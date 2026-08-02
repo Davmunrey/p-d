@@ -12,11 +12,7 @@
 export interface GrupoTokens {
   readonly id: string;
   readonly claveCopy:
-    | "grupoSuperficies"
-    | "grupoTinta"
-    | "grupoMarca"
-    | "grupoBordes"
-    | "grupoEstado";
+    "grupoSuperficies" | "grupoTinta" | "grupoMarca" | "grupoBordes" | "grupoEstado";
   readonly tokens: readonly string[];
 }
 

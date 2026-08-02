@@ -7,11 +7,11 @@ Web de boda con landing pública y panel privado de gestión.
 
 ## Documentación
 
-| Documento | Contenido |
-|---|---|
+| Documento                              | Contenido                                                      |
+| -------------------------------------- | -------------------------------------------------------------- |
 | [Plan maestro](./docs/PLAN-MAESTRO.md) | Visión, arquitectura, stack, modelo de datos, reglas y roadmap |
-| [Backlog](./docs/BACKLOG.md) | Board de tickets con criterios de aceptación y tests E2E |
-| [Skills](./.claude/skills/README.md) | Listón de diseño e interacción del proyecto |
+| [Backlog](./docs/BACKLOG.md)           | Board de tickets con criterios de aceptación y tests E2E       |
+| [Skills](./.claude/skills/README.md)   | Listón de diseño e interacción del proyecto                    |
 
 ## Reglas del proyecto
 

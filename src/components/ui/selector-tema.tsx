@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
-import { ATRIBUTO_TEMA, CLAVE_TEMA, TEMA_POR_DEFECTO, TEMAS, type Tema } from "@/config/constants";
+import {
+  ATRIBUTO_TEMA,
+  CLAVE_TEMA,
+  TEMA_POR_DEFECTO,
+  TEMAS,
+  type Tema,
+} from "@/config/constants";
 import { t } from "@/lib/copy";
 
 const ETIQUETAS: Record<Tema, string> = {
@@ -11,18 +17,34 @@ const ETIQUETAS: Record<Tema, string> = {
   sistema: t("cocina.temaSistema"),
 };
 
-function aplicarTema(tema: Tema) {
-  const raiz = document.documentElement;
-  if (tema === "sistema") {
-    raiz.removeAttribute(ATRIBUTO_TEMA);
-  } else {
-    raiz.setAttribute(ATRIBUTO_TEMA, tema);
-  }
+/** Evento propio: avisa a los suscriptores cuando el tema cambia en esta pestaña. */
+const EVENTO_TEMA = "boda:tema-cambiado";
+
+function esTema(valor: string | null): valor is Tema {
+  return valor !== null && (TEMAS as readonly string[]).includes(valor);
 }
 
-function leerTemaGuardado(): Tema {
+/**
+ * El tema es estado EXTERNO a React: vive en `localStorage` y en un atributo
+ * del DOM. Por eso se lee con `useSyncExternalStore` en lugar de duplicarlo en
+ * un `useState` que habría que mantener sincronizado a mano.
+ */
+function suscribir(alCambiar: () => void) {
+  window.addEventListener("storage", alCambiar);
+  window.addEventListener(EVENTO_TEMA, alCambiar);
+  return () => {
+    window.removeEventListener("storage", alCambiar);
+    window.removeEventListener(EVENTO_TEMA, alCambiar);
+  };
+}
+
+function leerTema(): Tema {
   const guardado = window.localStorage.getItem(CLAVE_TEMA);
-  return TEMAS.includes(guardado as Tema) ? (guardado as Tema) : TEMA_POR_DEFECTO;
+  return esTema(guardado) ? guardado : TEMA_POR_DEFECTO;
+}
+
+function leerTemaEnServidor(): Tema {
+  return TEMA_POR_DEFECTO;
 }
 
 /**
@@ -32,19 +54,18 @@ function leerTemaGuardado(): Tema {
  * Toda la traducción a valores la hace la capa semántica de tokens.
  */
 export function SelectorTema() {
-  const [tema, setTema] = useState<Tema>(TEMA_POR_DEFECTO);
+  const tema = useSyncExternalStore(suscribir, leerTema, leerTemaEnServidor);
 
-  useEffect(() => {
-    const guardado = leerTemaGuardado();
-    setTema(guardado);
-    aplicarTema(guardado);
-  }, []);
-
-  function cambiar(nuevo: Tema) {
-    setTema(nuevo);
-    aplicarTema(nuevo);
+  const cambiar = useCallback((nuevo: Tema) => {
+    const raiz = document.documentElement;
+    if (nuevo === "sistema") {
+      raiz.removeAttribute(ATRIBUTO_TEMA);
+    } else {
+      raiz.setAttribute(ATRIBUTO_TEMA, nuevo);
+    }
     window.localStorage.setItem(CLAVE_TEMA, nuevo);
-  }
+    window.dispatchEvent(new Event(EVENTO_TEMA));
+  }, []);
 
   return (
     <div

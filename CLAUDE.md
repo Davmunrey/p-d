@@ -8,14 +8,14 @@ Estas reglas son **innegociables** y aplican a todo cambio, sin excepción.
 
 Si un valor pudiera cambiar sin que cambie la lógica, no es código — es configuración.
 
-| Qué | Dónde va | Nunca |
-|---|---|---|
-| Color, tipografía, espaciado, radio, sombra, duración, easing, z-index, breakpoint | Token CSS en `src/styles/tokens/` | `#hex`, `rgb()`, `px` sueltos, `text-[14px]`, `bg-[#fff]` en componentes |
-| Texto visible (copy, label, error, meta) | `content/copy.es.json` vía `useCopy()` | String literal en JSX |
-| Datos de la boda (fecha, lugar, nombres, coords) | Tabla `wedding_settings` | Constante en código |
-| Imágenes de la landing | Supabase Storage + tabla `media` | `/public` con ruta fija |
-| URLs de servicios, claves, IDs | Variables de entorno | Código fuente |
-| Límites, paginaciones, timeouts | `src/config/constants.ts`, con nombre | Literal incrustado |
+| Qué                                                                                | Dónde va                               | Nunca                                                                    |
+| ---------------------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------ |
+| Color, tipografía, espaciado, radio, sombra, duración, easing, z-index, breakpoint | Token CSS en `src/styles/tokens/`      | `#hex`, `rgb()`, `px` sueltos, `text-[14px]`, `bg-[#fff]` en componentes |
+| Texto visible (copy, label, error, meta)                                           | `content/copy.es.json` vía `useCopy()` | String literal en JSX                                                    |
+| Datos de la boda (fecha, lugar, nombres, coords)                                   | Tabla `wedding_settings`               | Constante en código                                                      |
+| Imágenes de la landing                                                             | Supabase Storage + tabla `media`       | `/public` con ruta fija                                                  |
+| URLs de servicios, claves, IDs                                                     | Variables de entorno                   | Código fuente                                                            |
+| Límites, paginaciones, timeouts                                                    | `src/config/constants.ts`, con nombre  | Literal incrustado                                                       |
 
 **Tokens en tres capas.** Una capa solo consume la anterior, nunca se salta niveles:
 

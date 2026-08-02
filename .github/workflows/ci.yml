@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  calidad:
+    name: Calidad de código
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Comprobación de tipos
+        run: npm run typecheck
+
+      - name: ESLint (incluye reglas anti-hardcode)
+        run: npm run lint
+
+      - name: Stylelint (colores literales fuera de primitivos)
+        run: npm run lint:css
+
+      - name: Formato
+        run: npm run format:check
+
+  e2e:
+    name: Tests E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Instalar navegadores
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Ejecutar suite E2E
+        run: npm run test:e2e
+
+      - name: Guardar informe si algo falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-playwright
+          path: playwright-report/
+          retention-days: 7

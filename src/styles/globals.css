@@ -1,5 +1,4 @@
 @import "tailwindcss";
-
 @import "./tokens/primitives.css";
 @import "./tokens/semantic.css";
 @import "./tokens/motion.css";
@@ -80,7 +79,6 @@
   --font-titulo: var(--fuente-titulo);
   --font-cuerpo: var(--fuente-cuerpo);
   --font-codigo: var(--fuente-codigo);
-
   --text-display: var(--texto-display);
   --text-titulo-1: var(--texto-titulo-1);
   --text-titulo-2: var(--texto-titulo-2);
@@ -90,11 +88,9 @@
   --text-cuerpo: var(--texto-cuerpo);
   --text-pequeno: var(--texto-pequeno);
   --text-diminuto: var(--texto-diminuto);
-
   --leading-titulo: var(--interlineado-titulo);
   --leading-cuerpo: var(--interlineado-cuerpo);
   --leading-compacto: var(--interlineado-compacto);
-
   --tracking-titulo: var(--espaciado-titulo);
   --tracking-normal: var(--espaciado-normal);
   --tracking-amplio: var(--espaciado-amplio);
@@ -116,7 +112,6 @@
   --radius-modal: var(--radio-modal);
   --radius-imagen: var(--radio-imagen);
   --radius-etiqueta: var(--radio-etiqueta);
-
   --shadow-sutil: var(--sombra-sutil);
   --shadow-tarjeta: var(--sombra-tarjeta);
   --shadow-elevada: var(--sombra-elevada);

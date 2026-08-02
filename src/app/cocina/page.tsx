@@ -72,7 +72,7 @@ export default function PaginaCocina() {
                 className="mt-linea font-titulo leading-titulo"
                 style={{ fontSize: `var(--${token})` }}
               >
-                Nos casamos
+                {t("cocina.muestraTipografica")}
               </p>
             </li>
           ))}

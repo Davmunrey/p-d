@@ -9,10 +9,10 @@
 
 Un único producto con dos caras:
 
-| Cara | Público | Contenido |
-|---|---|---|
-| **Público** | Invitados y visitantes | Landing narrativa con fotos y animaciones al scroll, página *Save the Date*, confirmación de asistencia (RSVP), info práctica (lugar, horario, alojamiento, regalo) |
-| **Privado** | Los novios (y colaboradores) | Panel de gestión: invitados, presupuesto, proveedores, servicios, tareas, seating, documentos |
+| Cara        | Público                      | Contenido                                                                                                                                                           |
+| ----------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Público** | Invitados y visitantes       | Landing narrativa con fotos y animaciones al scroll, página _Save the Date_, confirmación de asistencia (RSVP), info práctica (lugar, horario, alojamiento, regalo) |
+| **Privado** | Los novios (y colaboradores) | Panel de gestión: invitados, presupuesto, proveedores, servicios, tareas, seating, documentos                                                                       |
 
 Ambas caras comparten el mismo origen de datos: lo que se gestiona en el panel es lo que ve el invitado. La lista de invitados alimenta el RSVP; el RSVP alimenta el presupuesto (nº de menús); los proveedores alimentan los pagos.
 
@@ -24,15 +24,15 @@ Estas reglas aplican a **todo** el código. Una PR que las incumpla no se mergea
 
 ### 2.1 Cero hardcode
 
-| Tipo de dato | Dónde vive | Nunca en |
-|---|---|---|
-| Colores, tipografías, espaciados, radios, sombras, duraciones, easings, z-index, breakpoints | Design tokens (CSS custom properties) | Valores literales en componentes |
-| Textos visibles (copys, labels, errores, meta) | `content/copy.es.json`, tipado | Strings literales en JSX |
-| Datos de la boda (fecha, lugar, nombres, coordenadas, hashtag) | Tabla `wedding_settings` en BBDD | Constantes en código |
-| Fotos, vídeos, documentos | Supabase Storage + tabla `media` | `/public` con rutas fijas |
-| URLs de servicios, claves, IDs de proyecto | Variables de entorno (`.env`, Netlify env) | Código fuente |
-| Enums de negocio (estados RSVP, categorías) | Tipos Postgres + tipos TS generados | Uniones de strings escritas a mano |
-| Números mágicos (límites, paginación, timeouts) | `src/config/constants.ts`, con nombre | Literales incrustados |
+| Tipo de dato                                                                                 | Dónde vive                                 | Nunca en                           |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------- |
+| Colores, tipografías, espaciados, radios, sombras, duraciones, easings, z-index, breakpoints | Design tokens (CSS custom properties)      | Valores literales en componentes   |
+| Textos visibles (copys, labels, errores, meta)                                               | `content/copy.es.json`, tipado             | Strings literales en JSX           |
+| Datos de la boda (fecha, lugar, nombres, coordenadas, hashtag)                               | Tabla `wedding_settings` en BBDD           | Constantes en código               |
+| Fotos, vídeos, documentos                                                                    | Supabase Storage + tabla `media`           | `/public` con rutas fijas          |
+| URLs de servicios, claves, IDs de proyecto                                                   | Variables de entorno (`.env`, Netlify env) | Código fuente                      |
+| Enums de negocio (estados RSVP, categorías)                                                  | Tipos Postgres + tipos TS generados        | Uniones de strings escritas a mano |
+| Números mágicos (límites, paginación, timeouts)                                              | `src/config/constants.ts`, con nombre      | Literales incrustados              |
 
 **Regla práctica:** si un valor pudiera cambiar sin que cambie la lógica, no es código — es configuración.
 
@@ -83,25 +83,25 @@ Orden de precedencia si algo entra en conflicto: **estas reglas fundacionales > 
 
 ## 3. Stack
 
-| Capa | Elección | Por qué |
-|---|---|---|
-| Framework | **Next.js 15 (App Router)** | SSR/ISR para la landing, Server Actions para el panel, un solo repo para ambas caras |
-| Hosting | **Netlify** (`@netlify/plugin-nextjs`) | Requisito. Deploy previews por PR, CDN global, free tier suficiente |
-| BBDD | **Supabase** (PostgreSQL, open source) | Postgres puro + Auth + Storage + RLS + Realtime en un free tier. Autoalojable si algún día hace falta |
-| Auth | Supabase Auth (magic link + OAuth Google) | Sin gestionar contraseñas. Solo 2-4 usuarios |
-| Ficheros | Supabase Storage | Fotos de la landing, contratos y facturas de proveedores |
-| Estilos | Tailwind CSS v4 + design tokens en CSS vars | Tokens nativos vía `@theme`, sin capa de traducción |
-| Componentes | shadcn/ui (copiado al repo, re-tematizado con nuestros tokens) | Base accesible; el código es nuestro y se adapta a los tokens |
-| Animación | Motion (`framer-motion`) + Lenis (scroll suave) | Scroll-linked, parallax y reveals; API declarativa |
-| Formularios | React Hook Form + Zod | Un esquema Zod valida cliente y servidor |
-| Datos (panel) | TanStack Query + Server Actions | Caché, optimistic updates, invalidación |
-| Copys | `content/copy.es.json` + hook `useCopy()` tipado | **Todo en castellano.** Sin librería de i18n: una capa propia y ligera que impide textos en código y centraliza la redacción |
-| Tablas | TanStack Table | Filtros, orden y export CSV para invitados/gastos |
-| Emails | Resend (free tier) | Confirmaciones de RSVP y recordatorios |
-| Tests | Vitest + Testing Library + Playwright | Unitarios y E2E del flujo crítico (RSVP y login) |
-| Calidad | ESLint + Prettier + Stylelint + Husky + lint-staged | Las reglas del §2 se aplican solas |
-| Errores | Sentry (free tier) | Ya disponible en el entorno |
-| Analítica | PostHog (free tier) | Ya disponible en el entorno |
+| Capa          | Elección                                                       | Por qué                                                                                                                      |
+| ------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Framework     | **Next.js 15 (App Router)**                                    | SSR/ISR para la landing, Server Actions para el panel, un solo repo para ambas caras                                         |
+| Hosting       | **Netlify** (`@netlify/plugin-nextjs`)                         | Requisito. Deploy previews por PR, CDN global, free tier suficiente                                                          |
+| BBDD          | **Supabase** (PostgreSQL, open source)                         | Postgres puro + Auth + Storage + RLS + Realtime en un free tier. Autoalojable si algún día hace falta                        |
+| Auth          | Supabase Auth (magic link + OAuth Google)                      | Sin gestionar contraseñas. Solo 2-4 usuarios                                                                                 |
+| Ficheros      | Supabase Storage                                               | Fotos de la landing, contratos y facturas de proveedores                                                                     |
+| Estilos       | Tailwind CSS v4 + design tokens en CSS vars                    | Tokens nativos vía `@theme`, sin capa de traducción                                                                          |
+| Componentes   | shadcn/ui (copiado al repo, re-tematizado con nuestros tokens) | Base accesible; el código es nuestro y se adapta a los tokens                                                                |
+| Animación     | Motion (`framer-motion`) + Lenis (scroll suave)                | Scroll-linked, parallax y reveals; API declarativa                                                                           |
+| Formularios   | React Hook Form + Zod                                          | Un esquema Zod valida cliente y servidor                                                                                     |
+| Datos (panel) | TanStack Query + Server Actions                                | Caché, optimistic updates, invalidación                                                                                      |
+| Copys         | `content/copy.es.json` + hook `useCopy()` tipado               | **Todo en castellano.** Sin librería de i18n: una capa propia y ligera que impide textos en código y centraliza la redacción |
+| Tablas        | TanStack Table                                                 | Filtros, orden y export CSV para invitados/gastos                                                                            |
+| Emails        | Resend (free tier)                                             | Confirmaciones de RSVP y recordatorios                                                                                       |
+| Tests         | Vitest + Testing Library + Playwright                          | Unitarios y E2E del flujo crítico (RSVP y login)                                                                             |
+| Calidad       | ESLint + Prettier + Stylelint + Husky + lint-staged            | Las reglas del §2 se aplican solas                                                                                           |
+| Errores       | Sentry (free tier)                                             | Ya disponible en el entorno                                                                                                  |
+| Analítica     | PostHog (free tier)                                            | Ya disponible en el entorno                                                                                                  |
 
 **Alternativas descartadas:** Astro (mejor landing, peor panel — no compensa mantener dos apps); Neon + Auth.js (Postgres excelente, pero habría que construir auth, storage y RLS por separado); PocketBase (ligero, pero requiere servidor propio, no encaja con Netlify).
 
@@ -171,7 +171,7 @@ Todas las tablas llevan `id uuid pk default gen_random_uuid()`, `created_at`, `u
 ### Configuración
 
 **`wedding_settings`** (fila única) — fecha, hora, nombres de los novios, lugar de ceremonia y banquete, coordenadas, hashtag, moneda, idioma por defecto, fecha límite de RSVP, flags de secciones visibles.
-→ *Elimina de raíz todo hardcode de datos de la boda.*
+→ _Elimina de raíz todo hardcode de datos de la boda._
 
 **`profiles`** — extiende `auth.users`. `role`: `owner` | `editor` | `viewer`.
 
@@ -192,7 +192,7 @@ Todas las tablas llevan `id uuid pk default gen_random_uuid()`, `created_at`, `u
 
 **`vendor_documents`** — contratos y facturas en Storage. `vendor_id`, `storage_path`, `type`, `uploaded_by`.
 
-**`services`** — lo contratado a cada proveedor: `vendor_id`, `name`, `description`, `unit_price`, `quantity`, `is_per_guest` *(recalcula automáticamente al confirmarse invitados)*.
+**`services`** — lo contratado a cada proveedor: `vendor_id`, `name`, `description`, `unit_price`, `quantity`, `is_per_guest` _(recalcula automáticamente al confirmarse invitados)_.
 
 ### Presupuesto
 
@@ -210,18 +210,18 @@ Todas las tablas llevan `id uuid pk default gen_random_uuid()`, `created_at`, `u
 **`tables`** — mesas del banquete: `name`, `capacity`, `shape`, `position_x`, `position_y` (para el plano visual).
 
 **`media`** — fotos de la landing: `storage_path`, `alt_text` (i18n), `section`, `sort_order`, `width`, `height`, `blur_hash`, `is_published`.
-→ *Ninguna imagen de la landing va en `/public`; todas se gestionan desde el panel.*
+→ _Ninguna imagen de la landing va en `/public`; todas se gestionan desde el panel._
 
 **`activity_log`** — auditoría: quién cambió qué y cuándo.
 
 ### Política RLS
 
-| Tabla | Público (anon) | Autenticado |
-|---|---|---|
-| `wedding_settings` | SELECT (solo campos públicos, vía vista) | ALL si `owner`/`editor` |
-| `media` | SELECT donde `is_published = true` | ALL |
-| `guest_groups`, `guests`, `rsvps` | **Nada directo** | ALL |
-| Resto (presupuesto, proveedores, pagos, tareas) | **Nada** | ALL |
+| Tabla                                           | Público (anon)                           | Autenticado             |
+| ----------------------------------------------- | ---------------------------------------- | ----------------------- |
+| `wedding_settings`                              | SELECT (solo campos públicos, vía vista) | ALL si `owner`/`editor` |
+| `media`                                         | SELECT donde `is_published = true`       | ALL                     |
+| `guest_groups`, `guests`, `rsvps`               | **Nada directo**                         | ALL                     |
+| Resto (presupuesto, proveedores, pagos, tareas) | **Nada**                                 | ALL                     |
 
 El invitado nunca consulta tablas directamente. El RSVP público pasa por dos funciones `SECURITY DEFINER` que reciben el token, devuelven **solo** ese grupo y escriben **solo** su respuesta:
 
@@ -235,6 +235,7 @@ Ambas con rate limiting y validación de que el token existe y el plazo no ha ve
 ## 6. Experiencia pública
 
 ### Landing (`/`)
+
 Secciones (orden y visibilidad configurables desde `wedding_settings`):
 
 1. **Hero** — foto a pantalla completa, nombres, fecha, cuenta atrás. Parallax suave al scroll.
@@ -249,42 +250,44 @@ Secciones (orden y visibilidad configurables desde `wedding_settings`):
 **Principios de animación:** el movimiento sirve a la narrativa, no la interrumpe. Todas las duraciones y curvas son tokens. Con `prefers-reduced-motion` los reveals se convierten en fades cortos o desaparecen. Ninguna animación puede provocar layout shift (CLS objetivo < 0.1).
 
 ### Save the Date (`/save-the-date`)
+
 Página independiente, ligera y compartible: fecha grande, foto, "añadir al calendario" (`.ics` generado desde `wedding_settings`), Open Graph propio para que se vea bien en WhatsApp.
 
 ### RSVP (`/rsvp/[token]`)
+
 El grupo se identifica por su enlace único — sin contraseñas. Formulario multipaso: asistencia por persona → menú y alergias → transporte/alojamiento → canción y mensaje. Confirmación por email (Resend) y posibilidad de editar hasta la fecha límite.
 
 ---
 
 ## 7. Panel de gestión (`/app`)
 
-| Módulo | Contenido |
-|---|---|
-| **Dashboard** | KPIs: días restantes, confirmados/pendientes, % presupuesto consumido, próximos pagos y tareas |
-| **Invitados** | Tabla con filtros y búsqueda, alta individual o import CSV, gestión de grupos, generación y copia de enlaces de invitación, envío por WhatsApp/email, export |
-| **Presupuesto** | Categorías con previsto vs real, gráfica de reparto, calendario de pagos, alertas de desvío |
-| **Proveedores** | Ficha por proveedor, pipeline de estado, comparativa de presupuestos, documentos adjuntos |
-| **Servicios** | Qué se contrata, precio por unidad o por invitado, recálculo automático con los confirmados |
-| **Tareas** | Checklist con vista lista y kanban, plantilla inicial por meses restantes |
-| **Seating** | Plano drag & drop de mesas, asignación con avisos de alergias y de invitados sin mesa |
-| **Ajustes** | Contenido de la landing, orden y visibilidad de secciones, subida y ordenación de fotos, textos i18n, datos de la boda, usuarios |
+| Módulo          | Contenido                                                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Dashboard**   | KPIs: días restantes, confirmados/pendientes, % presupuesto consumido, próximos pagos y tareas                                                               |
+| **Invitados**   | Tabla con filtros y búsqueda, alta individual o import CSV, gestión de grupos, generación y copia de enlaces de invitación, envío por WhatsApp/email, export |
+| **Presupuesto** | Categorías con previsto vs real, gráfica de reparto, calendario de pagos, alertas de desvío                                                                  |
+| **Proveedores** | Ficha por proveedor, pipeline de estado, comparativa de presupuestos, documentos adjuntos                                                                    |
+| **Servicios**   | Qué se contrata, precio por unidad o por invitado, recálculo automático con los confirmados                                                                  |
+| **Tareas**      | Checklist con vista lista y kanban, plantilla inicial por meses restantes                                                                                    |
+| **Seating**     | Plano drag & drop de mesas, asignación con avisos de alergias y de invitados sin mesa                                                                        |
+| **Ajustes**     | Contenido de la landing, orden y visibilidad de secciones, subida y ordenación de fotos, textos i18n, datos de la boda, usuarios                             |
 
 ---
 
 ## 8. Roadmap
 
-| Fase | Alcance | Entregable | Est. |
-|---|---|---|---|
-| **0 — Cimientos** | Next.js + TS + Tailwind v4, **tokens completos**, i18n, ESLint/Stylelint/Husky, Netlify + previews, proyecto Supabase, CI | Deploy en verde con las reglas del §2 activas | 1-2 d |
-| **1 — Base de datos** | Migraciones de todas las tablas, enums, vistas, triggers, RLS, seed, tipos TS generados | Esquema completo versionado | 2 d |
-| **2 — Landing** | Todas las secciones, animaciones, galería, contenido desde BBDD | Landing pública lista | 4-5 d |
-| **3 — Save the Date** | Página, `.ics`, OG images | Enlace compartible | 1 d |
-| **4 — Auth + shell** | Magic link, middleware, layout del panel, roles | Panel accesible y protegido | 2 d |
-| **5 — Invitados + RSVP** | CRUD, grupos, tokens, import/export, flujo público de RSVP, emails | Ciclo completo de invitación | 4-5 d |
-| **6 — Presupuesto** | Categorías, partidas, pagos, gráficas | Control económico operativo | 3 d |
-| **7 — Proveedores + servicios** | Fichas, pipeline, documentos, precio por invitado | Gestión de contratación | 3 d |
-| **8 — Tareas + seating** | Checklist, kanban, plano de mesas | Organización del día | 3-4 d |
-| **9 — Pulido** | Performance (Lighthouse ≥ 95), a11y, SEO, Sentry, PostHog, E2E, backups | Producción | 2-3 d |
+| Fase                            | Alcance                                                                                                                   | Entregable                                    | Est.  |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ----- |
+| **0 — Cimientos**               | Next.js + TS + Tailwind v4, **tokens completos**, i18n, ESLint/Stylelint/Husky, Netlify + previews, proyecto Supabase, CI | Deploy en verde con las reglas del §2 activas | 1-2 d |
+| **1 — Base de datos**           | Migraciones de todas las tablas, enums, vistas, triggers, RLS, seed, tipos TS generados                                   | Esquema completo versionado                   | 2 d   |
+| **2 — Landing**                 | Todas las secciones, animaciones, galería, contenido desde BBDD                                                           | Landing pública lista                         | 4-5 d |
+| **3 — Save the Date**           | Página, `.ics`, OG images                                                                                                 | Enlace compartible                            | 1 d   |
+| **4 — Auth + shell**            | Magic link, middleware, layout del panel, roles                                                                           | Panel accesible y protegido                   | 2 d   |
+| **5 — Invitados + RSVP**        | CRUD, grupos, tokens, import/export, flujo público de RSVP, emails                                                        | Ciclo completo de invitación                  | 4-5 d |
+| **6 — Presupuesto**             | Categorías, partidas, pagos, gráficas                                                                                     | Control económico operativo                   | 3 d   |
+| **7 — Proveedores + servicios** | Fichas, pipeline, documentos, precio por invitado                                                                         | Gestión de contratación                       | 3 d   |
+| **8 — Tareas + seating**        | Checklist, kanban, plano de mesas                                                                                         | Organización del día                          | 3-4 d |
+| **9 — Pulido**                  | Performance (Lighthouse ≥ 95), a11y, SEO, Sentry, PostHog, E2E, backups                                                   | Producción                                    | 2-3 d |
 
 **Camino crítico:** 0 → 1 → 2 → 3 permite publicar y empezar a repartir el Save the Date mientras el panel sigue en desarrollo. Las fases 6-8 son internas: no bloquean nada de cara a los invitados.
 
@@ -292,11 +295,11 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 
 ## 9. Entornos y despliegue
 
-| Entorno | Rama | Supabase |
-|---|---|---|
-| Producción | `main` | Proyecto principal |
-| Preview | Cada PR (URL de Netlify) | Branch de Supabase o proyecto de staging |
-| Local | — | Supabase CLI (`supabase start`) |
+| Entorno    | Rama                     | Supabase                                 |
+| ---------- | ------------------------ | ---------------------------------------- |
+| Producción | `main`                   | Proyecto principal                       |
+| Preview    | Cada PR (URL de Netlify) | Branch de Supabase o proyecto de staging |
+| Local      | —                        | Supabase CLI (`supabase start`)          |
 
 Variables de entorno (Netlify, nunca en git): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (solo servidor), `RESEND_API_KEY`, `NEXT_PUBLIC_SITE_URL`, `SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`.
 
@@ -306,13 +309,13 @@ Variables de entorno (Netlify, nunca en git): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_
 
 ## 10. Costes
 
-| Servicio | Plan | Coste |
-|---|---|---|
-| Netlify | Free (100 GB/mes) | 0 € |
-| Supabase | Free (500 MB BBDD, 1 GB storage) | 0 € |
-| Resend | Free (3.000 emails/mes) | 0 € |
-| Sentry / PostHog | Free | 0 € |
-| Dominio | `.com` o `.es` | ~10-15 €/año |
+| Servicio         | Plan                             | Coste        |
+| ---------------- | -------------------------------- | ------------ |
+| Netlify          | Free (100 GB/mes)                | 0 €          |
+| Supabase         | Free (500 MB BBDD, 1 GB storage) | 0 €          |
+| Resend           | Free (3.000 emails/mes)          | 0 €          |
+| Sentry / PostHog | Free                             | 0 €          |
+| Dominio          | `.com` o `.es`                   | ~10-15 €/año |
 
 **Total: ~12 €/año.** Único punto de atención: el free tier de Supabase pausa proyectos tras 7 días sin actividad — se resuelve con un ping semanal desde una GitHub Action (o el plan Pro, 25 $/mes, si se prefiere no depender de ello en la semana de la boda).
 
@@ -320,14 +323,14 @@ Variables de entorno (Netlify, nunca en git): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_
 
 ## 11. Riesgos
 
-| Riesgo | Mitigación |
-|---|---|
-| Pico de tráfico al enviar invitaciones | Landing estática en CDN; solo el RSVP toca BBDD |
-| Pausa del proyecto Supabase por inactividad | Cron semanal de ping + monitorización |
-| Fotos pesadas hunden el rendimiento | `next/image` + AVIF/WebP, tamaños responsive, blur placeholder, presupuesto de peso por página |
-| Enlace de invitación compartido o filtrado | Token largo aleatorio, sin datos sensibles en la respuesta, rate limiting, opción de regenerar |
-| Pérdida de datos | Backup diario automatizado a repo privado |
-| Deriva del diseño (hardcode reintroducido) | Stylelint + ESLint en CI: la PR falla, no depende de revisión humana |
+| Riesgo                                      | Mitigación                                                                                     |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Pico de tráfico al enviar invitaciones      | Landing estática en CDN; solo el RSVP toca BBDD                                                |
+| Pausa del proyecto Supabase por inactividad | Cron semanal de ping + monitorización                                                          |
+| Fotos pesadas hunden el rendimiento         | `next/image` + AVIF/WebP, tamaños responsive, blur placeholder, presupuesto de peso por página |
+| Enlace de invitación compartido o filtrado  | Token largo aleatorio, sin datos sensibles en la respuesta, rate limiting, opción de regenerar |
+| Pérdida de datos                            | Backup diario automatizado a repo privado                                                      |
+| Deriva del diseño (hardcode reintroducido)  | Stylelint + ESLint en CI: la PR falla, no depende de revisión humana                           |
 
 ---
 
@@ -335,13 +338,13 @@ Variables de entorno (Netlify, nunca en git): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_
 
 Ninguna bloquea la Fase 0; se resuelven antes de la fase indicada.
 
-1. **Dominio** — ¿comprado ya? Necesario en Fase 3 (Save the Date). *Netlify o Cloudflare como registrador.*
+1. **Dominio** — ¿comprado ya? Necesario en Fase 3 (Save the Date). _Netlify o Cloudflare como registrador._
 2. **Dirección de arte** — paleta, tipografías y tono. Determina los valores de los tokens primitivos (no su estructura), así que la Fase 0 puede arrancar con una paleta provisional.
 3. **Fotos** — ¿hay sesión de preboda? Condiciona el diseño del hero y la galería.
 4. **Regalo** — ¿cuenta bancaria, Bizum, lista? Afecta a una sección de la landing.
 5. **Colaboradores** — ¿acceso para wedding planner o familiares? El rol `viewer` ya lo contempla.
 
-*Idioma resuelto: solo castellano.*
+_Idioma resuelto: solo castellano._
 
 ---
 
@@ -371,12 +374,12 @@ Un ticket no se cierra hasta cumplir **todos** los puntos:
 
 **Cada ticket entrega su test E2E.** Es parte del ticket, no una tarea posterior — un módulo sin test se considera no entregado.
 
-| Nivel | Herramienta | Qué cubre |
-|---|---|---|
-| **E2E** | Playwright | Recorridos completos de usuario en navegador real. Chromium + WebKit móvil |
-| Integración | Vitest + Testing Library | Componentes con estado, formularios, validaciones |
-| Base de datos | pgTAP o SQL en CI | **Que las políticas RLS realmente bloquean.** Crítico: es la única capa de autorización |
-| Visual | Playwright screenshots | Landing y secciones animadas, para detectar regresiones de maquetación |
+| Nivel         | Herramienta              | Qué cubre                                                                               |
+| ------------- | ------------------------ | --------------------------------------------------------------------------------------- |
+| **E2E**       | Playwright               | Recorridos completos de usuario en navegador real. Chromium + WebKit móvil              |
+| Integración   | Vitest + Testing Library | Componentes con estado, formularios, validaciones                                       |
+| Base de datos | pgTAP o SQL en CI        | **Que las políticas RLS realmente bloquean.** Crítico: es la única capa de autorización |
+| Visual        | Playwright screenshots   | Landing y secciones animadas, para detectar regresiones de maquetación                  |
 
 ### Recorridos E2E imprescindibles
 
