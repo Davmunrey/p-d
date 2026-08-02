@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+@import "./tokens/primitives.css";
+@import "./tokens/semantic.css";
+@import "./tokens/motion.css";
+
+/**
+ * PUENTE CON TAILWIND
+ *
+ * `@theme inline` mapea los tokens semánticos al sistema de utilidades. Como
+ * usa `inline`, Tailwind referencia las variables en lugar de copiar sus
+ * valores: por eso el tema oscuro funciona reasignando semánticos en runtime.
+ *
+ * Resultado: `bg-superficie` y `var(--color-superficie)` son EL MISMO token.
+ * Una sola fuente de verdad, dos sintaxis.
+ *
+ * `--color-*: initial` borra antes la paleta por defecto de Tailwind: nadie
+ * puede escribir `bg-red-500` ni `text-gray-700` en este proyecto.
+ */
+
+@theme inline {
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+
+  /* Superficies */
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-superficie-elevada: var(--superficie-elevada);
+  --color-superficie-hundida: var(--superficie-hundida);
+  --color-superficie-tenue: var(--superficie-tenue);
+  --color-superficie-inversa: var(--superficie-inversa);
+
+  /* Texto */
+  --color-tinta: var(--tinta);
+  --color-tinta-suave: var(--tinta-suave);
+  --color-tinta-tenue: var(--tinta-tenue);
+  --color-tinta-inversa: var(--tinta-inversa);
+  --color-tinta-marca: var(--tinta-marca);
+  --color-tinta-sobre-marca: var(--tinta-sobre-marca);
+  --color-tinta-sobre-acento: var(--tinta-sobre-acento);
+
+  /* Marca */
+  --color-marca: var(--marca);
+  --color-marca-hover: var(--marca-hover);
+  --color-marca-activo: var(--marca-activo);
+  --color-marca-tenue: var(--marca-tenue);
+  --color-acento: var(--acento);
+  --color-acento-hover: var(--acento-hover);
+  --color-acento-tenue: var(--acento-tenue);
+
+  /* Bordes */
+  --color-borde: var(--borde);
+  --color-borde-fuerte: var(--borde-fuerte);
+  --color-borde-tenue: var(--borde-tenue);
+  --color-borde-marca: var(--borde-marca);
+
+  /* Estado */
+  --color-exito: var(--exito);
+  --color-exito-fondo: var(--exito-fondo);
+  --color-exito-tinta: var(--exito-tinta);
+  --color-aviso: var(--aviso);
+  --color-aviso-fondo: var(--aviso-fondo);
+  --color-aviso-tinta: var(--aviso-tinta);
+  --color-error: var(--error);
+  --color-error-fondo: var(--error-fondo);
+  --color-error-tinta: var(--error-tinta);
+  --color-info: var(--info);
+  --color-info-fondo: var(--info-fondo);
+  --color-info-tinta: var(--info-tinta);
+
+  /* Foco y velos */
+  --color-foco: var(--foco);
+  --color-velo: var(--velo);
+  --color-velo-suave: var(--velo-suave);
+
+  /* Tipografía */
+  --font-titulo: var(--fuente-titulo);
+  --font-cuerpo: var(--fuente-cuerpo);
+  --font-codigo: var(--fuente-codigo);
+
+  --text-display: var(--texto-display);
+  --text-titulo-1: var(--texto-titulo-1);
+  --text-titulo-2: var(--texto-titulo-2);
+  --text-titulo-3: var(--texto-titulo-3);
+  --text-titulo-4: var(--texto-titulo-4);
+  --text-cuerpo-grande: var(--texto-cuerpo-grande);
+  --text-cuerpo: var(--texto-cuerpo);
+  --text-pequeno: var(--texto-pequeno);
+  --text-diminuto: var(--texto-diminuto);
+
+  --leading-titulo: var(--interlineado-titulo);
+  --leading-cuerpo: var(--interlineado-cuerpo);
+  --leading-compacto: var(--interlineado-compacto);
+
+  --tracking-titulo: var(--espaciado-titulo);
+  --tracking-normal: var(--espaciado-normal);
+  --tracking-amplio: var(--espaciado-amplio);
+
+  /* Espaciado */
+  --spacing-seccion: var(--espacio-seccion);
+  --spacing-seccion-compacta: var(--espacio-seccion-compacta);
+  --spacing-bloque: var(--espacio-bloque);
+  --spacing-elemento: var(--espacio-elemento);
+  --spacing-interno: var(--espacio-interno);
+  --spacing-interno-compacto: var(--espacio-interno-compacto);
+  --spacing-pila: var(--espacio-pila);
+  --spacing-linea: var(--espacio-linea);
+
+  /* Forma */
+  --radius-boton: var(--radio-boton);
+  --radius-campo: var(--radio-campo);
+  --radius-tarjeta: var(--radio-tarjeta);
+  --radius-modal: var(--radio-modal);
+  --radius-imagen: var(--radio-imagen);
+  --radius-etiqueta: var(--radio-etiqueta);
+
+  --shadow-sutil: var(--sombra-sutil);
+  --shadow-tarjeta: var(--sombra-tarjeta);
+  --shadow-elevada: var(--sombra-elevada);
+  --shadow-modal: var(--sombra-modal);
+
+  /* Anchos */
+  --container-texto: var(--ancho-texto);
+  --container-estrecho: var(--ancho-estrecho);
+  --container-contenido: var(--ancho-contenido);
+  --container-amplio: var(--ancho-amplio);
+}
+
+/**
+ * PUNTOS DE RUPTURA — única excepción a la capa de primitivos
+ *
+ * Los breakpoints NO pueden ir en `@theme inline`: las media queries se
+ * resuelven en tiempo de compilación y no aceptan `var()`. Por eso viven aquí
+ * como valores directos, en un `@theme` normal.
+ *
+ * Sigue habiendo una sola fuente de verdad — solo que para estos tokens es
+ * este bloque y no `primitives.css`.
+ */
+
+@theme {
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+}
+
+/* --------------------------------------------------------------------------
+ * Base
+ * ----------------------------------------------------------------------- */
+
+@layer base {
+  * {
+    border-color: var(--borde);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--fuente-cuerpo);
+    font-size: var(--texto-cuerpo);
+    line-height: var(--interlineado-cuerpo);
+    text-rendering: optimizelegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--fuente-titulo);
+    letter-spacing: var(--espaciado-titulo);
+    line-height: var(--interlineado-titulo);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Foco visible siempre: se puede rediseñar, nunca eliminar. */
+  :focus-visible {
+    outline: var(--foco-ancho) solid var(--foco);
+    outline-offset: var(--foco-separacion);
+  }
+
+  ::selection {
+    background-color: var(--marca-tenue);
+    color: var(--tinta-marca);
+  }
+
+  img,
+  video {
+    height: auto;
+    max-width: 100%;
+  }
+}

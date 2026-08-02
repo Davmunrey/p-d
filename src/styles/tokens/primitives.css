@@ -1,0 +1,189 @@
+/**
+ * CAPA 1 — PRIMITIVOS
+ *
+ * Valores crudos, sin semántica. El ÚNICO fichero del proyecto donde se
+ * permiten literales de color, tamaño y tiempo.
+ *
+ * REGLA: los componentes NUNCA usan estos tokens. Solo los consume la capa
+ * semántica (semantic.css). Si necesitas un valor aquí en un componente,
+ * significa que falta un token semántico.
+ *
+ * Dirección de arte: EDITORIAL MINIMALISTA. El color casi desaparece —
+ * el peso visual lo llevan la tipografía, el blanco y las fotos. Un único
+ * acento discreto, usado con cuentagotas.
+ *
+ * Cambiar los valores de este fichero re-tematiza la aplicación entera sin
+ * tocar un solo componente.
+ */
+
+:root {
+  /* ---------------------------------------------------------------------
+   * Color — escalas de 50 (más claro) a 950 (más oscuro)
+   * ------------------------------------------------------------------- */
+
+  /* Neutros: croma casi nulo, apenas templado en cálido. La base de todo. */
+  --color-neutro-50: oklch(0.99 0.001 75);
+  --color-neutro-100: oklch(0.975 0.002 75);
+  --color-neutro-200: oklch(0.938 0.003 75);
+  --color-neutro-300: oklch(0.878 0.004 75);
+  --color-neutro-400: oklch(0.74 0.004 75);
+  --color-neutro-500: oklch(0.6 0.004 75);
+  --color-neutro-600: oklch(0.487 0.004 75);
+  --color-neutro-700: oklch(0.395 0.004 75);
+  --color-neutro-800: oklch(0.28 0.003 75);
+  --color-neutro-900: oklch(0.196 0.003 75);
+  --color-neutro-950: oklch(0.13 0.002 75);
+
+  /* Piedra: el único acento. Oliva apagado, casi neutro. Se usa poco. */
+  --color-piedra-50: oklch(0.972 0.006 120);
+  --color-piedra-100: oklch(0.945 0.012 120);
+  --color-piedra-200: oklch(0.894 0.02 120);
+  --color-piedra-300: oklch(0.815 0.028 120);
+  --color-piedra-400: oklch(0.708 0.034 120);
+  --color-piedra-500: oklch(0.598 0.036 120);
+  --color-piedra-600: oklch(0.497 0.033 120);
+  --color-piedra-700: oklch(0.408 0.028 120);
+  --color-piedra-800: oklch(0.329 0.022 120);
+  --color-piedra-900: oklch(0.262 0.017 120);
+  --color-piedra-950: oklch(0.175 0.011 120);
+
+  /* Estado: solo los tonos que se usan */
+  --color-exito-100: oklch(0.94 0.045 155);
+  --color-exito-500: oklch(0.63 0.14 155);
+  --color-exito-700: oklch(0.47 0.11 155);
+  --color-aviso-100: oklch(0.95 0.05 85);
+  --color-aviso-500: oklch(0.75 0.15 85);
+  --color-aviso-700: oklch(0.55 0.12 85);
+  --color-error-100: oklch(0.94 0.035 25);
+  --color-error-500: oklch(0.6 0.19 25);
+  --color-error-700: oklch(0.48 0.16 25);
+  --color-info-100: oklch(0.94 0.03 245);
+  --color-info-500: oklch(0.62 0.14 245);
+  --color-info-700: oklch(0.48 0.12 245);
+
+  /* Absolutos */
+  --color-blanco: oklch(1 0 0);
+  --color-negro: oklch(0 0 0);
+
+  /* Velos: negro con alfa, para superponer sobre imagen */
+  --color-velo-suave: oklch(0 0 0 / 25%);
+  --color-velo-medio: oklch(0 0 0 / 55%);
+  --color-velo-fuerte: oklch(0 0 0 / 70%);
+
+  /* ---------------------------------------------------------------------
+   * Tipografía
+   * ------------------------------------------------------------------- */
+
+  --font-family-serif: var(--font-serif), ui-serif, georgia, "Times New Roman", serif;
+  --font-family-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-family-mono: ui-monospace, "SF Mono", menlo, monospace;
+
+  /**
+   * Escala modular, ratio 1.333 (cuarta perfecta), base 16px.
+   * Ratio amplio a propósito: en editorial el salto entre el titular y el
+   * cuerpo tiene que ser evidente, no gradual.
+   */
+  --font-size-1: 0.75rem;
+  --font-size-2: 0.875rem;
+  --font-size-3: 1rem;
+  --font-size-4: 1.333rem;
+  --font-size-5: 1.777rem;
+  --font-size-6: 2.369rem;
+  --font-size-7: 3.157rem;
+  --font-size-8: 4.209rem;
+  --font-size-9: 5.61rem;
+  --font-size-10: 7.478rem;
+  --font-size-11: 9.969rem;
+
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.1;
+  --line-height-snug: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
+
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.04em;
+  --letter-spacing-wider: 0.12em;
+
+  /* ---------------------------------------------------------------------
+   * Espaciado — escala base 4px
+   * ------------------------------------------------------------------- */
+
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.5rem;
+  --space-8: 3rem;
+  --space-9: 4rem;
+  --space-10: 5rem;
+  --space-11: 6rem;
+  --space-12: 8rem;
+  --space-13: 12rem;
+
+  /* ---------------------------------------------------------------------
+   * Radios, bordes y sombras
+   * ------------------------------------------------------------------- */
+
+  --radius-0: 0;
+  --radius-1: 0.25rem;
+  --radius-2: 0.5rem;
+  --radius-3: 0.75rem;
+  --radius-4: 1rem;
+  --radius-5: 1.5rem;
+  --radius-full: 9999px;
+
+  --border-width-1: 1px;
+  --border-width-2: 2px;
+
+  --shadow-1: 0 1px 2px 0 oklch(0 0 0 / 6%);
+  --shadow-2: 0 2px 8px -2px oklch(0 0 0 / 8%), 0 1px 3px -1px oklch(0 0 0 / 6%);
+  --shadow-3: 0 8px 24px -6px oklch(0 0 0 / 10%), 0 2px 6px -2px oklch(0 0 0 / 6%);
+  --shadow-4: 0 20px 48px -12px oklch(0 0 0 / 14%), 0 4px 12px -4px oklch(0 0 0 / 8%);
+
+  /* ---------------------------------------------------------------------
+   * Movimiento — las animaciones también son tokens
+   * ------------------------------------------------------------------- */
+
+  --duration-instant: 100ms;
+  --duration-fast: 180ms;
+  --duration-normal: 280ms;
+  --duration-slow: 480ms;
+  --duration-slower: 720ms;
+  --duration-cinematic: 1200ms;
+
+  --ease-linear: linear;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ---------------------------------------------------------------------
+   * Capas, anchos y breakpoints
+   * ------------------------------------------------------------------- */
+
+  --layer-base: 0;
+  --layer-raised: 10;
+  --layer-sticky: 100;
+  --layer-header: 200;
+  --layer-overlay: 300;
+  --layer-modal: 400;
+  --layer-toast: 500;
+
+  --width-prose: 65ch;
+  --width-narrow: 36rem;
+  --width-content: 72rem;
+  --width-wide: 90rem;
+
+  /* Los puntos de ruptura viven en el bloque `@theme` de globals.css:
+     las media queries no aceptan var(). Ver nota allí. */
+}
