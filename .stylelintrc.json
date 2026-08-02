@@ -1,0 +1,38 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "custom-property-pattern": null,
+    "declaration-property-value-no-unknown": null,
+    "no-descending-specificity": null,
+    "lightness-notation": "number",
+    "hue-degree-notation": "number",
+    "property-no-vendor-prefix": null,
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": ["theme", "utility", "variant", "custom-variant", "apply", "layer"]
+      }
+    ],
+    "import-notation": "string"
+  },
+  "overrides": [
+    {
+      "files": ["src/styles/tokens/semantic.css", "src/styles/tokens/motion.css"],
+      "rules": {
+        "color-no-hex": true,
+        "declaration-property-value-disallowed-list": {
+          "/^(color|background|background-color|border|border-color|fill|stroke|box-shadow|outline|outline-color)$/": [
+            "/^(?!.*var\\().*(oklch|rgb|hsl|#)/"
+          ]
+        },
+        "comment-word-disallowed-list": []
+      }
+    },
+    {
+      "files": ["src/**/*.css", "!src/styles/tokens/primitives.css"],
+      "rules": {
+        "color-no-hex": true
+      }
+    }
+  ]
+}

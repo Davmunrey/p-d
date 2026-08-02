@@ -1,0 +1,48 @@
+{
+  "comun": {
+    "cargando": "Cargando…",
+    "guardar": "Guardar",
+    "cancelar": "Cancelar",
+    "eliminar": "Eliminar",
+    "editar": "Editar",
+    "volver": "Volver",
+    "continuar": "Continuar",
+    "cerrar": "Cerrar",
+    "buscar": "Buscar",
+    "si": "Sí",
+    "no": "No"
+  },
+  "errores": {
+    "generico": "Algo no ha ido bien. Inténtalo de nuevo en un momento.",
+    "noEncontrado": "No hemos encontrado esta página.",
+    "sinPermiso": "No tienes acceso a esta sección.",
+    "campoObligatorio": "Este campo es obligatorio.",
+    "emailInvalido": "Revisa el correo electrónico.",
+    "sinConexion": "Parece que no hay conexión."
+  },
+  "meta": {
+    "titulo": "Nuestra boda",
+    "descripcion": "Toda la información de nuestro gran día."
+  },
+  "cocina": {
+    "titulo": "Sistema de diseño",
+    "descripcion": "Todos los tokens del proyecto, en un solo sitio. Si un valor no aparece aquí, no debería existir en el código.",
+    "seccionColor": "Color",
+    "seccionTipografia": "Tipografía",
+    "seccionEspaciado": "Espaciado",
+    "seccionForma": "Forma y sombra",
+    "seccionMovimiento": "Movimiento",
+    "grupoSuperficies": "Superficies",
+    "grupoTinta": "Texto",
+    "grupoMarca": "Marca y acento",
+    "grupoBordes": "Bordes",
+    "grupoEstado": "Estado",
+    "temaClaro": "Claro",
+    "temaOscuro": "Oscuro",
+    "temaSistema": "Sistema",
+    "cambiarTema": "Cambiar tema",
+    "pruebaMovimiento": "Reproducir animación",
+    "muestraTipografica": "Nos casamos",
+    "avisoMovimiento": "Con «movimiento reducido» activado en el sistema, estas animaciones se reducen a una aparición corta."
+  }
+}

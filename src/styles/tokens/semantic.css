@@ -1,0 +1,214 @@
+/**
+ * CAPA 2 — SEMÁNTICOS
+ *
+ * Qué SIGNIFICA cada valor, no cuál es. Esta es la capa que consumen los
+ * componentes (vía las utilidades de Tailwind o `var(--color-*)`).
+ *
+ * REGLA: aquí no hay literales, solo referencias a primitivos. Si aparece un
+ * valor literal en este fichero, es que falta un primitivo.
+ *
+ * El tema claro/oscuro se resuelve reasignando estos tokens. Los componentes
+ * no saben qué tema está activo, ni les hace falta.
+ *
+ * Nomenclatura: los colores de texto se llaman `tinta` para no confundirse con
+ * los tamaños de texto (`--texto-titulo-1`, que es una escala tipográfica).
+ */
+
+:root {
+  /* --- Superficies --------------------------------------------------- */
+  --fondo: var(--color-neutro-50);
+  --superficie: var(--color-blanco);
+  --superficie-elevada: var(--color-blanco);
+  --superficie-hundida: var(--color-neutro-100);
+  --superficie-tenue: var(--color-neutro-100);
+  --superficie-inversa: var(--color-neutro-900);
+
+  /* --- Texto --------------------------------------------------------- */
+  --tinta: var(--color-neutro-900);
+  --tinta-suave: var(--color-neutro-700);
+  --tinta-tenue: var(--color-neutro-500);
+  --tinta-inversa: var(--color-neutro-50);
+  --tinta-marca: var(--color-piedra-700);
+  --tinta-sobre-marca: var(--color-blanco);
+  --tinta-sobre-acento: var(--color-blanco);
+
+  /* --- Marca y acento ------------------------------------------------ */
+  --marca: var(--color-piedra-600);
+  --marca-hover: var(--color-piedra-700);
+  --marca-activo: var(--color-piedra-800);
+  --marca-tenue: var(--color-piedra-100);
+  --acento: var(--color-piedra-800);
+  --acento-hover: var(--color-piedra-900);
+  --acento-tenue: var(--color-piedra-50);
+
+  /* --- Bordes -------------------------------------------------------- */
+  --borde: var(--color-neutro-200);
+  --borde-fuerte: var(--color-neutro-300);
+  --borde-tenue: var(--color-neutro-100);
+  --borde-marca: var(--color-piedra-400);
+
+  /* --- Estado -------------------------------------------------------- */
+  --exito: var(--color-exito-500);
+  --exito-fondo: var(--color-exito-100);
+  --exito-tinta: var(--color-exito-700);
+  --aviso: var(--color-aviso-500);
+  --aviso-fondo: var(--color-aviso-100);
+  --aviso-tinta: var(--color-aviso-700);
+  --error: var(--color-error-500);
+  --error-fondo: var(--color-error-100);
+  --error-tinta: var(--color-error-700);
+  --info: var(--color-info-500);
+  --info-fondo: var(--color-info-100);
+  --info-tinta: var(--color-info-700);
+
+  /* --- Foco (accesibilidad) ------------------------------------------ */
+  --foco: var(--color-piedra-500);
+  --foco-ancho: var(--border-width-2);
+  --foco-separacion: var(--space-1);
+
+  /* --- Superposiciones ----------------------------------------------- */
+  --velo: var(--color-velo-medio);
+  --velo-suave: var(--color-velo-suave);
+
+  /* --- Tipografía semántica ------------------------------------------ */
+  --fuente-titulo: var(--font-family-serif);
+  --fuente-cuerpo: var(--font-family-sans);
+  --fuente-codigo: var(--font-family-mono);
+  --texto-display: var(--font-size-10);
+  --texto-titulo-1: var(--font-size-8);
+  --texto-titulo-2: var(--font-size-6);
+  --texto-titulo-3: var(--font-size-5);
+  --texto-titulo-4: var(--font-size-4);
+  --texto-cuerpo-grande: var(--font-size-4);
+  --texto-cuerpo: var(--font-size-3);
+  --texto-pequeno: var(--font-size-2);
+  --texto-diminuto: var(--font-size-1);
+  --interlineado-titulo: var(--line-height-tight);
+  --interlineado-cuerpo: var(--line-height-relaxed);
+  --interlineado-compacto: var(--line-height-normal);
+  --espaciado-titulo: var(--letter-spacing-tight);
+  --espaciado-normal: var(--letter-spacing-normal);
+  --espaciado-amplio: var(--letter-spacing-wider);
+
+  /* --- Espaciado semántico ------------------------------------------- */
+  --espacio-seccion: var(--space-12);
+  --espacio-seccion-compacta: var(--space-10);
+  --espacio-bloque: var(--space-8);
+  --espacio-elemento: var(--space-5);
+  --espacio-interno: var(--space-4);
+  --espacio-interno-compacto: var(--space-3);
+  --espacio-pila: var(--space-4);
+  --espacio-linea: var(--space-2);
+
+  /* --- Forma --------------------------------------------------------- */
+  --radio-boton: var(--radius-2);
+  --radio-campo: var(--radius-2);
+  --radio-tarjeta: var(--radius-4);
+  --radio-modal: var(--radius-5);
+  --radio-imagen: var(--radius-3);
+  --radio-etiqueta: var(--radius-full);
+  --sombra-sutil: var(--shadow-1);
+  --sombra-tarjeta: var(--shadow-2);
+  --sombra-elevada: var(--shadow-3);
+  --sombra-modal: var(--shadow-4);
+
+  /* --- Movimiento semántico ------------------------------------------ */
+  --transicion-color: var(--duration-fast) var(--ease-out);
+  --transicion-transformacion: var(--duration-normal) var(--ease-out);
+  --transicion-aparicion: var(--duration-slow) var(--ease-out);
+  --transicion-cinematica: var(--duration-cinematic) var(--ease-in-out);
+
+  /* --- Anchos de contenido ------------------------------------------- */
+  --ancho-texto: var(--width-prose);
+  --ancho-estrecho: var(--width-narrow);
+  --ancho-contenido: var(--width-content);
+  --ancho-amplio: var(--width-wide);
+
+  /* --- Capas --------------------------------------------------------- */
+  --capa-base: var(--layer-base);
+  --capa-elevada: var(--layer-raised);
+  --capa-pegajosa: var(--layer-sticky);
+  --capa-cabecera: var(--layer-header);
+  --capa-velo: var(--layer-overlay);
+  --capa-modal: var(--layer-modal);
+  --capa-aviso: var(--layer-toast);
+}
+
+/**
+ * TEMA OSCURO
+ *
+ * Solo reasigna semánticos. Ningún componente se entera del cambio.
+ * Sin atributo se respeta la preferencia del sistema; `[data-tema]` la fuerza.
+ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --fondo: var(--color-neutro-950);
+    --superficie: var(--color-neutro-900);
+    --superficie-elevada: var(--color-neutro-800);
+    --superficie-hundida: var(--color-negro);
+    --superficie-tenue: var(--color-neutro-800);
+    --superficie-inversa: var(--color-neutro-50);
+    --tinta: var(--color-neutro-50);
+    --tinta-suave: var(--color-neutro-300);
+    --tinta-tenue: var(--color-neutro-400);
+    --tinta-inversa: var(--color-neutro-900);
+    --tinta-marca: var(--color-piedra-300);
+    --marca: var(--color-piedra-400);
+    --marca-hover: var(--color-piedra-300);
+    --marca-activo: var(--color-piedra-200);
+    --marca-tenue: var(--color-piedra-900);
+    --acento: var(--color-piedra-400);
+    --acento-hover: var(--color-piedra-300);
+    --acento-tenue: var(--color-piedra-900);
+    --borde: var(--color-neutro-700);
+    --borde-fuerte: var(--color-neutro-600);
+    --borde-tenue: var(--color-neutro-800);
+    --borde-marca: var(--color-piedra-600);
+    --exito-fondo: var(--color-exito-700);
+    --exito-tinta: var(--color-exito-100);
+    --aviso-fondo: var(--color-aviso-700);
+    --aviso-tinta: var(--color-aviso-100);
+    --error-fondo: var(--color-error-700);
+    --error-tinta: var(--color-error-100);
+    --info-fondo: var(--color-info-700);
+    --info-tinta: var(--color-info-100);
+    --foco: var(--color-piedra-400);
+    --velo: var(--color-velo-fuerte);
+  }
+}
+
+:root[data-tema="oscuro"] {
+  --fondo: var(--color-neutro-950);
+  --superficie: var(--color-neutro-900);
+  --superficie-elevada: var(--color-neutro-800);
+  --superficie-hundida: var(--color-negro);
+  --superficie-tenue: var(--color-neutro-800);
+  --superficie-inversa: var(--color-neutro-50);
+  --tinta: var(--color-neutro-50);
+  --tinta-suave: var(--color-neutro-300);
+  --tinta-tenue: var(--color-neutro-400);
+  --tinta-inversa: var(--color-neutro-900);
+  --tinta-marca: var(--color-piedra-300);
+  --marca: var(--color-piedra-400);
+  --marca-hover: var(--color-piedra-300);
+  --marca-activo: var(--color-piedra-200);
+  --marca-tenue: var(--color-piedra-900);
+  --acento: var(--color-piedra-400);
+  --acento-hover: var(--color-piedra-300);
+  --acento-tenue: var(--color-piedra-900);
+  --borde: var(--color-neutro-700);
+  --borde-fuerte: var(--color-neutro-600);
+  --borde-tenue: var(--color-neutro-800);
+  --borde-marca: var(--color-piedra-600);
+  --exito-fondo: var(--color-exito-700);
+  --exito-tinta: var(--color-exito-100);
+  --aviso-fondo: var(--color-aviso-700);
+  --aviso-tinta: var(--color-aviso-100);
+  --error-fondo: var(--color-error-700);
+  --error-tinta: var(--color-error-100);
+  --info-fondo: var(--color-info-700);
+  --info-tinta: var(--color-info-100);
+  --foco: var(--color-piedra-400);
+  --velo: var(--color-velo-fuerte);
+}

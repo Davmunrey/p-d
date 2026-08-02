@@ -1,0 +1,89 @@
+/**
+ * MOVIMIENTO
+ *
+ * Animaciones reutilizables construidas solo con tokens. Ninguna duración ni
+ * curva se escribe a mano en un componente.
+ *
+ * Toda animación aquí definida se desactiva con `prefers-reduced-motion`.
+ * Ese respeto no es opcional: hay personas para las que el movimiento provoca
+ * mareo real.
+ */
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes aparecer-subiendo {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-5));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aparecer-escalando {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulso-suave {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animacion-aparecer {
+  animation: aparecer var(--transicion-aparicion) both;
+}
+
+.animacion-aparecer-subiendo {
+  animation: aparecer-subiendo var(--transicion-aparicion) both;
+}
+
+.animacion-aparecer-escalando {
+  animation: aparecer-escalando var(--transicion-transformacion) both;
+}
+
+/**
+ * Movimiento reducido: el contenido sigue apareciendo, pero sin
+ * desplazamiento ni escalado. Nunca ocultamos información al desactivarlo.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  .animacion-aparecer,
+  .animacion-aparecer-subiendo,
+  .animacion-aparecer-escalando {
+    animation: aparecer var(--duration-instant) var(--ease-out) both;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: var(--duration-instant) !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: var(--duration-instant) !important;
+  }
+}
