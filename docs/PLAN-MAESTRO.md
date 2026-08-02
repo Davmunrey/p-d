@@ -73,6 +73,12 @@ Arquitectura de tres capas. Una capa solo consume la anterior; nunca se salta ni
 - **Mobile-first.** La mayoría de invitados abrirá el enlace desde WhatsApp en el móvil.
 - **Todo migrado.** Ningún cambio de esquema se hace a mano en el panel de Supabase; siempre migración versionada en git.
 
+### 2.4 Listón de diseño
+
+El proyecto instala skills de diseño en [`.claude/skills/`](../.claude/skills/README.md) — `impeccable`, `taste` y las de animación de Emil Kowalski — versionadas en el repo. Ninguna pantalla se da por terminada sin pasar por ellas.
+
+Orden de precedencia si algo entra en conflicto: **estas reglas fundacionales > skills de diseño > preferencia personal.** Una skill nunca justifica hardcodear un valor: su criterio se materializa cambiando **tokens**, no componentes.
+
 ---
 
 ## 3. Stack
@@ -356,6 +362,7 @@ Un ticket no se cierra hasta cumplir **todos** los puntos:
 - [ ] Verde en CI: typecheck, lint, stylelint, unitarios, E2E
 - [ ] Responsive verificado en móvil, tablet y escritorio
 - [ ] Accesible: navegable por teclado, foco visible, contraste AA
+- [ ] **Pasado por las skills de diseño** (`impeccable` → `audit` y `polish`; `review-animations` si hay movimiento)
 - [ ] Revisado en el deploy preview antes del merge
 
 ---

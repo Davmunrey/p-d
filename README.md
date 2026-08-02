@@ -11,6 +11,7 @@ Web de boda con landing pública y panel privado de gestión.
 |---|---|
 | [Plan maestro](./docs/PLAN-MAESTRO.md) | Visión, arquitectura, stack, modelo de datos, reglas y roadmap |
 | [Backlog](./docs/BACKLOG.md) | Board de tickets con criterios de aceptación y tests E2E |
+| [Skills](./.claude/skills/README.md) | Listón de diseño e interacción del proyecto |
 
 ## Reglas del proyecto
 
@@ -18,6 +19,7 @@ Web de boda con landing pública y panel privado de gestión.
 2. **Todo en castellano.**
 3. **Todo cableado.** Nada de maquetas con datos falsos: si una pantalla se entrega, funciona contra la BBDD.
 4. **Todo ticket lleva su test E2E.**
+5. **Nada se cierra sin pasar por las skills de diseño** (`impeccable`, `taste`, `review-animations`).
 
 Detalle completo en el §2 del plan maestro.
 
