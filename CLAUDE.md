@@ -67,6 +67,7 @@ Precedencia ante conflicto: **estas reglas > skills de diseño > preferencia per
 
 - Se trabaja **por tickets** del backlog. Una rama por ticket: `feat/BODA-12-tabla-invitados`, siempre creada desde `main` actualizado.
 - PR con deploy preview → merge a `main` → producción.
+- **Mergear no requiere pedir permiso: se mergea en cuanto el CI está verde.** Verde significa todo — typecheck, lint, stylelint, formato, unitarios y E2E. Nunca se mergea con un check en rojo, ni se relaja o desactiva un test para conseguirlo: si algo falla, se arregla la causa.
 - Toda migración de BBDD entra por PR con su SQL de rollback.
 - El plan maestro se actualiza en la misma PR que introduce el cambio que lo afecta.
 - **Ante una decisión de producto que cambie el resultado, preguntar** antes de asumir.
