@@ -1,11 +1,19 @@
 # Despliegue en Netlify.
 #
-# Las variables de entorno (Supabase, Resend…) se configuran en el panel de
-# Netlify, nunca en este fichero: aquí solo va configuración de build.
+# PRODUCCIÓN SIEMPRE DESDE `main`. La rama de producción se configura en el
+# panel (Site configuration → Build & deploy → Branches), no aquí: este fichero
+# no puede fijarla. Si apunta a otra rama, producción se congela en cuanto esa
+# rama deja de recibir commits.
+#
+# Las variables de entorno (Supabase, Resend…) también van en el panel, nunca
+# en este fichero: aquí solo hay configuración de build.
 
 [build]
   command = "npm run build"
   publish = ".next"
+
+# `npm ci` ejecuta el script `prepare`, que instala los hooks de git. En Netlify
+# no siempre hay un repo git utilizable, así que ese script tolera el fallo.
 
 [build.environment]
   NODE_VERSION = "22"

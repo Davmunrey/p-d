@@ -54,10 +54,20 @@ Precedencia ante conflicto: **estas reglas > skills de diseño > preferencia per
 - [ ] Pasado por las skills de diseño
 - [ ] Revisado en el deploy preview
 
+## Ramas y despliegue
+
+**`main` es la rama por defecto y la única rama de producción. Siempre, sin excepción.**
+
+- Todo sale de `main` y todo vuelve a `main`. Ninguna otra rama es permanente.
+- El despliegue de producción de Netlify apunta **siempre** a `main`. Si apunta a otra rama, está mal configurado: producción se congela en cuanto esa rama deja de recibir commits.
+- Las ramas de ticket son temporales: nacen de `main`, se mergean por PR y se borran.
+- Nunca se marca como rama por defecto una rama de trabajo, ni aunque sea la única que exista en ese momento.
+
 ## Cómo trabajamos
 
-- Se trabaja **por tickets** del backlog. Una rama por ticket: `feat/BODA-12-tabla-invitados`.
+- Se trabaja **por tickets** del backlog. Una rama por ticket: `feat/BODA-12-tabla-invitados`, siempre creada desde `main` actualizado.
 - PR con deploy preview → merge a `main` → producción.
+- **Mergear no requiere pedir permiso: se mergea en cuanto el CI está verde.** Verde significa todo — typecheck, lint, stylelint, formato, unitarios y E2E. Nunca se mergea con un check en rojo, ni se relaja o desactiva un test para conseguirlo: si algo falla, se arregla la causa.
 - Toda migración de BBDD entra por PR con su SQL de rollback.
 - El plan maestro se actualiza en la misma PR que introduce el cambio que lo afecta.
 - **Ante una decisión de producto que cambie el resultado, preguntar** antes de asumir.
