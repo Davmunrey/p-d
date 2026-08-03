@@ -301,6 +301,13 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 | Preview    | Cada PR (URL de Netlify) | Branch de Supabase o proyecto de staging |
 | Local      | —                        | Supabase CLI (`supabase start`)          |
 
+**`main` es la rama por defecto del repositorio y la única de producción, siempre.** Las ramas de ticket son temporales: nacen de `main` y se borran al mergear. Esto se configura en dos sitios y ambos deben apuntar a `main`:
+
+1. **GitHub** → Settings → General → Default branch.
+2. **Netlify** → Site configuration → Build & deploy → Branches and deploy contexts → Production branch.
+
+Si el despliegue apunta a una rama de trabajo, producción deja de actualizarse en cuanto esa rama se mergea y se abandona.
+
 Variables de entorno (Netlify, nunca en git): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (solo servidor), `RESEND_API_KEY`, `NEXT_PUBLIC_SITE_URL`, `SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`.
 
 **Backups:** export diario del esquema y datos a un repo privado vía GitHub Action — el free tier de Supabase tiene retención limitada, y la lista de invitados no se puede perder.
