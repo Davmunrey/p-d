@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { Boton, BotonEnlace } from "@/components/ui/boton";
 import { CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
-import { RUTA_PANEL, RUTA_RECUPERAR } from "@/config/constants";
+import { PARAMETRO_VOLVER, RUTA_PANEL, RUTA_RECUPERAR } from "@/config/constants";
 import { accesoActual } from "@/lib/sesion";
 import { t } from "@/lib/copy";
 
@@ -39,13 +39,20 @@ const MENSAJES: Record<string, string> = {
 export default async function PaginaAcceso({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string }>;
+  searchParams: Promise<{ estado?: string; [PARAMETRO_VOLVER]?: string }>;
 }) {
   // Con sesión válida no hay nada que pedir: dentro.
   if (await accesoActual()) redirect(RUTA_PANEL);
 
-  const { estado } = await searchParams;
+  const parametros = await searchParams;
+  const estado = parametros.estado;
   const mensaje = estado && estado in MENSAJES ? MENSAJES[estado] : null;
+
+  // A dónde quería ir quien llegó aquí rebotado por el middleware. Viaja en un
+  // campo oculto porque el formulario tiene que funcionar sin JavaScript: no
+  // hay forma de leerlo al enviar si no va dentro del propio `<form>`. Se
+  // acepta o se descarta en `entrar()`, que es quien puede: aquí solo se pasa.
+  const volver = parametros[PARAMETRO_VOLVER];
 
   return (
     <main className="grid min-h-dvh place-items-center px-interno py-elemento">
@@ -63,6 +70,7 @@ export default async function PaginaAcceso({
         ) : null}
 
         <form action={entrar} className="mt-elemento grid gap-elemento">
+          {volver ? <input type="hidden" name={PARAMETRO_VOLVER} value={volver} /> : null}
           <CampoTexto
             name="correo"
             type="email"

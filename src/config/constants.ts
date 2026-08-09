@@ -66,6 +66,12 @@ export const RUTA_RECUPERAR = "/acceso/recuperar";
 export const RUTA_NUEVA_CONTRASENA = "/acceso/nueva-contrasena";
 
 /**
+ * Dónde se anota la ruta que alguien pidió antes de que le mandaran a la
+ * puerta. Lo escribe el middleware y lo lee el formulario de acceso.
+ */
+export const PARAMETRO_VOLVER = "volver";
+
+/**
  * Longitud mínima de contraseña. El formulario la comprueba para avisar antes
  * de enviar, pero quien la impone de verdad es Supabase (`config.toml`): una
  * validación que solo vive en el navegador no es una validación.

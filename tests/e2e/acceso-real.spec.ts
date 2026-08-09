@@ -67,6 +67,23 @@ test.describe("Acceso de verdad", () => {
     await expect(page.getByRole("button", { name: copy.acceso.cerrarSesion })).toHaveCount(0);
   });
 
+  test("entrar tras ser redirigido lleva a donde se pedía", async ({ page }) => {
+    // BODA-41. La ruta interna todavía no tiene página, y para esto da igual:
+    // lo que se prueba es que el destino sobrevive al viaje —puerta, sesión,
+    // vuelta— y no que haya algo pintado al llegar. El día que exista, este
+    // test seguirá valiendo sin tocarlo.
+    const pedida = `${RUTA_PANEL}/invitados`;
+
+    await page.goto(pedida);
+    await expect(page).toHaveURL(new RegExp(RUTA_ACCESO));
+
+    await page.getByLabel(copy.acceso.correo).fill(CORREO_CON_ACCESO!);
+    await page.getByLabel(copy.acceso.contrasena).fill(CONTRASENA!);
+    await page.getByRole("button", { name: copy.acceso.entrar }).click();
+
+    await expect(page).toHaveURL(new RegExp(`${pedida}$`));
+  });
+
   // --- Los casos que de verdad importan --------------------------------
 
   test("la contraseña incorrecta no entra", async ({ page }) => {

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import {
   LONGITUD_MINIMA_CONTRASENA,
+  PARAMETRO_VOLVER,
   RUTA_ACCESO,
   RUTA_CONFIRMAR_ACCESO,
   RUTA_NUEVA_CONTRASENA,
@@ -45,15 +46,45 @@ function urlDeVuelta(): string {
   return new URL(RUTA_CONFIRMAR_ACCESO, base).toString();
 }
 
+/**
+ * A dónde ir después de entrar.
+ *
+ * El valor viene de la URL, así que viene de fuera. Se acepta **solo** si es
+ * una ruta del panel: sin esta comprobación, un enlace a
+ * `/acceso?volver=https://otro-sitio` convertiría nuestra puerta en un
+ * trampolín hacia cualquier parte, con la credibilidad de nuestro dominio
+ * detrás.
+ *
+ * Se exige el prefijo exacto y no «que empiece por barra», que es la versión
+ * de esta comprobación que se salta con `//otro-sitio`: el navegador lo lee
+ * como una URL sin protocolo y se va igual.
+ */
+function destinoSeguro(pedido: string | null): string {
+  if (!pedido) return RUTA_PANEL;
+  return pedido === RUTA_PANEL || pedido.startsWith(`${RUTA_PANEL}/`) ? pedido : RUTA_PANEL;
+}
+
+/**
+ * Vuelve a la puerta con el motivo y **sin perder a dónde iba**. Si el destino
+ * se cayera al equivocarse de contraseña, escribirla mal una vez bastaría para
+ * acabar en la portada del panel en lugar de en la pantalla que se pidió.
+ */
+function aLaPuerta(estado: string, destino: string): never {
+  const parametros = new URLSearchParams({ estado });
+  if (destino !== RUTA_PANEL) parametros.set(PARAMETRO_VOLVER, destino);
+  redirect(`${RUTA_ACCESO}?${parametros}`);
+}
+
 export async function entrar(datos: FormData) {
   const correo = String(datos.get("correo") ?? "").trim();
   const contrasena = String(datos.get("contrasena") ?? "");
+  const destino = destinoSeguro(datos.get(PARAMETRO_VOLVER)?.toString() ?? null);
 
-  if (!correo || !contrasena) redirect(`${RUTA_ACCESO}?estado=credenciales`);
+  if (!correo || !contrasena) aLaPuerta("credenciales", destino);
 
   if (!hayAutenticacion) {
     console.error("Acceso pedido sin Supabase configurado.");
-    redirect(`${RUTA_ACCESO}?estado=sin-configurar`);
+    aLaPuerta("sin-configurar", destino);
   }
 
   try {
@@ -67,7 +98,7 @@ export async function entrar(datos: FormData) {
       // Se registra el motivo real —hace falta para investigar— pero no viaja
       // a la pantalla.
       console.warn("Intento de acceso rechazado:", error.message);
-      redirect(`${RUTA_ACCESO}?estado=credenciales`);
+      aLaPuerta("credenciales", destino);
     }
 
     // AUTENTICADO NO ES CON ACCESO. Supabase ya ha dicho que esta persona es
@@ -94,7 +125,7 @@ export async function entrar(datos: FormData) {
 
     if (!perfil?.activo) {
       await supabase.auth.signOut();
-      redirect(`${RUTA_ACCESO}?estado=credenciales`);
+      aLaPuerta("credenciales", destino);
     }
   } catch (error) {
     // `redirect` funciona lanzando: si no se deja pasar, el fallo de arriba se
@@ -103,10 +134,10 @@ export async function entrar(datos: FormData) {
     if (typeof error === "object" && error !== null && "digest" in error) throw error;
 
     console.error("No se pudo comprobar el acceso:", error);
-    redirect(`${RUTA_ACCESO}?estado=error`);
+    aLaPuerta("error", destino);
   }
 
-  redirect(RUTA_PANEL);
+  redirect(destino);
 }
 
 /**
