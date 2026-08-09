@@ -50,6 +50,7 @@
   --color-superficie-hundida: var(--superficie-hundida);
   --color-superficie-tenue: var(--superficie-tenue);
   --color-superficie-inversa: var(--superficie-inversa);
+  --color-superficie-cabecera: var(--superficie-cabecera);
 
   /* Texto */
   --color-tinta: var(--tinta);
@@ -136,6 +137,9 @@
   --spacing-campo: var(--alto-campo);
   --spacing-cifra: var(--ancho-cifra);
 
+  /* Un solo token da `h-cabecera`, `pt-cabecera` y `scroll-mt-cabecera`. */
+  --spacing-cabecera: var(--alto-cabecera);
+
   /* Forma */
   --radius-boton: var(--radio-boton);
   --radius-campo: var(--radio-campo);
@@ -180,6 +184,39 @@
   grid-template-columns: auto minmax(0, 1fr);
 }
 
+/**
+ * Tailwind v4 no tiene familia de utilidades para `z-index`, así que los siete
+ * tokens `--capa-*` no llegan solos al sistema de clases. Se expone la única
+ * capa que usa la web pública. `z-[60]` está prohibido por ESLint, y con razón:
+ * es el número mágico que acaba compitiendo con otro número mágico.
+ */
+@utility capa-cabecera {
+  z-index: var(--capa-cabecera);
+}
+
+/**
+ * Superficie translúcida con desenfoque por detrás. Se escribe aquí y no como
+ * `backdrop-blur-*` porque esas clases traen la escala por defecto de Tailwind,
+ * que es hardcode entrando por la puerta de atrás.
+ */
+@utility velada {
+  backdrop-filter: blur(var(--desenfoque-cabecera));
+  background-color: var(--superficie-cabecera);
+}
+
+/**
+ * Subrayado que señala la sección en la que está el invitado. El grosor sale
+ * del token; el color lo pone quien la usa, según esté activa o no.
+ *
+ * No se escribe `border-b-2`: las utilidades de grosor de borde de Tailwind
+ * traen sus píxeles de fábrica y no pasan por la capa de primitivos, así que
+ * son hardcode con otra cara.
+ */
+@utility marca-activa {
+  border-bottom-style: solid;
+  border-bottom-width: var(--grosor-marca-activa);
+}
+
 /* --------------------------------------------------------------------------
  * Base
  * ----------------------------------------------------------------------- */
@@ -192,6 +229,18 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+  }
+
+  /**
+   * Con una barra fija arriba, saltar a `#programa` deja el título justo
+   * debajo de ella. El mismo token que da su alto reserva aquí el hueco, así
+   * que no hay dos números que mantener sincronizados.
+   *
+   * Va en `section[id]` y no en `[id]` a secas para no repartir margen de
+   * scroll por cada elemento identificado del documento.
+   */
+  section[id] {
+    scroll-margin-top: var(--alto-cabecera);
   }
 
   body {

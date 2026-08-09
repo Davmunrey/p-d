@@ -46,7 +46,7 @@ test.describe("Landing", () => {
   });
 
   test("las preguntas frecuentes se abren y cierran con teclado", async ({ page }) => {
-    const primera = page.locator("#preguntas details").first();
+    const primera = page.locator("#preguntas-frecuentes details").first();
     await expect(primera).not.toHaveAttribute("open", "");
 
     await primera.locator("summary").focus();

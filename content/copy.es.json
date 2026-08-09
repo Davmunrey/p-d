@@ -25,13 +25,26 @@
     "descripcion": "Nos casamos. Aquí tenéis todo lo que necesitáis saber."
   },
   "navegacion": {
-    "inicio": "Inicio",
-    "programa": "Programa",
-    "alojamiento": "Alojamiento",
-    "comoLlegar": "Cómo llegar",
-    "playlist": "Playlist",
-    "confirmar": "Confirmar",
-    "irAlContenido": "Ir al contenido"
+    "etiquetaPrincipal": "Navegación principal",
+    "irAlContenido": "Ir al contenido",
+    "abrirMenu": "Abrir menú",
+    "cerrarMenu": "Cerrar menú",
+    "menu": "Menú",
+    "secciones": {
+      "portada": "Inicio",
+      "reserva_la_fecha": "Reservad la fecha",
+      "cuenta_atras": "Cuenta atrás",
+      "historia": "Nuestra historia",
+      "galeria": "Galería",
+      "programa": "El día",
+      "ubicaciones": "Dónde",
+      "transporte": "Cómo llegar",
+      "alojamiento": "Alojamiento",
+      "regalos": "Regalo",
+      "preguntas_frecuentes": "Preguntas",
+      "playlist": "Playlist",
+      "rsvp": "Confirmar"
+    }
   },
   "portada": {
     "etiquetaFecha": "La fecha",
@@ -108,7 +121,10 @@
     "verLaWeb": "Ver la web"
   },
   "pie": {
-    "escribidnos": "Escribidnos"
+    "escribidnos": "Escribidnos",
+    "etiquetaNavegacion": "Enlaces del pie",
+    "contacto": "Cualquier duda, escribidnos",
+    "volverArriba": "Volver arriba"
   },
   "cocina": {
     "titulo": "Sistema de diseño",

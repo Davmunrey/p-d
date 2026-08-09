@@ -1,5 +1,7 @@
 import "server-only";
 
+import { esSeccionConocida, type Seccion } from "@/config/secciones";
+
 import { leerComoAnonimo } from "./cliente";
 
 /**
@@ -69,6 +71,43 @@ export interface Cancion {
 }
 
 /**
+ * Secciones que la web debe enseñar, en el orden en que van.
+ *
+ * Se lee de `v_secciones_publicas`, que ya filtra por `visible` y ordena por
+ * `orden`. Además la política RLS de la tabla base es `using (visible)`, así
+ * que a `anon` no le llega una sección apagada ni saltándose la vista: el
+ * frontend no filtra nada porque no le hace falta.
+ *
+ * Si la consulta falla devuelve lista vacía y quien llama decide qué enseñar;
+ * nunca se inventa un orden por defecto.
+ *
+ * Un valor que el frontend no sepa pintar se descarta con un aviso en el log,
+ * en lugar de tumbar la página: la base de datos puede ir por delante de un
+ * despliegue.
+ */
+export async function obtenerSecciones(): Promise<Seccion[]> {
+  const filas = await leerComoAnonimo(
+    (tx) => tx<{ seccion: string }[]>`
+      select seccion
+      from public.v_secciones_publicas
+    `,
+  );
+
+  const conocidas: Seccion[] = [];
+  for (const fila of filas ?? []) {
+    if (esSeccionConocida(fila.seccion)) {
+      conocidas.push(fila.seccion);
+    } else {
+      console.warn(
+        `Sección desconocida en secciones_landing: "${fila.seccion}". Se omite; ` +
+          "probablemente la base de datos va por delante del despliegue.",
+      );
+    }
+  }
+  return conocidas;
+}
+
+/**
  * Configuración de la boda. Devuelve `null` si todavía no se ha configurado,
  * para que la landing pueda decirlo en lugar de romperse.
  */
@@ -93,7 +132,7 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
         nombre_novia, nombre_novio, fecha_hora_ceremonia, fecha_limite_rsvp,
         lugar_ceremonia, direccion_ceremonia, lugar_banquete,
         latitud_ceremonia, longitud_ceremonia, correo_contacto, hashtag
-      from public.configuracion_boda
+      from public.v_configuracion_publica
       limit 1
     `,
   );

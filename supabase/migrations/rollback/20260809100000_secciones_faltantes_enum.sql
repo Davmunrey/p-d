@@ -1,0 +1,21 @@
+-- Rollback de 20260809100000_secciones_faltantes_enum.sql
+--
+-- NO SE PUEDE DESHACER, y conviene decirlo en voz alta en lugar de dejar un
+-- fichero vacío que aparente lo contrario: PostgreSQL no permite quitar un
+-- valor de un enumerado. `ALTER TYPE ... DROP VALUE` no existe.
+--
+-- Deshacerlo de verdad exige recrear el tipo entero y reescribir todas las
+-- columnas que lo usan, con la tabla bloqueada:
+--
+--   alter table public.secciones_landing alter column seccion type text;
+--   drop type public.seccion_landing;
+--   select public.asegurar_enum('seccion_landing', array[...sin los dos...]);
+--   alter table public.secciones_landing
+--     alter column seccion type public.seccion_landing
+--     using seccion::public.seccion_landing;
+--
+-- No merece la pena. Dos valores de más en un enumerado no molestan a nadie:
+-- lo que decide qué se enseña es la columna `visible` de `secciones_landing`.
+-- Para retirar las secciones, aplicad el rollback de la migración de filas.
+
+-- Sin operación: leed el comentario de arriba.

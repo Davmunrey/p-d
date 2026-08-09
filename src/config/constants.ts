@@ -5,8 +5,15 @@
  * su nombre es la explicación.
  *
  * Ojo: aquí NO van datos de la boda (fecha, lugar, nombres). Eso vive en la
- * tabla `wedding_settings` y se lee en runtime.
+ * tabla `configuracion_boda` y se lee en runtime.
  */
+
+/**
+ * `id` del elemento al que salta el enlace de «ir al contenido». Vive aquí
+ * porque lo escriben dos sitios —el enlace y el `<main>`— y si dejan de
+ * coincidir, el salto deja de funcionar sin que nada avise.
+ */
+export const ID_CONTENIDO = "contenido";
 
 /** Atributo del elemento raíz que fuerza el tema. */
 export const ATRIBUTO_TEMA = "data-tema";
