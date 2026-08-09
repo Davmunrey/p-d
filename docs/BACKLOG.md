@@ -10,20 +10,22 @@ Board de trabajo. Cada ticket es una rama y una PR. Ver [PLAN-MAESTRO.md](./PLAN
 
 ## Resumen
 
-| Épica                 | Tickets      | Estado                        |
-| --------------------- | ------------ | ----------------------------- |
-| E1 · Cimientos        | BODA-01 → 06 | ✅ 6 hechos                   |
-| E2 · Base de datos    | BODA-10 → 14 | ✅ 5 hechos                   |
-| E3 · Landing          | BODA-20 → 28 | ✅ 2 hechos · 📋 7 pendientes |
-| E4 · Save the Date    | BODA-30 → 32 | 📋 3 pendientes               |
-| E5 · Auth y panel     | BODA-40 → 43 | 📋 4 pendientes               |
-| E6 · Invitados y RSVP | BODA-50 → 58 | 📋 9 pendientes               |
-| E7 · Presupuesto      | BODA-60 → 64 | 📋 5 pendientes               |
-| E8 · Proveedores      | BODA-70 → 74 | 📋 5 pendientes               |
-| E9 · Tareas y seating | BODA-80 → 84 | 📋 5 pendientes               |
-| E10 · Producción      | BODA-90 → 95 | 📋 6 pendientes               |
+| Épica                 | Tickets        | Estado                        |
+| --------------------- | -------------- | ----------------------------- |
+| E1 · Cimientos        | BODA-01 → 06   | ✅ 6 hechos                   |
+| E2 · Base de datos    | BODA-10 → 14   | ✅ 5 hechos                   |
+| E3 · Landing          | BODA-20 → 28   | ✅ 2 hechos · 📋 7 pendientes |
+| E4 · Save the Date    | BODA-30 → 32   | 📋 3 pendientes               |
+| E5 · Auth y panel     | BODA-40 → 43   | 📋 4 pendientes               |
+| E6 · Invitados y RSVP | BODA-50 → 58   | 📋 9 pendientes               |
+| E7 · Presupuesto      | BODA-60 → 64   | 📋 5 pendientes               |
+| E8 · Proveedores      | BODA-70 → 74   | 📋 5 pendientes               |
+| E9 · Tareas y seating | BODA-80 → 84   | 📋 5 pendientes               |
+| E10 · Producción      | BODA-90 → 95   | 📋 6 pendientes               |
+| E11 · Día de la boda  | BODA-100 → 104 | 📋 5 pendientes               |
+| E12 · Comunicación    | BODA-110 → 113 | 📋 4 pendientes               |
 
-**Total: 57 tickets · 13 hechos.**
+**Total: 66 tickets · 13 hechos.**
 
 ---
 
@@ -238,6 +240,33 @@ Políticas RLS de todas las tablas + `get_invitation(token)` y `submit_rsvp(toke
 | **BODA-93** | Sentry y PostHog                       | `M`  | Errores y eventos llegan a los paneles       |
 | **BODA-94** | Backup diario automatizado             | `M`  | GitHub Action que exporta a repo privado     |
 | **BODA-95** | Ping semanal anti-pausa de Supabase    | `S`  | Evita la pausa por inactividad del free tier |
+
+---
+
+## E11 · Panel: día de la boda y cierre
+
+> Lo que hace falta cuando ya no se planifica, sino que se ejecuta. Casi todo
+> se usa **desde el móvil y con prisa**, así que prima la lectura rápida sobre
+> la densidad de datos.
+
+| ID           | Ticket                                    | Est. | E2E                                                           |
+| ------------ | ----------------------------------------- | ---- | ------------------------------------------------------------- |
+| **BODA-100** | Lista de control del día                  | `M`  | Marcar hecho persiste y sobrevive a recargar                  |
+| **BODA-101** | Agenda de contactos de proveedores        | `S`  | Los teléfonos son enlaces `tel:` pulsables desde el móvil     |
+| **BODA-102** | Buscador de invitados a pantalla completa | `M`  | Buscar un apellido devuelve su mesa y su menú en un toque     |
+| **BODA-103** | Recuento en vivo para el catering         | `M`  | Confirmados por tipo de menú, con niños aparte                |
+| **BODA-104** | Exportar todo (invitados, mesas, menús)   | `S`  | El fichero descargado abre en Excel con los acentos correctos |
+
+---
+
+## E12 · Panel: comunicación con invitados
+
+| ID           | Ticket                                | Est. | E2E                                                           |
+| ------------ | ------------------------------------- | ---- | ------------------------------------------------------------- |
+| **BODA-110** | Envío de invitaciones por WhatsApp    | `M`  | Genera el enlace con el token del grupo y el texto ya escrito |
+| **BODA-111** | Recordatorio a quien no ha contestado | `M`  | Solo alcanza a los pendientes, nunca a quien ya respondió     |
+| **BODA-112** | Bandeja de mensajes del RSVP          | `S`  | Los mensajes que dejan los invitados se leen en el panel      |
+| **BODA-113** | Moderación de la playlist             | `S`  | Ocultar una canción la retira de la landing sin borrarla      |
 
 ---
 
