@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { EnPreparacion } from "@/components/marketing/en-preparacion";
 import { BotonEnlace } from "@/components/ui/boton";
-import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
+import { Etiqueta, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_CALENDARIO, ZONA_HORARIA } from "@/config/constants";
 import { obtenerConfiguracion, obtenerSecciones } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
@@ -32,7 +33,9 @@ const formatoFechaLarga = new Intl.DateTimeFormat(IDIOMA, {
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const configuracion = await obtenerConfiguracion();
+  // Si la base no responde, la página ya enseñará su estado de reserva; unas
+  // meta tags vacías son mejores que tumbar la petición entera por el título.
+  const configuracion = await obtenerConfiguracion().catch(() => null);
   if (!configuracion) return {};
 
   const nombres = `${configuracion.nombreNovia} ${t("portada.conjuncion")} ${configuracion.nombreNovio}`;
@@ -46,10 +49,19 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PaginaReservaLaFecha() {
-  const [secciones, configuracion] = await Promise.all([
-    obtenerSecciones(),
-    obtenerConfiguracion(),
-  ]);
+  let secciones;
+  let configuracion;
+  try {
+    [secciones, configuracion] = await Promise.all([
+      obtenerSecciones(),
+      obtenerConfiguracion(),
+    ]);
+  } catch {
+    // La avería ya está en el log. Aquí no se puede saber si la sección estaba
+    // encendida, así que se enseña el estado de reserva en vez de un 404 que
+    // diría algo falso: la página existe, es la base la que no contesta.
+    return <EnPreparacion />;
+  }
 
   // La página existe sólo si su fila está visible. Apagada, 404: mejor que una
   // página a medias, y mejor que dejarla en pie cuando ya se ha querido
@@ -58,16 +70,7 @@ export default async function PaginaReservaLaFecha() {
   if (!secciones.includes("reserva_la_fecha")) notFound();
 
   // Sin configuración no hay nada que reservar. Se dice, no se finge.
-  if (!configuracion) {
-    return (
-      <main className="mx-auto grid min-h-dvh max-w-texto place-items-center px-interno text-center">
-        <div>
-          <Titulo2 como="h1">{t("portada.enPreparacion")}</Titulo2>
-          <Cuerpo className="mt-pila">{t("portada.enPreparacionTexto")}</Cuerpo>
-        </div>
-      </main>
-    );
-  }
+  if (!configuracion) return <EnPreparacion />;
 
   const lugar = configuracion.lugarCeremonia ?? configuracion.lugarBanquete;
 

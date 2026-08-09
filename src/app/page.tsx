@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 
+import { EnPreparacion } from "@/components/marketing/en-preparacion";
 import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
@@ -37,10 +38,23 @@ import { t } from "@/lib/copy";
  * y todavía no existen (son BODA-25 y BODA-26). Sin ese filtro, el menú
  * ofrecería dos enlaces que no llevan a ninguna parte.
  *
- * Se revalida cada hora: la landing no cambia a menudo, y así los invitados
- * reciben HTML de la caché en lugar de esperar a una consulta.
+ * NO SE CACHEA, y es un cambio respecto a cómo nació.
+ *
+ * Antes se revalidaba cada hora, así que la página se generaba en el despliegue
+ * y se servía desde caché. El problema no era el caso bueno: era el malo. Si la
+ * base no respondía justo en ese momento —caída, en pausa por inactividad del
+ * plan gratuito, o una variable de entorno que aún no estaba—, lo que se
+ * horneaba y se servía **durante una hora entera** era la pantalla de «estamos
+ * preparando la web». La base podía volver a estar bien a los diez segundos y
+ * los invitados seguían viendo eso.
+ *
+ * Pasó en producción. Ahora se consulta en cada visita: son ocho consultas
+ * indexadas sobre tablas de pocas filas, lanzadas a la vez, y la web tiene unos
+ * cientos de visitas en total. Cuesta unos milisegundos y a cambio nunca se
+ * queda enganchada en un fallo — ni enseñando datos viejos después de un
+ * cambio en el panel.
  */
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 const formatoFecha = new Intl.DateTimeFormat(IDIOMA, {
   weekday: "long",
@@ -58,7 +72,16 @@ const formatoFechaCorta = new Intl.DateTimeFormat(IDIOMA, {
 });
 
 export default async function PaginaInicio() {
-  const [
+  let datos;
+  try {
+    datos = await cargarLanding();
+  } catch {
+    // La avería ya se registró en el log con su motivo. Aquí sólo se decide
+    // qué ve el invitado, y lo que ve es la verdad: todavía no hay nada.
+    return <EnPreparacion />;
+  }
+
+  const {
     secciones,
     configuracion,
     programa,
@@ -67,30 +90,12 @@ export default async function PaginaInicio() {
     rutas,
     preguntas,
     canciones,
-  ] = await Promise.all([
-    obtenerSecciones(),
-    obtenerConfiguracion(),
-    obtenerPrograma(),
-    obtenerHistoria(),
-    obtenerAlojamientos(),
-    obtenerRutas(),
-    obtenerPreguntasFrecuentes(),
-    obtenerCanciones(),
-  ]);
+  } = datos;
 
-  // Sin configuración no hay boda que enseñar: puede que falte la variable de
-  // entorno o que aún no se haya rellenado el panel. Se dice con claridad, en
-  // lugar de pintar una página rota o inventarse datos para tapar el hueco.
-  if (!configuracion) {
-    return (
-      <main className="mx-auto grid min-h-dvh max-w-texto place-items-center px-interno text-center">
-        <div>
-          <Titulo2 como="h1">{t("portada.enPreparacion")}</Titulo2>
-          <Cuerpo className="mt-pila">{t("portada.enPreparacionTexto")}</Cuerpo>
-        </div>
-      </main>
-    );
-  }
+  // Sin configuración no hay boda que enseñar: la base respondió, pero el panel
+  // aún está vacío. Se dice con claridad, en lugar de pintar una página rota o
+  // inventarse datos para tapar el hueco.
+  if (!configuracion) return <EnPreparacion />;
 
   const nombres = `${configuracion.nombreNovia} ${t("portada.conjuncion")} ${configuracion.nombreNovio}`;
 
@@ -151,6 +156,40 @@ export default async function PaginaInicio() {
       />
     </>
   );
+}
+
+/** Todo lo que la landing necesita, pedido de una vez. */
+async function cargarLanding() {
+  const [
+    secciones,
+    configuracion,
+    programa,
+    historia,
+    alojamientos,
+    rutas,
+    preguntas,
+    canciones,
+  ] = await Promise.all([
+    obtenerSecciones(),
+    obtenerConfiguracion(),
+    obtenerPrograma(),
+    obtenerHistoria(),
+    obtenerAlojamientos(),
+    obtenerRutas(),
+    obtenerPreguntasFrecuentes(),
+    obtenerCanciones(),
+  ]);
+
+  return {
+    secciones,
+    configuracion,
+    programa,
+    historia,
+    alojamientos,
+    rutas,
+    preguntas,
+    canciones,
+  };
 }
 
 /* ------------------------------------------------------------------------ */

@@ -85,7 +85,7 @@ Orden de precedencia si algo entra en conflicto: **estas reglas fundacionales > 
 
 | Capa          | Elección                                                       | Por qué                                                                                                                           |
 | ------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Framework     | **Next.js 15 (App Router)**                                    | SSR/ISR para la landing, Server Actions para el panel, un solo repo para ambas caras                                              |
+| Framework     | **Next.js 16 (App Router)**                                    | Render en servidor para la landing, Server Actions para el panel, un solo repo para ambas caras                                   |
 | Hosting       | **Vercel**                                                     | Despliegue nativo de Next.js: no hay adaptador que mantener. Deploy previews por PR, CDN global, free tier suficiente             |
 | BBDD          | **Supabase** (PostgreSQL, open source)                         | Postgres puro + Auth + Storage + RLS + Realtime en un free tier. Autoalojable si algún día hace falta                             |
 | Auth          | Supabase Auth (magic link + OAuth Google)                      | Sin gestionar contraseñas. Solo 2-4 usuarios                                                                                      |
@@ -112,7 +112,7 @@ Orden de precedencia si algo entra en conflicto: **estas reglas fundacionales > 
 ```
                  ┌──────────────────────────────┐
    Invitados ───►│  Vercel CDN / Edge           │
-                 │  ├─ / (landing, ISR)         │
+                 │  ├─ / (landing, dinámica)    │
                  │  ├─ /reserva-la-fecha        │
                  │  └─ /rsvp/[token]            │
                  └──────────┬───────────────────┘
@@ -259,6 +259,8 @@ Secciones del enumerado `seccion_landing`:
 | `playlist`             | Canciones que sugieren los invitados                        | BODA-29 |
 | `rsvp`                 | Llamada a confirmar asistencia                              | BODA-28 |
 | `reserva_la_fecha`     | **No es una sección: es una página aparte** (ver más abajo) | BODA-30 |
+
+**Por qué la landing no se cachea.** Nació con `revalidate = 3600` y se quitó tras un fallo en producción: si la base no responde justo en el despliegue —caída, pausada por inactividad del plan gratuito, o una variable de entorno que aún no está—, lo que se hornea y se sirve **durante una hora entera** es la pantalla de «estamos preparando la web», aunque la base vuelva a los diez segundos. Ahora se consulta en cada visita: ocho consultas indexadas sobre tablas de pocas filas, lanzadas a la vez, medidas en 27 ms de mediana en local. A cambio, un cambio en el panel se ve al instante y un fallo nunca se queda pegado. Ver BODA-09.
 
 **Principios de animación:** el movimiento sirve a la narrativa, no la interrumpe. Todas las duraciones y curvas son tokens. Con `prefers-reduced-motion` los reveals se convierten en fades cortos o desaparecen. Ninguna animación puede provocar layout shift (CLS objetivo < 0.1).
 

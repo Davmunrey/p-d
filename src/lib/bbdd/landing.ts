@@ -13,6 +13,12 @@ import { leerComoAnonimo } from "./cliente";
  * Todas las lecturas se ejecutan como `anon`, así que lo que devuelven es
  * exactamente lo que puede ver un invitado. No hay filtrado en el frontend
  * porque no hace falta: lo hace la base de datos.
+ *
+ * ESTAS FUNCIONES LANZAN si la base no responde. No devuelven listas vacías
+ * disfrazando la avería: una lista vacía significa «no hay nada que enseñar» y
+ * tiene que seguir significando eso. Quien pinta la página decide qué hacer con
+ * el fallo, y así puede distinguir «todavía no hay hoteles» de «no he podido
+ * preguntar».
  */
 
 export interface ConfiguracionBoda {
@@ -95,7 +101,7 @@ export async function obtenerSecciones(): Promise<Seccion[]> {
   );
 
   const conocidas: Seccion[] = [];
-  for (const fila of filas ?? []) {
+  for (const fila of filas) {
     if (esSeccionConocida(fila.seccion)) {
       conocidas.push(fila.seccion);
     } else {
@@ -139,7 +145,7 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
     `,
   );
 
-  const fila = filas?.[0];
+  const fila = filas[0];
   if (!fila) return null;
 
   return {
@@ -166,7 +172,7 @@ export async function obtenerPrograma(): Promise<HitoPrograma[]> {
       order by orden, hora
     `,
   );
-  return (filas ?? []).map((f) => ({
+  return filas.map((f) => ({
     id: f.id,
     hora: f.hora,
     titulo: f.titulo,
@@ -191,7 +197,7 @@ export async function obtenerAlojamientos(): Promise<Alojamiento[]> {
       order by orden, nombre
     `,
   );
-  return (filas ?? []).map((f) => ({
+  return filas.map((f) => ({
     id: f.id,
     nombre: f.nombre,
     distintivo: f.distintivo,
@@ -209,7 +215,7 @@ export async function obtenerRutas(): Promise<RutaLlegada[]> {
       order by orden, modo
     `,
   );
-  return (filas ?? []).map((f) => ({
+  return filas.map((f) => ({
     id: f.id,
     modo: f.modo,
     duracion: f.duracion,
@@ -225,7 +231,7 @@ export async function obtenerPreguntasFrecuentes(): Promise<PreguntaFrecuente[]>
       order by orden
     `,
   );
-  return (filas ?? []).map((f) => ({ id: f.id, pregunta: f.pregunta, respuesta: f.respuesta }));
+  return filas.map((f) => ({ id: f.id, pregunta: f.pregunta, respuesta: f.respuesta }));
 }
 
 export async function obtenerHistoria(): Promise<HitoHistoria[]> {
@@ -238,7 +244,7 @@ export async function obtenerHistoria(): Promise<HitoHistoria[]> {
       order by orden
     `,
   );
-  return (filas ?? []).map((f) => ({
+  return filas.map((f) => ({
     id: f.id,
     titulo: f.titulo,
     fechaTexto: f.fecha_texto,
@@ -255,5 +261,5 @@ export async function obtenerCanciones(limite = 30): Promise<Cancion[]> {
       limit ${limite}
     `,
   );
-  return (filas ?? []).map((f) => ({ id: f.id, texto: f.texto }));
+  return filas.map((f) => ({ id: f.id, texto: f.texto }));
 }
