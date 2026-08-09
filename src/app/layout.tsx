@@ -25,9 +25,34 @@ const sans = Jost({
   display: "swap",
 });
 
+/**
+ * `metadataBase` es lo que convierte la ruta de la imagen de Open Graph en una
+ * URL absoluta. Sin ella, WhatsApp recibe una ruta relativa, no sabe resolverla
+ * y enseña el enlace pelado — justo lo que este ticket quiere evitar.
+ *
+ * En Vercel, `VERCEL_URL` viene puesta en cada despliegue e incluye los
+ * previews, así que la vista previa se puede comprobar antes de mergear. El
+ * dominio final manda sobre ella cuando existe.
+ */
+function urlDelSitio(): URL | undefined {
+  const propia = process.env.NEXT_PUBLIC_SITE_URL;
+  if (propia) return new URL(propia);
+
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL;
+  return vercel ? new URL(`https://${vercel}`) : undefined;
+}
+
 export const metadata: Metadata = {
+  metadataBase: urlDelSitio(),
   title: t("meta.titulo"),
   description: t("meta.descripcion"),
+  openGraph: {
+    title: t("meta.titulo"),
+    description: t("meta.descripcion"),
+    type: "website",
+    locale: IDIOMA,
+    siteName: t("meta.titulo"),
+  },
 };
 
 /**

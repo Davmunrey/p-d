@@ -28,8 +28,25 @@ const eslintConfig = defineConfig([
   prettier,
 
   {
+    /**
+     * El equivalente en TypeScript de lo que `primitives.css` es en CSS: el
+     * único sitio donde hay valores literales, y no escritos a mano sino
+     * generados desde el propio sistema de tokens por
+     * `scripts/generar-tokens.mjs`. Existe porque las imágenes de Open Graph se
+     * pintan sin hoja de estilos y necesitan los valores en crudo.
+     *
+     * La exención es del fichero generado, no de la regla: cualquier otro
+     * fichero de `src/` sigue teniendo prohibido escribir un color.
+     */
+    name: "boda/tokens-generados",
+    files: ["src/config/tokens.generado.ts"],
+    rules: { "no-restricted-syntax": "off" },
+  },
+
+  {
     name: "boda/cero-hardcode",
     files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/config/tokens.generado.ts"],
     rules: {
       "no-restricted-syntax": [
         "error",

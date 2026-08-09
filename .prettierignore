@@ -4,3 +4,4 @@ package-lock.json
 playwright-report
 test-results
 .claude/skills
+src/config/tokens.generado.ts

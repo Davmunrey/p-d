@@ -42,9 +42,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const fecha = formatoFechaLarga.format(configuracion.fechaCeremonia);
   const lugar = configuracion.lugarCeremonia ?? configuracion.lugarBanquete;
 
+  const titulo = `${nombres} · ${t("saveTheDate.etiqueta")}`;
+  const descripcion = lugar ? `${fecha} · ${lugar}` : fecha;
+
   return {
-    title: `${nombres} · ${t("saveTheDate.etiqueta")}`,
-    description: lugar ? `${fecha} · ${lugar}` : fecha,
+    title: titulo,
+    description: descripcion,
+    // Se repiten a propósito: sin `openGraph`, WhatsApp cae al título del
+    // layout y la tarjeta dice «Paloma y David» en vez de la fecha.
+    openGraph: { title: titulo, description: descripcion, type: "website" },
   };
 }
 

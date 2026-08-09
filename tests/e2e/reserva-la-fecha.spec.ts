@@ -202,3 +202,58 @@ test.describe("Reserva la fecha apagada", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText("(DES)");
   });
 });
+
+/**
+ * BODA-32 · Lo que se ve al compartir el enlace
+ *
+ * El enlace se va a pegar en WhatsApp cientos de veces. Se comprueba que la
+ * tarjeta lleva los datos de verdad y que la imagen se genera; lo que NO se
+ * comprueba aquí es cómo la pinta WhatsApp, que eso no es cosa de esta web.
+ */
+test.describe("Vista previa al compartir", () => {
+  test("las meta tags de Open Graph llevan los datos de la base", async ({ page }) => {
+    await page.goto(RUTA);
+
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+      "content",
+      /\(DES\)/,
+    );
+    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
+      "content",
+      /\(DES\)/,
+    );
+  });
+
+  test("la imagen es absoluta: una ruta relativa no la resuelve WhatsApp", async ({ page }) => {
+    await page.goto(RUTA);
+
+    const imagen = page.locator('meta[property="og:image"]');
+    await expect(imagen).toHaveAttribute("content", /^https?:\/\//);
+  });
+
+  test("la imagen se genera de verdad y es un PNG", async ({ page, request }) => {
+    await page.goto(RUTA);
+    const url = await page.locator('meta[property="og:image"]').getAttribute("content");
+
+    const respuesta = await request.get(new URL(url!).pathname);
+    expect(respuesta.status()).toBe(200);
+    expect(respuesta.headers()["content-type"]).toContain("image/png");
+
+    // Firma PNG: si saliera un texto de error, esto lo caza.
+    const bytes = await respuesta.body();
+    expect([...bytes.subarray(1, 4)].map((b) => String.fromCharCode(b)).join("")).toBe("PNG");
+    // Y que no sea un lienzo vacío de cuatro bytes.
+    expect(bytes.byteLength).toBeGreaterThan(10_000);
+  });
+
+  test("la landing también tiene su tarjeta", async ({ page, request }) => {
+    await page.goto("/");
+
+    const url = await page.locator('meta[property="og:image"]').getAttribute("content");
+    expect(url).toMatch(/^https?:\/\//);
+
+    const respuesta = await request.get(new URL(url!).pathname);
+    expect(respuesta.status()).toBe(200);
+    expect(respuesta.headers()["content-type"]).toContain("image/png");
+  });
+});
