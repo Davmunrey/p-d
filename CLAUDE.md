@@ -59,7 +59,7 @@ Precedencia ante conflicto: **estas reglas > skills de diseño > preferencia per
 **`main` es la rama por defecto y la única rama de producción. Siempre, sin excepción.**
 
 - Todo sale de `main` y todo vuelve a `main`. Ninguna otra rama es permanente.
-- El despliegue de producción de Netlify apunta **siempre** a `main`. Si apunta a otra rama, está mal configurado: producción se congela en cuanto esa rama deja de recibir commits.
+- El despliegue de producción de Vercel apunta **siempre** a `main`. Si apunta a otra rama, está mal configurado: producción se congela en cuanto esa rama deja de recibir commits.
 - Las ramas de ticket son temporales: nacen de `main`, se mergean por PR y se borran.
 - Nunca se marca como rama por defecto una rama de trabajo, ni aunque sea la única que exista en ese momento.
 

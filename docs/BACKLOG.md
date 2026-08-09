@@ -75,11 +75,11 @@ ESLint + Prettier + Stylelint + Husky + lint-staged. **Las reglas del §2 se apl
 
 ---
 
-### BODA-05 · Netlify y CI
+### BODA-05 · Despliegue y CI
 
 `✅` · `M` · ← BODA-01
 
-`netlify.toml` con `@netlify/plugin-nextjs`. GitHub Actions: typecheck, lint, tests, build. Deploy preview por PR.
+Despliegue en Vercel, nativo para Next.js. GitHub Actions: typecheck, lint, stylelint, formato, unitarios, migraciones y E2E. Deploy preview por PR.
 
 **Aceptación:** push a `main` despliega · cada PR genera preview con URL · CI bloquea el merge si falla.
 **E2E:** la suite corre en CI contra el preview.
@@ -92,7 +92,7 @@ ESLint + Prettier + Stylelint + Husky + lint-staged. **Las reglas del §2 se apl
 
 Proyectos de producción y staging. Clientes tipados (browser, servidor, middleware). Supabase CLI para local. Generación automática de tipos.
 
-**Aceptación:** `supabase start` levanta en local · `npm run db:types` genera `types/database.ts` · variables en Netlify · **`service_role` nunca en el bundle de cliente** (verificado en build).
+**Aceptación:** `supabase start` levanta en local · `npm run db:types` genera `types/database.ts` · variables en Vercel · **`service_role` nunca en el bundle de cliente** (verificado en build).
 **E2E:** una página server-side lee un valor de la BBDD y lo pinta.
 
 ---

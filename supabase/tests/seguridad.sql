@@ -194,6 +194,91 @@ end $$;
 
 \echo ''
 \echo '========================================'
+\echo '  Contenido de la landing'
+\echo '========================================'
+
+-- Estas tablas SÍ las lee el público: son la web. Lo que hay que verificar es
+-- lo contrario que en el resto — que se vea lo publicado y NO se vea el
+-- borrador que todavía se está preparando.
+do $$
+declare
+  v_visibles   bigint;
+  v_ocultos    bigint;
+  v_id         uuid;
+begin
+  insert into public.hitos_programa (hora, titulo, publicado)
+  values ('13:00', 'Ceremonia de prueba', true);
+
+  insert into public.hitos_programa (hora, titulo, publicado)
+  values ('99:99', 'Borrador que no debe verse', false)
+  returning id into v_id;
+
+  set local role anon;
+
+  select count(*) into v_visibles from public.hitos_programa;
+  perform pg_temp.comprobar('anon lee el programa publicado', v_visibles > 0);
+
+  select count(*) into v_ocultos
+    from public.hitos_programa as h
+   where h.id = v_id;
+  perform pg_temp.comprobar('anon NO ve lo que está sin publicar', v_ocultos = 0);
+
+  reset role;
+end $$;
+
+\echo ''
+\echo '========================================'
+\echo '  Playlist: sólo invitados, con tope'
+\echo '========================================'
+
+do $$
+declare
+  v_token text;
+  v_ok    boolean;
+  i       integer;
+begin
+  select token into v_token
+    from public.crear_grupo_invitacion(
+      'Grupo playlist', 2::smallint, 'ambos'::public.lado_invitacion,
+      array['fiesta']::public.evento_boda[]
+    );
+
+  set local role anon;
+
+  -- Sin token válido no se escribe: si no, la playlist de una web abierta a
+  -- internet se llena de spam en cuestión de horas.
+  begin
+    perform public.sugerir_cancion('token-que-no-existe-0000000000000', 'Spam — Bot');
+    v_ok := false;
+  exception when others then
+    v_ok := true;
+  end;
+  perform pg_temp.comprobar('sin token válido no se puede sugerir canción', v_ok);
+
+  begin
+    perform public.sugerir_cancion(v_token, 'La Flaca — Jarabe de Palo');
+    v_ok := true;
+  exception when others then
+    v_ok := false;
+  end;
+  perform pg_temp.comprobar('un invitado con su token sí puede sugerir', v_ok);
+
+  -- Tope por grupo.
+  begin
+    for i in 1..12 loop
+      perform public.sugerir_cancion(v_token, format('Canción de prueba %s', i));
+    end loop;
+    v_ok := false;
+  exception when others then
+    v_ok := true;
+  end;
+  perform pg_temp.comprobar('hay tope de canciones por grupo', v_ok);
+
+  reset role;
+end $$;
+
+\echo ''
+\echo '========================================'
 \echo '  RSVP público: solo tu grupo'
 \echo '========================================'
 

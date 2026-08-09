@@ -140,6 +140,9 @@
   --size-control-compacto: 2.75rem;
   --size-campo: 3.125rem;
 
+  /* Ancho mínimo de una cifra grande, para que la cuenta atrás no baile. */
+  --size-cifra: 5.5rem;
+
   /* ---------------------------------------------------------------------
    * Forma
    * ------------------------------------------------------------------- */

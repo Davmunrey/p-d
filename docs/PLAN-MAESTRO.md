@@ -24,15 +24,15 @@ Estas reglas aplican a **todo** el código. Una PR que las incumpla no se mergea
 
 ### 2.1 Cero hardcode
 
-| Tipo de dato                                                                                 | Dónde vive                                 | Nunca en                           |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------- |
-| Colores, tipografías, espaciados, radios, sombras, duraciones, easings, z-index, breakpoints | Design tokens (CSS custom properties)      | Valores literales en componentes   |
-| Textos visibles (copys, labels, errores, meta)                                               | `content/copy.es.json`, tipado             | Strings literales en JSX           |
-| Datos de la boda (fecha, lugar, nombres, coordenadas, hashtag)                               | Tabla `wedding_settings` en BBDD           | Constantes en código               |
-| Fotos, vídeos, documentos                                                                    | Supabase Storage + tabla `media`           | `/public` con rutas fijas          |
-| URLs de servicios, claves, IDs de proyecto                                                   | Variables de entorno (`.env`, Netlify env) | Código fuente                      |
-| Enums de negocio (estados RSVP, categorías)                                                  | Tipos Postgres + tipos TS generados        | Uniones de strings escritas a mano |
-| Números mágicos (límites, paginación, timeouts)                                              | `src/config/constants.ts`, con nombre      | Literales incrustados              |
+| Tipo de dato                                                                                 | Dónde vive                                | Nunca en                           |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------------------------- |
+| Colores, tipografías, espaciados, radios, sombras, duraciones, easings, z-index, breakpoints | Design tokens (CSS custom properties)     | Valores literales en componentes   |
+| Textos visibles (copys, labels, errores, meta)                                               | `content/copy.es.json`, tipado            | Strings literales en JSX           |
+| Datos de la boda (fecha, lugar, nombres, coordenadas, hashtag)                               | Tabla `wedding_settings` en BBDD          | Constantes en código               |
+| Fotos, vídeos, documentos                                                                    | Supabase Storage + tabla `media`          | `/public` con rutas fijas          |
+| URLs de servicios, claves, IDs de proyecto                                                   | Variables de entorno (`.env`, Vercel env) | Código fuente                      |
+| Enums de negocio (estados RSVP, categorías)                                                  | Tipos Postgres + tipos TS generados       | Uniones de strings escritas a mano |
+| Números mágicos (límites, paginación, timeouts)                                              | `src/config/constants.ts`, con nombre     | Literales incrustados              |
 
 **Regla práctica:** si un valor pudiera cambiar sin que cambie la lógica, no es código — es configuración.
 
@@ -86,7 +86,7 @@ Orden de precedencia si algo entra en conflicto: **estas reglas fundacionales > 
 | Capa          | Elección                                                       | Por qué                                                                                                                      |
 | ------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Framework     | **Next.js 15 (App Router)**                                    | SSR/ISR para la landing, Server Actions para el panel, un solo repo para ambas caras                                         |
-| Hosting       | **Netlify** (`@netlify/plugin-nextjs`)                         | Requisito. Deploy previews por PR, CDN global, free tier suficiente                                                          |
+| Hosting       | **Vercel**                                                     | Despliegue nativo de Next.js: no hay adaptador que mantener. Deploy previews por PR, CDN global, free tier suficiente        |
 | BBDD          | **Supabase** (PostgreSQL, open source)                         | Postgres puro + Auth + Storage + RLS + Realtime en un free tier. Autoalojable si algún día hace falta                        |
 | Auth          | Supabase Auth (magic link + OAuth Google)                      | Sin gestionar contraseñas. Solo 2-4 usuarios                                                                                 |
 | Ficheros      | Supabase Storage                                               | Fotos de la landing, contratos y facturas de proveedores                                                                     |
@@ -103,7 +103,7 @@ Orden de precedencia si algo entra en conflicto: **estas reglas fundacionales > 
 | Errores       | Sentry (free tier)                                             | Ya disponible en el entorno                                                                                                  |
 | Analítica     | PostHog (free tier)                                            | Ya disponible en el entorno                                                                                                  |
 
-**Alternativas descartadas:** Astro (mejor landing, peor panel — no compensa mantener dos apps); Neon + Auth.js (Postgres excelente, pero habría que construir auth, storage y RLS por separado); PocketBase (ligero, pero requiere servidor propio, no encaja con Netlify).
+**Alternativas descartadas:** Astro (mejor landing, peor panel — no compensa mantener dos apps); Neon + Auth.js (Postgres excelente, pero habría que construir auth, storage y RLS por separado); PocketBase (ligero, pero requiere servidor propio y sigue pre-1.0).
 
 ---
 
@@ -111,7 +111,7 @@ Orden de precedencia si algo entra en conflicto: **estas reglas fundacionales > 
 
 ```
                  ┌──────────────────────────────┐
-   Invitados ───►│  Netlify CDN / Edge          │
+   Invitados ───►│  Vercel CDN / Edge           │
                  │  ├─ / (landing, ISR)         │
                  │  ├─ /save-the-date           │
                  │  └─ /rsvp/[token]            │
@@ -276,18 +276,18 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 
 ## 8. Roadmap
 
-| Fase                            | Alcance                                                                                                                   | Entregable                                    | Est.  |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ----- |
-| **0 — Cimientos**               | Next.js + TS + Tailwind v4, **tokens completos**, i18n, ESLint/Stylelint/Husky, Netlify + previews, proyecto Supabase, CI | Deploy en verde con las reglas del §2 activas | 1-2 d |
-| **1 — Base de datos**           | Migraciones de todas las tablas, enums, vistas, triggers, RLS, seed, tipos TS generados                                   | Esquema completo versionado                   | 2 d   |
-| **2 — Landing**                 | Todas las secciones, animaciones, galería, contenido desde BBDD                                                           | Landing pública lista                         | 4-5 d |
-| **3 — Save the Date**           | Página, `.ics`, OG images                                                                                                 | Enlace compartible                            | 1 d   |
-| **4 — Auth + shell**            | Magic link, middleware, layout del panel, roles                                                                           | Panel accesible y protegido                   | 2 d   |
-| **5 — Invitados + RSVP**        | CRUD, grupos, tokens, import/export, flujo público de RSVP, emails                                                        | Ciclo completo de invitación                  | 4-5 d |
-| **6 — Presupuesto**             | Categorías, partidas, pagos, gráficas                                                                                     | Control económico operativo                   | 3 d   |
-| **7 — Proveedores + servicios** | Fichas, pipeline, documentos, precio por invitado                                                                         | Gestión de contratación                       | 3 d   |
-| **8 — Tareas + seating**        | Checklist, kanban, plano de mesas                                                                                         | Organización del día                          | 3-4 d |
-| **9 — Pulido**                  | Performance (Lighthouse ≥ 95), a11y, SEO, Sentry, PostHog, E2E, backups                                                   | Producción                                    | 2-3 d |
+| Fase                            | Alcance                                                                                                                  | Entregable                                    | Est.  |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- | ----- |
+| **0 — Cimientos**               | Next.js + TS + Tailwind v4, **tokens completos**, i18n, ESLint/Stylelint/Husky, Vercel + previews, proyecto Supabase, CI | Deploy en verde con las reglas del §2 activas | 1-2 d |
+| **1 — Base de datos**           | Migraciones de todas las tablas, enums, vistas, triggers, RLS, seed, tipos TS generados                                  | Esquema completo versionado                   | 2 d   |
+| **2 — Landing**                 | Todas las secciones, animaciones, galería, contenido desde BBDD                                                          | Landing pública lista                         | 4-5 d |
+| **3 — Save the Date**           | Página, `.ics`, OG images                                                                                                | Enlace compartible                            | 1 d   |
+| **4 — Auth + shell**            | Magic link, middleware, layout del panel, roles                                                                          | Panel accesible y protegido                   | 2 d   |
+| **5 — Invitados + RSVP**        | CRUD, grupos, tokens, import/export, flujo público de RSVP, emails                                                       | Ciclo completo de invitación                  | 4-5 d |
+| **6 — Presupuesto**             | Categorías, partidas, pagos, gráficas                                                                                    | Control económico operativo                   | 3 d   |
+| **7 — Proveedores + servicios** | Fichas, pipeline, documentos, precio por invitado                                                                        | Gestión de contratación                       | 3 d   |
+| **8 — Tareas + seating**        | Checklist, kanban, plano de mesas                                                                                        | Organización del día                          | 3-4 d |
+| **9 — Pulido**                  | Performance (Lighthouse ≥ 95), a11y, SEO, Sentry, PostHog, E2E, backups                                                  | Producción                                    | 2-3 d |
 
 **Camino crítico:** 0 → 1 → 2 → 3 permite publicar y empezar a repartir el Save the Date mientras el panel sigue en desarrollo. Las fases 6-8 son internas: no bloquean nada de cara a los invitados.
 
@@ -295,20 +295,20 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 
 ## 9. Entornos y despliegue
 
-| Entorno    | Rama                     | Supabase                                 |
-| ---------- | ------------------------ | ---------------------------------------- |
-| Producción | `main`                   | Proyecto principal                       |
-| Preview    | Cada PR (URL de Netlify) | Branch de Supabase o proyecto de staging |
-| Local      | —                        | Supabase CLI (`supabase start`)          |
+| Entorno    | Rama                    | Supabase                                 |
+| ---------- | ----------------------- | ---------------------------------------- |
+| Producción | `main`                  | Proyecto principal                       |
+| Preview    | Cada PR (URL de Vercel) | Branch de Supabase o proyecto de staging |
+| Local      | —                       | Supabase CLI (`supabase start`)          |
 
 **`main` es la rama por defecto del repositorio y la única de producción, siempre.** Las ramas de ticket son temporales: nacen de `main` y se borran al mergear. Esto se configura en dos sitios y ambos deben apuntar a `main`:
 
 1. **GitHub** → Settings → General → Default branch.
-2. **Netlify** → Site configuration → Build & deploy → Branches and deploy contexts → Production branch.
+2. **Vercel** → Settings → Git → Production Branch.
 
 Si el despliegue apunta a una rama de trabajo, producción deja de actualizarse en cuanto esa rama se mergea y se abandona.
 
-Variables de entorno (Netlify, nunca en git): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (solo servidor), `RESEND_API_KEY`, `NEXT_PUBLIC_SITE_URL`, `SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`.
+Variables de entorno (Vercel, nunca en git): `DATABASE_URL` (cadena del pooler de Supabase, modo transaction), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (solo servidor), `RESEND_API_KEY`, `NEXT_PUBLIC_SITE_URL`, `SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`.
 
 **Backups:** export diario del esquema y datos a un repo privado vía GitHub Action — el free tier de Supabase tiene retención limitada, y la lista de invitados no se puede perder.
 
@@ -318,7 +318,7 @@ Variables de entorno (Netlify, nunca en git): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_
 
 | Servicio         | Plan                             | Coste        |
 | ---------------- | -------------------------------- | ------------ |
-| Netlify          | Free (100 GB/mes)                | 0 €          |
+| Vercel           | Hobby                            | 0 €          |
 | Supabase         | Free (500 MB BBDD, 1 GB storage) | 0 €          |
 | Resend           | Free (3.000 emails/mes)          | 0 €          |
 | Sentry / PostHog | Free                             | 0 €          |
@@ -345,7 +345,7 @@ Variables de entorno (Netlify, nunca en git): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_
 
 Ninguna bloquea la Fase 0; se resuelven antes de la fase indicada.
 
-1. **Dominio** — ¿comprado ya? Necesario en Fase 3 (Save the Date). _Netlify o Cloudflare como registrador._
+1. **Dominio** — ¿comprado ya? Necesario en Fase 3 (Save the Date). _Vercel o Cloudflare como registrador._
 2. **Dirección de arte** — paleta, tipografías y tono. Determina los valores de los tokens primitivos (no su estructura), así que la Fase 0 puede arrancar con una paleta provisional.
 3. **Fotos** — ¿hay sesión de preboda? Condiciona el diseño del hero y la galería.
 4. **Regalo** — ¿cuenta bancaria, Bizum, lista? Afecta a una sección de la landing.

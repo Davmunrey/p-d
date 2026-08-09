@@ -134,6 +134,7 @@
   --spacing-control: var(--alto-control);
   --spacing-control-compacto: var(--alto-control-compacto);
   --spacing-campo: var(--alto-campo);
+  --spacing-cifra: var(--ancho-cifra);
 
   /* Forma */
   --radius-boton: var(--radio-boton);
@@ -167,6 +168,16 @@
   --breakpoint-md: 48rem;
   --breakpoint-lg: 64rem;
   --breakpoint-xl: 80rem;
+}
+
+/**
+ * Patrón «dato + contenido»: una columna estrecha con la hora o la duración,
+ * y otra con el texto. Se repite en el programa del día y en cómo llegar, así
+ * que vive aquí en lugar de como valor arbitrario en cada sitio.
+ */
+@utility rejilla-dato {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
 }
 
 /* --------------------------------------------------------------------------

@@ -38,7 +38,10 @@
     "etiquetaLugar": "El lugar",
     "confirmarAsistencia": "Confirmar asistencia",
     "verElDia": "Ver el día",
-    "altHero": "Paloma y David"
+    "altHero": "Paloma y David",
+    "conjuncion": "y",
+    "enPreparacion": "Estamos preparando la web",
+    "enPreparacionTexto": "Vuelve en un rato y aquí estará todo."
   },
   "cuentaAtras": {
     "titulo": "Nos vemos en",

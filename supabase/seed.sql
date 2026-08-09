@@ -308,3 +308,43 @@ begin
     'desarrollo-familia-uno-000000 / desarrollo-familia-dos-000000';
 end;
 $$;
+
+-- ============================================================================
+-- Contenido de la landing (BODA-11)
+--
+-- Estructura realista para que las secciones se puedan ver y probar. Todo con
+-- el prefijo «(DES)»: los datos de verdad se cargan desde el panel.
+-- ============================================================================
+
+insert into public.hitos_programa (hora, titulo, descripcion, orden) values
+  ('12:00', '(DES) Autobús desde la ciudad', 'Salida desde la plaza principal. Intentad estar cinco minutos antes.', 1),
+  ('13:00', '(DES) Ceremonia',               'Al aire libre, a la sombra. Habrá abanicos y agua fría esperando.',       2),
+  ('14:00', '(DES) Aperitivo',               'Cava y música en directo en la terraza.',                                 3),
+  ('16:00', '(DES) Banquete',                'Comida sentada. Encontraréis vuestro sitio en el plano de mesas.',        4),
+  ('19:30', '(DES) Baile y barra',           'Primer baile, música y barra hasta el final.',                            5),
+  ('02:00', '(DES) Recena y vuelta',         'Algo caliente para los valientes. Autobuses de vuelta.',                  6)
+on conflict do nothing;
+
+insert into public.alojamientos (nombre, distintivo, descripcion, precio_texto, url_reserva, orden) values
+  ('(DES) Hotel del Centro', 'A 18 min · con bus', 'El clásico de la ciudad, junto al río. El autobús para en la puerta.', '135 € / noche', 'https://ejemplo.test/hotel-centro', 1),
+  ('(DES) Hotel Plaza',      'A 20 min · céntrico', 'En el casco antiguo. Ideal si os quedáis el domingo.',                '95 € / noche',  'https://ejemplo.test/hotel-plaza',  2),
+  ('(DES) Posada Rural',     'A 6 min · rural',     'Ocho habitaciones a un paso de la finca. Perfecto con niños.',        '78 € / noche',  'https://ejemplo.test/posada',       3)
+on conflict do nothing;
+
+insert into public.rutas_llegada (modo, duracion, detalle, orden) values
+  ('(DES) En coche',    '18 min', 'Aparcamiento gratuito dentro de la finca.',                    1),
+  ('(DES) En autobús',  '25 min', 'Servicio privado gratuito: ida a las 12:00, vuelta a las 02:00 y 04:30.', 2),
+  ('(DES) En tren',     '1 h 50', 'Desde la estación, 20 minutos en taxi.',                       3)
+on conflict do nothing;
+
+insert into public.preguntas_frecuentes (pregunta, respuesta, orden) values
+  ('(DES) ¿Cuál es el código de vestimenta?', 'Elegante. La ceremonia es al aire libre, sobre césped y grava: cuidado con los tacones finos.', 1),
+  ('(DES) ¿Puedo llevar a los niños?',        'Por supuesto. Hay menú infantil y alguien pendiente de ellos durante el banquete.',             2),
+  ('(DES) ¿Hasta cuándo puedo confirmar?',    'Hasta la fecha límite que aparece en el formulario. Después nos cuesta avisar al catering.',    3)
+on conflict do nothing;
+
+insert into public.hitos_historia (titulo, fecha_texto, descripcion, orden) values
+  ('(DES) Nos conocimos', 'Marzo de 2018', 'En una cena de amigos comunes, hablando de música durante horas.', 1),
+  ('(DES) El viaje',      'Verano de 2021', 'Tres semanas y una avería del coche que hoy nos hace reír.',      2),
+  ('(DES) La pregunta',   'Diciembre de 2025', 'En casa, sin testigos y sin plan. Salió que sí.',              3)
+on conflict do nothing;

@@ -25,4 +25,4 @@ Detalle completo en el §2 del plan maestro.
 
 ## Stack
 
-Next.js 15 · TypeScript · Tailwind v4 · Supabase (PostgreSQL) · Netlify · Playwright
+Next.js 16 · TypeScript · Tailwind v4 · Supabase (PostgreSQL) · Vercel · Playwright

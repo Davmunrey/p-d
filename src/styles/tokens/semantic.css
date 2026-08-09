@@ -111,6 +111,7 @@
   --alto-control: var(--size-control);
   --alto-control-compacto: var(--size-control-compacto);
   --alto-campo: var(--size-campo);
+  --ancho-cifra: var(--size-cifra);
 
   /* --- Forma --------------------------------------------------------- */
   --radio-boton: var(--radius-redondo);
