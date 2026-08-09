@@ -89,3 +89,53 @@ jobs:
           name: informe-playwright
           path: playwright-report/
           retention-days: 7
+
+  acceso:
+    name: Acceso al panel (Supabase real)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Instalar navegador
+        run: npx playwright install --with-deps chromium
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Levanta Postgres, GoTrue y el buzón de correo. Es lento —descarga
+      # imágenes— y por eso va en su propio trabajo: el resto del CI no espera.
+      - name: Levantar Supabase
+        run: supabase start
+
+      - name: Aplicar migraciones y seed
+        run: supabase db reset --no-seed && supabase db push --local
+
+      - name: Crear los usuarios de prueba
+        run: psql "$(supabase status -o env | grep '^DB_URL=' | cut -d= -f2- | tr -d '\"')" -v ON_ERROR_STOP=1 -f scripts/preparar-acceso-pruebas.sql
+
+      - name: Recoger las claves del Supabase local
+        run: supabase status -o env | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/; s/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/; s/^DB_URL=/DATABASE_URL=/' | tr -d '"' >> "$GITHUB_ENV"
+
+      - name: Probar el recorrido completo del acceso
+        env:
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          URL_BUZON: http://127.0.0.1:54324
+          CORREO_CON_ACCESO: con-acceso@ejemplo.test
+          CORREO_SIN_ACCESO: sin-acceso@ejemplo.test
+        run: npx playwright test --project=escritorio tests/e2e/acceso-real.spec.ts
+
+      - name: Guardar informe si algo falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-acceso
+          path: playwright-report/
+          retention-days: 7

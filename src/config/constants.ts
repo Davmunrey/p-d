@@ -57,3 +57,8 @@ export const HORAS_DURACION_EVENTO = 6;
 
 /** Descarga del evento para el calendario. La escriben la página y su test. */
 export const RUTA_CALENDARIO = "/reserva-la-fecha/evento.ics";
+
+/** Rutas del panel privado. Se escriben en varios sitios: viven aquí. */
+export const RUTA_ACCESO = "/acceso";
+export const RUTA_CONFIRMAR_ACCESO = "/acceso/confirmar";
+export const RUTA_PANEL = "/panel";

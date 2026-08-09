@@ -54,5 +54,22 @@ export default defineConfig({
         url: URL_BASE,
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
+        env: {
+          /**
+           * Un Supabase que no existe, a propósito.
+           *
+           * El acceso al panel tiene que comportarse igual de bien cuando el
+           * servidor de autenticación no responde: el mismo mensaje neutro, sin
+           * revelar si un correo tiene acceso, y sin dejar entrar a nadie.
+           * Apuntando a un puerto cerrado, cada petición falla de verdad y los
+           * tests recorren ese camino sin simular nada.
+           *
+           * El apretón de manos completo —correo, enlace, sesión— se prueba en
+           * el trabajo de CI que levanta un Supabase de verdad.
+           */
+          NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:1",
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "clave-de-pruebas-sin-valor",
+          NEXT_PUBLIC_SITE_URL: URL_BASE,
+        },
       },
 });

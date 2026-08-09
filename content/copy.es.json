@@ -152,5 +152,20 @@
     "botonTerciario": "Terciario",
     "botonDesactivado": "Desactivado",
     "seccionInversa": "Bloque inverso: los mismos componentes, sin cambiar una clase"
+  },
+  "acceso": {
+    "titulo": "Entrar",
+    "descripcion": "Escribe tu correo y te mandamos un enlace para entrar. Sin contraseñas.",
+    "correo": "Correo electrónico",
+    "enviar": "Enviarme el enlace",
+    "enviando": "Enviando…",
+    "comprobadCorreo": "Si ese correo tiene acceso, ya está en camino",
+    "comprobadCorreoTexto": "Abre el enlace desde este mismo dispositivo. Caduca en una hora.",
+    "volverALaWeb": "Volver a la web",
+    "errorEnlace": "Ese enlace ya no vale. Pide uno nuevo y entra desde el último que recibas.",
+    "errorSinAcceso": "Ese correo no tiene acceso al panel.",
+    "errorGenerico": "No hemos podido enviarlo. Inténtalo de nuevo en un momento.",
+    "sinConfigurar": "El acceso todavía no está configurado.",
+    "cerrarSesion": "Cerrar sesión"
   }
 }
