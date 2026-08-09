@@ -65,8 +65,19 @@ jobs:
 
       - run: npm ci
 
+      - name: Instalar PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib
+
       - name: Instalar navegadores
         run: npx playwright install --with-deps chromium webkit
+
+      - name: Preparar base de datos con migraciones y seed
+        # Los E2E corren contra una base REAL, no contra mocks: la landing lee
+        # de la base de datos, así que probarla con datos falsos no probaría
+        # nada de lo que importa.
+        run: echo "DATABASE_URL=$(sudo ./scripts/preparar-bbdd.sh)" >> "$GITHUB_ENV"
 
       - name: Ejecutar suite E2E
         run: npm run test:e2e

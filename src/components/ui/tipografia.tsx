@@ -18,15 +18,19 @@ interface PropiedadesTitulo {
   /** Etiqueta HTML. Define la jerarquía del documento, no el tamaño. */
   como?: ElementType;
   className?: string;
+  /** Necesario para que una sección pueda referenciarlo con aria-labelledby. */
+  id?: string;
 }
 
 export function Display({
+  id,
   children,
   como: Etiqueta = "h1",
   className = "",
 }: PropiedadesTitulo) {
   return (
     <Etiqueta
+      id={id}
       className={`font-titulo text-display leading-display tracking-display ${className}`}
     >
       {children}
@@ -35,36 +39,39 @@ export function Display({
 }
 
 export function Titulo1({
+  id,
   children,
   como: Etiqueta = "h1",
   className = "",
 }: PropiedadesTitulo) {
   return (
-    <Etiqueta className={`font-titulo text-titulo-1 leading-titulo ${className}`}>
+    <Etiqueta id={id} className={`font-titulo text-titulo-1 leading-titulo ${className}`}>
       {children}
     </Etiqueta>
   );
 }
 
 export function Titulo2({
+  id,
   children,
   como: Etiqueta = "h2",
   className = "",
 }: PropiedadesTitulo) {
   return (
-    <Etiqueta className={`font-titulo text-titulo-2 leading-titulo-corto ${className}`}>
+    <Etiqueta id={id} className={`font-titulo text-titulo-2 leading-titulo-corto ${className}`}>
       {children}
     </Etiqueta>
   );
 }
 
 export function Titulo3({
+  id,
   children,
   como: Etiqueta = "h3",
   className = "",
 }: PropiedadesTitulo) {
   return (
-    <Etiqueta className={`font-titulo text-titulo-3 leading-titulo-corto ${className}`}>
+    <Etiqueta id={id} className={`font-titulo text-titulo-3 leading-titulo-corto ${className}`}>
       {children}
     </Etiqueta>
   );
@@ -72,14 +79,17 @@ export function Titulo3({
 
 /** Versalita espaciada: el rótulo que precede a cada sección. */
 export function Etiqueta({
+  id,
   children,
   className = "",
 }: {
+  id?: string;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <span
+      id={id}
       className={`block text-etiqueta uppercase tracking-etiqueta text-tinta-tenue ${className}`}
     >
       {children}
