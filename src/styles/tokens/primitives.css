@@ -164,6 +164,19 @@
    */
   --size-cabecera: 4.25rem;
 
+  /**
+   * Ancho del lateral del panel. Cabe el rótulo más largo («Presupuesto») sin
+   * partirse y deja el contenido con sitio de sobra en un portátil de 13".
+   */
+  --size-lateral: 15rem;
+
+  /**
+   * Alto de la barra inferior del panel en móvil. Es más que un control porque
+   * lleva rótulo bajo el icono: sin él, seis destinos iguales se distinguen
+   * sólo por un dibujo pequeño.
+   */
+  --size-barra-movil: 4rem;
+
   /* ---------------------------------------------------------------------
    * Forma
    * ------------------------------------------------------------------- */

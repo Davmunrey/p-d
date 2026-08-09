@@ -152,7 +152,7 @@ src/
 │  ├─ tokens/                # primitives.css, semantic.css, motion.css
 │  └─ globals.css
 ├─ lib/
-│  ├─ supabase/              # client.ts, server.ts, middleware.ts
+│  ├─ supabase/              # servidor.ts (el middleware vive en src/middleware.ts)
 │  ├─ validators/            # Esquemas Zod (compartidos cliente/servidor)
 │  └─ queries/               # Acceso a datos tipado
 ├─ config/                   # constants.ts, navigation.ts, site.ts

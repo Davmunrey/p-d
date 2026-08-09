@@ -140,6 +140,11 @@
   /* Un solo token da `h-cabecera`, `pt-cabecera` y `scroll-mt-cabecera`. */
   --spacing-cabecera: var(--alto-cabecera);
 
+  /* Igual que arriba: el mismo token da el ancho del lateral y el hueco que
+   * deja a su lado, y el alto de la barra de móvil y el que deja debajo. */
+  --spacing-lateral: var(--ancho-lateral);
+  --spacing-barra-movil: var(--alto-barra-movil);
+
   /* Forma */
   --radius-boton: var(--radio-boton);
   --radius-campo: var(--radio-campo);
@@ -192,6 +197,31 @@
  */
 @utility capa-cabecera {
   z-index: var(--capa-cabecera);
+}
+
+/** La misma razón, para la navegación fija del panel. */
+@utility capa-lateral {
+  z-index: var(--capa-pegajosa);
+}
+
+/**
+ * La barra inferior del panel y el hueco que deja bajo el contenido.
+ *
+ * `env(safe-area-inset-bottom)` no puede ser un token: no es un valor nuestro,
+ * lo pone el dispositivo y vale cero en casi todos. En un iPhone sin botón es
+ * la franja del indicador de inicio, y sin contar con ella la última fila de
+ * la barra queda debajo de él, medio tapada y difícil de acertar.
+ *
+ * Las dos utilidades van juntas a propósito: si el alto de la barra y el hueco
+ * que deja se calcularan por separado, cualquier cambio en uno dejaría al otro
+ * desfasado y el contenido acabaría escondido detrás de la barra.
+ */
+@utility barra-inferior {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility hueco-barra-inferior {
+  padding-bottom: calc(var(--alto-barra-movil) + env(safe-area-inset-bottom));
 }
 
 /**

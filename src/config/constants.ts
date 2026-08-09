@@ -64,6 +64,7 @@ export const RUTA_CONFIRMAR_ACCESO = "/acceso/confirmar";
 export const RUTA_PANEL = "/panel";
 export const RUTA_RECUPERAR = "/acceso/recuperar";
 export const RUTA_NUEVA_CONTRASENA = "/acceso/nueva-contrasena";
+export const RUTA_CUENTA = "/panel/cuenta";
 
 /**
  * Dónde se anota la ruta que alguien pidió antes de que le mandaran a la
@@ -77,3 +78,10 @@ export const PARAMETRO_VOLVER = "volver";
  * validación que solo vive en el navegador no es una validación.
  */
 export const LONGITUD_MINIMA_CONTRASENA = 12;
+
+/**
+ * Longitud mínima de un nombre en el panel. Dos caracteres: hay nombres
+ * cortos de verdad, y lo que se quiere evitar es el campo vacío o con un
+ * espacio, no obligar a nadie a escribir más de lo que se llama.
+ */
+export const LONGITUD_MINIMA_NOMBRE = 2;
