@@ -57,3 +57,23 @@ export const HORAS_DURACION_EVENTO = 6;
 
 /** Descarga del evento para el calendario. La escriben la página y su test. */
 export const RUTA_CALENDARIO = "/reserva-la-fecha/evento.ics";
+
+/** Rutas del panel privado. Se escriben en varios sitios: viven aquí. */
+export const RUTA_ACCESO = "/acceso";
+export const RUTA_CONFIRMAR_ACCESO = "/acceso/confirmar";
+export const RUTA_PANEL = "/panel";
+export const RUTA_RECUPERAR = "/acceso/recuperar";
+export const RUTA_NUEVA_CONTRASENA = "/acceso/nueva-contrasena";
+
+/**
+ * Dónde se anota la ruta que alguien pidió antes de que le mandaran a la
+ * puerta. Lo escribe el middleware y lo lee el formulario de acceso.
+ */
+export const PARAMETRO_VOLVER = "volver";
+
+/**
+ * Longitud mínima de contraseña. El formulario la comprueba para avisar antes
+ * de enviar, pero quien la impone de verdad es Supabase (`config.toml`): una
+ * validación que solo vive en el navegador no es una validación.
+ */
+export const LONGITUD_MINIMA_CONTRASENA = 12;

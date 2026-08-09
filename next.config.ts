@@ -33,7 +33,20 @@ const nextConfig: NextConfig = {
       },
       {
         // El panel privado y la página de sistema de diseño no se indexan.
-        source: "/app/:path*",
+        source: "/panel/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/panel",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        // La puerta de entrada tampoco tiene nada que hacer en un buscador.
+        source: "/acceso/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/acceso",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {

@@ -54,5 +54,32 @@ export default defineConfig({
         url: URL_BASE,
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
+        /**
+         * El servidor escribe en el registro por qué rechaza un acceso; la
+         * pantalla, a propósito, no lo cuenta. Sin este `pipe` ese motivo se
+         * queda dentro del proceso y un fallo de CI sólo dice «no entró».
+         */
+        stdout: "pipe",
+        stderr: "pipe",
+        env: {
+          /**
+           * Por defecto, un Supabase que NO EXISTE, a propósito.
+           *
+           * El acceso al panel tiene que comportarse igual de bien cuando el
+           * servidor de autenticación no responde: el mismo mensaje neutro, sin
+           * revelar si un correo tiene acceso, y sin dejar entrar a nadie.
+           * Apuntando a un puerto cerrado, cada petición falla de verdad y los
+           * tests recorren ese camino sin simular nada.
+           *
+           * OJO CON EL `??`: si estos valores se fijaran sin condición, el
+           * trabajo de CI que levanta un Supabase de verdad recibiría igualmente
+           * el puerto cerrado y no podría probar nada. Pasó.
+           */
+          NEXT_PUBLIC_SUPABASE_URL:
+            process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:1",
+          NEXT_PUBLIC_SUPABASE_ANON_KEY:
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "clave-de-pruebas-sin-valor",
+          NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? URL_BASE,
+        },
       },
 });

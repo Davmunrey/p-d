@@ -152,5 +152,32 @@
     "botonTerciario": "Terciario",
     "botonDesactivado": "Desactivado",
     "seccionInversa": "Bloque inverso: los mismos componentes, sin cambiar una clase"
+  },
+  "acceso": {
+    "titulo": "Entrar",
+    "descripcion": "El panel es solo para Paloma y David.",
+    "correo": "Correo electrónico",
+    "contrasena": "Contraseña",
+    "entrar": "Entrar",
+    "entrando": "Entrando…",
+    "errorCredenciales": "El correo o la contraseña no son correctos.",
+    "errorSinAcceso": "El correo o la contraseña no son correctos.",
+    "errorGenerico": "No hemos podido entrar. Inténtalo de nuevo en un momento.",
+    "sinConfigurar": "El acceso todavía no está configurado.",
+    "volverALaWeb": "Volver a la web",
+    "cerrarSesion": "Cerrar sesión",
+    "olvidada": "He olvidado la contraseña",
+    "recuperarTitulo": "Recuperar la contraseña",
+    "recuperarDescripcion": "Escribe tu correo y te mandamos un enlace para poner una nueva.",
+    "recuperarEnviar": "Enviarme el enlace",
+    "recuperarEnviado": "Si ese correo tiene acceso, ya está en camino",
+    "recuperarEnviadoTexto": "Abre el enlace desde este mismo dispositivo. Caduca en una hora.",
+    "nuevaTitulo": "Nueva contraseña",
+    "nuevaDescripcion": "Elige una contraseña nueva para entrar al panel.",
+    "nuevaContrasena": "Contraseña nueva",
+    "nuevaAyuda": "Al menos 12 caracteres.",
+    "nuevaGuardar": "Guardar y entrar",
+    "nuevaCorta": "La contraseña es demasiado corta.",
+    "errorEnlace": "Ese enlace ya no vale. Pide uno nuevo y entra desde el último que recibas."
   }
 }
