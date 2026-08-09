@@ -12,6 +12,12 @@ import { RUTA_ACCESO, RUTA_PANEL } from "../../src/config/constants";
  *
  * Se salta en cualquier otro sitio en lugar de fallar: un test que no puede
  * ejecutarse no es un test roto.
+ *
+ * ENTRAR, ESTAR Y SALIR VAN EN UN SOLO TEST, y no es por pereza. Cada test de
+ * Playwright estrena navegador: contexto nuevo, cookies vacías. Repartir el
+ * recorrido en tres dejaba al segundo sin la sesión que abrió el primero, y el
+ * fallo —«el panel me echa»— parecía de la aplicación cuando era del test.
+ * Una sesión es una sola historia y se cuenta seguida.
  */
 
 const CORREO_CON_ACCESO = process.env.CORREO_CON_ACCESO;
@@ -19,8 +25,6 @@ const CORREO_SIN_ACCESO = process.env.CORREO_SIN_ACCESO;
 const CONTRASENA = process.env.CONTRASENA_PRUEBAS;
 
 test.describe("Acceso de verdad", () => {
-  test.describe.configure({ mode: "serial" });
-
   test.skip(
     !CORREO_CON_ACCESO || !CORREO_SIN_ACCESO || !CONTRASENA,
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
@@ -37,37 +41,35 @@ test.describe("Acceso de verdad", () => {
     await page.getByRole("button", { name: copy.acceso.entrar }).click();
   }
 
-  test("recorrido completo: correo, contraseña y dentro", async ({ page }) => {
+  test("entrar, seguir dentro y salir de verdad", async ({ page }) => {
     await identificarse(page, CORREO_CON_ACCESO!);
 
     await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
     await expect(page.getByRole("button", { name: copy.acceso.cerrarSesion })).toBeVisible();
-  });
 
-  test("la sesión aguanta y la puerta deja de tener sentido", async ({ page }) => {
+    // La sesión aguanta una recarga: vive en la cookie, no en la memoria de la
+    // pestaña.
     await page.goto(RUTA_PANEL);
     await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
 
-    // Con sesión, la página de acceso lleva al panel en lugar de pedir nada.
+    // Y con sesión, la puerta deja de tener sentido: lleva dentro en lugar de
+    // volver a pedir lo que ya se ha dado.
     await page.goto(RUTA_ACCESO);
     await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
-  });
 
-  test("al cerrar sesión se sale de verdad", async ({ page }) => {
-    await page.goto(RUTA_PANEL);
     await page.getByRole("button", { name: copy.acceso.cerrarSesion }).click();
-
     await expect(page).toHaveURL(new RegExp(RUTA_ACCESO));
 
-    // Y volver al panel escribiendo la URL tampoco entra.
+    // Salir tiene que ser salir: volver al panel escribiendo la URL tampoco
+    // entra. Si la sesión sólo se borrara en el navegador, esto pasaría.
     await page.goto(RUTA_PANEL);
     await expect(page).toHaveURL(new RegExp(RUTA_ACCESO));
+    await expect(page.getByRole("button", { name: copy.acceso.cerrarSesion })).toHaveCount(0);
   });
 
   // --- Los casos que de verdad importan --------------------------------
 
-  test("la contraseña incorrecta no entra", async ({ page, context }) => {
-    await context.clearCookies();
+  test("la contraseña incorrecta no entra", async ({ page }) => {
     await identificarse(page, CORREO_CON_ACCESO!, "esta-no-es-la-contrasena");
 
     await expect(page).toHaveURL(new RegExp(RUTA_ACCESO));
@@ -76,9 +78,7 @@ test.describe("Acceso de verdad", () => {
     );
   });
 
-  test("identificarse bien pero sin perfil activo tampoco entra", async ({ page, context }) => {
-    await context.clearCookies();
-
+  test("identificarse bien pero sin perfil activo tampoco entra", async ({ page }) => {
     // Este usuario existe y acierta la contraseña: Supabase lo autentica sin
     // problema. Lo que no tiene es perfil activo, y eso lo decide `perfiles`.
     // Es la diferencia entre «autenticado» y «con acceso».
@@ -89,16 +89,19 @@ test.describe("Acceso de verdad", () => {
       copy.acceso.titulo,
     );
     await expect(page.getByRole("button", { name: copy.acceso.cerrarSesion })).toHaveCount(0);
+
+    // Y además se le cierra la sesión: si se le dejara una abierta, andaría
+    // rebotando en la puerta sin entender por qué.
+    await page.goto(RUTA_PANEL);
+    await expect(page).toHaveURL(new RegExp(RUTA_ACCESO));
   });
 
-  test("y el mensaje es el mismo que con la contraseña mal", async ({ page, context }) => {
+  test("y el mensaje es el mismo que con la contraseña mal", async ({ page }) => {
     // Si el desactivado recibiera un mensaje propio, cualquiera podría
     // averiguar qué correos existen probando.
-    await context.clearCookies();
     await identificarse(page, CORREO_SIN_ACCESO!);
     const sinPerfil = await page.getByRole("main").getByRole("alert").textContent();
 
-    await context.clearCookies();
     await identificarse(page, CORREO_CON_ACCESO!, "esta-no-es-la-contrasena");
     const malaContrasena = await page.getByRole("main").getByRole("alert").textContent();
 
