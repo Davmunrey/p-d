@@ -70,21 +70,39 @@ if (process.env.NODE_ENV !== "production" && cliente) {
 
 export const sql = cliente;
 
+/** Se lanza cuando no se pudo leer. No confundir con «no hay datos». */
+export class ErrorDeLectura extends Error {
+  constructor(motivo: string, options?: ErrorOptions) {
+    super(motivo, options);
+    this.name = "ErrorDeLectura";
+  }
+}
+
 /**
  * Ejecuta una lectura con los privilegios de un visitante anónimo.
  *
- * Devuelve `null` si no se pudo leer —sin base de datos configurada, o con la
- * base caída—. Quien llama decide qué enseñar; lo que nunca hace es inventarse
- * datos para rellenar el hueco.
+ * LANZA si no se pudo leer, y no devuelve `null`. La diferencia importa más de
+ * lo que parece: «la base dice que no hay ninguna fila» es un dato, y «no he
+ * podido preguntarle a la base» es una avería. Devolviendo `null` para las dos
+ * cosas, quien llama no puede distinguirlas — y acaba cacheando la avería como
+ * si fuera un resultado.
+ *
+ * Eso pasó de verdad: un despliegue sin `DATABASE_URL` horneó la pantalla de
+ * «estamos preparando la web» y la sirvió cacheada durante una hora. Con la
+ * avería propagándose como excepción, la caché no la guarda y la siguiente
+ * visita vuelve a intentarlo.
+ *
+ * Lo que nunca hace, ni lanzando ni devolviendo, es inventarse datos para
+ * rellenar el hueco.
  */
 export async function leerComoAnonimo<T>(
   consulta: (tx: postgres.TransactionSql) => Promise<T>,
-): Promise<T | null> {
+): Promise<T> {
   if (!cliente) {
-    console.error(
-      "Sin DATABASE_URL: la web se sirve sin datos. Configúrala en Vercel → Settings → Environment Variables.",
-    );
-    return null;
+    const motivo =
+      "Sin DATABASE_URL: la web se sirve sin datos. Configúrala en Vercel → Settings → Environment Variables.";
+    console.error(motivo);
+    throw new ErrorDeLectura(motivo);
   }
 
   try {
@@ -96,6 +114,6 @@ export async function leerComoAnonimo<T>(
     // Se registra entero: un fallo de lectura en la landing es un incidente,
     // aunque la página aguante y muestre su estado de reserva.
     console.error("Fallo al leer de la base de datos:", error);
-    return null;
+    throw new ErrorDeLectura("No se pudo leer de la base de datos.", { cause: error });
   }
 }

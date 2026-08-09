@@ -19,10 +19,18 @@ import { t } from "@/lib/copy";
 export const dynamic = "force-dynamic";
 
 export async function GET(peticion: Request) {
-  const [secciones, configuracion] = await Promise.all([
-    obtenerSecciones(),
-    obtenerConfiguracion(),
-  ]);
+  let secciones;
+  let configuracion;
+  try {
+    [secciones, configuracion] = await Promise.all([
+      obtenerSecciones(),
+      obtenerConfiguracion(),
+    ]);
+  } catch {
+    // 503 y no 404: la avería ya está en el log, y decirle a un cliente de
+    // calendario que el evento «no existe» le haría borrarlo. Que reintente.
+    return new Response(null, { status: 503, headers: { "Retry-After": "60" } });
+  }
 
   // Mismo criterio que la página: si la sección está apagada, esto tampoco
   // existe. Si no, quedaría una puerta trasera para sacar la fecha de una
