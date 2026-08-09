@@ -135,6 +135,11 @@
   --space-seccion-compacta: 5rem;
   --space-seccion: 8.25rem;
 
+  /* Altura de los controles: el objetivo táctil cómodo en móvil. */
+  --size-control: 3.25rem;
+  --size-control-compacto: 2.75rem;
+  --size-campo: 3.125rem;
+
   /* ---------------------------------------------------------------------
    * Forma
    * ------------------------------------------------------------------- */

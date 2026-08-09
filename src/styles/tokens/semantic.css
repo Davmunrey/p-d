@@ -108,6 +108,9 @@
   --espacio-bloque: var(--space-bloque);
   --espacio-seccion-compacta: var(--space-seccion-compacta);
   --espacio-seccion: var(--space-seccion);
+  --alto-control: var(--size-control);
+  --alto-control-compacto: var(--size-control-compacto);
+  --alto-campo: var(--size-campo);
 
   /* --- Forma --------------------------------------------------------- */
   --radio-boton: var(--radius-redondo);

@@ -23,8 +23,10 @@
  * valores: por eso el tema oscuro y los bloques `[data-seccion]` funcionan
  * reasignando semánticos en runtime.
  *
- * Resultado: `bg-superficie` y `var(--superficie)` son EL MISMO token. Una
- * sola fuente de verdad, dos sintaxis.
+ * Resultado: la utilidad `bg-superficie` compila literalmente a
+ * `var(--superficie)`. No hay copia del valor, hay referencia — por eso los
+ * componentes pueden usar indistintamente la utilidad o el token, y ambos
+ * siguen al tema activo.
  *
  * Los `*: initial` borran antes las escalas por defecto de Tailwind: nadie
  * puede escribir `bg-red-500`, `text-2xl` ni `p-4` en este proyecto. Solo
@@ -129,6 +131,9 @@
   --spacing-bloque: var(--espacio-bloque);
   --spacing-seccion-compacta: var(--espacio-seccion-compacta);
   --spacing-seccion: var(--espacio-seccion);
+  --spacing-control: var(--alto-control);
+  --spacing-control-compacto: var(--alto-control-compacto);
+  --spacing-campo: var(--alto-campo);
 
   /* Forma */
   --radius-boton: var(--radio-boton);
