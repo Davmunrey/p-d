@@ -1,63 +1,45 @@
--- Dos usuarios para probar el acceso al panel, contra el Supabase local.
+-- Los perfiles de los dos usuarios con los que se prueba el acceso al panel.
 --
--- Los dos tienen la MISMA contraseña, y correcta. La gracia está en el segundo:
--- se identifica bien —existe y acierta la contraseña— y aun así no entra,
--- porque su perfil está desactivado. Es el caso que separa «autenticado» de
--- «con acceso», y el que se rompería sin que nadie se enterase si sólo
--- probáramos el camino bueno.
+-- Los usuarios de `auth.users` ya existen cuando esto corre: los crea
+-- `preparar-acceso-pruebas.sh` por la API de administración de GoTrue, y pasa
+-- sus identificadores aquí. Este fichero no se ejecuta suelto.
 --
--- Solo se aplica en CI, nunca en producción: los usuarios de verdad se crean
--- desde el panel de Supabase.
+-- Los dos tienen la MISMA contraseña, y correcta. La gracia está en el
+-- segundo: se identifica bien —existe y acierta la contraseña— y aun así no
+-- entra, porque su perfil está desactivado. Es el caso que separa
+-- «autenticado» de «con acceso», y el que se rompería sin que nadie se
+-- enterase si sólo probáramos el camino bueno.
+
+-- Sin las variables no hay nada que hacer. El aviso es sólo para quien lo
+-- lance a mano: `\quit` no sabe devolver un código de salida, así que lo que
+-- de verdad corta es el error de sintaxis de la primera `:'…'` sin definir,
+-- que con `ON_ERROR_STOP` sale con 3.
+\if :{?id_con_acceso}
+\else
+  \echo 'Falta -v id_con_acceso: este fichero lo lanza preparar-acceso-pruebas.sh'
+\endif
 
 begin;
-
--- `gen_salt` y `crypt` viven en `extensions` en Supabase.
-set local search_path = public, extensions;
-
-insert into auth.users (
-  id, instance_id, aud, role, email, encrypted_password,
-  email_confirmed_at, created_at, updated_at,
-  raw_app_meta_data, raw_user_meta_data
-)
-values
-  (
-    '11111111-1111-4111-8111-111111111111',
-    '00000000-0000-0000-0000-000000000000',
-    'authenticated', 'authenticated',
-    'con-acceso@ejemplo.test',
-    crypt('contrasena-larga-de-pruebas', gen_salt('bf')),
-    now(), now(), now(),
-    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
-  ),
-  (
-    '22222222-2222-4222-8222-222222222222',
-    '00000000-0000-0000-0000-000000000000',
-    'authenticated', 'authenticated',
-    'sin-acceso@ejemplo.test',
-    crypt('contrasena-larga-de-pruebas', gen_salt('bf')),
-    now(), now(), now(),
-    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
-  )
-on conflict (id) do nothing;
 
 -- El primero entra: perfil activo. `designar_primer_propietario` es la vía
 -- oficial para el primero, y esquiva el trigger que exige un propietario ya
 -- activo — el arranque en frío que se arregló en BODA-14.
 select public.designar_primer_propietario(
-  '11111111-1111-4111-8111-111111111111',
-  'con-acceso@ejemplo.test'
+  :'id_con_acceso'::uuid,
+  '(PRUEBA) Con acceso'
 );
 
 -- El segundo NO entra: tiene perfil, pero desactivado. Es lo que le pasa a
 -- cualquiera que se registrase por su cuenta.
 insert into public.perfiles (usuario_id, correo_electronico, nombre_completo, rol, activo)
-values (
-  '22222222-2222-4222-8222-222222222222',
-  'sin-acceso@ejemplo.test',
+select
+  u.id,
+  u.email,
   '(PRUEBA) Sin acceso',
   'lector',
   false
-)
+from auth.users as u
+where u.id = :'id_sin_acceso'::uuid
 on conflict (usuario_id) do update set activo = false;
 
 commit;

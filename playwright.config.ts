@@ -54,6 +54,13 @@ export default defineConfig({
         url: URL_BASE,
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
+        /**
+         * El servidor escribe en el registro por qué rechaza un acceso; la
+         * pantalla, a propósito, no lo cuenta. Sin este `pipe` ese motivo se
+         * queda dentro del proceso y un fallo de CI sólo dice «no entró».
+         */
+        stdout: "pipe",
+        stderr: "pipe",
         env: {
           /**
            * Por defecto, un Supabase que NO EXISTE, a propósito.

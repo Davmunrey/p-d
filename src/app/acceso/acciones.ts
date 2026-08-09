@@ -58,7 +58,7 @@ export async function entrar(datos: FormData) {
 
   try {
     const supabase = await clienteServidor();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: identificado, error } = await supabase.auth.signInWithPassword({
       email: correo,
       password: contrasena,
     });
@@ -78,13 +78,21 @@ export async function entrar(datos: FormData) {
     //
     // El mensaje es el MISMO que el de contraseña incorrecta. Uno propio
     // permitiría averiguar qué correos existen probando.
-    const { data } = await supabase
+    //
+    // El identificador sale del propio `signInWithPassword`, no de un
+    // `getUser()` a continuación: es el mismo dato sin una segunda llamada de
+    // red que pueda fallar. Preguntándolo aparte, una respuesta vacía se
+    // convertía en `.eq("usuario_id", "")` y dejaba fuera a quien sí tenía
+    // acceso, con el mensaje de contraseña incorrecta y sin rastro de por qué.
+    const { data: perfil, error: fallo } = await supabase
       .from("perfiles")
       .select("activo")
-      .eq("usuario_id", (await supabase.auth.getUser()).data.user?.id ?? "")
+      .eq("usuario_id", identificado.user.id)
       .maybeSingle();
 
-    if (!data?.activo) {
+    if (fallo) console.error("No se pudo leer el perfil:", fallo.message);
+
+    if (!perfil?.activo) {
       await supabase.auth.signOut();
       redirect(`${RUTA_ACCESO}?estado=credenciales`);
     }

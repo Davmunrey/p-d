@@ -93,6 +93,15 @@ jobs:
   acceso:
     name: Acceso al panel (Supabase real)
     runs-on: ubuntu-latest
+    # Las mismas credenciales para quien prepara y para quien prueba: si
+    # vivieran en dos sitios, acabarían discrepando y el fallo sería «no entra»
+    # sin más pista.
+    env:
+      CORREO_CON_ACCESO: con-acceso@ejemplo.test
+      CORREO_SIN_ACCESO: sin-acceso@ejemplo.test
+      # No es un secreto: son dos usuarios de mentira en una base de datos que
+      # se destruye al acabar el trabajo.
+      CONTRASENA_PRUEBAS: contrasena-larga-de-pruebas
     steps:
       - uses: actions/checkout@v4
 
@@ -118,8 +127,11 @@ jobs:
       - name: Aplicar migraciones y seed
         run: supabase db reset
 
+      # Crea los usuarios por la API de administración de GoTrue y comprueba,
+      # antes de arrancar Playwright, que uno de ellos se puede identificar de
+      # verdad. Si esto falla, el problema es la preparación y no la puerta.
       - name: Crear los usuarios de prueba
-        run: psql "$(supabase status -o env | grep '^DB_URL=' | cut -d= -f2- | tr -d '\"')" -v ON_ERROR_STOP=1 -f scripts/preparar-acceso-pruebas.sql
+        run: ./scripts/preparar-acceso-pruebas.sh
 
       - name: Recoger las claves del Supabase local
         run: supabase status -o env | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/; s/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/; s/^DB_URL=/DATABASE_URL=/' | tr -d '"' >> "$GITHUB_ENV"
@@ -127,12 +139,6 @@ jobs:
       - name: Probar el recorrido completo del acceso
         env:
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
-          CORREO_CON_ACCESO: con-acceso@ejemplo.test
-          CORREO_SIN_ACCESO: sin-acceso@ejemplo.test
-          # No es un secreto: es la contraseña de dos usuarios de mentira en
-          # una base de datos que se destruye al acabar el trabajo. Va escrita
-          # para que se vea que coincide con la del SQL de preparación.
-          CONTRASENA_PRUEBAS: contrasena-larga-de-pruebas
         run: npx playwright test --project=escritorio tests/e2e/acceso-real.spec.ts
 
       - name: Guardar informe si algo falla
