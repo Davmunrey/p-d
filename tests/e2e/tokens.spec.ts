@@ -218,4 +218,52 @@ test.describe("Bloques inversos", () => {
     // AA para texto normal exige 4.5:1.
     expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
+
+  /**
+   * Este test existe por un fallo real. El bloque inverso reasignaba `--marca`
+   * y las tintas, pero se dejó `--acento` sin tocar: un botón primario dentro
+   * salía oliva sobre oliva, prácticamente invisible, y el test de contraste
+   * de arriba no lo veía porque solo mira el texto del contenedor.
+   *
+   * Se comprueba el botón contra su PROPIO fondo, que es lo que ve quien mira.
+   */
+  test("el botón primario se ve dentro de un bloque inverso", async ({ page }) => {
+    await page.goto("/cocina");
+
+    const medida = await page.evaluate(() => {
+      const bloque = document.querySelector('[data-prueba="bloque-inverso"]')!;
+      const boton = bloque.querySelector("button") as HTMLElement;
+      const estiloBoton = getComputedStyle(boton);
+      const estiloBloque = getComputedStyle(bloque as HTMLElement);
+
+      const luminancia = (color: string) => {
+        const [r, g, b] = color
+          .match(/\d+(\.\d+)?/g)!
+          .slice(0, 3)
+          .map(Number);
+        const canal = (v: number) => {
+          const s = v / 255;
+          return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+        };
+        return 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
+      };
+
+      const contraste = (a: string, b: string) => {
+        const claro = Math.max(luminancia(a), luminancia(b));
+        const oscuro = Math.min(luminancia(a), luminancia(b));
+        return (claro + 0.05) / (oscuro + 0.05);
+      };
+
+      return {
+        // El rótulo tiene que leerse sobre el relleno del botón…
+        rotulo: contraste(estiloBoton.backgroundColor, estiloBoton.color),
+        // …y el botón tiene que distinguirse del fondo de la sección.
+        relleno: contraste(estiloBoton.backgroundColor, estiloBloque.backgroundColor),
+      };
+    });
+
+    expect(medida.rotulo).toBeGreaterThanOrEqual(4.5);
+    // 3:1 es el umbral AA para elementos de interfaz no textuales.
+    expect(medida.relleno).toBeGreaterThanOrEqual(3);
+  });
 });

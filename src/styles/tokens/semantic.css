@@ -267,6 +267,16 @@
   --tinta-marca: var(--color-oliva-350);
   --marca: var(--color-oliva-350);
   --marca-hover: var(--color-oliva-200);
+
+  /**
+   * El acento se invierte, por la misma razón que en el tema oscuro: sobre
+   * fondo oliva, un botón oliva no se ve. Faltaba, y el resultado era un botón
+   * primario invisible dentro de cualquier bloque inverso.
+   */
+  --acento: var(--color-crema-200);
+  --acento-hover: var(--color-crema-50);
+  --acento-tenue: var(--color-oliva-800);
+  --tinta-sobre-acento: var(--color-oliva-875);
   --borde: var(--color-oliva-600);
   --borde-fuerte: var(--color-oliva-500);
   --borde-tenue: var(--color-oliva-750);
@@ -281,6 +291,10 @@
   --tinta-tenue: var(--color-oliva-450);
   --tinta-marca: var(--color-oliva-350);
   --marca: var(--color-oliva-350);
+  --acento: var(--color-crema-200);
+  --acento-hover: var(--color-crema-50);
+  --acento-tenue: var(--color-oliva-800);
+  --tinta-sobre-acento: var(--color-carbon-900);
   --borde: var(--color-oliva-800);
   --foco: var(--color-oliva-350);
 }
