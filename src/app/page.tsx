@@ -52,12 +52,16 @@ export default async function PaginaInicio() {
       obtenerCanciones(),
     ]);
 
-  // Sin configuración no hay boda que enseñar. Se dice, en lugar de pintar una
-  // página rota o inventarse datos.
+  // Sin configuración no hay boda que enseñar: puede que falte la variable de
+  // entorno o que aún no se haya rellenado el panel. Se dice con claridad, en
+  // lugar de pintar una página rota o inventarse datos para tapar el hueco.
   if (!configuracion) {
     return (
-      <main className="mx-auto grid min-h-dvh max-w-texto place-items-center px-interno">
-        <Cuerpo>{t("errores.generico")}</Cuerpo>
+      <main className="mx-auto grid min-h-dvh max-w-texto place-items-center px-interno text-center">
+        <div>
+          <Titulo2 como="h1">{t("portada.enPreparacion")}</Titulo2>
+          <Cuerpo className="mt-pila">{t("portada.enPreparacionTexto")}</Cuerpo>
+        </div>
       </main>
     );
   }

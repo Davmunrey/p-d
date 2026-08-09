@@ -98,7 +98,7 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
     `,
   );
 
-  const fila = filas[0];
+  const fila = filas?.[0];
   if (!fila) return null;
 
   return {
@@ -124,7 +124,7 @@ export async function obtenerPrograma(): Promise<HitoPrograma[]> {
       order by orden, hora
     `,
   );
-  return filas.map((f) => ({
+  return (filas ?? []).map((f) => ({
     id: f.id,
     hora: f.hora,
     titulo: f.titulo,
@@ -149,7 +149,7 @@ export async function obtenerAlojamientos(): Promise<Alojamiento[]> {
       order by orden, nombre
     `,
   );
-  return filas.map((f) => ({
+  return (filas ?? []).map((f) => ({
     id: f.id,
     nombre: f.nombre,
     distintivo: f.distintivo,
@@ -167,7 +167,7 @@ export async function obtenerRutas(): Promise<RutaLlegada[]> {
       order by orden, modo
     `,
   );
-  return filas.map((f) => ({
+  return (filas ?? []).map((f) => ({
     id: f.id,
     modo: f.modo,
     duracion: f.duracion,
@@ -183,7 +183,7 @@ export async function obtenerPreguntasFrecuentes(): Promise<PreguntaFrecuente[]>
       order by orden
     `,
   );
-  return filas.map((f) => ({ id: f.id, pregunta: f.pregunta, respuesta: f.respuesta }));
+  return (filas ?? []).map((f) => ({ id: f.id, pregunta: f.pregunta, respuesta: f.respuesta }));
 }
 
 export async function obtenerHistoria(): Promise<HitoHistoria[]> {
@@ -196,7 +196,7 @@ export async function obtenerHistoria(): Promise<HitoHistoria[]> {
       order by orden
     `,
   );
-  return filas.map((f) => ({
+  return (filas ?? []).map((f) => ({
     id: f.id,
     titulo: f.titulo,
     fechaTexto: f.fecha_texto,
@@ -213,5 +213,5 @@ export async function obtenerCanciones(limite = 30): Promise<Cancion[]> {
       limit ${limite}
     `,
   );
-  return filas.map((f) => ({ id: f.id, texto: f.texto }));
+  return (filas ?? []).map((f) => ({ id: f.id, texto: f.texto }));
 }
