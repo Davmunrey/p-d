@@ -47,14 +47,47 @@ jobs:
         env:
           TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           CLAVE: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          PROYECTO: ${{ vars.SUPABASE_PROJECT_REF }}
+          # De la variable, o del secreto si alguien lo guardó ahí. El sitio
+          # bueno es Variables —no es un secreto, sale en la URL del dashboard,
+          # y como secreto los registros lo tapan justo cuando hace falta
+          # leerlo—, pero equivocarse de pestaña es facilísimo y el síntoma era
+          # un tic verde sin haber aplicado nada. Se acepta de los dos sitios y
+          # se avisa; que funcione no depende de acertar a la primera.
+          PROYECTO: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
+          EN_VARIABLES: ${{ vars.SUPABASE_PROJECT_REF != '' }}
+        # SALTARSE ESTO EN SILENCIO SÓLO VALE CUANDO NADIE LO HA PEDIDO.
+        #
+        # Si el flujo salta solo al mergear a `main` y aún no hay credenciales,
+        # avisar y seguir es lo correcto: no tiene sentido teñir de rojo un
+        # despliegue por una configuración que todavía no está.
+        #
+        # Pero si alguien le ha dado al botón, ha pedido que se apliquen las
+        # migraciones. Devolverle un tic verde habiendo hecho nada es mentirle
+        # —pasó, y el aviso se perdió entre cien líneas de registro—, así que
+        # ahí se falla y se dice exactamente qué falta.
         run: |
-          if [ -n "$TOKEN" ] && [ -n "$CLAVE" ] && [ -n "$PROYECTO" ]; then
+          faltan=""
+          [ -z "$TOKEN" ]    && faltan="$faltan SUPABASE_ACCESS_TOKEN(secreto)"
+          [ -z "$CLAVE" ]    && faltan="$faltan SUPABASE_DB_PASSWORD(secreto)"
+          [ -z "$PROYECTO" ] && faltan="$faltan SUPABASE_PROJECT_REF(pestaña_Variables)"
+
+          if [ -z "$faltan" ]; then
             echo "hay=si" >> "$GITHUB_OUTPUT"
-          else
-            echo "hay=no" >> "$GITHUB_OUTPUT"
-            echo "::warning::Faltan SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD o la variable SUPABASE_PROJECT_REF. Ver docs/ENTORNO.md. Las migraciones no se aplican."
+            echo "proyecto=$PROYECTO" >> "$GITHUB_OUTPUT"
+            if [ "$EN_VARIABLES" != "true" ]; then
+              echo "::warning::SUPABASE_PROJECT_REF está en Secrets. Funciona, pero su sitio es la pestaña Variables: como secreto, los registros lo tapan con asteriscos justo cuando hace falta leerlo para depurar."
+            fi
+            exit 0
           fi
+
+          echo "hay=no" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "::error::Se ha pedido aplicar las migraciones, pero falta:$faltan. Ver docs/ENTORNO.md. No se ha aplicado nada."
+            exit 1
+          fi
+
+          echo "::warning::Falta:$faltan. Ver docs/ENTORNO.md. Las migraciones no se aplican."
 
       - uses: supabase/setup-cli@v1
         if: steps.credenciales.outputs.hay == 'si'
@@ -65,7 +98,7 @@ jobs:
         if: steps.credenciales.outputs.hay == 'si'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: supabase link --project-ref "${{ vars.SUPABASE_PROJECT_REF }}"
+        run: supabase link --project-ref "${{ steps.credenciales.outputs.proyecto }}"
 
       - name: Ver qué se va a aplicar
         if: steps.credenciales.outputs.hay == 'si'

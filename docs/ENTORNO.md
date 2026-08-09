@@ -20,18 +20,38 @@ solo están los **nombres**.
 **Settings → Environment Variables.** Marcar las tres ramas (Production,
 Preview, Development) salvo que se indique otra cosa.
 
-| Variable                        | De dónde se saca                                                                    |
-| ------------------------------- | ----------------------------------------------------------------------------------- |
-| `DATABASE_URL`                  | Supabase → Project Settings → Database → **Connection pooling**, modo `transaction` |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase → Project Settings → API → Project URL                                     |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → `anon` `public`                                 |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Supabase → Project Settings → API → `service_role` **secret**                       |
-| `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                          |
+| Variable                        | De dónde se saca                                                                          |
+| ------------------------------- | ----------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                  | Botón **Connect** del dashboard → pestaña **Transaction pooler**                          |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Botón **Connect** → pestaña de frameworks, o Settings → **API Keys**                      |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Igual que la anterior: salen juntas                                                       |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Settings → **API Keys** → `service_role`. **Todavía no hace falta**: ningún código la usa |
+| `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                                |
 
 **El pooler, no la conexión directa.** Cada petición a la web arranca una
 función efímera; con conexión directa se agotan las conexiones del servidor en
 cuanto hay algo de tráfico. El pooler en modo `transaction` está hecho
-exactamente para esto.
+exactamente para esto. Además, la directa sólo responde por IPv6 salvo que se
+contrate el add-on de IPv4, y las funciones de Vercel salen por IPv4.
+
+Se distinguen a simple vista, y confundirlas es el error habitual:
+
+|         | Directa                | Transaction pooler       |
+| ------- | ---------------------- | ------------------------ |
+| Usuario | `postgres`             | `postgres.<project-ref>` |
+| Host    | `db.<ref>.supabase.co` | `…pooler.supabase.com`   |
+| Puerto  | `5432`                 | `6543`                   |
+
+El modo `transaction` no admite sentencias preparadas; por eso
+`src/lib/bbdd/cliente.ts` va con `prepare: false`. Sin esa opción las consultas
+fallan de forma intermitente.
+
+**La contraseña lleva escapado de URL.** Si tiene `@`, `:`, `/`, `#` o `?` hay
+que codificarla, o la cadena se parte y el error habla de un host que no existe.
+
+**La misma contraseña vive en dos sitios**: dentro de `DATABASE_URL` en Vercel y
+suelta como `SUPABASE_DB_PASSWORD` en GitHub. Al rotarla hay que cambiar las
+dos; tocar sólo una deja el otro sistema fallando por autenticación.
 
 **`SUPABASE_SERVICE_ROLE_KEY` se salta todas las políticas RLS.** Nunca puede
 llevar el prefijo `NEXT_PUBLIC_`, porque eso la metería en el JavaScript que
@@ -87,11 +107,11 @@ lo único que necesita credenciales.
 
 **Settings → Secrets and variables → Actions.**
 
-| Dónde                     | Nombre                  | De dónde sale                                                      |
-| ------------------------- | ----------------------- | ------------------------------------------------------------------ |
-| Secrets                   | `SUPABASE_ACCESS_TOKEN` | supabase.com/dashboard/account/tokens → Generate new token         |
-| Secrets                   | `SUPABASE_DB_PASSWORD`  | La contraseña de la base, en Project Settings → Database           |
-| **Variables**, no secrets | `SUPABASE_PROJECT_REF`  | El identificador del proyecto, el que sale en la URL del dashboard |
+| Dónde                     | Nombre                  | De dónde sale                                                         |
+| ------------------------- | ----------------------- | --------------------------------------------------------------------- |
+| Secrets                   | `SUPABASE_ACCESS_TOKEN` | supabase.com/dashboard/account/tokens → Generate new token            |
+| Secrets                   | `SUPABASE_DB_PASSWORD`  | La contraseña de la base: **Database Settings**, `/database/settings` |
+| **Variables**, no secrets | `SUPABASE_PROJECT_REF`  | El identificador del proyecto, el que sale en la URL del dashboard    |
 
 El tercero va en _Variables_ y no en _Secrets_ porque no lo es: aparece en la
 URL del panel de Supabase. Guardarlo como secreto solo conseguiría que los
