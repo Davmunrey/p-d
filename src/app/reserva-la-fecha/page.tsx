@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { BotonEnlace } from "@/components/ui/boton";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { IDIOMA, ZONA_HORARIA } from "@/config/constants";
+import { IDIOMA, RUTA_CALENDARIO, ZONA_HORARIA } from "@/config/constants";
 import { obtenerConfiguracion, obtenerSecciones } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 
@@ -110,8 +110,18 @@ export default async function PaginaReservaLaFecha() {
           {t("saveTheDate.nota")}
         </p>
 
-        <div className="mt-elemento">
-          <BotonEnlace href="/">{t("saveTheDate.verLaWeb")}</BotonEnlace>
+        <div className="mt-elemento flex flex-wrap justify-center gap-interno">
+          {/*
+            Enlace normal y no `next/link`: el destino no es una página, es un
+            fichero que se descarga. Con el enrutador de Next por medio, el
+            navegador intentaría navegar a él.
+          */}
+          <BotonEnlace href={RUTA_CALENDARIO} prefetch={false} download>
+            {t("saveTheDate.anadirCalendario")}
+          </BotonEnlace>
+          <BotonEnlace href="/" jerarquia="secundario">
+            {t("saveTheDate.verLaWeb")}
+          </BotonEnlace>
         </div>
       </div>
     </main>

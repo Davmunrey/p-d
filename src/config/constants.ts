@@ -42,3 +42,18 @@ export const IDIOMA = "es-ES";
 
 /** Zona horaria de referencia para fechas y cuentas atrás. */
 export const ZONA_HORARIA = "Europe/Madrid";
+
+/** Nombre con el que se descarga el evento de la boda para el calendario. */
+export const NOMBRE_FICHERO_CALENDARIO = "nuestra-boda.ics";
+
+/**
+ * Cuánto dura el evento que se apunta en el calendario, contando desde el
+ * último hito con hora conocida. La base guarda cuándo *empieza* la ceremonia
+ * y cuándo *empieza* el banquete, pero no cuándo acaba la fiesta — y nadie lo
+ * sabe de antemano. Marcar un rato largo es mejor que dejar un evento que
+ * parece terminar cuando en realidad empieza lo bueno.
+ */
+export const HORAS_DURACION_EVENTO = 6;
+
+/** Descarga del evento para el calendario. La escriben la página y su test. */
+export const RUTA_CALENDARIO = "/reserva-la-fecha/evento.ics";

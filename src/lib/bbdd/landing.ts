@@ -19,6 +19,7 @@ export interface ConfiguracionBoda {
   nombreNovia: string;
   nombreNovio: string;
   fechaCeremonia: Date;
+  fechaBanquete: Date | null;
   fechaLimiteRsvp: Date | null;
   lugarCeremonia: string | null;
   direccionCeremonia: string | null;
@@ -118,6 +119,7 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
         nombre_novia: string;
         nombre_novio: string;
         fecha_hora_ceremonia: Date;
+        fecha_hora_banquete: Date | null;
         fecha_limite_rsvp: Date | null;
         lugar_ceremonia: string | null;
         direccion_ceremonia: string | null;
@@ -129,7 +131,7 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
       }[]
     >`
       select
-        nombre_novia, nombre_novio, fecha_hora_ceremonia, fecha_limite_rsvp,
+        nombre_novia, nombre_novio, fecha_hora_ceremonia, fecha_hora_banquete, fecha_limite_rsvp,
         lugar_ceremonia, direccion_ceremonia, lugar_banquete,
         latitud_ceremonia, longitud_ceremonia, correo_contacto, hashtag
       from public.v_configuracion_publica
@@ -144,6 +146,7 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
     nombreNovia: fila.nombre_novia,
     nombreNovio: fila.nombre_novio,
     fechaCeremonia: fila.fecha_hora_ceremonia,
+    fechaBanquete: fila.fecha_hora_banquete,
     fechaLimiteRsvp: fila.fecha_limite_rsvp,
     lugarCeremonia: fila.lugar_ceremonia,
     direccionCeremonia: fila.direccion_ceremonia,
