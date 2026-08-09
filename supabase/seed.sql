@@ -102,6 +102,15 @@ update public.configuracion_privada set
   telefono_contacto    = '+34 600 000 000',
   notas_privadas       = '(DES) Fila de desarrollo. No son cifras reales.';
 
+-- La reserva de fecha nace apagada en la migración base, que es lo correcto en
+-- producción: no se publica hasta que los novios lo deciden. En desarrollo se
+-- enciende, porque el entorno tiene que parecerse a una web ya publicada y
+-- porque si no, no hay forma de probar la página.
+--
+-- `regalos` se queda apagada a propósito: hace de sección de control para
+-- comprobar que una sección invisible no se cuela en la navegación.
+update public.secciones_landing set visible = true where seccion = 'reserva_la_fecha';
+
 
 -- ----------------------------------------------------------------------------
 -- 2. Invitados
