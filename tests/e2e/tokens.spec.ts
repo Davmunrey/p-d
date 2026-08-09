@@ -160,3 +160,62 @@ test.describe("Movimiento reducido", () => {
     expect(duracion).toBe("0.1s");
   });
 });
+
+/**
+ * La prueba de fuego del sistema de tokens: los MISMOS componentes, sin una
+ * sola clase distinta, dentro de un bloque inverso. Si esto funciona, cambiar
+ * el aspecto de una sección entera no obliga a tocar ningún componente.
+ */
+test.describe("Bloques inversos", () => {
+  test("los mismos componentes se adaptan sin cambiar de clase", async ({ page }) => {
+    await page.goto("/cocina");
+
+    const bloque = page.locator('[data-prueba="bloque-inverso"]');
+    await expect(bloque).toBeVisible();
+
+    const { normal, inverso } = await page.evaluate(() => {
+      const dentro = document.querySelector('[data-prueba="bloque-inverso"]')!;
+      const raiz = getComputedStyle(document.documentElement);
+      return {
+        normal: raiz.getPropertyValue("--fondo").trim(),
+        inverso: getComputedStyle(dentro).getPropertyValue("--fondo").trim(),
+      };
+    });
+
+    expect(inverso).not.toBe("");
+    expect(inverso).not.toBe(normal);
+  });
+
+  test("el texto del bloque inverso mantiene contraste suficiente", async ({ page }) => {
+    await page.goto("/cocina");
+
+    // Comprobación real de contraste: el color de texto computado dentro del
+    // bloque tiene que separarse del fondo del propio bloque, no del de la
+    // página. Un bloque inverso mal resuelto da texto oscuro sobre oscuro.
+    const ratio = await page.evaluate(() => {
+      const bloque = document.querySelector('[data-prueba="bloque-inverso"]') as HTMLElement;
+      const estilo = getComputedStyle(bloque);
+
+      const luminancia = (color: string) => {
+        const [r, g, b] = color
+          .match(/\d+(\.\d+)?/g)!
+          .slice(0, 3)
+          .map(Number);
+        const canal = (v: number) => {
+          const s = v / 255;
+          return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+        };
+        return 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
+      };
+
+      const lFondo = luminancia(estilo.backgroundColor);
+      const lTexto = luminancia(estilo.color);
+      const claro = Math.max(lFondo, lTexto);
+      const oscuro = Math.min(lFondo, lTexto);
+      return (claro + 0.05) / (oscuro + 0.05);
+    });
+
+    // AA para texto normal exige 4.5:1.
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+});

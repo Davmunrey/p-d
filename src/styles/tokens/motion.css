@@ -106,6 +106,33 @@
 }
 
 /* --------------------------------------------------------------------------
+ * Transiciones
+ *
+ * Tailwind genera `duration-*` a partir de números sueltos, lo que obligaría a
+ * escribir `duration-[250ms]` en cada componente: un valor arbitrario, justo lo
+ * que la regla 1 prohíbe. Estas utilidades encapsulan la transición completa
+ * en un token con nombre.
+ * ----------------------------------------------------------------------- */
+
+@utility transicion-color {
+  transition:
+    color var(--transicion-color),
+    background-color var(--transicion-color),
+    border-color var(--transicion-color),
+    box-shadow var(--transicion-color);
+}
+
+@utility transicion-transformacion {
+  transition:
+    transform var(--transicion-transformacion),
+    opacity var(--transicion-transformacion);
+}
+
+@utility transicion-suave {
+  transition: all var(--transicion-aparicion);
+}
+
+/* --------------------------------------------------------------------------
  * Utilidades de entrada
  *
  * `-al-ver` reproduce la animación cuando el elemento entra en el viewport;

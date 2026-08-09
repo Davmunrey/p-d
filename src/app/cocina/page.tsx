@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 
+import { Boton } from "@/components/ui/boton";
+import { CampoTexto } from "@/components/ui/campo";
 import { SelectorTema } from "@/components/ui/selector-tema";
+import { Cita, Etiqueta } from "@/components/ui/tipografia";
 import {
   ANIMACIONES,
   GRUPOS_COLOR,
@@ -135,6 +138,48 @@ export default function PaginaCocina() {
             </li>
           ))}
         </ul>
+      </Seccion>
+
+      <Seccion titulo={t("cocina.seccionComponentes")}>
+        <div className="grid gap-elemento sm:grid-cols-2">
+          <div className="grid content-start gap-pila">
+            <Etiqueta>{t("cocina.botonPrimario")}</Etiqueta>
+            <div className="flex flex-wrap items-center gap-interno">
+              <Boton>{t("cocina.botonPrimario")}</Boton>
+              <Boton jerarquia="secundario">{t("cocina.botonSecundario")}</Boton>
+              <Boton jerarquia="terciario">{t("cocina.botonTerciario")}</Boton>
+              <Boton disabled>{t("cocina.botonDesactivado")}</Boton>
+            </div>
+          </div>
+
+          <div className="grid content-start gap-pila">
+            <CampoTexto etiqueta={t("rsvp.nombre")} placeholder="Paloma Fernández" />
+            <CampoTexto
+              etiqueta={t("rsvp.contacto")}
+              ayuda={t("rsvp.contactoAyuda")}
+              error={t("errores.emailInvalido")}
+              defaultValue="correo@"
+            />
+          </div>
+        </div>
+
+        {/*
+          La prueba de fuego del sistema: exactamente los mismos componentes,
+          sin una sola clase distinta, dentro de un bloque inverso.
+        */}
+        <div
+          data-seccion="inversa"
+          className="mt-elemento rounded-tarjeta p-elemento"
+          data-prueba="bloque-inverso"
+        >
+          <Etiqueta>{t("cocina.seccionInversa")}</Etiqueta>
+          <div className="mt-pila flex flex-wrap items-center gap-interno">
+            <Boton>{t("cocina.botonPrimario")}</Boton>
+            <Boton jerarquia="secundario">{t("cocina.botonSecundario")}</Boton>
+            <Boton jerarquia="terciario">{t("cocina.botonTerciario")}</Boton>
+          </div>
+          <Cita className="mt-pila">{t("cocina.muestraTipografica")}</Cita>
+        </div>
       </Seccion>
     </main>
   );

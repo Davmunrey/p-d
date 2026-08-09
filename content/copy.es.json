@@ -13,16 +13,99 @@
     "no": "No"
   },
   "errores": {
-    "generico": "Algo no ha ido bien. Inténtalo de nuevo en un momento.",
+    "generico": "Algo no ha ido bien. Intentadlo de nuevo en un momento.",
     "noEncontrado": "No hemos encontrado esta página.",
-    "sinPermiso": "No tienes acceso a esta sección.",
+    "sinPermiso": "No tenéis acceso a esta sección.",
     "campoObligatorio": "Este campo es obligatorio.",
-    "emailInvalido": "Revisa el correo electrónico.",
+    "emailInvalido": "Revisad el correo, parece incompleto.",
     "sinConexion": "Parece que no hay conexión."
   },
   "meta": {
-    "titulo": "Nuestra boda",
-    "descripcion": "Toda la información de nuestro gran día."
+    "titulo": "Paloma y David",
+    "descripcion": "Nos casamos. Aquí tenéis todo lo que necesitáis saber."
+  },
+  "navegacion": {
+    "inicio": "Inicio",
+    "programa": "Programa",
+    "alojamiento": "Alojamiento",
+    "comoLlegar": "Cómo llegar",
+    "playlist": "Playlist",
+    "confirmar": "Confirmar",
+    "irAlContenido": "Ir al contenido"
+  },
+  "portada": {
+    "etiquetaFecha": "La fecha",
+    "etiquetaLugar": "El lugar",
+    "confirmarAsistencia": "Confirmar asistencia",
+    "verElDia": "Ver el día",
+    "altHero": "Paloma y David"
+  },
+  "cuentaAtras": {
+    "titulo": "Nos vemos en",
+    "dias": "días",
+    "horas": "horas",
+    "minutos": "minutos",
+    "segundos": "segundos",
+    "yaEsHoy": "Hoy es el día"
+  },
+  "programa": {
+    "etiqueta": "El día, hora a hora",
+    "titulo": "El día, hora a hora"
+  },
+  "alojamiento": {
+    "etiqueta": "Dónde dormir",
+    "titulo": "Alojamiento",
+    "reservar": "Reservar"
+  },
+  "comoLlegar": {
+    "etiqueta": "El lugar",
+    "titulo": "Cómo llegar",
+    "abrirMapa": "Abrir en el mapa"
+  },
+  "playlist": {
+    "etiqueta": "La pista de baile es cosa de todos",
+    "titulo": "Playlist colaborativa",
+    "descripcion": "Dejadnos la canción que no puede faltar. La añadiremos a la lista que sonará esa noche.",
+    "campoCancion": "Canción y artista",
+    "anadir": "Añadir",
+    "anadida": "Apuntada. Gracias.",
+    "vacia": "Todavía no hay canciones. Estrenad la lista."
+  },
+  "rsvp": {
+    "titulo": "Confirmad asistencia",
+    "nombre": "Nombre y apellidos",
+    "contacto": "Email o teléfono",
+    "contactoAyuda": "para avisaros de cambios",
+    "pregunta": "¿Vendréis?",
+    "sinAsistencia": "No podré ir",
+    "conAsistencia": "Sí, allí estaremos",
+    "personas": "Nº de personas",
+    "autobus": "Autobús",
+    "menu": "Alergias o menú especial",
+    "menuAyuda": "Celíaco, vegetariano, sin lactosa…",
+    "mensaje": "Un mensaje para nosotros",
+    "mensajeAyuda": "Opcional",
+    "enviar": "Enviar confirmación",
+    "enviando": "Enviando…",
+    "indicadAsistencia": "Indicadnos si podréis venir.",
+    "graciasSi": "Qué alegría",
+    "graciasSiTexto": "Queda apuntado. Os escribiremos unas semanas antes con los últimos detalles.",
+    "graciasNo": "Os echaremos de menos",
+    "graciasNoTexto": "Gracias por decírnoslo. Brindaremos por vosotros y os guardaremos un trozo de tarta.",
+    "editarRespuesta": "Cambiar la respuesta",
+    "tokenInvalido": "Este enlace no es válido. Escribidnos y os mandamos uno nuevo.",
+    "plazoCerrado": "El plazo para confirmar ya se ha cerrado. Escribidnos y lo miramos."
+  },
+  "saveTheDate": {
+    "etiqueta": "Reservad la fecha",
+    "abrir": "Abrir la invitación",
+    "pista": "Tocad el sello para abrir",
+    "nota": "La invitación con todos los detalles llegará más adelante.",
+    "anadirCalendario": "Añadir al calendario",
+    "verLaWeb": "Ver la web"
+  },
+  "pie": {
+    "escribidnos": "Escribidnos"
   },
   "cocina": {
     "titulo": "Sistema de diseño",
@@ -32,6 +115,7 @@
     "seccionEspaciado": "Espaciado",
     "seccionForma": "Forma y sombra",
     "seccionMovimiento": "Movimiento",
+    "seccionComponentes": "Componentes",
     "grupoSuperficies": "Superficies",
     "grupoTinta": "Texto",
     "grupoMarca": "Marca y acento",
@@ -42,7 +126,12 @@
     "temaSistema": "Sistema",
     "cambiarTema": "Cambiar tema",
     "pruebaMovimiento": "Reproducir animación",
+    "avisoMovimiento": "Con «movimiento reducido» activado en el sistema, estas animaciones se reducen a una aparición corta.",
     "muestraTipografica": "Nos casamos",
-    "avisoMovimiento": "Con «movimiento reducido» activado en el sistema, estas animaciones se reducen a una aparición corta."
+    "botonPrimario": "Primario",
+    "botonSecundario": "Secundario",
+    "botonTerciario": "Terciario",
+    "botonDesactivado": "Desactivado",
+    "seccionInversa": "Bloque inverso: los mismos componentes, sin cambiar una clase"
   }
 }
