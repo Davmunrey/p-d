@@ -29,7 +29,7 @@ número ya dice de qué va:
 | --------------------- | ---------------- | -------------------------------------------- |
 | `e1-cimientos`        | `BODA-01` → `06` | Proyecto, tokens, copys, calidad, despliegue |
 | `e2-base-de-datos`    | `BODA-10` → `14` | Esquema, RLS y funciones públicas            |
-| `e3-landing`          | `BODA-20` → `28` | La web que ven los invitados                 |
+| `e3-landing`          | `BODA-20` → `29` | La web que ven los invitados                 |
 | `e4-save-the-date`    | `BODA-30` → `32` | Reserva de fecha y calendario                |
 | `e5-auth-y-panel`     | `BODA-40` → `43` | Acceso privado y esqueleto del panel         |
 | `e6-invitados-y-rsvp` | `BODA-50` → `58` | Invitados y confirmaciones                   |
