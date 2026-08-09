@@ -69,12 +69,17 @@ test.describe("Dentro del panel", () => {
     await expect(page.getByLabel(copy.panel.cuenta.nombre)).toHaveValue(nombre);
   });
 
-  test("un nombre vacío no se guarda", async ({ page }) => {
+  test("un nombre de sólo espacios no se guarda", async ({ page }) => {
     await page.goto(RUTA_CUENTA);
     const campo = page.getByLabel(copy.panel.cuenta.nombre);
     const original = await campo.inputValue();
 
-    await campo.fill(" ");
+    // DOS espacios, y no uno, a propósito. Con uno el navegador ni siquiera
+    // envía el formulario —lo para su propio `minlength`— y lo que se estaría
+    // probando es el navegador, no nuestro código. Con dos pasa esa criba y
+    // llega al servidor, que es quien tiene que darse cuenta de que un nombre
+    // que al recortarlo se queda en nada no es un nombre.
+    await campo.fill("  ");
     await page.getByRole("button", { name: copy.panel.cuenta.guardar }).click();
 
     await expect(page.getByRole("main").getByRole("alert")).toHaveText(
