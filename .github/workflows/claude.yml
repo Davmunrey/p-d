@@ -1,0 +1,66 @@
+name: Claude
+
+# Permite trabajar desde GitHub sin abrir un terminal: se menciona `@claude` en
+# una incidencia, en una PR o en un comentario de revisión y el trabajo empieza
+# ahí mismo, con el contexto de ese hilo.
+#
+# El flujo NO forma parte del CI: solo se dispara con la mención, así que nunca
+# bloquea ni tiñe de rojo una PR normal.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened, assigned]
+
+jobs:
+  claude:
+    name: Atender la mención
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      # Para poder leer por qué ha fallado el CI de una PR.
+      actions: read
+    steps:
+      - name: Comprobar que hay credencial
+        id: credencial
+        env:
+          TOKEN_SUSCRIPCION: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAVE_API: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$TOKEN_SUSCRIPCION" ] || [ -n "$CLAVE_API" ]; then
+            echo "hay=si" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=no" >> "$GITHUB_OUTPUT"
+            echo "::warning::Falta el secreto CLAUDE_CODE_OAUTH_TOKEN (o ANTHROPIC_API_KEY). Ver docs/ENTORNO.md. La mención se ignora."
+          fi
+
+      - name: Descargar el repositorio
+        if: steps.credencial.outputs.hay == 'si'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Trabajar sobre la mención
+        if: steps.credencial.outputs.hay == 'si'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Las órdenes del proyecto se leen de CLAUDE.md, que es donde viven
+          # las reglas. Aquí solo se abren los comandos que hacen falta para
+          # poder verificar el trabajo antes de subirlo.
+          claude_args: |
+            --allowedTools "Bash(npm ci),Bash(npm run verificar),Bash(npm run typecheck),Bash(npm run lint),Bash(npm run lint:css),Bash(npm run format),Bash(npm run format:check),Bash(npm run test),Bash(npm run build)"

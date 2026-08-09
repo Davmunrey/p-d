@@ -357,7 +357,7 @@ _Idioma resuelto: solo castellano._
 
 ## 13. Cómo trabajamos
 
-- **Se trabaja por tickets**, no por fases sueltas. El board está en [`docs/BACKLOG.md`](./BACKLOG.md).
+- **Se trabaja por tickets**, no por fases sueltas. El board está en [GitHub Issues](https://github.com/Davmunrey/p-d/issues); cómo se lee, en [`docs/BACKLOG.md`](./BACKLOG.md).
 - Una rama por ticket (`feat/BODA-12-tabla-invitados`), PR con deploy preview, merge a `main` = deploy a producción.
 - Toda migración de BBDD entra por PR con su SQL de rollback.
 - Este documento se actualiza en la misma PR que introduce el cambio que lo afecta.
@@ -407,4 +407,8 @@ Entorno de test: proyecto Supabase de staging con seed determinista, reseteado a
 
 ## 15. Board
 
-El backlog vive en [`docs/BACKLOG.md`](./BACKLOG.md): tickets con ID, épica, estimación, dependencias, criterios de aceptación y su test E2E asociado. Se mantiene sincronizado con GitHub Issues (mismo ID) para poder enlazarlos desde las PRs.
+El backlog vive en [GitHub Issues](https://github.com/Davmunrey/p-d/issues): un ticket por incidencia, con su código `BODA-XX` en el título, épica y talla como etiquetas, dependencias enlazadas con `#` y sus criterios de aceptación y test E2E en el cuerpo.
+
+Está en GitHub y no en un fichero del repositorio a propósito. Es donde ya están la PR, el CI y el deploy preview, así que un ticket se cierra al mergear (`Closes #NN`) en lugar de editando un Markdown que tarde o temprano discrepa del estado real. Las etiquetas sí son configuración versionada: viven en [`.github/etiquetas.json`](../.github/etiquetas.json) y un flujo de Actions las reconcilia, de modo que el board se puede reconstruir entero desde el repositorio.
+
+[`docs/BACKLOG.md`](./BACKLOG.md) explica cómo leerlo: épicas, tallas, camino crítico y el ciclo de un ticket.

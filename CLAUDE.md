@@ -1,6 +1,6 @@
 # Reglas del proyecto
 
-Web de boda: landing pública + panel privado de gestión. Documentación en [`docs/PLAN-MAESTRO.md`](./docs/PLAN-MAESTRO.md), board en [`docs/BACKLOG.md`](./docs/BACKLOG.md).
+Web de boda: landing pública + panel privado de gestión. Documentación en [`docs/PLAN-MAESTRO.md`](./docs/PLAN-MAESTRO.md); el board son las [incidencias de GitHub](https://github.com/Davmunrey/p-d/issues), y [`docs/BACKLOG.md`](./docs/BACKLOG.md) explica cómo se leen.
 
 Estas reglas son **innegociables** y aplican a todo cambio, sin excepción.
 
@@ -65,7 +65,8 @@ Precedencia ante conflicto: **estas reglas > skills de diseño > preferencia per
 
 ## Cómo trabajamos
 
-- Se trabaja **por tickets** del backlog. Una rama por ticket: `feat/BODA-12-tabla-invitados`, siempre creada desde `main` actualizado.
+- Se trabaja **por tickets**, que son incidencias de GitHub. Una rama por ticket: `feat/BODA-12-tabla-invitados`, siempre creada desde `main` actualizado.
+- La PR lleva `Closes #NN` en el cuerpo: la incidencia se cierra al mergear, nunca a mano.
 - PR con deploy preview → merge a `main` → producción.
 - **Mergear no requiere pedir permiso: se mergea en cuanto el CI está verde.** Verde significa todo — typecheck, lint, stylelint, formato, unitarios y E2E. Nunca se mergea con un check en rojo, ni se relaja o desactiva un test para conseguirlo: si algo falla, se arregla la causa.
 - Toda migración de BBDD entra por PR con su SQL de rollback.

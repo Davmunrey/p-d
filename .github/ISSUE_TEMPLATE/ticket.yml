@@ -1,0 +1,91 @@
+name: Ticket de trabajo
+description: Una unidad de trabajo que acaba en una rama, una PR y un deploy preview.
+title: "BODA-00 · "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Un ticket es lo que cabe en una PR. Si al describirlo salen dos cosas
+        que se pueden entregar por separado, son dos tickets.
+
+        Sustituye `BODA-00` en el título por el siguiente número libre de su
+        épica (las decenas marcan la épica: 20-29 landing, 50-59 invitados…).
+
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Qué hay que hacer
+      description: En dos o tres frases, y desde el punto de vista de quien lo va a usar.
+      placeholder: Que los invitados puedan ver el listado de alojamientos con su distancia a la finca.
+    validations:
+      required: true
+
+  - type: textarea
+    id: aceptacion
+    attributes:
+      label: Criterios de aceptación
+      description: Qué tiene que ser cierto para darlo por hecho. Comprobables, no opiniones.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: e2e
+    attributes:
+      label: Test E2E
+      description: |
+        Camino feliz **y al menos un caso de error**. Regla 4 del proyecto: un
+        módulo sin test se considera no entregado.
+      placeholder: |
+        Feliz: la sección lista los alojamientos publicados en la BBDD.
+        Error: un alojamiento en borrador no aparece.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: talla
+    attributes:
+      label: Talla
+      options:
+        - S · medio día
+        - M · un día
+        - L · dos días
+    validations:
+      required: true
+
+  - type: input
+    id: dependencias
+    attributes:
+      label: Depende de
+      description: Tickets que tienen que estar cerrados antes. Referéncialos con `#`.
+      placeholder: "#12, #15"
+
+  - type: textarea
+    id: datos
+    attributes:
+      label: De dónde salen los datos y los textos
+      description: |
+        Regla 1 del proyecto. Ningún valor se escribe en el componente: los
+        colores y espaciados son tokens, los textos van a `content/copy.es.json`,
+        los datos de la boda a la base de datos y los límites a
+        `src/config/constants.ts`. Di aquí qué hace falta crear.
+      placeholder: |
+        Tabla `alojamientos` (ya existe). Copys nuevos: `alojamiento.titulo`,
+        `alojamiento.distancia`. Token nuevo: ninguno.
+
+  - type: checkboxes
+    id: cierre
+    attributes:
+      label: Definition of Done
+      description: Se marca en la PR, no aquí. Está a la vista para que nadie lo dé por supuesto.
+      options:
+        - label: Funciona contra la BBDD real, sin mocks ni datos de ejemplo incrustados
+        - label: Cero hardcode
+        - label: Test E2E incluido, con su caso de error
+        - label: CI verde entero
+        - label: Responsive en móvil, tablet y escritorio
+        - label: Accesible por teclado, con foco visible, contraste AA y `prefers-reduced-motion`
+        - label: Pasado por las skills de diseño
+        - label: Revisado en el deploy preview

@@ -1,0 +1,52 @@
+name: Algo no funciona
+description: Una parte que ya estaba entregada se comporta mal.
+title: "Error · "
+labels: ["error"]
+body:
+  - type: textarea
+    id: que-pasa
+    attributes:
+      label: Qué pasa
+      description: Qué esperabas ver y qué ves en su lugar.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproducir
+    attributes:
+      label: Cómo reproducirlo
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: input
+    id: donde
+    attributes:
+      label: Dónde
+      description: URL exacta. Si es un preview de una PR, pega el enlace del preview.
+      placeholder: https://…/rsvp/xxxx
+    validations:
+      required: true
+
+  - type: dropdown
+    id: dispositivo
+    attributes:
+      label: Dónde lo has visto
+      multiple: true
+      options:
+        - Móvil
+        - Tablet
+        - Escritorio
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: datos-personales
+    attributes:
+      label: Antes de enviar
+      options:
+        - label: No he pegado teléfonos, correos, tokens de invitación ni claves. Las incidencias son públicas.
+          required: true

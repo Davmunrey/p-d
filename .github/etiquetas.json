@@ -1,0 +1,102 @@
+[
+  {
+    "nombre": "e1-cimientos",
+    "color": "3c4233",
+    "descripcion": "Épica 1 · Proyecto, tokens, copys, calidad y despliegue"
+  },
+  {
+    "nombre": "e2-base-de-datos",
+    "color": "3c4233",
+    "descripcion": "Épica 2 · Esquema, RLS y funciones públicas"
+  },
+  {
+    "nombre": "e3-landing",
+    "color": "6b7060",
+    "descripcion": "Épica 3 · Web pública para los invitados"
+  },
+  {
+    "nombre": "e4-save-the-date",
+    "color": "6b7060",
+    "descripcion": "Épica 4 · Página de reserva de fecha y calendario"
+  },
+  {
+    "nombre": "e5-auth-y-panel",
+    "color": "8a8f7d",
+    "descripcion": "Épica 5 · Acceso privado y esqueleto del panel"
+  },
+  {
+    "nombre": "e6-invitados-y-rsvp",
+    "color": "8a8f7d",
+    "descripcion": "Épica 6 · Gestión de invitados y confirmaciones"
+  },
+  {
+    "nombre": "e7-presupuesto",
+    "color": "b8a67a",
+    "descripcion": "Épica 7 · Partidas, pagos y desvíos"
+  },
+  {
+    "nombre": "e8-proveedores",
+    "color": "b8a67a",
+    "descripcion": "Épica 8 · Proveedores, contratos y servicios"
+  },
+  {
+    "nombre": "e9-tareas-y-mesas",
+    "color": "b8a67a",
+    "descripcion": "Épica 9 · Tareas y plano de mesas"
+  },
+  {
+    "nombre": "e10-produccion",
+    "color": "9c6b4f",
+    "descripcion": "Épica 10 · Rendimiento, accesibilidad, SEO y respaldos"
+  },
+  {
+    "nombre": "e11-dia-de-la-boda",
+    "color": "9c6b4f",
+    "descripcion": "Épica 11 · Lo que se usa el día D, desde el móvil"
+  },
+  {
+    "nombre": "e12-comunicacion",
+    "color": "9c6b4f",
+    "descripcion": "Épica 12 · Envíos, recordatorios y mensajes"
+  },
+  {
+    "nombre": "talla-s",
+    "color": "e8e4dc",
+    "descripcion": "Medio día de trabajo"
+  },
+  {
+    "nombre": "talla-m",
+    "color": "cfc9bd",
+    "descripcion": "Un día de trabajo"
+  },
+  {
+    "nombre": "talla-l",
+    "color": "a89f8d",
+    "descripcion": "Dos días de trabajo"
+  },
+  {
+    "nombre": "camino-critico",
+    "color": "b03a2e",
+    "descripcion": "Bloquea poder repartir invitaciones y recibir confirmaciones"
+  },
+  {
+    "nombre": "seguridad",
+    "color": "7d1f14",
+    "descripcion": "Toca RLS, tokens o datos personales. La revisión es bloqueante"
+  },
+  {
+    "nombre": "error",
+    "color": "d64545",
+    "descripcion": "Algo que ya existe no funciona como debería"
+  },
+  {
+    "nombre": "bloqueado",
+    "color": "5b5b5b",
+    "descripcion": "Esperando una decisión, un dato o un acceso externo"
+  },
+  {
+    "nombre": "decision-pendiente",
+    "color": "c99700",
+    "descripcion": "Necesita una respuesta de producto antes de poder empezar"
+  }
+]
