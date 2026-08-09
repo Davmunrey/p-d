@@ -10,20 +10,20 @@ Board de trabajo. Cada ticket es una rama y una PR. Ver [PLAN-MAESTRO.md](./PLAN
 
 ## Resumen
 
-| Épica                 | Tickets      | Estado                       |
-| --------------------- | ------------ | ---------------------------- |
-| E1 · Cimientos        | BODA-01 → 06 | ✅ 5 hechos · 📋 1 pendiente |
-| E2 · Base de datos    | BODA-10 → 14 | 📋 5 pendientes              |
-| E3 · Landing          | BODA-20 → 28 | 📋 9 pendientes              |
-| E4 · Save the Date    | BODA-30 → 32 | 📋 3 pendientes              |
-| E5 · Auth y panel     | BODA-40 → 43 | 📋 4 pendientes              |
-| E6 · Invitados y RSVP | BODA-50 → 58 | 📋 9 pendientes              |
-| E7 · Presupuesto      | BODA-60 → 64 | 📋 5 pendientes              |
-| E8 · Proveedores      | BODA-70 → 74 | 📋 5 pendientes              |
-| E9 · Tareas y seating | BODA-80 → 84 | 📋 5 pendientes              |
-| E10 · Producción      | BODA-90 → 95 | 📋 6 pendientes              |
+| Épica                 | Tickets      | Estado                        |
+| --------------------- | ------------ | ----------------------------- |
+| E1 · Cimientos        | BODA-01 → 06 | ✅ 6 hechos                   |
+| E2 · Base de datos    | BODA-10 → 14 | ✅ 5 hechos                   |
+| E3 · Landing          | BODA-20 → 28 | ✅ 2 hechos · 📋 7 pendientes |
+| E4 · Save the Date    | BODA-30 → 32 | 📋 3 pendientes               |
+| E5 · Auth y panel     | BODA-40 → 43 | 📋 4 pendientes               |
+| E6 · Invitados y RSVP | BODA-50 → 58 | 📋 9 pendientes               |
+| E7 · Presupuesto      | BODA-60 → 64 | 📋 5 pendientes               |
+| E8 · Proveedores      | BODA-70 → 74 | 📋 5 pendientes               |
+| E9 · Tareas y seating | BODA-80 → 84 | 📋 5 pendientes               |
+| E10 · Producción      | BODA-90 → 95 | 📋 6 pendientes               |
 
-**Total: 57 tickets · 5 hechos.**
+**Total: 57 tickets · 13 hechos.**
 
 ---
 
@@ -88,7 +88,7 @@ ESLint + Prettier + Stylelint + Husky + lint-staged. **Las reglas del §2 se apl
 
 ### BODA-06 · Proyecto Supabase y conexión
 
-`📋` · `M` · ← BODA-01
+`✅` · `M` · ← BODA-01
 
 Proyectos de producción y staging. Clientes tipados (browser, servidor, middleware). Supabase CLI para local. Generación automática de tipos.
 
@@ -101,32 +101,32 @@ Proyectos de producción y staging. Clientes tipados (browser, servidor, middlew
 
 ### BODA-10 · Esquema base y convenciones
 
-`📋` · `S` · ← BODA-06
+`✅` · `S` · ← BODA-06
 
 Extensiones, `updated_at` por trigger, helpers de auditoría, tabla `profiles` ligada a `auth.users` con roles.
 
 ### BODA-11 · Configuración de la boda
 
-`📋` · `S` · ← BODA-10
+`✅` · `S` · ← BODA-10
 
 `wedding_settings` (fila única): fecha, lugar, nombres, coordenadas, flags de secciones, fecha límite de RSVP. **Fuente de verdad de todo dato de la boda.**
 **E2E:** cambiar la fecha en BBDD se refleja en la cuenta atrás de la landing.
 
 ### BODA-12 · Invitados
 
-`📋` · `M` · ← BODA-10
+`✅` · `M` · ← BODA-10
 
 `guest_groups`, `guests`, `rsvps` con sus enums. Índice único sobre `invite_token`.
 
 ### BODA-13 · Presupuesto, proveedores y organización
 
-`📋` · `M` · ← BODA-10
+`✅` · `M` · ← BODA-10
 
 `vendor_categories`, `vendors`, `vendor_documents`, `services`, `budget_categories`, `budget_items`, `payments`, `tasks`, `tables`, `media`, `activity_log`. Vistas `v_budget_summary` y `v_guest_stats`.
 
 ### BODA-14 · RLS y funciones públicas
 
-`📋` · `L` · ← BODA-11, BODA-12, BODA-13 · **🔒 crítico**
+`✅` · `L` · ← BODA-11, BODA-12, BODA-13 · **🔒 crítico**
 
 Políticas RLS de todas las tablas + `get_invitation(token)` y `submit_rsvp(token, responses)` como `SECURITY DEFINER` con rate limiting.
 

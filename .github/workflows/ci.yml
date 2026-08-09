@@ -35,6 +35,23 @@ jobs:
       - name: Formato
         run: npm run format:check
 
+  base-de-datos:
+    name: Migraciones y seguridad de la BBDD
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib
+
+      - name: Aplicar migraciones y ejecutar la suite de seguridad
+        # Bloqueante a propósito: comprueba que anon no puede leer ninguna tabla
+        # privada, que nadie se cuela registrándose, y que un invitado no puede
+        # confirmar por otro. Si esto falla, no se mergea.
+        run: sudo ./scripts/probar-bbdd.sh
+
   e2e:
     name: Tests E2E
     runs-on: ubuntu-latest
