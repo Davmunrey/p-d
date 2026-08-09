@@ -1,7 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_ACCESO, RUTA_CONFIRMAR_ACCESO, RUTA_PANEL } from "../../src/config/constants";
+import {
+  RUTA_ACCESO,
+  RUTA_CONFIRMAR_ACCESO,
+  RUTA_NUEVA_CONTRASENA,
+  RUTA_PANEL,
+  RUTA_RECUPERAR,
+} from "../../src/config/constants";
 
 /**
  * BODA-40 · Entrar al panel
@@ -9,11 +15,10 @@ import { RUTA_ACCESO, RUTA_CONFIRMAR_ACCESO, RUTA_PANEL } from "../../src/config
  * Aquí se prueba la puerta con el servidor de autenticación **caído a
  * propósito** (`playwright.config.ts` lo apunta a un puerto cerrado). Puede
  * parecer raro, pero es donde están los fallos que importan: que la puerta se
- * quede abierta cuando algo falla, o que el mensaje de error revele quién tiene
- * acceso.
+ * quede abierta cuando algo falla, o que el error revele quién tiene acceso.
  *
- * El apretón de manos completo —correo, enlace, sesión— necesita un Supabase de
- * verdad y se prueba en su propio trabajo de CI.
+ * El recorrido con credenciales de verdad se prueba en su propio trabajo de
+ * CI, que levanta un Supabase completo.
  */
 
 test.describe("Página de acceso", () => {
@@ -21,16 +26,29 @@ test.describe("Página de acceso", () => {
     await page.goto(RUTA_ACCESO);
   });
 
-  test("pide el correo y nada más", async ({ page }) => {
+  test("pide correo y contraseña", async ({ page }) => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.acceso.titulo);
 
-    const campo = page.getByLabel(copy.acceso.correo);
-    await expect(campo).toBeVisible();
-    await expect(campo).toHaveAttribute("type", "email");
+    const correo = page.getByLabel(copy.acceso.correo);
+    await expect(correo).toBeVisible();
+    await expect(correo).toHaveAttribute("type", "email");
 
-    // Sin contraseñas: si algún día aparece un campo de contraseña aquí, es que
-    // alguien ha cambiado de idea sin decirlo.
-    await expect(page.locator('input[type="password"]')).toHaveCount(0);
+    const contrasena = page.getByLabel(copy.acceso.contrasena);
+    await expect(contrasena).toBeVisible();
+    await expect(contrasena).toHaveAttribute("type", "password");
+  });
+
+  test("el gestor de contraseñas del navegador sabe qué guardar", async ({ page }) => {
+    // Sin estos `autocomplete`, ni el llavero del móvil ni el gestor del
+    // navegador ofrecen guardar ni rellenar, y acaban escribiéndose a mano.
+    await expect(page.getByLabel(copy.acceso.correo)).toHaveAttribute(
+      "autocomplete",
+      "username",
+    );
+    await expect(page.getByLabel(copy.acceso.contrasena)).toHaveAttribute(
+      "autocomplete",
+      "current-password",
+    );
   });
 
   test("no se indexa", async ({ request }) => {
@@ -46,57 +64,95 @@ test.describe("Página de acceso", () => {
     try {
       await pagina.goto(RUTA_ACCESO);
       await pagina.getByLabel(copy.acceso.correo).fill("alguien@ejemplo.test");
-      await pagina.getByRole("button", { name: copy.acceso.enviar }).click();
+      await pagina.getByLabel(copy.acceso.contrasena).fill("una-contrasena-larga");
+      await pagina.getByRole("button", { name: copy.acceso.entrar }).click();
 
-      await expect(pagina.getByRole("main").getByRole("status")).toHaveText(
-        copy.acceso.comprobadCorreo,
-      );
+      // Con el servidor caído no entra, pero responde: la página vive.
+      await expect(pagina).toHaveURL(new RegExp(RUTA_ACCESO));
+      await expect(pagina.getByRole("main").getByRole("alert")).toBeVisible();
     } finally {
       await contexto.close();
     }
   });
 
-  test("el campo es cómodo de escribir en un móvil", async ({ page }) => {
+  test("el correo es cómodo de escribir en un móvil", async ({ page }) => {
     const campo = page.getByLabel(copy.acceso.correo);
 
-    // Con autocapitalización, el teclado del móvil escribe «Alguien@…» y el
-    // correo no llega. Con autocorrección, peor.
+    // Con autocapitalización, el teclado del móvil escribe «Paloma@…» y el
+    // acceso falla sin que se vea por qué.
     await expect(campo).toHaveAttribute("autocapitalize", "none");
     await expect(campo).toHaveAttribute("autocorrect", "off");
-    await expect(campo).toHaveAttribute("autocomplete", "email");
   });
 
   // --- Lo que no se puede filtrar --------------------------------------
 
-  test("la respuesta es la misma para cualquier correo", async ({ page }) => {
-    // Es la propiedad que de verdad importa: con dos personas con acceso, un
-    // mensaje que distinguiera convertiría esta página en un comprobador de
-    // quién lo tiene.
+  test("un correo que no existe y una contraseña mala dicen lo mismo", async ({ page }) => {
+    // Es la propiedad que de verdad importa: si distinguieran, esta página
+    // sería un comprobador de qué correos tienen acceso al panel.
     const respuestas: string[] = [];
 
     for (const correo of ["paloma@ejemplo.test", "nadie-de-nadie@ejemplo.test"]) {
       await page.goto(RUTA_ACCESO);
       await page.getByLabel(copy.acceso.correo).fill(correo);
-      await page.getByRole("button", { name: copy.acceso.enviar }).click();
+      await page.getByLabel(copy.acceso.contrasena).fill("da-igual-lo-que-ponga");
+      await page.getByRole("button", { name: copy.acceso.entrar }).click();
+
+      const aviso = page.getByRole("main").getByRole("alert");
+      await expect(aviso).toBeVisible();
+      respuestas.push((await aviso.textContent()) ?? "");
+    }
+
+    expect(respuestas[0]).toBe(respuestas[1]);
+  });
+
+  test("el error no cuenta qué ha fallado por dentro", async ({ page }) => {
+    await page.getByLabel(copy.acceso.correo).fill("paloma@ejemplo.test");
+    await page.getByLabel(copy.acceso.contrasena).fill("da-igual");
+    await page.getByRole("button", { name: copy.acceso.entrar }).click();
+
+    const cuerpo = page.locator("body");
+    // Nada de «fetch failed», nombres de servicio ni rastros de pila.
+    await expect(cuerpo).not.toContainText("fetch");
+    await expect(cuerpo).not.toContainText("supabase");
+    await expect(cuerpo).not.toContainText("Error:");
+  });
+});
+
+test.describe("Recuperar la contraseña", () => {
+  test("se llega desde la página de acceso", async ({ page }) => {
+    await page.goto(RUTA_ACCESO);
+    await page.getByRole("link", { name: copy.acceso.olvidada }).click();
+
+    await expect(page).toHaveURL(new RegExp(RUTA_RECUPERAR));
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      copy.acceso.recuperarTitulo,
+    );
+  });
+
+  test("la respuesta es la misma exista o no el correo", async ({ page }) => {
+    const respuestas: string[] = [];
+
+    for (const correo of ["paloma@ejemplo.test", "nadie-de-nadie@ejemplo.test"]) {
+      await page.goto(RUTA_RECUPERAR);
+      await page.getByLabel(copy.acceso.correo).fill(correo);
+      await page.getByRole("button", { name: copy.acceso.recuperarEnviar }).click();
+
       const anuncio = page.getByRole("main").getByRole("status");
       await expect(anuncio).toBeVisible();
       respuestas.push((await anuncio.textContent()) ?? "");
     }
 
     expect(respuestas[0]).toBe(respuestas[1]);
-    expect(respuestas[0]).toBe(copy.acceso.comprobadCorreo);
+    expect(respuestas[0]).toBe(copy.acceso.recuperarEnviado);
   });
 
-  test("con el servidor de autenticación caído, el mensaje no cambia", async ({ page }) => {
-    // Está caído durante toda esta suite. Aun así no se enseña un error
-    // técnico ni se deja entrar a nadie: se responde lo mismo de siempre.
-    await page.getByLabel(copy.acceso.correo).fill("paloma@ejemplo.test");
-    await page.getByRole("button", { name: copy.acceso.enviar }).click();
+  test("sin sesión no se puede poner una contraseña nueva", async ({ page }) => {
+    // Si esto no redirigiera, la página sería una forma de cambiarle la
+    // contraseña a cualquiera con solo escribir la URL.
+    await page.goto(RUTA_NUEVA_CONTRASENA);
 
-    await expect(page.getByRole("main").getByRole("status")).toHaveText(
-      copy.acceso.comprobadCorreo,
-    );
-    await expect(page).toHaveURL(new RegExp(`${RUTA_ACCESO}\\?estado=enviado$`));
+    await expect(page).toHaveURL(new RegExp(RUTA_ACCESO));
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.acceso.titulo);
   });
 });
 
@@ -111,13 +167,11 @@ test.describe("La puerta del panel", () => {
   test("el panel no filtra nada antes de redirigir", async ({ page }) => {
     const respuesta = await page.goto(RUTA_PANEL);
 
-    // Ni el nombre de quien podría haber entrado, ni el rol, ni una pista de
-    // qué hay dentro.
     expect(respuesta?.status()).toBe(200);
     await expect(page.locator("body")).not.toContainText(copy.acceso.cerrarSesion);
   });
 
-  test("un enlace sin token no deja entrar", async ({ page }) => {
+  test("un enlace de recuperación sin token no deja entrar", async ({ page }) => {
     await page.goto(RUTA_CONFIRMAR_ACCESO);
 
     await expect(page).toHaveURL(new RegExp("estado=enlace-invalido"));
@@ -125,7 +179,7 @@ test.describe("La puerta del panel", () => {
   });
 
   test("un token inventado tampoco", async ({ page }) => {
-    await page.goto(`${RUTA_CONFIRMAR_ACCESO}?token_hash=inventado&type=email`);
+    await page.goto(`${RUTA_CONFIRMAR_ACCESO}?token_hash=inventado&type=recovery`);
 
     await expect(page).toHaveURL(new RegExp("estado=enlace-invalido"));
     await expect(page.getByRole("main").getByRole("alert")).toHaveText(copy.acceso.errorEnlace);

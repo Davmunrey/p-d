@@ -6,66 +6,49 @@ import { RUTA_ACCESO, RUTA_PANEL } from "../../src/config/constants";
 /**
  * BODA-40 · El recorrido completo, contra un Supabase de verdad
  *
- * Lo que `acceso.spec.ts` no puede probar: correo → enlace → sesión → panel.
- * Hace falta GoTrue funcionando y un buzón donde leer el correo, así que este
- * fichero solo corre en el trabajo de CI que levanta el Supabase local.
+ * Lo que `acceso.spec.ts` no puede probar: identificarse de verdad y entrar.
+ * Hace falta GoTrue funcionando, así que este fichero solo corre en el trabajo
+ * de CI que levanta el Supabase local.
  *
  * Se salta en cualquier otro sitio en lugar de fallar: un test que no puede
  * ejecutarse no es un test roto.
  */
 
-const BUZON = process.env.URL_BUZON;
 const CORREO_CON_ACCESO = process.env.CORREO_CON_ACCESO;
 const CORREO_SIN_ACCESO = process.env.CORREO_SIN_ACCESO;
+const CONTRASENA = process.env.CONTRASENA_PRUEBAS;
 
 test.describe("Acceso de verdad", () => {
   test.describe.configure({ mode: "serial" });
 
   test.skip(
-    !BUZON || !CORREO_CON_ACCESO || !CORREO_SIN_ACCESO,
+    !CORREO_CON_ACCESO || !CORREO_SIN_ACCESO || !CONTRASENA,
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
   );
 
-  /** Vacía el buzón para que cada test lea su propio correo y no el anterior. */
-  async function vaciarBuzon() {
-    await fetch(`${BUZON}/api/v1/messages`, { method: "DELETE" });
-  }
-
-  /** Saca el enlace de acceso del último correo recibido. */
-  async function ultimoEnlace(): Promise<string> {
-    const listado = await (await fetch(`${BUZON}/api/v1/messages`)).json();
-    const mensaje = listado.messages?.[0];
-    expect(mensaje, "no ha llegado ningún correo").toBeTruthy();
-
-    const cuerpo = await (await fetch(`${BUZON}/api/v1/message/${mensaje.ID}`)).json();
-    const texto: string = `${cuerpo.Text ?? ""}${cuerpo.HTML ?? ""}`;
-
-    const enlace = texto.match(/https?:\/\/[^\s"'<>]*token_hash=[^\s"'<>&]+[^\s"'<>]*/)?.[0];
-    expect(enlace, "el correo no traía enlace de acceso").toBeTruthy();
-    return enlace!.replace(/&amp;/g, "&");
-  }
-
-  test.beforeEach(async () => {
-    await vaciarBuzon();
-  });
-
-  test("recorrido completo: correo, enlace y dentro", async ({ page }) => {
+  async function identificarse(
+    page: import("@playwright/test").Page,
+    correo: string,
+    contrasena = CONTRASENA!,
+  ) {
     await page.goto(RUTA_ACCESO);
-    await page.getByLabel(copy.acceso.correo).fill(CORREO_CON_ACCESO!);
-    await page.getByRole("button", { name: copy.acceso.enviar }).click();
-    await expect(page.getByRole("main").getByRole("status")).toBeVisible();
+    await page.getByLabel(copy.acceso.correo).fill(correo);
+    await page.getByLabel(copy.acceso.contrasena).fill(contrasena);
+    await page.getByRole("button", { name: copy.acceso.entrar }).click();
+  }
 
-    await page.goto(await ultimoEnlace());
+  test("recorrido completo: correo, contraseña y dentro", async ({ page }) => {
+    await identificarse(page, CORREO_CON_ACCESO!);
 
     await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
     await expect(page.getByRole("button", { name: copy.acceso.cerrarSesion })).toBeVisible();
   });
 
-  test("la sesión sobrevive a recargar y a volver a entrar", async ({ page }) => {
+  test("la sesión aguanta y la puerta deja de tener sentido", async ({ page }) => {
     await page.goto(RUTA_PANEL);
     await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
 
-    // Con sesión, la página de acceso no tiene sentido: lleva al panel.
+    // Con sesión, la página de acceso lleva al panel en lugar de pedir nada.
     await page.goto(RUTA_ACCESO);
     await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
   });
@@ -76,49 +59,49 @@ test.describe("Acceso de verdad", () => {
 
     await expect(page).toHaveURL(new RegExp(RUTA_ACCESO));
 
-    // Y volver atrás en el navegador no devuelve al panel.
+    // Y volver al panel escribiendo la URL tampoco entra.
     await page.goto(RUTA_PANEL);
     await expect(page).toHaveURL(new RegExp(RUTA_ACCESO));
   });
 
-  test("el mismo enlace no vale dos veces", async ({ page, context }) => {
-    await page.goto(RUTA_ACCESO);
-    await page.getByLabel(copy.acceso.correo).fill(CORREO_CON_ACCESO!);
-    await page.getByRole("button", { name: copy.acceso.enviar }).click();
-    await expect(page.getByRole("main").getByRole("status")).toBeVisible();
+  // --- Los casos que de verdad importan --------------------------------
 
-    const enlace = await ultimoEnlace();
-    await page.goto(enlace);
-    await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
-
-    // Desde una sesión limpia, el mismo enlace ya está gastado.
+  test("la contraseña incorrecta no entra", async ({ page, context }) => {
     await context.clearCookies();
-    await page.goto(enlace);
-    await expect(page).toHaveURL(new RegExp("estado=enlace-invalido"));
+    await identificarse(page, CORREO_CON_ACCESO!, "esta-no-es-la-contrasena");
+
+    await expect(page).toHaveURL(new RegExp(RUTA_ACCESO));
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+      copy.acceso.errorCredenciales,
+    );
   });
 
-  // --- El caso que de verdad importa -----------------------------------
-
-  test("un correo sin perfil activo recibe su enlace y NO entra", async ({ page, context }) => {
+  test("identificarse bien pero sin perfil activo tampoco entra", async ({ page, context }) => {
     await context.clearCookies();
 
-    await page.goto(RUTA_ACCESO);
-    await page.getByLabel(copy.acceso.correo).fill(CORREO_SIN_ACCESO!);
-    await page.getByRole("button", { name: copy.acceso.enviar }).click();
-
-    // Mismo mensaje que para quien sí tiene acceso: la página no puede ser un
-    // comprobador de quién entra al panel.
-    await expect(page.getByRole("main").getByRole("status")).toHaveText(
-      copy.acceso.comprobadCorreo,
-    );
-
-    // El enlace es válido —existe en auth.users— pero el panel no se abre:
-    // quien decide es `perfiles`, y su perfil está desactivado.
-    await page.goto(await ultimoEnlace());
+    // Este usuario existe y acierta la contraseña: Supabase lo autentica sin
+    // problema. Lo que no tiene es perfil activo, y eso lo decide `perfiles`.
+    // Es la diferencia entre «autenticado» y «con acceso».
+    await identificarse(page, CORREO_SIN_ACCESO!);
 
     await expect(page).toHaveURL(new RegExp(RUTA_ACCESO));
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText(
       copy.acceso.titulo,
     );
+    await expect(page.getByRole("button", { name: copy.acceso.cerrarSesion })).toHaveCount(0);
+  });
+
+  test("y el mensaje es el mismo que con la contraseña mal", async ({ page, context }) => {
+    // Si el desactivado recibiera un mensaje propio, cualquiera podría
+    // averiguar qué correos existen probando.
+    await context.clearCookies();
+    await identificarse(page, CORREO_SIN_ACCESO!);
+    const sinPerfil = await page.getByRole("main").getByRole("alert").textContent();
+
+    await context.clearCookies();
+    await identificarse(page, CORREO_CON_ACCESO!, "esta-no-es-la-contrasena");
+    const malaContrasena = await page.getByRole("main").getByRole("alert").textContent();
+
+    expect(sinPerfil).toBe(malaContrasena);
   });
 });

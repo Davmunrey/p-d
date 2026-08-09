@@ -2,24 +2,33 @@
 
 import { redirect } from "next/navigation";
 
-import { RUTA_ACCESO, RUTA_CONFIRMAR_ACCESO } from "@/config/constants";
+import {
+  LONGITUD_MINIMA_CONTRASENA,
+  RUTA_ACCESO,
+  RUTA_CONFIRMAR_ACCESO,
+  RUTA_NUEVA_CONTRASENA,
+  RUTA_PANEL,
+  RUTA_RECUPERAR,
+} from "@/config/constants";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 /**
- * PEDIR EL ENLACE DE ACCESO
+ * ENTRAR AL PANEL
  *
- * Es una Server Action y el formulario es un `<form>` de verdad, así que
- * funciona sin JavaScript. No es purismo: si el panel falla justo el día de la
- * boda, con mala cobertura y un móvil prestado, conviene que dependa de lo
- * menos posible.
+ * Correo y contraseña. Los usuarios se crean a mano —son dos— y los registros
+ * están cerrados, así que aquí nadie se da de alta: solo se identifica.
  *
- * LA RESPUESTA ES SIEMPRE LA MISMA. Da igual que el correo tenga acceso, que no
- * exista o que Supabase lo rechace por tener los registros cerrados: se
- * responde lo mismo. Distinguirlos convertiría esta página en un comprobador de
- * quién tiene acceso al panel — y esa lista son dos personas concretas.
+ * Son Server Actions y los formularios son `<form>` de verdad, así que
+ * funcionan sin JavaScript. No es purismo: conviene que la puerta de entrada
+ * dependa de lo menos posible.
+ *
+ * UN SOLO MENSAJE DE ERROR. Correo que no existe y contraseña incorrecta
+ * responden lo mismo. Distinguirlos convertiría esta página en un comprobador
+ * de qué correos tienen acceso al panel, que es justo la lista que no interesa
+ * repartir.
  */
 
-/** El destino al que vuelve el enlace del correo. */
+/** El destino al que vuelven los enlaces del correo de recuperación. */
 function urlDeVuelta(): string {
   const base =
     process.env.NEXT_PUBLIC_SITE_URL ??
@@ -36,10 +45,11 @@ function urlDeVuelta(): string {
   return new URL(RUTA_CONFIRMAR_ACCESO, base).toString();
 }
 
-export async function pedirEnlace(datos: FormData) {
+export async function entrar(datos: FormData) {
   const correo = String(datos.get("correo") ?? "").trim();
+  const contrasena = String(datos.get("contrasena") ?? "");
 
-  if (!correo) redirect(`${RUTA_ACCESO}?estado=vacio`);
+  if (!correo || !contrasena) redirect(`${RUTA_ACCESO}?estado=credenciales`);
 
   if (!hayAutenticacion) {
     console.error("Acceso pedido sin Supabase configurado.");
@@ -48,24 +58,103 @@ export async function pedirEnlace(datos: FormData) {
 
   try {
     const supabase = await clienteServidor();
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signInWithPassword({
       email: correo,
-      options: {
-        emailRedirectTo: urlDeVuelta(),
-        // Con los registros cerrados esto ya es redundante, pero se deja
-        // explícito: pedir un enlace nunca puede crear una cuenta.
-        shouldCreateUser: false,
-      },
+      password: contrasena,
     });
 
-    // El error se registra pero NO cambia lo que se le enseña a quien lo pide:
-    // «este correo no existe» es exactamente el dato que no se puede soltar.
-    if (error) console.warn("Solicitud de enlace rechazada:", error.message);
+    if (error) {
+      // Se registra el motivo real —hace falta para investigar— pero no viaja
+      // a la pantalla.
+      console.warn("Intento de acceso rechazado:", error.message);
+      redirect(`${RUTA_ACCESO}?estado=credenciales`);
+    }
+
+    // AUTENTICADO NO ES CON ACCESO. Supabase ya ha dicho que esta persona es
+    // dueña de su correo y sabe su contraseña; quién entra al panel lo decide
+    // `perfiles`. Sin perfil activo se le cierra la sesión aquí mismo: si no,
+    // se quedaría con una sesión que no sirve para nada y rebotando en la
+    // puerta sin entender por qué.
+    //
+    // El mensaje es el MISMO que el de contraseña incorrecta. Uno propio
+    // permitiría averiguar qué correos existen probando.
+    const { data } = await supabase
+      .from("perfiles")
+      .select("activo")
+      .eq("usuario_id", (await supabase.auth.getUser()).data.user?.id ?? "")
+      .maybeSingle();
+
+    if (!data?.activo) {
+      await supabase.auth.signOut();
+      redirect(`${RUTA_ACCESO}?estado=credenciales`);
+    }
   } catch (error) {
-    console.error("No se pudo pedir el enlace de acceso:", error);
+    // `redirect` funciona lanzando: si no se deja pasar, el fallo de arriba se
+    // tragaría aquí y la página se quedaría colgada sin decir nada.
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+    if (typeof error === "object" && error !== null && "digest" in error) throw error;
+
+    console.error("No se pudo comprobar el acceso:", error);
+    redirect(`${RUTA_ACCESO}?estado=error`);
   }
 
-  redirect(`${RUTA_ACCESO}?estado=enviado`);
+  redirect(RUTA_PANEL);
+}
+
+/**
+ * Pide el enlace para poner una contraseña nueva.
+ *
+ * Sin esto, olvidar la contraseña deja a alguien fuera para siempre. Responde
+ * lo mismo exista o no el correo, por la misma razón que el acceso.
+ */
+export async function pedirRecuperacion(datos: FormData) {
+  const correo = String(datos.get("correo") ?? "").trim();
+
+  if (!correo) redirect(`${RUTA_RECUPERAR}?estado=credenciales`);
+
+  if (!hayAutenticacion) {
+    console.error("Recuperación pedida sin Supabase configurado.");
+    redirect(`${RUTA_RECUPERAR}?estado=sin-configurar`);
+  }
+
+  try {
+    const supabase = await clienteServidor();
+    const { error } = await supabase.auth.resetPasswordForEmail(correo, {
+      redirectTo: urlDeVuelta(),
+    });
+    if (error) console.warn("Recuperación rechazada:", error.message);
+  } catch (error) {
+    console.error("No se pudo pedir la recuperación:", error);
+  }
+
+  redirect(`${RUTA_RECUPERAR}?estado=enviado`);
+}
+
+/** Guarda la contraseña nueva. Solo funciona con la sesión del enlace abierta. */
+export async function guardarContrasena(datos: FormData) {
+  const contrasena = String(datos.get("contrasena") ?? "");
+
+  if (contrasena.length < LONGITUD_MINIMA_CONTRASENA) {
+    redirect(`${RUTA_NUEVA_CONTRASENA}?estado=corta`);
+  }
+
+  if (!hayAutenticacion) redirect(`${RUTA_ACCESO}?estado=sin-configurar`);
+
+  try {
+    const supabase = await clienteServidor();
+    const { error } = await supabase.auth.updateUser({ password: contrasena });
+
+    if (error) {
+      console.warn("No se pudo cambiar la contraseña:", error.message);
+      redirect(`${RUTA_NUEVA_CONTRASENA}?estado=error`);
+    }
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "digest" in error) throw error;
+    console.error("Fallo al cambiar la contraseña:", error);
+    redirect(`${RUTA_NUEVA_CONTRASENA}?estado=error`);
+  }
+
+  redirect(RUTA_PANEL);
 }
 
 /** Cierra la sesión y devuelve a la página de acceso. */

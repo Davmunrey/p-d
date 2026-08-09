@@ -127,9 +127,12 @@ jobs:
       - name: Probar el recorrido completo del acceso
         env:
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
-          URL_BUZON: http://127.0.0.1:54324
           CORREO_CON_ACCESO: con-acceso@ejemplo.test
           CORREO_SIN_ACCESO: sin-acceso@ejemplo.test
+          # No es un secreto: es la contraseña de dos usuarios de mentira en
+          # una base de datos que se destruye al acabar el trabajo. Va escrita
+          # para que se vea que coincide con la del SQL de preparación.
+          CONTRASENA_PRUEBAS: contrasena-larga-de-pruebas
         run: npx playwright test --project=escritorio tests/e2e/acceso-real.spec.ts
 
       - name: Guardar informe si algo falla

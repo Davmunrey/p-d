@@ -1,11 +1,11 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-import { RUTA_ACCESO, RUTA_PANEL } from "@/config/constants";
+import { RUTA_ACCESO, RUTA_NUEVA_CONTRASENA, RUTA_PANEL } from "@/config/constants";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 /**
- * LA VUELTA DEL ENLACE DEL CORREO
+ * LA VUELTA DEL ENLACE DE RECUPERACIÓN
  *
  * El enlace trae un `token_hash` de un solo uso. Aquí se canjea por una sesión
  * y se deja en cookies `httpOnly`, de modo que el token nunca llega a
@@ -42,7 +42,9 @@ export async function GET(peticion: Request) {
     return aAcceso("enlace-invalido");
   }
 
-  // Quien no tenga perfil activo no llegará a ver nada: el panel lo comprueba
-  // y RLS lo respalda. Aquí no se decide, solo se entrega la sesión.
-  return NextResponse.redirect(new URL(RUTA_PANEL, url.origin));
+  // Una recuperación no lleva al panel: lleva a elegir contraseña nueva. Si
+  // llevara dentro, el enlace del correo sería una puerta trasera permanente
+  // que se salta la contraseña.
+  const destino = tipo === "recovery" ? RUTA_NUEVA_CONTRASENA : RUTA_PANEL;
+  return NextResponse.redirect(new URL(destino, url.origin));
 }

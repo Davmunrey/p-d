@@ -1,9 +1,10 @@
 -- Dos usuarios para probar el acceso al panel, contra el Supabase local.
 --
--- La gracia está en el segundo: existe en `auth.users`, así que Supabase le
--- manda su enlace y el enlace es válido. Lo que no tiene es perfil activo, y
--- por eso no entra. Es el caso que separa «autenticado» de «con acceso», y el
--- que se rompería sin que nadie se enterase si sólo probáramos el camino bueno.
+-- Los dos tienen la MISMA contraseña, y correcta. La gracia está en el segundo:
+-- se identifica bien —existe y acierta la contraseña— y aun así no entra,
+-- porque su perfil está desactivado. Es el caso que separa «autenticado» de
+-- «con acceso», y el que se rompería sin que nadie se enterase si sólo
+-- probáramos el camino bueno.
 --
 -- Solo se aplica en CI, nunca en producción: los usuarios de verdad se crean
 -- desde el panel de Supabase.
@@ -24,7 +25,7 @@ values
     '00000000-0000-0000-0000-000000000000',
     'authenticated', 'authenticated',
     'con-acceso@ejemplo.test',
-    crypt('sin-uso-el-acceso-es-por-enlace', gen_salt('bf')),
+    crypt('contrasena-larga-de-pruebas', gen_salt('bf')),
     now(), now(), now(),
     '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
   ),
@@ -33,7 +34,7 @@ values
     '00000000-0000-0000-0000-000000000000',
     'authenticated', 'authenticated',
     'sin-acceso@ejemplo.test',
-    crypt('sin-uso-el-acceso-es-por-enlace', gen_salt('bf')),
+    crypt('contrasena-larga-de-pruebas', gen_salt('bf')),
     now(), now(), now(),
     '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
   )
