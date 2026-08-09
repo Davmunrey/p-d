@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
+import { NOMBRE_FICHERO_CALENDARIO, RUTA_CALENDARIO } from "../../src/config/constants";
 
 /**
  * BODA-30 · Reserva la fecha
@@ -80,12 +81,65 @@ test.describe("Reserva la fecha", () => {
     await expect(descripcion).toHaveAttribute("content", /\(DES\)/);
   });
 
-  test("no se ofrece nada que todavía no exista", async ({ page }) => {
-    // El `.ics` es BODA-31. Hasta entonces no puede haber un botón que no haga
-    // nada: la regla 3 prohíbe entregar botones sin acción.
-    await expect(
-      page.getByRole("link", { name: copy.saveTheDate.anadirCalendario }),
-    ).toHaveCount(0);
+  test("el botón de calendario apunta al fichero y se descarga", async ({ page }) => {
+    const boton = page.getByRole("link", { name: copy.saveTheDate.anadirCalendario });
+
+    await expect(boton).toBeVisible();
+    await expect(boton).toHaveAttribute("href", RUTA_CALENDARIO);
+    // `download` para que el navegador lo guarde en vez de intentar pintarlo.
+    await expect(boton).toHaveAttribute("download", "");
+  });
+});
+
+/**
+ * El fichero del calendario. Se pide por HTTP en lugar de hacer clic: lo que
+ * importa es lo que llega, y una descarga no deja nada que mirar en pantalla.
+ */
+test.describe("Evento para el calendario", () => {
+  test("se sirve como calendario y se descarga con nombre", async ({ request }) => {
+    const respuesta = await request.get(RUTA_CALENDARIO);
+
+    expect(respuesta.status()).toBe(200);
+    expect(respuesta.headers()["content-type"]).toContain("text/calendar");
+    expect(respuesta.headers()["content-disposition"]).toContain(NOMBRE_FICHERO_CALENDARIO);
+  });
+
+  test("lleva la fecha y el lugar que hay en la base de datos", async ({ request, page }) => {
+    const ics = await (await request.get(RUTA_CALENDARIO)).text();
+
+    // La fecha del fichero tiene que ser la misma que pinta la página: si
+    // alguien incrustara una fecha en el código, esto se cae.
+    await page.goto(RUTA);
+    const fechaEnPagina = await page.locator("time").getAttribute("datetime");
+    const esperada = fechaEnPagina!.replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+
+    expect(ics).toContain(`DTSTART:${esperada}`);
+    expect(ics).toContain("(DES) Finca de pruebas");
+    expect(ics).toMatch(/SUMMARY:.*\(DES\)/);
+  });
+
+  test("el evento no acaba cuando empieza el banquete", async ({ request }) => {
+    const ics = await (await request.get(RUTA_CALENDARIO)).text();
+
+    const inicio = ics.match(/DTSTART:(\S+)/)?.[1];
+    const fin = ics.match(/DTEND:(\S+)/)?.[1];
+
+    expect(inicio).toBeDefined();
+    expect(fin).toBeDefined();
+    expect(fin! > inicio!).toBe(true);
+  });
+
+  test("cumple el formato que exigen los calendarios", async ({ request }) => {
+    const ics = await (await request.get(RUTA_CALENDARIO)).text();
+
+    // CRLF: sin esto Outlook no abre el fichero.
+    expect(/[^\r]\n/.test(ics)).toBe(false);
+
+    // Y ninguna línea por encima de 75 octetos, contando en UTF-8.
+    const codificador = new TextEncoder();
+    for (const linea of ics.split("\r\n")) {
+      expect(codificador.encode(linea).length).toBeLessThanOrEqual(75);
+    }
   });
 });
 
@@ -129,6 +183,15 @@ test.describe("Reserva la fecha apagada", () => {
 
     // Y no se filtra ni un dato por el camino.
     await expect(page.locator("body")).not.toContainText("(DES)");
+  });
+
+  test("con la sección desactivada el calendario tampoco se descarga", async ({ request }) => {
+    await fijarVisible(false);
+
+    // Si no, quedaría una puerta trasera para sacar la fecha de una página que
+    // se ha querido retirar.
+    const respuesta = await request.get(RUTA_CALENDARIO);
+    expect(respuesta.status()).toBe(404);
   });
 
   test("volver a encenderla la devuelve", async ({ page }) => {
