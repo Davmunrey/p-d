@@ -1,0 +1,92 @@
+name: Migraciones
+
+# Aplica a producción las migraciones que entren en `main`.
+#
+# POR QUÉ SE PUEDE HACER AUTOMÁTICO SIN MIEDO
+#
+# No es que se confíe en que la migración esté bien: es que ya se ha
+# comprobado. Antes de que nada llegue aquí, el trabajo «Migraciones y
+# seguridad de la BBDD» ha aplicado TODAS las migraciones desde cero contra un
+# PostgreSQL limpio y ha pasado 36 comprobaciones de seguridad —que `anon` no
+# lee ninguna tabla privada, que nadie se cuela registrándose, que un invitado
+# no puede confirmar por otro—. Una migración rota no llega a `main`.
+#
+# LO QUE ESTE FLUJO NO HACE
+#
+# No carga el seed. Ese fichero tiene datos de desarrollo con el prefijo
+# «(DES)» y no puede acercarse a la boda de verdad. `supabase db push` solo
+# aplica migraciones.
+#
+# Tampoco deshace nada. Las migraciones son hacia delante; cada una trae su SQL
+# de rollback en `supabase/migrations/rollback/` para aplicarlo a mano si hace
+# falta, con la cabeza fría y mirando lo que se borra.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - ".github/workflows/migraciones.yml"
+  # Para poder relanzarlo si falló por una caída pasajera.
+  workflow_dispatch:
+
+# Dos despliegues a la vez sobre la misma base es la forma de dejarla a medias.
+concurrency:
+  group: migraciones-produccion
+  cancel-in-progress: false
+
+jobs:
+  aplicar:
+    name: Aplicar en producción
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar que hay credenciales
+        id: credenciales
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          CLAVE: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PROYECTO: ${{ vars.SUPABASE_PROJECT_REF }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$CLAVE" ] && [ -n "$PROYECTO" ]; then
+            echo "hay=si" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=no" >> "$GITHUB_OUTPUT"
+            echo "::warning::Faltan SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD o la variable SUPABASE_PROJECT_REF. Ver docs/ENTORNO.md. Las migraciones no se aplican."
+          fi
+
+      - uses: supabase/setup-cli@v1
+        if: steps.credenciales.outputs.hay == 'si'
+        with:
+          version: latest
+
+      - name: Enlazar con el proyecto
+        if: steps.credenciales.outputs.hay == 'si'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase link --project-ref "${{ vars.SUPABASE_PROJECT_REF }}"
+
+      - name: Ver qué se va a aplicar
+        if: steps.credenciales.outputs.hay == 'si'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        # Queda en el registro qué migraciones estaban pendientes. Cuando algo
+        # sale mal, la primera pregunta siempre es «¿qué se aplicó?».
+        run: supabase migration list --linked
+
+      - name: Aplicar
+        if: steps.credenciales.outputs.hay == 'si'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push --linked --include-all
+
+      - name: Comprobar que quedó al día
+        if: steps.credenciales.outputs.hay == 'si'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        # Si algo quedó sin aplicar, mejor enterarse aquí que dentro de un mes.
+        run: supabase migration list --linked

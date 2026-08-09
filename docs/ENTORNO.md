@@ -7,11 +7,11 @@ solo están los **nombres**.
 
 ## Resumen: qué necesita cada sitio
 
-| Dónde                          | Qué hace falta                          | Por qué                                             |
-| ------------------------------ | --------------------------------------- | --------------------------------------------------- |
-| **Vercel**                     | `DATABASE_URL` y las claves de Supabase | Es quien sirve la web a los invitados               |
-| **Tu portátil** (`.env.local`) | `DATABASE_URL` local                    | Para levantar el proyecto en desarrollo             |
-| **GitHub Actions**             | **nada, de momento**                    | El CI se fabrica su propia base de datos desechable |
+| Dónde                          | Qué hace falta                          | Por qué                                         |
+| ------------------------------ | --------------------------------------- | ----------------------------------------------- |
+| **Vercel**                     | `DATABASE_URL` y las claves de Supabase | Es quien sirve la web a los invitados           |
+| **Tu portátil** (`.env.local`) | `DATABASE_URL` local                    | Para levantar el proyecto en desarrollo         |
+| **GitHub Actions**             | Solo para aplicar migraciones           | Los tests se fabrican su propia base desechable |
 
 ---
 
@@ -58,13 +58,16 @@ O se copia `.env.example` a `.env.local` y se rellena. `.env*` está en
 
 ---
 
-## GitHub Actions: por qué no hay secretos
+## GitHub Actions
 
-El CI **no necesita ninguno**, y es a propósito.
+### Para probar: ningún secreto
+
+Ninguno de los trabajos de prueba toca tu Supabase, y es a propósito.
 
 `scripts/preparar-bbdd.sh` levanta un PostgreSQL nuevo en el runner, le aplica
-las migraciones desde cero y carga el seed de desarrollo. Cada ejecución
-empieza de una base vacía.
+las migraciones desde cero y carga el seed de desarrollo. El trabajo del acceso
+al panel va más lejos: levanta un Supabase entero con Docker, con sus claves
+locales de juguete, y lo destruye al terminar. Cada ejecución empieza de cero.
 
 Un CI conectado a una base de datos compartida tendría tres problemas que esto
 evita:
@@ -75,6 +78,40 @@ evita:
    lee de la base de verdad, acaban en el log público de la Action los
    teléfonos y las alergias de los invitados.
 3. **Un secreto más que rota y que se filtra.** El que no existe no se filtra.
+
+### Para aplicar migraciones en producción: tres valores
+
+`.github/workflows/migraciones.yml` aplica a producción las migraciones que
+entran en `main`. Es lo único que habla con tu Supabase de verdad, y por eso es
+lo único que necesita credenciales.
+
+**Settings → Secrets and variables → Actions.**
+
+| Dónde                     | Nombre                  | De dónde sale                                                      |
+| ------------------------- | ----------------------- | ------------------------------------------------------------------ |
+| Secrets                   | `SUPABASE_ACCESS_TOKEN` | supabase.com/dashboard/account/tokens → Generate new token         |
+| Secrets                   | `SUPABASE_DB_PASSWORD`  | La contraseña de la base, en Project Settings → Database           |
+| **Variables**, no secrets | `SUPABASE_PROJECT_REF`  | El identificador del proyecto, el que sale en la URL del dashboard |
+
+El tercero va en _Variables_ y no en _Secrets_ porque no lo es: aparece en la
+URL del panel de Supabase. Guardarlo como secreto solo conseguiría que los
+registros lo taparan con asteriscos justo cuando hace falta leerlo.
+
+Mientras falte alguno de los tres, el flujo **se salta con un aviso** en lugar
+de fallar: no tiene sentido teñir de rojo un despliegue por una configuración
+que aún no está.
+
+**Por qué se puede aplicar solo sin miedo.** No es confianza: es que ya se ha
+comprobado. Antes de que nada llegue a `main`, el trabajo «Migraciones y
+seguridad de la BBDD» ha aplicado todas las migraciones desde cero contra un
+PostgreSQL limpio y ha pasado 36 comprobaciones de seguridad. Una migración
+rota no llega.
+
+Lo que el flujo **no** hace: cargar el seed —son datos de desarrollo con el
+prefijo `(DES)` y no pueden acercarse a la boda— ni deshacer nada. Las
+migraciones van hacia delante; cada una trae su SQL de rollback en
+`supabase/migrations/rollback/` para aplicarlo a mano, con la cabeza fría y
+mirando lo que se borra.
 
 ### La excepción: trabajar desde GitHub
 
