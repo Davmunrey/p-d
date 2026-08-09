@@ -28,8 +28,8 @@ Estas reglas aplican a **todo** el código. Una PR que las incumpla no se mergea
 | -------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------------------------- |
 | Colores, tipografías, espaciados, radios, sombras, duraciones, easings, z-index, breakpoints | Design tokens (CSS custom properties)     | Valores literales en componentes   |
 | Textos visibles (copys, labels, errores, meta)                                               | `content/copy.es.json`, tipado            | Strings literales en JSX           |
-| Datos de la boda (fecha, lugar, nombres, coordenadas, hashtag)                               | Tabla `wedding_settings` en BBDD          | Constantes en código               |
-| Fotos, vídeos, documentos                                                                    | Supabase Storage + tabla `media`          | `/public` con rutas fijas          |
+| Datos de la boda (fecha, lugar, nombres, coordenadas, hashtag)                               | Tabla `configuracion_boda` en BBDD        | Constantes en código               |
+| Fotos, vídeos, documentos                                                                    | Supabase Storage + tabla `medios`         | `/public` con rutas fijas          |
 | URLs de servicios, claves, IDs de proyecto                                                   | Variables de entorno (`.env`, Vercel env) | Código fuente                      |
 | Enums de negocio (estados RSVP, categorías)                                                  | Tipos Postgres + tipos TS generados       | Uniones de strings escritas a mano |
 | Números mágicos (límites, paginación, timeouts)                                              | `src/config/constants.ts`, con nombre     | Literales incrustados              |
@@ -83,25 +83,25 @@ Orden de precedencia si algo entra en conflicto: **estas reglas fundacionales > 
 
 ## 3. Stack
 
-| Capa          | Elección                                                       | Por qué                                                                                                                      |
-| ------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Framework     | **Next.js 15 (App Router)**                                    | SSR/ISR para la landing, Server Actions para el panel, un solo repo para ambas caras                                         |
-| Hosting       | **Vercel**                                                     | Despliegue nativo de Next.js: no hay adaptador que mantener. Deploy previews por PR, CDN global, free tier suficiente        |
-| BBDD          | **Supabase** (PostgreSQL, open source)                         | Postgres puro + Auth + Storage + RLS + Realtime en un free tier. Autoalojable si algún día hace falta                        |
-| Auth          | Supabase Auth (magic link + OAuth Google)                      | Sin gestionar contraseñas. Solo 2-4 usuarios                                                                                 |
-| Ficheros      | Supabase Storage                                               | Fotos de la landing, contratos y facturas de proveedores                                                                     |
-| Estilos       | Tailwind CSS v4 + design tokens en CSS vars                    | Tokens nativos vía `@theme`, sin capa de traducción                                                                          |
-| Componentes   | shadcn/ui (copiado al repo, re-tematizado con nuestros tokens) | Base accesible; el código es nuestro y se adapta a los tokens                                                                |
-| Animación     | Motion (`framer-motion`) + Lenis (scroll suave)                | Scroll-linked, parallax y reveals; API declarativa                                                                           |
-| Formularios   | React Hook Form + Zod                                          | Un esquema Zod valida cliente y servidor                                                                                     |
-| Datos (panel) | TanStack Query + Server Actions                                | Caché, optimistic updates, invalidación                                                                                      |
-| Copys         | `content/copy.es.json` + hook `useCopy()` tipado               | **Todo en castellano.** Sin librería de i18n: una capa propia y ligera que impide textos en código y centraliza la redacción |
-| Tablas        | TanStack Table                                                 | Filtros, orden y export CSV para invitados/gastos                                                                            |
-| Emails        | Resend (free tier)                                             | Confirmaciones de RSVP y recordatorios                                                                                       |
-| Tests         | Vitest + Testing Library + Playwright                          | Unitarios y E2E del flujo crítico (RSVP y login)                                                                             |
-| Calidad       | ESLint + Prettier + Stylelint + Husky + lint-staged            | Las reglas del §2 se aplican solas                                                                                           |
-| Errores       | Sentry (free tier)                                             | Ya disponible en el entorno                                                                                                  |
-| Analítica     | PostHog (free tier)                                            | Ya disponible en el entorno                                                                                                  |
+| Capa          | Elección                                                       | Por qué                                                                                                                           |
+| ------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Framework     | **Next.js 15 (App Router)**                                    | SSR/ISR para la landing, Server Actions para el panel, un solo repo para ambas caras                                              |
+| Hosting       | **Vercel**                                                     | Despliegue nativo de Next.js: no hay adaptador que mantener. Deploy previews por PR, CDN global, free tier suficiente             |
+| BBDD          | **Supabase** (PostgreSQL, open source)                         | Postgres puro + Auth + Storage + RLS + Realtime en un free tier. Autoalojable si algún día hace falta                             |
+| Auth          | Supabase Auth (magic link + OAuth Google)                      | Sin gestionar contraseñas. Solo 2-4 usuarios                                                                                      |
+| Ficheros      | Supabase Storage                                               | Fotos de la landing, contratos y facturas de proveedores                                                                          |
+| Estilos       | Tailwind CSS v4 + design tokens en CSS vars                    | Tokens nativos vía `@theme`, sin capa de traducción                                                                               |
+| Componentes   | shadcn/ui (copiado al repo, re-tematizado con nuestros tokens) | Base accesible; el código es nuestro y se adapta a los tokens                                                                     |
+| Animación     | CSS `animation-timeline: view()` (BODA-21)                     | Reveals al scroll sin JavaScript ni librerías. Se descartaron Motion y Lenis: el navegador ya lo hace, y fuera del hilo principal |
+| Formularios   | React Hook Form + Zod                                          | Un esquema Zod valida cliente y servidor                                                                                          |
+| Datos (panel) | TanStack Query + Server Actions                                | Caché, optimistic updates, invalidación                                                                                           |
+| Copys         | `content/copy.es.json` + `t()` tipado (`src/lib/copy.ts`)      | **Todo en castellano.** Sin librería de i18n: una capa propia y ligera que impide textos en código y centraliza la redacción      |
+| Tablas        | TanStack Table                                                 | Filtros, orden y export CSV para invitados/gastos                                                                                 |
+| Emails        | Resend (free tier)                                             | Confirmaciones de RSVP y recordatorios                                                                                            |
+| Tests         | Vitest + Testing Library + Playwright                          | Unitarios y E2E del flujo crítico (RSVP y login)                                                                                  |
+| Calidad       | ESLint + Prettier + Stylelint + Husky + lint-staged            | Las reglas del §2 se aplican solas                                                                                                |
+| Errores       | Sentry (free tier)                                             | Ya disponible en el entorno                                                                                                       |
+| Analítica     | PostHog (free tier)                                            | Ya disponible en el entorno                                                                                                       |
 
 **Alternativas descartadas:** Astro (mejor landing, peor panel — no compensa mantener dos apps); Neon + Auth.js (Postgres excelente, pero habría que construir auth, storage y RLS por separado); PocketBase (ligero, pero requiere servidor propio y sigue pre-1.0).
 
@@ -113,7 +113,7 @@ Orden de precedencia si algo entra en conflicto: **estas reglas fundacionales > 
                  ┌──────────────────────────────┐
    Invitados ───►│  Vercel CDN / Edge           │
                  │  ├─ / (landing, ISR)         │
-                 │  ├─ /save-the-date           │
+                 │  ├─ /reserva-la-fecha        │
                  │  └─ /rsvp/[token]            │
                  └──────────┬───────────────────┘
                             │ Server Actions / Route Handlers
@@ -170,8 +170,12 @@ Todas las tablas llevan `id uuid pk default gen_random_uuid()`, `created_at`, `u
 
 ### Configuración
 
-**`wedding_settings`** (fila única) — fecha, hora, nombres de los novios, lugar de ceremonia y banquete, coordenadas, hashtag, moneda, idioma por defecto, fecha límite de RSVP, flags de secciones visibles.
+**`configuracion_boda`** (fila única) — fecha y hora de ceremonia y banquete, nombres de los novios, lugares, direcciones, coordenadas, hashtag, correo de contacto, moneda, zona horaria, idioma por defecto y fecha límite de RSVP. La vista `v_configuracion_publica` es lo único que lee `anon`: enumera columna a columna lo que puede salir a la web, para que una columna añadida mañana no aparezca sola en la landing.
 → _Elimina de raíz todo hardcode de datos de la boda._
+
+**`secciones_landing`** — qué secciones se enseñan y en qué orden (`seccion`, `visible`, `orden`). Sustituye a los nueve flags `mostrar_*` que este documento describía: añadir una sección es una fila, no una migración de esquema más un despliegue. Su política RLS es `using (visible)`, así que a un invitado no le llega siquiera el nombre de una sección apagada. La landing la usa para decidir qué pinta y qué ofrece en el menú (BODA-20).
+
+**`configuracion_privada`** (fila única) — lo que no puede salir a la web: presupuesto objetivo, aforo máximo, teléfono de contacto, IBAN de regalos y notas.
 
 **`profiles`** — extiende `auth.users`. `role`: `owner` | `editor` | `viewer`.
 
@@ -236,22 +240,31 @@ Ambas con rate limiting y validación de que el token existe y el plazo no ha ve
 
 ### Landing (`/`)
 
-Secciones (orden y visibilidad configurables desde `wedding_settings`):
+El orden y la visibilidad de las secciones salen de `secciones_landing`, no del JSX: la landing recorre esa tabla y pinta lo que le dice (BODA-20). Una sección se enseña si la base de datos la da por visible **y** hay contenido que pintar; ninguna aparece en el menú si su código todavía no existe, porque un enlace a una sección inexistente es peor que no tener menú.
 
-1. **Hero** — foto a pantalla completa, nombres, fecha, cuenta atrás. Parallax suave al scroll.
-2. **Nuestra historia** — timeline con reveals escalonados al entrar en viewport.
-3. **Galería** — grid tipo masonry, lightbox, lazy loading con blur placeholder.
-4. **Cuándo y dónde** — ceremonia y banquete, mapa embebido, cómo llegar.
-5. **Alojamiento y transporte** — recomendaciones y horarios de bus.
-6. **FAQ** — acordeón (dress code, niños, aparcamiento…).
-7. **Regalo** — número de cuenta / Bizum, revelado con interacción.
-8. **CTA RSVP** — sticky en móvil.
+Secciones del enumerado `seccion_landing`:
+
+| Valor                  | Qué es                                                      | Ticket  |
+| ---------------------- | ----------------------------------------------------------- | ------- |
+| `portada`              | Nombres, fecha y lugar a pantalla completa                  | BODA-22 |
+| `cuenta_atras`         | Lo que falta, calculado desde la fecha de la BBDD           | BODA-23 |
+| `historia`             | Hitos de la pareja, con reveal al entrar en pantalla        | BODA-24 |
+| `galeria`              | Rejilla de fotos con lightbox                               | BODA-25 |
+| `programa`             | El día hora a hora                                          | BODA-22 |
+| `ubicaciones`          | Ceremonia y banquete, con mapa                              | BODA-26 |
+| `transporte`           | Cómo llegar: coche, tren, autobús                           | BODA-26 |
+| `alojamiento`          | Hoteles recomendados con tarifa y enlace de reserva         | BODA-27 |
+| `regalos`              | Número de cuenta, revelado sólo al interactuar              | BODA-28 |
+| `preguntas_frecuentes` | Acordeón nativo: etiqueta, niños, aparcamiento…             | BODA-27 |
+| `playlist`             | Canciones que sugieren los invitados                        | BODA-29 |
+| `rsvp`                 | Llamada a confirmar asistencia                              | BODA-28 |
+| `reserva_la_fecha`     | **No es una sección: es una página aparte** (ver más abajo) | BODA-30 |
 
 **Principios de animación:** el movimiento sirve a la narrativa, no la interrumpe. Todas las duraciones y curvas son tokens. Con `prefers-reduced-motion` los reveals se convierten en fades cortos o desaparecen. Ninguna animación puede provocar layout shift (CLS objetivo < 0.1).
 
-### Save the Date (`/save-the-date`)
+### Reserva la fecha (`/reserva-la-fecha`)
 
-Página independiente, ligera y compartible: fecha grande, foto, "añadir al calendario" (`.ics` generado desde `wedding_settings`), Open Graph propio para que se vea bien en WhatsApp.
+Página independiente, ligera y compartible: fecha grande, foto, «añadir al calendario» (`.ics` generado desde `configuracion_boda`) y Open Graph propio para que se vea bien en WhatsApp. La ruta va en castellano como el resto del producto, y existe sólo si su fila de `secciones_landing` está visible: apagada, devuelve 404 en vez de una página a medias.
 
 ### RSVP (`/rsvp/[token]`)
 

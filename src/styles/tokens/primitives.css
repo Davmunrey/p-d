@@ -82,6 +82,19 @@
   --color-velo-medio: rgb(20 20 15 / 55%);
   --color-velo-fuerte: rgb(20 20 15 / 72%);
 
+  /**
+   * Los dos tonos de fondo de la paleta, translúcidos. Son para superficies
+   * que se apoyan sobre el contenido y dejan intuir lo que pasa por debajo,
+   * como una barra fija sobre una portada a pantalla completa. El alfa es alto
+   * a propósito: por debajo, el texto encima deja de cumplir contraste.
+   *
+   * Mismos valores que `--color-crema-50` y `--color-oliva-950`, que son los
+   * dos fondos de página. Van escritos porque `rgb(from …)` todavía no llega a
+   * todos los navegadores que abre un invitado desde WhatsApp.
+   */
+  --color-velado-crema: rgb(251 250 248 / 86%);
+  --color-velado-oliva: rgb(20 23 15 / 86%);
+
   /* ---------------------------------------------------------------------
    * Tipografía — Cormorant Garamond para titulares, Jost para cuerpo
    * ------------------------------------------------------------------- */
@@ -143,6 +156,14 @@
   /* Ancho mínimo de una cifra grande, para que la cuenta atrás no baile. */
   --size-cifra: 5.5rem;
 
+  /**
+   * Alto de la barra de navegación. Sale una vez de aquí y sirve para tres
+   * cosas a la vez: el alto de la barra, el hueco que deja bajo ella y el
+   * `scroll-margin-top` de las secciones, para que un salto no deje el título
+   * escondido detrás.
+   */
+  --size-cabecera: 4.25rem;
+
   /* ---------------------------------------------------------------------
    * Forma
    * ------------------------------------------------------------------- */
@@ -158,6 +179,8 @@
   --shadow-2: 0 18px 44px -24px rgb(20 20 15 / 32%);
   --shadow-3: 0 24px 60px -34px rgb(20 20 15 / 45%);
   --shadow-4: 0 40px 90px -30px rgb(20 20 15 / 55%);
+  --blur-1: 6px;
+  --blur-2: 12px;
 
   /* ---------------------------------------------------------------------
    * Movimiento — las animaciones también son tokens
