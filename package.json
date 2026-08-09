@@ -17,7 +17,9 @@
     "test:e2e:ui": "playwright test --ui",
     "verificar": "npm run typecheck && npm run lint && npm run lint:css && npm run format:check && npm run test",
     "db:types": "supabase gen types typescript --local > src/types/database.ts",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "tokens": "node scripts/generar-tokens.mjs",
+    "prebuild": "npm run tokens"
   },
   "dependencies": {
     "next": "16.2.12",
