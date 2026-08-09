@@ -1,81 +1,201 @@
 /**
  * MOVIMIENTO
  *
- * Animaciones reutilizables construidas solo con tokens. Ninguna duración ni
- * curva se escribe a mano en un componente.
+ * Las animaciones del sistema de marca, construidas solo con tokens. Ninguna
+ * duración ni curva se escribe a mano en un componente.
  *
- * Toda animación aquí definida se desactiva con `prefers-reduced-motion`.
- * Ese respeto no es opcional: hay personas para las que el movimiento provoca
+ * El criterio es el del diseño: el movimiento acompaña la lectura, nunca la
+ * interrumpe. Entradas largas y suaves con `--ease-salida`, sin rebotes.
+ *
+ * Los reveals al hacer scroll usan `animation-timeline: view()`, que resuelve
+ * el navegador sin JavaScript ni observadores. Donde no esté soportado, el
+ * contenido simplemente aparece: nunca se queda invisible.
+ *
+ * Toda animación aquí definida se reduce con `prefers-reduced-motion`. Ese
+ * respeto no es opcional: hay personas para las que el movimiento provoca
  * mareo real.
  */
 
 @keyframes aparecer {
   from {
-    opacity: 0;
+    opacity: 0%;
   }
 
   to {
-    opacity: 1;
+    opacity: 100%;
   }
 }
 
-@keyframes aparecer-subiendo {
+@keyframes subir {
   from {
-    opacity: 0;
-    transform: translateY(var(--space-5));
+    opacity: 0%;
+    transform: translateY(var(--space-pila));
   }
 
   to {
-    opacity: 1;
+    opacity: 100%;
     transform: translateY(0);
   }
 }
 
-@keyframes aparecer-escalando {
+@keyframes bajar {
   from {
-    opacity: 0;
-    transform: scale(0.96);
+    opacity: 0%;
+    transform: translateY(calc(var(--space-interno) * -1));
   }
 
   to {
-    opacity: 1;
+    opacity: 100%;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cortina {
+  from {
+    opacity: 0%;
+    transform: translateY(var(--space-elemento)) scale(0.985);
+  }
+
+  to {
+    opacity: 100%;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Una línea que se traza. Se usa como separador que "dibuja" la sección. */
+@keyframes trazar-horizontal {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes trazar-vertical {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* Zoom lento de una foto al entrar: cinematográfico, nunca brusco. */
+@keyframes acercar {
+  from {
+    transform: scale(1.12);
+  }
+
+  to {
     transform: scale(1);
   }
 }
 
-@keyframes pulso-suave {
+@keyframes flotar {
   0%,
   100% {
-    opacity: 1;
+    transform: translateY(0);
   }
 
   50% {
-    opacity: 0.6;
+    transform: translateY(calc(var(--space-linea) * -1.25));
   }
 }
+
+/* --------------------------------------------------------------------------
+ * Utilidades de entrada
+ *
+ * `-al-ver` reproduce la animación cuando el elemento entra en el viewport;
+ * el resto se reproducen al cargar (contenido de la primera pantalla).
+ * ----------------------------------------------------------------------- */
 
 .animacion-aparecer {
   animation: aparecer var(--transicion-aparicion) both;
 }
 
-.animacion-aparecer-subiendo {
-  animation: aparecer-subiendo var(--transicion-aparicion) both;
+.animacion-subir {
+  animation: subir var(--transicion-cinematica) both;
 }
 
-.animacion-aparecer-escalando {
-  animation: aparecer-escalando var(--transicion-transformacion) both;
+.animacion-bajar {
+  animation: bajar var(--transicion-aparicion) both;
+}
+
+.animacion-acercar {
+  animation: acercar var(--duration-cinematic) var(--ease-salida) both;
+}
+
+.animacion-flotar {
+  animation: flotar calc(var(--duration-cinematic) * 2.6) ease-in-out infinite;
+}
+
+.animacion-trazar {
+  animation: trazar-horizontal var(--transicion-cinematica) both;
+  transform-origin: left;
+}
+
+.animacion-trazar-vertical {
+  animation: trazar-vertical var(--transicion-aparicion) both;
+  transform-origin: top;
+}
+
+@supports (animation-timeline: view()) {
+  .animacion-subir-al-ver,
+  .animacion-aparecer-al-ver,
+  .animacion-cortina-al-ver {
+    animation-fill-mode: both;
+    animation-range: entry 4% cover 24%;
+    animation-timeline: view();
+    animation-timing-function: linear;
+  }
+
+  .animacion-subir-al-ver {
+    animation-duration: var(--duration-slow);
+    animation-name: subir;
+  }
+
+  .animacion-aparecer-al-ver {
+    animation-duration: var(--duration-slower);
+    animation-name: aparecer;
+  }
+
+  .animacion-cortina-al-ver {
+    animation-duration: var(--duration-slower);
+    animation-name: cortina;
+  }
+}
+
+/* Escalonado de listas: cada hijo entra un poco después que el anterior. */
+.escalonado > * {
+  animation-delay: calc(var(--indice, 0) * var(--duration-instant));
 }
 
 /**
- * Movimiento reducido: el contenido sigue apareciendo, pero sin
- * desplazamiento ni escalado. Nunca ocultamos información al desactivarlo.
+ * MOVIMIENTO REDUCIDO
+ *
+ * El contenido sigue apareciendo, pero sin desplazamiento, escalado ni bucles.
+ * Nunca ocultamos información al desactivar el movimiento.
  */
 
 @media (prefers-reduced-motion: reduce) {
   .animacion-aparecer,
-  .animacion-aparecer-subiendo,
-  .animacion-aparecer-escalando {
-    animation: aparecer var(--duration-instant) var(--ease-out) both;
+  .animacion-subir,
+  .animacion-bajar,
+  .animacion-acercar,
+  .animacion-trazar,
+  .animacion-trazar-vertical,
+  .animacion-subir-al-ver,
+  .animacion-aparecer-al-ver,
+  .animacion-cortina-al-ver {
+    animation: aparecer var(--duration-instant) var(--ease-salida) both;
+    animation-timeline: auto;
+  }
+
+  .animacion-flotar {
+    animation: none;
   }
 
   *,
