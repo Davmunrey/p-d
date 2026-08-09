@@ -73,7 +73,24 @@ export async function middleware(peticion: NextRequest) {
 
   if (!usuario && esDelPanel(peticion.nextUrl.pathname)) return aLaPuerta(peticion);
 
+  if (esDelPanel(peticion.nextUrl.pathname)) sinGuardarEnCache(respuesta);
+
   return respuesta;
+}
+
+/**
+ * Que el panel no se quede guardado en el navegador.
+ *
+ * Sin esto, cerrar sesión y darle a «atrás» devuelve la pantalla anterior tal
+ * cual: el navegador la tiene en su caché de historial y no vuelve a pedirla,
+ * así que ni el middleware ni RLS llegan a enterarse. Los datos que se ven son
+ * viejos y ya no se pueden refrescar, pero están ahí — en un portátil
+ * compartido, eso es la lista de invitados a la vista de quien lo coja después.
+ *
+ * `no-store` obliga a pedirla otra vez, y esa petición sí pasa por aquí.
+ */
+function sinGuardarEnCache(respuesta: NextResponse): void {
+  respuesta.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
 }
 
 /**
@@ -92,7 +109,9 @@ function aLaPuerta(peticion: NextRequest): NextResponse {
     `${peticion.nextUrl.pathname}${peticion.nextUrl.search}`,
   );
 
-  return NextResponse.redirect(destino);
+  const respuesta = NextResponse.redirect(destino);
+  sinGuardarEnCache(respuesta);
+  return respuesta;
 }
 
 export const config = {

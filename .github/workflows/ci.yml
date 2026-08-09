@@ -139,7 +139,7 @@ jobs:
       - name: Probar el recorrido completo del acceso
         env:
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
-        run: npx playwright test --project=escritorio tests/e2e/acceso-real.spec.ts
+        run: npx playwright test --project=escritorio tests/e2e/acceso-real.spec.ts tests/e2e/panel.spec.ts
 
       - name: Guardar informe si algo falla
         if: failure()

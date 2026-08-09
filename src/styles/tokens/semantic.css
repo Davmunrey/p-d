@@ -119,6 +119,8 @@
   --alto-campo: var(--size-campo);
   --ancho-cifra: var(--size-cifra);
   --alto-cabecera: var(--size-cabecera);
+  --ancho-lateral: var(--size-lateral);
+  --alto-barra-movil: var(--size-barra-movil);
 
   /* --- Forma --------------------------------------------------------- */
   --radio-boton: var(--radius-redondo);

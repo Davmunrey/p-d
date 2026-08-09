@@ -179,5 +179,46 @@
     "nuevaGuardar": "Guardar y entrar",
     "nuevaCorta": "La contraseña es demasiado corta.",
     "errorEnlace": "Ese enlace ya no vale. Pide uno nuevo y entra desde el último que recibas."
+  },
+  "panel": {
+    "titulo": "Panel",
+    "navegacion": "Secciones del panel",
+    "saltarAlContenido": "Saltar al contenido",
+    "sesionDe": "Has entrado como",
+    "cargando": "Cargando…",
+    "errorTitulo": "Algo no ha ido bien",
+    "errorTexto": "No hemos podido cargar esta pantalla. Vuelve a intentarlo; si sigue igual, avisa.",
+    "reintentar": "Reintentar",
+    "modulos": {
+      "resumen": "Resumen",
+      "invitados": "Invitados",
+      "mesas": "Mesas",
+      "menus": "Menús",
+      "actividades": "Actividades",
+      "proveedores": "Proveedores",
+      "presupuesto": "Presupuesto",
+      "tareas": "Tareas",
+      "cuenta": "Mi cuenta"
+    },
+    "resumen": {
+      "titulo": "Resumen",
+      "descripcion": "Aquí irán los números de la boda: cuántos han confirmado, qué queda por pagar y qué vence esta semana.",
+      "enConstruccion": "Los módulos aparecen en el menú según se van terminando."
+    },
+    "cuenta": {
+      "titulo": "Mi cuenta",
+      "descripcion": "Tu nombre es el que ve la otra persona en el panel.",
+      "nombre": "Nombre",
+      "guardar": "Guardar",
+      "guardado": "Nombre actualizado",
+      "errorGuardar": "No hemos podido guardar el nombre. Inténtalo de nuevo.",
+      "nombreCorto": "Escribe un nombre de al menos dos caracteres.",
+      "rol": "Permisos",
+      "roles": {
+        "propietario": "Propietario",
+        "editor": "Editor",
+        "lector": "Lector"
+      }
+    }
   }
 }
