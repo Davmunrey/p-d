@@ -2,13 +2,14 @@
  * CAPA 2 — SEMÁNTICOS
  *
  * Qué SIGNIFICA cada valor, no cuál es. Esta es la capa que consumen los
- * componentes (vía las utilidades de Tailwind o `var(--color-*)`).
+ * componentes (vía las utilidades de Tailwind o `var(--nombre)`).
  *
  * REGLA: aquí no hay literales, solo referencias a primitivos. Si aparece un
  * valor literal en este fichero, es que falta un primitivo.
  *
- * El tema claro/oscuro se resuelve reasignando estos tokens. Los componentes
- * no saben qué tema está activo, ni les hace falta.
+ * Los nombres y la asignación vienen del sistema de marca de Paloma y David.
+ * El tema oscuro se resuelve reasignando estos tokens: ningún componente sabe
+ * qué tema está activo, ni le hace falta.
  *
  * Nomenclatura: los colores de texto se llaman `tinta` para no confundirse con
  * los tamaños de texto (`--texto-titulo-1`, que es una escala tipográfica).
@@ -16,107 +17,115 @@
 
 :root {
   /* --- Superficies --------------------------------------------------- */
-  --fondo: var(--color-neutro-50);
+  --fondo: var(--color-crema-50);
   --superficie: var(--color-blanco);
   --superficie-elevada: var(--color-blanco);
-  --superficie-hundida: var(--color-neutro-100);
-  --superficie-tenue: var(--color-neutro-100);
-  --superficie-inversa: var(--color-neutro-900);
+  --superficie-hundida: var(--color-crema-100);
+  --superficie-tenue: var(--color-oliva-100);
+  --superficie-inversa: var(--color-carbon-950);
 
   /* --- Texto --------------------------------------------------------- */
-  --tinta: var(--color-neutro-900);
-  --tinta-suave: var(--color-neutro-700);
-  --tinta-tenue: var(--color-neutro-500);
-  --tinta-inversa: var(--color-neutro-50);
-  --tinta-marca: var(--color-piedra-700);
-  --tinta-sobre-marca: var(--color-blanco);
-  --tinta-sobre-acento: var(--color-blanco);
+  --tinta: var(--color-carbon-900);
+  --tinta-suave: var(--color-carbon-600);
+  --tinta-tenue: var(--color-carbon-400);
+  --tinta-inversa: var(--color-crema-50);
+  --tinta-marca: var(--color-oliva-700);
+  --tinta-sobre-marca: var(--color-crema-50);
+  --tinta-sobre-acento: var(--color-crema-50);
 
   /* --- Marca y acento ------------------------------------------------ */
-  --marca: var(--color-piedra-600);
-  --marca-hover: var(--color-piedra-700);
-  --marca-activo: var(--color-piedra-800);
-  --marca-tenue: var(--color-piedra-100);
-  --acento: var(--color-piedra-800);
-  --acento-hover: var(--color-piedra-900);
-  --acento-tenue: var(--color-piedra-50);
+  --marca: var(--color-oliva-500);
+  --marca-hover: var(--color-oliva-600);
+  --marca-activo: var(--color-oliva-750);
+  --marca-tenue: var(--color-oliva-100);
+  --acento: var(--color-oliva-700);
+  --acento-hover: var(--color-oliva-875);
+  --acento-tenue: var(--color-oliva-100);
 
   /* --- Bordes -------------------------------------------------------- */
-  --borde: var(--color-neutro-200);
-  --borde-fuerte: var(--color-neutro-300);
-  --borde-tenue: var(--color-neutro-100);
-  --borde-marca: var(--color-piedra-400);
+  --borde: var(--color-hueso-300);
+  --borde-fuerte: var(--color-hueso-400);
+  --borde-tenue: var(--color-crema-100);
+  --borde-marca: var(--color-oliva-420);
 
   /* --- Estado -------------------------------------------------------- */
-  --exito: var(--color-exito-500);
-  --exito-fondo: var(--color-exito-100);
-  --exito-tinta: var(--color-exito-700);
-  --aviso: var(--color-aviso-500);
-  --aviso-fondo: var(--color-aviso-100);
-  --aviso-tinta: var(--color-aviso-700);
-  --error: var(--color-error-500);
-  --error-fondo: var(--color-error-100);
-  --error-tinta: var(--color-error-700);
-  --info: var(--color-info-500);
-  --info-fondo: var(--color-info-100);
-  --info-tinta: var(--color-info-700);
+  --exito: var(--color-exito-claro);
+  --exito-fondo: var(--color-exito-fondo-claro);
+  --exito-tinta: var(--color-exito-claro);
+  --aviso: var(--color-aviso-claro);
+  --aviso-fondo: var(--color-crema-100);
+  --aviso-tinta: var(--color-aviso-claro);
+  --error: var(--color-error-claro);
+  --error-fondo: var(--color-error-fondo-claro);
+  --error-tinta: var(--color-error-claro);
 
   /* --- Foco (accesibilidad) ------------------------------------------ */
-  --foco: var(--color-piedra-500);
+  --foco: var(--color-oliva-500);
   --foco-ancho: var(--border-width-2);
-  --foco-separacion: var(--space-1);
+  --foco-separacion: var(--space-linea);
 
   /* --- Superposiciones ----------------------------------------------- */
   --velo: var(--color-velo-medio);
   --velo-suave: var(--color-velo-suave);
+  --velo-fuerte: var(--color-velo-fuerte);
 
   /* --- Tipografía semántica ------------------------------------------ */
   --fuente-titulo: var(--font-family-serif);
   --fuente-cuerpo: var(--font-family-sans);
   --fuente-codigo: var(--font-family-mono);
-  --texto-display: var(--font-size-10);
-  --texto-titulo-1: var(--font-size-8);
-  --texto-titulo-2: var(--font-size-6);
-  --texto-titulo-3: var(--font-size-5);
-  --texto-titulo-4: var(--font-size-4);
-  --texto-cuerpo-grande: var(--font-size-4);
-  --texto-cuerpo: var(--font-size-3);
-  --texto-pequeno: var(--font-size-2);
-  --texto-diminuto: var(--font-size-1);
-  --interlineado-titulo: var(--line-height-tight);
-  --interlineado-cuerpo: var(--line-height-relaxed);
-  --interlineado-compacto: var(--line-height-normal);
-  --espaciado-titulo: var(--letter-spacing-tight);
+  --texto-display: var(--font-size-display);
+  --texto-titulo-1: var(--font-size-titulo-1);
+  --texto-titulo-2: var(--font-size-titulo-2);
+  --texto-titulo-3: var(--font-size-titulo-3);
+  --texto-cita: var(--font-size-cita);
+  --texto-cuerpo-grande: var(--font-size-cuerpo-grande);
+  --texto-cuerpo: var(--font-size-cuerpo);
+  --texto-etiqueta: var(--font-size-etiqueta);
+  --texto-pequeno: var(--font-size-pequeno);
+  --texto-diminuto: var(--font-size-diminuto);
+  --peso-titulo: var(--font-weight-light);
+  --peso-titulo-menor: var(--font-weight-regular);
+  --peso-cuerpo: var(--font-weight-regular);
+  --peso-destacado: var(--font-weight-medium);
+  --interlineado-display: var(--line-height-display);
+  --interlineado-titulo: var(--line-height-titulo);
+  --interlineado-titulo-corto: var(--line-height-titulo-corto);
+  --interlineado-cita: var(--line-height-cita);
+  --interlineado-cuerpo: var(--line-height-cuerpo);
+  --espaciado-display: var(--letter-spacing-display);
+  --espaciado-titulo: var(--letter-spacing-titulo);
   --espaciado-normal: var(--letter-spacing-normal);
-  --espaciado-amplio: var(--letter-spacing-wider);
+  --espaciado-etiqueta: var(--letter-spacing-etiqueta);
+  --espaciado-boton: var(--letter-spacing-boton);
+  --espaciado-marcado: var(--letter-spacing-marcado);
 
   /* --- Espaciado semántico ------------------------------------------- */
-  --espacio-seccion: var(--space-12);
-  --espacio-seccion-compacta: var(--space-10);
-  --espacio-bloque: var(--space-8);
-  --espacio-elemento: var(--space-5);
-  --espacio-interno: var(--space-4);
-  --espacio-interno-compacto: var(--space-3);
-  --espacio-pila: var(--space-4);
-  --espacio-linea: var(--space-2);
+  --espacio-linea: var(--space-linea);
+  --espacio-interno-compacto: var(--space-compacto);
+  --espacio-interno: var(--space-interno);
+  --espacio-pila: var(--space-pila);
+  --espacio-elemento: var(--space-elemento);
+  --espacio-bloque: var(--space-bloque);
+  --espacio-seccion-compacta: var(--space-seccion-compacta);
+  --espacio-seccion: var(--space-seccion);
 
   /* --- Forma --------------------------------------------------------- */
-  --radio-boton: var(--radius-2);
-  --radio-campo: var(--radius-2);
-  --radio-tarjeta: var(--radius-4);
-  --radio-modal: var(--radius-5);
-  --radio-imagen: var(--radius-3);
-  --radio-etiqueta: var(--radius-full);
+  --radio-boton: var(--radius-redondo);
+  --radio-campo: var(--radius-caja);
+  --radio-tarjeta: var(--radius-caja);
+  --radio-imagen: var(--radius-sutil);
+  --radio-modal: var(--radius-amplio);
+  --radio-etiqueta: var(--radius-redondo);
   --sombra-sutil: var(--shadow-1);
   --sombra-tarjeta: var(--shadow-2);
   --sombra-elevada: var(--shadow-3);
   --sombra-modal: var(--shadow-4);
 
   /* --- Movimiento semántico ------------------------------------------ */
-  --transicion-color: var(--duration-fast) var(--ease-out);
-  --transicion-transformacion: var(--duration-normal) var(--ease-out);
-  --transicion-aparicion: var(--duration-slow) var(--ease-out);
-  --transicion-cinematica: var(--duration-cinematic) var(--ease-in-out);
+  --transicion-color: var(--duration-fast) var(--ease-salida);
+  --transicion-transformacion: var(--duration-normal) var(--ease-salida);
+  --transicion-aparicion: var(--duration-slow) var(--ease-salida);
+  --transicion-cinematica: var(--duration-cinematic) var(--ease-suave);
 
   /* --- Anchos de contenido ------------------------------------------- */
   --ancho-texto: var(--width-prose);
@@ -139,76 +148,124 @@
  *
  * Solo reasigna semánticos. Ningún componente se entera del cambio.
  * Sin atributo se respeta la preferencia del sistema; `[data-tema]` la fuerza.
+ *
+ * Ojo: en oscuro el acento se invierte — pasa a ser el crema, porque sobre
+ * fondo oliva oscuro el propio oliva ya no destaca.
  */
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]) {
-    --fondo: var(--color-neutro-950);
-    --superficie: var(--color-neutro-900);
-    --superficie-elevada: var(--color-neutro-800);
-    --superficie-hundida: var(--color-negro);
-    --superficie-tenue: var(--color-neutro-800);
-    --superficie-inversa: var(--color-neutro-50);
-    --tinta: var(--color-neutro-50);
-    --tinta-suave: var(--color-neutro-300);
-    --tinta-tenue: var(--color-neutro-400);
-    --tinta-inversa: var(--color-neutro-900);
-    --tinta-marca: var(--color-piedra-300);
-    --marca: var(--color-piedra-400);
-    --marca-hover: var(--color-piedra-300);
-    --marca-activo: var(--color-piedra-200);
-    --marca-tenue: var(--color-piedra-900);
-    --acento: var(--color-piedra-400);
-    --acento-hover: var(--color-piedra-300);
-    --acento-tenue: var(--color-piedra-900);
-    --borde: var(--color-neutro-700);
-    --borde-fuerte: var(--color-neutro-600);
-    --borde-tenue: var(--color-neutro-800);
-    --borde-marca: var(--color-piedra-600);
-    --exito-fondo: var(--color-exito-700);
-    --exito-tinta: var(--color-exito-100);
-    --aviso-fondo: var(--color-aviso-700);
-    --aviso-tinta: var(--color-aviso-100);
-    --error-fondo: var(--color-error-700);
-    --error-tinta: var(--color-error-100);
-    --info-fondo: var(--color-info-700);
-    --info-tinta: var(--color-info-100);
-    --foco: var(--color-piedra-400);
+    --fondo: var(--color-oliva-950);
+    --superficie: var(--color-oliva-900);
+    --superficie-elevada: var(--color-oliva-850);
+    --superficie-hundida: var(--color-oliva-975);
+    --superficie-tenue: var(--color-oliva-750);
+    --superficie-inversa: var(--color-crema-50);
+    --tinta: var(--color-crema-150);
+    --tinta-suave: var(--color-oliva-200);
+    --tinta-tenue: var(--color-oliva-450);
+    --tinta-inversa: var(--color-carbon-900);
+    --tinta-marca: var(--color-oliva-350);
+    --tinta-sobre-marca: var(--color-carbon-900);
+    --tinta-sobre-acento: var(--color-carbon-900);
+    --marca: var(--color-oliva-400);
+    --marca-hover: var(--color-oliva-300);
+    --marca-activo: var(--color-oliva-200);
+    --marca-tenue: var(--color-oliva-800);
+    --acento: var(--color-crema-200);
+    --acento-hover: var(--color-crema-50);
+    --acento-tenue: var(--color-oliva-800);
+    --borde: var(--color-oliva-750);
+    --borde-fuerte: var(--color-oliva-600);
+    --borde-tenue: var(--color-oliva-850);
+    --borde-marca: var(--color-oliva-500);
+    --exito: var(--color-exito-oscuro);
+    --exito-fondo: var(--color-oliva-800);
+    --exito-tinta: var(--color-exito-oscuro);
+    --aviso: var(--color-aviso-oscuro);
+    --aviso-fondo: var(--color-oliva-800);
+    --aviso-tinta: var(--color-aviso-oscuro);
+    --error: var(--color-error-oscuro);
+    --error-fondo: var(--color-oliva-800);
+    --error-tinta: var(--color-error-oscuro);
+    --foco: var(--color-oliva-400);
     --velo: var(--color-velo-fuerte);
   }
 }
 
 :root[data-tema="oscuro"] {
-  --fondo: var(--color-neutro-950);
-  --superficie: var(--color-neutro-900);
-  --superficie-elevada: var(--color-neutro-800);
-  --superficie-hundida: var(--color-negro);
-  --superficie-tenue: var(--color-neutro-800);
-  --superficie-inversa: var(--color-neutro-50);
-  --tinta: var(--color-neutro-50);
-  --tinta-suave: var(--color-neutro-300);
-  --tinta-tenue: var(--color-neutro-400);
-  --tinta-inversa: var(--color-neutro-900);
-  --tinta-marca: var(--color-piedra-300);
-  --marca: var(--color-piedra-400);
-  --marca-hover: var(--color-piedra-300);
-  --marca-activo: var(--color-piedra-200);
-  --marca-tenue: var(--color-piedra-900);
-  --acento: var(--color-piedra-400);
-  --acento-hover: var(--color-piedra-300);
-  --acento-tenue: var(--color-piedra-900);
-  --borde: var(--color-neutro-700);
-  --borde-fuerte: var(--color-neutro-600);
-  --borde-tenue: var(--color-neutro-800);
-  --borde-marca: var(--color-piedra-600);
-  --exito-fondo: var(--color-exito-700);
-  --exito-tinta: var(--color-exito-100);
-  --aviso-fondo: var(--color-aviso-700);
-  --aviso-tinta: var(--color-aviso-100);
-  --error-fondo: var(--color-error-700);
-  --error-tinta: var(--color-error-100);
-  --info-fondo: var(--color-info-700);
-  --info-tinta: var(--color-info-100);
-  --foco: var(--color-piedra-400);
+  --fondo: var(--color-oliva-950);
+  --superficie: var(--color-oliva-900);
+  --superficie-elevada: var(--color-oliva-850);
+  --superficie-hundida: var(--color-oliva-975);
+  --superficie-tenue: var(--color-oliva-750);
+  --superficie-inversa: var(--color-crema-50);
+  --tinta: var(--color-crema-150);
+  --tinta-suave: var(--color-oliva-200);
+  --tinta-tenue: var(--color-oliva-450);
+  --tinta-inversa: var(--color-carbon-900);
+  --tinta-marca: var(--color-oliva-350);
+  --tinta-sobre-marca: var(--color-carbon-900);
+  --tinta-sobre-acento: var(--color-carbon-900);
+  --marca: var(--color-oliva-400);
+  --marca-hover: var(--color-oliva-300);
+  --marca-activo: var(--color-oliva-200);
+  --marca-tenue: var(--color-oliva-800);
+  --acento: var(--color-crema-200);
+  --acento-hover: var(--color-crema-50);
+  --acento-tenue: var(--color-oliva-800);
+  --borde: var(--color-oliva-750);
+  --borde-fuerte: var(--color-oliva-600);
+  --borde-tenue: var(--color-oliva-850);
+  --borde-marca: var(--color-oliva-500);
+  --exito: var(--color-exito-oscuro);
+  --exito-fondo: var(--color-oliva-800);
+  --exito-tinta: var(--color-exito-oscuro);
+  --aviso: var(--color-aviso-oscuro);
+  --aviso-fondo: var(--color-oliva-800);
+  --aviso-tinta: var(--color-aviso-oscuro);
+  --error: var(--color-error-oscuro);
+  --error-fondo: var(--color-oliva-800);
+  --error-tinta: var(--color-error-oscuro);
+  --foco: var(--color-oliva-400);
   --velo: var(--color-velo-fuerte);
+}
+
+/**
+ * SECCIÓN INVERSA
+ *
+ * El diseño alterna bloques crema con bloques oliva oscuro (cuenta atrás,
+ * RSVP, pie). En lugar de que cada componente sepa "aquí voy en claro sobre
+ * oscuro", se reasignan los mismos semánticos dentro del bloque: los
+ * componentes de dentro no cambian ni una clase.
+ */
+
+[data-seccion="inversa"] {
+  --fondo: var(--color-oliva-700);
+  --superficie: var(--color-oliva-750);
+  --superficie-elevada: var(--color-crema-50);
+  --superficie-tenue: var(--color-oliva-800);
+  --tinta: var(--color-crema-150);
+  --tinta-suave: var(--color-oliva-200);
+  --tinta-tenue: var(--color-oliva-350);
+  --tinta-inversa: var(--color-carbon-900);
+  --tinta-marca: var(--color-oliva-350);
+  --marca: var(--color-oliva-350);
+  --marca-hover: var(--color-oliva-200);
+  --borde: var(--color-oliva-600);
+  --borde-fuerte: var(--color-oliva-500);
+  --borde-tenue: var(--color-oliva-750);
+  --foco: var(--color-oliva-200);
+}
+
+[data-seccion="pie"] {
+  --fondo: var(--color-carbon-950);
+  --superficie: var(--color-carbon-950);
+  --tinta: var(--color-crema-150);
+  --tinta-suave: var(--color-oliva-450);
+  --tinta-tenue: var(--color-oliva-450);
+  --tinta-marca: var(--color-oliva-350);
+  --marca: var(--color-oliva-350);
+  --borde: var(--color-oliva-800);
+  --foco: var(--color-oliva-350);
 }

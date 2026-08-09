@@ -55,7 +55,7 @@ export const GRUPOS_COLOR: readonly GrupoTokens[] = [
   {
     id: "estado",
     claveCopy: "grupoEstado",
-    tokens: ["exito", "aviso", "error", "info", "foco"],
+    tokens: ["exito", "aviso", "error", "foco"],
   },
 ] as const;
 
@@ -64,11 +64,11 @@ export const TOKENS_TIPOGRAFIA: readonly string[] = [
   "texto-titulo-1",
   "texto-titulo-2",
   "texto-titulo-3",
-  "texto-titulo-4",
+  "texto-cita",
   "texto-cuerpo-grande",
   "texto-cuerpo",
+  "texto-etiqueta",
   "texto-pequeno",
-  "texto-diminuto",
 ] as const;
 
 export const TOKENS_ESPACIADO: readonly string[] = [
@@ -83,12 +83,11 @@ export const TOKENS_ESPACIADO: readonly string[] = [
 ] as const;
 
 export const TOKENS_RADIO: readonly string[] = [
-  "radio-boton",
-  "radio-campo",
   "radio-imagen",
+  "radio-campo",
   "radio-tarjeta",
   "radio-modal",
-  "radio-etiqueta",
+  "radio-boton",
 ] as const;
 
 export const TOKENS_SOMBRA: readonly string[] = [
@@ -100,6 +99,7 @@ export const TOKENS_SOMBRA: readonly string[] = [
 
 export const ANIMACIONES: readonly string[] = [
   "animacion-aparecer",
-  "animacion-aparecer-subiendo",
-  "animacion-aparecer-escalando",
+  "animacion-subir",
+  "animacion-bajar",
+  "animacion-acercar",
 ] as const;

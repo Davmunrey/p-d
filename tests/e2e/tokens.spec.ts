@@ -29,15 +29,32 @@ test.describe("Sistema de diseño", () => {
     }
   });
 
-  test("el puente con Tailwind apunta al mismo token que la capa semántica", async ({
+  test("la utilidad de Tailwind resuelve al mismo valor que el token semántico", async ({
     page,
   }) => {
-    // `bg-superficie` (utilidad) y `var(--superficie)` (CSS) deben ser lo mismo.
-    const viaTailwind = await leerToken(page, "color-superficie");
-    const viaSemantico = await leerToken(page, "superficie");
+    // Con `@theme inline`, la utilidad `bg-superficie` compila a
+    // `var(--superficie)`: no hay copia del valor, hay referencia. Esto es lo
+    // que permite que el tema oscuro y los bloques inversos funcionen
+    // reasignando semánticos, sin que ningún componente se entere.
+    const { pintado, token } = await page.evaluate(() => {
+      const sonda = document.createElement("div");
+      sonda.className = "bg-superficie";
+      document.body.appendChild(sonda);
+      const pintado = getComputedStyle(sonda).backgroundColor;
+      sonda.remove();
 
-    expect(viaTailwind).not.toBe("");
-    expect(viaTailwind).toBe(viaSemantico);
+      const raiz = getComputedStyle(document.documentElement);
+      const referencia = document.createElement("div");
+      referencia.style.backgroundColor = raiz.getPropertyValue("--superficie").trim();
+      document.body.appendChild(referencia);
+      const token = getComputedStyle(referencia).backgroundColor;
+      referencia.remove();
+
+      return { pintado, token };
+    });
+
+    expect(pintado).not.toBe("");
+    expect(pintado).toBe(token);
   });
 
   test("el tema oscuro reasigna semánticos sin tocar componentes", async ({ page }) => {
@@ -135,7 +152,7 @@ test.describe("Movimiento reducido", () => {
     );
 
     const duracion = await page
-      .locator(".animacion-aparecer-subiendo")
+      .locator(".animacion-subir")
       .first()
       .evaluate((elemento) => getComputedStyle(elemento).animationDuration);
 

@@ -4,17 +4,31 @@
 @import "./tokens/motion.css";
 
 /**
+ * Las carpetas de skills son documentación de terceros con ejemplos de código.
+ * Sin excluirlas, Tailwind las escanea y mete en el CSS de producción
+ * utilidades que ningún componente nuestro usa.
+ *
+ * Ojo con la notación de los `@import` de arriba: deben ir entre comillas.
+ * Tailwind no resuelve `@import url(...)`, y si alguien los reescribe a esa
+ * forma el proyecto compila sin una sola utilidad, en silencio.
+ */
+@source not "../../.claude";
+@source not "../../.agents";
+
+/**
  * PUENTE CON TAILWIND
  *
  * `@theme inline` mapea los tokens semánticos al sistema de utilidades. Como
  * usa `inline`, Tailwind referencia las variables en lugar de copiar sus
- * valores: por eso el tema oscuro funciona reasignando semánticos en runtime.
+ * valores: por eso el tema oscuro y los bloques `[data-seccion]` funcionan
+ * reasignando semánticos en runtime.
  *
- * Resultado: `bg-superficie` y `var(--color-superficie)` son EL MISMO token.
- * Una sola fuente de verdad, dos sintaxis.
+ * Resultado: `bg-superficie` y `var(--superficie)` son EL MISMO token. Una
+ * sola fuente de verdad, dos sintaxis.
  *
- * `--color-*: initial` borra antes la paleta por defecto de Tailwind: nadie
- * puede escribir `bg-red-500` ni `text-gray-700` en este proyecto.
+ * Los `*: initial` borran antes las escalas por defecto de Tailwind: nadie
+ * puede escribir `bg-red-500`, `text-2xl` ni `p-4` en este proyecto. Solo
+ * existe el vocabulario del sistema de marca.
  */
 
 @theme inline {
@@ -23,6 +37,9 @@
   --text-*: initial;
   --radius-*: initial;
   --shadow-*: initial;
+  --leading-*: initial;
+  --tracking-*: initial;
+  --ease-*: initial;
 
   /* Superficies */
   --color-fondo: var(--fondo);
@@ -66,14 +83,12 @@
   --color-error: var(--error);
   --color-error-fondo: var(--error-fondo);
   --color-error-tinta: var(--error-tinta);
-  --color-info: var(--info);
-  --color-info-fondo: var(--info-fondo);
-  --color-info-tinta: var(--info-tinta);
 
   /* Foco y velos */
   --color-foco: var(--foco);
   --color-velo: var(--velo);
   --color-velo-suave: var(--velo-suave);
+  --color-velo-fuerte: var(--velo-fuerte);
 
   /* Tipografía */
   --font-titulo: var(--fuente-titulo);
@@ -83,34 +98,44 @@
   --text-titulo-1: var(--texto-titulo-1);
   --text-titulo-2: var(--texto-titulo-2);
   --text-titulo-3: var(--texto-titulo-3);
-  --text-titulo-4: var(--texto-titulo-4);
+  --text-cita: var(--texto-cita);
   --text-cuerpo-grande: var(--texto-cuerpo-grande);
   --text-cuerpo: var(--texto-cuerpo);
+  --text-etiqueta: var(--texto-etiqueta);
   --text-pequeno: var(--texto-pequeno);
   --text-diminuto: var(--texto-diminuto);
+  --font-weight-titulo: var(--peso-titulo);
+  --font-weight-titulo-menor: var(--peso-titulo-menor);
+  --font-weight-cuerpo: var(--peso-cuerpo);
+  --font-weight-destacado: var(--peso-destacado);
+  --leading-display: var(--interlineado-display);
   --leading-titulo: var(--interlineado-titulo);
+  --leading-titulo-corto: var(--interlineado-titulo-corto);
+  --leading-cita: var(--interlineado-cita);
   --leading-cuerpo: var(--interlineado-cuerpo);
-  --leading-compacto: var(--interlineado-compacto);
+  --tracking-display: var(--espaciado-display);
   --tracking-titulo: var(--espaciado-titulo);
   --tracking-normal: var(--espaciado-normal);
-  --tracking-amplio: var(--espaciado-amplio);
+  --tracking-etiqueta: var(--espaciado-etiqueta);
+  --tracking-boton: var(--espaciado-boton);
+  --tracking-marcado: var(--espaciado-marcado);
 
   /* Espaciado */
-  --spacing-seccion: var(--espacio-seccion);
-  --spacing-seccion-compacta: var(--espacio-seccion-compacta);
-  --spacing-bloque: var(--espacio-bloque);
-  --spacing-elemento: var(--espacio-elemento);
-  --spacing-interno: var(--espacio-interno);
-  --spacing-interno-compacto: var(--espacio-interno-compacto);
-  --spacing-pila: var(--espacio-pila);
   --spacing-linea: var(--espacio-linea);
+  --spacing-interno-compacto: var(--espacio-interno-compacto);
+  --spacing-interno: var(--espacio-interno);
+  --spacing-pila: var(--espacio-pila);
+  --spacing-elemento: var(--espacio-elemento);
+  --spacing-bloque: var(--espacio-bloque);
+  --spacing-seccion-compacta: var(--espacio-seccion-compacta);
+  --spacing-seccion: var(--espacio-seccion);
 
   /* Forma */
   --radius-boton: var(--radio-boton);
   --radius-campo: var(--radio-campo);
   --radius-tarjeta: var(--radio-tarjeta);
-  --radius-modal: var(--radio-modal);
   --radius-imagen: var(--radio-imagen);
+  --radius-modal: var(--radio-modal);
   --radius-etiqueta: var(--radio-etiqueta);
   --shadow-sutil: var(--sombra-sutil);
   --shadow-tarjeta: var(--sombra-tarjeta);
@@ -130,9 +155,6 @@
  * Los breakpoints NO pueden ir en `@theme inline`: las media queries se
  * resuelven en tiempo de compilación y no aceptan `var()`. Por eso viven aquí
  * como valores directos, en un `@theme` normal.
- *
- * Sigue habiendo una sola fuente de verdad — solo que para estos tokens es
- * este bloque y no `primitives.css`.
  */
 
 @theme {
@@ -171,6 +193,7 @@
   h3,
   h4 {
     font-family: var(--fuente-titulo);
+    font-weight: var(--peso-titulo);
     letter-spacing: var(--espaciado-titulo);
     line-height: var(--interlineado-titulo);
     text-wrap: balance;
@@ -195,5 +218,15 @@
   video {
     height: auto;
     max-width: 100%;
+  }
+
+  /**
+   * Los bloques inversos pintan su propio fondo: sin esto, reasignar
+   * `--fondo` dentro de `[data-seccion]` no tendría efecto visible porque
+   * el color lo pinta `body`.
+   */
+  [data-seccion] {
+    background-color: var(--fondo);
+    color: var(--tinta);
   }
 }

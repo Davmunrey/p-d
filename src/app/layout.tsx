@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Cormorant_Garamond, Jost } from "next/font/google";
 
 import { ATRIBUTO_TEMA, CLAVE_TEMA, IDIOMA } from "@/config/constants";
 import { t } from "@/lib/copy";
@@ -12,13 +12,15 @@ import "@/styles/globals.css";
  */
 const serif = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
   variable: "--font-serif",
   display: "swap",
 });
 
-const sans = Inter({
+const sans = Jost({
   subsets: ["latin"],
+  weight: ["300", "400", "500"],
   variable: "--font-sans",
   display: "swap",
 });
