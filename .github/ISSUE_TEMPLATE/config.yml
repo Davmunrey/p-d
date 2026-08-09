@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Plan maestro
+    url: https://github.com/Davmunrey/p-d/blob/main/docs/PLAN-MAESTRO.md
+    about: Arquitectura, modelo de datos y decisiones tomadas. Léelo antes de abrir un ticket grande.
+  - name: Reglas del proyecto
+    url: https://github.com/Davmunrey/p-d/blob/main/CLAUDE.md
+    about: Cero hardcode, castellano, todo cableado, E2E en cada entrega. Son innegociables.

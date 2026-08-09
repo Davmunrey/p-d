@@ -7,11 +7,13 @@ Web de boda con landing pública y panel privado de gestión.
 
 ## Documentación
 
-| Documento                              | Contenido                                                      |
-| -------------------------------------- | -------------------------------------------------------------- |
-| [Plan maestro](./docs/PLAN-MAESTRO.md) | Visión, arquitectura, stack, modelo de datos, reglas y roadmap |
-| [Backlog](./docs/BACKLOG.md)           | Board de tickets con criterios de aceptación y tests E2E       |
-| [Skills](./.claude/skills/README.md)   | Listón de diseño e interacción del proyecto                    |
+| Documento                                            | Contenido                                                      |
+| ---------------------------------------------------- | -------------------------------------------------------------- |
+| [**Board**](https://github.com/Davmunrey/p-d/issues) | Los tickets. Es donde se mira qué toca hacer                   |
+| [Plan maestro](./docs/PLAN-MAESTRO.md)               | Visión, arquitectura, stack, modelo de datos, reglas y roadmap |
+| [Backlog](./docs/BACKLOG.md)                         | Cómo se lee el board: épicas, tallas y ciclo de un ticket      |
+| [Entorno](./docs/ENTORNO.md)                         | Qué variable va en cada sitio y por qué                        |
+| [Skills](./.claude/skills/README.md)                 | Listón de diseño e interacción del proyecto                    |
 
 ## Reglas del proyecto
 

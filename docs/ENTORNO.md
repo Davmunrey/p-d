@@ -76,10 +76,25 @@ evita:
    teléfonos y las alergias de los invitados.
 3. **Un secreto más que rota y que se filtra.** El que no existe no se filtra.
 
-### Si algún día hacen falta
+### La excepción: trabajar desde GitHub
+
+`.github/workflows/claude.yml` permite mencionar `@claude` en una incidencia o
+en una PR y que el trabajo se haga ahí, sin abrir un terminal. Eso sí necesita
+credencial:
+
+| Secreto                   | De dónde sale                                                     |
+| ------------------------- | ----------------------------------------------------------------- |
+| `CLAUDE_CODE_OAUTH_TOKEN` | `/install-github-app` desde Claude Code, si usas la suscripción   |
+| `ANTHROPIC_API_KEY`       | Alternativa: consola de Anthropic, si prefieres pagar por consumo |
+
+Basta con uno de los dos. **Mientras no exista ninguno, la mención se ignora**
+dejando un aviso en el registro: el flujo no se pone en rojo, porque no forma
+parte del CI y no debe ensuciar el estado de una PR.
+
+### Si algún día hacen falta más
 
 Cuando entren los emails (BODA-57) o la analítica (BODA-93) habrá que añadir
-`RESEND_API_KEY` y similares. Entonces:
+`RESEND_API_KEY` y similares. En todos los casos:
 
 **Settings → Secrets and variables → Actions → New repository secret.**
 

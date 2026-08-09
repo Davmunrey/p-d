@@ -1,0 +1,43 @@
+name: Etiquetas
+
+# Las etiquetas del board son configuración, no algo que se cree a mano en la
+# interfaz de GitHub: viven en `.github/etiquetas.json` y este flujo las
+# reconcilia. Así el board se puede reconstruir entero desde el repositorio y
+# un cambio de nombre o de color pasa por PR como cualquier otro cambio.
+
+on:
+  push:
+    branches: [main]
+    paths: [".github/etiquetas.json", ".github/workflows/etiquetas.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: etiquetas
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    name: Sincronizar etiquetas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Crear o actualizar cada etiqueta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          jq -c '.[]' .github/etiquetas.json | while read -r etiqueta; do
+            nombre=$(jq -r '.nombre' <<<"$etiqueta")
+            color=$(jq -r '.color' <<<"$etiqueta")
+            descripcion=$(jq -r '.descripcion' <<<"$etiqueta")
+            # --force actualiza la etiqueta si ya existe, así que el flujo es
+            # idempotente: se puede relanzar sin miedo.
+            gh label create "$nombre" --color "$color" --description "$descripcion" --force
+            echo "· $nombre"
+          done
