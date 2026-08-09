@@ -116,7 +116,7 @@ jobs:
         run: supabase start
 
       - name: Aplicar migraciones y seed
-        run: supabase db reset --no-seed && supabase db push --local
+        run: supabase db reset
 
       - name: Crear los usuarios de prueba
         run: psql "$(supabase status -o env | grep '^DB_URL=' | cut -d= -f2- | tr -d '\"')" -v ON_ERROR_STOP=1 -f scripts/preparar-acceso-pruebas.sql

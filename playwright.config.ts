@@ -56,7 +56,7 @@ export default defineConfig({
         timeout: 180_000,
         env: {
           /**
-           * Un Supabase que no existe, a propósito.
+           * Por defecto, un Supabase que NO EXISTE, a propósito.
            *
            * El acceso al panel tiene que comportarse igual de bien cuando el
            * servidor de autenticación no responde: el mismo mensaje neutro, sin
@@ -64,12 +64,15 @@ export default defineConfig({
            * Apuntando a un puerto cerrado, cada petición falla de verdad y los
            * tests recorren ese camino sin simular nada.
            *
-           * El apretón de manos completo —correo, enlace, sesión— se prueba en
-           * el trabajo de CI que levanta un Supabase de verdad.
+           * OJO CON EL `??`: si estos valores se fijaran sin condición, el
+           * trabajo de CI que levanta un Supabase de verdad recibiría igualmente
+           * el puerto cerrado y no podría probar nada. Pasó.
            */
-          NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:1",
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: "clave-de-pruebas-sin-valor",
-          NEXT_PUBLIC_SITE_URL: URL_BASE,
+          NEXT_PUBLIC_SUPABASE_URL:
+            process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:1",
+          NEXT_PUBLIC_SUPABASE_ANON_KEY:
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "clave-de-pruebas-sin-valor",
+          NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? URL_BASE,
         },
       },
 });
