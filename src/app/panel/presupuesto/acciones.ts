@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO, RUTA_PRESUPUESTO } from "@/config/constants";
 import { contarGastosDeCategoria } from "@/lib/bbdd/presupuesto";
+import { leerImporte } from "@/lib/importe";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 import { type EstadoPresupuesto } from "./estado";
@@ -39,18 +40,8 @@ function opcional(datos: FormData, campo: string): string | null {
  * decidido cuánto — que es exactamente cero previsto, no «desconocido».
  */
 function importe(datos: FormData, campo: string): number | undefined {
-  const bruto = texto(datos, campo);
-  if (!bruto) return 0;
-
-  const limpio = bruto
-    .replace(/[€\s]/g, "")
-    .replace(/\.(?=\d{3}(\D|$))/g, "")
-    .replace(",", ".");
-
-  const numero = Number(limpio);
-  if (!Number.isFinite(numero) || numero < 0) return undefined;
-
-  return Math.round(numero * 100) / 100;
+  const leido = leerImporte(texto(datos, campo));
+  return leido === null ? 0 : leido;
 }
 
 /*

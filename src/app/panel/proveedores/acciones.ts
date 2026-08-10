@@ -9,6 +9,7 @@ import {
   esEstadoProveedor,
   obtenerContratadosDeCategoria,
 } from "@/lib/bbdd/proveedores";
+import { leerImporte } from "@/lib/importe";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 import { type EstadoProveedores } from "./estado";
@@ -44,28 +45,12 @@ function opcional(datos: FormData, campo: string): string | null {
 /**
  * Un importe escrito por una persona → un número, o `undefined` si no se puede.
  *
- * Se distinguen tres cosas que no son iguales: vacío (no hay importe, `null`),
- * un número, y algo que no es un número (`undefined`, que la pantalla convierte
- * en error). Devolver `null` para lo ilegible borraría en silencio el importe
- * que alguien acaba de teclear mal.
+ * La lectura vive en `@/lib/importe` porque la comparten tres pantallas —ficha
+ * de proveedor, categorías y gastos— y tres copias del mismo `replace` acaban
+ * siendo tres criterios distintos sobre el punto de los millares.
  */
 function importe(datos: FormData, campo: string): number | null | undefined {
-  const bruto = texto(datos, campo);
-  if (!bruto) return null;
-
-  // Se quitan los separadores de millar y la coma decimal pasa a punto. El
-  // euro y los espacios se caen también: se pegan desde un presupuesto en PDF.
-  const limpio = bruto
-    .replace(/[€\s]/g, "")
-    .replace(/\.(?=\d{3}(\D|$))/g, "")
-    .replace(",", ".");
-
-  const numero = Number(limpio);
-  if (!Number.isFinite(numero) || numero < 0) return undefined;
-
-  // Dos decimales, como `numeric(12,2)`. Redondear aquí evita que la base
-  // rechace un céntimo de más venido de una división.
-  return Math.round(numero * 100) / 100;
+  return leerImporte(texto(datos, campo));
 }
 
 /*

@@ -177,6 +177,15 @@ export const MAXIMO_FILAS_IMPORTACION = 500;
 export const RUTA_PENDIENTES = "/panel/invitados/pendientes";
 
 /**
+ * Los gastos, uno a uno, dentro del presupuesto.
+ *
+ * Cuelga del presupuesto y no es una sección propia del panel a propósito: un
+ * gasto sin su categoría delante no se entiende, y la pregunta que trae aquí a
+ * alguien nunca es «enséñame los gastos», es «¿en qué se me está yendo esto?».
+ */
+export const RUTA_GASTOS = "/panel/presupuesto/gastos";
+
+/**
  * A dónde se mandan los correos.
  *
  * Configurable a propósito, y no porque vaya a cambiar de proveedor: es lo que

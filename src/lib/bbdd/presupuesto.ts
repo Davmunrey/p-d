@@ -191,3 +191,110 @@ export async function contarGastosDeCategoria(categoriaId: string): Promise<numb
 export function loQueVaCostando(fila: ResumenCategoria): number {
   return fila.importePrevisto - fila.desviacion;
 }
+
+/**
+ * BODA-61 · UN GASTO CONCRETO
+ *
+ * La unidad de la que están hechas las categorías: «el catering», «el ramo»,
+ * «las alianzas». Lleva dos importes y no uno porque son dos cosas distintas:
+ * `estimado` es lo que se calcula que costará y `real` lo que se acabó
+ * acordando. Mientras no hay acuerdo, `real` es `null` — que no es cero.
+ */
+export interface Gasto {
+  id: string;
+  categoriaId: string;
+  categoria: string;
+  proveedorId: string | null;
+  proveedor: string | null;
+  concepto: string;
+  descripcion: string | null;
+  importeEstimado: number;
+  /** `null` mientras no se ha cerrado. Distinto de un acuerdo por cero euros. */
+  importeReal: number | null;
+  pagada: boolean;
+}
+
+/**
+ * `numeric` nulo tiene que seguir siendo nulo.
+ *
+ * `aImporte` convierte `null` en `0` porque en las sumas eso es lo correcto —
+ * una categoría sin gastos ha costado cero—. Aquí no: un gasto sin importe real
+ * todavía no se ha cerrado, y enseñar «0,00 €» en esa columna diría que el
+ * proveedor sale gratis.
+ */
+function aImporteOpcional(valor: string | number | null): number | null {
+  if (valor === null) return null;
+  const numero = typeof valor === "number" ? valor : Number(valor);
+  return Number.isFinite(numero) ? numero : null;
+}
+
+interface FilaGasto {
+  id: string;
+  categoria_id: string;
+  proveedor_id: string | null;
+  concepto: string;
+  descripcion: string | null;
+  importe_estimado: string | number;
+  importe_real: string | number | null;
+  pagada: boolean;
+  categorias_presupuesto: { nombre: string } | null;
+  proveedores: { nombre: string } | null;
+}
+
+/**
+ * Los gastos con su categoría y su proveedor ya resueltos.
+ *
+ * SE PIDEN EN UNA SOLA CONSULTA, con los `embed` de PostgREST. Leer los gastos
+ * y luego el nombre de cada proveedor uno a uno son cuarenta viajes a la base
+ * para pintar una lista — y la lista se abre cada vez que se apunta un gasto.
+ *
+ * EL ORDEN LO MARCA LA CATEGORÍA, como en el resumen: los gastos se miran por
+ * bloques («¿en qué se me está yendo el catering?»), no como una lista plana
+ * ordenada por fecha de alta.
+ */
+export async function obtenerGastos(): Promise<Gasto[]> {
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("partidas_presupuesto")
+    .select(
+      "id, categoria_id, proveedor_id, concepto, descripcion, importe_estimado, importe_real, pagada, categorias_presupuesto(nombre), proveedores(nombre)",
+    )
+    .order("concepto");
+
+  if (error) {
+    console.error("No se pudieron leer los gastos:", error);
+    return [];
+  }
+
+  return ((data as unknown as FilaGasto[] | null) ?? []).map((fila) => ({
+    id: fila.id,
+    categoriaId: fila.categoria_id,
+    categoria: fila.categorias_presupuesto?.nombre ?? "",
+    proveedorId: fila.proveedor_id,
+    proveedor: fila.proveedores?.nombre ?? null,
+    concepto: fila.concepto,
+    descripcion: fila.descripcion,
+    importeEstimado: aImporte(fila.importe_estimado),
+    importeReal: aImporteOpcional(fila.importe_real),
+    pagada: fila.pagada,
+  }));
+}
+
+/**
+ * Los gastos repartidos por categoría, en el orden en que se enseñan las
+ * categorías.
+ *
+ * Agrupar aquí y no en la pantalla: es la misma lista que necesitan el listado
+ * y los subtotales, y hacerlo dos veces es cómo dos partes de la misma pantalla
+ * acaban discrepando en cuántos gastos hay.
+ */
+export function porCategoria(gastos: Gasto[]): Map<string, Gasto[]> {
+  const grupos = new Map<string, Gasto[]>();
+  for (const gasto of gastos) {
+    const suyos = grupos.get(gasto.categoriaId);
+    if (suyos) suyos.push(gasto);
+    else grupos.set(gasto.categoriaId, [gasto]);
+  }
+  return grupos;
+}

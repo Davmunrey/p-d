@@ -249,6 +249,12 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 
 **`categorias_presupuesto`**, **`partidas_presupuesto`**, **`pagos`**. Vistas: **`v_resumen_presupuesto`** y **`v_proximos_pagos`**.
 
+**Un gasto lleva dos importes y el segundo puede estar sin poner.** `importe_estimado` es lo que se calcula que costará —`not null` con `default 0`, porque un gasto sin calcular son cero euros previstos— y `importe_real` es lo que se acabó acordando. `importe_real` nulo significa «todavía no cerrado» y hay que dejarlo nulo: un cero ahí diría que el proveedor sale gratis, y ese ahorro inventado entraría en la desviación de la categoría como dinero que sobra. Por eso la pantalla enseña «sin cerrar» y no «0,00 €», y `loQueVaCostando()` se despeja de la `desviacion` que ya calcula la vista —real donde lo haya, estimado donde no— en vez de sumar las partidas por segunda vez con otro criterio.
+
+**Los totales los suma la base y nunca el navegador.** Los importes son `numeric`, que en PostgreSQL es exacto y en JavaScript se convierte en coma flotante: sumar cuarenta partidas en la pantalla acaba enseñando «21.399,999999999996 €» justo en la vista que decide si esta boda cabe en el presupuesto.
+
+**Cómo se lee un importe teclado** (`leerImporte()`, en `src/lib/importe.ts`, compartido por la ficha de proveedor, las categorías y los gastos). Vacío es `null` y no cero; lo ilegible es un rechazo con su frase y no un `null` que borraría en silencio lo que alguien acaba de teclear mal. **No se redondea, se rechaza:** un tercer decimal es un dedo que ha resbalado y la respuesta es enseñarlo, no elegir por él —antes `8600,555` se guardaba como 8.600,56 sin decir nada—. Y con el punto manda el castellano: se quita sólo el que va seguido de exactamente tres cifras, así que `1.250` son mil doscientos cincuenta y `12.50` siguen siendo doce con cincuenta.
+
 **`tareas`** — con estado, prioridad y vencimiento.
 
 ### Política RLS

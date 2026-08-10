@@ -1,9 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO } from "@/config/constants";
+import { RUTA_ACCESO, RUTA_GASTOS } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   loQueVaCostando,
@@ -85,6 +86,12 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
       <header className="max-w-texto">
         <Titulo2 como="h1">{t("panel.presupuesto.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.presupuesto.descripcion")}</Cuerpo>
+        <Link
+          href={RUTA_GASTOS}
+          className="mt-pila inline-block text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
+        >
+          {t("panel.presupuesto.verGastos")}
+        </Link>
       </header>
 
       <AvisoPresupuesto estado={estado} />
