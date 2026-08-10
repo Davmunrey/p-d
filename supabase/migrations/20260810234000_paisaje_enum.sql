@@ -1,0 +1,24 @@
+-- ============================================================================
+-- BODA-27 · Paisaje: el enumerado
+--
+-- La entrega del estudio pone, justo debajo de la portada, una sección a
+-- pantalla completa con una foto aérea y una frase encima: «Todo empezó entre
+-- Barcelona y Sevilla y continúa en León». La web no la tenía.
+--
+-- No es relleno visual. La portada da los nombres y la fecha, y a partir de la
+-- cuenta atrás todo es logística —cuándo, dónde, cómo llegar, qué ponerse—.
+-- Esta sección es lo único que cuenta de dónde vienen los novios, y va donde la
+-- puso el estudio: en el respiro entre las dos cosas.
+--
+-- ESTE FICHERO SÓLO TOCA EL ENUMERADO. PostgreSQL no deja usar un valor nuevo
+-- de un enumerado dentro de la misma transacción que lo añade, así que la fila
+-- de `secciones_landing` y la columna de la frase van en la migración
+-- siguiente, que corre en su propia transacción. Mismo par que en BODA-20,
+-- BODA-36 y BODA-38.
+--
+-- Rollback: supabase/migrations/rollback/20260810234000_paisaje_enum.sql
+-- ============================================================================
+
+-- Detrás de `portada`, que es donde la puso la entrega: se ve al primer scroll,
+-- antes de que empiece la logística.
+alter type public.seccion_landing add value if not exists 'paisaje' after 'portada';

@@ -92,6 +92,7 @@ update public.configuracion_boda set
   direccion_banquete   = '(DES) Camino del Ejemplo, 1',
   latitud_banquete     = 40.416775,
   longitud_banquete    = -3.703790,
+  frase_paisaje        = '(DES) Todo empezó entre dos ciudades y continúa en una tercera',
   correo_contacto      = 'hola@ejemplo.test',
   moneda               = 'EUR',
   idioma_por_defecto   = 'es';

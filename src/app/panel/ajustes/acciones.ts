@@ -147,6 +147,7 @@ export async function guardarAjustes(datos: FormData) {
           fecha_hora_ceremonia: ceremonia.toISOString(),
           fecha_hora_banquete: banquete ? banquete.toISOString() : null,
           fecha_limite_rsvp: limite.toISOString(),
+          frase_paisaje: textoONulo(datos, "frase_paisaje"),
           lugar_ceremonia: textoONulo(datos, "lugar_ceremonia"),
           direccion_ceremonia: textoONulo(datos, "direccion_ceremonia"),
           latitud_ceremonia: latCeremonia,

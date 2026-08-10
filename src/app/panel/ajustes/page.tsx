@@ -51,6 +51,7 @@ interface Configuracion {
   fecha_hora_banquete: string | null;
   fecha_limite_rsvp: string;
   zona_horaria: string;
+  frase_paisaje: string | null;
   lugar_ceremonia: string | null;
   direccion_ceremonia: string | null;
   latitud_ceremonia: number | null;
@@ -94,7 +95,7 @@ export default async function PaginaAjustes({
       "nombre_novia, nombre_novio, hashtag, correo_contacto, fecha_hora_ceremonia, " +
         "fecha_hora_banquete, fecha_limite_rsvp, zona_horaria, lugar_ceremonia, " +
         "direccion_ceremonia, latitud_ceremonia, longitud_ceremonia, lugar_banquete, " +
-        "direccion_banquete, latitud_banquete, longitud_banquete",
+        "direccion_banquete, latitud_banquete, longitud_banquete, frase_paisaje",
     )
     .maybeSingle<Configuracion>();
 
@@ -178,6 +179,21 @@ export default async function PaginaAjustes({
             name="direccion_ceremonia"
             etiqueta={t("panel.ajustes.direccionCeremonia")}
             defaultValue={data?.direccion_ceremonia ?? ""}
+            disabled={soloLectura}
+          />
+          {/*
+            LA FRASE DEL PAISAJE VIVE AQUÍ, entre los datos de la boda, y no en
+            un módulo de contenido aparte: nombra tres ciudades concretas, que
+            son de esta boda igual que el lugar o la fecha. Vacía, la sección no
+            se pinta — y eso se dice en la ayuda, porque si no el único modo de
+            averiguarlo es borrarla y recargar la web.
+          */}
+          <CampoTexto
+            name="frase_paisaje"
+            etiqueta={t("panel.ajustes.frasePaisaje")}
+            ayuda={t("panel.ajustes.frasePaisajeAyuda")}
+            defaultValue={data?.frase_paisaje ?? ""}
+            maxLength={200}
             disabled={soloLectura}
           />
           <div className="grid gap-elemento sm:grid-cols-2">

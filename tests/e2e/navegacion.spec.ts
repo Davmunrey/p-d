@@ -39,7 +39,7 @@ test.describe("Navegación", () => {
   });
 
   test("el orden del menú es el que manda la base de datos", async ({ page }) => {
-    // `orden` en la tabla: portada 0 · cuenta_atras 10 · historia 20 ·
+    // `orden` en la tabla: portada 0 · paisaje 5 · cuenta_atras 10 · historia 20 ·
     // preboda 33 · programa 35 · transporte 50 · alojamiento 60 ·
     // preguntas 70 · playlist 75 · regalos 76 · dresscode 77 · rsvp 80. Si
     // alguien reordena el JSX, esto se cae.
@@ -50,6 +50,7 @@ test.describe("Navegación", () => {
 
     expect(rotulos.map((rotulo) => rotulo.trim())).toEqual([
       copy.navegacion.secciones.portada,
+      copy.navegacion.secciones.paisaje,
       copy.navegacion.secciones.cuenta_atras,
       copy.navegacion.secciones.historia,
       copy.navegacion.secciones.preboda,
@@ -130,11 +131,20 @@ test.describe("Navegación", () => {
   test("una sección encendida pero sin construir tampoco aparece", async ({ page }) => {
     // `galeria` y `ubicaciones` están visibles en la base de datos desde el
     // primer día, y su código todavía no existe.
+    /*
+      `exact` no sobra: `getByRole` casa el nombre por SUBCADENA, así que buscar
+      «Dónde» encuentra también cualquier rótulo que lo contenga. Sin esto, el
+      test no falla porque `ubicaciones` haya aparecido, sino porque alguien
+      añadió una sección con una palabra parecida — y el mensaje no lo dice.
+    */
     await expect(
-      menu(page).getByRole("link", { name: copy.navegacion.secciones.galeria }),
+      menu(page).getByRole("link", { name: copy.navegacion.secciones.galeria, exact: true }),
     ).toHaveCount(0);
     await expect(
-      menu(page).getByRole("link", { name: copy.navegacion.secciones.ubicaciones }),
+      menu(page).getByRole("link", {
+        name: copy.navegacion.secciones.ubicaciones,
+        exact: true,
+      }),
     ).toHaveCount(0);
   });
 
