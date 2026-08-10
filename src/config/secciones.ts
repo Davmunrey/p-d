@@ -28,6 +28,7 @@ export const SECCIONES = [
   "cuenta_atras",
   "historia",
   "galeria",
+  "preboda",
   "programa",
   "ubicaciones",
   "transporte",

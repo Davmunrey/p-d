@@ -43,7 +43,8 @@
       "regalos": "Regalo",
       "preguntas_frecuentes": "Preguntas",
       "playlist": "Playlist",
-      "rsvp": "Confirmar"
+      "rsvp": "Confirmar",
+      "preboda": "La víspera"
     }
   },
   "portada": {
@@ -69,6 +70,11 @@
   "historia": {
     "etiqueta": "Cómo llegamos hasta aquí",
     "titulo": "Nuestra historia"
+  },
+  "preboda": {
+    "etiqueta": "La víspera",
+    "titulo": "Si llegáis antes de tiempo",
+    "entradilla": "Muchos venís de fuera y el día antes da para mucho. Esto es lo que habrá."
   },
   "programa": {
     "etiqueta": "El día, hora a hora",

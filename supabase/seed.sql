@@ -325,6 +325,16 @@ $$;
 -- el prefijo «(DES)»: los datos de verdad se cargan desde el panel.
 -- ============================================================================
 
+-- La víspera. Van con `momento = 'preboda'` y son los que separan la sección de
+-- la del día de la boda: sin al menos uno, el test que comprueba que las dos no
+-- se mezclan se saltaría solo y estaría verde sin haberse ejecutado nunca.
+insert into public.hitos_programa (hora, titulo, descripcion, orden, momento) values
+  ('19:00', '(DES) Vermut de bienvenida', 'En la plaza mayor, para quien llegue con tiempo.',      1, 'preboda'),
+  ('21:30', '(DES) Cena informal',        'Sin reserva ni protocolo: quien pueda, que se apunte.', 2, 'preboda')
+on conflict do nothing;
+
+update public.secciones_landing set visible = true where seccion = 'preboda';
+
 insert into public.hitos_programa (hora, titulo, descripcion, orden) values
   ('12:00', '(DES) Autobús desde la ciudad', 'Salida desde la plaza principal. Intentad estar cinco minutos antes.', 1),
   ('13:00', '(DES) Ceremonia',               'Al aire libre, a la sombra. Habrá abanicos y agua fría esperando.',       2),

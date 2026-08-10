@@ -164,11 +164,22 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
   };
 }
 
-export async function obtenerPrograma(): Promise<HitoPrograma[]> {
+/**
+ * Los hitos de un momento: la víspera o el día de la boda.
+ *
+ * Las dos secciones leen la MISMA tabla, filtrando por `momento`. Un hito de
+ * la preboda es exactamente lo mismo —hora, título y descripción— y lo único
+ * que cambia es el día; dos tablas iguales se acabarían separando en cuanto
+ * una ganara una columna que la otra no.
+ */
+export async function obtenerPrograma(
+  momento: "preboda" | "boda" = "boda",
+): Promise<HitoPrograma[]> {
   const filas = await leerComoAnonimo(
     (tx) => tx<{ id: string; hora: string; titulo: string; descripcion: string | null }[]>`
       select id, hora, titulo, descripcion
       from public.hitos_programa
+      where momento = ${momento}
       order by orden, hora
     `,
   );

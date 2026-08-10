@@ -111,6 +111,7 @@ export default async function PaginaInicio() {
     secciones,
     configuracion,
     programa,
+    preboda,
     historia,
     alojamientos,
     rutas,
@@ -136,9 +137,26 @@ export default async function PaginaInicio() {
     ),
     cuenta_atras: <CuentaAtrasSeccion configuracion={configuracion} />,
     historia: historia.length > 0 ? <Historia hitos={historia} /> : undefined,
+    preboda:
+      preboda.length > 0 ? (
+        <ListaDeHoras
+          seccion="preboda"
+          etiqueta={t("preboda.etiqueta")}
+          titulo={t("preboda.titulo")}
+          entradilla={t("preboda.entradilla")}
+          realzada
+          hundida
+          hitos={preboda}
+        />
+      ) : undefined,
     programa:
       programa.length > 0 ? (
-        <Programa hitos={programa} fecha={configuracion.fechaCeremonia} />
+        <ListaDeHoras
+          seccion="programa"
+          etiqueta={formatoFecha.format(configuracion.fechaCeremonia)}
+          titulo={t("programa.titulo")}
+          hitos={programa}
+        />
       ) : undefined,
     alojamiento: alojamientos.length > 0 ? <Alojamiento sitios={alojamientos} /> : undefined,
     transporte:
@@ -197,6 +215,7 @@ async function cargarLanding() {
     secciones,
     configuracion,
     programa,
+    preboda,
     historia,
     alojamientos,
     rutas,
@@ -206,7 +225,8 @@ async function cargarLanding() {
   ] = await Promise.all([
     obtenerSecciones(),
     obtenerConfiguracion(),
-    obtenerPrograma(),
+    obtenerPrograma("boda"),
+    obtenerPrograma("preboda"),
     obtenerHistoria(),
     obtenerAlojamientos(),
     obtenerRutas(),
@@ -219,6 +239,7 @@ async function cargarLanding() {
     secciones,
     configuracion,
     programa,
+    preboda,
     historia,
     alojamientos,
     rutas,
@@ -414,18 +435,40 @@ function Historia({
   );
 }
 
-function Programa({
+/**
+ * LA LISTA DE HORAS
+ *
+ * La usan el programa del día y la víspera, que son la misma pieza con otros
+ * datos: hora a la izquierda, título y detalle a la derecha, una línea entre
+ * filas. La diferencia está en la cabecera —una lleva la fecha de la boda y la
+ * otra un rótulo— y en el realce: la preboda es un extra, así que su versalita
+ * va en bronce; el programa del día hay que leerlo sí o sí, y va sobrio.
+ */
+function ListaDeHoras({
+  seccion,
+  etiqueta,
+  titulo,
+  entradilla = null,
+  realzada = false,
+  hundida = false,
   hitos,
-  fecha,
 }: {
+  seccion: Seccion;
+  etiqueta: string;
+  titulo: string;
+  entradilla?: string | null;
+  realzada?: boolean;
+  hundida?: boolean;
   hitos: { id: string; hora: string; titulo: string; descripcion: string | null }[];
-  fecha: Date;
 }) {
   return (
     <Bloque
-      seccion="programa"
-      etiqueta={formatoFecha.format(fecha)}
-      titulo={t("programa.titulo")}
+      seccion={seccion}
+      etiqueta={etiqueta}
+      titulo={titulo}
+      entradilla={entradilla}
+      realzada={realzada}
+      hundida={hundida}
     >
       <ol className="border-t border-borde">
         {hitos.map((hito) => (

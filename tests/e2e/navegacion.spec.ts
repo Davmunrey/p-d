@@ -39,8 +39,9 @@ test.describe("Navegación", () => {
 
   test("el orden del menú es el que manda la base de datos", async ({ page }) => {
     // `orden` en la tabla: portada 0 · cuenta_atras 10 · historia 20 ·
-    // programa 35 · transporte 50 · alojamiento 60 · preguntas 70 ·
-    // playlist 75 · rsvp 80. Si alguien reordena el JSX, esto se cae.
+    // preboda 33 · programa 35 · transporte 50 · alojamiento 60 ·
+    // preguntas 70 · playlist 75 · rsvp 80. Si alguien reordena el JSX, esto
+    // se cae.
     // `allTextContents` y no `allInnerTexts`: el segundo devuelve el texto ya
     // pasado por el `text-transform: uppercase` del CSS, así que compararía
     // contra la presentación en vez de contra el copy.
@@ -50,6 +51,7 @@ test.describe("Navegación", () => {
       copy.navegacion.secciones.portada,
       copy.navegacion.secciones.cuenta_atras,
       copy.navegacion.secciones.historia,
+      copy.navegacion.secciones.preboda,
       copy.navegacion.secciones.programa,
       copy.navegacion.secciones.transporte,
       copy.navegacion.secciones.alojamiento,

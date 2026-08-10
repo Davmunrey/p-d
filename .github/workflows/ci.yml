@@ -119,10 +119,18 @@ jobs:
         with:
           version: latest
 
-      # Levanta Postgres, GoTrue y el buzón de correo. Es lento —descarga
-      # imágenes— y por eso va en su propio trabajo: el resto del CI no espera.
+      # Levanta Postgres y GoTrue, que es lo que hace falta para probar la
+      # puerta del panel. Es lento —descarga imágenes— y por eso va en su
+      # propio trabajo: el resto del CI no espera.
+      #
+      # SIN LOS SERVICIOS QUE NO SE USAN. Arrancarlos todos costaba un fallo
+      # recurrente que no era nuestro: el buzón de correo se planta con
+      # «address already in use» al chocar por el puerto 54324, y el trabajo
+      # entero se cae por un contenedor que ningún test toca. Ninguna prueba
+      # lee correo, sube ficheros ni consulta la API de análisis, así que esos
+      # cuatro no se levantan. De paso, arranca antes.
       - name: Levantar Supabase
-        run: supabase start
+        run: supabase start -x inbucket,imgproxy,studio,logflare
 
       - name: Aplicar migraciones y seed
         run: supabase db reset

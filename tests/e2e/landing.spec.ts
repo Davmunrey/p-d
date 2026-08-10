@@ -294,3 +294,61 @@ test.describe("Cielo con movimiento reducido", () => {
     expect(nombre).toBe("none");
   });
 });
+
+/**
+ * BODA-36 · La víspera
+ *
+ * La entrega tiene una sección que aquí no existía: el plan del viernes para
+ * quien viene de fuera. Se resuelve con la tabla del programa y una columna
+ * que dice a qué momento pertenece cada hito, así que lo que hay que
+ * comprobar es justo eso: que las dos secciones leen la misma tabla y no se
+ * mezclan.
+ */
+test.describe("La víspera y el día", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+  });
+
+  test("son dos secciones distintas y ninguna enseña los hitos de la otra", async ({
+    page,
+  }) => {
+    const preboda = page.locator("#preboda");
+    const programa = page.locator("#programa");
+
+    // La sección de la víspera puede estar apagada: es contenido opcional y
+    // entra desactivada. Si no está, no hay nada que comprobar aquí.
+    test.skip((await preboda.count()) === 0, "La víspera está apagada en esta base.");
+
+    await expect(preboda).toBeVisible();
+    await expect(programa).toBeVisible();
+
+    const horasPreboda = await preboda.locator("ol li").allTextContents();
+    const horasPrograma = await programa.locator("ol li").allTextContents();
+
+    expect(horasPreboda.length).toBeGreaterThan(0);
+    expect(horasPrograma.length).toBeGreaterThan(0);
+
+    // Ningún hito puede salir en las dos: significaría que falta el filtro por
+    // momento y que la víspera está repitiendo el día de la boda.
+    for (const hito of horasPreboda) {
+      expect(horasPrograma, "un hito sale en las dos secciones").not.toContain(hito);
+    }
+  });
+
+  test("la víspera va antes que el día, y en el menú también", async ({ page }) => {
+    test.skip(
+      (await page.locator("#preboda").count()) === 0,
+      "La víspera está apagada en esta base.",
+    );
+
+    const orden = await page.evaluate(() =>
+      [...document.querySelectorAll("main section")].map((seccion) => seccion.id),
+    );
+    expect(orden.indexOf("preboda")).toBeLessThan(orden.indexOf("programa"));
+
+    const menu = await page.evaluate(() =>
+      [...document.querySelectorAll("nav a")].map((enlace) => enlace.getAttribute("href")),
+    );
+    expect(menu.indexOf("#preboda")).toBeLessThan(menu.indexOf("#programa"));
+  });
+});
