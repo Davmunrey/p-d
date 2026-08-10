@@ -104,9 +104,18 @@
     "titulo": "Playlist colaborativa",
     "descripcion": "Dejadnos la canción que os apetece bailar y la añadimos a la lista que sonará esa noche.",
     "campoCancion": "Canción y artista",
+    "campoAyuda": "Por ejemplo: «Tú me dejaste de querer — C. Tangana»",
     "anadir": "Añadir",
+    "anadiendo": "Apuntando…",
     "anadida": "Apuntada. Gracias.",
-    "vacia": "Todavía no hay canciones. Estrenad la lista."
+    "vacia": "Todavía no hay canciones. Estrenad la lista.",
+    "sinInvitacion": "Para apuntar una canción, entrad desde vuestro enlace de invitación.",
+    "errorVacio": "Escribid la canción antes de darle a añadir.",
+    "errorTexto": "Escribid la canción y el artista, sin pasaros de largo.",
+    "errorEnlace": "Vuestro enlace de invitación ya no vale. Escribidnos y os mandamos otro.",
+    "errorTope": "Ya habéis apuntado diez canciones. Con eso hay fiesta de sobra.",
+    "errorIntentos": "Demasiados intentos seguidos. Probad dentro de un rato.",
+    "errorAveria": "No hemos podido apuntarla. Probad dentro de un rato."
   },
   "regalos": {
     "etiqueta": "Vuestra presencia ya es el regalo",

@@ -86,6 +86,31 @@ export const MINUTOS_BORRADOR_RSVP = 180;
 export const PASOS_RSVP = ["asistencia", "detalles", "mensaje"] as const;
 export type PasoRsvp = (typeof PASOS_RSVP)[number];
 
+/**
+ * Cuánto recuerda el navegador de qué invitación es.
+ *
+ * Se guarda al abrir el enlace de invitación y sirve para que la playlist de
+ * la portada sepa quién escribe: apuntar una canción exige token, porque la
+ * lista es de los invitados y no de internet entera.
+ *
+ * UN AÑO, Y NO UNA SESIÓN. La invitación se manda meses antes de la boda y la
+ * canción se apunta cuando a uno le viene a la cabeza —en el coche, oyendo la
+ * radio—, que no es el mismo día en que confirmó. Una cookie de sesión
+ * obligaría a volver a WhatsApp a buscar el enlace justo en ese momento, y lo
+ * que pasa entonces es que no se apunta la canción.
+ */
+export const DIAS_RECUERDO_INVITACION = 365;
+
+/**
+ * Lo más largo que puede ser una canción apuntada en la playlist.
+ *
+ * ES EL MISMO NÚMERO QUE LA RESTRICCIÓN DE LA TABLA, a propósito: el navegador
+ * corta antes de mandar y la base vuelve a comprobarlo. Si aquí fuera mayor, el
+ * campo dejaría escribir un texto que la base rechaza después, y el invitado se
+ * llevaría un error por algo que la pantalla le había dejado hacer.
+ */
+export const LIMITE_TEXTO_CANCION = 160;
+
 /** Rutas del panel privado. Se escriben en varios sitios: viven aquí. */
 export const RUTA_ACCESO = "/acceso";
 export const RUTA_CONFIRMAR_ACCESO = "/acceso/confirmar";
