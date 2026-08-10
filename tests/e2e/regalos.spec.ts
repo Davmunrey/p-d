@@ -48,6 +48,19 @@ test.describe.configure({ mode: "serial" });
 test.describe("La sección de regalos", () => {
   test.skip(!cadena, "Hace falta DATABASE_URL.");
 
+  test.beforeEach(async () => {
+    // Cada test se coloca su propio escenario. Con `beforeAll` bastaba
+    // mientras corría un solo navegador; con dos proyectos, el `afterAll` de
+    // uno y el `beforeAll` del otro se pisan y el fallo no dice por qué.
+    await conBase(async (sql) => {
+      await sql`
+        update public.configuracion_privada
+           set iban_regalos = ${IBAN}, titular_cuenta = ${TITULAR}
+      `;
+      await sql`update public.secciones_landing set visible = true where seccion = 'regalos'`;
+    });
+  });
+
   test.beforeAll(async () => {
     const [previo] = await conBase(
       (sql) => sql<{ iban_regalos: string | null; titular_cuenta: string | null }[]>`
@@ -94,8 +107,25 @@ test.describe("La sección de regalos", () => {
     expect(html).not.toContain(TITULAR);
   });
 
-  test("al pulsar aparece el número, y se puede copiar", async ({ page, context }) => {
-    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  test("al pulsar aparece el número, y se puede copiar", async ({
+    page,
+    context,
+    browserName,
+  }) => {
+    /*
+      EL PORTAPAPELES SÓLO SE LEE EN CHROMIUM.
+
+      `clipboard-write` es un permiso que WebKit no conoce, y pedirlo allí no
+      es que no haga nada: lanza. Lo cazó el CI, porque en local sólo había
+      corrido el proyecto de escritorio.
+      
+      Lo que sí se comprueba en los dos es lo que ve quien usa la web: que el
+      botón confirma que ha copiado. La lectura del portapapeles es un extra
+      que sólo un navegador deja hacer, no el criterio del ticket.
+    */
+    const leePortapapeles = browserName === "chromium";
+    if (leePortapapeles) await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+
     await page.goto("/");
 
     const seccion = page.locator("#regalos");
@@ -109,8 +139,10 @@ test.describe("La sección de regalos", () => {
     await seccion.getByRole("button", { name: copy.regalos.copiar }).click();
     await expect(seccion.getByRole("button", { name: copy.regalos.copiado })).toBeVisible();
 
-    const copiado = await page.evaluate(() => navigator.clipboard.readText());
-    expect(copiado, "copiar tiene que dejar el IBAN en el portapapeles").toBe(IBAN);
+    if (leePortapapeles) {
+      const copiado = await page.evaluate(() => navigator.clipboard.readText());
+      expect(copiado, "copiar tiene que dejar el IBAN en el portapapeles").toBe(IBAN);
+    }
   });
 
   /**
