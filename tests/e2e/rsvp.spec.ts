@@ -158,6 +158,44 @@ test.describe("El recorrido del invitado", () => {
     await contexto.close();
   });
 
+  /**
+   * CASO DE ERROR · La cookie del borrador no puede ir marcada `Secure` si la
+   * página no se está sirviendo por HTTPS.
+   *
+   * Este test existe porque el fallo ya pasó. La cookie se marcaba según
+   * `NODE_ENV`, así que una compilación de producción servida por `http` —los
+   * tests E2E, y cualquier despliegue interno sin TLS— la mandaba protegida.
+   * Chromium la guardaba igual, porque trata `http://localhost` como contexto
+   * seguro; **Safari la descartaba en silencio** y el RSVP se quedaba clavado
+   * en el primer paso sin un solo error. Safari en el móvil es exactamente el
+   * navegador de esta pantalla.
+   */
+  test("el borrador no se marca Secure sobre http", async ({ browser, baseURL }) => {
+    test.skip(
+      Boolean(baseURL?.startsWith("https:")),
+      "Sobre HTTPS la cookie sí debe ir marcada.",
+    );
+
+    const token = await crearGrupo("e2e-cookie", ["(DES) Gorka"]);
+    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const pagina = await contexto.newPage();
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.locator('input[type="radio"]').first().check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    const borrador = (await contexto.cookies()).find((galleta) =>
+      galleta.name.startsWith("boda:rsvp"),
+    );
+
+    expect(borrador, "el borrador no llegó a guardarse").toBeDefined();
+    expect(borrador?.secure).toBe(false);
+    // Lo que sí tiene que llevar siempre: nada de esto lo necesita el navegador.
+    expect(borrador?.httpOnly).toBe(true);
+
+    await contexto.close();
+  });
+
   test("lo escrito sobrevive al botón de atrás", async ({ browser }) => {
     const token = await crearGrupo("e2e-atras", ["(DES) Cris"]);
     const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });

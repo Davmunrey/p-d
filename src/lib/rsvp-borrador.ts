@@ -1,6 +1,6 @@
 import "server-only";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { MINUTOS_BORRADOR_RSVP, RUTA_RSVP } from "@/config/constants";
 
@@ -76,11 +76,31 @@ export async function leerBorrador(token: string): Promise<Borrador> {
   }
 }
 
+/**
+ * `Secure` sí, pero según cómo se esté sirviendo la página y no según
+ * `NODE_ENV`.
+ *
+ * Parece un matiz y no lo es. Con `NODE_ENV === "production"` la cookie salía
+ * marcada `Secure` también en una compilación de producción servida por `http`
+ * —que es como corren los tests E2E—, y ahí Safari **la descarta en silencio**.
+ * Chromium no: trata `http://localhost` como contexto seguro y la guarda. O
+ * sea, que el RSVP funcionaba en Chrome y en Safari se quedaba clavado en el
+ * primer paso, sin un solo error.
+ *
+ * Safari en el móvil es exactamente el navegador de esta pantalla, así que el
+ * fallo estaba donde más caro sale. Se mira el protocolo real de la petición:
+ * detrás de Vercel llega `https` y la cookie va protegida; en local y en CI
+ * llega `http` y no se marca, que es lo correcto para un `http` de verdad.
+ */
+async function servidoPorHttps(): Promise<boolean> {
+  return (await headers()).get("x-forwarded-proto") === "https";
+}
+
 export async function guardarBorrador(borrador: Borrador): Promise<void> {
   (await cookies()).set(NOMBRE_COOKIE, JSON.stringify(borrador), {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: await servidoPorHttps(),
     path: RUTA_RSVP,
     maxAge: MINUTOS_BORRADOR_RSVP * 60,
   });
