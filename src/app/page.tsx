@@ -39,6 +39,7 @@ import {
   type Medio,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
+import { enlaceMapaEmbebido, enlaceMapaExterno } from "@/lib/mapa";
 import { invitacionRecordada } from "@/lib/invitacion-recordada";
 
 /**
@@ -149,6 +150,19 @@ export default async function PaginaInicio() {
 
   const nombres = `${configuracion.nombreNovia} ${t("portada.conjuncion")} ${configuracion.nombreNovio}`;
 
+  /*
+    LAS COORDENADAS, COMPROBADAS UNA VEZ Y CON NOMBRE.
+
+    Son dos columnas que sólo valen juntas —una latitud sin longitud no es
+    ningún sitio—, así que se comprueban aquí y lo que baja es un punto o nada.
+    Repetir `!== null` en cada sitio que las use es como se acaba pintando media
+    sección: alguien comprueba una de las dos y da por hecha la otra.
+  */
+  const coordenadas =
+    configuracion.latitud !== null && configuracion.longitud !== null
+      ? { latitud: configuracion.latitud, longitud: configuracion.longitud }
+      : null;
+
   const contenido: Partial<Record<Seccion, ReactNode>> = {
     portada: (
       <Portada
@@ -196,8 +210,19 @@ export default async function PaginaInicio() {
       alojamientos.length > 0 ? (
         <Alojamiento sitios={alojamientos} configuracion={configuracion} nombres={nombres} />
       ) : undefined,
-    transporte:
-      rutas.length > 0 ? <Transporte rutas={rutas} configuracion={configuracion} /> : undefined,
+    /*
+      SIN COORDENADAS NO HAY SECCIÓN, aunque haya rutas escritas.
+
+      Puede sonar duro tirar unas rutas que alguien tecleó, pero «treinta
+      minutos en autobús» sin decir hasta dónde no informa de nada: las rutas
+      describen cómo llegar A un sitio, y sin ese sitio quedan flotando. El
+      mapa, que es el centro de la sección, tampoco se puede dibujar. Es el
+      mismo criterio que el resto de la landing —antes ocultar que dejar un
+      hueco a medias— aplicado a lo que aquí hace de columna vertebral.
+    */
+    transporte: coordenadas ? (
+      <Transporte rutas={rutas} configuracion={configuracion} coordenadas={coordenadas} />
+    ) : undefined,
     preguntas_frecuentes:
       preguntas.length > 0 ? <Preguntas preguntas={preguntas} /> : undefined,
     playlist: <Playlist canciones={canciones} puedeApuntar={hayInvitacion} />,
@@ -637,12 +662,20 @@ function Alojamiento({
   );
 }
 
+/**
+ * Las coordenadas llegan aparte y ya comprobadas: quien compone la landing no
+ * pinta esta sección sin ellas. Volver a preguntar «¿y si son nulas?» aquí
+ * dentro obligaría a inventar qué enseñar en un caso que no puede pasar, y ese
+ * «por si acaso» es justo el hueco que acaba viéndose.
+ */
 function Transporte({
   rutas,
   configuracion,
+  coordenadas,
 }: {
   rutas: { id: string; modo: string; duracion: string | null; detalle: string | null }[];
   configuracion: ConfiguracionBoda;
+  coordenadas: { latitud: number; longitud: number };
 }) {
   return (
     <Bloque
@@ -675,19 +708,48 @@ function Transporte({
           ))}
         </ul>
 
-        {configuracion.latitud !== null && configuracion.longitud !== null ? (
-          <div className="self-start">
+        <div className="self-start">
+          <MapaDelLugar latitud={coordenadas.latitud} longitud={coordenadas.longitud} />
+
+          <div className="mt-elemento">
             <BotonEnlace
-              href={`https://www.google.com/maps/search/?api=1&query=${configuracion.latitud},${configuracion.longitud}`}
+              href={enlaceMapaExterno(coordenadas.latitud, coordenadas.longitud)}
               target="_blank"
               rel="noopener noreferrer"
             >
               {t("comoLlegar.abrirMapa")}
             </BotonEnlace>
           </div>
-        ) : null}
+        </div>
       </div>
     </Bloque>
+  );
+}
+
+/**
+ * EL MAPA SE CARGA AL LLEGAR A ÉL, no al abrir la portada.
+ *
+ * `loading="lazy"` en el marco lo deja dicho sin una línea de JavaScript: el
+ * navegador no pide nada hasta que la sección se acerca a la pantalla. Hacerlo
+ * con un observador de intersección sería el mismo efecto pagando código, y
+ * encima dejaría fuera a quien navega sin JavaScript.
+ *
+ * LLEVA `title` PORQUE ES UN MARCO. Sin él, un lector de pantalla anuncia «marco»
+ * y se acabó; con él dice qué hay dentro y quien no quiera entrar puede
+ * saltárselo. El alto va en el atributo además de en las clases para que el
+ * hueco esté reservado antes de que cargue nada: si aparece de golpe, empuja
+ * hacia abajo lo que la persona estaba leyendo.
+ */
+function MapaDelLugar({ latitud, longitud }: { latitud: number; longitud: number }) {
+  return (
+    <iframe
+      src={enlaceMapaEmbebido(latitud, longitud)}
+      title={t("comoLlegar.mapaTitulo")}
+      loading="lazy"
+      width={600}
+      height={400}
+      className="aspect-mapa w-full rounded-tarjeta border border-borde"
+    />
   );
 }
 

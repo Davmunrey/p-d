@@ -45,6 +45,17 @@ export const PESO_MAXIMO_IMAGEN_MB = 10;
 export const BUCKET_MEDIOS = "medios";
 
 /** Idioma de la aplicación. La boda es en España: solo castellano. */
+/**
+ * Cuánto se ve alrededor de la finca en el mapa incrustado, en grados.
+ *
+ * Unos 0,01° son algo más de un kilómetro: lo justo para situar el sitio
+ * respecto al pueblo sin que la finca se pierda en una mancha verde. Es un
+ * número que se ajusta mirando el resultado, así que vive aquí con su nombre y
+ * no incrustado en la URL, donde nadie sabría qué significa el cuarto número de
+ * una lista separada por comas.
+ */
+export const MAPA_MARGEN_GRADOS = 0.012;
+
 export const IDIOMA = "es-ES";
 
 /** Zona horaria de referencia para fechas y cuentas atrás. */
