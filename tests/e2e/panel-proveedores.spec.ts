@@ -42,14 +42,22 @@ async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T
 
 async function entrar(pagina: Page) {
   await pagina.goto(RUTA_ACCESO);
-  await pagina.getByLabel(copy.acceso.correo).fill(CORREO_CON_ACCESO!);
-  await pagina.getByLabel(copy.acceso.contrasena).fill(CONTRASENA!);
+  await pagina.getByLabel(copy.acceso.correo, { exact: true }).fill(CORREO_CON_ACCESO!);
+  await pagina.getByLabel(copy.acceso.contrasena, { exact: true }).fill(CONTRASENA!);
   await pagina.getByRole("button", { name: copy.acceso.entrar }).click();
   await expect(pagina).toHaveURL(new RegExp(RUTA_PANEL));
 }
 
 /**
- * LAS SECCIONES SE LOCALIZAN POR SU TÍTULO Y NO POR SU POSICIÓN.
+ * LAS SECCIONES SE LOCALIZAN POR SU TÍTULO Y NO POR SU POSICIÓN, Y LAS
+ * ETIQUETAS SE EXIGEN EXACTAS.
+ *
+ * Lo segundo lo enseñó el CI: `getByLabel("Estado")` casa por subcadena, y
+ * «Pre-supu-ESTADO» la contiene. El desplegable de fase y el campo de importe
+ * salían los dos, y el test moría con un «resolved to 2 elements» que costaba
+ * más leer que arreglar. Con `exact` no hay sorpresa: lo que se pasa es el
+ * rótulo entero.
+ *
  *
  * «Teléfono» y «Nombre» son la etiqueta correcta en tres formularios distintos
  * de esta pantalla —el proveedor, su gente, la categoría— y eso está bien: son
@@ -68,7 +76,7 @@ function seccion(pagina: Page, titulo: string) {
 /** La primera categoría del desplegable, sea cual sea el estado de la base. */
 async function primeraCategoria(pagina: Page): Promise<string> {
   const opcion = seccion(pagina, copy.panel.proveedores.nuevoTitulo)
-    .getByLabel(copy.panel.proveedores.campoCategoria)
+    .getByLabel(copy.panel.proveedores.campoCategoria, { exact: true })
     .locator("option")
     .first();
   return (await opcion.textContent())?.trim() ?? "";
@@ -92,13 +100,15 @@ test.describe("El módulo de proveedores", () => {
     const categoria = await primeraCategoria(page);
     const alta = seccion(page, copy.panel.proveedores.nuevoTitulo);
 
-    await alta.getByLabel(copy.panel.proveedores.campoNombre).fill(nombre);
+    await alta.getByLabel(copy.panel.proveedores.campoNombre, { exact: true }).fill(nombre);
     await alta
-      .getByLabel(copy.panel.proveedores.campoCategoria)
+      .getByLabel(copy.panel.proveedores.campoCategoria, { exact: true })
       .selectOption({ label: categoria });
     // Con separador de millar y coma decimal: es como se escribe en castellano
     // y como se pega desde un presupuesto en PDF.
-    await alta.getByLabel(copy.panel.proveedores.campoPresupuestado).fill("2.200,50");
+    await alta
+      .getByLabel(copy.panel.proveedores.campoPresupuestado, { exact: true })
+      .fill("2.200,50");
     await alta.getByRole("button", { name: copy.panel.proveedores.crear }).click();
 
     // Se va a su ficha: quien acaba de darlo de alta sigue teniendo qué apuntar.
@@ -115,10 +125,14 @@ test.describe("El módulo de proveedores", () => {
 
     // Editar: se cierra el acuerdo y se apunta el teléfono.
     const edicion = seccion(page, copy.panel.proveedores.editarTitulo);
-    await edicion.getByLabel(copy.panel.proveedores.campoAcordado).fill("2100");
-    await edicion.getByLabel(copy.panel.proveedores.campoTelefono).fill("+34 600 111 222");
     await edicion
-      .getByLabel(copy.panel.proveedores.campoEstado)
+      .getByLabel(copy.panel.proveedores.campoAcordado, { exact: true })
+      .fill("2100");
+    await edicion
+      .getByLabel(copy.panel.proveedores.campoTelefono, { exact: true })
+      .fill("+34 600 111 222");
+    await edicion
+      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
       .selectOption({ label: copy.panel.proveedores.estados.contratado });
     await edicion.getByRole("button", { name: copy.panel.proveedores.guardar }).click();
     await expect(page.getByText(copy.panel.proveedores.avisoEditado)).toBeVisible();
@@ -135,10 +149,12 @@ test.describe("El módulo de proveedores", () => {
     // Un segundo contacto: el del día de la boda, que no es el comercial.
     const gente = seccion(page, copy.panel.proveedores.contactosTitulo);
     await gente
-      .getByLabel(copy.panel.proveedores.campoNombreContacto)
+      .getByLabel(copy.panel.proveedores.campoNombreContacto, { exact: true })
       .fill("(DES) Jefe de sala");
-    await gente.getByLabel(copy.panel.proveedores.campoTelefono).fill("+34 600 333 444");
-    await gente.getByLabel(copy.panel.proveedores.campoEsDelDia).check();
+    await gente
+      .getByLabel(copy.panel.proveedores.campoTelefono, { exact: true })
+      .fill("+34 600 333 444");
+    await gente.getByLabel(copy.panel.proveedores.campoEsDelDia, { exact: true }).check();
     await gente.getByRole("button", { name: copy.panel.proveedores.anadirContacto }).click();
 
     await expect(page.getByText("(DES) Jefe de sala")).toBeVisible();
@@ -156,9 +172,15 @@ test.describe("El módulo de proveedores", () => {
 
     // La búsqueda aguanta acentos: «fotografo» tiene que encontrar «Fotógrafo».
     await page.goto(RUTA_PROVEEDORES);
-    await page.getByLabel(copy.panel.proveedores.buscar).fill("fotografo");
+    await page.getByLabel(copy.panel.proveedores.buscar, { exact: true }).fill("fotografo");
     await page.getByRole("button", { name: copy.panel.proveedores.buscar }).click();
-    await expect(page.getByRole("link", { name: new RegExp(nombre) })).toBeVisible();
+    /*
+      Por texto y no por expresión regular: el nombre lleva «(DES)» dentro, y
+      `new RegExp(nombre)` convierte esos paréntesis en un grupo de captura —la
+      expresión pasaría a buscar «DES E2E…» sin paréntesis y no encontraría
+      nada. Con una cadena, Playwright busca subcadena y ya está.
+    */
+    await expect(page.getByRole("link", { name: nombre })).toBeVisible();
   });
 
   /**
@@ -236,7 +258,9 @@ test.describe("El módulo de proveedores", () => {
     await page.goto(RUTA_PROVEEDORES);
 
     const nueva = seccion(page, copy.panel.proveedores.nuevaCategoriaTitulo);
-    await nueva.getByLabel(copy.panel.proveedores.campoNombreCategoria).fill(nombreCategoria);
+    await nueva
+      .getByLabel(copy.panel.proveedores.campoNombreCategoria, { exact: true })
+      .fill(nombreCategoria);
     await nueva.getByRole("button", { name: copy.panel.proveedores.crearCategoria }).click();
     await expect(page.getByText(copy.panel.proveedores.avisoCategoriaCreada)).toBeVisible();
 
