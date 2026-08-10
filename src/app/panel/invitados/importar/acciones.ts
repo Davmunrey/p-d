@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { RUTA_ACCESO, RUTA_INVITADOS } from "@/config/constants";
@@ -165,6 +164,11 @@ export async function importar(
     };
   }
 
-  revalidatePath(RUTA_INVITADOS);
+  /*
+    Sin `revalidatePath` de `RUTA_INVITADOS`: es el destino de la redirección y
+    revalidarlo se comía el `?estado=importados`, dejando la importación hecha
+    y sin el aviso que dice cuántos entraron. Ver el comentario de
+    `proveedores/acciones.ts`.
+  */
   redirect(`${RUTA_INVITADOS}?estado=importados`);
 }

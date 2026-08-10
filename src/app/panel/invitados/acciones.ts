@@ -52,6 +52,19 @@ function texto(datos: FormData, campo: string): string {
  * Vuelve a la pantalla con el resultado. Cuando hay grupo se vuelve a su
  * ficha: quien acaba de añadir a alguien quiere seguir ahí, no en la lista.
  */
+/*
+  NO SE REVALIDA LA RUTA A LA QUE SE VA A REDIRIGIR.
+
+  Lo descubrió la investigación de BODA-71: `revalidatePath` del destino y
+  `redirect` a ese mismo destino compiten, y cuando gana el refresco la
+  redirección pierde su `?estado=` — la escritura se hace, la pantalla se
+  repinta, y el aviso de «hecho» no sale nunca. Quien lo usa se queda sin saber
+  si se guardó, que es justo lo que el aviso existe para contestar.
+
+  Es redundante además: estas pantallas son `force-dynamic`, así que la
+  redirección ya las vuelve a leer de la base enteras. Se revalida sólo lo que
+  NO se va a visitar.
+*/
 function volver(estado: Estado, grupoId?: string): never {
   const base = grupoId ? `${RUTA_INVITADOS}/${grupoId}` : RUTA_INVITADOS;
   redirect(`${base}?estado=${estado}`);
@@ -125,7 +138,6 @@ export async function emitirEnlace(datos: FormData): Promise<void> {
     volver("error", grupoId);
   }
 
-  revalidatePath(`${RUTA_INVITADOS}/${grupoId}`);
   redirect(
     `${RUTA_INVITADOS}/${grupoId}?estado=enlace-emitido&token=${encodeURIComponent(String(data))}`,
   );
@@ -152,7 +164,6 @@ export async function anadirPersona(datos: FormData): Promise<void> {
   // RLS no da error cuando prohíbe una escritura: no toca ninguna fila.
   if (count === 0) volver("sin-permiso", grupoId);
 
-  revalidatePath(`${RUTA_INVITADOS}/${grupoId}`);
   volver("persona-anadida", grupoId);
 }
 
@@ -195,7 +206,6 @@ export async function quitarPersona(datos: FormData): Promise<void> {
   }
   if (count === 0) volver("sin-permiso", grupoId);
 
-  revalidatePath(`${RUTA_INVITADOS}/${grupoId}`);
   volver("persona-quitada", grupoId);
 }
 
