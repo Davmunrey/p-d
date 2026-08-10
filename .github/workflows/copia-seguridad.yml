@@ -1,0 +1,85 @@
+# BODA-94 · Copia de seguridad diaria
+#
+# La lista de invitados con sus alergias y sus teléfonos no se puede volver a
+# pedir: son doscientas conversaciones. El plan gratuito de Supabase no guarda
+# copias por ti.
+#
+# EL DESTINO ES UN REPOSITORIO PRIVADO Y VA POR VARIABLES, nunca escrito aquí.
+# Hacen falta dos cosas configuradas en este repositorio:
+#
+#   · Variable  REPO_COPIAS   → «usuario/repo-privado-de-copias»
+#   · Secreto   TOKEN_COPIAS  → un token con permiso de escritura en ese repo
+#   · Secreto   DATABASE_URL  → la conexión a la base de producción
+#
+# Sin ellos el flujo falla y lo dice. No se salta en silencio: una copia que no
+# se hace y no avisa es exactamente lo mismo que no tener copia, sólo que con
+# la tranquilidad de creer que se tiene.
+name: Copia de seguridad
+
+on:
+  schedule:
+    # De madrugada, cuando nadie está tocando el panel.
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  copia:
+    name: Volcar y guardar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar que hay a dónde copiar
+        env:
+          REPO_COPIAS: ${{ vars.REPO_COPIAS }}
+          TOKEN_COPIAS: ${{ secrets.TOKEN_COPIAS }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          faltan=""
+          [ -z "$REPO_COPIAS" ]  && faltan="$faltan REPO_COPIAS(variable)"
+          [ -z "$TOKEN_COPIAS" ] && faltan="$faltan TOKEN_COPIAS(secreto)"
+          [ -z "$DATABASE_URL" ] && faltan="$faltan DATABASE_URL(secreto)"
+          if [ -n "$faltan" ]; then
+            echo "Falta configurar:$faltan" >&2
+            echo "Ver docs/ENTORNO.md, apartado «Copia de seguridad»." >&2
+            exit 1
+          fi
+
+      - name: Instalar PostgreSQL
+        # Para tener `pg_dump`, y de la misma versión mayor que el servidor:
+        # un `pg_dump` más viejo que la base se niega a volcarla.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Traer el repositorio de copias
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.REPO_COPIAS }}
+          token: ${{ secrets.TOKEN_COPIAS }}
+          path: destino
+
+      - name: Volcar
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECTORIO_COPIAS: destino/copias
+        run: ./scripts/copia-de-seguridad.sh
+
+      - name: Guardar los últimos treinta días
+        working-directory: destino
+        run: |
+          # Varios días y no sólo el último: un borrado se detecta tarde, y una
+          # copia que sobrescribe la de ayer copia también el borrado.
+          ls -1 copias/*.dump 2>/dev/null | sort | head -n -30 | xargs -r rm --
+
+          git config user.name "Copias de la boda"
+          git config user.email "copias@users.noreply.github.com"
+          git add copias
+          # Sin cambios no se commitea: el volcado del mismo día se repite igual
+          # si el flujo se lanza dos veces, y un commit vacío falla.
+          if git diff --cached --quiet; then
+            echo "La copia de hoy ya estaba guardada."
+          else
+            git commit -m "Copia de $(date -u +%Y-%m-%d)"
+            git push
+          fi

@@ -158,3 +158,10 @@ export const RUTA_PENDIENTES = "/panel/invitados/pendientes";
  * en CI o un mock de nuestro propio código, que no probaría que el correo sale.
  */
 export const URL_RESEND = process.env.RESEND_URL ?? "https://api.resend.com";
+
+/**
+ * De dónde saca la landing el número de cuenta, y por qué no viene ya puesto:
+ * un IBAN escrito en el HTML lo indexan los buscadores y lo recogen los
+ * rastreadores sin que nadie haya abierto la página. Ver BODA-28.
+ */
+export const RUTA_CUENTA_REGALOS = "/regalos/cuenta";

@@ -189,3 +189,35 @@ defecto apunta a la API de Resend. Existe para que los tests puedan levantar un
 buzón de captura y leer el correo que sale de verdad, en lugar de simular
 nuestra propia función de envío —que probaría que sabemos llamarla, no que el
 correo sale—.
+
+## Copia de seguridad
+
+El flujo `copia-seguridad.yml` vuelca la base cada madrugada a un repositorio
+**privado** aparte. Hace falta configurar tres cosas en este repositorio:
+
+| Dónde                | Nombre         | Qué es                                           |
+| -------------------- | -------------- | ------------------------------------------------ |
+| Settings → Variables | `REPO_COPIAS`  | `usuario/repo-privado`, el destino de las copias |
+| Settings → Secrets   | `TOKEN_COPIAS` | Un token con permiso de escritura en ese repo    |
+| Settings → Secrets   | `DATABASE_URL` | La conexión a la base de producción              |
+
+**El repositorio de destino tiene que ser privado.** Un volcado lleva los
+nombres, los teléfonos y las alergias de doscientas personas: en un repositorio
+público, eso es publicarlo.
+
+Se guardan los treinta últimos días y no sólo el último, porque un borrado se
+detecta tarde — y una copia que sobrescribe la de ayer copia también el
+borrado.
+
+Si falta cualquiera de las tres, el flujo **falla y lo dice**. No se salta en
+silencio: una copia que no se hace y no avisa es lo mismo que no tener copia,
+sólo que con la tranquilidad de creer que se tiene.
+
+### Restaurar
+
+`pg_restore --no-owner --no-privileges --dbname="<destino>" copias/boda-<fecha>.dump`
+
+La restauración está probada en `tests/unidad/copia-seguridad.test.ts`, y no
+sólo el volcado: el test restaura en una base vacía y comprueba que vuelven las
+filas **y las políticas RLS**. Sin esa segunda mitad, una copia podría devolver
+la lista de invitados a una base donde la lee cualquiera.

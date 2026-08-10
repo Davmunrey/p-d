@@ -112,7 +112,11 @@
     "etiquetaCuenta": "Número de cuenta",
     "copiar": "Copiar",
     "copiado": "Copiado",
-    "buzon": "También habrá un buzón en la entrada del invernadero."
+    "buzon": "También habrá un buzón en la entrada del invernadero.",
+    "revelar": "Ver el número de cuenta",
+    "revelando": "Un momento…",
+    "errorRevelar": "No hemos podido cargarlo. Probad de nuevo en un momento.",
+    "sinJavascript": "Para ver el número de cuenta hace falta JavaScript. Si no podéis activarlo, escribidnos y os lo mandamos."
   },
   "dresscode": {
     "etiqueta": "Qué ponerse",

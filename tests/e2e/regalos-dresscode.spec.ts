@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
+import { RUTA_CUENTA_REGALOS } from "../../src/config/constants";
 import { conSeccionApagada, fijarSeccionVisible } from "./utiles/secciones";
 
 /**
@@ -56,10 +57,18 @@ test("los regalos enseñan la cuenta que hay en la base, no una escrita a mano",
   await expect(regalos).toContainText(copy.regalos.etiqueta);
   await expect(regalos).toContainText(copy.regalos.descripcion);
 
-  // La cuenta va en un campo de sólo lectura: así se selecciona entera de una
-  // pasada, con JavaScript o sin él.
-  const campo = regalos.getByLabel(copy.regalos.etiquetaCuenta);
-  await expect(campo).toHaveValue(iban);
+  /*
+    LA CUENTA YA NO SE PINTA DE ENTRADA, y este test cambió con BODA-28.
+
+    Antes se comprobaba que el campo traía el IBAN puesto. Ahora lo que tiene
+    que haber es un botón: el número no puede viajar en el HTML entregado
+    —lo indexan los buscadores y lo recogen los rastreadores sin que nadie
+    abra la página— y se pide al pulsar. Que al pulsar aparezca el que hay en
+    la base lo comprueba `regalos.spec.ts`; aquí basta con que el número NO
+    esté antes, que es lo que este fichero vigila.
+  */
+  await expect(regalos.getByRole("button", { name: copy.regalos.revelar })).toBeVisible();
+  expect(await page.content()).not.toContain(iban);
 
   await expect(regalos).toContainText(copy.regalos.buzon);
 });
@@ -101,9 +110,17 @@ test("con la sección apagada, el IBAN no está ni en el HTML ni en el menú", a
 }) => {
   const iban = await ibanDelEntorno();
 
-  // Encendida, está.
-  const encendida = await request.get("/");
-  expect(await encendida.text()).toContain(iban);
+  /*
+    ENCENDIDA, EL NÚMERO SALE POR LA RUTA — no por el HTML.
+
+    Desde BODA-28 el IBAN no viaja en la página, así que comprobarlo ahí ya no
+    diría nada: saldría «no está» con la sección encendida y con la sección
+    apagada, y el test pasaría sin haber probado nada. Lo que hay que ver es
+    que la puerta por la que sale de verdad se abre y se cierra con ella.
+  */
+  const conCuenta = await request.get(RUTA_CUENTA_REGALOS);
+  expect(conCuenta.status()).toBe(200);
+  expect(await conCuenta.text()).toContain(iban);
 
   await conSeccionApagada("regalos", async () => {
     const apagada = await request.get("/");
@@ -111,6 +128,12 @@ test("con la sección apagada, el IBAN no está ni en el HTML ni en el menú", a
 
     expect(html, "el IBAN sigue publicado con la sección apagada").not.toContain(iban);
     expect(html).not.toContain(copy.regalos.titulo);
+
+    // Y la ruta se cierra con la sección: es la misma condición, comprobada
+    // por la base y no por la pantalla.
+    const sinCuenta = await request.get(RUTA_CUENTA_REGALOS);
+    expect(sinCuenta.status(), "apagar la sección tiene que cerrar la ruta").toBe(404);
+    expect(await sinCuenta.text()).not.toContain(iban);
 
     // Y el menú tampoco ofrece un enlace a una sección que ya no está.
     await page.goto("/");

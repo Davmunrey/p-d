@@ -26,6 +26,25 @@ const cadena = process.env.DATABASE_URL;
 
 test.describe.configure({ mode: "serial" });
 
+/**
+ * CADA CONTEXTO, CON SU PROPIO ORIGEN.
+ *
+ * `obtener_invitacion()` pasa por `exigir_cupo_rsvp()`, que cuenta intentos
+ * por origen — y TODA la suite sale de `127.0.0.1`. Los tests que abren
+ * enlaces inválidos a propósito gastan ese cupo, y para cuando arranca el
+ * proyecto móvil —que corre después del de escritorio— la IP está cerrada: la
+ * lectura lanza y la página muestra «Estamos preparando la web».
+ *
+ * Pasó en CI y sólo en `movil`, que es justo el que no puedo ejecutar aquí.
+ * No se relaja el límite —es una protección de verdad—: se deja de compartir
+ * el cubo. Los tests del cortafuegos siguen usando sus IP fijas, que es su
+ * razón de ser.
+ */
+let contador = 0;
+const origenPropio = () => ({
+  "x-forwarded-for": `198.51.100.${((contador += 1) % 200) + 20}`,
+});
+
 async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T> {
   const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
   try {
@@ -207,7 +226,11 @@ test.describe("El recorrido del invitado", () => {
     );
 
     const token = await crearGrupo("e2e-cookie", ["(DES) Gorka"]);
-    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
     const pagina = await contexto.newPage();
 
     await pagina.goto(`${RUTA_RSVP}/${token}`);
@@ -228,7 +251,11 @@ test.describe("El recorrido del invitado", () => {
 
   test("lo escrito sobrevive al botón de atrás", async ({ browser }) => {
     const token = await crearGrupo("e2e-atras", ["(DES) Cris"]);
-    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
     const pagina = await contexto.newPage();
 
     await pagina.goto(`${RUTA_RSVP}/${token}`);
@@ -255,7 +282,11 @@ test.describe("El recorrido del invitado", () => {
    */
   test("no deja avanzar si falta alguien, y dice quién", async ({ browser }) => {
     const token = await crearGrupo("e2e-falta", ["(DES) Dani", "(DES) Eva"]);
-    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
     const pagina = await contexto.newPage();
 
     await pagina.goto(`${RUTA_RSVP}/${token}`);
@@ -272,7 +303,11 @@ test.describe("El recorrido del invitado", () => {
 
   test("si no viene nadie, no se pregunta por el menú", async ({ browser }) => {
     const token = await crearGrupo("e2e-nadie", ["(DES) Fran"]);
-    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
     const pagina = await contexto.newPage();
 
     await pagina.goto(`${RUTA_RSVP}/${token}`);
@@ -468,7 +503,11 @@ test.describe("Cambiar una respuesta ya dada", () => {
   }) => {
     const token = await crearGrupo(`editar-${Date.now()}`, ["(DES) Editable"]);
 
-    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
     const pagina = await contexto.newPage();
 
     // Primero, que sí.
@@ -525,7 +564,11 @@ test.describe("Cambiar una respuesta ya dada", () => {
   }) => {
     const token = await crearGrupo(`plazo-${Date.now()}`, ["(DES) Tarde"]);
 
-    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
     const pagina = await contexto.newPage();
 
     await pagina.goto(`${RUTA_RSVP}/${token}`);
