@@ -198,7 +198,8 @@
       "proveedores": "Proveedores",
       "presupuesto": "Presupuesto",
       "tareas": "Tareas",
-      "cuenta": "Mi cuenta"
+      "cuenta": "Mi cuenta",
+      "ajustes": "Ajustes"
     },
     "resumen": {
       "titulo": "Resumen",
@@ -219,6 +220,45 @@
         "editor": "Editor",
         "lector": "Lector"
       }
+    },
+    "ajustes": {
+      "titulo": "Ajustes de la boda",
+      "descripcion": "De aquí salen los nombres de la portada, la cuenta atrás, el mapa, el evento del calendario y la vista previa al compartir. Es lo primero que conviene rellenar.",
+      "grupoPareja": "La pareja",
+      "grupoCeremonia": "Ceremonia",
+      "grupoBanquete": "Banquete",
+      "grupoContacto": "Contacto y confirmaciones",
+      "nombreNovia": "Nombre de la novia",
+      "nombreNovio": "Nombre del novio",
+      "hashtag": "Hashtag",
+      "hashtagAyuda": "Con almohadilla delante, por ejemplo #PalomaYDavid. Déjalo vacío si no queréis.",
+      "fechaCeremonia": "Fecha y hora de la ceremonia",
+      "fechaBanquete": "Fecha y hora del banquete",
+      "fechaBanqueteAyuda": "Opcional. Si lo dejas vacío, el calendario cuenta sólo desde la ceremonia.",
+      "lugarCeremonia": "Lugar de la ceremonia",
+      "direccionCeremonia": "Dirección de la ceremonia",
+      "lugarBanquete": "Lugar del banquete",
+      "direccionBanquete": "Dirección del banquete",
+      "latitud": "Latitud",
+      "longitud": "Longitud",
+      "coordenadasAyuda": "Las dos o ninguna. Se copian de Google Maps y admiten coma o punto.",
+      "correo": "Correo de contacto",
+      "correoAyuda": "El que ven los invitados en el pie de la web.",
+      "limiteRsvp": "Fecha límite para confirmar",
+      "limiteRsvpAyuda": "Tiene que ser anterior a la ceremonia.",
+      "zonaHoraria": "Las horas se guardan en",
+      "guardar": "Guardar cambios",
+      "guardado": "Ajustes guardados. La web ya los muestra.",
+      "soloLectura": "Tus permisos son de sólo lectura: puedes ver estos datos, pero no cambiarlos.",
+      "errorNombres": "Hacen falta los dos nombres, de al menos dos caracteres.",
+      "errorCeremonia": "Pon la fecha y la hora de la ceremonia.",
+      "errorLimiteTarde": "La fecha límite para confirmar no puede ser posterior a la ceremonia.",
+      "errorBanqueteAntes": "El banquete no puede empezar antes que la ceremonia.",
+      "errorCoordenadas": "Revisa las coordenadas: van las dos o ninguna, la latitud entre -90 y 90 y la longitud entre -180 y 180.",
+      "errorHashtag": "El hashtag empieza por almohadilla y sigue con letras, números o guion bajo.",
+      "errorCorreo": "Ese correo no tiene buena pinta.",
+      "errorSinPermiso": "No se ha guardado nada: tus permisos no alcanzan para cambiar los ajustes de la boda.",
+      "errorGuardar": "No hemos podido guardar los ajustes. Inténtalo de nuevo."
     }
   }
 }
