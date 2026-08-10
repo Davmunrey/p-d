@@ -82,6 +82,25 @@ async function primeraCategoria(pagina: Page): Promise<string> {
   return (await opcion.textContent())?.trim() ?? "";
 }
 
+/**
+ * ESPERA LA REDIRECCIÓN ANTES DE MIRAR EL AVISO.
+ *
+ * Cada formulario de esta pantalla hace `POST` a una acción de servidor que
+ * escribe y **redirige** con el resultado en la URL. Mirar directamente el
+ * aviso mete dos cosas en el mismo cronómetro de cinco segundos: la escritura
+ * en la base y el renderizado entero de la página siguiente. En una máquina de
+ * CI cargada eso se pasa de largo, y el fallo aparece en un sitio distinto en
+ * cada reintento — que es exactamente lo que pasó, y lo que hace que un test
+ * así no diga nada cuando falla.
+ *
+ * Separarlo tiene además una ventaja de diagnóstico: si lo que falla es la
+ * espera de la URL, la acción no ha redirigido; si falla el aviso, redirigió a
+ * otro estado y el mensaje dice a cuál.
+ */
+async function esperarEstado(pagina: Page, esperado: string) {
+  await pagina.waitForURL(new RegExp(`estado=${esperado}(&|$)`), { timeout: 15_000 });
+}
+
 test.describe("El módulo de proveedores", () => {
   test.skip(
     !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
@@ -112,7 +131,9 @@ test.describe("El módulo de proveedores", () => {
     await alta.getByRole("button", { name: copy.panel.proveedores.crear }).click();
 
     // Se va a su ficha: quien acaba de darlo de alta sigue teniendo qué apuntar.
-    await expect(page).toHaveURL(new RegExp(`${RUTA_PROVEEDORES}/[0-9a-f-]{36}`));
+    await page.waitForURL(new RegExp(`${RUTA_PROVEEDORES}/[0-9a-f-]{36}`), {
+      timeout: 15_000,
+    });
     await expect(page.getByRole("heading", { name: nombre })).toBeVisible();
 
     // El importe se ha guardado como número, no como el texto que se tecleó.
@@ -132,6 +153,7 @@ test.describe("El módulo de proveedores", () => {
       .getByLabel(copy.panel.proveedores.campoTelefono, { exact: true })
       .fill("+34 600 111 222");
     await edicion.getByRole("button", { name: copy.panel.proveedores.guardar }).click();
+    await esperarEstado(page, "editado");
     await expect(page.getByText(copy.panel.proveedores.avisoEditado)).toBeVisible();
 
     const [editado] = await conBase(
@@ -152,6 +174,7 @@ test.describe("El módulo de proveedores", () => {
       .fill("+34 600 333 444");
     await gente.getByLabel(copy.panel.proveedores.campoEsDelDia, { exact: true }).check();
     await gente.getByRole("button", { name: copy.panel.proveedores.anadirContacto }).click();
+    await esperarEstado(page, "contacto-anadido");
 
     await expect(page.getByText("(DES) Jefe de sala")).toBeVisible();
     // El distintivo lleva texto y no sólo color: es lo que lee un lector de
@@ -214,6 +237,7 @@ test.describe("El módulo de proveedores", () => {
     await page.goto(`${RUTA_PROVEEDORES}/${proveedorId}`);
 
     await page.getByRole("button", { name: copy.panel.proveedores.borrar }).click();
+    await esperarEstado(page, "confirmar-borrado");
 
     // No ha borrado: pregunta, y dice exactamente qué se quedaría huérfano.
     await expect(page.getByText(copy.panel.proveedores.avisoConfirmarBorrado)).toBeVisible();
@@ -227,6 +251,7 @@ test.describe("El módulo de proveedores", () => {
 
     // Ahora sí, confirmando. El gasto sobrevive: es contabilidad.
     await page.getByRole("button", { name: copy.panel.proveedores.confirmarBorrado }).click();
+    await esperarEstado(page, "borrado");
     await expect(page.getByText(copy.panel.proveedores.avisoBorrado)).toBeVisible();
 
     const restantes = await conBase(
@@ -258,6 +283,7 @@ test.describe("El módulo de proveedores", () => {
       .getByLabel(copy.panel.proveedores.campoNombreCategoria, { exact: true })
       .fill(nombreCategoria);
     await nueva.getByRole("button", { name: copy.panel.proveedores.crearCategoria }).click();
+    await esperarEstado(page, "categoria-creada");
     await expect(page.getByText(copy.panel.proveedores.avisoCategoriaCreada)).toBeVisible();
 
     const suya = seccion(page, nombreCategoria);
@@ -340,6 +366,7 @@ test.describe("El embudo del proveedor", () => {
       .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
       .selectOption({ label: copy.panel.proveedores.estados.presupuesto_pedido });
     await fase.getByRole("button", { name: copy.panel.proveedores.cambiarEstado }).click();
+    await esperarEstado(page, "estado-cambiado");
     await expect(page.getByText(copy.panel.proveedores.avisoEstadoCambiado)).toBeVisible();
 
     // Persiste: se comprueba recargando, no fiándose de lo que quedó pintado.
@@ -363,6 +390,7 @@ test.describe("El embudo del proveedor", () => {
     await faseTrasRecarga
       .getByRole("button", { name: copy.panel.proveedores.cambiarEstado })
       .click();
+    await esperarEstado(page, "estado-cambiado");
 
     await expect(page.getByText(motivo)).toBeVisible();
 
@@ -389,6 +417,7 @@ test.describe("El embudo del proveedor", () => {
       .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
       .selectOption({ label: copy.panel.proveedores.estados.descartado });
     await fase.getByRole("button", { name: copy.panel.proveedores.cambiarEstado }).click();
+    await esperarEstado(page, "descarte-sin-motivo");
 
     await expect(page.getByText(copy.panel.proveedores.errorDescarteSinMotivo)).toBeVisible();
 
@@ -428,6 +457,7 @@ test.describe("El embudo del proveedor", () => {
       .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
       .selectOption({ label: copy.panel.proveedores.estados.contratado });
     await fase.getByRole("button", { name: copy.panel.proveedores.cambiarEstado }).click();
+    await esperarEstado(page, "confirmar-contratado");
 
     // Pregunta, y dice a quién: «ya hay uno» sin nombre obliga a ir a buscarlo.
     await expect(page.getByText(copy.panel.proveedores.avisoConfirmarContratado)).toBeVisible();
