@@ -22,6 +22,21 @@ import { RUTA_RSVP } from "../../src/config/constants";
 const cadena = process.env.DATABASE_URL;
 const PUERTO_BUZON = 54999;
 
+/**
+ * CADA CONTEXTO, CON SU PROPIO ORIGEN.
+ *
+ * El cortafuegos del RSVP cuenta intentos fallidos por origen, y toda la suite
+ * sale de `127.0.0.1`: los tests que abren enlaces inválidos a propósito
+ * —«un enlace que no vale», la rotación de tokens— gastan ese cupo, y cuando le
+ * toca el turno a este fichero la IP puede estar cerrada. Entonces el enlace no
+ * se abre y el test falla por algo que no tiene nada que ver con el correo.
+ *
+ * Pasó. Con una cabecera propia, este fichero tiene su cupo entero y no se lo
+ * gasta nadie. No se relaja el límite: se deja de compartir el cubo.
+ */
+let siguienteOrigen = 0;
+const origen = () => ({ "x-forwarded-for": `198.51.100.${(siguienteOrigen += 1) + 100}` });
+
 interface CorreoCapturado {
   from: string;
   to: string[];
@@ -117,7 +132,11 @@ test.describe("El acuse de recibo", () => {
     const correo = `invitada-${Date.now()}@ejemplo.test`;
     const token = await crearGrupo(`feliz-${Date.now()}`, correo);
 
-    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origen(),
+    });
     const pagina = await contexto.newPage();
     await pagina.goto(`${RUTA_RSVP}/${token}`);
     await pagina.locator('input[value="confirmado"]').first().check();
@@ -155,7 +174,11 @@ test.describe("El acuse de recibo", () => {
   test("con el proveedor caído, la confirmación se guarda igual", async ({ browser }) => {
     const token = await crearGrupo(`caido-${Date.now()}`, `caido-${Date.now()}@ejemplo.test`);
 
-    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origen(),
+    });
     const pagina = await contexto.newPage();
     await pagina.goto(`${RUTA_RSVP}/${token}`);
     await pagina.locator('input[value="confirmado"]').first().check();
@@ -182,7 +205,11 @@ test.describe("El acuse de recibo", () => {
 
     const token = await crearGrupo(`sin-correo-${Date.now()}`, null);
 
-    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origen(),
+    });
     const pagina = await contexto.newPage();
     await pagina.goto(`${RUTA_RSVP}/${token}`);
     await pagina.locator('input[value="confirmado"]').first().check();

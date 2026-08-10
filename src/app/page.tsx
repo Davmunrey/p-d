@@ -6,7 +6,7 @@ import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { BotonEnlace } from "@/components/ui/boton";
-import { CampoCopiable } from "@/components/ui/campo-copiable";
+import { CuentaRegalos } from "@/components/ui/cuenta-regalos";
 import {
   Cita,
   Conector,
@@ -33,7 +33,6 @@ import {
   obtenerSecciones,
   type ConfiguracionBoda,
   type ConsejoVestimenta,
-  type CuentaRegalos,
   type Medio,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
@@ -172,7 +171,7 @@ export default async function PaginaInicio() {
       preguntas.length > 0 ? <Preguntas preguntas={preguntas} /> : undefined,
     playlist: <Playlist canciones={canciones} />,
     // Sin cuenta no hay sección: ver el comentario de `Regalos`.
-    regalos: cuentaRegalos ? <Regalos cuenta={cuentaRegalos} /> : undefined,
+    regalos: cuentaRegalos ? <Regalos /> : undefined,
     dresscode: consejos.length > 0 ? <DressCode consejos={consejos} /> : undefined,
     rsvp: <Rsvp configuracion={configuracion} />,
   };
@@ -682,7 +681,7 @@ function Playlist({ canciones }: { canciones: { id: string; texto: string }[] })
  * Una sección de regalos con un hueco donde va el número es peor que no
  * tenerla.
  */
-function Regalos({ cuenta }: { cuenta: CuentaRegalos }) {
+function Regalos() {
   return (
     <Bloque
       seccion="regalos"
@@ -692,16 +691,13 @@ function Regalos({ cuenta }: { cuenta: CuentaRegalos }) {
       realzada
     >
       <div className="mx-auto max-w-estrecho rounded-tarjeta border border-borde bg-superficie-tenue p-elemento">
-        {cuenta.titular ? (
-          <Etiqueta>{t("regalos.titular", { titular: cuenta.titular })}</Etiqueta>
-        ) : null}
-
-        <CampoCopiable
-          valor={cuenta.iban}
-          etiqueta={t("regalos.etiquetaCuenta")}
-          textoCopiar={t("regalos.copiar")}
-          textoCopiado={t("regalos.copiado")}
-        />
+        {/*
+          EL NÚMERO NO ESTÁ AQUÍ, y es el ticket entero. Este componente pinta
+          un botón; el IBAN se pide a `/regalos/cuenta` cuando alguien lo
+          pulsa. Lo que el servidor decide es sólo SI hay cuenta —para no
+          enseñar un botón que no lleva a nada— y eso no revela el número.
+        */}
+        <CuentaRegalos />
 
         <Cuerpo className="mt-elemento text-pequeno">{t("regalos.buzon")}</Cuerpo>
       </div>
