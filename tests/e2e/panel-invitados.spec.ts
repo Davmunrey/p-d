@@ -190,3 +190,67 @@ test.describe("Invitaciones", () => {
     );
   });
 });
+
+/**
+ * BODA-43 · Los números de la portada del panel
+ *
+ * Antes esta pantalla decía «aquí irán los números de la boda». Lo que se
+ * comprueba es que ya no promete nada: que las cifras se mueven cuando alguien
+ * contesta, que es la única forma de saber que salen de la base.
+ */
+test.describe("Resumen del panel", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  test("las cifras suben cuando alguien confirma", async ({ page, browser }) => {
+    await entrar(page);
+
+    const confirmados = page
+      .getByRole("term")
+      .filter({ hasText: copy.panel.resumen.confirmados })
+      .locator("xpath=following-sibling::dd[1]");
+
+    await page.goto(RUTA_PANEL);
+    const antes = Number((await confirmados.first().textContent())?.trim() ?? "0");
+
+    // Una invitación nueva con una persona, contestada que sí.
+    await page.goto(RUTA_INVITADOS);
+    await page
+      .getByLabel(copy.panel.invitados.nombreGrupo)
+      .fill(`${MARCA} cifras ${Date.now()}`);
+    await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
+    const enlace = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
+    await page.getByLabel(copy.panel.invitados.nombrePersona).fill("(DES) Nekane");
+    await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
+
+    const contexto = await browser.newContext({ locale: "es-ES" });
+    const invitada = await contexto.newPage();
+    await invitada.goto(new URL(enlace).pathname);
+    await invitada.locator('input[value="confirmado"]').first().check();
+    await invitada.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await invitada.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await invitada.getByRole("button", { name: copy.rsvp.enviar }).click();
+    await expect(invitada.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
+    await contexto.close();
+
+    await page.goto(RUTA_PANEL);
+    const despues = Number((await confirmados.first().textContent())?.trim() ?? "0");
+
+    // Si esto no sube, las cifras no salen de la base.
+    expect(despues).toBe(antes + 1);
+  });
+
+  test("sin fecha o sin invitados, lo dice en vez de enseñar ceros", async ({ page }) => {
+    await entrar(page);
+    await page.goto(RUTA_PANEL);
+
+    // Con el seed hay invitados, así que se enseñan los bloques de cifras.
+    await expect(
+      page.getByRole("heading", { name: copy.panel.resumen.bloqueInvitados }),
+    ).toBeVisible();
+    // Y la cuenta atrás dice algo concreto, no un hueco.
+    await expect(page.locator("header")).not.toContainText("{dias}");
+  });
+});
