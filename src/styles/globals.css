@@ -101,11 +101,13 @@
   /* Tipografía */
   --font-titulo: var(--fuente-titulo);
   --font-cuerpo: var(--fuente-cuerpo);
+  --font-conector: var(--fuente-conector);
   --font-codigo: var(--fuente-codigo);
   --text-display: var(--texto-display);
   --text-titulo-1: var(--texto-titulo-1);
   --text-titulo-2: var(--texto-titulo-2);
   --text-titulo-3: var(--texto-titulo-3);
+  --text-conector: var(--texto-conector);
   --text-cita: var(--texto-cita);
   --text-cuerpo-grande: var(--texto-cuerpo-grande);
   --text-cuerpo: var(--texto-cuerpo);
@@ -119,6 +121,8 @@
   --leading-display: var(--interlineado-display);
   --leading-titulo: var(--interlineado-titulo);
   --leading-titulo-corto: var(--interlineado-titulo-corto);
+  --leading-titulo-menor: var(--interlineado-titulo-menor);
+  --leading-conector: var(--interlineado-conector);
   --leading-cita: var(--interlineado-cita);
   --leading-cuerpo: var(--interlineado-cuerpo);
   --tracking-display: var(--espaciado-display);

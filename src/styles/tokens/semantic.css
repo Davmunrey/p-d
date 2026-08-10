@@ -97,11 +97,13 @@
   /* --- Tipografía semántica ------------------------------------------ */
   --fuente-titulo: var(--font-family-serif);
   --fuente-cuerpo: var(--font-family-sans);
+  --fuente-conector: var(--font-family-conector);
   --fuente-codigo: var(--font-family-mono);
   --texto-display: var(--font-size-display);
   --texto-titulo-1: var(--font-size-titulo-1);
   --texto-titulo-2: var(--font-size-titulo-2);
   --texto-titulo-3: var(--font-size-titulo-3);
+  --texto-conector: var(--font-size-conector);
   --texto-cita: var(--font-size-cita);
   --texto-cuerpo-grande: var(--font-size-cuerpo-grande);
   --texto-cuerpo: var(--font-size-cuerpo);
@@ -115,6 +117,8 @@
   --interlineado-display: var(--line-height-display);
   --interlineado-titulo: var(--line-height-titulo);
   --interlineado-titulo-corto: var(--line-height-titulo-corto);
+  --interlineado-titulo-menor: var(--line-height-titulo-menor);
+  --interlineado-conector: var(--line-height-conector);
   --interlineado-cita: var(--line-height-cita);
   --interlineado-cuerpo: var(--line-height-cuerpo);
   --espaciado-display: var(--letter-spacing-display);

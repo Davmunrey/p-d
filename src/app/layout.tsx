@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Jost } from "next/font/google";
+import { Cormorant_Infant, Italianno, Jost } from "next/font/google";
 
 import { ATRIBUTO_TEMA, CLAVE_TEMA, IDIOMA } from "@/config/constants";
 import { t } from "@/lib/copy";
@@ -11,7 +11,7 @@ import "@/styles/globals.css";
  * primitivos (`--font-family-serif` / `--font-family-sans`). Ningún componente
  * nombra una fuente directamente.
  */
-const serif = Cormorant_Garamond({
+const serif = Cormorant_Infant({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600"],
   style: ["normal", "italic"],
@@ -23,6 +23,17 @@ const sans = Jost({
   subsets: ["latin"],
   weight: ["300", "400", "500"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+/**
+ * El conector «y» y el ampersand, y nada más. Una sola letra por pieza, así
+ * que un peso basta y no compensa cargar más.
+ */
+const conector = Italianno({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-conector",
   display: "swap",
 });
 
@@ -49,7 +60,7 @@ const GUION_TEMA = `try{var t=localStorage.getItem(${JSON.stringify(CLAVE_TEMA)}
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang={IDIOMA} className={`${serif.variable} ${sans.variable}`}>
+    <html lang={IDIOMA} className={`${serif.variable} ${sans.variable} ${conector.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: GUION_TEMA }} />
       </head>

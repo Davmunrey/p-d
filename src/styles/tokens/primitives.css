@@ -124,21 +124,37 @@
   --color-velado-marino: rgb(16 22 35 / 86%);
 
   /* ---------------------------------------------------------------------
-   * Tipografía — Cormorant Garamond para titulares, Jost para cuerpo
+   * Tipografía — las tres familias de la entrega
+   *
+   * Cormorant Infant para titulares y cifras, Jost para cuerpo y versalitas,
+   * e Italianno **sólo** para el conector «y» y el ampersand. La entrega es
+   * explícita en eso último: una vez por pieza. Usarla para algo más la
+   * convertiría en decoración, y deja de funcionar como respiro.
+   *
+   * Ojo con Cormorant: hay varias. La entrega usa **Infant**, que tiene la «a»
+   * y la «g» de caja baja de una sola panza; Garamond es otra letra distinta y
+   * el titular se lee con otro carácter.
    * ------------------------------------------------------------------- */
 
-  --font-family-serif: var(--font-serif), "Cormorant Garamond", ui-serif, georgia, serif;
+  --font-family-serif: var(--font-serif), "Cormorant Infant", ui-serif, georgia, serif;
   --font-family-sans: var(--font-sans), "Jost", ui-sans-serif, system-ui, sans-serif;
+  --font-family-conector: var(--font-conector), "Italianno", ui-serif, cursive;
   --font-family-mono: ui-monospace, "SF Mono", menlo, monospace;
 
   /**
    * Tamaños fluidos con clamp: el diseño es responsive por definición, así que
    * el token lleva dentro su propio rango. No hay saltos por breakpoint.
+   *
+   * Los rangos son los de la hoja de entrega, no una escala inventada: display
+   * 58–124 px, título 1 38–68 px, título 2 38 px, título 3 27 px, conector
+   * 44–104 px. Los `vw` salen de las piezas, que es donde está el criterio de
+   * a qué velocidad crece cada uno.
    */
-  --font-size-display: clamp(3.25rem, 7vw, 6.75rem);
-  --font-size-titulo-1: clamp(2.375rem, 5vw, 3.625rem);
+  --font-size-display: clamp(3.625rem, 9.2vw, 7.75rem);
+  --font-size-titulo-1: clamp(2.375rem, 5vw, 4.25rem);
   --font-size-titulo-2: clamp(2rem, 3.4vw, 2.375rem);
   --font-size-titulo-3: 1.6875rem;
+  --font-size-conector: clamp(2.75rem, 8vw, 6.5rem);
   --font-size-cita: 1.5rem;
   --font-size-cuerpo-grande: 1.1875rem;
   --font-size-cuerpo: 1rem;
@@ -149,13 +165,18 @@
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
-  --line-height-display: 0.94;
-  --line-height-titulo: 1.04;
-  --line-height-titulo-corto: 1.15;
-  --line-height-cita: 1.4;
+  --line-height-display: 0.92;
+  --line-height-titulo: 1.02;
+  --line-height-titulo-corto: 1.1;
+  --line-height-titulo-menor: 1.2;
+
+  /* La «y» de Italianno cuelga mucho: con interlínea normal separa las dos
+     líneas del nombre más de la cuenta. */
+  --line-height-conector: 0.8;
+  --line-height-cita: 1.5;
   --line-height-cuerpo: 1.65;
   --line-height-holgado: 1.6;
-  --letter-spacing-display: -0.02em;
+  --letter-spacing-display: -0.015em;
   --letter-spacing-titulo: -0.015em;
   --letter-spacing-normal: 0;
   --letter-spacing-etiqueta: 0.3em;

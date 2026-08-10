@@ -29,14 +29,23 @@ export const TIPO_OG = "image/png";
 
 const paleta = PALETAS.inversa;
 
+/**
+ * Las tres familias de la entrega, en crudo: aquí no hay CSS que las resuelva,
+ * así que se leen del repositorio y se le pasan al renderizador.
+ *
+ * Italianno entra por el conector. Sin ella, la «y» se pintaba en cursiva de
+ * la serif y la tarjeta que sale en WhatsApp no era la misma marca que la web.
+ */
 async function fuentes() {
-  const [serif, sans] = await Promise.all([
-    readFile(join(process.cwd(), "assets/fuentes/cormorant-garamond-300.ttf")),
+  const [serif, sans, conector] = await Promise.all([
+    readFile(join(process.cwd(), "assets/fuentes/cormorant-infant-300.ttf")),
     readFile(join(process.cwd(), "assets/fuentes/jost-400.ttf")),
+    readFile(join(process.cwd(), "assets/fuentes/italianno-400.ttf")),
   ]);
   return [
-    { name: "Cormorant Garamond", data: serif, weight: 300 as const, style: "normal" as const },
+    { name: "Cormorant Infant", data: serif, weight: 300 as const, style: "normal" as const },
     { name: "Jost", data: sans, weight: 400 as const, style: "normal" as const },
+    { name: "Italianno", data: conector, weight: 400 as const, style: "normal" as const },
   ];
 }
 
@@ -60,7 +69,7 @@ export async function construirImagenOg(contenido: ContenidoOg) {
         justifyContent: "center",
         backgroundColor: paleta.fondo,
         color: paleta.tinta,
-        fontFamily: "Cormorant Garamond",
+        fontFamily: "Cormorant Infant",
         padding: "80px 140px",
         textAlign: "center",
       }}
@@ -92,7 +101,7 @@ export async function construirImagenOg(contenido: ContenidoOg) {
         }}
       >
         <span>{contenido.nombreNovia}</span>
-        <span style={{ fontSize: 60, fontStyle: "italic", color: paleta.marca }}>
+        <span style={{ fontFamily: "Italianno", fontSize: 96, color: paleta.acento }}>
           {contenido.conjuncion}
         </span>
         <span>{contenido.nombreNovio}</span>

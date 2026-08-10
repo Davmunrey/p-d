@@ -17,6 +17,7 @@ export const PALETAS = {
     "tinta": "#121722",
     "tinta-suave": "#434e63",
     "marca": "#3f4f70",
+    "acento": "#8a6224",
     "borde": "#dfe4ec"
   },
   "inversa": {
@@ -25,6 +26,7 @@ export const PALETAS = {
     "tinta": "#eef2f8",
     "tinta-suave": "#c3cee1",
     "marca": "#9db0ce",
+    "acento": "#e3be86",
     "borde": "#2c3a56"
   }
 } as const;

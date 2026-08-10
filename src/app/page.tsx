@@ -5,7 +5,15 @@ import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { BotonEnlace } from "@/components/ui/boton";
-import { Cita, Cuerpo, Display, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
+import {
+  Cita,
+  Conector,
+  Cuerpo,
+  Display,
+  Etiqueta,
+  Titulo2,
+  Titulo3,
+} from "@/components/ui/tipografia";
 import { ID_CONTENIDO, IDIOMA, ZONA_HORARIA } from "@/config/constants";
 import { anclaDe, esAncla, type Seccion } from "@/config/secciones";
 import {
@@ -214,9 +222,7 @@ function Portada({ configuracion }: { configuracion: ConfiguracionBoda }) {
 
         <Display className="animacion-subir mt-pila">{configuracion.nombreNovia}</Display>
         <div className="animacion-subir flex flex-wrap items-baseline gap-elemento">
-          <span className="font-titulo text-titulo-1 italic text-acento">
-            {t("portada.conjuncion")}
-          </span>
+          <Conector>{t("portada.conjuncion")}</Conector>
           <Display como="p">{configuracion.nombreNovio}</Display>
         </div>
 

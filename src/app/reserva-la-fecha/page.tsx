@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
 import { BotonEnlace } from "@/components/ui/boton";
-import { Etiqueta, Titulo3 } from "@/components/ui/tipografia";
+import { Conector, Etiqueta, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_CALENDARIO, ZONA_HORARIA } from "@/config/constants";
 import { obtenerConfiguracion, obtenerSecciones } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
@@ -96,8 +96,8 @@ export default async function PaginaReservaLaFecha() {
             lector de pantalla partirlo en dos encabezados no significa nada. */}
         <h1 className="mt-pila font-titulo text-display leading-display tracking-display">
           {configuracion.nombreNovia}
-          <span className="block text-titulo-1 italic text-acento">
-            {t("portada.conjuncion")}
+          <span className="block">
+            <Conector>{t("portada.conjuncion")}</Conector>
           </span>
           {configuracion.nombreNovio}
         </h1>
