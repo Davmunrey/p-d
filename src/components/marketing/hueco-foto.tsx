@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import { VideoDeFondo } from "@/components/marketing/video-de-fondo";
+
 import { BUCKET_MEDIOS } from "@/config/constants";
 import type { Medio } from "@/lib/bbdd/landing";
 
@@ -40,14 +42,30 @@ export function HuecoFoto({
   className = "",
   prioritaria = false,
 }: Propiedades) {
-  const fuente =
-    medio && urlBase
-      ? `${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${medio.ruta}`
-      : null;
+  const enElBucket = (ruta: string) =>
+    `${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${ruta}`;
+
+  const fuente = medio && urlBase ? enElBucket(medio.ruta) : null;
+
+  /*
+    UN VÍDEO NO ES UNA IMAGEN CON OTRA EXTENSIÓN, así que sale por su propia
+    rama en vez de intentar que `next/image` lo entienda. Lo dice la base —el
+    campo `tipo`—, no el final de la ruta: «.mov» y «.mp4» son el mismo vídeo
+    con distinto envoltorio, y adivinarlo mirando una cadena convierte un dato
+    en una corazonada.
+  */
+  const esVideo = medio?.tipo === "video" && medio.posterRuta && fuente && urlBase;
 
   return (
     <div className={`relative overflow-hidden bg-superficie-hundida ${className}`}>
-      {fuente ? (
+      {esVideo ? (
+        <VideoDeFondo
+          fuente={fuente!}
+          poster={enElBucket(medio!.posterRuta!)}
+          textoAlternativo={medio!.textoAlternativo}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : fuente ? (
         <Image
           src={fuente}
           alt={medio!.textoAlternativo}

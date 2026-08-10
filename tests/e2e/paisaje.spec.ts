@@ -137,3 +137,80 @@ test.describe("El paisaje", () => {
     await expect(seccion(page)).toContainText(original!);
   });
 });
+
+/**
+ * BODA-28 · El paisaje en movimiento
+ *
+ * LO QUE SE PRUEBA NO ES QUE EL VÍDEO SE VEA, sino que la sección lo monta como
+ * FONDO y no como reproductor —callado, en bucle, sin controles y sin robar una
+ * parada de teclado—, y que **se rinde ante quien ha pedido no ver movimiento**.
+ * Un bucle aéreo a pantalla completa es justo lo que marea a esa persona.
+ *
+ * El fichero no está en el bucket de pruebas: Storage no se siembra. Da igual —
+ * lo que se comprueba es la rama y sus atributos, y para eso basta la fila.
+ */
+test.describe("El paisaje en movimiento", () => {
+  test.skip(!cadena, "Hace falta DATABASE_URL: la landing lee de la base real.");
+
+  test.beforeAll(async () => {
+    await fijarFrase(await leerFrase());
+  });
+
+  /**
+   * CAMINO FELIZ · con movimiento permitido, la sección monta el vídeo.
+   */
+  test("el vídeo se monta como fondo, no como reproductor", async ({ page }) => {
+    await page.goto("/");
+
+    const video = seccion(page).locator("video");
+    await expect(video, "con la fila de vídeo publicada tiene que montarse").toHaveCount(1);
+
+    // Callado y en bucle: sin `muted` ningún navegador lo arranca solo.
+    expect(await video.evaluate((v: HTMLVideoElement) => v.muted)).toBe(true);
+    expect(await video.evaluate((v: HTMLVideoElement) => v.loop)).toBe(true);
+    expect(await video.evaluate((v: HTMLVideoElement) => v.autoplay)).toBe(true);
+
+    // Sin controles y fuera del recorrido de teclado: es el fondo, no un
+    // reproductor. Una parada de tabulación que no lleva a nada es una parada
+    // de más para quien navega con teclado.
+    expect(await video.evaluate((v: HTMLVideoElement) => v.controls)).toBe(false);
+    await expect(video).toHaveAttribute("tabindex", "-1");
+
+    // Y el póster puesto: es lo que se ve mientras carga y si algo falla.
+    const poster = await video.getAttribute("poster");
+    expect(poster, "el vídeo tiene que llevar su fotograma quieto").toContain(".jpg");
+
+    // El titular sigue siendo el que cuenta la sección; el vídeo no habla.
+    await expect(video).toHaveAttribute("aria-hidden", "true");
+    await expect(seccion(page).locator("h2")).toBeVisible();
+  });
+
+  /**
+   * CASO DE ERROR · quien pide no ver movimiento no ve movimiento.
+   */
+  test("con «prefers-reduced-motion» no hay vídeo, sino el fotograma quieto", async ({
+    browser,
+  }) => {
+    const contexto = await browser.newContext({ reducedMotion: "reduce" });
+    const pagina = await contexto.newPage();
+
+    try {
+      await pagina.goto("/");
+
+      await expect(
+        seccion(pagina).locator("video"),
+        "un bucle de fondo es justo lo que se pidió no ver",
+      ).toHaveCount(0);
+
+      // Y en su lugar, el fotograma: la sección no se queda en un hueco.
+      const quieta = seccion(pagina).locator("img");
+      await expect(quieta).toHaveCount(1);
+      expect(
+        await quieta.getAttribute("alt"),
+        "el fotograma es contenido, no relleno",
+      ).toBeTruthy();
+    } finally {
+      await contexto.close();
+    }
+  });
+});

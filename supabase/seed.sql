@@ -379,3 +379,22 @@ insert into public.hitos_historia (titulo, fecha_texto, descripcion, orden) valu
   ('(DES) El viaje',      'Verano de 2021', 'Tres semanas y una avería del coche que hoy nos hace reír.',      2),
   ('(DES) La pregunta',   'Diciembre de 2025', 'En casa, sin testigos y sin plan. Salió que sí.',              3)
 on conflict do nothing;
+/*
+  UN VÍDEO DE PAISAJE PARA DESARROLLO.
+
+  El objeto no está en el bucket de pruebas —Storage no se siembra desde aquí—,
+  así que el navegador pedirá un fichero que no existe y se quedará el póster.
+  Es justo lo que hace falta para probar la RAMA: que la sección monta un vídeo
+  con sus atributos de fondo cuando la fila dice que es vídeo, sin depender de
+  que alguien suba dos megas a una base de pruebas que se borra cada vez.
+*/
+delete from public.medios where ruta_almacenamiento like 'paisaje/%';
+
+insert into public.medios
+  (ruta_almacenamiento, texto_alternativo, seccion, tipo, poster_ruta, publicado, orden)
+values
+  ('paisaje/vista-aerea.mp4',
+   '{"es": "(DES) Vista aerea de la ciudad al amanecer"}'::jsonb,
+   'paisaje', 'video', 'paisaje/vista-aerea.jpg', true, 0);
+
+
