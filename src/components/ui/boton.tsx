@@ -4,9 +4,13 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 /**
  * BOTÓN
  *
- * Tres jerarquías, como manda el sistema de marca: primario (relleno oliva),
+ * Tres jerarquías, como manda el sistema de marca: primario (relleno marino),
  * secundario (contorno) y terciario (texto subrayado). Nada más — un cuarto
  * estilo sería ruido.
+ *
+ * El relleno del primario sale de `--accion`, no de `--acento`: el acento es
+ * el bronce, y un botón entero de bronce convertiría el único color cálido del
+ * sistema en el elemento más ruidoso de la página.
  *
  * Solo usa tokens semánticos: en un bloque `[data-seccion="inversa"]` los
  * mismos colores se reasignan y el botón se adapta sin tocar una clase.
@@ -22,7 +26,7 @@ const BASE =
 
 const JERARQUIAS: Record<JerarquiaBoton, string> = {
   primario:
-    "min-h-control rounded-boton bg-acento px-elemento text-tinta-sobre-acento hover:bg-acento-hover",
+    "min-h-control rounded-boton bg-accion px-elemento text-tinta-sobre-accion hover:bg-accion-hover",
   secundario:
     "min-h-control rounded-boton border border-borde-fuerte px-elemento text-tinta-marca hover:border-borde-marca hover:bg-superficie-hundida",
   terciario:

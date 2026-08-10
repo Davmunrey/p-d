@@ -105,6 +105,16 @@ const eslintConfig = defineConfig([
     "test-results/**",
     // Skills de diseño de terceros: se versionan tal cual llegan del origen.
     ".claude/skills/**",
+    /**
+     * La entrega del estudio de marca: las piezas en HTML, sus SVG y el runtime
+     * de la herramienta con la que se hicieron. Es material de referencia, no
+     * código del proyecto — de ahí salen los valores de `primitives.css`, pero
+     * nada de esto se compila ni se despliega.
+     *
+     * Se versiona tal cual llegó: reformatearlo o "arreglarlo" rompería la
+     * única copia fiel del diseño que tenemos.
+     */
+    "Sistema completo de boda/**",
   ]),
 ]);
 

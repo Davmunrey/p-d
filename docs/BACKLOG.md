@@ -25,20 +25,24 @@ de aviso.
 **Épicas** — las decenas del código `BODA-XX` coinciden con la épica, así que el
 número ya dice de qué va:
 
-| Etiqueta              | Códigos          | Qué agrupa                                   |
-| --------------------- | ---------------- | -------------------------------------------- |
-| `e1-cimientos`        | `BODA-01` → `06` | Proyecto, tokens, copys, calidad, despliegue |
-| `e2-base-de-datos`    | `BODA-10` → `14` | Esquema, RLS y funciones públicas            |
-| `e3-landing`          | `BODA-20` → `29` | La web que ven los invitados                 |
-| `e4-save-the-date`    | `BODA-30` → `32` | Reserva de fecha y calendario                |
-| `e5-auth-y-panel`     | `BODA-40` → `43` | Acceso privado y esqueleto del panel         |
-| `e6-invitados-y-rsvp` | `BODA-50` → `58` | Invitados y confirmaciones                   |
-| `e7-presupuesto`      | `BODA-60` → `64` | Partidas, pagos y desvíos                    |
-| `e8-proveedores`      | `BODA-70` → `74` | Proveedores, contratos y servicios           |
-| `e9-tareas-y-mesas`   | `BODA-80` → `84` | Tareas y plano de mesas                      |
-| `e10-produccion`      | `BODA-90` → `95` | Rendimiento, accesibilidad, SEO y respaldos  |
-| `e11-dia-de-la-boda`  | `BODA-100`→`104` | Lo que se usa el día D, desde el móvil       |
-| `e12-comunicacion`    | `BODA-110`→`113` | Envíos, recordatorios y mensajes             |
+| Etiqueta              | Códigos                       | Qué agrupa                                   |
+| --------------------- | ----------------------------- | -------------------------------------------- |
+| `e1-cimientos`        | `BODA-01` → `08`, `15` → `19` | Proyecto, tokens, copys, calidad, despliegue |
+| `e2-base-de-datos`    | `BODA-10` → `14`              | Esquema, RLS y funciones públicas            |
+| `e3-landing`          | `BODA-20` → `29`              | La web que ven los invitados                 |
+| `e4-save-the-date`    | `BODA-30` → `32`              | Reserva de fecha y calendario                |
+| `e5-auth-y-panel`     | `BODA-40` → `43`              | Acceso privado y esqueleto del panel         |
+| `e6-invitados-y-rsvp` | `BODA-50` → `58`              | Invitados y confirmaciones                   |
+| `e7-presupuesto`      | `BODA-60` → `64`              | Partidas, pagos y desvíos                    |
+| `e8-proveedores`      | `BODA-70` → `74`              | Proveedores, contratos y servicios           |
+| `e9-tareas-y-mesas`   | `BODA-80` → `84`              | Tareas y plano de mesas                      |
+| `e10-produccion`      | `BODA-90` → `95`              | Rendimiento, accesibilidad, SEO y respaldos  |
+| `e11-dia-de-la-boda`  | `BODA-100`→`104`              | Lo que se usa el día D, desde el móvil       |
+| `e12-comunicacion`    | `BODA-110`→`113`              | Envíos, recordatorios y mensajes             |
+
+La decena de E1 se llenó (`BODA-09` se lo quedó un ticket de landing), así que
+los cimientos continúan en `15` → `19`, que es el hueco libre que dejó E2. La
+etiqueta manda sobre el número: si los dos discrepan, se mira la etiqueta.
 
 **Tallas** — `talla-s` medio día · `talla-m` un día · `talla-l` dos días.
 

@@ -4,9 +4,11 @@
 @import "./tokens/motion.css";
 
 /**
- * Las carpetas de skills son documentación de terceros con ejemplos de código.
- * Sin excluirlas, Tailwind las escanea y mete en el CSS de producción
- * utilidades que ningún componente nuestro usa.
+ * Las carpetas de skills son documentación de terceros con ejemplos de código,
+ * y la del estudio de marca son las piezas del diseño en HTML, con sus estilos
+ * escritos a mano. Sin excluirlas, Tailwind las escanea y mete en el CSS de
+ * producción utilidades que ningún componente nuestro usa: casi un megabyte de
+ * HTML ajeno decidiendo lo que descarga cada invitado.
  *
  * Ojo con la notación de los `@import` de arriba: deben ir entre comillas.
  * Tailwind no resuelve `@import url(...)`, y si alguien los reescribe a esa
@@ -14,6 +16,7 @@
  */
 @source not "../../.claude";
 @source not "../../.agents";
+@source not "../../Sistema completo de boda";
 
 /**
  * PUENTE CON TAILWIND
@@ -59,16 +62,18 @@
   --color-tinta-inversa: var(--tinta-inversa);
   --color-tinta-marca: var(--tinta-marca);
   --color-tinta-sobre-marca: var(--tinta-sobre-marca);
+  --color-tinta-sobre-accion: var(--tinta-sobre-accion);
   --color-tinta-sobre-acento: var(--tinta-sobre-acento);
 
-  /* Marca */
+  /* Marca, acción y acento */
   --color-marca: var(--marca);
   --color-marca-hover: var(--marca-hover);
   --color-marca-activo: var(--marca-activo);
   --color-marca-tenue: var(--marca-tenue);
+  --color-accion: var(--accion);
+  --color-accion-hover: var(--accion-hover);
   --color-acento: var(--acento);
   --color-acento-hover: var(--acento-hover);
-  --color-acento-tenue: var(--acento-tenue);
 
   /* Bordes */
   --color-borde: var(--borde);

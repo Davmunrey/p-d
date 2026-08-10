@@ -207,14 +207,14 @@ function Portada({ configuracion }: { configuracion: ConfiguracionBoda }) {
     >
       <div className="mx-auto w-full max-w-contenido">
         {procedencia ? (
-          <p className="animacion-aparecer text-etiqueta uppercase tracking-marcado text-tinta-tenue">
+          <p className="animacion-aparecer text-etiqueta uppercase tracking-marcado text-acento">
             {procedencia}
           </p>
         ) : null}
 
         <Display className="animacion-subir mt-pila">{configuracion.nombreNovia}</Display>
         <div className="animacion-subir flex flex-wrap items-baseline gap-elemento">
-          <span className="font-titulo text-titulo-1 italic text-marca">
+          <span className="font-titulo text-titulo-1 italic text-acento">
             {t("portada.conjuncion")}
           </span>
           <Display como="p">{configuracion.nombreNovio}</Display>
@@ -322,7 +322,7 @@ function Programa({
             key={hito.id}
             className="animacion-subir-al-ver rejilla-dato gap-elemento border-b border-borde py-elemento"
           >
-            <span className="font-titulo text-titulo-3 text-marca tabular-nums">
+            <span className="font-titulo text-titulo-3 text-acento tabular-nums">
               {hito.hora}
             </span>
             <div>

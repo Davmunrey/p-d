@@ -8,56 +8,77 @@
  * semántica (semantic.css). Si necesitas un valor de aquí en un componente,
  * significa que falta un token semántico.
  *
- * Fuente: sistema de marca de Paloma y David. Los valores son los del diseño,
- * transcritos uno a uno — no aproximaciones. Editorial minimalista: el color
- * casi desaparece, el peso lo llevan la tipografía, el aire y las fotos.
+ * Fuente: sistema de marca de Paloma y David, **versión azul marino**
+ * (`Sistema de marca azul.dc.html` y la hoja de entrega para Figma). Los
+ * valores son los del diseño, transcritos uno a uno — no aproximaciones.
+ * Editorial minimalista: el color casi desaparece, el peso lo llevan la
+ * tipografía, el aire y las fotos.
+ *
+ * La marca tiene dos versiones entregadas, verde oliva y azul marino. Se monta
+ * la azul. Volver a la otra es reescribir ESTE fichero y nada más: ni un
+ * componente nombra un color.
  *
  * Escalas ordenadas de claro (número bajo) a oscuro (número alto).
  */
 
 :root {
   /* ---------------------------------------------------------------------
-   * Color — oliva: el color de la marca
+   * Color — marino: el color de la marca
+   *
+   * `500` es el trazo («marca media» en la entrega) y `700` la superficie
+   * oscura que llevan la portada, el bloque de confirmación y los botones
+   * primarios.
    * ------------------------------------------------------------------- */
 
-  --color-oliva-100: #eceee8;
-  --color-oliva-200: #c9cdbc;
-  --color-oliva-300: #b4b9a4;
-  --color-oliva-350: #a9af98;
-  --color-oliva-400: #9aa089;
-  --color-oliva-420: #9ba08c;
-  --color-oliva-450: #8b917c;
-  --color-oliva-500: #6b7060;
-  --color-oliva-600: #454a3c;
-  --color-oliva-700: #3c4233;
-  --color-oliva-750: #2e3327;
-  --color-oliva-800: #2a2f23;
-  --color-oliva-850: #23271e;
-  --color-oliva-875: #1f2318;
-  --color-oliva-900: #1b1e17;
-  --color-oliva-950: #14170f;
-  --color-oliva-975: #101309;
+  --color-marino-100: #e7ecf3;
+  --color-marino-200: #c3cee1;
+  --color-marino-300: #aec0da;
+  --color-marino-350: #9db0ce;
+  --color-marino-400: #8fa0bc;
+  --color-marino-420: #8b97ac;
+  --color-marino-450: #7e8aa0;
+  --color-marino-500: #3f4f70;
+  --color-marino-600: #2c3a56;
+  --color-marino-700: #1f2b44;
+  --color-marino-750: #1c2434;
+  --color-marino-775: #16213a;
+  --color-marino-800: #141e33;
+  --color-marino-850: #151c2b;
+  --color-marino-900: #101623;
+  --color-marino-950: #0b1120;
 
   /* ---------------------------------------------------------------------
-   * Color — crema y hueso: el aire
+   * Color — bronce: el acento
+   *
+   * El único color cálido del sistema y lo que distingue de verdad a la
+   * versión azul: sobre tanto marino, un acento frío no se despega. Se usa con
+   * cuentagotas — la versalita de la portada, el conector, las citas y el aro
+   * de foco— y nunca como relleno de un botón.
    * ------------------------------------------------------------------- */
 
-  --color-crema-50: #fbfaf8;
-  --color-crema-100: #f4f3f0;
-  --color-crema-150: #f1efe7;
-  --color-crema-200: #e9e4d8;
-  --color-hueso-300: #e6e4df;
-  --color-hueso-350: #dedacb;
-  --color-hueso-400: #c9c5b8;
+  --color-bronce-200: #f0d6ac;
+  --color-bronce-300: #e3be86;
+  --color-bronce-500: #a97634;
+  --color-bronce-600: #8a6224;
 
   /* ---------------------------------------------------------------------
-   * Color — carbón: texto y superficies inversas
+   * Color — nieve y bruma: el aire
    * ------------------------------------------------------------------- */
 
-  --color-carbon-400: #8a8a84;
-  --color-carbon-600: #4a4a45;
-  --color-carbon-900: #14140f;
-  --color-carbon-950: #121210;
+  --color-nieve-50: #f8f9fc;
+  --color-nieve-100: #eef2f8;
+  --color-nieve-150: #eef1f6;
+  --color-bruma-300: #dfe4ec;
+  --color-bruma-400: #b7c0d0;
+
+  /* ---------------------------------------------------------------------
+   * Color — pizarra: texto y superficies inversas
+   * ------------------------------------------------------------------- */
+
+  --color-pizarra-400: #78839a;
+  --color-pizarra-600: #434e63;
+  --color-pizarra-900: #121722;
+  --color-pizarra-950: #0d1220;
 
   /* ---------------------------------------------------------------------
    * Color — estado. Nunca decorativo: solo comunica.
@@ -78,6 +99,13 @@
 
   --color-blanco: #fff;
   --color-negro: #000;
+
+  /**
+   * Los velos y las sombras van en un negro neutro, no en tinta marino. Es
+   * decisión de la entrega, que da una sola receta de sombra para las dos
+   * versiones de la marca: una sombra teñida del color de la paleta delata el
+   * truco en cuanto cae sobre una foto, porque la foto no está teñida.
+   */
   --color-velo-suave: rgb(20 20 15 / 25%);
   --color-velo-medio: rgb(20 20 15 / 55%);
   --color-velo-fuerte: rgb(20 20 15 / 72%);
@@ -88,12 +116,12 @@
    * como una barra fija sobre una portada a pantalla completa. El alfa es alto
    * a propósito: por debajo, el texto encima deja de cumplir contraste.
    *
-   * Mismos valores que `--color-crema-50` y `--color-oliva-950`, que son los
+   * Mismos valores que `--color-nieve-50` y `--color-marino-900`, que son los
    * dos fondos de página. Van escritos porque `rgb(from …)` todavía no llega a
    * todos los navegadores que abre un invitado desde WhatsApp.
    */
-  --color-velado-crema: rgb(251 250 248 / 86%);
-  --color-velado-oliva: rgb(20 23 15 / 86%);
+  --color-velado-nieve: rgb(248 249 252 / 86%);
+  --color-velado-marino: rgb(16 22 35 / 86%);
 
   /* ---------------------------------------------------------------------
    * Tipografía — Cormorant Garamond para titulares, Jost para cuerpo

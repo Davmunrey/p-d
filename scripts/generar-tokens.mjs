@@ -8,7 +8,7 @@
  * valores literales.
  *
  * La tentación es escribirlos a mano y ya. Eso es exactamente lo que prohíbe la
- * regla 1: al día siguiente la web es oliva y la imagen que sale en WhatsApp
+ * regla 1: al día siguiente la web es marino y la imagen que sale en WhatsApp
  * sigue siendo del color de antes, sin que nadie se entere.
  *
  * Así que se leen del propio CSS y se resuelven las dos capas —semántico →
@@ -37,7 +37,7 @@ function sinComentarios(css) {
   return css.replace(/\/\*[\s\S]*?\*\//g, "");
 }
 
-/** `--color-oliva-700: #3c4233;` → { "color-oliva-700": "#3c4233" } */
+/** `--color-marino-700: #1f2b44;` → { "color-marino-700": "#1f2b44" } */
 function declaracionesDe(bloque) {
   const mapa = new Map();
   for (const [, nombre, valor] of bloque.matchAll(/--([\w-]+)\s*:\s*([^;]+);/g)) {
