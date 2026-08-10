@@ -61,6 +61,10 @@
   --acento: var(--color-bronce-600);
   --acento-hover: var(--color-bronce-500);
 
+  /* --- Constelaciones (el único motivo ilustrativo del sistema) -------- */
+  --constelacion-estrella: var(--color-marino-700);
+  --constelacion-trazo: var(--color-trazo-marino);
+
   /* --- Bordes -------------------------------------------------------- */
   --borde: var(--color-bruma-300);
   --borde-fuerte: var(--color-bruma-400);
@@ -146,6 +150,7 @@
   --alto-control-compacto: var(--size-control-compacto);
   --alto-campo: var(--size-campo);
   --ancho-cifra: var(--size-cifra);
+  --lado-constelacion: var(--size-constelacion);
   --ancho-columna-minima: var(--size-columna-minima);
   --ancho-entradilla: var(--size-entradilla);
   --alto-foto-portada: var(--size-foto-portada);
@@ -225,6 +230,8 @@
     --accion-hover: var(--color-blanco);
     --acento: var(--color-bronce-300);
     --acento-hover: var(--color-bronce-200);
+    --constelacion-estrella: var(--color-nieve-100);
+    --constelacion-trazo: var(--color-trazo-nieve);
     --borde: var(--color-marino-775);
     --borde-fuerte: var(--color-marino-600);
     --borde-tenue: var(--color-marino-850);
@@ -268,6 +275,8 @@
   --accion-hover: var(--color-blanco);
   --acento: var(--color-bronce-300);
   --acento-hover: var(--color-bronce-200);
+  --constelacion-estrella: var(--color-nieve-100);
+  --constelacion-trazo: var(--color-trazo-nieve);
   --borde: var(--color-marino-775);
   --borde-fuerte: var(--color-marino-600);
   --borde-tenue: var(--color-marino-850);
@@ -318,6 +327,8 @@
   --tinta-sobre-accion: var(--color-pizarra-900);
   --acento: var(--color-bronce-300);
   --acento-hover: var(--color-bronce-200);
+  --constelacion-estrella: var(--color-nieve-100);
+  --constelacion-trazo: var(--color-trazo-nieve);
   --tinta-sobre-acento: var(--color-pizarra-900);
   --borde: var(--color-marino-600);
   --borde-fuerte: var(--color-marino-500);
@@ -339,6 +350,8 @@
   --tinta-sobre-accion: var(--color-pizarra-900);
   --acento: var(--color-bronce-300);
   --acento-hover: var(--color-bronce-200);
+  --constelacion-estrella: var(--color-nieve-100);
+  --constelacion-trazo: var(--color-trazo-nieve);
   --tinta-sobre-acento: var(--color-pizarra-900);
   --borde: var(--color-marino-800);
   --foco: var(--color-bronce-300);

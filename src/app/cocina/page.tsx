@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { Boton } from "@/components/ui/boton";
 import { CampoTexto } from "@/components/ui/campo";
+import { Constelacion } from "@/components/ui/constelacion";
 import { SelectorTema } from "@/components/ui/selector-tema";
 import { Cita, Etiqueta } from "@/components/ui/tipografia";
 import {
@@ -12,7 +13,22 @@ import {
   TOKENS_SOMBRA,
   TOKENS_TIPOGRAFIA,
 } from "@/config/tokens";
-import { t } from "@/lib/copy";
+import { CONSTELACIONES, type Hemisferio } from "@/config/constelaciones";
+import { t, type ClaveCopy } from "@/lib/copy";
+
+/** Los dos grupos del catálogo, en el orden en que la entrega los presenta. */
+const HEMISFERIOS: readonly {
+  id: Hemisferio;
+  claveTitulo: ClaveCopy;
+  claveNota: ClaveCopy;
+}[] = [
+  {
+    id: "norte",
+    claveTitulo: "cocina.hemisferioNorte",
+    claveNota: "cocina.hemisferioNorteNota",
+  },
+  { id: "sur", claveTitulo: "cocina.hemisferioSur", claveNota: "cocina.hemisferioSurNota" },
+];
 
 export const metadata: Metadata = {
   title: t("cocina.titulo"),
@@ -138,6 +154,44 @@ export default function PaginaCocina() {
             </li>
           ))}
         </ul>
+      </Seccion>
+
+      {/*
+        Las constelaciones son parte del sistema, no de una pantalla: aquí se
+        ven las dieciséis a la vez, que es la única forma de comprobar que
+        comparten trazo. Van `rotulada`: en esta página el dibujo ES la
+        información, así que cada uno se anuncia con su nombre.
+      */}
+      <Seccion titulo={t("cocina.seccionConstelaciones")}>
+        <p className="mb-elemento max-w-texto text-pequeno text-tinta-tenue">
+          {t("cocina.constelacionesDescripcion")}
+        </p>
+        <div className="grid gap-bloque sm:grid-cols-2">
+          {HEMISFERIOS.map((hemisferio) => (
+            <div key={hemisferio.id}>
+              <h3 className="text-pequeno uppercase tracking-amplio text-tinta-tenue">
+                {t(hemisferio.claveTitulo)}
+              </h3>
+              <p className="mt-linea text-pequeno text-tinta-suave">
+                {t(hemisferio.claveNota)}
+              </p>
+              <ul className="mt-pila grid grid-cols-2 gap-pila sm:grid-cols-4">
+                {CONSTELACIONES.filter((c) => c.hemisferio === hemisferio.id).map(
+                  (constelacion) => (
+                    <li key={constelacion.clave}>
+                      <div className="aspect-square rounded-imagen border border-borde bg-superficie p-interno">
+                        <Constelacion clave={constelacion.clave} rotulada />
+                      </div>
+                      <span className="mt-linea block text-diminuto text-tinta-tenue">
+                        {constelacion.nombre}
+                      </span>
+                    </li>
+                  ),
+                )}
+              </ul>
+            </div>
+          ))}
+        </div>
       </Seccion>
 
       <Seccion titulo={t("cocina.seccionComponentes")}>

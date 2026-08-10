@@ -75,6 +75,10 @@
   --color-acento: var(--acento);
   --color-acento-hover: var(--acento-hover);
 
+  /* Constelaciones: dan `fill-*` y `stroke-*` sin valores arbitrarios */
+  --color-constelacion-estrella: var(--constelacion-estrella);
+  --color-constelacion-trazo: var(--constelacion-trazo);
+
   /* Bordes */
   --color-borde: var(--borde);
   --color-borde-fuerte: var(--borde-fuerte);
@@ -151,6 +155,9 @@
   --spacing-campo: var(--alto-campo);
   --spacing-cifra: var(--ancho-cifra);
 
+  /* Un solo token da `size-constelacion`: el hueco es cuadrado por definición. */
+  --spacing-constelacion: var(--lado-constelacion);
+
   /* Un solo token da `h-cabecera`, `pt-cabecera` y `scroll-mt-cabecera`. */
   --spacing-cabecera: var(--alto-cabecera);
 
@@ -192,6 +199,25 @@
   --breakpoint-lg: 64rem;
   --breakpoint-xl: 80rem;
 }
+
+/**
+ * PANTALLA ALTA — el único punto de ruptura que mide el alto
+ *
+ * Todo el diseño responde al ancho menos una cosa: el Save the Date, que
+ * promete caber de una vez sin que nadie haga scroll. Ahí el ancho da igual y
+ * lo que manda es cuánto alto hay.
+ *
+ * Sirve para que un adorno ceda el sitio a la información. La página necesita
+ * unos 690 px de contenido y la constelación cuesta 108 más; por debajo de
+ * este umbral no caben las dos, y lo que se va es el adorno. Los móviles de
+ * hoy pasan de 840 px de alto, así que la constelación se ve donde de verdad
+ * se abre esta página — en el móvil, desde WhatsApp— y desaparece en una
+ * ventana de escritorio baja, que es donde menos falta hace.
+ *
+ * Va como valor directo por lo mismo que los breakpoints de arriba: una media
+ * query no acepta `var()`.
+ */
+@custom-variant pantalla-alta (@media (min-height: 52rem));
 
 /**
  * Patrón «dato + contenido»: una columna estrecha con la hora o la duración,
