@@ -1,8 +1,10 @@
 import Link from "next/link";
 
+import { AvisoDesvios } from "@/components/panel/aviso-desvios";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_INVITADOS, ZONA_HORARIA } from "@/config/constants";
 import { obtenerConfiguracion } from "@/lib/bbdd/landing";
+import { desviosDe, obtenerResumenPresupuesto } from "@/lib/bbdd/presupuesto";
 import { obtenerResumen, type ResumenBoda } from "@/lib/bbdd/resumen";
 import { t } from "@/lib/copy";
 
@@ -45,10 +47,13 @@ function diasHasta(fecha: Date): number {
 }
 
 export default async function PaginaResumen() {
-  const [configuracion, resumen] = await Promise.all([
+  const [configuracion, resumen, presupuesto] = await Promise.all([
     obtenerConfiguracion().catch(() => null),
     obtenerResumen(),
+    obtenerResumenPresupuesto(),
   ]);
+
+  const desvios = desviosDe(presupuesto);
 
   const dias = configuracion ? diasHasta(configuracion.fechaCeremonia) : null;
 
@@ -67,6 +72,14 @@ export default async function PaginaResumen() {
                 : t("panel.resumen.yaFue")}
         </p>
       </header>
+
+      {/*
+        EL AVISO VA ANTES QUE LAS CIFRAS, y no al final con lo demás. Todo lo
+        que hay debajo es información —cuántos vienen, cuántos faltan—; esto es
+        lo único de la pantalla sobre lo que hay que hacer algo, y ponerlo tras
+        cuatro bloques de números es enterrarlo.
+      */}
+      <AvisoDesvios desvios={desvios} />
 
       {resumen.invitados.personas === 0 ? (
         <section>

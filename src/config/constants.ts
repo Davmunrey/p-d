@@ -45,17 +45,6 @@ export const PESO_MAXIMO_IMAGEN_MB = 10;
 export const BUCKET_MEDIOS = "medios";
 
 /** Idioma de la aplicación. La boda es en España: solo castellano. */
-/**
- * Cuánto se ve alrededor de la finca en el mapa incrustado, en grados.
- *
- * Unos 0,01° son algo más de un kilómetro: lo justo para situar el sitio
- * respecto al pueblo sin que la finca se pierda en una mancha verde. Es un
- * número que se ajusta mirando el resultado, así que vive aquí con su nombre y
- * no incrustado en la URL, donde nadie sabría qué significa el cuarto número de
- * una lista separada por comas.
- */
-export const MAPA_MARGEN_GRADOS = 0.012;
-
 export const IDIOMA = "es-ES";
 
 /** Zona horaria de referencia para fechas y cuentas atrás. */
@@ -75,6 +64,17 @@ export const HORAS_DURACION_EVENTO = 6;
 
 /** Descarga del evento para el calendario. La escriben la página y su test. */
 export const RUTA_CALENDARIO = "/reserva-la-fecha/evento.ics";
+
+/**
+ * Cuánto se ve alrededor de la finca en el mapa incrustado, en grados.
+ *
+ * Unos 0,01° son algo más de un kilómetro: lo justo para situar el sitio
+ * respecto al pueblo sin que la finca se pierda en una mancha verde. Es un
+ * número que se ajusta mirando el resultado, así que vive aquí con su nombre y
+ * no incrustado en la URL, donde nadie sabría qué significa el cuarto número de
+ * una lista separada por comas.
+ */
+export const MAPA_MARGEN_GRADOS = 0.012;
 
 /**
  * Raíz del RSVP público. El enlace de cada invitación es `${RUTA_RSVP}/token`,
@@ -194,6 +194,18 @@ export const RUTA_PENDIENTES = "/panel/invitados/pendientes";
  * gasto sin su categoría delante no se entiende, y la pregunta que trae aquí a
  * alguien nunca es «enséñame los gastos», es «¿en qué se me está yendo esto?».
  */
+/**
+ * A partir de qué parte de lo previsto se avisa de que una categoría se está
+ * acercando a su tope.
+ *
+ * NOVENTA POR CIENTO, y el número importa. Más alto —un 98%— avisa cuando ya no
+ * queda margen para hacer nada: los contratos de boda se firman con semanas de
+ * antelación y enterarse al 98% es enterarse después. Más bajo —un 70%— avisa
+ * de todo siempre, y un aviso que sale constantemente deja de leerse, que es
+ * peor que no tenerlo.
+ */
+export const UMBRAL_AVISO_PRESUPUESTO = 0.9;
+
 export const RUTA_GASTOS = "/panel/presupuesto/gastos";
 
 /**
