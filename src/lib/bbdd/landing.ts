@@ -333,6 +333,10 @@ export interface Medio {
   alto: number | null;
   /** Miniatura en base64 para pintar algo mientras carga la de verdad. */
   marcadorBorroso: string | null;
+  /** Imagen o vídeo. Lo dice la base, no la extensión del fichero. */
+  tipo: "imagen" | "video";
+  /** El fotograma quieto de un vídeo. `null` en las imágenes. */
+  posterRuta: string | null;
 }
 
 /**
@@ -357,9 +361,12 @@ export async function obtenerMedios(seccion: Seccion): Promise<Medio[]> {
         ancho: number | null;
         alto: number | null;
         marcador_borroso: string | null;
+        tipo: "imagen" | "video";
+        poster_ruta: string | null;
       }[]
     >`
-      select id, ruta_almacenamiento, texto_alternativo, ancho, alto, marcador_borroso
+      select id, ruta_almacenamiento, texto_alternativo, ancho, alto, marcador_borroso,
+             tipo, poster_ruta
       from public.medios
       where publicado and seccion = ${seccion}::public.seccion_landing
       order by orden nulls last, creado_en
@@ -374,5 +381,7 @@ export async function obtenerMedios(seccion: Seccion): Promise<Medio[]> {
     ancho: f.ancho,
     alto: f.alto,
     marcadorBorroso: f.marcador_borroso,
+    tipo: f.tipo,
+    posterRuta: f.poster_ruta,
   }));
 }
