@@ -278,6 +278,71 @@ test.describe("El recorrido del invitado", () => {
 });
 
 /**
+ * BODA-16 · El cortafuegos cuenta por origen, no en un montón común
+ *
+ * `huella_peticion()` lee `request.headers`, un ajuste que pone PostgREST. Esta
+ * aplicación consulta por SQL directo, así que ese ajuste no existía y la
+ * función caía en su respaldo: `'desconocido'`, el mismo para todos. Diez
+ * intentos fallidos de una sola persona —o de un robot probando enlaces al
+ * azar— cerraban la confirmación a los ciento veinte invitados durante quince
+ * minutos.
+ *
+ * La semana antes de la boda eso no se lee como un cortafuegos: se lee como
+ * que la web está rota.
+ */
+test.describe("El cortafuegos del RSVP", () => {
+  test.skip(!cadena, "Hace falta DATABASE_URL para leer los intentos anotados.");
+
+  test("cada origen tiene su propio cupo", async ({ browser }) => {
+    const contexto = await browser.newContext({
+      locale: "es-ES",
+      extraHTTPHeaders: { "x-forwarded-for": "203.0.113.7" },
+    });
+    const pagina = await contexto.newPage();
+
+    await pagina.goto(`${RUTA_RSVP}/no-existe-este-token-cortafuegos`);
+    await expect(pagina.getByText(copy.rsvp.tokenInvalido)).toBeVisible();
+
+    const anotados = await conBase(
+      (sql) => sql<{ huella: string }[]>`
+        select huella from public.intentos_rsvp
+         where huella = '203.0.113.7'
+         order by creado_en desc
+         limit 1
+      `,
+    );
+
+    // Si esto vuelve vacío, la huella no llega a la base y todos los invitados
+    // vuelven a compartir el mismo cupo.
+    expect(anotados).toHaveLength(1);
+
+    await contexto.close();
+  });
+
+  test("dos orígenes distintos se anotan por separado", async ({ browser }) => {
+    for (const ip of ["198.51.100.1", "198.51.100.2"]) {
+      const contexto = await browser.newContext({
+        locale: "es-ES",
+        extraHTTPHeaders: { "x-forwarded-for": ip },
+      });
+      const pagina = await contexto.newPage();
+      await pagina.goto(`${RUTA_RSVP}/no-existe-tampoco-${ip.replaceAll(".", "-")}`);
+      await contexto.close();
+    }
+
+    const huellas = await conBase(
+      (sql) => sql<{ huella: string }[]>`
+        select distinct huella from public.intentos_rsvp
+         where huella in ('198.51.100.1', '198.51.100.2')
+      `,
+    );
+
+    // Dos filas, no una: el cupo de uno no puede gastarle el de nadie más.
+    expect(huellas).toHaveLength(2);
+  });
+});
+
+/**
  * CASO DE ERROR · Un enlace que no vale no puede contar nada de nadie.
  */
 test.describe("Un enlace que no vale", () => {

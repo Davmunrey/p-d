@@ -97,6 +97,7 @@ export class ErrorDeLectura extends Error {
  */
 export async function leerComoAnonimo<T>(
   consulta: (tx: postgres.TransactionSql) => Promise<T>,
+  huella?: string | null,
 ): Promise<T> {
   if (!cliente) {
     const motivo =
@@ -108,6 +109,7 @@ export async function leerComoAnonimo<T>(
   try {
     return (await cliente.begin(async (tx) => {
       await tx`set local role anon`;
+      await declararOrigen(tx, huella);
       return consulta(tx);
     })) as T;
   } catch (error) {
@@ -134,6 +136,7 @@ export async function leerComoAnonimo<T>(
  */
 export async function llamarComoAnonimo<T>(
   consulta: (tx: postgres.TransactionSql) => Promise<T>,
+  huella?: string | null,
 ): Promise<T> {
   if (!cliente) {
     const motivo =
@@ -144,6 +147,32 @@ export async function llamarComoAnonimo<T>(
 
   return (await cliente.begin(async (tx) => {
     await tx`set local role anon`;
+    await declararOrigen(tx, huella);
     return consulta(tx);
   })) as T;
+}
+
+/**
+ * Le cuenta a la base de dónde viene la petición.
+ *
+ * `huella_peticion()` lee `request.headers`, el ajuste que **pone PostgREST**
+ * con las cabeceras HTTP. Por SQL directo ese ajuste no existe, así que la
+ * función caía en su respaldo —`'desconocido'`— y todos los invitados
+ * compartían el mismo cupo de intentos: diez fallos de una sola persona
+ * cerraban la confirmación a los ciento veinte durante quince minutos.
+ *
+ * Se rellena aquí con la misma forma que usaría PostgREST, en lugar de cambiar
+ * la función de la base. Así el contrato sigue siendo uno solo —«mira la
+ * cabecera que reenvía el proxy»— y vale igual si algún día algo entra por la
+ * API REST.
+ *
+ * `set_local` a `true`: el ajuste vive lo que dure la transacción y no se
+ * queda pegado a la conexión, que se reutiliza para la petición de otro.
+ */
+async function declararOrigen(
+  tx: postgres.TransactionSql,
+  huella: string | null | undefined,
+): Promise<void> {
+  if (!huella) return;
+  await tx`select set_config('request.headers', ${JSON.stringify({ "x-forwarded-for": huella })}, true)`;
 }

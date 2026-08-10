@@ -1,5 +1,7 @@
 import "server-only";
 
+import { huellaDePeticion } from "@/lib/huella-peticion";
+
 import { ErrorDeLectura, leerComoAnonimo, llamarComoAnonimo } from "./cliente";
 
 /**
@@ -82,8 +84,11 @@ interface FilaInvitacion {
  * base está caída.
  */
 export async function obtenerInvitacion(token: string): Promise<Invitacion | null> {
+  // Con la huella: el cortafuegos cuenta intentos por origen, y sin ella todos
+  // los invitados comparten el mismo cupo.
   const filas = await leerComoAnonimo(
     (tx) => tx<FilaInvitacion[]>`select * from public.obtener_invitacion(${token})`,
+    await huellaDePeticion(),
   );
 
   if (filas.length === 0) return null;
@@ -165,6 +170,7 @@ export async function registrarConfirmacion(
       (tx) => tx<{ registrar_confirmacion: number }[]>`
         select public.registrar_confirmacion(${token}, ${tx.json(respuestas)})
       `,
+      await huellaDePeticion(),
     );
 
     const registradas = filas[0]?.registrar_confirmacion ?? 0;
@@ -201,7 +207,10 @@ export async function registrarConfirmacion(
  */
 async function anotarCancion(token: string, texto: string): Promise<void> {
   try {
-    await llamarComoAnonimo((tx) => tx`select public.sugerir_cancion(${token}, ${texto})`);
+    await llamarComoAnonimo(
+      (tx) => tx`select public.sugerir_cancion(${token}, ${texto})`,
+      await huellaDePeticion(),
+    );
   } catch (error) {
     console.error("La confirmación se guardó, pero la canción no:", error);
   }
