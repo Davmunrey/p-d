@@ -181,73 +181,93 @@ tests/e2e/
 
 ## 5. Modelo de datos
 
-Todas las tablas llevan `id uuid pk default gen_random_uuid()`, `created_at`, `updated_at` (trigger) y RLS activo.
+Treinta y una tablas y ocho vistas, todas en `public`, todas con RLS activa y **todas con nombre en castellano** — regla 2, también aquí.
 
-### Configuración
+La convención es uniforme: `id uuid` como clave, `creado_en` y `actualizado_en` con trigger. Las excepciones se nombran donde toca.
 
-**`configuracion_boda`** (fila única) — fecha y hora de ceremonia y banquete, nombres de los novios, lugares, direcciones, coordenadas, hashtag, correo de contacto, moneda, zona horaria, idioma por defecto y fecha límite de RSVP. La vista `v_configuracion_publica` es lo único que lee `anon`: enumera columna a columna lo que puede salir a la web, para que una columna añadida mañana no aparezca sola en la landing.
-→ _Elimina de raíz todo hardcode de datos de la boda._
+> Este apartado describe lo que hay en `supabase/migrations/`, no lo que se planeó. Un test unitario extrae los nombres `public.*` citados aquí y comprueba que existen: citar una tabla inventada pone el CI en rojo.
 
-**`secciones_landing`** — qué secciones se enseñan y en qué orden (`seccion`, `visible`, `orden`). Sustituye a los nueve flags `mostrar_*` que este documento describía: añadir una sección es una fila, no una migración de esquema más un despliegue. Su política RLS es `using (visible)`, así que a un invitado no le llega siquiera el nombre de una sección apagada. La landing la usa para decidir qué pinta y qué ofrece en el menú (BODA-20).
+### Configuración y acceso
 
-**`configuracion_privada`** (fila única) — lo que no puede salir a la web: presupuesto objetivo, aforo máximo, teléfono de contacto, IBAN de regalos y notas.
+**`configuracion_boda`** (fila única) — fecha y hora de ceremonia y banquete, nombres, lugares, direcciones, coordenadas, hashtag, correo de contacto, moneda, zona horaria, idioma por defecto y `fecha_limite_rsvp`. La vista **`v_configuracion_publica`** es lo único que lee `anon`: enumera columna a columna lo que puede salir a la web, para que una columna añadida mañana no aparezca sola en la landing.
 
-**`profiles`** — extiende `auth.users`. `role`: `owner` | `editor` | `viewer`.
+**`configuracion_privada`** (fila única) — lo que no sale a la web: presupuesto objetivo, aforo, teléfono, IBAN de regalos y notas.
 
-### Invitados
+**`secciones_landing`** — qué secciones se enseñan y en qué orden (`seccion`, `visible`, `orden`). Añadir una sección es una fila, no una migración. Su política es `using (visible)`: a un invitado no le llega ni el nombre de una sección apagada. Vista pública: **`v_secciones_publicas`**.
 
-**`guest_groups`** — la unidad de invitación (una familia, una pareja). Campos: `name`, `invite_token` (único, indexado — la URL `/rsvp/[token]`), `max_guests`, `language`, `side` (`novia` | `novio` | `ambos`), `address`, `invited_to` (`ceremonia`, `banquete`, `fiesta` — array).
+**`perfiles`** — extiende `auth.users`. `usuario_id`, `nombre_completo`, `rol` (`propietario` | `editor` | `lector`) y `activo`. Estar autenticado y tener acceso son cosas distintas: un perfil inactivo es tan forastero como alguien sin sesión.
 
-**`guests`** — persona individual. `group_id`, `first_name`, `last_name`, `email`, `phone`, `is_child`, `is_plus_one`, `menu_type` (`estandar` | `vegetariano` | `vegano` | `infantil` | `sin_gluten` | `otro`), `allergies`, `notes`, `table_id`.
+**`invitaciones_panel`** — altas pendientes de colaborador.
 
-**`rsvps`** — respuesta por invitado. `guest_id`, `status` (`pendiente` | `confirmado` | `rechazado` | `tentativo`), `responded_at`, `needs_transport`, `needs_accommodation`, `song_request`, `message`.
-→ Historial preservado: se inserta versión nueva, no se sobrescribe.
+**`parametros_seguridad`** (fila única) — `maximo_intentos_rsvp` y `ventana_intentos_minutos`, que alimentan el cortafuegos del RSVP.
 
-### Proveedores y servicios
+**`intentos_rsvp`** — bitácora de intentos. Guarda la **huella** del token, nunca el token.
 
-**`vendor_categories`** — catering, fotografía, música, flores, transporte, vestido…
+**`registro_auditoria`** y **`campos_auditoria_redactados`** — quién cambió qué y cuándo, con la lista de columnas que se redactan antes de anotarlas.
 
-**`vendors`** — `name`, `category_id`, `contact_name`, `email`, `phone`, `website`, `status` (`investigando` | `contactado` | `presupuesto_recibido` | `contratado` | `descartado`), `rating`, `quoted_amount`, `agreed_amount`, `notes`.
+### Invitados y confirmaciones
 
-**`vendor_documents`** — contratos y facturas en Storage. `vendor_id`, `storage_path`, `type`, `uploaded_by`.
+**`grupos_invitacion`** — la unidad de invitación (una familia, una cuadrilla). `nombre`, `lado` (`novia` | `novio` | `ambos`), `invitado_a` (array de `ceremonia` | `banquete` | `fiesta`), `maximo_acompanantes`, `idioma`, `huella_token` y `token_emitido_en`.
 
-**`services`** — lo contratado a cada proveedor: `vendor_id`, `name`, `description`, `unit_price`, `quantity`, `is_per_guest` _(recalcula automáticamente al confirmarse invitados)_.
+> **El token no se guarda.** La columna es `huella_token`: el SHA-256 del token, y nada más. Ni un volcado de la base ni quien tenga la contraseña de Supabase puede reconstruir un enlace. De ahí que el panel lo enseñe **una sola vez** al emitirlo, y que perderlo obligue a emitir otro — que invalida el anterior en el acto.
 
-### Presupuesto
+**`invitados`** — persona. `grupo_id`, `nombre`, `apellidos`, `correo_electronico`, `telefono`, `es_nino`, `es_acompanante`, `tipo_menu` (`estandar` | `vegetariano` | `vegano` | `infantil` | `sin_gluten` | `otro`) y `alergias`. El menú infantil está reservado a menores por restricción de tabla.
 
-**`budget_categories`** — con `planned_amount` por categoría.
+**`confirmaciones`** — respuesta por invitado: `estado` (`pendiente` | `tentativo` | `confirmado` | `rechazado`), `origen`, `respondido_en`, `necesita_autobus`, `necesita_alojamiento`, `cancion_solicitada`, `mensaje` y `es_vigente`.
 
-**`budget_items`** — `category_id`, `vendor_id` (opcional), `concept`, `estimated_amount`, `actual_amount`, `is_paid`.
+> **Histórico inmutable.** Cambiar una respuesta inserta una fila nueva; la anterior deja de ser vigente pero no se toca. Un trigger lo impide, así que **ninguna columna añadida aquí se puede actualizar después** — por eso lo leído de un mensaje vive en `mensajes_leidos` y no en una columna de esta tabla.
 
-**`payments`** — `budget_item_id`, `amount`, `due_date`, `paid_at`, `method`, `receipt_path`.
-→ Vistas SQL: `v_budget_summary` (previsto vs real vs pagado vs pendiente por categoría) y `v_guest_stats` (confirmados, menús por tipo, niños).
+**`notas_grupo`** y **`notas_invitado`** — anotaciones privadas del panel. No las ve ningún invitado.
 
-### Organización
+**`mensajes_leidos`** — qué mensajes de invitados ya se han leído, y quién.
 
-**`tasks`** — `title`, `description`, `due_date`, `status` (`pendiente` | `en_progreso` | `hecha`), `priority`, `assigned_to`, `vendor_id`, `category`.
+**`mesas`** — mesas del banquete: nombre, capacidad, forma y posición para el plano.
 
-**`tables`** — mesas del banquete: `name`, `capacity`, `shape`, `position_x`, `position_y` (para el plano visual).
+Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, alojamiento) y **`v_menus_confirmados`** (menús por tipo y cuántos llevan alergias).
 
-**`media`** — fotos de la landing: `storage_path`, `alt_text` (i18n), `section`, `sort_order`, `width`, `height`, `blur_hash`, `is_published`.
-→ _Ninguna imagen de la landing va en `/public`; todas se gestionan desde el panel._
+### Contenido de la landing
 
-**`activity_log`** — auditoría: quién cambió qué y cuándo.
+**`hitos_programa`** — el día hora a hora, y también la víspera: la columna `momento` (`preboda` | `boda`) separa las dos secciones sin duplicar la tabla. La hora es texto y no `time` a propósito: en una boda se escribe «14:00» pero también «de madrugada».
+
+**`hitos_historia`**, **`preguntas_frecuentes`**, **`alojamientos`**, **`rutas_llegada`** — cada uno con `orden` y `publicado`.
+
+**`canciones_sugeridas`** — la playlist. `aprobada` la retira de la web sin borrarla, y es la propia política de lectura pública la que filtra por ese booleano.
+
+**`medios`** — fotos de la landing: `ruta_almacenamiento`, `texto_alternativo`, `seccion`, `orden`, `ancho`, `alto`, `marcador_borroso` y `publicado`. Vista pública: **`v_medios_publicados`**. Ninguna imagen va en `/public`.
+
+### Proveedores, presupuesto y organización
+
+**`categorias_proveedor`**, **`proveedores`**, **`documentos_proveedor`**, **`servicios`** — con `es_por_invitado` en los servicios, que recalcula al confirmarse invitados. Vista: **`v_servicios_importe`**.
+
+**`categorias_presupuesto`**, **`partidas_presupuesto`**, **`pagos`**. Vistas: **`v_resumen_presupuesto`** y **`v_proximos_pagos`**.
+
+**`tareas`** — con estado, prioridad y vencimiento.
 
 ### Política RLS
 
-| Tabla                                           | Público (anon)                           | Autenticado             |
-| ----------------------------------------------- | ---------------------------------------- | ----------------------- |
-| `wedding_settings`                              | SELECT (solo campos públicos, vía vista) | ALL si `owner`/`editor` |
-| `media`                                         | SELECT donde `is_published = true`       | ALL                     |
-| `guest_groups`, `guests`, `rsvps`               | **Nada directo**                         | ALL                     |
-| Resto (presupuesto, proveedores, pagos, tareas) | **Nada**                                 | ALL                     |
+Lo primero que hace la migración de seguridad es `revoke all on all tables in schema public from anon, authenticated`, y después reparte permisos **tabla por tabla**. Una tabla nueva nace sin privilegios: la política dice qué filas puede tocar quien ya tiene permiso, no se lo concede.
 
-El invitado nunca consulta tablas directamente. El RSVP público pasa por dos funciones `SECURITY DEFINER` que reciben el token, devuelven **solo** ese grupo y escriben **solo** su respuesta:
+| Quién         | Qué puede                                                                                                                                             |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `anon`        | `SELECT` sobre `configuracion_boda`, `secciones_landing` y `medios`, más el contenido de la landing filtrado por `publicado` / `visible` / `aprobada` |
+| `lector`      | Leer todo el panel; no escribe nada                                                                                                                   |
+| `editor`      | Además, escribir invitados, contenido, proveedores, presupuesto y tareas                                                                              |
+| `propietario` | Además, gestionar colaboradores                                                                                                                       |
 
-- `get_invitation(token text)` → datos del grupo y sus invitados
-- `submit_rsvp(token text, responses jsonb)` → registra respuestas
+`anon` puede leer el contenido de la landing porque la landing se renderiza en el servidor con ese mismo rol: es el que usaría PostgREST, así que lo que devuelve una consulta es exactamente lo que puede ver un invitado. No hay filtrado en el frontend porque no hace falta.
 
-Ambas con rate limiting y validación de que el token existe y el plazo no ha vencido.
+Sobre `grupos_invitacion`, `invitados` y `confirmaciones`, `anon` **no tiene nada**. El RSVP público pasa por funciones `SECURITY DEFINER` que reciben el token:
+
+- **`obtener_invitacion(token)`** → el grupo del token y su gente. Enumera sus columnas a mano: sin eso, un invitado recibiría el teléfono y las notas privadas de sus coinvitados, y cualquier columna futura se publicaría sola. **Cero filas significa «este enlace no vale»**, y no lanza excepción: al abortar se perdería el registro del intento y el cortafuegos dejaría de contar.
+- **`registrar_confirmacion(token, respuestas)`** → registra la respuesta del grupo, todo o nada. Escribe además menú y alergias en `invitados`, que es donde viven.
+- **`sugerir_cancion(token, texto)`** → añade a la playlist, con tope de diez por grupo.
+- **`crear_grupo_invitacion(...)`** y **`rotar_token_invitacion(grupo)`** → del panel, devuelven el token en claro una sola vez.
+
+El plazo lo aplica un trigger contra `now()`, nunca contra una fecha enviada por el cliente. El cupo de intentos lo aplica **`exigir_cupo_rsvp()`** por origen.
+
+### Arranque en frío
+
+La base nace sin nadie dentro: no hay un usuario administrador de fábrica. La primera persona que entra se convierte en propietaria llamando a **`designar_primer_propietario()`**, que sólo funciona mientras no haya ninguno. Sin ese paso, un despliegue nuevo tiene el panel cerrado para todo el mundo — incluido quien lo desplegó.
 
 ---
 
@@ -429,7 +449,7 @@ Un ticket no se cierra hasta cumplir **todos** los puntos:
 7. Import CSV de invitados → validación de errores → alta en bloque
 8. Alta de gasto → se refleja en los totales del presupuesto y en el dashboard
 9. Confirmación de un invitado → recalcula servicios con precio por invitado
-10. Anon intenta leer `guests` directamente vía API → **denegado por RLS**
+10. Anon intenta leer `invitados` directamente vía API → **denegado por RLS**
 
 Entorno de test: proyecto Supabase de staging con seed determinista, reseteado antes de cada suite. Los E2E corren en cada PR (bloqueantes) y en `main` tras el deploy.
 
