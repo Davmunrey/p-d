@@ -7,7 +7,8 @@ import { Cuerpo, Etiqueta, Titulo3 } from "@/components/ui/tipografia";
 import { RUTA_INVITADOS } from "@/config/constants";
 import { t } from "@/lib/copy";
 
-import { analizarFichero, importar, ESTADO_INICIAL } from "./acciones";
+import { analizarFichero, importar } from "./acciones";
+import { ESTADO_INICIAL } from "./estado";
 
 /**
  * BODA-53 · SUBIR, MIRAR, IMPORTAR

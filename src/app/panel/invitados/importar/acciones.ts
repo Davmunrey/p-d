@@ -6,14 +6,11 @@ import { redirect } from "next/navigation";
 import { RUTA_ACCESO, RUTA_INVITADOS } from "@/config/constants";
 import { obtenerGruposConGente } from "@/lib/bbdd/invitados";
 import { decodificar } from "@/lib/csv";
-import {
-  clavePersona,
-  leerImportacion,
-  type ErrorDeFila,
-  type FilaImportada,
-} from "@/lib/importacion-invitados";
+import { clavePersona, leerImportacion, type FilaImportada } from "@/lib/importacion-invitados";
 import { t } from "@/lib/copy";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
+
+import { ESTADO_INICIAL, type EstadoImportacion } from "./estado";
 
 /**
  * BODA-53 · IMPORTAR INVITADOS, EN DOS PASOS
@@ -29,29 +26,6 @@ import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
  * no podría cumplir el criterio del ticket —o entran todas o ninguna— porque
  * cada llamada sería su propia transacción.
  */
-
-export interface EstadoImportacion {
-  /** Qué pantalla toca: el formulario de subida o la vista previa. */
-  fase: "subir" | "previa";
-  filas: FilaImportada[];
-  errores: ErrorDeFila[];
-  columnasIgnoradas: string[];
-  /** Invitaciones que se van a crear, para poder decirlo antes de crearlas. */
-  gruposNuevos: string[];
-  /** El CSV ya decodificado, que viaja al paso de confirmar. */
-  contenido: string;
-  /** Un fallo que no es de ninguna fila en concreto. */
-  aviso?: string;
-}
-
-export const ESTADO_INICIAL: EstadoImportacion = {
-  fase: "subir",
-  filas: [],
-  errores: [],
-  columnasIgnoradas: [],
-  gruposNuevos: [],
-  contenido: "",
-};
 
 async function cliente() {
   if (!hayAutenticacion) redirect(RUTA_ACCESO);
