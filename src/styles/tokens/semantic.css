@@ -105,6 +105,7 @@
   --texto-titulo-2: var(--font-size-titulo-2);
   --texto-titulo-3: var(--font-size-titulo-3);
   --texto-conector: var(--font-size-conector);
+  --texto-cifra: var(--font-size-cifra);
   --texto-cita: var(--font-size-cita);
   --texto-cuerpo-grande: var(--font-size-cuerpo-grande);
   --texto-cuerpo: var(--font-size-cuerpo);

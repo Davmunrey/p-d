@@ -109,6 +109,7 @@
   --text-titulo-2: var(--texto-titulo-2);
   --text-titulo-3: var(--texto-titulo-3);
   --text-conector: var(--texto-conector);
+  --text-cifra: var(--texto-cifra);
   --text-cita: var(--texto-cita);
   --text-cuerpo-grande: var(--texto-cuerpo-grande);
   --text-cuerpo: var(--texto-cuerpo);
@@ -216,6 +217,29 @@
 /** Alto del hueco de foto de la portada una vez la rejilla se ha apilado. */
 @utility alto-foto-portada {
   min-height: var(--alto-foto-portada);
+}
+
+/**
+ * EL CIELO ESTRELLADO de la cuenta atrás.
+ *
+ * Cuatro capas de puntos, cada una con su alfa, su tamaño y su rejilla. Que no
+ * coincidan es lo que lo hace parecer un cielo: cuatro rejillas iguales se
+ * leerían como una trama de imprenta.
+ *
+ * Va en CSS y no como imagen: pesa cero, se adapta a cualquier tamaño de
+ * pantalla y cambia de color solo si algún día cambia la paleta.
+ */
+@utility cielo-estrellado {
+  background-image:
+    radial-gradient(circle at 18% 24%, var(--color-estrella-1) 1.3px, transparent 0),
+    radial-gradient(circle at 64% 12%, var(--color-estrella-2) 1px, transparent 0),
+    radial-gradient(circle at 86% 58%, var(--color-estrella-3) 1.5px, transparent 0),
+    radial-gradient(circle at 34% 76%, var(--color-estrella-4) 1.1px, transparent 0);
+  background-size:
+    250px 220px,
+    180px 200px,
+    300px 270px,
+    220px 250px;
 }
 
 /**

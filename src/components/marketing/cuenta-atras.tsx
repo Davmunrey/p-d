@@ -73,8 +73,12 @@ export function CuentaAtras({ fechaIso }: { fechaIso: string }) {
       aria-label={`${restante.dias} ${t("cuentaAtras.dias")}`}
     >
       {bloques.map((bloque) => (
-        <div key={bloque.etiqueta} className="min-w-cifra text-center">
-          <div className="font-titulo text-display leading-display tabular-nums">
+        <div key={bloque.etiqueta} className="animacion-escala-al-ver min-w-cifra text-center">
+          {/*
+            Las cifras tienen su propio tamaño, más contenido que el titular:
+            son cuatro seguidas y a tamaño de portada no cabrían en un móvil.
+          */}
+          <div className="font-titulo text-cifra font-light leading-none tabular-nums">
             {bloque.valor}
           </div>
           <div className="mt-linea text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
