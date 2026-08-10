@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
 import { BotonEnlace } from "@/components/ui/boton";
+import { Constelacion } from "@/components/ui/constelacion";
 import { Conector, Etiqueta, Titulo3 } from "@/components/ui/tipografia";
+import { CONSTELACION_NOVIOS } from "@/config/constelaciones";
 import { IDIOMA, RUTA_CALENDARIO, ZONA_HORARIA } from "@/config/constants";
 import { obtenerConfiguracion, obtenerSecciones } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
@@ -90,6 +92,19 @@ export default async function PaginaReservaLaFecha() {
       className="grid min-h-dvh place-items-center px-interno py-pila text-center"
     >
       <div className="mx-auto w-full max-w-estrecho">
+        {/*
+          Lira, la constelación de los novios, abre la pieza igual que en la
+          entrega. Va sin rotular: aquí es adorno sobre unos nombres, y
+          anunciarle «Lira» a quien escucha la página no le diría nada.
+
+          Y sólo aparece si hay alto de sobra. Esta página promete caber de una
+          vez —se abre en WhatsApp y se mira dos segundos—, así que cuando el
+          adorno y la información no caben juntos, el que se va es el adorno.
+        */}
+        <div className="mx-auto mb-elemento hidden size-constelacion pantalla-alta:block">
+          <Constelacion clave={CONSTELACION_NOVIOS} />
+        </div>
+
         <Etiqueta>{t("saveTheDate.etiqueta")}</Etiqueta>
 
         {/* Un solo h1 con los dos nombres: es el título de la página, y para un

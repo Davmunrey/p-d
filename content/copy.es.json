@@ -162,7 +162,13 @@
     "botonSecundario": "Secundario",
     "botonTerciario": "Terciario",
     "botonDesactivado": "Desactivado",
-    "seccionInversa": "Bloque inverso: los mismos componentes, sin cambiar una clase"
+    "seccionInversa": "Bloque inverso: los mismos componentes, sin cambiar una clase",
+    "seccionConstelaciones": "Constelaciones",
+    "constelacionesDescripcion": "El único elemento ilustrativo del sistema: no hay iconos ni ilustraciones. Cada mesa del banquete llevará el nombre y el mapa de una de ellas.",
+    "hemisferioNorte": "Hemisferio norte",
+    "hemisferioNorteNota": "El cielo que habrá sobre la finca esa noche.",
+    "hemisferioSur": "Hemisferio sur",
+    "hemisferioSurNota": "El del viaje de novios, al otro lado del ecuador."
   },
   "acceso": {
     "titulo": "Entrar",
