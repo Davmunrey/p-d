@@ -95,6 +95,47 @@ async function primeraCategoria(pagina: Page): Promise<string> {
 }
 
 /**
+ * LO QUE LE HA PASADO A ESTA PESTAÑA, PASO A PASO.
+ *
+ * Cuando una espera de URL se agota, la pregunta siguiente no es «qué se ve» —
+ * eso ya se adjunta— sino **si llegó a haber viaje**. Una acción de servidor que
+ * escribe y redirige deja un rastro muy concreto: un `POST` con su código y una
+ * navegación a la URL nueva. Distinguir «el POST no salió», «salió y respondió
+ * 500» y «respondió bien pero el navegador no se movió» son tres averías
+ * distintas con tres arreglos distintos, y desde el registro de CI no se
+ * distinguen sin esto.
+ *
+ * Se apunta en un `WeakMap` y no en una variable suelta porque cada test tiene
+ * su propia `page` y corren en paralelo fuera de CI.
+ */
+const rastro = new WeakMap<Page, string[]>();
+
+function seguirLaPista(pagina: Page): void {
+  const pasos: string[] = [];
+  rastro.set(pagina, pasos);
+
+  pagina.on("framenavigated", (marco) => {
+    if (marco === pagina.mainFrame()) pasos.push(`navega a ${marco.url()}`);
+  });
+  pagina.on("response", (respuesta) => {
+    if (respuesta.request().method() === "POST") {
+      pasos.push(`POST ${respuesta.status()} → ${respuesta.url()}`);
+    }
+  });
+  pagina.on("pageerror", (fallo) => pasos.push(`error de página: ${fallo.message}`));
+  pagina.on("console", (mensaje) => {
+    if (mensaje.type() === "error") pasos.push(`consola: ${mensaje.text()}`);
+  });
+}
+
+/** El rastro en texto, para pegarlo en el mensaje de un fallo. */
+function laPista(pagina: Page): string {
+  const pasos = rastro.get(pagina);
+  if (!pasos?.length) return "(no se apuntó ningún paso)";
+  return pasos.slice(-25).join("\n");
+}
+
+/**
  * ESPERA LA REDIRECCIÓN ANTES DE MIRAR EL AVISO.
  *
  * Cada formulario de esta pantalla hace `POST` a una acción de servidor que
@@ -143,7 +184,8 @@ async function esperarEstado(pagina: Page, esperado: string) {
       .innerText()
       .catch(() => "(no se pudo leer la pantalla)");
     throw new Error(
-      `${(fallo as Error).message}\n\nLa pantalla decía:\n${enPantalla.slice(0, 600)}`,
+      `${(fallo as Error).message}\n\nLo que hizo la pestaña:\n${laPista(pagina)}` +
+        `\n\nLa pantalla decía:\n${enPantalla.slice(0, 600)}`,
     );
   }
 }
@@ -163,6 +205,8 @@ test.describe("El módulo de proveedores", () => {
     !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
   );
+
+  test.beforeEach(({ page }) => seguirLaPista(page));
 
   /**
    * CAMINO FELIZ · alta, edición, contacto y búsqueda con acentos.
@@ -398,6 +442,8 @@ test.describe("El embudo del proveedor", () => {
     !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
   );
+
+  test.beforeEach(({ page }) => seguirLaPista(page));
 
   /** Un proveedor recién creado, en la categoría que se diga. */
   async function crearProveedor(nombre: string, categoriaId?: string): Promise<string> {
