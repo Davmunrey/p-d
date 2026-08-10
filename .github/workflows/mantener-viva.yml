@@ -1,0 +1,40 @@
+# BODA-95 · Que Supabase no pause el proyecto
+#
+# El plan gratuito pausa los proyectos que pasan una semana sin actividad, y
+# entre la reserva de fecha y las primeras confirmaciones puede haber meses de
+# silencio. Este flujo le da un toque a la base para que ese contador no llegue
+# nunca a la semana.
+#
+# CADA TRES DÍAS Y NO CADA SEIS. El límite es de siete, así que con seis un
+# solo fallo —GitHub retrasa los flujos programados cuando hay carga, y puede
+# saltárselos— dejaría pasar la semana. Con tres, tienen que fallar dos
+# seguidos para que haya problema.
+name: Mantener viva la base
+
+on:
+  schedule:
+    # Minuto 17 y no en punto: las horas redondas son cuando GitHub tiene la
+    # cola llena de flujos de todo el mundo y más retrasa los programados.
+    - cron: "17 6 */3 * *"
+  # Para poder comprobarlo a mano sin esperar tres días, que es el camino
+  # feliz que pide el ticket.
+  workflow_dispatch:
+
+jobs:
+  toque:
+    name: Dar un toque a la base
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Leer una fila
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/mantener-viva-la-base.mjs
