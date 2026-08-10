@@ -14,6 +14,7 @@ import { t, type ClaveCopy } from "@/lib/copy";
 
 const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   creada: { clave: "panel.invitados.creada", error: false },
+  importados: { clave: "panel.invitados.avisoImportados", error: false },
   "enlace-emitido": { clave: "panel.invitados.enlaceEmitido", error: false },
   "persona-anadida": { clave: "panel.invitados.personaAnadida", error: false },
   "persona-quitada": { clave: "panel.invitados.personaQuitada", error: false },

@@ -430,7 +430,8 @@
       "si": "Sí",
       "no": "No",
       "pendienteRespuesta": "Sin contestar",
-      "nombreFichero": "invitados-{fecha}.csv"
+      "nombreFichero": "invitados-{fecha}.csv",
+      "avisoImportados": "Importados. Ya están en la lista."
     },
     "mensajes": {
       "titulo": "Lo que escriben los invitados",
@@ -458,6 +459,54 @@
       "cancionMostrada": "Canción devuelta a la web.",
       "errorSinPermiso": "Sólo un editor puede moderar la playlist o marcar mensajes.",
       "errorGuardar": "No hemos podido guardar. Inténtalo de nuevo."
+    },
+    "importar": {
+      "titulo": "Importar invitados",
+      "descripcion": "Subid la hoja de cálculo tal cual. Antes de dar de alta a nadie se enseña qué va a entrar, y si hay una fila mal no se importa ninguna.",
+      "enlaceDesdeLista": "Importar desde CSV",
+      "volver": "Volver a las invitaciones",
+      "fichero": "Fichero CSV",
+      "ficheroAyuda": "Exportado de Excel, de Numbers o de Google Sheets. Da igual el separador y da igual la codificación.",
+      "analizar": "Ver qué se va a importar",
+      "plantilla": "Descargar plantilla de ejemplo",
+      "plantillaAyuda": "Una hoja con las columnas puestas y una fila de muestra, por si es más cómodo empezar de ahí.",
+      "nombreFicheroPlantilla": "plantilla-invitados.csv",
+      "columnasEsperadas": "Columnas",
+      "columnasAyuda": "Hacen falta «Grupo» y «Nombre». «Apellidos», «Lado» y «Niño» son opcionales. El orden no importa y las columnas que no se entiendan se ignoran.",
+      "columna": {
+        "grupo": "Grupo",
+        "lado": "Lado",
+        "nombre": "Nombre",
+        "apellidos": "Apellidos",
+        "nino": "Niño"
+      },
+      "ignoradas": "Estas columnas no se entienden y se van a ignorar: {columnas}.",
+      "previaTitulo": "Esto es lo que se va a dar de alta",
+      "previaResumen": "{personas} personas en {grupos} invitaciones.",
+      "previaResumenUna": "1 persona en 1 invitación.",
+      "grupoNuevo": "invitación nueva",
+      "grupoExistente": "ya existía",
+      "confirmar": "Importar",
+      "cancelar": "Cancelar",
+      "erroresTitulo": "Hay {cuantos} filas con problemas",
+      "erroresTituloUna": "Hay una fila con problemas",
+      "erroresAyuda": "No se ha importado nada. Arregladlas en la hoja y volved a subirla: media importación es peor que ninguna.",
+      "errorLinea": "Fila {linea}",
+      "errorVacio": "El fichero está vacío.",
+      "errorFaltaColumna": "Falta la columna {columnas}.",
+      "errorDemasiadas": "El fichero trae {traidas} filas y el tope son {tope}. ¿Seguro que es la lista de invitados?",
+      "errorSinGrupo": "Falta el grupo: hay que decir de qué invitación es esta persona.",
+      "errorSinNombre": "Falta el nombre.",
+      "errorLado": "«{valor}» no es un lado. Escribid novia, novio o ambos.",
+      "errorDuplicado": "{persona} ya está en «{grupo}».",
+      "errorSinFichero": "No habéis elegido ningún fichero.",
+      "errorNadaQueImportar": "No hay ninguna fila que dar de alta.",
+      "errorImportando": "No se ha podido importar. No se ha dado de alta a nadie.",
+      "importados": "Importados: {personas} personas en {grupos} invitaciones.",
+      "sinJavascript": "Esta pantalla necesita JavaScript para enseñaros qué se va a importar antes de dar de alta a nadie. Si no podéis activarlo, se pueden añadir personas una a una desde la ficha de cada invitación.",
+      "muestraGrupo": "Familia Zubeldía",
+      "muestraNombre": "Ainhoa",
+      "muestraApellidos": "Zubeldía Gorroño"
     }
   }
 }

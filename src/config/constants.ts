@@ -134,3 +134,14 @@ export const LONGITUD_MINIMA_NOMBRE = 2;
  * ponía lo mismo.
  */
 export const DURACION_AVISO_COPIADO = 2000;
+
+/**
+ * Cuántas filas se admiten en una importación de invitados.
+ *
+ * No es un límite técnico —la función de la base importa en una transacción y
+ * aguantaría muchas más— sino un cortafuegos: doscientas es de largo la boda
+ * más grande imaginable, así que un fichero con miles de filas no es la lista
+ * de invitados, es el CSV equivocado. Mejor decirlo antes de dar de alta a
+ * cinco mil desconocidos.
+ */
+export const MAXIMO_FILAS_IMPORTACION = 500;

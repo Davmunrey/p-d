@@ -240,6 +240,20 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
               <Boton type="submit">{t("panel.invitados.crear")}</Boton>
             </div>
           </form>
+
+          {/*
+            Y la otra vía, para cuando la lista ya existe en una hoja: teclear
+            doscientos nombres de uno en uno en el formulario de arriba no es
+            una opción, y el resultado de intentarlo es que falte gente.
+          */}
+          <Cuerpo className="mt-elemento max-w-texto text-pequeno text-tinta-tenue">
+            <Link
+              href={`${RUTA_INVITADOS}/importar`}
+              className="text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
+            >
+              {t("panel.importar.enlaceDesdeLista")}
+            </Link>
+          </Cuerpo>
         </section>
       ) : (
         <Etiqueta className="mt-bloque">{t("panel.invitados.errorSinPermiso")}</Etiqueta>
