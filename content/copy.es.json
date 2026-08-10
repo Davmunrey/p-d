@@ -60,7 +60,7 @@
     "bajad": "Bajad"
   },
   "cuentaAtras": {
-    "titulo": "Nos vemos en",
+    "titulo": "Cuenta atrás",
     "dias": "días",
     "horas": "horas",
     "minutos": "minutos",
@@ -75,7 +75,8 @@
   "preboda": {
     "etiqueta": "La víspera",
     "titulo": "Si llegáis antes de tiempo",
-    "entradilla": "Muchos venís de fuera y el día antes da para mucho. Esto es lo que habrá."
+    "entradilla": "Muchos venís de fuera y el día antes da para mucho. Esto es lo que habrá.",
+    "cierre": "Nada de esto es obligatorio ni hace falta confirmarlo: pasaos por donde os apetezca."
   },
   "programa": {
     "etiqueta": "El día, hora a hora",
@@ -84,21 +85,24 @@
   "alojamiento": {
     "etiqueta": "Dónde dormir",
     "titulo": "Alojamiento",
-    "reservar": "Reservar"
+    "reservar": "Reservar",
+    "entradilla": "Hemos bloqueado habitaciones en varios hoteles con tarifa cerrada. Reservad diciendo «Boda {nombres}» antes del {fecha}.",
+    "entradillaSinPlazo": "Hemos bloqueado habitaciones en varios hoteles con tarifa cerrada. Reservad diciendo «Boda {nombres}»."
   },
   "comoLlegar": {
     "etiqueta": "El lugar",
     "titulo": "Cómo llegar",
-    "abrirMapa": "Abrir en el mapa"
+    "abrirMapa": "Abrir en el mapa",
+    "direccion": "{direccion}"
   },
   "preguntas": {
     "etiqueta": "Por si os queda alguna duda",
     "titulo": "Preguntas frecuentes"
   },
   "playlist": {
-    "etiqueta": "La pista de baile es cosa de todos",
+    "etiqueta": "La pista es cosa vuestra",
     "titulo": "Playlist colaborativa",
-    "descripcion": "Dejadnos la canción que no puede faltar. La añadiremos a la lista que sonará esa noche.",
+    "descripcion": "Dejadnos la canción que os apetece bailar y la añadimos a la lista que sonará esa noche.",
     "campoCancion": "Canción y artista",
     "anadir": "Añadir",
     "anadida": "Apuntada. Gracias.",

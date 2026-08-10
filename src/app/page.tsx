@@ -151,6 +151,7 @@ export default async function PaginaInicio() {
           etiqueta={t("preboda.etiqueta")}
           titulo={t("preboda.titulo")}
           entradilla={t("preboda.entradilla")}
+          cierre={t("preboda.cierre")}
           realzada
           hundida
           hitos={preboda}
@@ -165,7 +166,10 @@ export default async function PaginaInicio() {
           hitos={programa}
         />
       ) : undefined,
-    alojamiento: alojamientos.length > 0 ? <Alojamiento sitios={alojamientos} /> : undefined,
+    alojamiento:
+      alojamientos.length > 0 ? (
+        <Alojamiento sitios={alojamientos} configuracion={configuracion} nombres={nombres} />
+      ) : undefined,
     transporte:
       rutas.length > 0 ? <Transporte rutas={rutas} configuracion={configuracion} /> : undefined,
     preguntas_frecuentes:
@@ -468,6 +472,7 @@ function ListaDeHoras({
   etiqueta,
   titulo,
   entradilla = null,
+  cierre = null,
   realzada = false,
   hundida = false,
   hitos,
@@ -476,6 +481,8 @@ function ListaDeHoras({
   etiqueta: string;
   titulo: string;
   entradilla?: string | null;
+  /** Una línea al pie del bloque, como el «no hace falta confirmarlo» de la preboda. */
+  cierre?: string | null;
   realzada?: boolean;
   hundida?: boolean;
   hitos: { id: string; hora: string; titulo: string; descripcion: string | null }[];
@@ -507,12 +514,20 @@ function ListaDeHoras({
           </li>
         ))}
       </ol>
+
+      {cierre ? (
+        <Cuerpo className="mt-elemento max-w-texto text-pequeno text-tinta-suave">
+          {cierre}
+        </Cuerpo>
+      ) : null}
     </Bloque>
   );
 }
 
 function Alojamiento({
   sitios,
+  configuracion,
+  nombres,
 }: {
   sitios: {
     id: string;
@@ -522,12 +537,28 @@ function Alojamiento({
     precioTexto: string | null;
     urlReserva: string | null;
   }[];
+  configuracion: ConfiguracionBoda;
+  nombres: string;
 }) {
   return (
     <Bloque
       seccion="alojamiento"
       etiqueta={t("alojamiento.etiqueta")}
       titulo={t("alojamiento.titulo")}
+      entradilla={
+        /*
+          El plazo y los nombres salen de `configuracion_boda`: la entrega los
+          traía escritos —«Boda Paloma y David», «antes del 1 de mayo de 2027»—
+          y ahí escritos se quedarían viejos el día que cambie cualquiera de
+          los dos. Sin fecha límite se dice lo mismo sin ella.
+        */
+        configuracion.fechaLimiteRsvp
+          ? t("alojamiento.entradilla", {
+              nombres,
+              fecha: formatoFecha.format(configuracion.fechaLimiteRsvp),
+            })
+          : t("alojamiento.entradillaSinPlazo", { nombres })
+      }
       hundida
     >
       <ul className="grid gap-elemento sm:grid-cols-2 lg:grid-cols-3">
@@ -577,8 +608,15 @@ function Transporte({
   return (
     <Bloque
       seccion="transporte"
-      etiqueta={t("comoLlegar.etiqueta")}
+      /*
+        LA ENTREGA PONE AQUÍ EL NOMBRE DE LA FINCA, no un rótulo genérico: es
+        la primera vez que aparece con todas sus letras y es lo que se busca
+        cuando alguien llega a esta sección. Sin lugar configurado se cae al
+        rótulo de siempre en vez de dejar un hueco.
+      */
+      etiqueta={configuracion.lugarCeremonia ?? t("comoLlegar.etiqueta")}
       titulo={t("comoLlegar.titulo")}
+      entradilla={configuracion.direccionCeremonia ?? undefined}
     >
       <div className="grid gap-bloque lg:grid-cols-2">
         <ul className="border-t border-borde">
