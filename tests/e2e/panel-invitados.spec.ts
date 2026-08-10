@@ -157,6 +157,17 @@ test.describe("Invitaciones", () => {
     await expect(page).toHaveURL(FICHA);
 
     /*
+      EL ENLACE SE LEE AQUÍ, ANTES DE TOCAR NADA MÁS.
+
+      El token en claro no está en la base —sólo su huella— así que la ficha
+      sólo puede pintarlo cuando la acción que acaba de correr se lo pasa en la
+      URL. Cualquier otra cosa que se haga después, añadir a alguien incluido,
+      recarga la ficha sin `?token=` y el campo desaparece. Leerlo más tarde no
+      es leer un valor viejo: es esperar a un campo que ya no existe.
+    */
+    const primero = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
+
+    /*
       Con alguien dentro, y no por capricho: `obtener_invitacion()` devuelve
       una fila por persona, así que un grupo vacío devuelve cero filas — que es
       el mismo contrato que «este enlace no vale». Sin esto, el test creía
@@ -168,8 +179,6 @@ test.describe("Invitaciones", () => {
       .fill("(DES) Uxue");
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
     await expect(page.getByText("(DES) Uxue")).toBeVisible();
-
-    const primero = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
 
     // Esperar a que la redirección haya llegado antes de leer el campo. Sin
     // esto se lee el enlace viejo, que sigue pintado, y el test compara una
@@ -274,8 +283,21 @@ test.describe("Resumen del panel", () => {
     const invitada = await contexto.newPage();
     await invitada.goto(new URL(enlace).pathname);
     await invitada.locator('input[value="confirmado"]').first().check();
+
+    /*
+      UN PASO CADA VEZ, Y ESPERANDO A VERLO.
+
+      Con JavaScript apagado cada «Siguiente» es una navegación completa y
+      Playwright la espera solo. Aquí no: el paso lo cambia una acción de
+      servidor y el botón del paso anterior sigue en el DOM unos milisegundos,
+      así que dos clics seguidos caen los dos en el mismo formulario y el
+      asistente se queda donde estaba. Afirmar el título entre clic y clic es
+      lo que ata cada uno a su paso.
+    */
     await invitada.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await expect(invitada.getByText(copy.rsvp.pasoDetallesTitulo)).toBeVisible();
     await invitada.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await expect(invitada.getByText(copy.rsvp.pasoMensajeTitulo)).toBeVisible();
     await invitada.getByRole("button", { name: copy.rsvp.enviar }).click();
     await expect(invitada.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
     await contexto.close();
@@ -314,7 +336,17 @@ test.describe("Exportar invitados", () => {
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
   );
 
-  test("el fichero trae lo filtrado, no la tabla entera", async ({ page, request }) => {
+  /*
+    LAS DESCARGAS VAN POR `page.request`, NO POR EL FIXTURE `request`.
+
+    El fixture `request` de Playwright es un contexto de red aparte: no
+    comparte las cookies del navegador, así que la petición llega sin sesión,
+    la ruta redirige a la pantalla de acceso y lo que se descarga es el HTML
+    del formulario de entrar. `page.request` sale del mismo contexto que la
+    página y lleva la sesión puesta, que es lo que hace el navegador cuando se
+    pulsa el botón de exportar.
+  */
+  test("el fichero trae lo filtrado, no la tabla entera", async ({ page }) => {
     await entrar(page);
 
     const marca = `${MARCA} export ${Date.now()}`;
@@ -330,12 +362,12 @@ test.describe("Exportar invitados", () => {
     await expect(page.getByText("(DES) Ainhoa")).toBeVisible();
 
     // Sin filtro: salen todos, así que hay más de una fila de datos.
-    const completo = await request.get(`${RUTA_INVITADOS}/exportar`);
+    const completo = await page.request.get(`${RUTA_INVITADOS}/exportar`);
     expect(completo.status()).toBe(200);
     const todas = (await completo.text()).trim().split("\r\n");
 
     // Con filtro: sólo la persona de este grupo.
-    const filtrado = await request.get(
+    const filtrado = await page.request.get(
       `${RUTA_INVITADOS}/exportar?buscar=${encodeURIComponent(marca)}`,
     );
     const pocas = (await filtrado.text()).trim().split("\r\n");
@@ -351,10 +383,10 @@ test.describe("Exportar invitados", () => {
    * códigos local y «Zubeldía» se convierte en «ZubeldÃ­a». Quien lo recibe es
    * el catering, y va a abrirlo con Excel.
    */
-  test("los acentos y la ñ sobreviven a Excel", async ({ page, request }) => {
+  test("los acentos y la ñ sobreviven a Excel", async ({ page }) => {
     await entrar(page);
 
-    const respuesta = await request.get(`${RUTA_INVITADOS}/exportar`);
+    const respuesta = await page.request.get(`${RUTA_INVITADOS}/exportar`);
     const bytes = await respuesta.body();
 
     // Los tres bytes del BOM, al principio y en ese orden.

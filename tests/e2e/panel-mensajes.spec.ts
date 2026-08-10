@@ -64,8 +64,14 @@ test.describe("Bandeja de mensajes", () => {
     const invitada = await contexto.newPage();
     await invitada.goto(new URL(enlace).pathname);
     await invitada.locator('input[value="confirmado"]').first().check();
+
+    // Un paso cada vez: con JavaScript encendido el botón del paso anterior
+    // sigue en el DOM mientras la acción de servidor va y vuelve, así que dos
+    // clics seguidos caen los dos en el mismo formulario.
     await invitada.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await expect(invitada.getByText(copy.rsvp.pasoDetallesTitulo)).toBeVisible();
     await invitada.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await expect(invitada.getByText(copy.rsvp.pasoMensajeTitulo)).toBeVisible();
     await invitada.locator('input[name="cancion"]').fill(cancion);
     await invitada.locator('textarea[name="mensaje"]').fill(mensaje);
     await invitada.getByRole("button", { name: copy.rsvp.enviar }).click();
