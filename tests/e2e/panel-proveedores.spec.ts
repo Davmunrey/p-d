@@ -99,15 +99,21 @@ async function primeraCategoria(pagina: Page): Promise<string> {
  */
 async function esperarEstado(pagina: Page, esperado: string) {
   /*
-    `commit` y no `load`: lo que hay que saber es que la redirección ocurrió y
-    a qué estado, no que hayan terminado de bajar todas las subpeticiones de la
-    página siguiente. Esperar a `load` ataba el test a cosas que no tienen nada
-    que ver con lo que comprueba —una fuente, una imagen— y convertía un fallo
-    de red ajeno en un «la acción no redirigió» que manda a buscar donde no es.
-    Lo que venga después ya espera por su cuenta a lo que necesita ver.
+    Se espera a la URL y no al aviso: la URL dice si la acción terminó y con
+    qué resultado, y el aviso llega después. Meterlo todo en el mismo plazo
+    hacía que el fallo apareciera en un punto distinto en cada intento.
   */
-  await pagina.waitForURL(new RegExp(`estado=${esperado}(&|$)`), {
-    waitUntil: "commit",
+  /*
+    `toHaveURL` y no `waitForURL`, por lo que dicen al fallar.
+
+    Los dos esperan lo mismo, pero `waitForURL` sólo sabe decir «se acabó el
+    tiempo»: no cuenta dónde te has quedado. Y aquí la pregunta entera es a
+    dónde fue la redirección — si acabó en `sin-permiso` o en `error`, eso NO es
+    lentitud, es la acción diciendo que no ha podido, y el test tiene que
+    enseñarlo en vez de mandar a mirar plazos. `toHaveURL` imprime la URL
+    recibida y con eso el fallo se lee solo.
+  */
+  await expect(pagina).toHaveURL(new RegExp(`estado=${esperado}(&|$)`), {
     timeout: 30_000,
   });
 }
