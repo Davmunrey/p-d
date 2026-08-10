@@ -94,6 +94,16 @@ export const RUTA_RECUPERAR = "/acceso/recuperar";
 export const RUTA_NUEVA_CONTRASENA = "/acceso/nueva-contrasena";
 export const RUTA_CUENTA = "/panel/cuenta";
 export const RUTA_AJUSTES = "/panel/ajustes";
+export const RUTA_INVITADOS = "/panel/invitados";
+
+/**
+ * Tope de acompañantes que se puede fijar por invitación desde el panel.
+ *
+ * No es una regla de la boda, es un pararrayos: el campo es un número que se
+ * teclea, y un cero de más convertiría «pueden traer a dos» en «pueden traer a
+ * veinte». El aforo de verdad lo impone `invitados_aforo_grupo` en la base.
+ */
+export const MAXIMO_ACOMPANANTES = 20;
 
 /**
  * Dónde se anota la ruta que alguien pidió antes de que le mandaran a la

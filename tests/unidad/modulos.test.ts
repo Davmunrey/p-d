@@ -80,7 +80,16 @@ describe("Qué módulo está activo", () => {
 
   it("lo que no es de nadie no marca nada", () => {
     expect(moduloActivo("/acceso")).toBeNull();
-    // Un módulo sin entregar no puede salir marcado: no está en el menú.
-    expect(moduloActivo("/panel/invitados")).toBeNull();
+
+    /*
+      Un módulo sin entregar no puede salir marcado: no está en el menú.
+
+      El ejemplo se saca de la propia lista en lugar de escribir una ruta a
+      mano. Antes ponía `/panel/invitados`, y el día que invitados se entregó
+      este test se cayó — no porque la regla dejara de valer, sino porque el
+      ejemplo había caducado. Así el test envejece solo.
+    */
+    const sinEntregar = MODULOS.find((modulo) => !modulo.entregado);
+    if (sinEntregar) expect(moduloActivo(sinEntregar.ruta)).toBeNull();
   });
 });
