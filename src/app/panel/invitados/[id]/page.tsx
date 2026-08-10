@@ -16,7 +16,7 @@ import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 import { urlDelSitio } from "@/lib/url-sitio";
 
-import { anadirPersona, emitirEnlace, quitarPersona } from "../acciones";
+import { anadirPersona, emitirEnlace, quitarPersona, repartirPorWhatsApp } from "../acciones";
 import { AvisoEstado } from "../aviso";
 
 /**
@@ -121,6 +121,78 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
             aria-label={t("panel.invitados.copiarEnlace")}
             className="mt-pila min-h-campo w-full rounded-campo border border-borde bg-superficie px-interno font-codigo text-pequeno text-tinta"
           />
+
+          {/*
+            BODA-110 · Y desde aquí mismo se manda.
+
+            Va DENTRO del bloque del enlace, y no en una sección aparte, porque
+            depende de lo mismo: el token en claro sólo existe en esta pantalla
+            y sólo ahora. Ponerlo abajo, separado, invitaría a pulsarlo cuando
+            ya no hay enlace que mandar.
+
+            El texto es un `<textarea>` y no una cadena fija: el mensaje que se
+            le manda a una tía abuela no es el que se le manda a un amigo, y
+            retocarlo antes de enviar es el criterio del ticket. Funciona sin
+            JavaScript — es un formulario que va a una acción de servidor y de
+            ahí a WhatsApp.
+          */}
+          {puedeEditar ? (
+            <form action={repartirPorWhatsApp} className="mt-elemento grid gap-interno">
+              <input type="hidden" name="grupo_id" value={grupo.id} />
+              {grupo.invitacionEnviadaEn ? (
+                <input type="hidden" name="recordatorio" value="1" />
+              ) : null}
+
+              <div className="grid gap-interno-compacto">
+                <label
+                  htmlFor="mensaje-whatsapp"
+                  className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave"
+                >
+                  {t("panel.invitados.repartirMensaje")}
+                </label>
+                <textarea
+                  id="mensaje-whatsapp"
+                  name="mensaje"
+                  rows={3}
+                  required
+                  defaultValue={t("panel.invitados.repartirPlantilla", { enlace })}
+                  className="w-full rounded-campo border border-borde bg-superficie p-interno text-pequeno text-tinta"
+                />
+                <p className="text-pequeno text-tinta-tenue">
+                  {t("panel.invitados.repartirAyuda")}
+                </p>
+              </div>
+
+              <div>
+                <Boton type="submit">{t("panel.invitados.repartirBoton")}</Boton>
+              </div>
+            </form>
+          ) : null}
+        </section>
+      ) : null}
+
+      {/*
+        Y si no hay enlace en claro, se dice por qué no se puede mandar. Un
+        hueco donde debería estar el botón se lee como una avería.
+      */}
+      {!enlace && puedeEditar ? (
+        <section className="mt-elemento max-w-texto">
+          <Titulo3 como="h2">{t("panel.invitados.repartirTitulo")}</Titulo3>
+          <Cuerpo className="mt-pila text-pequeno text-tinta-suave">
+            {grupo.invitacionEnviadaEn
+              ? t("panel.invitados.repartirEnviadaEn", {
+                  fecha: formatoFecha.format(grupo.invitacionEnviadaEn),
+                })
+              : t("panel.invitados.repartirNunca")}
+            {grupo.recordatorioEnviadoEn
+              ? ` ${t("panel.invitados.repartirRecordadaEn", {
+                  fecha: formatoFecha.format(grupo.recordatorioEnviadoEn),
+                })}`
+              : ""}
+          </Cuerpo>
+          <Cuerpo className="mt-pila text-pequeno text-tinta-tenue">
+            {t("panel.invitados.repartirSoloConEnlace")}
+          </Cuerpo>
         </section>
       ) : null}
 

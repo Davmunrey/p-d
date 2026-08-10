@@ -431,7 +431,16 @@
       "no": "No",
       "pendienteRespuesta": "Sin contestar",
       "nombreFichero": "invitados-{fecha}.csv",
-      "avisoImportados": "Importados. Ya están en la lista."
+      "avisoImportados": "Importados. Ya están en la lista.",
+      "repartirTitulo": "Mandar la invitación",
+      "repartirAyuda": "Se abre WhatsApp con el mensaje escrito y el enlace de ESTA invitación dentro. Podéis retocar el texto antes.",
+      "repartirMensaje": "Mensaje",
+      "repartirBoton": "Abrir WhatsApp",
+      "repartirPlantilla": "¡Nos casamos! Aquí tenéis toda la información y el enlace para confirmar: {enlace}",
+      "repartirEnviadaEn": "Invitación mandada el {fecha}.",
+      "repartirNunca": "Todavía no se ha mandado.",
+      "repartirRecordadaEn": "Último recordatorio: {fecha}.",
+      "repartirSoloConEnlace": "Para mandar la invitación hace falta un enlace en claro, y sólo se enseña en el momento de emitirlo. Emitid uno nuevo y se manda desde aquí mismo."
     },
     "mensajes": {
       "titulo": "Lo que escriben los invitados",
