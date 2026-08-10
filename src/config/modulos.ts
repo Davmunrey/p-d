@@ -4,6 +4,7 @@ import {
   RUTA_INVITADOS,
   RUTA_MENSAJES,
   RUTA_PANEL,
+  RUTA_PROVEEDORES,
 } from "./constants";
 
 /**
@@ -44,7 +45,7 @@ export const MODULOS = [
   { clave: "mesas", ruta: `${RUTA_PANEL}/mesas`, entregado: false },
   { clave: "menus", ruta: `${RUTA_PANEL}/menus`, entregado: false },
   { clave: "actividades", ruta: `${RUTA_PANEL}/actividades`, entregado: false },
-  { clave: "proveedores", ruta: `${RUTA_PANEL}/proveedores`, entregado: false },
+  { clave: "proveedores", ruta: RUTA_PROVEEDORES, entregado: true },
   { clave: "presupuesto", ruta: `${RUTA_PANEL}/presupuesto`, entregado: false },
   { clave: "tareas", ruta: `${RUTA_PANEL}/tareas`, entregado: false },
   { clave: "ajustes", ruta: RUTA_AJUSTES, entregado: true },

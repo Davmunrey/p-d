@@ -1,4 +1,5 @@
 import type { GrupoInvitacion } from "@/lib/bbdd/invitados";
+import { normalizar } from "@/lib/texto";
 
 /**
  * Genérico sobre el grupo: la pantalla filtra grupos con su recuento y la
@@ -25,19 +26,6 @@ export type EstadoFiltro = (typeof ESTADOS_FILTRO)[number];
 
 export function esEstadoFiltro(valor: string): valor is EstadoFiltro {
   return (ESTADOS_FILTRO as readonly string[]).includes(valor);
-}
-
-/**
- * Sin acentos y en minúsculas.
- *
- * Quien busca a «Ainhoa Zubeldía» desde el móvil escribe «zubeldia», y una
- * búsqueda que no encuentre a nadie por eso es una búsqueda que no se usa.
- */
-export function normalizar(texto: string): string {
-  return texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
 }
 
 /** Encuentra por el nombre del grupo o por el de cualquiera de su gente. */

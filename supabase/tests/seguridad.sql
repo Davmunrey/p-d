@@ -56,7 +56,8 @@ declare
   t text;
   privadas text[] := array[
     'grupos_invitacion', 'invitados', 'confirmaciones', 'notas_invitado',
-    'notas_grupo', 'proveedores', 'documentos_proveedor', 'servicios',
+    'notas_grupo', 'proveedores', 'documentos_proveedor', 'contactos_proveedor',
+    'servicios',
     'categorias_proveedor', 'categorias_presupuesto', 'partidas_presupuesto',
     'pagos', 'tareas', 'mesas', 'perfiles', 'registro_auditoria',
     'configuracion_privada', 'intentos_rsvp', 'invitaciones_panel',

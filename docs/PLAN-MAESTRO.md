@@ -239,7 +239,9 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 
 ### Proveedores, presupuesto y organización
 
-**`categorias_proveedor`**, **`proveedores`**, **`documentos_proveedor`**, **`servicios`** — con `es_por_invitado` en los servicios, que recalcula al confirmarse invitados. Vista: **`v_servicios_importe`**.
+**`categorias_proveedor`**, **`proveedores`**, **`contactos_proveedor`**, **`documentos_proveedor`**, **`servicios`** — con `es_por_invitado` en los servicios, que recalcula al confirmarse invitados. Vista: **`v_servicios_importe`**.
+
+**Por qué `contactos_proveedor` existe además de las columnas de contacto de `proveedores`.** Quien te vende el catering no es quien está en la cocina, y el número del comercial a las once de la noche no lo coge nadie: lo que hace falta el día de la boda es el móvil del jefe de sala. Las columnas de `proveedores` se quedan como contacto principal —el que sale en la lista sin abrir la ficha— y esta tabla es «además de», no «en vez de». Su `es_del_dia` es lo que ordenará la agenda de BODA-101. La clave ajena es `on delete cascade`, al revés que el resto de esta parte del esquema: un contacto no es contabilidad y no tiene sentido conservarlo sin su proveedor.
 
 **`categorias_presupuesto`**, **`partidas_presupuesto`**, **`pagos`**. Vistas: **`v_resumen_presupuesto`** y **`v_proximos_pagos`**.
 
@@ -318,16 +320,16 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 
 ## 7. Panel de gestión (`/app`)
 
-| Módulo          | Contenido                                                                                                                                                    |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Dashboard**   | KPIs: días restantes, confirmados/pendientes, % presupuesto consumido, próximos pagos y tareas                                                               |
-| **Invitados**   | Tabla con filtros y búsqueda, alta individual o import CSV, gestión de grupos, generación y copia de enlaces de invitación, envío por WhatsApp/email, export |
-| **Presupuesto** | Categorías con previsto vs real, gráfica de reparto, calendario de pagos, alertas de desvío                                                                  |
-| **Proveedores** | Ficha por proveedor, pipeline de estado, comparativa de presupuestos, documentos adjuntos                                                                    |
-| **Servicios**   | Qué se contrata, precio por unidad o por invitado, recálculo automático con los confirmados                                                                  |
-| **Tareas**      | Checklist con vista lista y kanban, plantilla inicial por meses restantes                                                                                    |
-| **Seating**     | Plano drag & drop de mesas, asignación con avisos de alergias y de invitados sin mesa                                                                        |
-| **Ajustes**     | Contenido de la landing, orden y visibilidad de secciones, subida y ordenación de fotos, textos i18n, datos de la boda, usuarios                             |
+| Módulo          | Contenido                                                                                                                                                             |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard**   | KPIs: días restantes, confirmados/pendientes, % presupuesto consumido, próximos pagos y tareas                                                                        |
+| **Invitados**   | Tabla con filtros y búsqueda, alta individual o import CSV, gestión de grupos, generación y copia de enlaces de invitación, envío por WhatsApp/email, export          |
+| **Presupuesto** | Categorías con previsto vs real, gráfica de reparto, calendario de pagos, alertas de desvío                                                                           |
+| **Proveedores** | Lista agrupada por categoría con búsqueda que aguanta acentos, ficha por proveedor con su gente, pipeline de estado, comparativa de presupuestos, documentos adjuntos |
+| **Servicios**   | Qué se contrata, precio por unidad o por invitado, recálculo automático con los confirmados                                                                           |
+| **Tareas**      | Checklist con vista lista y kanban, plantilla inicial por meses restantes                                                                                             |
+| **Seating**     | Plano drag & drop de mesas, asignación con avisos de alergias y de invitados sin mesa                                                                                 |
+| **Ajustes**     | Contenido de la landing, orden y visibilidad de secciones, subida y ordenación de fotos, textos i18n, datos de la boda, usuarios                                      |
 
 ---
 
