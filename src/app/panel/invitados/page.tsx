@@ -11,8 +11,9 @@ import {
   RUTA_INVITADOS,
   ZONA_HORARIA,
 } from "@/config/constants";
-import { obtenerGrupos, type GrupoInvitacion } from "@/lib/bbdd/invitados";
-import { t } from "@/lib/copy";
+import { obtenerGrupos } from "@/lib/bbdd/invitados";
+import { esEstadoFiltro, filtrarGrupos, type EstadoFiltro } from "@/lib/filtro-invitados";
+import { t, type ClaveCopy } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 
 import { crearInvitacion } from "./acciones";
@@ -43,8 +44,6 @@ const formatoFecha = new Intl.DateTimeFormat(IDIOMA, {
   timeZone: ZONA_HORARIA,
 });
 
-const ESTADOS_FILTRO = ["todos", "sin-contestar", "contestado"] as const;
-
 interface Parametros {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
@@ -52,22 +51,21 @@ interface Parametros {
 const soloTexto = (valor: string | string[] | undefined) =>
   typeof valor === "string" ? valor : "";
 
-/** Sin acentos y en minúsculas: «Fernández» tiene que encontrarse por «fernandez». */
-function normalizar(texto: string): string {
-  return texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
-}
-
-function coincide(grupo: GrupoInvitacion, busqueda: string): boolean {
-  if (!busqueda) return true;
-  const aguja = normalizar(busqueda);
-  return (
-    normalizar(grupo.nombre).includes(aguja) ||
-    grupo.nombresPersonas.some((nombre) => normalizar(nombre).includes(aguja))
-  );
-}
+/**
+ * Las columnas que se pueden llevar al fichero. El orden es el de la tabla que
+ * espera quien la recibe: primero de quién es la invitación, luego quién es la
+ * persona, y al final lo que come.
+ */
+const COLUMNAS_EXPORTABLES: readonly { id: string; clave: ClaveCopy }[] = [
+  { id: "grupo", clave: "panel.invitados.columnaNombreGrupo" },
+  { id: "lado", clave: "panel.invitados.columnaLado" },
+  { id: "nombre", clave: "panel.invitados.columnaNombre" },
+  { id: "apellidos", clave: "panel.invitados.columnaApellidos" },
+  { id: "nino", clave: "panel.invitados.columnaEsNino" },
+  { id: "respuesta", clave: "panel.invitados.columnaRespuesta" },
+  { id: "menu", clave: "panel.invitados.columnaMenu" },
+  { id: "alergias", clave: "panel.invitados.columnaAlergias" },
+];
 
 export default async function PaginaInvitados({ searchParams }: Parametros) {
   const acceso = await accesoActual();
@@ -76,19 +74,13 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
   const consulta = await searchParams;
   const busqueda = soloTexto(consulta.buscar);
   const filtroBruto = soloTexto(consulta.estado_filtro);
-  const filtro = (ESTADOS_FILTRO as readonly string[]).includes(filtroBruto)
-    ? filtroBruto
-    : "todos";
+  const filtro: EstadoFiltro = esEstadoFiltro(filtroBruto) ? filtroBruto : "todos";
 
   const grupos = await obtenerGrupos();
   const puedeEditar = acceso.rol !== "lector";
 
-  const visibles = grupos.filter((grupo) => {
-    if (!coincide(grupo, busqueda)) return false;
-    if (filtro === "sin-contestar") return grupo.pendientes > 0;
-    if (filtro === "contestado") return grupo.pendientes === 0 && grupo.personas > 0;
-    return true;
-  });
+  // El MISMO filtro que usa la exportación. Ver `lib/filtro-invitados.ts`.
+  const visibles = filtrarGrupos(grupos, { busqueda, estado: filtro });
 
   return (
     <>
@@ -162,6 +154,57 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
           ))}
         </ul>
       )}
+
+      {/*
+        LA DESCARGA SE LLEVA EL FILTRO PUESTO.
+
+        Los tres valores viajan como campos ocultos, así que el fichero
+        contiene exactamente las filas que se están viendo. Es un `GET` a una
+        ruta y no una acción de servidor porque el resultado es un fichero: hay
+        que poner cabeceras para que el navegador lo descargue en vez de
+        pintarlo.
+
+        Lo ve también un lector: exportar es leer, y quien puede mirar la lista
+        puede llevársela.
+      */}
+      {visibles.length > 0 ? (
+        <section className="mt-bloque border-t border-borde pt-bloque">
+          <Titulo3 como="h2">{t("panel.invitados.exportarTitulo")}</Titulo3>
+          <Cuerpo className="mt-pila max-w-texto">{t("panel.invitados.exportarAyuda")}</Cuerpo>
+
+          <form method="get" action={`${RUTA_INVITADOS}/exportar`} className="mt-elemento">
+            <input type="hidden" name="buscar" value={busqueda} />
+            <input type="hidden" name="estado_filtro" value={filtro} />
+
+            <fieldset className="border-0 p-0">
+              <legend className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
+                {t("panel.invitados.columnas")}
+              </legend>
+              <div className="mt-pila flex flex-wrap gap-interno-compacto">
+                {COLUMNAS_EXPORTABLES.map((columna) => (
+                  <label
+                    key={columna.id}
+                    className="flex cursor-pointer items-center gap-interno-compacto rounded-etiqueta border border-borde px-interno py-linea transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue"
+                  >
+                    <input
+                      type="checkbox"
+                      name="columna"
+                      value={columna.id}
+                      defaultChecked
+                      className="size-casilla accent-marca"
+                    />
+                    <span className="text-pequeno text-tinta">{t(columna.clave)}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <Boton type="submit" jerarquia="secundario" className="mt-elemento">
+              {t("panel.invitados.exportar")}
+            </Boton>
+          </form>
+        </section>
+      ) : null}
 
       {puedeEditar ? (
         <section className="mt-bloque border-t border-borde pt-bloque">

@@ -144,7 +144,13 @@ export async function obtenerGrupo(id: string): Promise<DetalleGrupo | null> {
   if (!data) return null;
 
   const fila = data as unknown as Omit<FilaGrupo, "invitados"> & { invitados: FilaPersona[] };
+  return componerGrupo(fila);
+}
 
+/** De la fila cruda al grupo con su gente, contada y ordenada. */
+function componerGrupo(
+  fila: Omit<FilaGrupo, "invitados"> & { invitados: FilaPersona[] },
+): DetalleGrupo {
   const gente: PersonaDelGrupo[] = (fila.invitados ?? [])
     .map((persona) => ({
       id: persona.id,
@@ -179,4 +185,31 @@ export async function obtenerGrupo(id: string): Promise<DetalleGrupo | null> {
     ),
     gente,
   };
+}
+
+/**
+ * Todas las invitaciones con su gente, para exportar.
+ *
+ * Una consulta y no una por grupo: la lista pide las mismas relaciones
+ * anidadas que la ficha, sólo que sin filtrar por id.
+ */
+export async function obtenerGruposConGente(): Promise<DetalleGrupo[]> {
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("grupos_invitacion")
+    .select(
+      `id, nombre, lado, maximo_acompanantes, token_emitido_en,
+       invitados ( id, nombre, apellidos, es_nino, es_acompanante, tipo_menu, alergias,
+                   confirmaciones ( estado, es_vigente ) )`,
+    )
+    .order("nombre");
+
+  if (error) throw new Error(`No se pudieron leer las invitaciones: ${error.message}`);
+
+  return (
+    (data ?? []) as unknown as (Omit<FilaGrupo, "invitados"> & {
+      invitados: FilaPersona[];
+    })[]
+  ).map(componerGrupo);
 }

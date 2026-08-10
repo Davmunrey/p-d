@@ -299,3 +299,88 @@ test.describe("Resumen del panel", () => {
     await expect(page.locator("main header")).not.toContainText("{dias}");
   });
 });
+
+/**
+ * BODA-54 · Exportar la lista
+ *
+ * El catering, la finca y quien imprima las minutas van a pedir la lista. Lo
+ * que se comprueba aquí son las dos cosas por las que un CSV se estropea de
+ * verdad: que traiga **lo filtrado** y no la tabla entera, y que los acentos
+ * lleguen enteros a Excel.
+ */
+test.describe("Exportar invitados", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  test("el fichero trae lo filtrado, no la tabla entera", async ({ page, request }) => {
+    await entrar(page);
+
+    const marca = `${MARCA} export ${Date.now()}`;
+    await page.goto(RUTA_INVITADOS);
+    await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(marca);
+    await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
+    await expect(page).toHaveURL(FICHA);
+    await page
+      .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
+      .fill("(DES) Ainhoa");
+    await page.getByLabel(copy.panel.invitados.apellidosPersona).fill("Zubeldía");
+    await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
+    await expect(page.getByText("(DES) Ainhoa")).toBeVisible();
+
+    // Sin filtro: salen todos, así que hay más de una fila de datos.
+    const completo = await request.get(`${RUTA_INVITADOS}/exportar`);
+    expect(completo.status()).toBe(200);
+    const todas = (await completo.text()).trim().split("\r\n");
+
+    // Con filtro: sólo la persona de este grupo.
+    const filtrado = await request.get(
+      `${RUTA_INVITADOS}/exportar?buscar=${encodeURIComponent(marca)}`,
+    );
+    const pocas = (await filtrado.text()).trim().split("\r\n");
+
+    // Cabecera + una fila. Si el filtro no viajara, saldrían todas.
+    expect(pocas).toHaveLength(2);
+    expect(todas.length).toBeGreaterThan(pocas.length);
+    expect(pocas[1]).toContain("(DES) Ainhoa");
+  });
+
+  /**
+   * CASO DE ERROR. Sin BOM, Excel en Windows abre el fichero con su página de
+   * códigos local y «Zubeldía» se convierte en «ZubeldÃ­a». Quien lo recibe es
+   * el catering, y va a abrirlo con Excel.
+   */
+  test("los acentos y la ñ sobreviven a Excel", async ({ page, request }) => {
+    await entrar(page);
+
+    const respuesta = await request.get(`${RUTA_INVITADOS}/exportar`);
+    const bytes = await respuesta.body();
+
+    // Los tres bytes del BOM, al principio y en ese orden.
+    expect([bytes[0], bytes[1], bytes[2]]).toEqual([0xef, 0xbb, 0xbf]);
+
+    const texto = bytes.toString("utf8");
+    expect(texto).toContain("Zubeldía");
+    // Y la cabecera va con los rótulos en castellano, no con nombres de columna.
+    expect(texto).toContain(copy.panel.invitados.columnaAlergias);
+
+    // Se descarga con su fecha en el nombre, para no acabar con cuatro
+    // `invitados.csv` en la carpeta de descargas.
+    const disposicion = respuesta.headers()["content-disposition"] ?? "";
+    expect(disposicion).toMatch(/attachment; filename="invitados-\d{4}-\d{2}-\d{2}\.csv"/);
+  });
+
+  test("sin sesión no se descarga nada", async ({ browser }) => {
+    // Un fichero con los datos de ciento veinte personas no se sirve a quien
+    // acierte la URL.
+    const contexto = await browser.newContext();
+    const respuesta = await contexto.request.get(`${RUTA_INVITADOS}/exportar`, {
+      maxRedirects: 0,
+    });
+
+    expect(respuesta.status()).toBeGreaterThanOrEqual(300);
+    expect(respuesta.status()).toBeLessThan(400);
+    await contexto.close();
+  });
+});
