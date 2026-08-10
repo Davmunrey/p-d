@@ -95,6 +95,7 @@ export const RUTA_NUEVA_CONTRASENA = "/acceso/nueva-contrasena";
 export const RUTA_CUENTA = "/panel/cuenta";
 export const RUTA_AJUSTES = "/panel/ajustes";
 export const RUTA_INVITADOS = "/panel/invitados";
+export const RUTA_MENSAJES = "/panel/mensajes";
 
 /**
  * Tope de acompañantes que se puede fijar por invitación desde el panel.

@@ -259,7 +259,8 @@
       "presupuesto": "Presupuesto",
       "tareas": "Tareas",
       "cuenta": "Mi cuenta",
-      "ajustes": "Ajustes"
+      "ajustes": "Ajustes",
+      "mensajes": "Mensajes"
     },
     "resumen": {
       "titulo": "Resumen",
@@ -396,6 +397,33 @@
       "personaAnadida": "Persona añadida a la invitación.",
       "personaQuitada": "Persona quitada.",
       "copiarEnlace": "Este es el enlace. Copiadlo antes de salir de esta pantalla."
+    },
+    "mensajes": {
+      "titulo": "Lo que escriben los invitados",
+      "descripcion": "Los mensajes que dejan al confirmar y las canciones que piden para la fiesta.",
+      "bloqueMensajes": "Mensajes",
+      "bloquePlaylist": "Playlist",
+      "sinMensajes": "Todavía no os ha escrito nadie.",
+      "sinCanciones": "Todavía no ha pedido nadie ninguna canción.",
+      "buscar": "Buscar en los mensajes",
+      "buscarAyuda": "Por texto del mensaje o por el nombre del grupo.",
+      "sinResultados": "Ningún mensaje coincide con la búsqueda.",
+      "nuevo": "Nuevo",
+      "marcarLeido": "Marcar como leído",
+      "marcarNoLeido": "Marcar como no leído",
+      "verGrupo": "Ver la invitación",
+      "escritoPor": "{grupo} · {fecha}",
+      "sinLeer": "{cuantos} sin leer",
+      "todoLeido": "Todo leído",
+      "cancionDe": "Pedida por {grupo}",
+      "cancionSinGrupo": "Sin grupo",
+      "ocultar": "Quitar de la web",
+      "mostrar": "Devolver a la web",
+      "oculta": "No se ve en la web",
+      "cancionOcultada": "Canción retirada de la web. No se ha borrado.",
+      "cancionMostrada": "Canción devuelta a la web.",
+      "errorSinPermiso": "Sólo un editor puede moderar la playlist o marcar mensajes.",
+      "errorGuardar": "No hemos podido guardar. Inténtalo de nuevo."
     }
   }
 }

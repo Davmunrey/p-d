@@ -1,4 +1,10 @@
-import { RUTA_AJUSTES, RUTA_CUENTA, RUTA_INVITADOS, RUTA_PANEL } from "./constants";
+import {
+  RUTA_AJUSTES,
+  RUTA_CUENTA,
+  RUTA_INVITADOS,
+  RUTA_MENSAJES,
+  RUTA_PANEL,
+} from "./constants";
 
 /**
  * LOS MÓDULOS DEL PANEL
@@ -34,6 +40,7 @@ export interface Modulo {
 export const MODULOS = [
   { clave: "resumen", ruta: RUTA_PANEL, entregado: true },
   { clave: "invitados", ruta: RUTA_INVITADOS, entregado: true },
+  { clave: "mensajes", ruta: RUTA_MENSAJES, entregado: true },
   { clave: "mesas", ruta: `${RUTA_PANEL}/mesas`, entregado: false },
   { clave: "menus", ruta: `${RUTA_PANEL}/menus`, entregado: false },
   { clave: "actividades", ruta: `${RUTA_PANEL}/actividades`, entregado: false },
