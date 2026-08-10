@@ -77,6 +77,24 @@ export function Titulo3({
   );
 }
 
+/**
+ * EL CONECTOR «y»
+ *
+ * La única aparición de Italianno en toda la pieza, y va en el acento. La
+ * entrega es tajante con esto —«sólo el conector y el ampersand», una vez por
+ * pieza— y tiene razón: es una letra con tanta personalidad que repetida deja
+ * de ser un respiro y se convierte en ruido.
+ *
+ * Va como `<span aria-hidden>` con el texto real en `sr-only` porque un lector
+ * de pantalla lee «Paloma y David» de corrido, y esa «y» no es decoración
+ * tipográfica para quien escucha: es la conjunción.
+ */
+export function Conector({ children }: { children: ReactNode }) {
+  return (
+    <span className="font-conector text-conector leading-conector text-acento">{children}</span>
+  );
+}
+
 /** Versalita espaciada: el rótulo que precede a cada sección. */
 export function Etiqueta({
   id,

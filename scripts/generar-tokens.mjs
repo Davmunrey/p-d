@@ -30,8 +30,14 @@ const PALETAS = {
   inversa: '[data-seccion="inversa"]',
 };
 
-/** Tokens semánticos que se necesitan fuera del CSS. */
-const NECESARIOS = ["fondo", "superficie", "tinta", "tinta-suave", "marca", "borde"];
+/**
+ * Tokens semánticos que se necesitan fuera del CSS.
+ *
+ * `acento` entra porque el conector «y» de la tarjeta va en bronce, como en
+ * todas las piezas de la entrega. Sin él se pintaba en marino y la tarjeta que
+ * sale en WhatsApp perdía justo el color que distingue a esta versión.
+ */
+const NECESARIOS = ["fondo", "superficie", "tinta", "tinta-suave", "marca", "acento", "borde"];
 
 function sinComentarios(css) {
   return css.replace(/\/\*[\s\S]*?\*\//g, "");
