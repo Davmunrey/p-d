@@ -79,6 +79,7 @@
   --color-borde: var(--borde);
   --color-borde-fuerte: var(--borde-fuerte);
   --color-borde-tenue: var(--borde-tenue);
+  --color-borde-filete: var(--borde-filete);
   --color-borde-marca: var(--borde-marca);
 
   /* Estado */
@@ -196,6 +197,25 @@
 @utility rejilla-dato {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
+}
+
+/**
+ * La rejilla que se parte sola: dos columnas mientras quepan y una en cuanto
+ * no. La usa la portada —texto a un lado, foto al otro—.
+ *
+ * No lleva `breakpoint` a propósito. Con `auto-fit` el corte ocurre cuando la
+ * columna baja del ancho al que deja de leerse, que es lo que de verdad
+ * importa; un breakpoint fijo acierta en el móvil de quien lo escribió y falla
+ * en la ventana a media pantalla de cualquier otro.
+ */
+@utility rejilla-partida {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-columna-minima)), 1fr));
+}
+
+/** Alto del hueco de foto de la portada una vez la rejilla se ha apilado. */
+@utility alto-foto-portada {
+  min-height: var(--alto-foto-portada);
 }
 
 /**

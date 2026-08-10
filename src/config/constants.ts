@@ -37,6 +37,13 @@ export const LONGITUD_TOKEN_INVITACION = 24;
 /** Peso máximo por imagen subida al gestor de fotos. */
 export const PESO_MAXIMO_IMAGEN_MB = 10;
 
+/**
+ * Bucket de Supabase Storage donde viven las fotos de la landing. La base
+ * guarda sólo la ruta relativa —lo impone `es_ruta_almacenamiento_valida`—,
+ * así que el bucket se nombra una vez, aquí.
+ */
+export const BUCKET_MEDIOS = "medios";
+
 /** Idioma de la aplicación. La boda es en España: solo castellano. */
 export const IDIOMA = "es-ES";
 

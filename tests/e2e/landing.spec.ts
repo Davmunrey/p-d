@@ -84,6 +84,38 @@ test.describe("Landing", () => {
   });
 
   /**
+   * BODA-19 · La portada, según la entrega.
+   */
+  test("la fecha se escribe con puntos medios, como la marca", async ({ page }) => {
+    // `26 · 06 · 2027`. Se comprueba el formato, no la fecha: la fecha la pone
+    // la base y cambia; la forma de escribirla es la marca y no cambia.
+    const fecha = page.locator("#portada time").first();
+    await expect(fecha).toHaveText(/^\d{2} · \d{2} · \d{4}$/);
+  });
+
+  test("la portada se parte en dos cuando hay foto publicada", async ({ page }) => {
+    // El seed publica una foto de portada, así que aquí tiene que haber dos
+    // columnas: el texto y la imagen.
+    const columnas = await page
+      .locator("#portada")
+      .evaluate((seccion) => seccion.children.length);
+
+    expect(columnas).toBe(2);
+  });
+
+  /**
+   * CASO DE ERROR. Una imagen sin publicar no puede asomarse a la landing.
+   *
+   * El seed deja una en `galeria` marcada como borrador justamente para esto:
+   * si apareciera, significaría que la consulta se olvidó del filtro y que
+   * cualquier foto a medio subir acabaría en la web.
+   */
+  test("una imagen sin publicar no aparece en ninguna parte", async ({ page }) => {
+    await expect(page.getByAltText(/Borrador/i)).toHaveCount(0);
+    await expect(page.locator('img[src*="galeria-borrador"]')).toHaveCount(0);
+  });
+
+  /**
    * BODA-17 · El conector va en Italianno, y de verdad.
    *
    * Comprobar la clase no valdría: diría que se ha pedido la fuente, no que

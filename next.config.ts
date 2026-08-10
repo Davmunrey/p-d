@@ -24,7 +24,40 @@ const CABECERAS_SEGURIDAD = [
   },
 ];
 
+/**
+ * De dónde se aceptan imágenes remotas.
+ *
+ * `next/image` rechaza cualquier origen que no esté declarado, y con razón: sin
+ * esa lista, quien pudiera escribir una URL en la base convertiría nuestro
+ * optimizador en un servicio gratuito para redimensionar imágenes ajenas.
+ *
+ * El host sale de la variable de entorno, no escrito a mano: es el mismo
+ * proyecto de Supabase que ya usa el resto de la aplicación, y así no hay dos
+ * sitios que puedan discrepar. Si la variable falta, la lista queda vacía y no
+ * se acepta ninguna imagen remota, que es lo seguro.
+ */
+function origenesDeImagen() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return [];
+
+  try {
+    const { protocol, hostname } = new URL(url);
+    return [
+      {
+        protocol: protocol.replace(":", "") as "http" | "https",
+        hostname,
+        pathname: "/storage/v1/object/public/**",
+      },
+    ];
+  } catch {
+    console.warn("NEXT_PUBLIC_SUPABASE_URL no es una URL válida: no se servirán fotos.");
+    return [];
+  }
+}
+
 const nextConfig: NextConfig = {
+  images: { remotePatterns: origenesDeImagen() },
+
   async headers() {
     return [
       {

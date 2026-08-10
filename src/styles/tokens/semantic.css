@@ -65,6 +65,7 @@
   --borde: var(--color-bruma-300);
   --borde-fuerte: var(--color-bruma-400);
   --borde-tenue: var(--color-nieve-150);
+  --borde-filete: var(--color-bruma-350);
   --borde-marca: var(--color-marino-420);
 
   /* --- Estado -------------------------------------------------------- */
@@ -141,6 +142,8 @@
   --alto-control-compacto: var(--size-control-compacto);
   --alto-campo: var(--size-campo);
   --ancho-cifra: var(--size-cifra);
+  --ancho-columna-minima: var(--size-columna-minima);
+  --alto-foto-portada: var(--size-foto-portada);
   --alto-cabecera: var(--size-cabecera);
   --ancho-lateral: var(--size-lateral);
   --alto-barra-movil: var(--size-barra-movil);
@@ -220,6 +223,7 @@
     --borde: var(--color-marino-775);
     --borde-fuerte: var(--color-marino-600);
     --borde-tenue: var(--color-marino-850);
+    --borde-filete: var(--color-marino-800);
     --borde-marca: var(--color-marino-500);
     --exito: var(--color-exito-oscuro);
     --exito-fondo: var(--color-marino-800);
@@ -262,6 +266,7 @@
   --borde: var(--color-marino-775);
   --borde-fuerte: var(--color-marino-600);
   --borde-tenue: var(--color-marino-850);
+  --borde-filete: var(--color-marino-800);
   --borde-marca: var(--color-marino-500);
   --exito: var(--color-exito-oscuro);
   --exito-fondo: var(--color-marino-800);
@@ -312,6 +317,7 @@
   --borde: var(--color-marino-600);
   --borde-fuerte: var(--color-marino-500);
   --borde-tenue: var(--color-marino-775);
+  --borde-filete: var(--color-marino-600);
   --foco: var(--color-bronce-300);
 }
 

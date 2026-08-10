@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
+import { HuecoFoto } from "@/components/marketing/hueco-foto";
 import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
@@ -24,8 +25,10 @@ import {
   obtenerPreguntasFrecuentes,
   obtenerPrograma,
   obtenerRutas,
+  obtenerMedios,
   obtenerSecciones,
   type ConfiguracionBoda,
+  type Medio,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 
@@ -79,6 +82,20 @@ const formatoFechaCorta = new Intl.DateTimeFormat(IDIOMA, {
   timeZone: ZONA_HORARIA,
 });
 
+/**
+ * `26 · 06 · 2027`, como en la entrega.
+ *
+ * Se compone a partir de las partes que da `Intl`, no cortando la cadena
+ * formateada: el orden de día y mes depende del idioma, y trocear texto
+ * formateado es la forma clásica de acabar publicando el mes como día.
+ */
+function fechaEnPuntos(fecha: Date): string {
+  const partes = Object.fromEntries(
+    formatoFechaCorta.formatToParts(fecha).map((parte) => [parte.type, parte.value]),
+  );
+  return [partes.day, partes.month, partes.year].join(" · ");
+}
+
 export default async function PaginaInicio() {
   let datos;
   try {
@@ -98,6 +115,7 @@ export default async function PaginaInicio() {
     rutas,
     preguntas,
     canciones,
+    fotosPortada,
   } = datos;
 
   // Sin configuración no hay boda que enseñar: la base respondió, pero el panel
@@ -108,7 +126,13 @@ export default async function PaginaInicio() {
   const nombres = `${configuracion.nombreNovia} ${t("portada.conjuncion")} ${configuracion.nombreNovio}`;
 
   const contenido: Partial<Record<Seccion, ReactNode>> = {
-    portada: <Portada configuracion={configuracion} />,
+    portada: (
+      <Portada
+        configuracion={configuracion}
+        foto={fotosPortada[0] ?? null}
+        urlBase={process.env.NEXT_PUBLIC_SUPABASE_URL}
+      />
+    ),
     cuenta_atras: <CuentaAtrasSeccion configuracion={configuracion} />,
     historia: historia.length > 0 ? <Historia hitos={historia} /> : undefined,
     programa:
@@ -177,6 +201,7 @@ async function cargarLanding() {
     rutas,
     preguntas,
     canciones,
+    fotosPortada,
   ] = await Promise.all([
     obtenerSecciones(),
     obtenerConfiguracion(),
@@ -186,6 +211,7 @@ async function cargarLanding() {
     obtenerRutas(),
     obtenerPreguntasFrecuentes(),
     obtenerCanciones(),
+    obtenerMedios("portada"),
   ]);
 
   return {
@@ -197,6 +223,7 @@ async function cargarLanding() {
     rutas,
     preguntas,
     canciones,
+    fotosPortada,
   };
 }
 
@@ -204,16 +231,44 @@ async function cargarLanding() {
 /* Secciones                                                                 */
 /* ------------------------------------------------------------------------ */
 
-function Portada({ configuracion }: { configuracion: ConfiguracionBoda }) {
+/**
+ * LA PORTADA
+ *
+ * La pantalla partida de la entrega: el texto ocupa una mitad y la foto la
+ * otra, y en cuanto no caben dos columnas —móvil, o una ventana estrecha— se
+ * apilan solas. No hay `breakpoint` escrito: lo resuelve `auto-fit` con un
+ * ancho mínimo de columna, así que el corte pasa cuando de verdad estorba y no
+ * a un número redondo.
+ *
+ * LA PARTICIÓN SÓLO EXISTE SI HAY FOTO. Todavía no las hay —la sesión de
+ * preboda ni siquiera está decidida— y media pantalla en blanco no se lee como
+ * una decisión de diseño, se lee como algo que no ha cargado. Sin foto, el
+ * texto se queda en una columna centrada y la portada se sostiene sola; el día
+ * que se publique una imagen, `auto-fit` abre la segunda columna sin que haya
+ * que tocar nada.
+ *
+ * El bloque de datos usa `--texto-titulo-2` y la fecha va en `26 · 06 · 2027`,
+ * que es como la escribe la marca en todas las piezas.
+ */
+function Portada({
+  configuracion,
+  foto,
+  urlBase,
+}: {
+  configuracion: ConfiguracionBoda;
+  foto: Medio | null;
+  urlBase: string | undefined;
+}) {
   const lugar = configuracion.lugarCeremonia ?? configuracion.lugarBanquete;
   const procedencia = configuracion.direccionCeremonia;
 
   return (
-    <section
-      id={anclaDe("portada")}
-      className="grid min-h-dvh items-center px-interno py-seccion-compacta"
-    >
-      <div className="mx-auto w-full max-w-contenido">
+    <section id={anclaDe("portada")} className="rejilla-partida min-h-dvh items-stretch">
+      <div
+        className={`flex w-full flex-col justify-center px-interno py-seccion-compacta sm:px-bloque ${
+          foto ? "" : "mx-auto max-w-contenido"
+        }`}
+      >
         {procedencia ? (
           <p className="animacion-aparecer text-etiqueta uppercase tracking-marcado text-acento">
             {procedencia}
@@ -233,9 +288,9 @@ function Portada({ configuracion }: { configuracion: ConfiguracionBoda }) {
             <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
               {t("portada.etiquetaFecha")}
             </dt>
-            <dd className="mt-linea font-titulo text-titulo-2">
+            <dd className="mt-linea font-titulo text-titulo-2 text-tinta-marca tabular-nums">
               <time dateTime={configuracion.fechaCeremonia.toISOString()}>
-                {formatoFechaCorta.format(configuracion.fechaCeremonia)}
+                {fechaEnPuntos(configuracion.fechaCeremonia)}
               </time>
             </dd>
           </div>
@@ -244,7 +299,7 @@ function Portada({ configuracion }: { configuracion: ConfiguracionBoda }) {
               <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
                 {t("portada.etiquetaLugar")}
               </dt>
-              <dd className="mt-linea font-titulo text-titulo-2">{lugar}</dd>
+              <dd className="mt-linea font-titulo text-titulo-2 text-tinta-marca">{lugar}</dd>
             </div>
           ) : null}
         </dl>
@@ -257,7 +312,35 @@ function Portada({ configuracion }: { configuracion: ConfiguracionBoda }) {
             {t("portada.verElDia")}
           </BotonEnlace>
         </div>
+
+        {/*
+          El aviso de que la página sigue hacia abajo. Con una portada a
+          pantalla completa hay quien se queda ahí sin saber que hay más, y
+          este es el trabajo que hace la entrega con dos elementos y ningún
+          icono: una versalita y una raya que respira.
+
+          `aria-hidden` porque para quien navega con lector de pantalla no
+          significa nada: el documento ya continúa, y anunciar «bajad» sería
+          ruido. La animación es de las que se apagan con movimiento reducido.
+        */}
+        <p
+          aria-hidden
+          className="animacion-aparecer mt-elemento flex items-center gap-interno-compacto text-diminuto uppercase tracking-marcado text-tinta-tenue"
+        >
+          {t("portada.bajad")}
+          <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
+        </p>
       </div>
+
+      {foto ? (
+        <HuecoFoto
+          medio={foto}
+          urlBase={urlBase}
+          prioritaria
+          medidas="(min-width: 40rem) 50vw, 100vw"
+          className="alto-foto-portada"
+        />
+      ) : null}
     </section>
   );
 }
