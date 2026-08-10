@@ -13,6 +13,7 @@ import {
 } from "@/lib/bbdd/mensajes";
 import { t, type ClaveCopy } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
+import { normalizar } from "@/lib/texto";
 
 import { marcarLeido, moderarCancion } from "./acciones";
 
@@ -52,13 +53,6 @@ interface Parametros {
 
 const soloTexto = (valor: string | string[] | undefined) =>
   typeof valor === "string" ? valor : "";
-
-/** Sin acentos y en minúsculas: se busca como se teclea. */
-const normalizar = (texto: string) =>
-  texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
 
 export default async function PaginaMensajes({ searchParams }: Parametros) {
   const acceso = await accesoActual();
