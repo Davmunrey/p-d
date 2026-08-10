@@ -33,6 +33,7 @@ import {
   obtenerMedios,
   obtenerSecciones,
   type ConfiguracionBoda,
+  type RutaLlegada,
   type ConsejoVestimenta,
   type Medio,
 } from "@/lib/bbdd/landing";
@@ -163,6 +164,17 @@ export default async function PaginaInicio() {
           seccion="programa"
           etiqueta={formatoFecha.format(configuracion.fechaCeremonia)}
           titulo={t("programa.titulo")}
+          /*
+            LA NOTA DEL AUTOBÚS SALE DE `rutas_llegada`, NO DE UN LITERAL.
+
+            La entrega la traía escrita —«a las 12:00 y de vuelta a las 02:00 y
+            04:30»— pero esas horas ya están en la base, en la ruta del
+            autobús. Copiarlas aquí sería tenerlas en dos sitios que se pueden
+            contradecir, y el día que cambie el horario cambiaría uno y no el
+            otro: media boda esperando en la Plaza de Santo Domingo a una hora
+            que ya no es.
+          */
+          entradilla={notaDelAutobus(rutas)}
           hitos={programa}
         />
       ) : undefined,
@@ -224,6 +236,19 @@ export default async function PaginaInicio() {
       />
     </>
   );
+}
+
+/**
+ * El detalle de la ruta en autobús, para anunciarlo encima del programa.
+ *
+ * Se busca por el modo y no por una posición fija: las rutas las ordena quien
+ * organiza desde el panel, y «la segunda de la lista» dejaría de ser el autobús
+ * en cuanto alguien mueva una. Si no hay ruta en autobús no se anuncia nada,
+ * que es lo correcto: no todas las bodas ponen.
+ */
+function notaDelAutobus(rutas: RutaLlegada[]): string | null {
+  const autobus = rutas.find((ruta) => /autob[uú]s|bus/i.test(ruta.modo));
+  return autobus?.detalle ?? null;
 }
 
 /** Todo lo que la landing necesita, pedido de una vez. */
