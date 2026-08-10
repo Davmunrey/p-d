@@ -68,7 +68,18 @@ function seccion(pagina: Page, titulo: string) {
  * bug de lógica que no existe.
  */
 async function esperarEstado(pagina: Page, esperado: string) {
-  await pagina.waitForURL(new RegExp(`estado=${esperado}(&|$)`), { timeout: 15_000 });
+  /*
+    `commit` y no `load`: lo que hay que saber es que la redirección ocurrió y
+    a qué estado, no que hayan terminado de bajar todas las subpeticiones de la
+    página siguiente. Esperar a `load` ataba el test a cosas que no tienen nada
+    que ver con lo que comprueba —una fuente, una imagen— y convertía un fallo
+    de red ajeno en un «la acción no redirigió» que manda a buscar donde no es.
+    Lo que venga después ya espera por su cuenta a lo que necesita ver.
+  */
+  await pagina.waitForURL(new RegExp(`estado=${esperado}(&|$)`), {
+    waitUntil: "commit",
+    timeout: 30_000,
+  });
 }
 
 test.describe("Las categorías del presupuesto", () => {
@@ -188,7 +199,18 @@ test.describe("Las categorías del presupuesto", () => {
     await entrar(page);
     await page.goto(RUTA_PRESUPUESTO);
 
-    const suya = page.locator("li").filter({ hasText: conGastos });
+    /*
+      SE LOCALIZA POR EL VALOR DEL CAMPO, NO POR TEXTO.
+
+      Aquí me equivoqué y costó un rato: en la lista de ajuste, el nombre de la
+      categoría no es texto de la página, es el `value` de un input — la fila
+      ES el formulario. `hasText` mira el contenido de texto y el valor de un
+      campo no lo es, así que el `<li>` no casaba nunca y el test se quedaba
+      noventa segundos esperando un botón que sí estaba ahí.
+    */
+    const suya = page
+      .locator("li")
+      .filter({ has: page.locator(`input[value="${conGastos}"]`) });
     await suya.getByRole("button", { name: copy.panel.presupuesto.borrar }).click();
     await esperarEstado(page, "decidir-gastos");
 

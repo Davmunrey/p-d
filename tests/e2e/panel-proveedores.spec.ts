@@ -98,7 +98,18 @@ async function primeraCategoria(pagina: Page): Promise<string> {
  * otro estado y el mensaje dice a cuál.
  */
 async function esperarEstado(pagina: Page, esperado: string) {
-  await pagina.waitForURL(new RegExp(`estado=${esperado}(&|$)`), { timeout: 30_000 });
+  /*
+    `commit` y no `load`: lo que hay que saber es que la redirección ocurrió y
+    a qué estado, no que hayan terminado de bajar todas las subpeticiones de la
+    página siguiente. Esperar a `load` ataba el test a cosas que no tienen nada
+    que ver con lo que comprueba —una fuente, una imagen— y convertía un fallo
+    de red ajeno en un «la acción no redirigió» que manda a buscar donde no es.
+    Lo que venga después ya espera por su cuenta a lo que necesita ver.
+  */
+  await pagina.waitForURL(new RegExp(`estado=${esperado}(&|$)`), {
+    waitUntil: "commit",
+    timeout: 30_000,
+  });
 }
 
 test.describe("El módulo de proveedores", () => {
