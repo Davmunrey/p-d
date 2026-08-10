@@ -98,10 +98,20 @@ async function primeraCategoria(pagina: Page): Promise<string> {
  * otro estado y el mensaje dice a cuál.
  */
 async function esperarEstado(pagina: Page, esperado: string) {
-  await pagina.waitForURL(new RegExp(`estado=${esperado}(&|$)`), { timeout: 15_000 });
+  await pagina.waitForURL(new RegExp(`estado=${esperado}(&|$)`), { timeout: 30_000 });
 }
 
 test.describe("El módulo de proveedores", () => {
+  /*
+    CADA PASO DE ESTAS PANTALLAS ES UN VIAJE COMPLETO: escribir en la base,
+    redirigir, y repintar entera una página `force-dynamic` con sus consultas.
+    En el trabajo de CI que levanta Supabase en Docker eso no cabe en el plazo
+    por defecto, y el síntoma no es un fallo honesto sino uno que aparece en un
+    punto distinto en cada intento. `test.slow()` es lo que Playwright ofrece
+    para decir «esto es lento de verdad» en vez de ir subiendo plazos sueltos.
+  */
+  test.slow();
+
   test.skip(
     !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
@@ -327,6 +337,16 @@ test.describe("El módulo de proveedores", () => {
  *    miente en la dirección tranquilizadora.
  */
 test.describe("El embudo del proveedor", () => {
+  /*
+    CADA PASO DE ESTAS PANTALLAS ES UN VIAJE COMPLETO: escribir en la base,
+    redirigir, y repintar entera una página `force-dynamic` con sus consultas.
+    En el trabajo de CI que levanta Supabase en Docker eso no cabe en el plazo
+    por defecto, y el síntoma no es un fallo honesto sino uno que aparece en un
+    punto distinto en cada intento. `test.slow()` es lo que Playwright ofrece
+    para decir «esto es lento de verdad» en vez de ir subiendo plazos sueltos.
+  */
+  test.slow();
+
   test.skip(
     !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
@@ -392,8 +412,12 @@ test.describe("El embudo del proveedor", () => {
       .click();
     await esperarEstado(page, "estado-cambiado");
 
-    await expect(page.getByText(motivo)).toBeVisible();
-
+    /*
+      PRIMERO LA BASE Y DESPUÉS LA PANTALLA, y en ese orden a propósito: lo que
+      el ticket promete es que el motivo QUEDA GUARDADO. Si eso falla, el test
+      tiene que decir «no se guardó», no «no lo veo» — que es lo que decía
+      antes y mandaba a buscar el problema al sitio equivocado.
+    */
     const [descartado] = await conBase(
       (sql) => sql<{ estado: string; motivo_descarte: string }[]>`
         select estado, motivo_descarte from public.proveedores where id = ${id}
@@ -401,6 +425,14 @@ test.describe("El embudo del proveedor", () => {
     );
     expect(descartado.estado).toBe("descartado");
     expect(descartado.motivo_descarte).toBe(motivo);
+
+    // Y en pantalla vuelve puesto, listo para corregirlo sin volver a teclearlo.
+    await expect(
+      seccion(page, copy.panel.proveedores.estadoTitulo).getByLabel(
+        copy.panel.proveedores.campoMotivoDescarte,
+        { exact: true },
+      ),
+    ).toHaveValue(motivo);
   });
 
   /**

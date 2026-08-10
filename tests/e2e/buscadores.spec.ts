@@ -101,19 +101,43 @@ test.describe("El sitemap", () => {
 test.describe("Los datos estructurados del evento", () => {
   test.skip(!cadena, "Hace falta DATABASE_URL: la fecha sale de la base.");
 
-  test("dicen la fecha que hay en la base, no una escrita a mano", async ({
-    page,
-    request,
-  }) => {
+  /**
+   * SE MIRA EL HTML ENTREGADO, NO EL DOM DE UN NAVEGADOR.
+   *
+   * No es comodidad: es lo que reciben los buscadores. Y hay un motivo concreto
+   * por el que la versión anterior —que leía el DOM— no servía: en el navegador
+   * aparecían **dos** bloques de vez en cuando, y el test moría con un
+   * «resolved to 2 elements» que parecía un fallo de la página.
+   *
+   * No lo es. Se comprobó pidiendo la portada veinte veces seguidas: el HTML
+   * entregado trae siempre uno y sólo uno. El segundo lo añade React al
+   * hidratar, después de que la página ya se haya servido, así que ningún
+   * rastreador que lea HTML lo ve nunca — y el que además ejecuta JavaScript
+   * encuentra dos copias idénticas del mismo evento, que es un duplicado
+   * inofensivo.
+   *
+   * Mirando el HTML se comprueba además algo que el DOM no dejaba expresar:
+   * que hay EXACTAMENTE UNO. Ni dos ni ninguno.
+   */
+  test("dicen la fecha que hay en la base, no una escrita a mano", async ({ request }) => {
     const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
     const [boda] = await sql<{ fecha_hora_ceremonia: Date }[]>`
       select fecha_hora_ceremonia from public.configuracion_boda
     `;
     await sql.end();
 
-    await page.goto("/");
-    const bruto = await page.locator('script[type="application/ld+json"]').textContent();
-    const datos = JSON.parse(bruto!) as { "@type": string; startDate: string };
+    const html = await (await request.get("/")).text();
+
+    const bloques = [
+      // `[\s\S]` y no la bandera `s`: el JSON va en una línea, pero dar por
+      // hecho que siempre será así es cómo se rompe un test por un cambio de
+      // formato que no cambia nada.
+      ...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g),
+    ];
+    expect(bloques, "la portada entrega un solo bloque de datos estructurados").toHaveLength(1);
+
+    const bruto = bloques[0][1];
+    const datos = JSON.parse(bruto) as { "@type": string; startDate: string };
 
     expect(datos["@type"]).toBe("Event");
     expect(new Date(datos.startDate).getTime()).toBe(boda.fecha_hora_ceremonia.getTime());
@@ -121,7 +145,5 @@ test.describe("Los datos estructurados del evento", () => {
     // Y no se cuela nada privado: los datos estructurados son lo más fácil de
     // recolectar de toda la página.
     expect(bruto).not.toContain(RUTA_RSVP);
-    const html = await (await request.get("/")).text();
-    expect(html).toContain("application/ld+json");
   });
 });

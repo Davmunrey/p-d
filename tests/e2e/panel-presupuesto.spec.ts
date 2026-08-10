@@ -72,6 +72,16 @@ async function esperarEstado(pagina: Page, esperado: string) {
 }
 
 test.describe("Las categorías del presupuesto", () => {
+  /*
+    CADA PASO DE ESTAS PANTALLAS ES UN VIAJE COMPLETO: escribir en la base,
+    redirigir, y repintar entera una página `force-dynamic` con sus consultas.
+    En el trabajo de CI que levanta Supabase en Docker eso no cabe en el plazo
+    por defecto, y el síntoma no es un fallo honesto sino uno que aparece en un
+    punto distinto en cada intento. `test.slow()` es lo que Playwright ofrece
+    para decir «esto es lento de verdad» en vez de ir subiendo plazos sueltos.
+  */
+  test.slow();
+
   test.skip(
     !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
@@ -97,10 +107,18 @@ test.describe("Las categorías del presupuesto", () => {
 
     await expect(page.getByText(copy.panel.presupuesto.avisoCreada)).toBeVisible();
 
-    // En el resumen, con su importe ya formateado.
+    /*
+      EN EL RESUMEN, CON SU IMPORTE YA FORMATEADO — Y SIN PUNTO DE MILLAR.
+
+      Aquí me equivoqué yo y lo dijo el CI: escribí «1.250,50» dando por hecho
+      que el punto va siempre. En castellano no: `Intl.NumberFormat` con
+      `es-ES` no agrupa los números de cuatro cifras, así que 1250,50 € se
+      escribe tal cual y el punto sólo aparece a partir de cinco. La página
+      estaba bien y el test estaba mal.
+    */
     const fila = page.locator("tr").filter({ hasText: nombre });
     await expect(fila).toHaveCount(1);
-    await expect(fila).toContainText("1.250,50");
+    await expect(fila).toContainText("1250,50");
 
     // Y guardado como número, no como el texto que se tecleó.
     const [guardada] = await conBase(
