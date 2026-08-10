@@ -132,7 +132,17 @@ async function montar(sufijo: string, importe = 1000): Promise<Montaje> {
   });
 }
 
-/** Un pago apuntado por SQL: lo que se prueba no es volver a teclear el alta. */
+/**
+ * Un pago apuntado por SQL: lo que se prueba no es volver a teclear el alta.
+ *
+ * EL `::int` NO SOBRA, aunque el parámetro ya sea un número en JavaScript. Va
+ * como parámetro y Postgres lo recibe con tipo `unknown`, y `date + unknown` es
+ * **ambiguo**: encaja con `date + integer` (otra fecha) y con `date + interval`
+ * (una marca de tiempo), así que el servidor se niega a elegir —
+ * «operator is not unique: date + unknown»—. Escrito a mano en un `psql` no
+ * falla, porque ahí el literal ya llega tipado; sólo se rompe por parámetro, que
+ * es justo como lo manda este test.
+ */
 async function apuntar(
   gastoId: string,
   importe: number,
@@ -141,7 +151,7 @@ async function apuntar(
   const [pago] = await conBase(
     (sql) => sql<{ id: string }[]>`
       insert into public.pagos (partida_id, importe, fecha_vencimiento)
-      values (${gastoId}, ${importe}, current_date + ${diasHastaVencer})
+      values (${gastoId}, ${importe}, current_date + ${diasHastaVencer}::int)
       returning id
     `,
   );
