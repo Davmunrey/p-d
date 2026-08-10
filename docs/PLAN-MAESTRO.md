@@ -42,13 +42,13 @@ Arquitectura de tres capas. Una capa solo consume la anterior; nunca se salta ni
 
 ```
 ┌─ Capa 1 — Primitivos ────────────────────────────────┐
-│  --color-sage-500, --font-size-8, --space-6          │  Valores crudos. Sin semántica.
+│  --color-marino-500, --color-bronce-600, --space-6   │  Valores crudos. Sin semántica.
 │  Fuente única de verdad. Solo aquí hay literales.    │  No se usan en componentes.
 └───────────────────────┬──────────────────────────────┘
                         ▼
 ┌─ Capa 2 — Semánticos ────────────────────────────────┐
-│  --color-surface, --color-text-muted,                │  Qué significa el valor.
-│  --color-accent, --space-section, --radius-card      │  Aquí vive el tema claro/oscuro.
+│  --superficie, --tinta-tenue, --acento,              │  Qué significa el valor.
+│  --espacio-seccion, --radio-tarjeta                  │  Aquí vive el tema claro/oscuro.
 └───────────────────────┬──────────────────────────────┘
                         ▼
 ┌─ Capa 3 — Componente ────────────────────────────────┐
@@ -57,7 +57,22 @@ Arquitectura de tres capas. Una capa solo consume la anterior; nunca se salta ni
 └──────────────────────────────────────────────────────┘
 ```
 
-- Los tokens se definen en `src/styles/tokens/` y se exponen a Tailwind vía `@theme` (Tailwind v4), de modo que `bg-surface` y `var(--color-surface)` son el mismo token. **Una sola fuente, dos sintaxis.**
+**La paleta es la versión azul marino del sistema de marca.** El estudio entregó
+la identidad en dos versiones —verde oliva y azul marino— y se monta la azul;
+la entrega completa está en `Sistema completo de boda/`, y de su tabla de tokens
+salen uno a uno los valores de `primitives.css`. Cambiar de versión es reescribir
+ese fichero y nada más: ningún componente nombra un color.
+`tests/unidad/paleta.test.ts` compara las dos capas contra esa tabla, así que la
+web no puede separarse de la cartelería impresa sin que el CI lo diga.
+
+**Marca, acción y acento son tres cosas distintas.** La marca (marino) es el
+color de la identidad; la acción (`--accion`) es el relleno del botón primario;
+el acento (`--acento`) es el bronce, el único color cálido, y aparece a gotas —la
+versalita de la portada, el conector «y», las citas, las horas del programa y el
+aro de foco—. Mezclar acción y acento en un solo token, como estaba, hace que el
+acento deje de existir: el botón se lo come.
+
+- Los tokens se definen en `src/styles/tokens/` y se exponen a Tailwind vía `@theme` (Tailwind v4), de modo que `bg-superficie` y `var(--superficie)` son el mismo token. **Una sola fuente, dos sintaxis.**
 - Prohibido en componentes: `#hex`, `rgb()`, `px` sueltos (salvo `1px` de borde), `text-[14px]`, `bg-[#fff]`.
 - Tema claro/oscuro y variantes estacionales se resuelven **reasignando semánticos**, nunca tocando componentes.
 - Movimiento: duraciones y easings también son tokens (`--duration-slow`, `--ease-out-expo`), y todo respeta `prefers-reduced-motion`.
@@ -361,7 +376,7 @@ Variables de entorno (Vercel, nunca en git): `DATABASE_URL` (cadena del pooler d
 Ninguna bloquea la Fase 0; se resuelven antes de la fase indicada.
 
 1. **Dominio** — ¿comprado ya? Necesario en Fase 3 (Save the Date). _Vercel o Cloudflare como registrador._
-2. **Dirección de arte** — paleta, tipografías y tono. Determina los valores de los tokens primitivos (no su estructura), así que la Fase 0 puede arrancar con una paleta provisional.
+2. ~~**Dirección de arte**~~ — _resuelta._ El estudio entregó la identidad completa (`Sistema completo de boda/`) en dos versiones, y se monta la **azul marino**: marino `#1F2B44`, acento bronce `#8A6224`, Cormorant Infant y Jost. Los valores están transcritos en `primitives.css`; ver §2.2.
 3. **Fotos** — ¿hay sesión de preboda? Condiciona el diseño del hero y la galería.
 4. **Regalo** — ¿cuenta bancaria, Bizum, lista? Afecta a una sección de la landing.
 5. **Colaboradores** — ¿acceso para wedding planner o familiares? El rol `viewer` ya lo contempla.

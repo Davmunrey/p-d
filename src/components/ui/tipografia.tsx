@@ -97,7 +97,14 @@ export function Etiqueta({
   );
 }
 
-/** Cursiva serif: las frases que respiran, nunca para información esencial. */
+/**
+ * Cursiva serif: las frases que respiran, nunca para información esencial.
+ *
+ * Va en el acento, como manda la escala tipográfica de la entrega
+ * (`--texto-cita · color acento`). Es de los pocos sitios donde el bronce
+ * aparece, y por eso la cita se lee como una voz distinta y no como un párrafo
+ * más en cursiva.
+ */
 export function Cita({
   children,
   className = "",
@@ -106,7 +113,7 @@ export function Cita({
   className?: string;
 }) {
   return (
-    <p className={`font-titulo text-cita italic leading-cita text-tinta-suave ${className}`}>
+    <p className={`font-titulo text-cita italic leading-cita text-acento ${className}`}>
       {children}
     </p>
   );

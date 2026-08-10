@@ -12,20 +12,20 @@
 
 export const PALETAS = {
   "claro": {
-    "fondo": "#fbfaf8",
+    "fondo": "#f8f9fc",
     "superficie": "#fff",
-    "tinta": "#14140f",
-    "tinta-suave": "#4a4a45",
-    "marca": "#6b7060",
-    "borde": "#e6e4df"
+    "tinta": "#121722",
+    "tinta-suave": "#434e63",
+    "marca": "#3f4f70",
+    "borde": "#dfe4ec"
   },
   "inversa": {
-    "fondo": "#3c4233",
-    "superficie": "#2e3327",
-    "tinta": "#f1efe7",
-    "tinta-suave": "#c9cdbc",
-    "marca": "#a9af98",
-    "borde": "#454a3c"
+    "fondo": "#1f2b44",
+    "superficie": "#16213a",
+    "tinta": "#eef2f8",
+    "tinta-suave": "#c3cee1",
+    "marca": "#9db0ce",
+    "borde": "#2c3a56"
   }
 } as const;
 

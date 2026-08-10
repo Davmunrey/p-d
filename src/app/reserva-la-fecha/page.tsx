@@ -96,7 +96,7 @@ export default async function PaginaReservaLaFecha() {
             lector de pantalla partirlo en dos encabezados no significa nada. */}
         <h1 className="mt-pila font-titulo text-display leading-display tracking-display">
           {configuracion.nombreNovia}
-          <span className="block text-titulo-1 italic text-marca">
+          <span className="block text-titulo-1 italic text-acento">
             {t("portada.conjuncion")}
           </span>
           {configuracion.nombreNovio}

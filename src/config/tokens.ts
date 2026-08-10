@@ -42,9 +42,10 @@ export const GRUPOS_COLOR: readonly GrupoTokens[] = [
       "marca-hover",
       "marca-activo",
       "marca-tenue",
+      "accion",
+      "accion-hover",
       "acento",
       "acento-hover",
-      "acento-tenue",
     ],
   },
   {

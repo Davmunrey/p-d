@@ -43,11 +43,12 @@ describe("globals.css", () => {
     }
   });
 
-  it("excluye del escaneo las carpetas de skills", () => {
-    // Sin esto, la documentación de terceros mete utilidades que nadie usa
-    // en el CSS que descarga cada invitado.
+  it("excluye del escaneo las carpetas que no son código nuestro", () => {
+    // Sin esto, la documentación de terceros y las piezas del estudio de marca
+    // meten utilidades que nadie usa en el CSS que descarga cada invitado.
     expect(css).toMatch(/@source not ".*\.claude"/);
     expect(css).toMatch(/@source not ".*\.agents"/);
+    expect(css).toMatch(/@source not ".*Sistema completo de boda"/);
   });
 
   it("borra las escalas por defecto de Tailwind", () => {
@@ -73,8 +74,24 @@ describe("capa de primitivos", () => {
   const css = leer("src/styles/tokens/primitives.css");
 
   it("define las escalas de la marca", () => {
-    for (const escala of ["--color-oliva-500", "--color-crema-50", "--color-carbon-900"]) {
+    for (const escala of [
+      "--color-marino-500",
+      "--color-bronce-600",
+      "--color-nieve-50",
+      "--color-pizarra-900",
+    ]) {
       expect(css).toContain(escala);
+    }
+  });
+
+  it("no queda ni rastro de la paleta verde oliva", () => {
+    // La marca tiene dos versiones entregadas y se monta la azul. Un primitivo
+    // oliva superviviente sería un color que ya no está en ninguna pieza del
+    // sistema, esperando a que alguien lo use sin saberlo.
+    for (const escala of ["oliva", "crema", "hueso", "carbon"]) {
+      expect(css, `Queda un primitivo de la paleta anterior: --color-${escala}-*`).not.toMatch(
+        new RegExp(`--color-${escala}-`),
+      );
     }
   });
 });

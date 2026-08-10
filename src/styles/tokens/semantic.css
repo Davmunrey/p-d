@@ -7,66 +7,85 @@
  * REGLA: aquí no hay literales, solo referencias a primitivos. Si aparece un
  * valor literal en este fichero, es que falta un primitivo.
  *
- * Los nombres y la asignación vienen del sistema de marca de Paloma y David.
- * El tema oscuro se resuelve reasignando estos tokens: ningún componente sabe
- * qué tema está activo, ni le hace falta.
+ * Los nombres y la asignación vienen de la tabla de tokens del sistema de
+ * marca de Paloma y David, versión azul marino. El tema oscuro se resuelve
+ * reasignando estos tokens: ningún componente sabe qué tema está activo, ni le
+ * hace falta.
  *
  * Nomenclatura: los colores de texto se llaman `tinta` para no confundirse con
  * los tamaños de texto (`--texto-titulo-1`, que es una escala tipográfica).
+ *
+ * ACENTO Y ACCIÓN son dos cosas distintas, y conviene no repetir el error de
+ * mezclarlas. El acento es el bronce: aparece en gotas —la versalita de la
+ * portada, el conector, las citas, el aro de foco— y nunca rellena nada. La
+ * acción es el marino a plena potencia: el relleno del botón primario. Cuando
+ * un solo token hacía las dos cosas, el acento sencillamente no existía.
  */
 
 :root {
   /* --- Superficies --------------------------------------------------- */
-  --fondo: var(--color-crema-50);
+  --fondo: var(--color-nieve-50);
   --superficie: var(--color-blanco);
   --superficie-elevada: var(--color-blanco);
-  --superficie-hundida: var(--color-crema-100);
-  --superficie-tenue: var(--color-oliva-100);
-  --superficie-inversa: var(--color-carbon-950);
+  --superficie-hundida: var(--color-nieve-150);
+  --superficie-tenue: var(--color-marino-100);
+  --superficie-inversa: var(--color-pizarra-950);
 
   /**
    * Fondo de la barra de navegación. Translúcido porque se apoya sobre la
    * portada a pantalla completa: opaco, cortaría la foto con una franja.
    */
-  --superficie-cabecera: var(--color-velado-crema);
+  --superficie-cabecera: var(--color-velado-nieve);
 
   /* --- Texto --------------------------------------------------------- */
-  --tinta: var(--color-carbon-900);
-  --tinta-suave: var(--color-carbon-600);
-  --tinta-tenue: var(--color-carbon-400);
-  --tinta-inversa: var(--color-crema-50);
-  --tinta-marca: var(--color-oliva-700);
-  --tinta-sobre-marca: var(--color-crema-50);
-  --tinta-sobre-acento: var(--color-crema-50);
+  --tinta: var(--color-pizarra-900);
+  --tinta-suave: var(--color-pizarra-600);
+  --tinta-tenue: var(--color-pizarra-400);
+  --tinta-inversa: var(--color-nieve-50);
+  --tinta-marca: var(--color-marino-700);
+  --tinta-sobre-marca: var(--color-nieve-50);
+  --tinta-sobre-accion: var(--color-nieve-50);
+  --tinta-sobre-acento: var(--color-nieve-50);
 
-  /* --- Marca y acento ------------------------------------------------ */
-  --marca: var(--color-oliva-500);
-  --marca-hover: var(--color-oliva-600);
-  --marca-activo: var(--color-oliva-750);
-  --marca-tenue: var(--color-oliva-100);
-  --acento: var(--color-oliva-700);
-  --acento-hover: var(--color-oliva-875);
-  --acento-tenue: var(--color-oliva-100);
+  /* --- Marca --------------------------------------------------------- */
+  --marca: var(--color-marino-500);
+  --marca-hover: var(--color-marino-600);
+  --marca-activo: var(--color-marino-775);
+  --marca-tenue: var(--color-marino-100);
+
+  /* --- Acción (relleno del botón primario) ---------------------------- */
+  --accion: var(--color-marino-700);
+  --accion-hover: var(--color-pizarra-900);
+
+  /* --- Acento (el bronce, a gotas) ------------------------------------ */
+  --acento: var(--color-bronce-600);
+  --acento-hover: var(--color-bronce-500);
 
   /* --- Bordes -------------------------------------------------------- */
-  --borde: var(--color-hueso-300);
-  --borde-fuerte: var(--color-hueso-400);
-  --borde-tenue: var(--color-crema-100);
-  --borde-marca: var(--color-oliva-420);
+  --borde: var(--color-bruma-300);
+  --borde-fuerte: var(--color-bruma-400);
+  --borde-tenue: var(--color-nieve-150);
+  --borde-marca: var(--color-marino-420);
 
   /* --- Estado -------------------------------------------------------- */
   --exito: var(--color-exito-claro);
   --exito-fondo: var(--color-exito-fondo-claro);
   --exito-tinta: var(--color-exito-claro);
   --aviso: var(--color-aviso-claro);
-  --aviso-fondo: var(--color-crema-100);
+  --aviso-fondo: var(--color-nieve-150);
   --aviso-tinta: var(--color-aviso-claro);
   --error: var(--color-error-claro);
   --error-fondo: var(--color-error-fondo-claro);
   --error-tinta: var(--color-error-claro);
 
-  /* --- Foco (accesibilidad) ------------------------------------------ */
-  --foco: var(--color-oliva-500);
+  /**
+   * --- Foco (accesibilidad) -------------------------------------------
+   *
+   * El aro va en bronce, como en la entrega. No es capricho: en marino sobre
+   * marino el aro se confunde con el propio botón, y el acento es el único
+   * color del sistema que se despega de los dos fondos, el claro y el oscuro.
+   */
+  --foco: var(--color-bronce-600);
   --foco-ancho: var(--border-width-2);
   --foco-separacion: var(--space-linea);
 
@@ -164,139 +183,148 @@
  * Solo reasigna semánticos. Ningún componente se entera del cambio.
  * Sin atributo se respeta la preferencia del sistema; `[data-tema]` la fuerza.
  *
- * Ojo: en oscuro el acento se invierte — pasa a ser el crema, porque sobre
- * fondo oliva oscuro el propio oliva ya no destaca.
+ * Sobre fondo marino oscuro, el marino de la marca ya no destaca: la acción se
+ * invierte y pasa a rellenarse con el tono más pálido de la escala, con tinta
+ * oscura encima. El acento sube de bronce oscuro a bronce claro por lo mismo.
  */
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]) {
-    --fondo: var(--color-oliva-950);
-    --superficie: var(--color-oliva-900);
-    --superficie-elevada: var(--color-oliva-850);
-    --superficie-hundida: var(--color-oliva-975);
-    --superficie-tenue: var(--color-oliva-750);
-    --superficie-inversa: var(--color-crema-50);
-    --superficie-cabecera: var(--color-velado-oliva);
-    --tinta: var(--color-crema-150);
-    --tinta-suave: var(--color-oliva-200);
-    --tinta-tenue: var(--color-oliva-450);
-    --tinta-inversa: var(--color-carbon-900);
-    --tinta-marca: var(--color-oliva-350);
-    --tinta-sobre-marca: var(--color-carbon-900);
-    --tinta-sobre-acento: var(--color-carbon-900);
-    --marca: var(--color-oliva-400);
-    --marca-hover: var(--color-oliva-300);
-    --marca-activo: var(--color-oliva-200);
-    --marca-tenue: var(--color-oliva-800);
-    --acento: var(--color-crema-200);
-    --acento-hover: var(--color-crema-50);
-    --acento-tenue: var(--color-oliva-800);
-    --borde: var(--color-oliva-750);
-    --borde-fuerte: var(--color-oliva-600);
-    --borde-tenue: var(--color-oliva-850);
-    --borde-marca: var(--color-oliva-500);
+    --fondo: var(--color-marino-900);
+    --superficie: var(--color-marino-850);
+    --superficie-elevada: var(--color-marino-750);
+    --superficie-hundida: var(--color-marino-950);
+    --superficie-tenue: var(--color-marino-775);
+    --superficie-inversa: var(--color-nieve-50);
+    --superficie-cabecera: var(--color-velado-marino);
+    --tinta: var(--color-nieve-100);
+    --tinta-suave: var(--color-marino-200);
+    --tinta-tenue: var(--color-marino-450);
+    --tinta-inversa: var(--color-pizarra-900);
+    --tinta-marca: var(--color-marino-350);
+    --tinta-sobre-marca: var(--color-pizarra-900);
+    --tinta-sobre-accion: var(--color-pizarra-900);
+    --tinta-sobre-acento: var(--color-pizarra-900);
+    --marca: var(--color-marino-400);
+    --marca-hover: var(--color-marino-300);
+    --marca-activo: var(--color-marino-200);
+    --marca-tenue: var(--color-marino-800);
+    --accion: var(--color-marino-100);
+    --accion-hover: var(--color-blanco);
+    --acento: var(--color-bronce-300);
+    --acento-hover: var(--color-bronce-200);
+    --borde: var(--color-marino-775);
+    --borde-fuerte: var(--color-marino-600);
+    --borde-tenue: var(--color-marino-850);
+    --borde-marca: var(--color-marino-500);
     --exito: var(--color-exito-oscuro);
-    --exito-fondo: var(--color-oliva-800);
+    --exito-fondo: var(--color-marino-800);
     --exito-tinta: var(--color-exito-oscuro);
     --aviso: var(--color-aviso-oscuro);
-    --aviso-fondo: var(--color-oliva-800);
+    --aviso-fondo: var(--color-marino-800);
     --aviso-tinta: var(--color-aviso-oscuro);
     --error: var(--color-error-oscuro);
-    --error-fondo: var(--color-oliva-800);
+    --error-fondo: var(--color-marino-800);
     --error-tinta: var(--color-error-oscuro);
-    --foco: var(--color-oliva-400);
+    --foco: var(--color-bronce-300);
     --velo: var(--color-velo-fuerte);
   }
 }
 
 :root[data-tema="oscuro"] {
-  --fondo: var(--color-oliva-950);
-  --superficie: var(--color-oliva-900);
-  --superficie-elevada: var(--color-oliva-850);
-  --superficie-hundida: var(--color-oliva-975);
-  --superficie-tenue: var(--color-oliva-750);
-  --superficie-inversa: var(--color-crema-50);
-  --superficie-cabecera: var(--color-velado-oliva);
-  --tinta: var(--color-crema-150);
-  --tinta-suave: var(--color-oliva-200);
-  --tinta-tenue: var(--color-oliva-450);
-  --tinta-inversa: var(--color-carbon-900);
-  --tinta-marca: var(--color-oliva-350);
-  --tinta-sobre-marca: var(--color-carbon-900);
-  --tinta-sobre-acento: var(--color-carbon-900);
-  --marca: var(--color-oliva-400);
-  --marca-hover: var(--color-oliva-300);
-  --marca-activo: var(--color-oliva-200);
-  --marca-tenue: var(--color-oliva-800);
-  --acento: var(--color-crema-200);
-  --acento-hover: var(--color-crema-50);
-  --acento-tenue: var(--color-oliva-800);
-  --borde: var(--color-oliva-750);
-  --borde-fuerte: var(--color-oliva-600);
-  --borde-tenue: var(--color-oliva-850);
-  --borde-marca: var(--color-oliva-500);
+  --fondo: var(--color-marino-900);
+  --superficie: var(--color-marino-850);
+  --superficie-elevada: var(--color-marino-750);
+  --superficie-hundida: var(--color-marino-950);
+  --superficie-tenue: var(--color-marino-775);
+  --superficie-inversa: var(--color-nieve-50);
+  --superficie-cabecera: var(--color-velado-marino);
+  --tinta: var(--color-nieve-100);
+  --tinta-suave: var(--color-marino-200);
+  --tinta-tenue: var(--color-marino-450);
+  --tinta-inversa: var(--color-pizarra-900);
+  --tinta-marca: var(--color-marino-350);
+  --tinta-sobre-marca: var(--color-pizarra-900);
+  --tinta-sobre-accion: var(--color-pizarra-900);
+  --tinta-sobre-acento: var(--color-pizarra-900);
+  --marca: var(--color-marino-400);
+  --marca-hover: var(--color-marino-300);
+  --marca-activo: var(--color-marino-200);
+  --marca-tenue: var(--color-marino-800);
+  --accion: var(--color-marino-100);
+  --accion-hover: var(--color-blanco);
+  --acento: var(--color-bronce-300);
+  --acento-hover: var(--color-bronce-200);
+  --borde: var(--color-marino-775);
+  --borde-fuerte: var(--color-marino-600);
+  --borde-tenue: var(--color-marino-850);
+  --borde-marca: var(--color-marino-500);
   --exito: var(--color-exito-oscuro);
-  --exito-fondo: var(--color-oliva-800);
+  --exito-fondo: var(--color-marino-800);
   --exito-tinta: var(--color-exito-oscuro);
   --aviso: var(--color-aviso-oscuro);
-  --aviso-fondo: var(--color-oliva-800);
+  --aviso-fondo: var(--color-marino-800);
   --aviso-tinta: var(--color-aviso-oscuro);
   --error: var(--color-error-oscuro);
-  --error-fondo: var(--color-oliva-800);
+  --error-fondo: var(--color-marino-800);
   --error-tinta: var(--color-error-oscuro);
-  --foco: var(--color-oliva-400);
+  --foco: var(--color-bronce-300);
   --velo: var(--color-velo-fuerte);
 }
 
 /**
  * SECCIÓN INVERSA
  *
- * El diseño alterna bloques crema con bloques oliva oscuro (cuenta atrás,
- * RSVP, pie). En lugar de que cada componente sepa "aquí voy en claro sobre
- * oscuro", se reasignan los mismos semánticos dentro del bloque: los
- * componentes de dentro no cambian ni una clase.
+ * El diseño alterna bloques claros con bloques marino (cuenta atrás, RSVP,
+ * pie). En lugar de que cada componente sepa "aquí voy en claro sobre oscuro",
+ * se reasignan los mismos semánticos dentro del bloque: los componentes de
+ * dentro no cambian ni una clase.
  */
 
 [data-seccion="inversa"] {
-  --fondo: var(--color-oliva-700);
-  --superficie: var(--color-oliva-750);
-  --superficie-elevada: var(--color-crema-50);
-  --superficie-tenue: var(--color-oliva-800);
-  --tinta: var(--color-crema-150);
-  --tinta-suave: var(--color-oliva-200);
-  --tinta-tenue: var(--color-oliva-350);
-  --tinta-inversa: var(--color-carbon-900);
-  --tinta-marca: var(--color-oliva-350);
-  --marca: var(--color-oliva-350);
-  --marca-hover: var(--color-oliva-200);
+  --fondo: var(--color-marino-700);
+  --superficie: var(--color-marino-775);
+  --superficie-elevada: var(--color-nieve-50);
+  --superficie-tenue: var(--color-marino-800);
+  --tinta: var(--color-nieve-100);
+  --tinta-suave: var(--color-marino-200);
+  --tinta-tenue: var(--color-marino-350);
+  --tinta-inversa: var(--color-pizarra-900);
+  --tinta-marca: var(--color-marino-350);
+  --marca: var(--color-marino-350);
+  --marca-hover: var(--color-marino-200);
 
   /**
-   * El acento se invierte, por la misma razón que en el tema oscuro: sobre
-   * fondo oliva, un botón oliva no se ve. Faltaba, y el resultado era un botón
-   * primario invisible dentro de cualquier bloque inverso.
+   * La acción se invierte, por la misma razón que en el tema oscuro: sobre
+   * fondo marino, un botón marino no se ve. Faltaba, y el resultado era un
+   * botón primario invisible dentro de cualquier bloque inverso.
    */
-  --acento: var(--color-crema-200);
-  --acento-hover: var(--color-crema-50);
-  --acento-tenue: var(--color-oliva-800);
-  --tinta-sobre-acento: var(--color-oliva-875);
-  --borde: var(--color-oliva-600);
-  --borde-fuerte: var(--color-oliva-500);
-  --borde-tenue: var(--color-oliva-750);
-  --foco: var(--color-oliva-200);
+  --accion: var(--color-marino-100);
+  --accion-hover: var(--color-blanco);
+  --tinta-sobre-accion: var(--color-pizarra-900);
+  --acento: var(--color-bronce-300);
+  --acento-hover: var(--color-bronce-200);
+  --tinta-sobre-acento: var(--color-pizarra-900);
+  --borde: var(--color-marino-600);
+  --borde-fuerte: var(--color-marino-500);
+  --borde-tenue: var(--color-marino-775);
+  --foco: var(--color-bronce-300);
 }
 
 [data-seccion="pie"] {
-  --fondo: var(--color-carbon-950);
-  --superficie: var(--color-carbon-950);
-  --tinta: var(--color-crema-150);
-  --tinta-suave: var(--color-oliva-450);
-  --tinta-tenue: var(--color-oliva-450);
-  --tinta-marca: var(--color-oliva-350);
-  --marca: var(--color-oliva-350);
-  --acento: var(--color-crema-200);
-  --acento-hover: var(--color-crema-50);
-  --acento-tenue: var(--color-oliva-800);
-  --tinta-sobre-acento: var(--color-carbon-900);
-  --borde: var(--color-oliva-800);
-  --foco: var(--color-oliva-350);
+  --fondo: var(--color-pizarra-950);
+  --superficie: var(--color-pizarra-950);
+  --tinta: var(--color-nieve-100);
+  --tinta-suave: var(--color-marino-450);
+  --tinta-tenue: var(--color-marino-450);
+  --tinta-marca: var(--color-marino-350);
+  --marca: var(--color-marino-350);
+  --accion: var(--color-marino-100);
+  --accion-hover: var(--color-blanco);
+  --tinta-sobre-accion: var(--color-pizarra-900);
+  --acento: var(--color-bronce-300);
+  --acento-hover: var(--color-bronce-200);
+  --tinta-sobre-acento: var(--color-pizarra-900);
+  --borde: var(--color-marino-800);
+  --foco: var(--color-bronce-300);
 }
