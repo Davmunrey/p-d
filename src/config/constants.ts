@@ -65,6 +65,7 @@ export const RUTA_PANEL = "/panel";
 export const RUTA_RECUPERAR = "/acceso/recuperar";
 export const RUTA_NUEVA_CONTRASENA = "/acceso/nueva-contrasena";
 export const RUTA_CUENTA = "/panel/cuenta";
+export const RUTA_AJUSTES = "/panel/ajustes";
 
 /**
  * Dónde se anota la ruta que alguien pidió antes de que le mandaran a la

@@ -1,4 +1,4 @@
-import { RUTA_CUENTA, RUTA_PANEL } from "./constants";
+import { RUTA_AJUSTES, RUTA_CUENTA, RUTA_PANEL } from "./constants";
 
 /**
  * LOS MÓDULOS DEL PANEL
@@ -40,6 +40,7 @@ export const MODULOS = [
   { clave: "proveedores", ruta: `${RUTA_PANEL}/proveedores`, entregado: false },
   { clave: "presupuesto", ruta: `${RUTA_PANEL}/presupuesto`, entregado: false },
   { clave: "tareas", ruta: `${RUTA_PANEL}/tareas`, entregado: false },
+  { clave: "ajustes", ruta: RUTA_AJUSTES, entregado: true },
   { clave: "cuenta", ruta: RUTA_CUENTA, entregado: true },
 ] as const satisfies readonly Modulo[];
 

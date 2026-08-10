@@ -139,7 +139,17 @@ jobs:
       - name: Probar el recorrido completo del acceso
         env:
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
-        run: npx playwright test --project=escritorio tests/e2e/acceso-real.spec.ts tests/e2e/panel.spec.ts
+        # LA SUITE ENTERA, NO UNA LISTA DE FICHEROS.
+        #
+        # Aquí estaban escritos a mano los dos specs que necesitaban sesión, y
+        # esa lista se quedó atrás en cuanto apareció el tercero: el test nuevo
+        # se saltaba solo —no hay Supabase fuera de este trabajo— y el de aquí
+        # ni lo miraba. Verde por los dos lados y sin haberse ejecutado nunca.
+        #
+        # Este trabajo es el único con Supabase y base de datos de verdad, así
+        # que puede correrlo todo. Cuesta un par de minutos más y a cambio
+        # ningún spec puede volver a colarse sin ejecutarse.
+        run: npx playwright test --project=escritorio
 
       - name: Guardar informe si algo falla
         if: failure()
