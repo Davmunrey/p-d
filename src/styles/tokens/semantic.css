@@ -129,6 +129,7 @@
   --espaciado-etiqueta: var(--letter-spacing-etiqueta);
   --espaciado-boton: var(--letter-spacing-boton);
   --espaciado-marcado: var(--letter-spacing-marcado);
+  --espaciado-seccion: var(--letter-spacing-seccion);
 
   /* --- Espaciado semántico ------------------------------------------- */
   --espacio-linea: var(--space-linea);
@@ -139,11 +140,14 @@
   --espacio-bloque: var(--space-bloque);
   --espacio-seccion-compacta: var(--space-seccion-compacta);
   --espacio-seccion: var(--space-seccion);
+  --espacio-seccion-fluida: var(--space-seccion-fluida);
+  --espacio-bloque-fluido: var(--space-bloque-fluido);
   --alto-control: var(--size-control);
   --alto-control-compacto: var(--size-control-compacto);
   --alto-campo: var(--size-campo);
   --ancho-cifra: var(--size-cifra);
   --ancho-columna-minima: var(--size-columna-minima);
+  --ancho-entradilla: var(--size-entradilla);
   --alto-foto-portada: var(--size-foto-portada);
   --alto-cabecera: var(--size-cabecera);
   --ancho-lateral: var(--size-lateral);

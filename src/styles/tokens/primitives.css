@@ -207,6 +207,15 @@
   --letter-spacing-boton: 0.2em;
   --letter-spacing-marcado: 0.44em;
 
+  /**
+   * El espaciado de la versalita que abre una sección. Cuatro centésimas menos
+   * que `marcado` y no es un descuido de la entrega: `marcado` lo llevan las
+   * dos versalitas que van solas y grandes —la de la portada y la del
+   * paisaje—, y ésta, que va pegada a un titular, necesita apretarse un punto
+   * para no competir con él.
+   */
+  --letter-spacing-seccion: 0.4em;
+
   /* ---------------------------------------------------------------------
    * Espaciado — la escala del sistema de marca, no una progresión genérica
    * ------------------------------------------------------------------- */
@@ -220,6 +229,20 @@
   --space-bloque: 3.5rem;
   --space-seccion-compacta: 5rem;
   --space-seccion: 8.25rem;
+
+  /**
+   * El aire vertical de las secciones de contenido, fluido: 76 px en un móvil
+   * y 132 en escritorio. La entrega lo escribe así en todas ellas, y con razón
+   * — 132 px fijos en una pantalla de 640 dejan la sección casi vacía.
+   */
+  --space-seccion-fluida: clamp(4.75rem, 10vw, 8.25rem);
+
+  /**
+   * El hueco entre la cabecera de una sección y su contenido. También fluido,
+   * por lo mismo: es el respiro que separa el titular de lo que anuncia, y en
+   * un móvil un hueco fijo de escritorio parece un olvido de maquetación.
+   */
+  --space-bloque-fluido: clamp(2.5rem, 5vw, 4rem);
 
   /* Altura de los controles: el objetivo táctil cómodo en móvil. */
   --size-control: 3.25rem;
@@ -235,6 +258,14 @@
    * y por eso el corte no ocurre en un breakpoint redondo sino cuando estorba.
    */
   --size-columna-minima: 22.5rem;
+
+  /**
+   * Ancho de la entradilla que acompaña a un titular de sección. Es más
+   * estrecha que la columna mínima a propósito: no es una columna de la
+   * rejilla, es una nota al margen, y se lee como tal justamente porque no
+   * llega a alinearse con nada.
+   */
+  --size-entradilla: 21.25rem;
 
   /**
    * Alto del hueco de foto de la portada cuando la rejilla ya se ha apilado.
