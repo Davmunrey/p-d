@@ -6,6 +6,7 @@ import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { BotonEnlace } from "@/components/ui/boton";
+import { DatosEstructurados } from "@/components/datos-estructurados";
 import { CuentaRegalos } from "@/components/ui/cuenta-regalos";
 import {
   Cita,
@@ -187,6 +188,9 @@ export default async function PaginaInicio() {
 
   return (
     <>
+      {/* Los datos del evento para buscadores y asistentes de voz. */}
+      <DatosEstructurados configuracion={configuracion} nombres={nombres} />
+
       {/* Primer elemento enfocable del documento: quien navega con teclado no
           debería tener que recorrer once enlaces para llegar al contenido. */}
       <a
