@@ -138,8 +138,19 @@ test.describe("Bandeja de mensajes", () => {
     const ocultada = page.locator("li").filter({ hasText: texto }).first();
     await expect(ocultada).toContainText(copy.panel.mensajes.oculta);
 
-    // Y se puede deshacer.
+    /*
+      Y se puede deshacer.
+
+      SE ESPERA AL AVISO ANTES DE PEDIR LA LANDING, igual que al ocultarla.
+      `click()` vuelve en cuanto suelta el clic, no cuando la acción de servidor
+      ha terminado: sin esta espera se pedía el HTML mientras la canción seguía
+      oculta y el test fallaba contando una carrera como si fuera un fallo del
+      producto. Lo delató el HTML recibido — traía la canción del intento
+      anterior y no la de éste, que es la firma de una lectura adelantada.
+    */
     await ocultada.getByRole("button", { name: copy.panel.mensajes.mostrar }).click();
+    await expect(page.getByText(copy.panel.mensajes.cancionMostrada)).toBeVisible();
+
     const despues = await request.get("/");
     expect(await despues.text()).toContain(texto);
   });

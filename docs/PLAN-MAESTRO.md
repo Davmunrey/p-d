@@ -191,7 +191,7 @@ La convención es uniforme: `id uuid` como clave, `creado_en` y `actualizado_en`
 
 **`configuracion_boda`** (fila única) — fecha y hora de ceremonia y banquete, nombres, lugares, direcciones, coordenadas, hashtag, correo de contacto, moneda, zona horaria, idioma por defecto y `fecha_limite_rsvp`. La vista **`v_configuracion_publica`** es lo único que lee `anon`: enumera columna a columna lo que puede salir a la web, para que una columna añadida mañana no aparezca sola en la landing.
 
-**`configuracion_privada`** (fila única) — lo que no sale a la web: presupuesto objetivo, aforo, teléfono, IBAN de regalos y notas.
+**`configuracion_privada`** (fila única) — lo que no sale a la web: presupuesto objetivo, aforo, teléfono, IBAN de regalos con su titular, y notas. `anon` no tiene nada sobre esta tabla; la única excepción es **`datos_para_regalos()`**, que publica el IBAN y el titular —y sólo eso— cuando la sección `regalos` está visible. Encender la sección **es** publicar la cuenta: no hay un segundo interruptor que pueda quedar en desacuerdo con el primero.
 
 **`secciones_landing`** — qué secciones se enseñan y en qué orden (`seccion`, `visible`, `orden`). Añadir una sección es una fila, no una migración. Su política es `using (visible)`: a un invitado no le llega ni el nombre de una sección apagada. Vista pública: **`v_secciones_publicas`**.
 
@@ -233,6 +233,8 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 
 **`canciones_sugeridas`** — la playlist. `aprobada` la retira de la web sin borrarla, y es la propia política de lectura pública la que filtra por ese booleano.
 
+**`consejos_vestimenta`** — los bloques del dress code («Ellas», «Ellos», «Solo dos peticiones»), con `orden` y `publicado`. Es una tabla y no copy fijo porque los consejos dependen de la finca y de la fecha —el del tacón sale de conocer el suelo— y se retocan sin desplegar.
+
 **`medios`** — fotos de la landing: `ruta_almacenamiento`, `texto_alternativo`, `seccion`, `orden`, `ancho`, `alto`, `marcador_borroso` y `publicado`. Vista pública: **`v_medios_publicados`**. Ninguna imagen va en `/public`.
 
 ### Proveedores, presupuesto y organización
@@ -261,6 +263,7 @@ Sobre `grupos_invitacion`, `invitados` y `confirmaciones`, `anon` **no tiene nad
 - **`obtener_invitacion(token)`** → el grupo del token y su gente. Enumera sus columnas a mano: sin eso, un invitado recibiría el teléfono y las notas privadas de sus coinvitados, y cualquier columna futura se publicaría sola. **Cero filas significa «este enlace no vale»**, y no lanza excepción: al abortar se perdería el registro del intento y el cortafuegos dejaría de contar.
 - **`registrar_confirmacion(token, respuestas)`** → registra la respuesta del grupo, todo o nada. Escribe además menú y alergias en `invitados`, que es donde viven.
 - **`sugerir_cancion(token, texto)`** → añade a la playlist, con tope de diez por grupo.
+- **`datos_para_regalos()`** → el IBAN y su titular, o cero filas. Es la única puerta por la que sale un dato de `configuracion_privada`, y sólo se abre con la sección `regalos` visible.
 - **`crear_grupo_invitacion(...)`** y **`rotar_token_invitacion(grupo)`** → del panel, devuelven el token en claro una sola vez.
 
 El plazo lo aplica un trigger contra `now()`, nunca contra una fecha enviada por el cliente. El cupo de intentos lo aplica **`exigir_cupo_rsvp()`** por origen.
@@ -289,7 +292,8 @@ Secciones del enumerado `seccion_landing`:
 | `ubicaciones`          | Ceremonia y banquete, con mapa                              | BODA-26 |
 | `transporte`           | Cómo llegar: coche, tren, autobús                           | BODA-26 |
 | `alojamiento`          | Hoteles recomendados con tarifa y enlace de reserva         | BODA-27 |
-| `regalos`              | Número de cuenta, revelado sólo al interactuar              | BODA-28 |
+| `regalos`              | Número de cuenta en campo copiable. Nace apagada            | BODA-37 |
+| `dresscode`            | Qué ponerse, un bloque por consejo                          | BODA-38 |
 | `preguntas_frecuentes` | Acordeón nativo: etiqueta, niños, aparcamiento…             | BODA-27 |
 | `playlist`             | Canciones que sugieren los invitados                        | BODA-29 |
 | `rsvp`                 | Llamada a confirmar asistencia                              | BODA-28 |

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import copy from "../../content/copy.es.json";
+import { conSeccionApagada } from "./utiles/secciones";
 
 /**
  * BODA-20 · Navegación y pie
@@ -40,8 +41,8 @@ test.describe("Navegación", () => {
   test("el orden del menú es el que manda la base de datos", async ({ page }) => {
     // `orden` en la tabla: portada 0 · cuenta_atras 10 · historia 20 ·
     // preboda 33 · programa 35 · transporte 50 · alojamiento 60 ·
-    // preguntas 70 · playlist 75 · rsvp 80. Si alguien reordena el JSX, esto
-    // se cae.
+    // preguntas 70 · playlist 75 · regalos 76 · dresscode 77 · rsvp 80. Si
+    // alguien reordena el JSX, esto se cae.
     // `allTextContents` y no `allInnerTexts`: el segundo devuelve el texto ya
     // pasado por el `text-transform: uppercase` del CSS, así que compararía
     // contra la presentación en vez de contra el copy.
@@ -57,6 +58,8 @@ test.describe("Navegación", () => {
       copy.navegacion.secciones.alojamiento,
       copy.navegacion.secciones.preguntas_frecuentes,
       copy.navegacion.secciones.playlist,
+      copy.navegacion.secciones.regalos,
+      copy.navegacion.secciones.dresscode,
       copy.navegacion.secciones.rsvp,
     ]);
   });
@@ -108,11 +111,20 @@ test.describe("Navegación", () => {
   // --- Casos de error -----------------------------------------------------
 
   test("una sección apagada en la base de datos no aparece en el menú", async ({ page }) => {
-    // `regalos` está en `secciones_landing` con `visible = false`.
-    await expect(
-      menu(page).getByRole("link", { name: copy.navegacion.secciones.regalos }),
-    ).toHaveCount(0);
-    await expect(page.locator("#regalos")).toHaveCount(0);
+    /*
+      `reserva_la_fecha` no vale para esto —es una página aparte y no sale en
+      el menú aunque esté encendida—, así que el caso se prueba apagando una
+      sección de verdad y devolviéndola después. Antes se usaba `regalos`
+      porque nacía apagada; desde que el seed la enciende, dar por hecho que
+      alguna sección está apagada es atarse a un dato que puede cambiar.
+    */
+    await conSeccionApagada("dresscode", async () => {
+      await page.goto("/");
+      await expect(
+        menu(page).getByRole("link", { name: copy.navegacion.secciones.dresscode }),
+      ).toHaveCount(0);
+      await expect(page.locator("#dresscode")).toHaveCount(0);
+    });
   });
 
   test("una sección encendida pero sin construir tampoco aparece", async ({ page }) => {

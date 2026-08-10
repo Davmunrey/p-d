@@ -40,7 +40,8 @@
       "ubicaciones": "Dónde",
       "transporte": "Cómo llegar",
       "alojamiento": "Alojamiento",
-      "regalos": "Regalo",
+      "regalos": "Regalos",
+      "dresscode": "Dress code",
       "preguntas_frecuentes": "Preguntas",
       "playlist": "Playlist",
       "rsvp": "Confirmar",
@@ -102,6 +103,21 @@
     "anadir": "Añadir",
     "anadida": "Apuntada. Gracias.",
     "vacia": "Todavía no hay canciones. Estrenad la lista."
+  },
+  "regalos": {
+    "etiqueta": "Vuestra presencia ya es el regalo",
+    "titulo": "Si queréis regalarnos algo",
+    "descripcion": "No esperamos nada, de verdad. Si aun así os apetece contribuir, estamos ahorrando para el viaje de novios y aquí tenéis la cuenta.",
+    "titular": "Cuenta a nombre de {titular}",
+    "etiquetaCuenta": "Número de cuenta",
+    "copiar": "Copiar",
+    "copiado": "Copiado",
+    "buzon": "También habrá un buzón en la entrada del invernadero."
+  },
+  "dresscode": {
+    "etiqueta": "Qué ponerse",
+    "titulo": "Dress code",
+    "descripcion": "Etiqueta elegante. La ceremonia es al aire libre y en junio hace calor de día y fresco de noche, así que vestíos cómodos: la fiesta es larga."
   },
   "rsvp": {
     "titulo": "Confirmad asistencia",

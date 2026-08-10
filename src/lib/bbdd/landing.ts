@@ -275,6 +275,50 @@ export async function obtenerCanciones(limite = 30): Promise<Cancion[]> {
   return filas.map((f) => ({ id: f.id, texto: f.texto }));
 }
 
+export interface ConsejoVestimenta {
+  id: string;
+  titulo: string;
+  texto: string;
+}
+
+/** Los bloques del dress code —«Ellas», «Ellos»…—, en su orden. */
+export async function obtenerConsejosVestimenta(): Promise<ConsejoVestimenta[]> {
+  const filas = await leerComoAnonimo(
+    (tx) => tx<{ id: string; titulo: string; texto: string }[]>`
+      select id, titulo, texto
+      from public.consejos_vestimenta
+      order by orden
+    `,
+  );
+  return filas.map((f) => ({ id: f.id, titulo: f.titulo, texto: f.texto }));
+}
+
+export interface CuentaRegalos {
+  iban: string;
+  titular: string | null;
+}
+
+/**
+ * La cuenta para los regalos, o `null`.
+ *
+ * NO SE LEE UNA TABLA, se llama a `datos_para_regalos()`. El IBAN vive en
+ * `configuracion_privada`, que `anon` no puede tocar —lo comprueba
+ * `tests/seguridad`—, y esa función es la única puerta por la que sale: se abre
+ * sólo cuando la sección de regalos está encendida.
+ *
+ * Devuelve `null` cuando no hay cuenta que enseñar, que es lo mismo que dice la
+ * base: cero filas. Aquí no se decide nada, sólo se traduce.
+ */
+export async function obtenerCuentaRegalos(): Promise<CuentaRegalos | null> {
+  const filas = await leerComoAnonimo(
+    (tx) => tx<{ iban: string; titular: string | null }[]>`
+      select iban, titular from public.datos_para_regalos()
+    `,
+  );
+  const cuenta = filas[0];
+  return cuenta ? { iban: cuenta.iban, titular: cuenta.titular } : null;
+}
+
 export interface Medio {
   id: string;
   /** Ruta relativa dentro del bucket, tal y como la valida la base. */

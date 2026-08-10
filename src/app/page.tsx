@@ -6,6 +6,7 @@ import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { BotonEnlace } from "@/components/ui/boton";
+import { CampoCopiable } from "@/components/ui/campo-copiable";
 import {
   Cita,
   Conector,
@@ -22,6 +23,8 @@ import {
   obtenerAlojamientos,
   obtenerCanciones,
   obtenerConfiguracion,
+  obtenerConsejosVestimenta,
+  obtenerCuentaRegalos,
   obtenerHistoria,
   obtenerPreguntasFrecuentes,
   obtenerPrograma,
@@ -29,6 +32,8 @@ import {
   obtenerMedios,
   obtenerSecciones,
   type ConfiguracionBoda,
+  type ConsejoVestimenta,
+  type CuentaRegalos,
   type Medio,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
@@ -117,6 +122,8 @@ export default async function PaginaInicio() {
     rutas,
     preguntas,
     canciones,
+    consejos,
+    cuentaRegalos,
     fotosPortada,
   } = datos;
 
@@ -164,6 +171,9 @@ export default async function PaginaInicio() {
     preguntas_frecuentes:
       preguntas.length > 0 ? <Preguntas preguntas={preguntas} /> : undefined,
     playlist: <Playlist canciones={canciones} />,
+    // Sin cuenta no hay sección: ver el comentario de `Regalos`.
+    regalos: cuentaRegalos ? <Regalos cuenta={cuentaRegalos} /> : undefined,
+    dresscode: consejos.length > 0 ? <DressCode consejos={consejos} /> : undefined,
     rsvp: <Rsvp configuracion={configuracion} />,
   };
 
@@ -221,6 +231,8 @@ async function cargarLanding() {
     rutas,
     preguntas,
     canciones,
+    consejos,
+    cuentaRegalos,
     fotosPortada,
   ] = await Promise.all([
     obtenerSecciones(),
@@ -232,6 +244,8 @@ async function cargarLanding() {
     obtenerRutas(),
     obtenerPreguntasFrecuentes(),
     obtenerCanciones(),
+    obtenerConsejosVestimenta(),
+    obtenerCuentaRegalos(),
     obtenerMedios("portada"),
   ]);
 
@@ -245,6 +259,8 @@ async function cargarLanding() {
     rutas,
     preguntas,
     canciones,
+    consejos,
+    cuentaRegalos,
     fotosPortada,
   };
 }
@@ -648,6 +664,80 @@ function Playlist({ canciones }: { canciones: { id: string; texto: string }[] })
       ) : (
         <Cuerpo className="mt-elemento text-center">{t("playlist.vacia")}</Cuerpo>
       )}
+    </Bloque>
+  );
+}
+
+/**
+ * LOS REGALOS
+ *
+ * La sección más delicada de la web, y la entrega la resuelve con el tono
+ * exacto: primero «vuestra presencia ya es el regalo», y sólo después la
+ * cuenta. El orden no es decorativo — leerlo al revés convierte una invitación
+ * en una petición.
+ *
+ * NO SE PINTA SI NO HAY CUENTA. `datos_para_regalos()` devuelve cero filas
+ * mientras la sección esté apagada o falte el IBAN, así que aquí no se decide
+ * nada: si no hay cuenta, no hay sección, y el enlace no aparece en el menú.
+ * Una sección de regalos con un hueco donde va el número es peor que no
+ * tenerla.
+ */
+function Regalos({ cuenta }: { cuenta: CuentaRegalos }) {
+  return (
+    <Bloque
+      seccion="regalos"
+      etiqueta={t("regalos.etiqueta")}
+      titulo={t("regalos.titulo")}
+      entradilla={t("regalos.descripcion")}
+      realzada
+    >
+      <div className="mx-auto max-w-estrecho rounded-tarjeta border border-borde bg-superficie-tenue p-elemento">
+        {cuenta.titular ? (
+          <Etiqueta>{t("regalos.titular", { titular: cuenta.titular })}</Etiqueta>
+        ) : null}
+
+        <CampoCopiable
+          valor={cuenta.iban}
+          etiqueta={t("regalos.etiquetaCuenta")}
+          textoCopiar={t("regalos.copiar")}
+          textoCopiado={t("regalos.copiado")}
+        />
+
+        <Cuerpo className="mt-elemento text-pequeno">{t("regalos.buzon")}</Cuerpo>
+      </div>
+    </Bloque>
+  );
+}
+
+/**
+ * QUÉ PONERSE
+ *
+ * Es la pregunta que más se repite por WhatsApp antes de una boda, y
+ * contestarla aquí ahorra treinta conversaciones idénticas. Los bloques salen
+ * de la base —«Ellas», «Ellos», «Solo dos peticiones»— porque son consejos que
+ * dependen de la finca y de la fecha, y los novios los van a retocar.
+ */
+function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
+  return (
+    <Bloque
+      seccion="dresscode"
+      etiqueta={t("dresscode.etiqueta")}
+      titulo={t("dresscode.titulo")}
+      entradilla={t("dresscode.descripcion")}
+      hundida
+    >
+      {/* Misma rejilla que el alojamiento: son tarjetas del mismo peso. */}
+      <ul className="grid gap-elemento sm:grid-cols-2 lg:grid-cols-3">
+        {consejos.map((consejo) => (
+          <li
+            key={consejo.id}
+            className="animacion-subir-al-ver rounded-tarjeta border border-borde bg-superficie p-elemento"
+          >
+            <Titulo3 como="h3">{consejo.titulo}</Titulo3>
+            <Cuerpo className="mt-pila">{consejo.texto}</Cuerpo>
+          </li>
+        ))}
+      </ul>
     </Bloque>
   );
 }
