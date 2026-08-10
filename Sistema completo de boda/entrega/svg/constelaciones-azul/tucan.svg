@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="240" height="240" fill="none">
+  <title>Tucán</title>
+  <line x1="17" y1="71" x2="36" y2="53" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="36" y1="53" x2="56" y2="44" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="56" y1="44" x2="76" y2="28" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="76" y1="28" x2="88" y2="53" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <circle cx="17" cy="71" r="1.1" fill="#1F2B44"></circle>
+  <circle cx="36" cy="53" r="1" fill="#1F2B44"></circle>
+  <circle cx="56" cy="44" r="1.4" fill="#1F2B44"></circle>
+  <circle cx="76" cy="28" r="1" fill="#1F2B44"></circle>
+  <circle cx="88" cy="53" r="1" fill="#1F2B44"></circle>
+</svg>

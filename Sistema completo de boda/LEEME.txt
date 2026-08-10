@@ -1,0 +1,35 @@
+# Boda Paloma & David — 26.06.2027
+Finca La Sierra, León · Sistema completo de identidad y web
+
+## Piezas (abrir en el navegador)
+Version verde oliva          |  Version azul marino
+-----------------------------|------------------------------
+Landing boda.dc.html         |  Landing boda azul.dc.html
+Save the Date.dc.html        |  Save the Date azul.dc.html
+Sistema de marca.dc.html     |  Sistema de marca azul.dc.html
+Carteleria.dc.html           |  Carteleria azul.dc.html
+
+Entrega para Figma.dc.html — tokens, escala tipografica, medidas y pasos de montaje.
+Constelacion.dc.html / Constelacion azul.dc.html — componente que dibuja las constelaciones.
+support.js e image-slot.js son necesarios: mantenerlos junto a los HTML.
+
+## entrega/svg  (39 archivos, vectores editables en Figma)
+constelaciones-verde/ — 16 constelaciones
+constelaciones-azul/  — las mismas en azul marino
+marca/                — monograma (verde, azul, crema), sello, patron punteado
+
+## Tipografias (Google Fonts)
+Cormorant Infant — titulares y cifras (300, 400)
+Jost — cuerpo, versalitas y botones (300, 400, 500)
+Italianno — solo el conector «y» y el ampersand
+
+## Color
+Verde oliva: marca #3C4233 · media #6B7060 · acento #3F6E64
+Azul marino: marca #1F2B44 · media #3F4F70 · acento #8A6224 / #E3BE86
+Tinta #14140F · suave #4A4A45 · dato #6B6B66 · tenue #8A8A84
+Fondo #FBFAF8 · hundida #F4F3F0 · tenue #ECEEE8 · borde #E6E4DF
+
+## Notas
+El RSVP acepta un endpoint propio (prop endpointRsvp de la landing).
+Los huecos de foto se rellenan arrastrando imagenes sobre la pagina.
+Nombres, mesas y menus son de ejemplo: sustituir por los reales.

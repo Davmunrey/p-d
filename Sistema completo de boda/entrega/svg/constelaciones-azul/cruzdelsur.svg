@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="240" height="240" fill="none">
+  <title>Cruz del Sur</title>
+  <line x1="50" y1="8" x2="50" y2="88" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="15" y1="50" x2="85" y2="44" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <circle cx="50" cy="8" r="1.6" fill="#1F2B44"></circle>
+  <circle cx="50" cy="88" r="1.3" fill="#1F2B44"></circle>
+  <circle cx="15" cy="50" r="1.1" fill="#1F2B44"></circle>
+  <circle cx="85" cy="44" r="1" fill="#1F2B44"></circle>
+</svg>

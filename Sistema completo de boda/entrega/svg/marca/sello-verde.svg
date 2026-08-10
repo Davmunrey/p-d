@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="320" height="320">
+  <title>Sello de lacre</title>
+  <defs>
+    <radialGradient id="lacre" cx="34%" cy="26%" r="120%">
+      <stop offset="0%" stop-color="#7E8472"></stop><stop offset="48%" stop-color="#5E6454"></stop><stop offset="100%" stop-color="#3C4233"></stop>
+    </radialGradient>
+  </defs>
+  <circle cx="100" cy="100" r="96" fill="url(#lacre)"></circle>
+  <text x="100" y="124" text-anchor="middle" font-family="Cormorant Infant, Georgia, serif" font-size="62" fill="#F1EFE7">P<tspan font-family="Italianno, cursive" font-size="58" fill="#D9DCCF">&amp;</tspan>D</text>
+</svg>

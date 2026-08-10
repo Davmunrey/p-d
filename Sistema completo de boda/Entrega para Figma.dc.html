@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Italianno&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #FBFAF8; scroll-behavior: smooth; }
+  * { box-sizing: border-box; }
+  a { color: #3F6E64; text-decoration: none; text-underline-offset: 3px; }
+  a:hover { color: #14140F; text-decoration: underline; }
+  ::selection { background: #DDE1D4; }
+  :focus-visible { outline: 2px solid #3F6E64; outline-offset: 3px; }
+  @keyframes enSubir { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important } }
+</style>
+</helmet>
+
+<div style="font-family:'Jost',sans-serif;color:#14140F;background:#FBFAF8;font-size:16px;line-height:1.6">
+
+  <header style="max-width:1180px;margin:0 auto;padding:clamp(56px,7vw,100px) clamp(20px,5vw,64px) clamp(34px,4vw,52px);border-bottom:1px solid #E6E4DF">
+    <div style="display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.44em;text-transform:uppercase;color:#3F6E64">
+      <span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto"></span>
+      Paloma &amp; David · 26.06.2027
+    </div>
+    <h1 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(38px,6.4vw,86px);line-height:1;letter-spacing:-.02em;margin:20px 0 0;text-wrap:balance">Hoja <span style="font-family:'Italianno',cursive;color:#3F6E64;font-size:.72em">de</span> entrega</h1>
+    <p style="max-width:620px;color:#4A4A45;margin:22px 0 0;font-size:18px;text-wrap:pretty">Todo lo necesario para reconstruir el sistema en Figma sin medir sobre la web: tokens, escala tipográfica, medidas de cada pieza e inventario de archivos exportados.</p>
+  </header>
+
+  <section style="max-width:1180px;margin:0 auto;padding:clamp(46px,6vw,78px) clamp(20px,5vw,64px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64">01</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(30px,4vw,50px);letter-spacing:-.015em;margin:14px 0 30px;line-height:1.05">Tipografías</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:clamp(16px,2.2vw,26px)">
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:26px">
+        <div style="font-family:'Cormorant Infant',serif;font-size:56px;line-height:1">Aa</div>
+        <div style="font-size:20px;margin-top:14px">Cormorant Infant</div>
+        <p style="color:#4A4A45;font-size:15px;margin:8px 0 0">Titulares y cifras. Pesos 300 y 400. Google Fonts.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:26px">
+        <div style="font-size:56px;line-height:1;font-weight:300">Aa</div>
+        <div style="font-size:20px;margin-top:14px">Jost</div>
+        <p style="color:#4A4A45;font-size:15px;margin:8px 0 0">Cuerpo, versalitas y botones. Pesos 300, 400 y 500.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:26px">
+        <div style="font-family:'Italianno',cursive;font-size:64px;line-height:.9;color:#3F6E64">Aa</div>
+        <div style="font-size:20px;margin-top:14px">Italianno</div>
+        <p style="color:#4A4A45;font-size:15px;margin:8px 0 0">Solo el conector «y» y el ampersand. Una vez por pieza.</p>
+      </div>
+    </div>
+    <div style="display:grid;gap:0;border-top:1px solid #E6E4DF;margin-top:clamp(26px,3.4vw,40px)">
+      <sc-for list="{{ escala }}" as="e" hint-placeholder-count="9">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:clamp(10px,2vw,24px);padding:16px 0;border-bottom:1px solid #E6E4DF;align-items:baseline">
+          <span style="font-size:13px;letter-spacing:.06em;color:#14140F">{{ e.nombre }}</span>
+          <span style="font-size:14.5px;color:#4A4A45">{{ e.fuente }}</span>
+          <span style="font-size:14.5px;color:#4A4A45;font-variant-numeric:tabular-nums">{{ e.tamano }}</span>
+          <span style="font-size:14.5px;color:#6B6B66;font-variant-numeric:tabular-nums">{{ e.detalle }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width:1180px;margin:0 auto;padding:clamp(46px,6vw,78px) clamp(20px,5vw,64px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64">02</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(30px,4vw,50px);letter-spacing:-.015em;margin:14px 0 30px;line-height:1.05">Color</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:clamp(20px,3vw,40px)">
+      <sc-for list="{{ paletas }}" as="p" hint-placeholder-count="2">
+        <div>
+          <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#8A8A84;margin-bottom:16px">{{ p.titulo }}</div>
+          <div style="display:grid;gap:0;border-top:1px solid #E6E4DF">
+            <sc-for list="{{ p.fichas }}" as="f" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid #E6E4DF">
+                <span style="{{ f.muestraStyle }}"></span>
+                <span style="font-size:14px;color:#4A4A45">{{ f.uso }}</span>
+                <span style="font-size:13.5px;color:#14140F;font-variant-numeric:tabular-nums;letter-spacing:.04em">{{ f.hex }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width:1180px;margin:0 auto;padding:clamp(46px,6vw,78px) clamp(20px,5vw,64px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64">03</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(30px,4vw,50px);letter-spacing:-.015em;margin:14px 0 30px;line-height:1.05">Rejilla, forma y movimiento</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:clamp(16px,2.2vw,26px)">
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:26px">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Rejilla web</div>
+        <div style="display:grid;gap:8px;font-size:14.5px;color:#4A4A45">
+          <div>Contenedor máximo · 1180 px</div>
+          <div>Margen lateral · 26 px móvil, 72 px escritorio</div>
+          <div>Sección · 132 px vertical</div>
+          <div>Columna mínima de tarjeta · 280 px</div>
+        </div>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:26px">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Espaciado</div>
+        <div style="display:grid;gap:8px;font-size:14.5px;color:#4A4A45;font-variant-numeric:tabular-nums">
+          <div>4 · 8 · 14 · 22 · 34 · 56 · 80 · 132 px</div>
+          <div style="color:#6B6B66">Nada intermedio; si hace falta, se sube al siguiente.</div>
+        </div>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:26px">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Forma</div>
+        <div style="display:grid;gap:8px;font-size:14.5px;color:#4A4A45">
+          <div>Botón · 999 px</div>
+          <div>Campo y tarjeta · 6 px</div>
+          <div>Sombra tarjeta · 0 24 60 −34 rgba(20,20,15,.45)</div>
+          <div>Sombra cartel · 0 40 90 −30 rgba(20,20,15,.55)</div>
+        </div>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:26px">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Movimiento</div>
+        <div style="display:grid;gap:8px;font-size:14.5px;color:#4A4A45">
+          <div>Micro · 250 ms</div>
+          <div>Bloque · 800–900 ms</div>
+          <div>Escena · 1–1,2 s</div>
+          <div>Suave cubic-bezier(.22,.75,.24,1) · Muelle (.16,1.1,.3,1)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width:1180px;margin:0 auto;padding:clamp(46px,6vw,78px) clamp(20px,5vw,64px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64">04</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(30px,4vw,50px);letter-spacing:-.015em;margin:14px 0 30px;line-height:1.05">Piezas y medidas</h2>
+    <div style="display:grid;gap:0;border-top:1px solid #E6E4DF">
+      <sc-for list="{{ piezas }}" as="p" hint-placeholder-count="12">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:clamp(10px,2vw,24px);padding:17px 0;border-bottom:1px solid #E6E4DF;align-items:baseline">
+          <span style="font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:#14140F">{{ p.pieza }}</span>
+          <span style="font-size:14.5px;color:#4A4A45;font-variant-numeric:tabular-nums">{{ p.medida }}</span>
+          <span style="font-size:14.5px;color:#4A4A45">{{ p.material }}</span>
+          <span style="font-size:14.5px;color:#6B6B66;font-variant-numeric:tabular-nums">{{ p.cantidad }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <p style="max-width:600px;color:#4A4A45;margin:26px 0 0;text-wrap:pretty">Sangre de 3 mm en todo lo impreso, tintas a CMYK antes de enviar y texto nunca por debajo de 12 pt.</p>
+  </section>
+
+  <section style="max-width:1180px;margin:0 auto;padding:clamp(46px,6vw,78px) clamp(20px,5vw,64px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64">05</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(30px,4vw,50px);letter-spacing:-.015em;margin:14px 0 16px;line-height:1.05">Qué hay en el paquete</h2>
+    <p style="max-width:620px;color:#4A4A45;margin:0 0 30px;text-wrap:pretty">Descargad el proyecto completo desde el chat. Esta es la estructura de lo exportado.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:clamp(16px,2.2vw,26px)">
+      <sc-for list="{{ paquete }}" as="c" hint-placeholder-count="4">
+        <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:26px">
+          <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">{{ c.titulo }}</div>
+          <div style="display:grid;gap:9px;font-size:14.5px;color:#4A4A45">
+            <sc-for list="{{ c.items }}" as="i" hint-placeholder-count="4">
+              <div style="display:flex;gap:10px;align-items:baseline">
+                <span style="width:4px;height:4px;background:#3F6E64;transform:rotate(45deg);flex:0 0 auto"></span>
+                <span style="overflow-wrap:anywhere">{{ i }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width:1180px;margin:0 auto;padding:clamp(46px,6vw,78px) clamp(20px,5vw,64px)">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64">06</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(30px,4vw,50px);letter-spacing:-.015em;margin:14px 0 16px;line-height:1.05">Montarlo en Figma</h2>
+    <div style="display:grid;gap:0;border-top:1px solid #E6E4DF;max-width:780px">
+      <sc-for list="{{ pasos }}" as="p" hint-placeholder-count="5">
+        <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;padding:18px 0;border-bottom:1px solid #E6E4DF;align-items:baseline">
+          <span style="font-family:'Cormorant Infant',serif;font-size:22px;color:#C9C5B8;font-variant-numeric:tabular-nums">{{ p.n }}</span>
+          <span style="color:#4A4A45;text-wrap:pretty">{{ p.texto }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <footer style="background:#121210;color:#8B917C;padding:clamp(46px,6vw,72px) clamp(20px,5vw,64px);display:flex;justify-content:space-between;gap:22px;flex-wrap:wrap;align-items:center">
+    <div style="font-family:'Cormorant Infant',serif;font-size:32px;color:#F1EFE7;line-height:1">P<span style="font-family:'Italianno',cursive;color:#9AC4B6;font-size:.95em">&amp;</span>D</div>
+    <div style="display:flex;gap:22px;flex-wrap:wrap;font-size:13px;letter-spacing:.1em">
+      <a href="./Landing boda.dc.html" style="color:#A9AF98">Web</a>
+      <a href="./Save the Date.dc.html" style="color:#A9AF98">Save the date</a>
+      <a href="./Sistema de marca.dc.html" style="color:#A9AF98">Sistema de marca</a>
+      <a href="./Carteleria.dc.html" style="color:#A9AF98">Cartelería</a>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  renderVals() {
+    const ficha = (hex, uso) => ({ hex, uso, muestraStyle: `width:34px;height:34px;border-radius:5px;background:${hex};border:1px solid rgba(20,20,15,.1)` });
+    return {
+      escala: [
+        { nombre: '--texto-display', fuente: 'Cormorant Infant 300', tamano: '58–124 px', detalle: 'interlínea .92 · tracking −.015em' },
+        { nombre: '--texto-titulo-1', fuente: 'Cormorant Infant 300', tamano: '38–68 px', detalle: 'interlínea 1.02' },
+        { nombre: '--texto-titulo-2', fuente: 'Cormorant Infant 400', tamano: '38 px', detalle: 'interlínea 1.1' },
+        { nombre: '--texto-titulo-3', fuente: 'Cormorant Infant 400', tamano: '27 px', detalle: 'interlínea 1.2' },
+        { nombre: '--texto-conector', fuente: 'Italianno 400', tamano: '44–104 px', detalle: 'solo la «y»' },
+        { nombre: '--texto-cita', fuente: 'Cormorant Infant italic 300', tamano: '24 px', detalle: 'color acento' },
+        { nombre: '--texto-cuerpo', fuente: 'Jost 400', tamano: '16 px', detalle: 'interlínea 1.65' },
+        { nombre: '--texto-etiqueta', fuente: 'Jost 400', tamano: '11 px', detalle: 'versalita · tracking .3em' },
+        { nombre: '--texto-pequeno', fuente: 'Jost 400', tamano: '13 px', detalle: 'interlínea 1.5' }
+      ],
+      paletas: [
+        { titulo: 'Versión verde oliva', fichas: [
+          ficha('#3C4233', 'Marca · superficies oscuras'), ficha('#6B7060', 'Marca media · trazos'),
+          ficha('#3F6E64', 'Acento'), ficha('#14140F', 'Tinta'), ficha('#4A4A45', 'Tinta suave'),
+          ficha('#6B6B66', 'Tinta dato · cifras y tablas'), ficha('#8A8A84', 'Tinta tenue · versalitas'),
+          ficha('#FBFAF8', 'Fondo'), ficha('#F4F3F0', 'Superficie hundida'),
+          ficha('#ECEEE8', 'Superficie tenue'), ficha('#E6E4DF', 'Borde'), ficha('#C9C5B8', 'Borde fuerte'), ficha('#F1EFE7', 'Tinta sobre oscuro')
+        ] },
+        { titulo: 'Versión azul marino', fichas: [
+          ficha('#1F2B44', 'Marca · superficies oscuras'), ficha('#3F4F70', 'Marca media · trazos'),
+          ficha('#8A6224', 'Acento sobre claro'), ficha('#E3BE86', 'Acento sobre marino'), ficha('#121722', 'Tinta'),
+          ficha('#434E63', 'Tinta suave'), ficha('#5C6678', 'Tinta dato · cifras y tablas'),
+          ficha('#78839A', 'Tinta tenue · versalitas'), ficha('#F8F9FC', 'Fondo'),
+          ficha('#EEF1F6', 'Superficie hundida'), ficha('#E7ECF3', 'Superficie tenue'), ficha('#DFE4EC', 'Borde'),
+          ficha('#B7C0D0', 'Borde fuerte'), ficha('#EEF2F8', 'Tinta sobre oscuro')
+        ] }
+      ],
+      piezas: [
+        { pieza: 'Mapa de mesas', medida: 'A0 · 841 × 1189 mm', material: 'Forex 5 mm', cantidad: '1 ud.' },
+        { pieza: 'Cartel de bienvenida', medida: 'A1 · 594 × 841 mm', material: 'Metacrilato 5 mm', cantidad: '1 ud.' },
+        { pieza: 'Cartel de horario', medida: 'A2 · 420 × 594 mm', material: 'Cartón pluma', cantidad: '2 uds.' },
+        { pieza: 'Programa de ceremonia', medida: 'A2 · 420 × 594 mm', material: 'Cartón pluma', cantidad: '1 ud.' },
+        { pieza: 'Nombre de mesa', medida: '150 × 180 mm', material: 'Verjurado 300 g', cantidad: '15 uds.' },
+        { pieza: 'Minuta', medida: '100 × 140 mm', material: 'Verjurado 300 g', cantidad: '120 uds.' },
+        { pieza: 'Marcasitios', medida: '90 × 55 mm', material: 'Verjurado 300 g', cantidad: '120 uds.' },
+        { pieza: 'Invitación', medida: '125 × 175 mm', material: 'Verjurado 300 g', cantidad: '80 uds.' },
+        { pieza: 'Direccional', medida: '300 × 400 mm', material: 'Madera serigrafiada', cantidad: '4 uds.' },
+        { pieza: 'Carta de barra', medida: 'A3 · 297 × 420 mm', material: 'Verjurado 300 g', cantidad: '3 uds.' },
+        { pieza: 'Etiqueta de botella', medida: '90 × 120 mm', material: 'Adhesivo mate', cantidad: '90 uds.' },
+        { pieza: 'Abanico', medida: '230 mm', material: 'Madera y tela', cantidad: '120 uds.' },
+        { pieza: 'Señalética menor', medida: '200 × 200 mm', material: 'Cartón pluma', cantidad: '6 uds.' }
+      ],
+      paquete: [
+        { titulo: 'SVG · constelaciones', items: ['entrega/svg/constelaciones-verde/ · 16 archivos', 'entrega/svg/constelaciones-azul/ · 16 archivos', 'Vectores planos: líneas + círculos, editables en Figma'] },
+        { titulo: 'SVG · marca', items: ['monograma-verde / azul / crema', 'sello-verde · sello-azul', 'patron-punteado-verde · azul'] },
+        { titulo: 'HTML · piezas vivas', items: ['Landing boda · Save the Date', 'Sistema de marca · Cartelería', 'Las mismas cuatro en versión azul', 'Constelacion.dc.html (componente de dibujo)'] },
+        { titulo: 'Cómo abrirlo', items: ['Cualquier .dc.html abre en el navegador', 'Los SVG se arrastran directamente al lienzo de Figma', 'Las fuentes son de Google Fonts: instalables en Figma'] }
+      ],
+      pasos: [
+        { n: '01', texto: 'Crear los estilos de color con los hex de la sección 02, en dos temas: verde y azul marino.' },
+        { n: '02', texto: 'Instalar Cormorant Infant, Jost e Italianno desde Google Fonts y crear los estilos de texto de la sección 01.' },
+        { n: '03', texto: 'Arrastrar los SVG de constelaciones al lienzo y convertirlos en componentes con variante por nombre.' },
+        { n: '04', texto: 'Montar los marcos de impresión con las medidas de la sección 04 (A0, A1, A2, A3 y los formatos a medida).' },
+        { n: '05', texto: 'Para la web, usar los HTML como referencia viva: abrid la página al lado del lienzo para copiar espaciados y estados.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="240" height="240" fill="none">
+  <title>Escorpio</title>
+  <line x1="10" y1="16" x2="22" y2="27" stroke="rgba(107,112,96,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="22" y1="27" x2="34" y2="15" stroke="rgba(107,112,96,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="22" y1="27" x2="41" y2="41" stroke="rgba(107,112,96,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="41" y1="41" x2="51" y2="57" stroke="rgba(107,112,96,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="51" y1="57" x2="63" y2="70" stroke="rgba(107,112,96,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="63" y1="70" x2="75" y2="80" stroke="rgba(107,112,96,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="75" y1="80" x2="87" y2="73" stroke="rgba(107,112,96,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="87" y1="73" x2="91" y2="57" stroke="rgba(107,112,96,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <circle cx="10" cy="16" r="1" fill="#3C4233"></circle>
+  <circle cx="22" cy="27" r="1.1" fill="#3C4233"></circle>
+  <circle cx="34" cy="15" r="1" fill="#3C4233"></circle>
+  <circle cx="41" cy="41" r="1.7" fill="#3C4233"></circle>
+  <circle cx="51" cy="57" r="1.1" fill="#3C4233"></circle>
+  <circle cx="63" cy="70" r="1" fill="#3C4233"></circle>
+  <circle cx="75" cy="80" r="1.1" fill="#3C4233"></circle>
+  <circle cx="87" cy="73" r="1" fill="#3C4233"></circle>
+  <circle cx="91" cy="57" r="1" fill="#3C4233"></circle>
+</svg>

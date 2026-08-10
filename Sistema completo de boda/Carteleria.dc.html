@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Italianno&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #FBFAF8; scroll-behavior: smooth; }
+  * { box-sizing: border-box; }
+  a { color: #454A3C; text-decoration: none; }
+  a:hover { color: #14140F; }
+  @keyframes ctSubir { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
+  @keyframes ctAparecer { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes ctEscala { from { opacity: 0; transform: scale(.955) } to { opacity: 1; transform: scale(1) } }
+  @keyframes ctIzquierda { from { opacity: 0; transform: translateX(-24px) } to { opacity: 1; transform: translateX(0) } }
+  @keyframes ctDerecha { from { opacity: 0; transform: translateX(24px) } to { opacity: 1; transform: translateX(0) } }
+  @keyframes ctLinea { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+  @keyframes ctTitilar { 0%, 100% { opacity: .85 } 50% { opacity: .35 } }
+  /* __acabado */
+  ::selection { background: #DDE1D4 }
+  a { text-underline-offset: 3px }
+  :focus-visible { outline: 2px solid #3F6E64; outline-offset: 3px; border-radius: 2px }
+  h1, h2, h3 { text-wrap: balance }
+  p { text-wrap: pretty }
+  svg { display: block }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important } }
+</style>
+</helmet>
+
+<div style="font-family:'Jost',sans-serif;color:#14140F;background:#FBFAF8;font-size:16px;line-height:1.6">
+
+  <header style="position:relative;overflow:hidden;background:#FBFAF8;border-bottom:1px solid #E6E4DF">
+    <div style="position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle at 12% 22%, #DFDCCE 1.4px, transparent 0), radial-gradient(circle at 68% 12%, #E4E1D4 1.1px, transparent 0), radial-gradient(circle at 84% 62%, #DFDCCE 1.6px, transparent 0), radial-gradient(circle at 32% 78%, #E4E1D4 1.2px, transparent 0);background-size:280px 240px, 190px 210px, 320px 280px, 240px 260px;opacity:.9"></div>
+    <div style="position:relative;max-width:1320px;margin:0 auto;padding:clamp(60px,8vw,116px) clamp(20px,5vw,72px) clamp(40px,5vw,64px)">
+      <div style="display:flex;align-items:center;gap:18px;animation:ctAparecer 1s ease both">
+        <span style="width:44px;height:44px;border-radius:50%;background:radial-gradient(120% 120% at 34% 26%, #7E8472 0%, #5E6454 48%, #3C4233 100%);display:grid;place-items:center;box-shadow:0 10px 22px -12px rgba(46,51,39,.6), inset 0 1px 2px rgba(255,255,255,.3);flex:0 0 auto">
+          <span style="font-family:'Cormorant Infant',serif;font-size:16px;color:#F1EFE7;line-height:1">P<span style="font-family:'Italianno',cursive;font-size:.95em;opacity:.85">&amp;</span>D</span>
+        </span>
+        <span style="font-size:11px;letter-spacing:.44em;text-transform:uppercase;color:#8A8A84">Paloma &amp; David · 26.06.2027</span>
+      </div>
+      <h1 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(42px,7vw,100px);line-height:.98;letter-spacing:-.02em;margin:22px 0 0;animation:ctSubir 1.2s cubic-bezier(.2,.7,.3,1) both .15s">Cartelería <span style="font-family:'Italianno',cursive;color:#3F6E64;font-size:.72em">y</span> señalética</h1>
+      <p style="max-width:620px;color:#4A4A45;margin:24px 0 0;font-size:18px;text-wrap:pretty;animation:ctSubir 1.2s cubic-bezier(.2,.7,.3,1) both .3s">Quince mesas, quince constelaciones: ocho del hemisferio norte —el cielo que tendremos encima esa noche— y siete del sur. El mismo trazo —estrellas llenas, líneas al 42 %— ordena carteles, marcasitios, minutas y hasta las etiquetas de las botellas.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:clamp(14px,2vw,26px);margin-top:clamp(34px,4.4vw,52px);border-top:1px solid #E6E4DF;padding-top:clamp(24px,3vw,34px);animation:ctSubir 1.2s cubic-bezier(.2,.7,.3,1) both .45s">
+        <div><div style="font-family:'Cormorant Infant',serif;font-size:clamp(30px,4vw,46px);line-height:1;color:#3C4233">15</div><div style="font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#8A8A84;margin-top:8px">Constelaciones</div></div>
+        <div><div style="font-family:'Cormorant Infant',serif;font-size:clamp(30px,4vw,46px);line-height:1;color:#3C4233">120</div><div style="font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#8A8A84;margin-top:8px">Invitados</div></div>
+        <div><div style="font-family:'Cormorant Infant',serif;font-size:clamp(30px,4vw,46px);line-height:1;color:#3C4233">21</div><div style="font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#8A8A84;margin-top:8px">Piezas distintas</div></div>
+        <div><div style="font-family:'Cormorant Infant',serif;font-size:clamp(30px,4vw,46px);line-height:1;color:#3C4233">2</div><div style="font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#8A8A84;margin-top:8px">Tintas</div></div>
+      </div>
+      <nav style="display:flex;gap:10px;flex-wrap:wrap;margin-top:clamp(30px,4vw,44px);animation:ctSubir 1.2s cubic-bezier(.2,.7,.3,1) both .55s">
+        <a href="#seating" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45;background:#FFFFFF" style-hover="border-color:#6B7060;background:#ECEEE8">Mapa de mesas</a>
+        <a href="#mesas" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45;background:#FFFFFF" style-hover="border-color:#6B7060;background:#ECEEE8">Constelaciones</a>
+        <a href="#catalogo" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45;background:#FFFFFF" style-hover="border-color:#3F6E64">Norte y sur</a>
+        <a href="#grandes" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45;background:#FFFFFF" style-hover="border-color:#6B7060;background:#ECEEE8">Gran formato</a>
+        <a href="#mesa" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45;background:#FFFFFF" style-hover="border-color:#6B7060;background:#ECEEE8">Sobre la mesa</a>
+        <a href="#detalles" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45;background:#FFFFFF" style-hover="border-color:#6B7060;background:#ECEEE8">Detalles</a>
+        <a href="#composicion" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45;background:#FFFFFF" style-hover="border-color:#6B7060;background:#ECEEE8">Composición</a>
+        <a href="#produccion" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45;background:#FFFFFF" style-hover="border-color:#6B7060;background:#ECEEE8">Producción</a>
+      </nav>
+    </div>
+  </header>
+
+  <section id="seating" style="background:#F4F3F0;border-bottom:1px solid #E6E4DF;padding:clamp(56px,7vw,100px) clamp(16px,4vw,52px)">
+    <div style="max-width:1240px;margin:0 auto">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:26px;flex-wrap:wrap;margin-bottom:clamp(30px,4vw,44px);animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 24%">
+        <div>
+          <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px"><span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto;opacity:.8"></span>01 · Pieza principal</div>
+          <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(32px,4.4vw,56px);letter-spacing:-.014em;margin:14px 0 0;line-height:1.04">El gran mapa de mesas</h2>
+        </div>
+        <p style="max-width:360px;color:#4A4A45;margin:0;font-size:15.5px;text-wrap:pretty">A0 vertical sobre forex, en caballete de roble a la entrada del invernadero. Quince constelaciones, ciento veinte nombres, dos tintas.</p>
+      </div>
+
+      <div style="position:relative;padding:clamp(10px,2vw,26px);animation:ctEscala 1s linear both;animation-timeline:view();animation-range:entry 2% cover 18%">
+        <span style="position:absolute;left:0;top:0;width:26px;height:26px;border-left:1px solid #C9C5B8;border-top:1px solid #C9C5B8"></span>
+        <span style="position:absolute;right:0;top:0;width:26px;height:26px;border-right:1px solid #C9C5B8;border-top:1px solid #C9C5B8"></span>
+        <span style="position:absolute;left:0;bottom:0;width:26px;height:26px;border-left:1px solid #C9C5B8;border-bottom:1px solid #C9C5B8"></span>
+        <span style="position:absolute;right:0;bottom:0;width:26px;height:26px;border-right:1px solid #C9C5B8;border-bottom:1px solid #C9C5B8"></span>
+
+        <div style="background:#2E3327;color:#F1EFE7;box-shadow:0 1px 3px rgba(20,20,15,.10), 0 46px 100px -54px rgba(20,20,15,.85);padding:clamp(22px,3.4vw,54px) clamp(18px,3vw,48px) clamp(24px,3.4vw,48px);position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle at 18% 14%, rgba(241,239,231,.5) 1.3px, transparent 0), radial-gradient(circle at 62% 8%, rgba(241,239,231,.32) 1px, transparent 0), radial-gradient(circle at 88% 44%, rgba(241,239,231,.42) 1.5px, transparent 0), radial-gradient(circle at 36% 72%, rgba(241,239,231,.28) 1.1px, transparent 0);background-size:260px 220px, 180px 190px, 300px 260px, 220px 240px;animation:ctTitilar 6s ease-in-out infinite"></div>
+          <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(62% 42% at 50% 0%, rgba(241,239,231,.12) 0%, rgba(0,0,0,0) 72%)"></div>
+          <div style="position:absolute;inset:clamp(10px,1.6vw,22px);pointer-events:none;border:1px solid rgba(241,239,231,.16)"></div>
+
+          <div style="position:relative;text-align:center;padding:clamp(8px,1.4vw,18px) 0 clamp(18px,2.6vw,30px)">
+            <div style="font-size:clamp(8px,1.1vw,11px);letter-spacing:.46em;text-transform:uppercase;color:#9AC4B6">Buscad vuestra estrella</div>
+            <div style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(28px,4.6vw,58px);line-height:1.02;margin-top:clamp(10px,1.6vw,18px)">Paloma <span style="font-family:'Italianno',cursive;color:#9AC4B6;font-size:.8em">y</span> David</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:clamp(12px,1.8vw,20px)">
+              <span style="height:1px;width:clamp(30px,6vw,90px);background:rgba(241,239,231,.34)"></span>
+              <span style="width:5px;height:5px;background:#9AC4B6;transform:rotate(45deg)"></span>
+              <span style="height:1px;width:clamp(30px,6vw,90px);background:rgba(241,239,231,.34)"></span>
+            </div>
+            <div style="font-size:clamp(8px,1vw,10.5px);letter-spacing:.34em;text-transform:uppercase;color:#8B917C;margin-top:clamp(10px,1.4vw,16px)">26 de junio de 2027 · Finca La Sierra · León</div>
+          </div>
+
+          <div style="position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,215px),1fr));gap:clamp(16px,2.4vw,34px);padding:clamp(18px,2.6vw,34px) 0;border-top:1px solid rgba(241,239,231,.2);border-bottom:1px solid rgba(241,239,231,.2)">
+            <sc-for list="{{ mesas }}" as="m" hint-placeholder-count="8">
+              <div style="display:flex;flex-direction:column;gap:clamp(10px,1.4vw,15px);min-width:0">
+                <div style="display:flex;align-items:center;gap:12px;min-width:0">
+                  <div style="width:clamp(32px,3.6vw,46px);height:clamp(32px,3.6vw,46px);flex:0 0 auto;padding:2px;border:1px solid rgba(241,239,231,.18);border-radius:50%">
+                    <dc-import name="Constelacion" constelacion="{{ m.clave }}" color="#F1EFE7" color-trazo="rgba(154,196,182,.5)" escala-estrella="1.25" hint-size="100%,100%"></dc-import>
+                  </div>
+                  <div style="min-width:0">
+                    <div style="font-family:'Cormorant Infant',serif;font-size:clamp(19px,2.2vw,27px);line-height:1.1">{{ m.nombre }}</div>
+                    <div style="font-size:clamp(7.5px,.85vw,9.5px);letter-spacing:.28em;text-transform:uppercase;color:#8B917C;margin-top:4px">Mesa {{ m.numero }} · {{ m.estrella }}</div>
+                  </div>
+                </div>
+                <div style="display:grid;gap:clamp(4px,.6vw,7px)">
+                  <sc-for list="{{ m.invitados }}" as="p" hint-placeholder-count="9">
+                    <div style="font-size:clamp(11px,1.15vw,14.5px);line-height:1.35;color:#D6DAC9;font-weight:300;overflow-wrap:break-word">{{ p }}</div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="position:relative;padding-top:clamp(16px,2.2vw,26px);display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+            <div style="font-family:'Cormorant Infant',serif;font-style:italic;font-size:clamp(13px,1.6vw,20px);color:#C9CDBC">Los peques tienen su propia mesa junto al ventanal.</div>
+            <div style="font-family:'Cormorant Infant',serif;font-size:clamp(19px,2.2vw,28px);line-height:1">P<span style="font-family:'Italianno',cursive;color:#9AC4B6;font-size:.95em">&amp;</span>D</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:clamp(16px,2.4vw,28px);margin-top:clamp(24px,3vw,38px)">
+        <div style="background:#2E3327;color:#F1EFE7;padding:clamp(22px,3vw,32px);position:relative;overflow:hidden;animation:ctIzquierda .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+          <div style="position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle at 22% 18%, rgba(241,239,231,.4) 1.2px, transparent 0);background-size:140px 130px"></div>
+          <div style="position:relative;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#9AC4B6">Detalle a tamaño real</div>
+          <div style="position:relative;display:flex;align-items:center;gap:16px;margin-top:20px">
+            <div style="width:74px;height:74px;flex:0 0 auto;padding:4px;border:1px solid rgba(241,239,231,.2);border-radius:50%">
+              <dc-import name="Constelacion" constelacion="cruzdelsur" color="#F1EFE7" color-trazo="rgba(154,196,182,.5)" escala-estrella="1.3" hint-size="100%,100%"></dc-import>
+            </div>
+            <div style="min-width:0">
+              <div style="font-family:'Cormorant Infant',serif;font-size:34px;line-height:1.05">Cruz del Sur</div>
+              <div style="font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:#8B917C;margin-top:6px">Mesa 05 · Acrux</div>
+            </div>
+          </div>
+          <div style="position:relative;height:1px;background:rgba(241,239,231,.2);margin:18px 0"></div>
+          <div style="position:relative;font-size:14.5px;color:#D6DAC9;line-height:1.5">Jorge Barrios · Alicia Nogal · Víctor Cepeda · Raquel Tomé…</div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E6E4DF;padding:clamp(22px,3vw,32px);animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+          <div style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#6B7060">Cómo se lee</div>
+          <div style="display:grid;gap:14px;margin-top:20px">
+            <div style="display:flex;gap:12px;align-items:baseline"><span style="width:6px;height:6px;background:#3F6E64;border-radius:50%;flex:0 0 auto;transform:translateY(-2px)"></span><span style="font-size:14.5px;color:#4A4A45">El tamaño de cada estrella marca su magnitud real.</span></div>
+            <div style="display:flex;gap:12px;align-items:baseline"><span style="width:6px;height:6px;background:#3F6E64;border-radius:50%;flex:0 0 auto;transform:translateY(-2px)"></span><span style="font-size:14.5px;color:#4A4A45">Los nombres van en orden de mesa, no alfabético.</span></div>
+            <div style="display:flex;gap:12px;align-items:baseline"><span style="width:6px;height:6px;background:#3F6E64;border-radius:50%;flex:0 0 auto;transform:translateY(-2px)"></span><span style="font-size:14.5px;color:#4A4A45">Cada constelación se repite en el nombre de mesa y en el marcasitios.</span></div>
+          </div>
+        </div>
+        <div style="background:#ECEEE8;padding:clamp(22px,3vw,32px);animation:ctDerecha .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+          <div style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#6B7060">Montaje</div>
+          <div style="font-family:'Cormorant Infant',serif;font-size:clamp(22px,2.6vw,30px);line-height:1.2;color:#14140F;margin-top:16px">Caballete de roble a 1,60 m del suelo, en la entrada del invernadero</div>
+          <div style="font-size:14.5px;color:#4A4A45;margin-top:14px">Iluminado con dos focos cálidos en diagonal para que las estrellas no se apaguen al anochecer.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="mesas" style="max-width:1320px;margin:0 auto;padding:clamp(56px,7vw,100px) clamp(20px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px"><span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto;opacity:.8"></span>02</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(32px,4.4vw,56px);letter-spacing:-.014em;margin:14px 0 14px;line-height:1.04">Las quince constelaciones</h2>
+    <p style="max-width:580px;color:#4A4A45;margin:0 0 clamp(32px,4vw,46px);text-wrap:pretty">Ocho se ven desde León y siete solo cruzando el ecuador. El trazo es siempre el mismo: estrellas llenas, líneas al 42 %, sin relleno ni degradado.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:clamp(12px,1.6vw,20px)">
+      <sc-for list="{{ mesas }}" as="c" hint-placeholder-count="8">
+        <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:22px 20px 24px;display:flex;flex-direction:column;gap:14px;transition:border-color .25s ease, transform .25s ease, box-shadow .25s ease;animation:ctSubir .8s linear both;animation-timeline:view();animation-range:entry 2% cover 20%" style-hover="border-color:#9BA08C;transform:translateY(-3px);box-shadow:0 18px 40px -30px rgba(20,20,15,.5)">
+          <div style="aspect-ratio:1;padding:10px;background:#FBFAF8;border-radius:4px">
+            <dc-import name="Constelacion" constelacion="{{ c.clave }}" hint-size="100%,100%"></dc-import>
+          </div>
+          <div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+              <div style="font-family:'Cormorant Infant',serif;font-size:25px;line-height:1.1;color:#14140F">{{ c.nombre }}</div>
+              <div style="font-family:'Cormorant Infant',serif;font-size:18px;color:#C9C5B8">{{ c.numero }}</div>
+            </div>
+            <div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#8A8A84;margin-top:7px">{{ c.plazas }} plazas · {{ c.mejor }}</div>
+            <div style="font-size:14.5px;color:#4A4A45;margin-top:12px;text-wrap:pretty">{{ c.nota }}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+              <span style="padding:6px 12px;border-radius:999px;background:#ECEEE8;color:#3C4233;font-size:12px">{{ c.estrella }}</span>
+              <span style="padding:6px 12px;border-radius:999px;border:1px solid #E6E4DF;color:#6B7060;font-size:12px">{{ c.grupo }}</span>
+              <span style="padding:6px 12px;border-radius:999px;border:1px solid #E6E4DF;color:#3F6E64;font-size:12px">{{ c.hemisferio }}</span>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="catalogo" style="max-width:1320px;margin:0 auto;padding:clamp(56px,7vw,100px) clamp(20px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px"><span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto;opacity:.8"></span>02 bis</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(32px,4.4vw,56px);letter-spacing:-.014em;margin:14px 0 14px;line-height:1.04">Norte y sur</h2>
+    <p style="max-width:600px;color:#4A4A45;margin:0 0 clamp(32px,4vw,46px);text-wrap:pretty">Las mesas se reparten entre los dos hemisferios: las ocho primeras son el cielo que tendremos encima esa noche; las siete siguientes, el que veremos en el viaje de novios. El catálogo completo queda aquí, con la Grulla libre por si hace falta una mesa más.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:clamp(24px,3.4vw,44px)">
+      <sc-for list="{{ catalogo }}" as="g" hint-placeholder-count="2">
+        <div style="animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding-bottom:14px;border-bottom:1px solid #E6E4DF">
+            <span style="font-family:'Cormorant Infant',serif;font-size:clamp(22px,2.6vw,30px);line-height:1.1">{{ g.titulo }}</span>
+            <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#8A8A84">8</span>
+          </div>
+          <div style="font-size:14.5px;color:#4A4A45;margin-top:14px">{{ g.pie }}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,110px),1fr));gap:clamp(10px,1.4vw,16px);margin-top:clamp(18px,2.4vw,26px)">
+            <sc-for list="{{ g.fichas }}" as="fi" hint-placeholder-count="8">
+              <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:14px 12px 16px;text-align:center;transition:border-color .25s ease, transform .25s ease" style-hover="border-color:#3F6E64;transform:translateY(-2px)">
+                <div style="aspect-ratio:1;padding:6px">
+                  <dc-import name="Constelacion" constelacion="{{ fi.clave }}" hint-size="100%,100%"></dc-import>
+                </div>
+                <div style="font-family:'Cormorant Infant',serif;font-size:17px;line-height:1.2;margin-top:8px">{{ fi.nombre }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="grandes" style="max-width:1320px;margin:0 auto;padding:clamp(56px,7vw,100px) clamp(20px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px"><span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto;opacity:.8"></span>03</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(32px,4.4vw,56px);letter-spacing:-.014em;margin:14px 0 clamp(32px,4vw,46px);line-height:1.04">Gran formato</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:clamp(20px,3vw,36px);align-items:start">
+
+      <div style="animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+        <div style="aspect-ratio:1/1.414;background:linear-gradient(160deg,#FFFDF8 0%,#F5F2EA 100%);border:1px solid #E6E4DF;box-shadow:0 1px 2px rgba(20,20,15,.05), 0 30px 66px -38px rgba(20,20,15,.5);padding:clamp(22px,3.4vw,44px);display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;background-image:radial-gradient(circle at 1px 1px, #E2DFD2 1px, transparent 0);background-size:20px 20px;opacity:.6"></div>
+          <div style="position:absolute;inset:clamp(10px,1.6vw,20px);border:1px solid #E4E1D4;pointer-events:none"></div>
+          <div style="position:relative;font-size:clamp(8px,1.4vw,10px);letter-spacing:.42em;text-transform:uppercase;color:#8A8A84;margin-top:clamp(6px,1vw,12px)">Bienvenidos a la boda de</div>
+          <div style="position:relative;font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(30px,5.4vw,58px);line-height:1.02;color:#14140F;margin-top:clamp(12px,2vw,22px)">Paloma</div>
+          <div style="position:relative;font-family:'Italianno',cursive;font-size:clamp(26px,4.6vw,52px);color:#3F6E64;line-height:1.1">y</div>
+          <div style="position:relative;font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(30px,5.4vw,58px);line-height:1.02;color:#14140F">David</div>
+          <div style="position:relative;width:100%;flex:1;min-height:70px;padding:clamp(12px,2.4vw,26px) 14%">
+            <dc-import name="Constelacion" constelacion="lira" hint-size="100%,100%"></dc-import>
+          </div>
+          <div style="position:relative;display:flex;align-items:center;gap:10px;margin-bottom:clamp(10px,1.6vw,16px)">
+            <span style="height:1px;width:clamp(18px,3vw,34px);background:#C9C5B8"></span>
+            <span style="width:4px;height:4px;background:#3F6E64;transform:rotate(45deg)"></span>
+            <span style="height:1px;width:clamp(18px,3vw,34px);background:#C9C5B8"></span>
+          </div>
+          <div style="position:relative;font-family:'Cormorant Infant',serif;font-size:clamp(18px,2.8vw,30px);color:#3C4233">26 · 06 · 2027</div>
+          <div style="position:relative;font-size:clamp(8px,1.3vw,10px);letter-spacing:.3em;text-transform:uppercase;color:#8A8A84;margin-top:10px">Finca La Sierra · León</div>
+        </div>
+        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Cartel de bienvenida · A1 · metacrilato</div>
+      </div>
+
+      <div style="animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+        <div style="aspect-ratio:1/1.414;background:#FFFFFF;border:1px solid #E6E4DF;box-shadow:0 1px 2px rgba(20,20,15,.05), 0 30px 66px -38px rgba(20,20,15,.5);padding:clamp(22px,3.4vw,42px);display:flex;flex-direction:column">
+          <div style="text-align:center">
+            <div style="font-size:clamp(8px,1.3vw,10px);letter-spacing:.42em;text-transform:uppercase;color:#8A8A84">Sábado 26 de junio</div>
+            <div style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(24px,4vw,42px);line-height:1.05;margin-top:10px;color:#14140F">El día</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:clamp(14px,2.2vw,22px) 0">
+            <span style="height:1px;flex:1;background:#EDEBE4"></span>
+            <span style="width:4px;height:4px;background:#3F6E64;transform:rotate(45deg)"></span>
+            <span style="height:1px;flex:1;background:#EDEBE4"></span>
+          </div>
+          <div style="display:grid;gap:clamp(9px,1.6vw,17px);flex:1;align-content:start">
+            <sc-for list="{{ horario }}" as="h" hint-placeholder-count="7">
+              <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(10px,1.8vw,20px);align-items:baseline">
+                <span style="font-family:'Cormorant Infant',serif;font-size:clamp(14px,2.2vw,23px);font-variant-numeric:tabular-nums;color:#3F6E64;line-height:1">{{ h.hora }}</span>
+                <span style="font-size:clamp(9px,1.4vw,13px);letter-spacing:.14em;text-transform:uppercase;color:#14140F;line-height:1.3">{{ h.que }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="height:1px;background:#EDEBE4;margin:clamp(14px,2.2vw,22px) 0 clamp(12px,1.8vw,18px)"></div>
+          <div style="text-align:center;font-family:'Cormorant Infant',serif;font-style:italic;font-size:clamp(12px,1.9vw,19px);color:#6B7060">Autobús de vuelta a las 02:00 y 04:30</div>
+        </div>
+        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Cartel de horario · A2 · caballete</div>
+      </div>
+
+      <div style="animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+        <div style="aspect-ratio:1/1.414;background:#3C4233;color:#F1EFE7;box-shadow:0 1px 2px rgba(20,20,15,.06), 0 30px 66px -38px rgba(20,20,15,.6);padding:clamp(22px,3.4vw,42px);display:flex;flex-direction:column;position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(90deg, rgba(241,239,231,.08) 0 1px, transparent 1px 14px)"></div>
+          <div style="position:absolute;inset:0;background-image:radial-gradient(circle at 24% 16%, rgba(241,239,231,.4) 1.2px, transparent 0), radial-gradient(circle at 76% 66%, rgba(241,239,231,.3) 1.4px, transparent 0);background-size:170px 160px, 210px 190px"></div>
+          <div style="position:relative;text-align:center">
+            <div style="font-size:clamp(8px,1.3vw,10px);letter-spacing:.42em;text-transform:uppercase;color:#9AC4B6">La ceremonia</div>
+            <div style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(24px,4vw,42px);line-height:1.05;margin-top:10px">Orden del rito</div>
+          </div>
+          <div style="position:relative;height:1px;background:rgba(241,239,231,.22);margin:clamp(16px,2.6vw,26px) 0"></div>
+          <div style="position:relative;display:grid;gap:clamp(10px,1.8vw,20px);flex:1;align-content:start;text-align:center">
+            <sc-for list="{{ ceremonia }}" as="ce" hint-placeholder-count="5">
+              <div>
+                <div style="font-size:clamp(7.5px,1.15vw,9.5px);letter-spacing:.3em;text-transform:uppercase;color:#9AC4B6">{{ ce.momento }}</div>
+                <div style="font-family:'Cormorant Infant',serif;font-size:clamp(13px,2vw,20px);line-height:1.3;margin-top:5px">{{ ce.detalle }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="position:relative;font-family:'Cormorant Infant',serif;font-style:italic;font-size:clamp(11px,1.7vw,17px);color:#C9CDBC;text-align:center">Después, vermut en la terraza baja</div>
+        </div>
+        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Programa de ceremonia · A2 · atril</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="mesa" style="max-width:1320px;margin:0 auto;padding:clamp(56px,7vw,100px) clamp(20px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px"><span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto;opacity:.8"></span>04</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(32px,4.4vw,56px);letter-spacing:-.014em;margin:14px 0 clamp(32px,4vw,46px);line-height:1.04">Sobre la mesa</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:clamp(18px,2.6vw,30px);align-items:start">
+
+      <div style="animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+        <div style="aspect-ratio:1/1.2;background:linear-gradient(160deg,#FFFDF8 0%,#F5F2EA 100%);border:1px solid #E6E4DF;box-shadow:0 1px 2px rgba(20,20,15,.05), 0 22px 50px -32px rgba(20,20,15,.45);padding:clamp(18px,2.6vw,30px);display:flex;flex-direction:column;align-items:center;text-align:center;position:relative">
+          <div style="position:absolute;inset:clamp(8px,1.4vw,14px);border:1px solid #EAE7DC;pointer-events:none"></div>
+          <div style="position:relative;font-size:9.5px;letter-spacing:.36em;text-transform:uppercase;color:#78839A">Mesa 03</div>
+          <div style="position:relative;width:100%;flex:1;min-height:64px;padding:clamp(10px,2vw,20px) 16%">
+            <dc-import name="Constelacion" constelacion="osamayor" hint-size="100%,100%"></dc-import>
+          </div>
+          <div style="position:relative;font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(26px,3.6vw,40px);line-height:1;color:#14140F">Osa Mayor</div>
+          <div style="position:relative;font-family:'Cormorant Infant',serif;font-style:italic;font-size:clamp(12px,1.7vw,17px);color:#6B7060;margin-top:10px;line-height:1.4">El carro que señala<br />siempre al norte</div>
+        </div>
+        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Nombre de mesa · 150 × 180 mm · atril</div>
+      </div>
+
+      <div style="animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+        <div style="aspect-ratio:1/1.2;background:#FFFFFF;border:1px solid #E6E4DF;box-shadow:0 1px 2px rgba(20,20,15,.05), 0 22px 50px -32px rgba(20,20,15,.45);padding:clamp(18px,2.6vw,30px);display:flex;flex-direction:column">
+          <div style="text-align:center">
+            <div style="font-family:'Cormorant Infant',serif;font-size:clamp(18px,2.4vw,24px);color:#3C4233;line-height:1">P<span style="font-family:'Italianno',cursive;color:#3F6E64;font-size:.95em">&amp;</span>D</div>
+            <div style="font-size:9.5px;letter-spacing:.36em;text-transform:uppercase;color:#8A8A84;margin-top:12px">Menú</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin:clamp(14px,2vw,20px) 0">
+            <span style="height:1px;flex:1;background:#EDEBE4"></span>
+            <span style="width:4px;height:4px;background:#3F6E64;transform:rotate(45deg)"></span>
+            <span style="height:1px;flex:1;background:#EDEBE4"></span>
+          </div>
+          <div style="display:grid;gap:clamp(12px,1.8vw,18px);text-align:center;flex:1;align-content:center">
+            <sc-for list="{{ menu }}" as="pl" hint-placeholder-count="3">
+              <div>
+                <div style="font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:#9BA08C;margin-bottom:5px">{{ pl.paso }}</div>
+                <div style="font-family:'Cormorant Infant',serif;font-size:clamp(14px,1.9vw,18px);color:#14140F;line-height:1.3">{{ pl.plato }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="text-align:center;font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:#8A8A84">26.06.2027</div>
+        </div>
+        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Minuta · 100 × 140 mm</div>
+      </div>
+
+      <div style="animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+        <div style="display:grid;gap:clamp(12px,1.8vw,16px)">
+          <sc-for list="{{ marcasitios }}" as="ms" hint-placeholder-count="4">
+            <div style="background:linear-gradient(160deg,#FFFDF8 0%,#F7F5EE 100%);border:1px solid #E6E4DF;border-radius:3px;padding:16px 18px;display:flex;align-items:center;gap:16px;box-shadow:0 12px 28px -22px rgba(20,20,15,.45);min-width:0">
+              <div style="width:40px;height:40px;flex:0 0 auto;padding:3px;border:1px solid #EAE7DC;border-radius:50%">
+                <dc-import name="Constelacion" constelacion="{{ ms.clave }}" escala-estrella="1.3" hint-size="100%,100%"></dc-import>
+              </div>
+              <div style="min-width:0">
+                <div style="font-family:'Cormorant Infant',serif;font-size:21px;line-height:1.15;color:#14140F;overflow-wrap:break-word">{{ ms.nombre }}</div>
+                <div style="font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#8A8A84;margin-top:5px">{{ ms.mesa }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Marcasitios · 90 × 55 mm</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="detalles" style="background:#F4F3F0;border-bottom:1px solid #E6E4DF;padding:clamp(56px,7vw,100px) clamp(20px,5vw,72px)">
+    <div style="max-width:1320px;margin:0 auto">
+      <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px"><span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto;opacity:.8"></span>05</div>
+      <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(32px,4.4vw,56px);letter-spacing:-.014em;margin:14px 0 14px;line-height:1.04">Detalles y direccional</h2>
+      <p style="max-width:560px;color:#4A4A45;margin:0 0 clamp(32px,4vw,46px);text-wrap:pretty">Las piezas pequeñas son las que más se tocan: etiquetas, abanicos, flechas y la carta de la barra.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:clamp(18px,2.4vw,28px);align-items:start">
+
+        <div style="animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+          <div style="background:#ECEEE8;padding:clamp(24px,3vw,34px);min-height:300px;display:flex;flex-direction:column;justify-content:center;gap:clamp(16px,2.4vw,24px);border:1px solid #DEDCD1">
+            <sc-for list="{{ direcciones }}" as="d" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:16px;border-bottom:1px solid rgba(107,112,96,.22);padding-bottom:clamp(12px,1.8vw,18px);min-width:0">
+                <span style="{{ d.flechaStyle }}">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3F6E64" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12 6l6 6-6 6"></path></svg>
+                </span>
+                <span style="font-family:'Cormorant Infant',serif;font-size:clamp(19px,2.4vw,27px);color:#14140F;line-height:1.15;overflow-wrap:break-word">{{ d.destino }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Direccional · 300 × 400 mm · madera</div>
+        </div>
+
+        <div style="animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+          <div style="background:#3C4233;color:#F1EFE7;padding:clamp(24px,3vw,34px);min-height:300px;display:flex;flex-direction:column;position:relative;overflow:hidden">
+            <div style="position:absolute;inset:0;background-image:radial-gradient(circle at 26% 18%, rgba(241,239,231,.35) 1.2px, transparent 0), radial-gradient(circle at 72% 72%, rgba(241,239,231,.28) 1.4px, transparent 0);background-size:150px 140px, 190px 180px"></div>
+            <div style="position:relative;font-size:9.5px;letter-spacing:.4em;text-transform:uppercase;color:#9AC4B6">La barra</div>
+            <div style="position:relative;font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(26px,3.4vw,38px);line-height:1.05;margin:10px 0 clamp(16px,2.4vw,24px)">Cócteles de autor</div>
+            <div style="position:relative;display:grid;gap:clamp(12px,1.8vw,18px);flex:1;align-content:start">
+              <sc-for list="{{ cocteles }}" as="co" hint-placeholder-count="4">
+                <div style="min-width:0">
+                  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px">
+                    <span style="font-family:'Cormorant Infant',serif;font-size:clamp(17px,2.2vw,22px);line-height:1.2">{{ co.nombre }}</span>
+                    <span style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#9AC4B6;white-space:nowrap">{{ co.constelacion }}</span>
+                  </div>
+                  <div style="font-size:13.5px;color:#C9CDBC;margin-top:4px;text-wrap:pretty">{{ co.receta }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Carta de barra · A3</div>
+        </div>
+
+        <div style="animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:clamp(12px,1.6vw,16px)">
+            <div style="aspect-ratio:1;background:#FFFFFF;border:1px solid #E6E4DF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;text-align:center">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3F6E64" stroke-width="1.1" stroke-linecap="round"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M3 9h18M8 22h8"></path></svg>
+              <span style="font-size:clamp(7.5px,1.5vw,10.5px);letter-spacing:.1em;text-transform:uppercase;color:#4A4A45;line-height:1.5;word-break:keep-all">Wi-Fi<br />BodaPD2027</span>
+            </div>
+            <div style="aspect-ratio:1;background:#FFFFFF;border:1px solid #E6E4DF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;text-align:center">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3F6E64" stroke-width="1.1" stroke-linecap="round"><path d="M7 4v16M17 4v16"></path><circle cx="7" cy="9" r="2"></circle><circle cx="17" cy="9" r="2"></circle></svg>
+              <span style="font-size:clamp(7.5px,1.5vw,10.5px);letter-spacing:.1em;text-transform:uppercase;color:#4A4A45;line-height:1.5;word-break:keep-all">Aseos</span>
+            </div>
+            <div style="aspect-ratio:1;background:#ECEEE8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;text-align:center">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3F6E64" stroke-width="1.1" stroke-linecap="round"><rect x="2" y="6" width="20" height="14" rx="2"></rect><circle cx="12" cy="13" r="4"></circle><path d="M8 6l1.5-2h5L16 6"></path></svg>
+              <span style="font-size:clamp(7.5px,1.5vw,10.5px);letter-spacing:.1em;text-transform:uppercase;color:#4A4A45;line-height:1.5;word-break:keep-all">Photocall<br />#PalomaYDavid</span>
+            </div>
+            <div style="aspect-ratio:1;background:#ECEEE8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;text-align:center">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3F6E64" stroke-width="1.1" stroke-linecap="round"><path d="M4 5h13a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3V5ZM4 16h13"></path></svg>
+              <span style="font-size:clamp(7.5px,1.5vw,10.5px);letter-spacing:.1em;text-transform:uppercase;color:#4A4A45;line-height:1.5;word-break:keep-all">Libro<br />de firmas</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:clamp(12px,1.6vw,16px);margin-top:clamp(12px,1.6vw,16px)">
+            <div style="background:#3C4233;color:#F1EFE7;padding:18px 16px;min-height:120px;display:flex;flex-direction:column;justify-content:space-between">
+              <span style="font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:#9AC4B6">Etiqueta de botella</span>
+              <span style="font-family:'Cormorant Infant',serif;font-size:19px;line-height:1.25">Tinto de la casa<br /><span style="font-family:'Italianno',cursive;color:#C9CDBC;font-size:1.15em">26.06.2027</span></span>
+            </div>
+            <div style="background:#FFFFFF;border:1px dashed #C9C5B8;padding:18px 16px;min-height:120px;display:flex;flex-direction:column;justify-content:space-between">
+              <span style="font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:#8A8A84">Abanico</span>
+              <span style="font-family:'Cormorant Infant',serif;font-size:19px;line-height:1.25;color:#14140F">Para la ceremonia<br /><span style="font-family:'Italianno',cursive;color:#3F6E64;font-size:1.15em">hará calor</span></span>
+            </div>
+          </div>
+          <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Señalética menor y detalles</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="composicion" style="max-width:1320px;margin:0 auto;padding:clamp(56px,7vw,100px) clamp(20px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px"><span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto;opacity:.8"></span>06</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(32px,4.4vw,56px);letter-spacing:-.014em;margin:14px 0 14px;line-height:1.04">Reglas de composición</h2>
+    <p style="max-width:560px;color:#4A4A45;margin:0 0 clamp(32px,4vw,46px);text-wrap:pretty">Lo que hace que veinte piezas distintas parezcan una sola familia.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:clamp(16px,2.2vw,26px)">
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:28px 26px;animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#3F6E64;margin-bottom:14px">Márgenes</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Un 8 % del lado corto en todas las piezas, y un filete interior a la mitad de ese margen en las impresas sobre papel.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:28px 26px;animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#3F6E64;margin-bottom:14px">Jerarquía</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Epígrafe en versalitas, título en Cormorant Infant, dato en cifras grandes. Nunca dos títulos del mismo tamaño en una pieza.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:28px 26px;animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#3F6E64;margin-bottom:14px">El conector</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">La «y» en Italianno aparece una sola vez por pieza. Es el guiño de la marca, no un adorno repetible.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:28px 26px;animation:ctSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#3F6E64;margin-bottom:14px">Constelaciones</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Siempre dentro de un círculo o de un área cuadrada con aire. Nunca recortadas por el borde de la pieza.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="produccion" style="max-width:1320px;margin:0 auto;padding:clamp(56px,7vw,100px) clamp(20px,5vw,72px)">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px"><span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto;opacity:.8"></span>07</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(32px,4.4vw,56px);letter-spacing:-.014em;margin:14px 0 clamp(30px,4vw,44px);line-height:1.04">Producción</h2>
+    <div style="display:grid;gap:0;border-top:1px solid #E6E4DF">
+      <sc-for list="{{ produccion }}" as="p" hint-placeholder-count="10">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:clamp(10px,2vw,24px);padding:20px 0;border-bottom:1px solid #E6E4DF;align-items:baseline;animation:ctIzquierda .7s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+          <span style="font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:#14140F">{{ p.pieza }}</span>
+          <span style="font-size:14.5px;color:#4A4A45;font-variant-numeric:tabular-nums">{{ p.medida }}</span>
+          <span style="font-size:14.5px;color:#4A4A45">{{ p.material }}</span>
+          <span style="font-size:14.5px;color:#6B6B66;font-variant-numeric:tabular-nums">{{ p.cantidad }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <p style="max-width:580px;color:#4A4A45;margin:clamp(26px,3vw,36px) 0 0;text-wrap:pretty">Todo se imprime en papel verjurado crema de 300 g salvo los paneles, en forex de 5 mm. Tinta oliva #3C4233, verde profundo #3F6E64 y negro carbón #14140F; nada de dorados ni acabados metalizados.</p>
+  </section>
+
+  <footer style="background:#121210;color:#8B917C;padding:clamp(46px,6vw,72px) clamp(20px,5vw,72px);display:flex;justify-content:space-between;gap:22px;flex-wrap:wrap;align-items:center;animation:ctSubir 1s linear both;animation-timeline:view();animation-range:entry 4% cover 30%">
+    <div style="font-family:'Cormorant Infant',serif;font-size:32px;color:#F1EFE7;line-height:1">P<span style="font-family:'Italianno',cursive;color:#9AC4B6;font-size:.95em">&amp;</span>D</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;letter-spacing:.1em">
+      <a href="./Landing boda.dc.html" style="color:#A9AF98">Web de la boda</a>
+      <a href="./Save the Date.dc.html" style="color:#A9AF98">Save the date</a>
+      <a href="./Sistema de marca.dc.html" style="color:#A9AF98">Sistema de marca</a>
+    </div>
+  </footer>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const mesas = [
+      { clave: 'lira', nombre: 'Lira', numero: '01', plazas: 10, estrella: 'Vega', grupo: 'Novios y padrinos', hemisferio: 'Norte', mejor: 'Verano', nota: 'La estrella más brillante del verano boreal. Mesa de los novios.',
+        invitados: ['Paloma Fernández', 'David Ruiz', 'Carmen Prieto', 'Antonio Ruiz', 'Mercedes Gil', 'Luis Fernández', 'Elena Souto', 'Pablo Andrés', 'Nuria Cabo', 'Álvaro Gago'] },
+      { clave: 'casiopea', nombre: 'Casiopea', numero: '02', plazas: 8, estrella: 'Schedar', grupo: 'Familia Fernández', hemisferio: 'Norte', mejor: 'Todo el año', nota: 'La W del norte, visible toda la noche desde León.',
+        invitados: ['Rosa Fernández', 'Miguel Ángel Vega', 'Teresa Cordero', 'Javier Fernández', 'Lucía Barreda', 'Óscar Mena', 'Pilar Ibáñez', 'Ramón Fernández'] },
+      { clave: 'osamayor', nombre: 'Osa Mayor', numero: '03', plazas: 8, estrella: 'Alkaid', grupo: 'Familia Ruiz', hemisferio: 'Norte', mejor: 'Todo el año', nota: 'El carro que señala siempre al norte.',
+        invitados: ['Marina Álvarez', 'Tomás Ruiz', 'Beatriz Cano', 'Ignacio Ruiz', 'Clara Montes', 'Fernando Sáez', 'Ana Belén Pardo', 'Guillermo Ortiz'] },
+      { clave: 'cisne', nombre: 'Cisne', numero: '04', plazas: 8, estrella: 'Deneb', grupo: 'Amigos de León', hemisferio: 'Norte', mejor: 'Verano', nota: 'La cruz del norte, en pleno corazón de la Vía Láctea.',
+        invitados: ['Irene Casado', 'Rubén Tejada', 'Marta Cuevas', 'Adrián Nieto', 'Paula Arias', 'Sergio Bermejo', 'Laura Fontán', 'Iván Redondo'] },
+      { clave: 'perseo', nombre: 'Perseo', numero: '05', plazas: 8, estrella: 'Mirfak', grupo: 'Amigos de Madrid', hemisferio: 'Norte', mejor: 'Otoño', nota: 'De donde caen las lágrimas de San Lorenzo cada agosto.',
+        invitados: ['Celia Marchante', 'Bruno Villar', 'Lidia Cabezas', 'Enrique Solís', 'Patricia Roldán', 'Samuel Ferrán', 'Vega Cortés', 'Nicolás Aramburu'] },
+      { clave: 'coronaboreal', nombre: 'Corona Boreal', numero: '06', plazas: 8, estrella: 'Gemma', grupo: 'Trabajo de Paloma', hemisferio: 'Norte', mejor: 'Primavera', nota: 'Un arco pequeño y perfecto entre Boyero y Hércules.',
+        invitados: ['Natalia Ferrer', 'Emilio Sanchís', 'Rebeca Losada', 'Óliver Bragado', 'Nadia Torrent', 'Carlos Espina', 'Julia Rueda', 'Martín Vaquero'] },
+      { clave: 'aguila', nombre: 'Águila', numero: '07', plazas: 8, estrella: 'Altair', grupo: 'Trabajo de David', hemisferio: 'Norte', mejor: 'Verano', nota: 'Altair cierra con Vega y Deneb el triángulo del verano.',
+        invitados: ['Sofía Berzosa', 'Marcos Iriarte', 'Alba Requejo', 'Dani Cuadrado', 'Miriam Salgado', 'Pedro Lastra', 'Ainhoa Rivas', 'Jaime Ferreras'] },
+      { clave: 'orion', nombre: 'Orión', numero: '08', plazas: 8, estrella: 'Betelgeuse', grupo: 'Amigos de Barcelona', hemisferio: 'Norte', mejor: 'Invierno', nota: 'El cazador de invierno, con su cinturón de tres estrellas.',
+        invitados: ['Roi Castiñeira', 'Amaia Ledesma', 'Ferran Puig', 'Gemma Colom', 'Arnau Sardá', 'Berta Ríos', 'Quim Vidal', 'Laia Torner'] },
+      { clave: 'cruzdelsur', nombre: 'Cruz del Sur', numero: '09', plazas: 8, estrella: 'Acrux', grupo: 'Universidad', hemisferio: 'Sur', mejor: 'Otoño austral', nota: 'La constelación más pequeña del cielo y la más reconocible del sur.',
+        invitados: ['Jorge Barrios', 'Alicia Nogal', 'Víctor Cepeda', 'Raquel Tomé', 'Daniel Palacios', 'Eva Mendizábal', 'Andrés Colinas', 'Bárbara Suárez'] },
+      { clave: 'centauro', nombre: 'Centauro', numero: '10', plazas: 8, estrella: 'Rigil Kentaurus', grupo: 'Amigos de Sevilla', hemisferio: 'Sur', mejor: 'Invierno austral', nota: 'Contiene el sistema estelar más cercano al nuestro.',
+        invitados: ['Hugo Lameiro', 'Inés Padrón', 'Rocío Salas', 'Manuel Otero', 'Silvia Duarte', 'Héctor Vidal', 'Macarena Gil', 'Curro Benítez'] },
+      { clave: 'escorpio', nombre: 'Escorpio', numero: '11', plazas: 8, estrella: 'Antares', grupo: 'Cuadrilla', hemisferio: 'Sur', mejor: 'Verano', nota: 'Su corazón rojo, Antares, se ve también desde León en julio.',
+        invitados: ['Nerea Ibarra', 'Unai Zubiaga', 'Carla Menéndez', 'Borja Alonso', 'Tania Cifuentes', 'Raúl Mediavilla', 'Sonia Braña', 'Álex Piñeiro'] },
+      { clave: 'tucan', nombre: 'Tucán', numero: '12', plazas: 8, estrella: 'α Tucanae', grupo: 'Peques y primos', hemisferio: 'Sur', mejor: 'Primavera austral', nota: 'Junto al ventanal, con su propia mesa de juegos.',
+        invitados: ['Mateo Ruiz', 'Vera Fernández', 'Lola Mena', 'Bruno Sáez', 'Jimena Ortiz', 'Telmo Nieto', 'Aitana Peña', 'Leo Barrios'] },
+      { clave: 'fenix', nombre: 'Fénix', numero: '13', plazas: 8, estrella: 'Ankaa', grupo: 'Vecinos y amigos de casa', hemisferio: 'Sur', mejor: 'Otoño austral', nota: 'La que siempre vuelve, como los que vienen de lejos.',
+        invitados: ['Concha Villalba', 'Andrés Marbán', 'Loli Sampedro', 'Chema Otero', 'Amparo Nieto', 'Julián Cañas', 'Marisa Fuertes', 'Bernardo Ruano'] },
+      { clave: 'carina', nombre: 'Carina', numero: '14', plazas: 8, estrella: 'Canopus', grupo: 'Amigos del máster', hemisferio: 'Sur', mejor: 'Verano austral', nota: 'Canopus, la segunda estrella más brillante del cielo.',
+        invitados: ['Elsa Guzmán', 'Iker Basterra', 'Noa Trillo', 'Pau Miralles', 'Cristina Vega', 'Marc Aledo', 'Lucía Serrat', 'Diego Bouzas'] },
+      { clave: 'vela', nombre: 'Vela', numero: '15', plazas: 6, estrella: 'Suhail', grupo: 'Equipo de la finca', hemisferio: 'Sur', mejor: 'Verano austral', nota: 'La vela del barco Argo, para quienes nos llevan a puerto.',
+        invitados: ['Sara Quintana', 'Diego Lorenzo', 'Cristina Peña', 'Gonzalo Íñigo', 'Julia Rueda', 'Nicolás Aramburu'] }
+    ];
+    return {
+      mesas,
+      menu: [
+        { paso: 'Para empezar', plato: 'Cecina de León con pan de hogaza' },
+        { paso: 'Principal', plato: 'Lechazo asado, patata violeta y romero' },
+        { paso: 'Dulce', plato: 'Tarta de queso y cereza picota' }
+      ],
+      marcasitios: [
+        { clave: 'osamayor', nombre: 'Marina Álvarez', mesa: 'Mesa 03 · Osa Mayor' },
+        { clave: 'cruzdelsur', nombre: 'Jorge Barrios', mesa: 'Mesa 05 · Cruz del Sur' },
+        { clave: 'lira', nombre: 'Elena Souto', mesa: 'Mesa 01 · Lira' },
+        { clave: 'escorpio', nombre: 'Celia Marchante', mesa: 'Mesa 07 · Escorpio' }
+      ],
+      catalogo: [
+        { titulo: 'Hemisferio norte', pie: 'El cielo que veremos esa noche desde la finca', fichas: [
+          { clave: 'lira', nombre: 'Lira' }, { clave: 'casiopea', nombre: 'Casiopea' },
+          { clave: 'osamayor', nombre: 'Osa Mayor' }, { clave: 'cisne', nombre: 'Cisne' },
+          { clave: 'perseo', nombre: 'Perseo' }, { clave: 'coronaboreal', nombre: 'Corona Boreal' },
+          { clave: 'aguila', nombre: 'Águila' }, { clave: 'orion', nombre: 'Orión' }
+        ] },
+        { titulo: 'Hemisferio sur', pie: 'El cielo del viaje de novios, al otro lado del ecuador', fichas: [
+          { clave: 'cruzdelsur', nombre: 'Cruz del Sur' }, { clave: 'centauro', nombre: 'Centauro' },
+          { clave: 'escorpio', nombre: 'Escorpio' }, { clave: 'tucan', nombre: 'Tucán' },
+          { clave: 'fenix', nombre: 'Fénix' }, { clave: 'carina', nombre: 'Carina' },
+          { clave: 'grulla', nombre: 'Grulla' }, { clave: 'vela', nombre: 'Vela' }
+        ] }
+      ],
+      horario: [
+        { hora: '12:00', que: 'Autobús desde León' },
+        { hora: '13:00', que: 'Ceremonia en el olivar' },
+        { hora: '14:00', que: 'Aperitivo y vermut' },
+        { hora: '16:00', que: 'Banquete en el invernadero' },
+        { hora: '19:30', que: 'Primer baile' },
+        { hora: '20:00', que: 'Barra y DJ' },
+        { hora: '02:00', que: 'Recena y vuelta' }
+      ],
+      ceremonia: [
+        { momento: 'Entrada', detalle: 'Nocturno op. 9 n.º 2 · Chopin' },
+        { momento: 'Lecturas', detalle: 'Rosa Fernández y Tomás Ruiz' },
+        { momento: 'Consentimiento', detalle: 'Paloma y David' },
+        { momento: 'Anillos', detalle: 'Mateo y Vera' },
+        { momento: 'Salida', detalle: 'Cántico del alba · coro de León' }
+      ],
+      direcciones: [
+        { destino: 'Ceremonia', flechaStyle: 'display:inline-flex;flex:0 0 auto;transform:rotate(0deg)' },
+        { destino: 'Aperitivo', flechaStyle: 'display:inline-flex;flex:0 0 auto;transform:rotate(-45deg)' },
+        { destino: 'Invernadero', flechaStyle: 'display:inline-flex;flex:0 0 auto;transform:rotate(45deg)' },
+        { destino: 'Baile y barra', flechaStyle: 'display:inline-flex;flex:0 0 auto;transform:rotate(180deg)' }
+      ],
+      cocteles: [
+        { nombre: 'Vega', constelacion: 'Lira', receta: 'Ginebra, tónica de romero y piel de limón' },
+        { nombre: 'Antares', constelacion: 'Escorpio', receta: 'Vermut rojo de la casa, naranja sanguina y soda' },
+        { nombre: 'Deneb', constelacion: 'Cisne', receta: 'Cava, licor de saúco y menta fresca' },
+        { nombre: 'Acrux', constelacion: 'Cruz del Sur', receta: 'Sin alcohol: pomelo, jengibre y agua con gas' }
+      ],
+      produccion: [
+        { pieza: 'Mapa de mesas', medida: 'A0 · 841 × 1189 mm', material: 'Forex 5 mm', cantidad: '1 ud.' },
+        { pieza: 'Cartel de bienvenida', medida: 'A1 · 594 × 841 mm', material: 'Metacrilato 5 mm', cantidad: '1 ud.' },
+        { pieza: 'Cartel de horario', medida: 'A2 · 420 × 594 mm', material: 'Cartón pluma', cantidad: '2 uds.' },
+        { pieza: 'Programa de ceremonia', medida: 'A2 · 420 × 594 mm', material: 'Cartón pluma', cantidad: '1 ud.' },
+        { pieza: 'Nombre de mesa', medida: '150 × 180 mm', material: 'Verjurado 300 g', cantidad: '15 uds.' },
+        { pieza: 'Minuta', medida: '100 × 140 mm', material: 'Verjurado 300 g', cantidad: '120 uds.' },
+        { pieza: 'Marcasitios', medida: '90 × 55 mm', material: 'Verjurado 300 g', cantidad: '120 uds.' },
+        { pieza: 'Direccional', medida: '300 × 400 mm', material: 'Madera serigrafiada', cantidad: '4 uds.' },
+        { pieza: 'Carta de barra', medida: 'A3 · 297 × 420 mm', material: 'Verjurado 300 g', cantidad: '3 uds.' },
+        { pieza: 'Etiqueta de botella', medida: '90 × 120 mm', material: 'Adhesivo mate', cantidad: '90 uds.' },
+        { pieza: 'Abanico', medida: '230 mm', material: 'Madera y tela', cantidad: '120 uds.' },
+        { pieza: 'Señalética menor', medida: '200 × 200 mm', material: 'Cartón pluma', cantidad: '6 uds.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

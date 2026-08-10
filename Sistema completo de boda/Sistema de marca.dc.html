@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Italianno&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #FBFAF8; scroll-behavior: smooth; }
+  * { box-sizing: border-box; }
+  a { color: #454A3C; text-decoration: none; }
+  a:hover { color: #14140F; }
+  @keyframes smSubir { from { opacity: 0; transform: translateY(22px) } to { opacity: 1; transform: translateY(0) } }
+  @keyframes smAparecer { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes smEscala { from { opacity: 0; transform: scale(.95) } to { opacity: 1; transform: scale(1) } }
+  @keyframes smIzquierda { from { opacity: 0; transform: translateX(-22px) } to { opacity: 1; transform: translateX(0) } }
+  @keyframes smLinea { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+  /* __acabado */
+  ::selection { background: #DDE1D4 }
+  a { text-underline-offset: 3px }
+  :focus-visible { outline: 2px solid #3F6E64; outline-offset: 3px; border-radius: 2px }
+  h1, h2, h3 { text-wrap: balance }
+  p { text-wrap: pretty }
+  svg { display: block }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important } }
+</style>
+</helmet>
+
+<div style="font-family:'Jost',sans-serif;color:#14140F;background:#FBFAF8;font-size:16px;line-height:1.6">
+
+  <header style="position:relative;overflow:hidden;padding:clamp(70px,9vw,124px) clamp(24px,5vw,72px) clamp(46px,6vw,72px);border-bottom:1px solid #E6E4DF;max-width:1320px;margin:0 auto">
+    <div style="position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle at 14% 24%, #E2DFD2 1.3px, transparent 0), radial-gradient(circle at 72% 14%, #E6E3D7 1px, transparent 0), radial-gradient(circle at 88% 64%, #E2DFD2 1.5px, transparent 0);background-size:270px 240px, 200px 210px, 320px 280px"></div>
+    <div style="position:relative;display:flex;align-items:center;gap:16px;animation:smAparecer 1s ease both">
+      <span style="width:42px;height:42px;border-radius:50%;background:radial-gradient(120% 120% at 34% 26%, #7E8472 0%, #5E6454 48%, #3C4233 100%);display:grid;place-items:center;box-shadow:0 10px 22px -12px rgba(46,51,39,.6), inset 0 1px 2px rgba(255,255,255,.3);flex:0 0 auto">
+        <span style="font-family:'Cormorant Infant',serif;font-size:15px;color:#F1EFE7;line-height:1">P<span style="font-family:'Italianno',cursive;font-size:1.05em;opacity:.9">&amp;</span>D</span>
+      </span>
+      <span style="font-size:11px;letter-spacing:.44em;text-transform:uppercase;color:#8A8A84">Paloma &amp; David · 26.06.2027</span>
+    </div>
+    <h1 style="position:relative;font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(46px,7.4vw,104px);line-height:.98;letter-spacing:-.02em;margin:22px 0 0;animation:smSubir 1.2s cubic-bezier(.2,.7,.3,1) both .15s">Sistema <span style="font-family:'Italianno',cursive;color:#3F6E64;font-size:.7em">de</span> marca</h1>
+    <p style="position:relative;max-width:600px;color:#4A4A45;margin:26px 0 0;font-size:18px;text-wrap:pretty;animation:smSubir 1.2s cubic-bezier(.2,.7,.3,1) both .3s">Identidad, tokens, movimiento y aplicaciones de la boda. Si un valor no aparece aquí, no debería existir en ninguna pieza.</p>
+    <div style="position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:clamp(16px,2.4vw,30px);margin-top:clamp(34px,4.4vw,50px);padding-top:clamp(24px,3vw,34px);border-top:1px solid #E6E4DF;animation:smSubir 1.2s cubic-bezier(.2,.7,.3,1) both .4s">
+      <div>
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#3F6E64;margin-bottom:10px">Sobrio</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Dos tintas, dos tipografías, mucho aire. Si dudamos, quitamos.</p>
+      </div>
+      <div>
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#3F6E64;margin-bottom:10px">Cálido</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">La caligrafía y el verde profundo son el guiño; aparecen poco y por eso funcionan.</p>
+      </div>
+      <div>
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#3F6E64;margin-bottom:10px">Útil</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Primero la información que un invitado necesita; después, la belleza.</p>
+      </div>
+    </div>
+    <nav style="display:flex;gap:12px;flex-wrap:wrap;margin-top:40px;animation:smSubir 1.2s cubic-bezier(.2,.7,.3,1) both .45s">
+      <a href="#identidad" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45" style-hover="border-color:#6B7060;background:#ECEEE8">Identidad</a>
+      <a href="#color" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45" style-hover="border-color:#6B7060;background:#ECEEE8">Color</a>
+      <a href="#tipografia" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45" style-hover="border-color:#6B7060;background:#ECEEE8">Tipografía</a>
+      <a href="#forma" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45" style-hover="border-color:#6B7060;background:#ECEEE8">Forma y espacio</a>
+      <a href="#componentes" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45" style-hover="border-color:#6B7060;background:#ECEEE8">Componentes</a>
+      <a href="#patrones" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45" style-hover="border-color:#6B7060;background:#ECEEE8">Patrones</a>
+      <a href="#iconos" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45" style-hover="border-color:#6B7060;background:#ECEEE8">Iconos</a>
+      <a href="#aplicaciones" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45" style-hover="border-color:#6B7060;background:#ECEEE8">Aplicaciones</a>
+      <a href="#movimiento" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45" style-hover="border-color:#6B7060;background:#ECEEE8">Movimiento</a>
+      <a href="#fotografia" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45" style-hover="border-color:#6B7060;background:#ECEEE8">Fotografía</a>
+      <a href="#voz" style="padding:10px 18px;border:1px solid #E6E4DF;border-radius:999px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#4A4A45" style-hover="border-color:#6B7060;background:#ECEEE8">Tono de voz</a>
+    </nav>
+  </header>
+
+  <section id="identidad" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">01</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 44px;line-height:1.04">Identidad</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:clamp(16px,2vw,26px)">
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;aspect-ratio:1/.86;display:grid;place-items:center;position:relative">
+        <div style="font-family:'Cormorant Infant',serif;font-size:clamp(56px,7vw,84px);line-height:1;color:#3C4233">P<span style="font-style:italic;color:#6B7060;font-size:.66em;margin:0 .04em">&amp;</span>D</div>
+        <span style="position:absolute;bottom:14px;left:16px;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#8A8A84">Monograma principal</span>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;aspect-ratio:1/.86;display:grid;place-items:center;position:relative">
+        <div style="text-align:center">
+          <div style="font-family:'Cormorant Infant',serif;font-size:clamp(26px,3.2vw,38px);line-height:1.15;color:#14140F;font-weight:300">Paloma</div>
+          <div style="font-family:'Italianno',cursive;font-size:clamp(26px,3.2vw,38px);color:#3F6E64;line-height:1.15">y</div>
+          <div style="font-family:'Cormorant Infant',serif;font-size:clamp(26px,3.2vw,38px);line-height:1.15;color:#14140F;font-weight:300">David</div>
+          <div style="width:28px;height:1px;background:#C9C5B8;margin:14px auto"></div>
+          <div style="font-size:9.5px;letter-spacing:.32em;text-transform:uppercase;color:#8A8A84">26.06.2027</div>
+        </div>
+        <span style="position:absolute;bottom:14px;left:16px;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#8A8A84">Logotipo apilado</span>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#3C4233;aspect-ratio:1/.86;display:grid;place-items:center;position:relative">
+        <div style="width:clamp(96px,13vw,128px);height:clamp(96px,13vw,128px);border-radius:50%;background:radial-gradient(120% 120% at 32% 26%, #7C8271 0%, #5B6151 46%, #2E3327 100%);display:grid;place-items:center;box-shadow:inset 0 1px 2px rgba(255,255,255,.3), 0 14px 30px -12px rgba(0,0,0,.6)">
+          <span style="font-family:'Cormorant Infant',serif;font-size:clamp(30px,4vw,42px);color:#F1EFE7;line-height:1">P<span style="font-style:italic;font-size:.7em;opacity:.85">&amp;</span>D</span>
+        </div>
+        <span style="position:absolute;bottom:14px;left:16px;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#9AA089">Sello</span>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#ECEEE8;aspect-ratio:1/.86;display:grid;place-items:center;position:relative">
+        <div style="font-size:clamp(11px,1.5vw,14px);letter-spacing:.5em;text-transform:uppercase;color:#3C4233;text-align:center;line-height:2">Paloma<br />&amp;<br />David</div>
+        <span style="position:absolute;bottom:14px;left:16px;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#8A8A84">Versión secundaria</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(16px,2vw,26px);margin-top:clamp(16px,2vw,26px)">
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:26px;background:#FFFFFF">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Área de respeto</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Alrededor del monograma se reserva un margen igual a la altura de la «D». Nada entra en ese espacio.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:26px;background:#FFFFFF">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Tamaño mínimo</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">18 px en pantalla y 8 mm impreso. Por debajo, se usa la versión de iniciales sin ampersand italic.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:26px;background:#FFFFFF">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#D14545;margin-bottom:14px">Nunca</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Deformar, añadir sombras, girar, rellenar con degradados ajenos a la paleta ni usar sobre fotos sin capa de contraste.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="color" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:44px">
+      <div>
+        <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">02</div>
+        <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 0;line-height:1.04">Color</h2>
+      </div>
+      <div style="display:flex;gap:6px;padding:5px;border:1px solid #E6E4DF;border-radius:999px;background:#FFFFFF">
+        <button type="button" onClick="{{ verClaro }}" style="{{ btnClaroStyle }}">Claro</button>
+        <button type="button" onClick="{{ verOscuro }}" style="{{ btnOscuroStyle }}">Oscuro</button>
+      </div>
+    </div>
+
+    <div style="{{ paletaCajaStyle }}">
+      <sc-for list="{{ grupos }}" as="g" hint-placeholder-count="4">
+        <div style="margin-bottom:38px">
+          <div style="{{ g.etiquetaStyle }}">{{ g.nombre }}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px">
+            <sc-for list="{{ g.fichas }}" as="f" hint-placeholder-count="5">
+              <div>
+                <div style="{{ f.muestraStyle }}"></div>
+                <div style="{{ f.tokenStyle }}">{{ f.token }}</div>
+                <div style="{{ f.hexStyle }}">{{ f.hex }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+      <div style="{{ notaColorStyle }}">
+        El verde oliva es el color de la marca; el crema es el aire. El negro carbón solo para texto y superficies inversas. Ningún acento fuera de esta paleta.
+      </div>
+    </div>
+  </section>
+
+  <section id="tipografia" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">03</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 40px;line-height:1.04">Tipografía</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(16px,2vw,26px);margin-bottom:52px">
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:30px;background:#FFFFFF;transition:transform .3s ease, box-shadow .3s ease;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%" style-hover="transform:translateY(-3px);box-shadow:0 20px 40px -30px rgba(20,20,15,.45)">
+        <div style="font-family:'Cormorant Infant',serif;font-size:70px;line-height:1;color:#14140F">Aa</div>
+        <div style="font-family:'Cormorant Infant',serif;font-size:26px;margin-top:18px;color:#3C4233">Cormorant Infant</div>
+        <p style="color:#4A4A45;font-size:15.5px;margin:10px 0 0">Titulares, nombres, cifras grandes y cursivas de enlace. Pesos 300 y 400; cursiva 300.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:30px;background:#FFFFFF;transition:transform .3s ease, box-shadow .3s ease;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%" style-hover="transform:translateY(-3px);box-shadow:0 20px 40px -30px rgba(20,20,15,.45)">
+        <div style="font-size:70px;line-height:1;font-weight:300;color:#14140F">Aa</div>
+        <div style="font-size:26px;margin-top:18px;color:#3C4233;font-weight:400">Jost</div>
+        <p style="color:#4A4A45;font-size:15.5px;margin:10px 0 0">Cuerpo, etiquetas versalitas, botones y formularios. Pesos 300, 400 y 500.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:30px;background:#FFFFFF;transition:transform .3s ease, box-shadow .3s ease;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%" style-hover="transform:translateY(-3px);box-shadow:0 20px 40px -30px rgba(20,20,15,.45)">
+        <div style="font-family:'Italianno',cursive;font-size:78px;line-height:.9;color:#3F6E64">Aa</div>
+        <div style="font-size:26px;margin-top:18px;color:#3C4233;font-weight:400">Italianno</div>
+        <p style="color:#4A4A45;font-size:15.5px;margin:10px 0 0">Solo para el conector «y» y el ampersand del monograma. Nunca en frases ni en mayúsculas.</p>
+      </div>
+    </div>
+
+    <div style="display:grid;gap:0;border-top:1px solid #E6E4DF">
+      <sc-for list="{{ escala }}" as="e" hint-placeholder-count="8">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:clamp(16px,3vw,40px);align-items:baseline;padding:26px 0;border-bottom:1px solid #E6E4DF">
+          <div>
+            <div style="font-family:'Jost',sans-serif;font-size:12px;letter-spacing:.1em;color:#6B7060">{{ e.token }}</div>
+            <div style="font-size:12.5px;color:#8A8A84;margin-top:5px">{{ e.spec }}</div>
+          </div>
+          <div style="{{ e.demoStyle }}">Nos casamos</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="forma" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">04</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 40px;line-height:1.04">Forma y espacio</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(26px,4vw,56px)">
+      <div>
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:22px">Escala de espaciado</div>
+        <div style="display:grid;gap:14px">
+          <sc-for list="{{ espacios }}" as="s" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr) auto;gap:16px;align-items:center">
+              <span style="font-size:12.5px;color:#4A4A45;letter-spacing:.04em">{{ s.token }}</span>
+              <span style="{{ s.barraStyle }}"></span>
+              <span style="font-size:12px;color:#8A8A84">{{ s.valor }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:22px">Radios y sombras</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:16px">
+          <sc-for list="{{ formas }}" as="fo" hint-placeholder-count="6">
+            <div>
+              <div style="{{ fo.cajaStyle }}"></div>
+              <div style="font-size:12px;color:#4A4A45;margin-top:9px">{{ fo.token }}</div>
+              <div style="font-size:11.5px;color:#8A8A84">{{ fo.valor }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="componentes" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">05</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 40px;line-height:1.04">Componentes</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(16px,2vw,26px)">
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:30px;background:#FFFFFF;transition:transform .3s ease, box-shadow .3s ease;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%" style-hover="transform:translateY(-3px);box-shadow:0 20px 40px -30px rgba(20,20,15,.45)">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:22px">Botones</div>
+        <div style="display:flex;flex-direction:column;gap:14px;align-items:flex-start">
+          <button type="button" style="min-height:52px;padding:0 30px;border:none;border-radius:999px;background:#3C4233;color:#FBFAF8;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:background .25s ease" style-hover="background:#14140F">Primario</button>
+          <button type="button" style="min-height:52px;padding:0 30px;border:1px solid #C9C5B8;border-radius:999px;background:transparent;color:#3C4233;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .25s ease" style-hover="border-color:#6B7060;background:#F4F3F0">Secundario</button>
+          <button type="button" style="min-height:44px;padding:0 8px;border:none;background:transparent;color:#6B7060;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;border-bottom:1px solid #C9C5B8;border-radius:0" style-hover="color:#14140F;border-color:#6B7060">Terciario</button>
+          <button type="button" disabled="" style="min-height:52px;padding:0 30px;border:none;border-radius:999px;background:#ECEEE8;color:#9BA08C;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:not-allowed">Desactivado</button>
+        </div>
+      </div>
+
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:30px;background:#FFFFFF;transition:transform .3s ease, box-shadow .3s ease;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%" style-hover="transform:translateY(-3px);box-shadow:0 20px 40px -30px rgba(20,20,15,.45)">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:22px">Campos</div>
+        <div style="display:grid;gap:18px">
+          <label style="display:grid;gap:9px">
+            <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#4A4A45">Nombre</span>
+            <input placeholder="Paloma Fernández" style="min-height:50px;padding:0 16px;border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;font-size:16px;color:#14140F;outline:none" style-focus="border-color:#6B7060;box-shadow:0 0 0 3px #ECEEE8" />
+          </label>
+          <label style="display:grid;gap:9px">
+            <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#4A4A45">Menú</span>
+            <select style="min-height:50px;padding:0 14px;border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;font-size:16px;color:#14140F;outline:none"><option>Sin restricciones</option><option>Vegetariano</option></select>
+          </label>
+          <label style="display:grid;gap:9px">
+            <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#D14545">Con error</span>
+            <input placeholder="correo@" style="min-height:50px;padding:0 16px;border:1px solid #D14545;border-radius:6px;background:#FFFFFF;font-size:16px;color:#14140F;outline:none" />
+            <span style="font-size:13px;color:#D14545">Revisad el correo, parece incompleto.</span>
+          </label>
+        </div>
+      </div>
+
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:30px;background:#FFFFFF;transition:transform .3s ease, box-shadow .3s ease;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%" style-hover="transform:translateY(-3px);box-shadow:0 20px 40px -30px rgba(20,20,15,.45)">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:22px">Etiquetas y avisos</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px">
+          <span style="padding:9px 16px;border-radius:999px;background:#ECEEE8;color:#3C4233;font-size:13.5px">Neutra</span>
+          <span style="padding:9px 16px;border-radius:999px;background:#3C4233;color:#F1EFE7;font-size:13.5px">Marca</span>
+          <span style="padding:9px 16px;border-radius:999px;border:1px solid #C9C5B8;color:#4A4A45;font-size:13.5px">Contorno</span>
+          <span style="padding:9px 16px;border-radius:999px;background:#F0F6F1;color:#1F7A4C;font-size:13.5px">Confirmado</span>
+        </div>
+        <div style="border-left:none;background:#F4F3F0;border-radius:6px;padding:18px 20px;color:#4A4A45;font-size:15px;text-wrap:pretty">
+          <strong style="font-weight:500;color:#14140F">Plazo:</strong> las confirmaciones se cierran el 1 de mayo de 2027.
+        </div>
+      </div>
+
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:30px;background:#FFFFFF;transition:transform .3s ease, box-shadow .3s ease;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%" style-hover="transform:translateY(-3px);box-shadow:0 20px 40px -30px rgba(20,20,15,.45)">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:22px">Tarjeta</div>
+        <div style="border:1px solid #E6E4DF;border-radius:6px;overflow:hidden;background:#FBFAF8">
+          <div style="height:112px;background:#ECEEE8;display:grid;place-items:center;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#9BA08C">imagen 4:3</div>
+          <div style="padding:22px">
+            <div style="font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:#8A8A84">A 18 min · con bus</div>
+            <div style="font-family:'Cormorant Infant',serif;font-size:25px;margin:9px 0 8px;line-height:1.15">Parador de San Marcos</div>
+            <p style="margin:0;color:#4A4A45;font-size:15px">Tarifa cerrada para invitados.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="patrones" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">06</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 40px;line-height:1.04">Patrones y texturas</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:clamp(16px,2vw,26px)">
+      <div>
+        <div style="aspect-ratio:1;border:1px solid #E6E4DF;border-radius:6px;background-color:#FBFAF8;background-image:radial-gradient(circle at 1px 1px, #C9C5B8 1.2px, transparent 0);background-size:16px 16px"></div>
+        <div style="font-size:12px;color:#4A4A45;margin-top:10px">Punteado · fondos secundarios</div>
+      </div>
+      <div>
+        <div style="aspect-ratio:1;border:1px solid #E6E4DF;border-radius:6px;background-color:#ECEEE8;background-image:repeating-linear-gradient(45deg, rgba(107,112,96,.22) 0 1px, transparent 1px 11px)"></div>
+        <div style="font-size:12px;color:#4A4A45;margin-top:10px">Rayado diagonal · sobres y bandas</div>
+      </div>
+      <div>
+        <div style="aspect-ratio:1;border:1px solid #E6E4DF;border-radius:6px;background:radial-gradient(60% 60% at 50% 40%, #FFFFFF 0%, #F0EFE9 55%, #E4E2D8 100%)"></div>
+        <div style="font-size:12px;color:#4A4A45;margin-top:10px">Papel · superficies impresas</div>
+      </div>
+      <div>
+        <div style="aspect-ratio:1;border:1px solid #2E3327;border-radius:6px;background-color:#3C4233;background-image:repeating-linear-gradient(90deg, rgba(241,239,231,.14) 0 1px, transparent 1px 13px)"></div>
+        <div style="font-size:12px;color:#4A4A45;margin-top:10px">Verjurado oliva · piezas oscuras</div>
+      </div>
+    </div>
+
+    <div style="margin-top:clamp(34px,4vw,52px);border-top:1px solid #E6E4DF;padding-top:clamp(30px,4vw,44px)">
+      <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Motivo: constelaciones</div>
+      <p style="max-width:560px;color:#4A4A45;margin:0 0 clamp(24px,3vw,34px);text-wrap:pretty">Cada una de las quince mesas lleva el nombre y el mapa de una constelación: ocho del hemisferio norte —el cielo de esa noche en León— y siete del sur. Estrellas llenas, líneas al 42 % de opacidad, nunca relleno ni degradado. Es el único elemento ilustrativo del sistema.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,130px),1fr));gap:clamp(12px,1.6vw,18px)">
+        <sc-for list="{{ constelaciones }}" as="c" hint-placeholder-count="8">
+          <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:16px 14px 18px">
+            <div style="aspect-ratio:1;padding:8px">
+              <dc-import name="Constelacion" constelacion="{{ c.clave }}" hint-size="100%,100%"></dc-import>
+            </div>
+            <div style="font-family:'Cormorant Infant',serif;font-size:19px;line-height:1.2;color:#14140F;margin-top:10px">{{ c.nombre }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <a href="./Carteleria.dc.html" style="display:inline-flex;align-items:center;min-height:48px;padding:0 26px;border-radius:999px;border:1px solid #C9C5B8;color:#3C4233;font-size:12px;letter-spacing:.2em;text-transform:uppercase;margin-top:clamp(24px,3vw,34px)" style-hover="border-color:#6B7060;background:#F4F3F0">Ver la cartelería completa</a>
+    </div>
+  </section>
+
+  <section id="iconos" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">07</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 12px;line-height:1.04">Iconografía</h2>
+    <p style="max-width:520px;color:#4A4A45;margin:0 0 40px;text-wrap:pretty">Trazo de 1,2 px, esquinas redondeadas, caja de 24 px. Siempre en oliva o tinta, nunca rellenos.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px">
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:24px 16px;display:grid;place-items:center;gap:14px;background:#FFFFFF;color:#6B7060">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="9" cy="14" r="6"></circle><circle cx="15" cy="14" r="6"></circle></svg>
+        <span style="font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A8A84">Anillos</span>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:24px 16px;display:grid;place-items:center;gap:14px;background:#FFFFFF;color:#6B7060">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M6 3h12l-1 5a5 5 0 0 1-10 0L6 3ZM12 13v7M8 21h8"></path></svg>
+        <span style="font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A8A84">Brindis</span>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:24px 16px;display:grid;place-items:center;gap:14px;background:#FFFFFF;color:#6B7060">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><rect x="2" y="10" width="20" height="7" rx="2"></rect><path d="M4 10l2-5h12l2 5M6 17v2M18 17v2"></path></svg>
+        <span style="font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A8A84">Autobús</span>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:24px 16px;display:grid;place-items:center;gap:14px;background:#FFFFFF;color:#6B7060">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M3 18v-6h12a4 4 0 0 1 4 4v2M3 12V7M3 18h18M7 12V9h5v3"></path></svg>
+        <span style="font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A8A84">Alojamiento</span>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:24px 16px;display:grid;place-items:center;gap:14px;background:#FFFFFF;color:#6B7060">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="7" cy="18" r="3"></circle><circle cx="18" cy="15" r="3"></circle><path d="M10 18V6l11-2v11"></path></svg>
+        <span style="font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A8A84">Música</span>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:24px 16px;display:grid;place-items:center;gap:14px;background:#FFFFFF;color:#6B7060">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 7l10 7 10-7"></path></svg>
+        <span style="font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A8A84">Invitación</span>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:24px 16px;display:grid;place-items:center;gap:14px;background:#FFFFFF;color:#6B7060">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l4 2"></path></svg>
+        <span style="font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A8A84">Horario</span>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:24px 16px;display:grid;place-items:center;gap:14px;background:#FFFFFF;color:#6B7060">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.6"></circle></svg>
+        <span style="font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A8A84">Lugar</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="aplicaciones" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">08</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 40px;line-height:1.04">Aplicaciones</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(20px,3vw,34px)">
+
+      <div>
+        <div style="aspect-ratio:5/7;background:#FBFAF8;border:1px solid #E6E4DF;padding:clamp(24px,3vw,40px);display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:0 24px 60px -34px rgba(20,20,15,.45)">
+          <div style="font-size:9.5px;letter-spacing:.4em;text-transform:uppercase;color:#8A8A84">Nos casamos</div>
+          <div style="width:26px;height:1px;background:#C9C5B8;margin:20px 0"></div>
+          <div style="font-family:'Cormorant Infant',serif;font-size:clamp(30px,3.6vw,44px);line-height:1.06;font-weight:300;color:#14140F">Paloma<br /><span style="font-style:italic;color:#6B7060;font-size:.62em">y</span><br />David</div>
+          <div style="flex:1"></div>
+          <div style="font-family:'Cormorant Infant',serif;font-size:clamp(20px,2.4vw,28px);color:#3C4233">26 · 06 · 2027</div>
+          <div style="font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:#8A8A84;margin-top:10px">Finca La Sierra · León</div>
+          <div style="font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#9BA08C;margin-top:22px">palomaydavid.es</div>
+        </div>
+        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Invitación · 125 × 175 mm</div>
+      </div>
+
+      <div>
+        <div style="aspect-ratio:5/7;background:#FFFFFF;border:1px solid #E6E4DF;padding:clamp(24px,3vw,38px);display:flex;flex-direction:column;box-shadow:0 24px 60px -34px rgba(20,20,15,.45)">
+          <div style="text-align:center;font-family:'Cormorant Infant',serif;font-size:26px;color:#3C4233;line-height:1">P<span style="font-style:italic;color:#6B7060;font-size:.7em">&amp;</span>D</div>
+          <div style="text-align:center;font-size:9.5px;letter-spacing:.36em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Menú</div>
+          <div style="height:1px;background:#E6E4DF;margin:22px 0"></div>
+          <div style="display:grid;gap:20px;text-align:center">
+            <div>
+              <div style="font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:#9BA08C;margin-bottom:6px">Para empezar</div>
+              <div style="font-family:'Cormorant Infant',serif;font-size:19px;color:#14140F;line-height:1.35">Cecina de León con pan de hogaza</div>
+            </div>
+            <div>
+              <div style="font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:#9BA08C;margin-bottom:6px">Principal</div>
+              <div style="font-family:'Cormorant Infant',serif;font-size:19px;color:#14140F;line-height:1.35">Lechazo asado, patata violeta y romero</div>
+            </div>
+            <div>
+              <div style="font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:#9BA08C;margin-bottom:6px">Dulce</div>
+              <div style="font-family:'Cormorant Infant',serif;font-size:19px;color:#14140F;line-height:1.35">Tarta de queso y cereza picota</div>
+            </div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="text-align:center;font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;color:#8A8A84">26.06.2027</div>
+        </div>
+        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Minuta · 100 × 140 mm</div>
+      </div>
+
+      <div>
+        <div style="aspect-ratio:5/7;background:#3C4233;color:#F1EFE7;padding:clamp(24px,3vw,38px);display:flex;flex-direction:column;justify-content:space-between;background-image:repeating-linear-gradient(90deg, rgba(241,239,231,.10) 0 1px, transparent 1px 13px);box-shadow:0 24px 60px -34px rgba(20,20,15,.55)">
+          <div style="font-size:9.5px;letter-spacing:.4em;text-transform:uppercase;color:#A9AF98">Seating plan</div>
+          <div>
+            <div style="font-family:'Cormorant Infant',serif;font-size:clamp(34px,4.6vw,54px);line-height:1;font-weight:300">Buscad<br /><span style="font-style:italic;color:#C9CDBC">vuestra</span><br />mesa</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:24px">
+              <span style="padding:7px 13px;border:1px solid rgba(241,239,231,.3);border-radius:999px;font-size:11.5px">Lira</span>
+              <span style="padding:7px 13px;border:1px solid rgba(241,239,231,.3);border-radius:999px;font-size:11.5px">Casiopea</span>
+              <span style="padding:7px 13px;border:1px solid rgba(241,239,231,.3);border-radius:999px;font-size:11.5px">Orión</span>
+              <span style="padding:7px 13px;border:1px solid rgba(241,239,231,.3);border-radius:999px;font-size:11.5px">Cisne</span>
+            </div>
+          </div>
+          <div style="font-family:'Cormorant Infant',serif;font-size:26px;line-height:1">P<span style="font-style:italic;color:#9AA089;font-size:.7em">&amp;</span>D</div>
+        </div>
+        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8A8A84;margin-top:14px">Cartelería · A2</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:clamp(16px,2vw,26px);margin-top:clamp(26px,4vw,40px)">
+      <div style="background:#ECEEE8;border-radius:6px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;min-height:150px">
+        <div style="font-family:'Cormorant Infant',serif;font-size:22px;color:#3C4233">P<span style="font-style:italic;color:#6B7060;font-size:.72em">&amp;</span>D</div>
+        <div>
+          <div style="font-family:'Cormorant Infant',serif;font-size:21px;color:#14140F;line-height:1.2">Marina Álvarez</div>
+          <div style="font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:#8A8A84;margin-top:6px">Mesa 03 · Osa Mayor</div>
+        </div>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #E6E4DF;border-radius:6px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;min-height:150px">
+        <div style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#8A8A84">Detalle</div>
+        <div style="font-family:'Cormorant Infant',serif;font-size:20px;color:#14140F;line-height:1.25">Aceite de la finca<br /><span style="font-style:italic;color:#6B7060;font-size:.8em">gracias por venir</span></div>
+      </div>
+      <div style="background:#3C4233;color:#F1EFE7;border-radius:6px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;min-height:150px">
+        <div style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#A9AF98">Etiqueta de botella</div>
+        <div style="font-family:'Cormorant Infant',serif;font-size:20px;line-height:1.25">Tinto de la casa<br /><span style="font-style:italic;color:#C9CDBC;font-size:.8em">26.06.2027</span></div>
+      </div>
+      <div style="background:#FBFAF8;border:1px dashed #C9C5B8;border-radius:6px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;min-height:150px">
+        <div style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#8A8A84">Sello de cera</div>
+        <div style="width:56px;height:56px;border-radius:50%;background:radial-gradient(120% 120% at 32% 26%, #7C8271 0%, #5B6151 46%, #2E3327 100%);display:grid;place-items:center;color:#F1EFE7;font-family:'Cormorant Infant',serif;font-size:19px">PD</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="voz" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px)">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">09</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 40px;line-height:1.04">Tono de voz</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(16px,2vw,26px)">
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:30px;background:#FFFFFF;transition:transform .3s ease, box-shadow .3s ease;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%" style-hover="transform:translateY(-3px);box-shadow:0 20px 40px -30px rgba(20,20,15,.45)">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#3F6E64;margin-bottom:16px">Cómo hablamos</div>
+        <p style="margin:0;color:#4A4A45;text-wrap:pretty">Cuidado y cercano, en segunda persona del plural. Frases cortas y directas, con calidez pero sin chistes ni exclamaciones de más. Información primero; la elegancia está en no adornar.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:30px;background:#F0F6F1">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#1F7A4C;margin-bottom:16px">Sí</div>
+        <p style="margin:0 0 12px;font-family:'Cormorant Infant',serif;font-size:21px;color:#14140F;line-height:1.35">«Habrá autobús desde León a las 12:00.»</p>
+        <p style="margin:0;font-family:'Cormorant Infant',serif;font-size:21px;color:#14140F;line-height:1.35">«Confirmadnos antes del 1 de mayo.»</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;padding:30px;background:#FDF2F2">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#D14545;margin-bottom:16px">No</div>
+        <p style="margin:0 0 12px;font-family:'Cormorant Infant',serif;font-size:21px;color:#4A4A45;line-height:1.35">«¡¡El día más feliz de nuestras vidas!!»</p>
+        <p style="margin:0 0 12px;font-family:'Cormorant Infant',serif;font-size:21px;color:#4A4A45;line-height:1.35">«Se ruega puntualidad y decoro en el recinto.»</p>
+        <p style="margin:0;font-family:'Cormorant Infant',serif;font-size:21px;color:#4A4A45;line-height:1.35">«No te lo puedes perder 🎉»</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="movimiento" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">10</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 14px;line-height:1.04">Movimiento</h2>
+    <p style="max-width:580px;color:#4A4A45;margin:0 0 clamp(32px,4vw,46px);text-wrap:pretty">Todo entra desde abajo y nada rebota salvo lo pequeño. La web se lee mientras se mueve: si una animación obliga a esperar, sobra.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:clamp(16px,2.2vw,26px)">
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:28px 26px;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Duraciones</div>
+        <div style="display:grid;gap:10px;font-size:15px;color:#4A4A45">
+          <div style="display:flex;justify-content:space-between;gap:12px"><span>Micro (hover, foco)</span><span style="color:#14140F">250 ms</span></div>
+          <div style="display:flex;justify-content:space-between;gap:12px"><span>Entrada de bloque</span><span style="color:#14140F">800–900 ms</span></div>
+          <div style="display:flex;justify-content:space-between;gap:12px"><span>Escena (sobre, paisaje)</span><span style="color:#14140F">1–1,2 s</span></div>
+        </div>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:28px 26px;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Curvas</div>
+        <div style="display:grid;gap:10px;font-size:15px;color:#4A4A45">
+          <div><span style="color:#14140F">Suave</span> · cubic-bezier(.22,.75,.24,1)</div>
+          <div><span style="color:#14140F">Muelle</span> · cubic-bezier(.16,1.1,.3,1)</div>
+          <div style="font-size:14px">El muelle solo en sellos, tarjetas y etiquetas.</div>
+        </div>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:28px 26px;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Recorridos</div>
+        <div style="display:grid;gap:10px;font-size:15px;color:#4A4A45">
+          <div>Desplazamiento vertical: <span style="color:#14140F">20–26 px</span></div>
+          <div>Lateral: <span style="color:#14140F">22–26 px</span></div>
+          <div>Escala: <span style="color:#14140F">.94 → 1</span>, nunca menos de .9</div>
+        </div>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#F0F6F1;padding:28px 26px;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#1F7A4C;margin-bottom:14px">Accesibilidad</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Con <em style="font-family:'Cormorant Infant',serif;font-style:italic">prefers-reduced-motion</em> todo se reduce a 0,01 ms. Ninguna información depende del movimiento.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="fotografia" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">11</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 14px;line-height:1.04">Fotografía</h2>
+    <p style="max-width:580px;color:#4A4A45;margin:0 0 clamp(32px,4vw,46px);text-wrap:pretty">Luz natural, nada de filtros cálidos ni virados. Preferimos el plano abierto —la vista aérea de la portada— y el detalle honesto: manos, mesa puesta, campo. Blanco y negro solo si la escena ya funciona en color.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:clamp(16px,2.2vw,26px)">
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:28px 26px;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Encuadre</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Vertical en tarjetas y portada; 4:3 en galerías. El horizonte, recto siempre.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:28px 26px;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Color</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Verdes y tierras. Si la escena tiene un color chillón, se recorta o se descarta.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FFFFFF;padding:28px 26px;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#6B7060;margin-bottom:14px">Texto sobre foto</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Siempre con velo oscuro del 20 % al 60 %. Nunca texto oliva sobre imagen.</p>
+      </div>
+      <div style="border:1px solid #E6E4DF;border-radius:6px;background:#FDF2F2;padding:28px 26px;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#D14545;margin-bottom:14px">Nunca</div>
+        <p style="margin:0;color:#4A4A45;font-size:15.5px;text-wrap:pretty">Collages, marcos con sombra dura, viñeteados ni fotos de banco con modelos ajenos.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="repaso" style="max-width:1320px;margin:0 auto;padding:clamp(60px,7vw,100px) clamp(24px,5vw,72px);border-bottom:1px solid #E6E4DF">
+    <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#3F6E64;display:inline-flex;align-items:center;gap:9px;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">12</div>
+    <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(34px,4.6vw,58px);letter-spacing:-.014em;animation:smSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 26%;margin:14px 0 14px;line-height:1.04">Antes de mandar a imprenta</h2>
+    <p style="max-width:580px;color:#4A4A45;margin:0 0 clamp(30px,4vw,42px);text-wrap:pretty">Seis comprobaciones que evitan el 90 % de los disgustos.</p>
+    <div style="display:grid;gap:0;border-top:1px solid #E6E4DF">
+      <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;padding:18px 0;border-bottom:1px solid #E6E4DF;align-items:baseline;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 2% cover 22%"><span style="font-family:'Cormorant Infant',serif;font-size:22px;color:#C9C5B8">01</span><span style="color:#4A4A45">El monograma respira: margen igual a la altura de la «D».</span></div>
+      <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;padding:18px 0;border-bottom:1px solid #E6E4DF;align-items:baseline;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 2% cover 22%"><span style="font-family:'Cormorant Infant',serif;font-size:22px;color:#C9C5B8">02</span><span style="color:#4A4A45">Una sola «y» en Italianno por pieza.</span></div>
+      <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;padding:18px 0;border-bottom:1px solid #E6E4DF;align-items:baseline;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 2% cover 22%"><span style="font-family:'Cormorant Infant',serif;font-size:22px;color:#C9C5B8">03</span><span style="color:#4A4A45">Ningún texto por debajo de 12 pt en impreso.</span></div>
+      <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;padding:18px 0;border-bottom:1px solid #E6E4DF;align-items:baseline;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 2% cover 22%"><span style="font-family:'Cormorant Infant',serif;font-size:22px;color:#C9C5B8">04</span><span style="color:#4A4A45">Fecha siempre como 26 · 06 · 2027 o «26 de junio de 2027».</span></div>
+      <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;padding:18px 0;border-bottom:1px solid #E6E4DF;align-items:baseline;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 2% cover 22%"><span style="font-family:'Cormorant Infant',serif;font-size:22px;color:#C9C5B8">05</span><span style="color:#4A4A45">Constelación dentro de círculo o cuadrado con aire, nunca recortada.</span></div>
+      <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;padding:18px 0;border-bottom:1px solid #E6E4DF;align-items:baseline;animation:smIzquierda .7s linear both;animation-timeline:view();animation-range:entry 2% cover 22%"><span style="font-family:'Cormorant Infant',serif;font-size:22px;color:#C9C5B8">06</span><span style="color:#4A4A45">Sangre de 3 mm y tintas convertidas a CMYK antes de enviar.</span></div>
+    </div>
+  </section>
+
+  <footer style="background:#121210;color:#8B917C;padding:clamp(50px,6vw,76px) clamp(24px,5vw,72px);display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center">
+    <div style="font-family:'Cormorant Infant',serif;font-size:34px;color:#F1EFE7;line-height:1">P<span style="font-style:italic;color:#9AA089;font-size:.72em">&amp;</span>D</div>
+    <div style="display:flex;gap:26px;flex-wrap:wrap;font-size:13px;letter-spacing:.1em">
+      <a href="./Landing boda.dc.html" style="color:#A9AF98">Web de la boda</a>
+      <a href="./Save the Date.dc.html" style="color:#A9AF98">Save the date</a>
+      <a href="./Carteleria.dc.html" style="color:#A9AF98">Cartelería</a>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{},&quot;mostrarCodigos&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Documentación&quot;}}">
+class Component extends DCLogic {
+  state = { tema: 'claro' };
+
+  verClaro = () => this.setState({ tema: 'claro' });
+  verOscuro = () => this.setState({ tema: 'oscuro' });
+
+  paleta() {
+    if (this.state.tema === 'oscuro') {
+      return [
+        { nombre: 'Superficies', fichas: [
+          { token: '--fondo', hex: '#14170F' }, { token: '--superficie', hex: '#1B1E17' },
+          { token: '--superficie-elevada', hex: '#23271E' }, { token: '--superficie-hundida', hex: '#101309' },
+          { token: '--superficie-tenue', hex: '#2E3327' }, { token: '--superficie-inversa', hex: '#FBFAF8' }
+        ] },
+        { nombre: 'Texto', fichas: [
+          { token: '--tinta', hex: '#F1EFE7' }, { token: '--tinta-suave', hex: '#C9CDBC' },
+          { token: '--tinta-tenue', hex: '#8B917C' }, { token: '--tinta-inversa', hex: '#14140F' },
+          { token: '--tinta-marca', hex: '#A9AF98' }
+        ] },
+        { nombre: 'Marca y acento', fichas: [
+          { token: '--marca', hex: '#9AA089' }, { token: '--marca-hover', hex: '#B4B9A4' },
+          { token: '--marca-activo', hex: '#C9CDBC' }, { token: '--marca-tenue', hex: '#2A2F23' },
+          { token: '--acento', hex: '#9AC4B6' }, { token: '--acento-hover', hex: '#BFDCD2' }
+        ] },
+        { nombre: 'Bordes y estado', fichas: [
+          { token: '--borde', hex: '#2E3327' }, { token: '--borde-fuerte', hex: '#454A3C' },
+          { token: '--borde-marca', hex: '#6B7060' }, { token: '--exito', hex: '#4FAE7B' },
+          { token: '--aviso', hex: '#D9A425' }, { token: '--error', hex: '#E06A6A' }
+        ] }
+      ];
+    }
+    return [
+      { nombre: 'Superficies', fichas: [
+        { token: '--fondo', hex: '#FBFAF8' }, { token: '--superficie', hex: '#FFFFFF' },
+        { token: '--superficie-elevada', hex: '#FFFFFF' }, { token: '--superficie-hundida', hex: '#F4F3F0' },
+        { token: '--superficie-tenue', hex: '#ECEEE8' }, { token: '--superficie-inversa', hex: '#121210' }
+      ] },
+      { nombre: 'Texto', fichas: [
+        { token: '--tinta', hex: '#14140F' }, { token: '--tinta-suave', hex: '#4A4A45' },
+        { token: '--tinta-tenue', hex: '#8A8A84' }, { token: '--tinta-dato', hex: '#6B6B66' }, { token: '--tinta-inversa', hex: '#FBFAF8' },
+        { token: '--tinta-marca', hex: '#3C4233' }
+      ] },
+      { nombre: 'Marca y acento', fichas: [
+        { token: '--marca', hex: '#6B7060' }, { token: '--marca-hover', hex: '#454A3C' },
+        { token: '--marca-activo', hex: '#2E3327' }, { token: '--marca-tenue', hex: '#ECEEE8' },
+        { token: '--acento', hex: '#3F6E64' }, { token: '--acento-hover', hex: '#2F5A51' }
+      ] },
+      { nombre: 'Bordes y estado', fichas: [
+        { token: '--borde', hex: '#E6E4DF' }, { token: '--borde-fuerte', hex: '#C9C5B8' },
+        { token: '--borde-marca', hex: '#9BA08C' }, { token: '--exito', hex: '#1F7A4C' },
+        { token: '--aviso', hex: '#B8860B' }, { token: '--error', hex: '#D14545' }
+      ] }
+    ];
+  }
+
+  renderVals() {
+    const oscuro = this.state.tema === 'oscuro';
+    const mostrar = this.props.mostrarCodigos !== false;
+    const tintaTenue = oscuro ? '#8B917C' : '#8A8A84';
+    const tintaSuave = oscuro ? '#C9CDBC' : '#4A4A45';
+    const borde = oscuro ? 'rgba(241,239,231,.16)' : '#E6E4DF';
+    const pill = (activo) => `min-height:40px;padding:0 22px;border-radius:999px;border:none;cursor:pointer;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;transition:all .25s ease;background:${activo ? '#14140F' : 'transparent'};color:${activo ? '#FBFAF8' : '#8A8A84'}`;
+
+    const grupos = this.paleta().map((g) => ({
+      nombre: g.nombre,
+      etiquetaStyle: `font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:${oscuro ? '#9AA089' : '#9BA08C'};margin-bottom:18px`,
+      fichas: g.fichas.map((f) => ({
+        token: f.token,
+        hex: mostrar ? f.hex : '',
+        muestraStyle: `height:74px;border-radius:8px;background:${f.hex};border:1px solid ${borde}`,
+        tokenStyle: `font-size:12px;color:${tintaSuave};margin-top:10px;letter-spacing:.03em`,
+        hexStyle: `font-size:11.5px;color:${tintaTenue};margin-top:2px;letter-spacing:.05em`
+      }))
+    }));
+
+    const escala = [
+      { token: '--texto-display', spec: 'Cormorant Infant 300 · clamp 58–124 px', style: "font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(52px,7vw,108px);line-height:.94;letter-spacing:-.02em" },
+      { token: '--texto-titulo-1', spec: 'Cormorant Infant 300 · 58 px', style: "font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(38px,5vw,58px);line-height:1.04" },
+      { token: '--texto-titulo-2', spec: 'Cormorant Infant 400 · 38 px', style: "font-family:'Cormorant Infant',serif;font-weight:400;font-size:38px;line-height:1.1" },
+      { token: '--texto-titulo-3', spec: 'Cormorant Infant 400 · 27 px', style: "font-family:'Cormorant Infant',serif;font-weight:400;font-size:27px;line-height:1.2" },
+      { token: '--texto-cita', spec: 'Cormorant Infant italic 300 · 24 px', style: "font-family:'Cormorant Infant',serif;font-style:italic;font-weight:300;font-size:24px;line-height:1.4;color:#3F6E64" },
+      { token: '--texto-conector', spec: 'Italianno 400 · 44 px', style: "font-family:'Italianno',cursive;font-size:44px;line-height:1;color:#3F6E64" },
+      { token: '--texto-cuerpo-grande', spec: 'Jost 300 · 19 px', style: "font-weight:300;font-size:19px;line-height:1.6" },
+      { token: '--texto-cuerpo', spec: 'Jost 400 · 16 px', style: 'font-size:16px;line-height:1.65' },
+      { token: '--texto-etiqueta', spec: 'Jost 400 · 11 px · 0.3em', style: 'font-size:11px;letter-spacing:.3em;text-transform:uppercase' },
+      { token: '--texto-pequeno', spec: 'Jost 400 · 13 px', style: 'font-size:13px;line-height:1.5;color:#4A4A45' }
+    ].map((e) => ({ token: e.token, spec: e.spec, demoStyle: e.style + ';color:#14140F;min-width:0;overflow-wrap:break-word' }));
+
+    const espacios = [
+      { token: '--espacio-linea', valor: '4 px', px: 4 },
+      { token: '--espacio-interno-compacto', valor: '8 px', px: 8 },
+      { token: '--espacio-interno', valor: '14 px', px: 14 },
+      { token: '--espacio-pila', valor: '22 px', px: 22 },
+      { token: '--espacio-elemento', valor: '34 px', px: 34 },
+      { token: '--espacio-bloque', valor: '56 px', px: 56 },
+      { token: '--espacio-seccion-compacta', valor: '80 px', px: 80 },
+      { token: '--espacio-seccion', valor: '132 px', px: 132 }
+    ].map((s) => ({ token: s.token, valor: s.valor, barraStyle: `display:block;height:10px;border-radius:999px;background:#6B7060;width:${Math.round((s.px / 132) * 100)}%` }));
+
+    const formas = [
+      { token: '--radio-boton', valor: '999 px', style: 'border-radius:999px;background:#F4F3F0;border:1px solid #E6E4DF' },
+      { token: '--radio-campo', valor: '6 px', style: 'border-radius:6px;background:#F4F3F0;border:1px solid #E6E4DF' },
+      { token: '--radio-tarjeta', valor: '6 px', style: 'border-radius:6px;background:#F4F3F0;border:1px solid #E6E4DF' },
+      { token: '--sombra-sutil', valor: '0 1px 2px', style: 'border-radius:6px;background:#FFFFFF;box-shadow:0 1px 2px rgba(20,20,15,.07)' },
+      { token: '--sombra-tarjeta', valor: '0 24px 60px -34px', style: 'border-radius:6px;background:#FFFFFF;box-shadow:0 24px 60px -34px rgba(20,20,15,.45)' },
+      { token: '--sombra-modal', valor: '0 40px 90px -30px', style: 'border-radius:8px;background:#FFFFFF;box-shadow:0 40px 90px -30px rgba(20,20,15,.55)' }
+    ].map((f) => ({ token: f.token, valor: f.valor, cajaStyle: f.style + ';aspect-ratio:1.5' }));
+
+    const constelaciones = [
+      { clave: 'lira', nombre: 'Lira' }, { clave: 'casiopea', nombre: 'Casiopea' },
+      { clave: 'osamayor', nombre: 'Osa Mayor' }, { clave: 'cisne', nombre: 'Cisne' },
+      { clave: 'perseo', nombre: 'Perseo' }, { clave: 'coronaboreal', nombre: 'Corona Boreal' },
+      { clave: 'aguila', nombre: 'Águila' }, { clave: 'orion', nombre: 'Orión' },
+      { clave: 'cruzdelsur', nombre: 'Cruz del Sur' }, { clave: 'centauro', nombre: 'Centauro' },
+      { clave: 'escorpio', nombre: 'Escorpio' }, { clave: 'tucan', nombre: 'Tucán' },
+      { clave: 'fenix', nombre: 'Fénix' }, { clave: 'carina', nombre: 'Carina' },
+      { clave: 'vela', nombre: 'Vela' }
+    ];
+
+    return {
+      grupos, escala, espacios, formas, constelaciones,
+      verClaro: this.verClaro,
+      verOscuro: this.verOscuro,
+      btnClaroStyle: pill(!oscuro),
+      btnOscuroStyle: pill(oscuro),
+      paletaCajaStyle: `border-radius:10px;padding:clamp(24px,3.4vw,44px);transition:background .5s ease, color .5s ease;background:${oscuro ? '#14170F' : '#FFFFFF'};border:1px solid ${borde}`,
+      notaColorStyle: `font-family:'Cormorant Infant',serif;font-style:italic;font-size:20px;line-height:1.5;max-width:620px;color:${oscuro ? '#C9CDBC' : '#4A4A45'};border-top:1px solid ${borde};padding-top:26px;margin-top:6px`
+    };
+  }
+}
+</script>
+</body>
+</html>

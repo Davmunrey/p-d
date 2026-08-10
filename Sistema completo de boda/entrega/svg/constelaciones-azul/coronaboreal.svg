@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="240" height="240" fill="none">
+  <title>Corona Boreal</title>
+  <line x1="9" y1="62" x2="20" y2="40" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="20" y1="40" x2="35" y2="28" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="35" y1="28" x2="51" y2="24" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="51" y1="24" x2="67" y2="30" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="67" y1="30" x2="81" y2="43" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="81" y1="43" x2="92" y2="64" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <circle cx="9" cy="62" r="1" fill="#1F2B44"></circle>
+  <circle cx="20" cy="40" r="1" fill="#1F2B44"></circle>
+  <circle cx="35" cy="28" r="1.1" fill="#1F2B44"></circle>
+  <circle cx="51" cy="24" r="1.5" fill="#1F2B44"></circle>
+  <circle cx="67" cy="30" r="1.1" fill="#1F2B44"></circle>
+  <circle cx="81" cy="43" r="1" fill="#1F2B44"></circle>
+  <circle cx="92" cy="64" r="1" fill="#1F2B44"></circle>
+</svg>

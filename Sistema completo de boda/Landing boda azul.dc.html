@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Italianno&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="./image-slot.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: #F8F9FC; scroll-behavior: smooth; }
+  * { box-sizing: border-box; }
+  a { color: #2C3A56; text-decoration: none; }
+  a:hover { color: #121722; }
+  ::selection { background: #D5DEEC; }
+  input, textarea, select, button { font-family: 'Jost', sans-serif; }
+  @keyframes bdSubir { from { opacity: 0; transform: translateY(26px) } to { opacity: 1; transform: translateY(0) } }
+  @keyframes bdAparecer { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes bdCortina { from { opacity: 0; transform: translateY(40px) scale(.985) } to { opacity: 1; transform: translateY(0) scale(1) } }
+  @keyframes bdLinea { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+  @keyframes bdLineaV { from { transform: scaleY(0) } to { transform: scaleY(1) } }
+  @keyframes bdPop { from { opacity: 0; transform: scale(.6) } to { opacity: 1; transform: scale(1) } }
+  @keyframes bdDeriva { from { transform: translate3d(0,0,0) } to { transform: translate3d(-40px,-26px,0) } }
+  @keyframes bdTitilar { 0%, 100% { opacity: .9 } 50% { opacity: .4 } }
+  @keyframes bdRotar { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+  @keyframes bdFlotarCue { 0%, 100% { transform: translateY(0); opacity: .8 } 50% { transform: translateY(7px); opacity: .35 } }
+  @keyframes bdZoom { from { transform: scale(1.12) } to { transform: scale(1) } }
+  @keyframes bdEscala { from { opacity: 0; transform: scale(.94) } to { opacity: 1; transform: scale(1) } }
+  @keyframes bdIzquierda { from { opacity: 0; transform: translateX(-26px) } to { opacity: 1; transform: translateX(0) } }
+  @keyframes bdDerecha { from { opacity: 0; transform: translateX(26px) } to { opacity: 1; transform: translateX(0) } }
+  @keyframes bdParalaje { from { transform: translateY(-5%) scale(1.1) } to { transform: translateY(5%) scale(1.1) } }
+  @keyframes bdBarrido { from { clip-path: inset(0 100% 0 0) } to { clip-path: inset(0 0 0 0) } }
+  /* __acabado */
+  ::selection { background: #D5DEEC }
+  a { text-underline-offset: 3px }
+  :focus-visible { outline: 2px solid #8A6224; outline-offset: 3px; border-radius: 2px }
+  h1, h2, h3 { text-wrap: balance }
+  p { text-wrap: pretty }
+  svg { display: block }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important } }
+</style>
+</helmet>
+
+<div style="font-family:'Jost',sans-serif;color:#121722;background:#F8F9FC;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased">
+
+  <div style="{{ barraProgresoStyle }}"></div>
+
+  <div style="{{ navStyle }}">
+    <div style="max-width:1180px;margin:0 auto;padding:0 clamp(18px,3vw,26px);min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <a href="#inicio" style="flex:0 0 auto;font-family:'Cormorant Infant',serif;font-size:23px;letter-spacing:.04em;color:#1F2B44;line-height:1">P<span style="font-style:italic;color:#3F4F70;font-size:.72em;margin:0 .08em">&amp;</span>D</a>
+      <nav style="display:flex;align-items:center;gap:clamp(14px,2.2vw,28px);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;justify-content:flex-start;margin-left:auto;padding:11px 0;min-width:0;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 22px),transparent 100%)">
+        <a href="#preboda" style="flex:0 0 auto;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#434E63;white-space:nowrap">Preboda</a>
+        <a href="#programa" style="flex:0 0 auto;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#434E63;white-space:nowrap">Programa</a>
+        <a href="#alojamiento" style="flex:0 0 auto;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#434E63;white-space:nowrap">Alojamiento</a>
+        <a href="#llegar" style="flex:0 0 auto;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#434E63;white-space:nowrap">Cómo llegar</a>
+        <a href="#playlist" style="flex:0 0 auto;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#434E63;white-space:nowrap">Playlist</a>
+        <a href="#regalos" style="flex:0 0 auto;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#434E63;white-space:nowrap">Regalos</a>
+        <a href="#dresscode" style="flex:0 0 auto;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#434E63;white-space:nowrap">Dress code</a>
+      </nav>
+      <a href="#rsvp" style="flex:0 0 auto;display:inline-flex;align-items:center;min-height:42px;padding:0 22px;border-radius:999px;background:#1F2B44;color:#F8F9FC;font-size:12px;letter-spacing:.18em;text-transform:uppercase;white-space:nowrap;transition:background .25s ease" style-hover="background:#121722">Confirmar</a>
+    </div>
+  </div>
+
+  <section id="inicio" data-screen-label="Portada" style="position:relative;min-height:100vh;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));align-items:stretch;background:#F8F9FC;overflow:hidden">
+    <div style="display:flex;flex-direction:column;justify-content:center;padding:clamp(84px,9vw,120px) clamp(26px,6vw,88px) clamp(48px,6vw,80px);position:relative;z-index:2">
+      <div style="font-size:12px;letter-spacing:.44em;text-transform:uppercase;color:#8A6224;animation:bdAparecer 1.2s ease both .2s">Nos casamos en León</div>
+      <h1 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(58px,9.2vw,124px);line-height:.92;letter-spacing:-.015em;margin:clamp(18px,2.6vw,30px) 0 0;color:#121722;animation:bdSubir 1.4s cubic-bezier(.2,.7,.3,1) both .35s">Paloma</h1>
+      <div style="display:flex;align-items:baseline;gap:clamp(14px,2vw,26px);animation:bdSubir 1.4s cubic-bezier(.2,.7,.3,1) both .5s">
+        <span style="font-family:'Italianno',cursive;font-weight:400;font-size:clamp(52px,8vw,104px);color:#8A6224;line-height:.8">y</span>
+        <h1 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(58px,9.2vw,124px);line-height:.92;letter-spacing:-.015em;margin:0;color:#121722">David</h1>
+      </div>
+      <div style="height:1px;background:#B7C0D0;margin:clamp(28px,4vw,44px) 0;transform-origin:left;animation:bdLinea 1.4s cubic-bezier(.2,.7,.3,1) both .8s"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(20px,4vw,54px);animation:bdSubir 1.2s cubic-bezier(.2,.7,.3,1) both .95s">
+        <div>
+          <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#78839A;margin-bottom:8px">La fecha</div>
+          <div style="font-family:'Cormorant Infant',serif;font-size:clamp(24px,3vw,34px);line-height:1.1;color:#1F2B44">26 · 06 · 2027</div>
+        </div>
+        <div>
+          <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#78839A;margin-bottom:8px">El lugar</div>
+          <div style="font-family:'Cormorant Infant',serif;font-size:clamp(24px,3vw,34px);line-height:1.1;color:#1F2B44">Finca La Sierra</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:clamp(30px,4vw,44px);animation:bdAparecer 1.4s ease both 1.6s">
+        <span style="font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:#78839A">Bajad</span>
+        <span style="display:inline-block;width:1px;height:26px;background:linear-gradient(#B7C0D0,transparent);animation:bdFlotarCue 2.6s ease-in-out infinite"></span>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:clamp(20px,2.6vw,28px);animation:bdSubir 1.2s cubic-bezier(.2,.7,.3,1) both 1.1s">
+        <a href="#rsvp" style="display:inline-flex;align-items:center;min-height:52px;padding:0 32px;border-radius:999px;background:#1F2B44;color:#F8F9FC;font-size:12px;letter-spacing:.2em;text-transform:uppercase" style-hover="background:#121722">Confirmar asistencia</a>
+        <a href="#programa" style="display:inline-flex;align-items:center;min-height:52px;padding:0 32px;border-radius:999px;border:1px solid #B7C0D0;color:#1F2B44;font-size:12px;letter-spacing:.2em;text-transform:uppercase" style-hover="border-color:#3F4F70;background:#EEF1F6">Ver el día</a>
+      </div>
+    </div>
+    <div style="position:relative;overflow:hidden;min-height:min(60vh,520px);background:#EEF1F6;animation:bdAparecer 1.6s ease both .1s">
+      <div style="{{ heroFotoStyle }}">
+        <image-slot id="boda-hero" shape="rect" placeholder="Foto vertical de los novios" fit="cover"></image-slot>
+      </div>
+      <div style="position:absolute;left:0;top:0;bottom:0;width:120px;background:linear-gradient(90deg,#F8F9FC,rgba(251,250,248,0));pointer-events:none"></div>
+    </div>
+  </section>
+
+  <section id="paisaje" data-screen-label="Paisaje" ref="{{ refPaisaje }}" style="position:relative;height:300vh;background:#F8F9FC">
+    <div style="position:sticky;top:0;height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#F8F9FC">
+      <div style="{{ marcoStyle }}">
+        <div style="{{ mediaStyle }}">
+        <sc-if value="{{ hayVideo }}" hint-placeholder-val="{{ false }}">
+          <video src="{{ videoUrl }}" autoPlay="{{ true }}" muted="{{ true }}" loop="{{ true }}" playsInline="{{ true }}" style="width:100%;height:100%;object-fit:cover;display:block"></video>
+        </sc-if>
+        <sc-if value="{{ sinVideo }}" hint-placeholder-val="{{ true }}">
+          <image-slot id="boda-paisaje" shape="rect" placeholder="Vista aérea desde el cielo: Barcelona, Sevilla o León"></image-slot>
+        </sc-if>
+        </div>
+        <div style="{{ veloStyle }}"></div>
+        <div style="{{ textoPaisajeStyle }}">
+          <div style="font-size:11px;letter-spacing:.44em;text-transform:uppercase;color:#C3CEE1">Todo empezó entre</div>
+          <div style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(38px,7.4vw,98px);line-height:1.02;color:#F8F9FC;margin-top:clamp(14px,2vw,24px);text-wrap:balance">Barcelona y Sevilla</div>
+          <div style="font-family:'Italianno',cursive;font-size:clamp(30px,5vw,64px);color:#E3BE86;line-height:1.1;margin-top:6px">y continúa en León</div>
+        </div>
+      </div>
+      <div style="{{ pistaPaisajeStyle }}">
+        <span style="font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:#78839A">Seguid bajando</span>
+        <span style="display:block;width:1px;height:34px;background:linear-gradient(#B7C0D0,transparent);margin:12px auto 0"></span>
+      </div>
+    </div>
+  </section>
+
+  <section id="cuenta" style="background:#1F2B44;color:#EEF2F8;padding:clamp(64px,8vw,104px) 26px;position:relative;overflow:hidden">
+    <div style="position:absolute;inset:-40px;pointer-events:none;background-image:radial-gradient(circle at 18% 24%, rgba(241,239,231,.5) 1.3px, transparent 0), radial-gradient(circle at 64% 12%, rgba(241,239,231,.3) 1px, transparent 0), radial-gradient(circle at 86% 58%, rgba(241,239,231,.42) 1.5px, transparent 0), radial-gradient(circle at 34% 76%, rgba(241,239,231,.28) 1.1px, transparent 0);background-size:250px 220px, 180px 200px, 300px 270px, 220px 250px;animation:bdDeriva 44s linear infinite alternate, bdTitilar 7s ease-in-out infinite"></div>
+    <div style="position:relative;max-width:1000px;margin:0 auto;text-align:center;animation:bdCortina 1s linear both;animation-timeline:view();animation-range:entry 6% cover 26%">
+      <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#9DB0CE">Cuenta atrás</div>
+      <div style="display:flex;justify-content:center;gap:clamp(16px,5vw,68px);margin-top:clamp(26px,4vw,44px);flex-wrap:wrap">
+        <div style="min-width:88px;animation:bdEscala .8s linear both;animation-timeline:view();animation-range:entry 6% cover 26%"><div style="font-family:'Cormorant Infant',serif;font-size:clamp(46px,8vw,86px);line-height:1;font-weight:300;font-variant-numeric:tabular-nums">{{ dias }}</div><div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#9DB0CE;margin-top:10px">días</div></div>
+        <div style="min-width:88px;animation:bdEscala .8s linear both;animation-timeline:view();animation-range:entry 6% cover 26%"><div style="font-family:'Cormorant Infant',serif;font-size:clamp(46px,8vw,86px);line-height:1;font-weight:300;font-variant-numeric:tabular-nums">{{ horas }}</div><div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#9DB0CE;margin-top:10px">horas</div></div>
+        <div style="min-width:88px;animation:bdEscala .8s linear both;animation-timeline:view();animation-range:entry 6% cover 26%"><div style="font-family:'Cormorant Infant',serif;font-size:clamp(46px,8vw,86px);line-height:1;font-weight:300;font-variant-numeric:tabular-nums">{{ minutos }}</div><div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#9DB0CE;margin-top:10px">minutos</div></div>
+        <div style="min-width:88px;animation:bdEscala .8s linear both;animation-timeline:view();animation-range:entry 6% cover 26%"><div style="font-family:'Cormorant Infant',serif;font-size:clamp(46px,8vw,86px);line-height:1;font-weight:300;font-variant-numeric:tabular-nums">{{ segundos }}</div><div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#9DB0CE;margin-top:10px">segundos</div></div>
+      </div>
+      <p style="font-family:'Cormorant Infant',serif;font-style:italic;font-size:clamp(19px,2.4vw,26px);color:#D2DBEA;margin:clamp(30px,4vw,46px) auto 0;max-width:520px;line-height:1.5;text-wrap:pretty">Nos hace mucha ilusión celebrarlo con vosotros. Aquí abajo está todo lo que hay que saber.</p>
+    </div>
+  </section>
+
+  <section id="preboda" data-screen-label="Preboda" style="padding:clamp(76px,10vw,132px) 26px;background:#EEF1F6">
+    <div style="max-width:1080px;margin:0 auto">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:30px;flex-wrap:wrap;margin-bottom:clamp(36px,4.6vw,54px);animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 24%">
+        <div>
+          <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#8A6224;display:inline-flex;align-items:center;gap:9px"><span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto;opacity:.8"></span>Viernes 25 de junio</div>
+          <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(38px,5.4vw,68px);line-height:1.02;letter-spacing:-.016em;margin:16px 0 0;color:#121722">Si llegáis antes de tiempo</h2>
+        </div>
+        <p style="max-width:360px;color:#434E63;margin:0;font-size:16px;text-wrap:pretty">Muchos vendréis de fuera y el viernes da para mucho. Nosotros estaremos por León: venid a saludar.</p>
+      </div>
+      <div style="display:grid;gap:0;border-top:1px solid #D6DCE7">
+        <sc-for list="{{ preboda }}" as="p" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:auto 1px minmax(0,1fr);gap:clamp(18px,3vw,40px);align-items:start;padding:clamp(20px,2.6vw,30px) 0;border-bottom:1px solid #D6DCE7;animation:bdSubir .8s linear both;animation-timeline:view();animation-range:entry 2% cover 20%">
+            <div style="font-family:'Cormorant Infant',serif;font-size:clamp(24px,3vw,32px);line-height:1;font-variant-numeric:tabular-nums;color:#8A6224;animation:bdIzquierda .7s linear both;animation-timeline:view();animation-range:entry 2% cover 24%">{{ p.hora }}</div>
+            <div style="background:#D6DCE7;align-self:stretch;min-height:34px;transform-origin:top;animation:bdLineaV .8s linear both;animation-timeline:view();animation-range:entry 2% cover 26%"></div>
+            <div>
+              <h3 style="font-family:'Cormorant Infant',serif;font-weight:400;font-size:clamp(21px,2.4vw,27px);margin:0 0 8px;color:#121722;line-height:1.15">{{ p.titulo }}</h3>
+              <p style="margin:0;color:#434E63;max-width:560px;font-size:15.5px;text-wrap:pretty">{{ p.texto }}</p>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <p style="margin:clamp(26px,3vw,34px) 0 0;color:#434E63;font-size:15.5px;max-width:560px;text-wrap:pretty;animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">Nada de esto es obligatorio ni hace falta confirmarlo: pasaos por donde os apetezca.</p>
+    </div>
+  </section>
+
+  <section id="programa" data-screen-label="Programa" style="padding:clamp(76px,10vw,132px) 26px;background:#F8F9FC">
+    <div style="max-width:1080px;margin:0 auto">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:30px;flex-wrap:wrap;margin-bottom:clamp(40px,5vw,64px);animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 24%">
+        <div>
+          <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#78839A">Sábado 26 de junio</div>
+          <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(38px,5.4vw,68px);line-height:1.02;letter-spacing:-.016em;margin:16px 0 0;color:#121722">El día, hora a hora</h2>
+        </div>
+        <p style="max-width:340px;color:#434E63;margin:0;font-size:16px;text-wrap:pretty">Habrá autobús desde el centro de León a las 12:00 y de vuelta a las 02:00 y 04:30.</p>
+      </div>
+      <div style="display:grid;gap:0">
+        <sc-for list="{{ programa }}" as="item" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:auto 1px minmax(0,1fr);gap:clamp(18px,3vw,40px);align-items:start;padding:clamp(22px,3vw,34px) clamp(6px,1.4vw,16px);border-top:1px solid #DFE4EC;border-radius:4px;transition:background .3s ease;animation:bdSubir .8s linear both;animation-timeline:view();animation-range:entry 2% cover 20%" style-hover="background:#EEF1F6">
+            <div style="font-family:'Cormorant Infant',serif;font-size:clamp(26px,3.2vw,36px);line-height:1;font-variant-numeric:tabular-nums;color:#8A6224">{{ item.hora }}</div>
+            <div style="background:#DFE4EC;align-self:stretch;min-height:38px;transform-origin:top;animation:bdLineaV .8s linear both;animation-timeline:view();animation-range:entry 2% cover 26%"></div>
+            <div>
+              <h3 style="font-family:'Cormorant Infant',serif;font-weight:400;font-size:clamp(23px,2.6vw,30px);margin:0 0 8px;color:#121722;line-height:1.15">{{ item.titulo }}</h3>
+              <p style="margin:0;color:#434E63;max-width:560px;font-size:16px;text-wrap:pretty">{{ item.texto }}</p>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="border-top:1px solid #DFE4EC;margin-top:0;padding-top:clamp(30px,4vw,44px);display:flex;gap:clamp(18px,3vw,34px);flex-wrap:wrap;align-items:center;animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+        <div style="display:inline-flex;align-items:center;gap:10px;padding:11px 20px;border-radius:999px;background:#E7ECF3;color:#1F2B44;font-size:13px;letter-spacing:.06em">Etiqueta elegante · ceremonia al aire libre</div>
+        <div style="display:inline-flex;align-items:center;gap:10px;padding:11px 20px;border-radius:999px;background:#E7ECF3;color:#1F2B44;font-size:13px;letter-spacing:.06em">Césped y grava: cuidado con los tacones finos</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding:0 0 clamp(76px,10vw,132px);background:#F8F9FC">
+    <div style="max-width:1400px;margin:0 auto;padding:0 26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:clamp(14px,2vw,26px);animation:bdAparecer 1s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+      <div style="position:relative;min-width:0;aspect-ratio:4/3;background:#EEF1F6;overflow:hidden;animation:bdBarrido 1.1s linear both;animation-timeline:view();animation-range:entry 0% cover 26%"><div style="position:absolute;inset:0;animation:bdParalaje linear both;animation-timeline:view();animation-range:cover 0% cover 100%"><image-slot id="boda-galeria-1" shape="rect" placeholder="Foto de la finca"></image-slot></div></div>
+      <div style="position:relative;min-width:0;aspect-ratio:4/3;background:#EEF1F6;overflow:hidden;animation:bdBarrido 1.1s linear both;animation-timeline:view();animation-range:entry 0% cover 26%"><div style="position:absolute;inset:0;animation:bdParalaje linear both;animation-timeline:view();animation-range:cover 0% cover 100%"><image-slot id="boda-galeria-2" shape="rect" placeholder="Detalle"></image-slot></div></div>
+      <div style="position:relative;min-width:0;aspect-ratio:4/3;background:#EEF1F6;overflow:hidden;animation:bdBarrido 1.1s linear both;animation-timeline:view();animation-range:entry 0% cover 26%"><div style="position:absolute;inset:0;animation:bdParalaje linear both;animation-timeline:view();animation-range:cover 0% cover 100%"><image-slot id="boda-galeria-3" shape="rect" placeholder="Detalle"></image-slot></div></div>
+    </div>
+  </section>
+
+  <section id="alojamiento" data-screen-label="Alojamiento" style="padding:clamp(76px,10vw,132px) 26px;background:#EEF1F6">
+    <div style="max-width:1180px;margin:0 auto">
+      <div style="max-width:620px;margin-bottom:clamp(40px,5vw,60px);animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 24%">
+        <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#78839A">Dónde dormir</div>
+        <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(38px,5.4vw,68px);line-height:1.02;letter-spacing:-.016em;margin:16px 0 18px;color:#121722">Alojamiento</h2>
+        <p style="margin:0;color:#434E63;text-wrap:pretty">Hemos bloqueado habitaciones en tres hoteles de León con tarifa cerrada. Reservad diciendo <em style="font-family:'Cormorant Infant',serif;font-style:italic;font-size:1.1em;color:#8A6224">«Boda Paloma y David»</em> antes del 1 de mayo de 2027.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(18px,2.4vw,30px)">
+        <sc-for list="{{ hoteles }}" as="h" hint-placeholder-count="3">
+          <div style="background:#FFFFFF;border:1px solid #DFE4EC;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;transition:transform .3s ease, box-shadow .3s ease, border-color .3s ease;animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%" style-hover="border-color:#8B97AC;transform:translateY(-4px);box-shadow:0 22px 44px -32px rgba(20,20,15,.5)">
+            <div style="position:relative;aspect-ratio:4/3;background:#EEF1F6;overflow:hidden"><div style="position:absolute;inset:0;animation:bdZoom 1.2s linear both;animation-timeline:view();animation-range:entry 0% cover 30%"><image-slot id="{{ h.slot }}" shape="rect" placeholder="Foto del hotel"></image-slot></div></div>
+            <div style="padding:26px 24px 28px;display:flex;flex-direction:column;flex:1">
+              <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#78839A">{{ h.categoria }}</div>
+              <h3 style="font-family:'Cormorant Infant',serif;font-weight:400;font-size:27px;margin:10px 0 10px;color:#121722;line-height:1.15">{{ h.nombre }}</h3>
+              <p style="margin:0 0 18px;color:#434E63;font-size:15.5px;text-wrap:pretty">{{ h.texto }}</p>
+              <div style="flex:1"></div>
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding-top:16px;border-top:1px solid #E6EAF1">
+                <span style="font-family:'Cormorant Infant',serif;font-size:23px;color:#1F2B44">{{ h.precio }}</span>
+                <a href="{{ h.enlace }}" style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#3F4F70">Reservar →</a>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="llegar" data-screen-label="Cómo llegar" style="padding:clamp(76px,10vw,132px) 26px;background:#F8F9FC">
+    <div style="max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:clamp(30px,5vw,72px);align-items:center">
+      <div style="animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 24%">
+        <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#78839A">Finca La Sierra</div>
+        <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(38px,5.4vw,68px);line-height:1.02;letter-spacing:-.016em;margin:16px 0 22px;color:#121722">Cómo llegar</h2>
+        <p style="margin:0 0 30px;color:#434E63;max-width:460px;text-wrap:pretty">Ctra. de la Sierra, km 4 · 24193 León. A 18 minutos en coche del centro, con aparcamiento propio y gratuito dentro de la finca.</p>
+        <div style="display:grid;gap:0;border-top:1px solid #DFE4EC">
+          <sc-for list="{{ rutas }}" as="r" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;padding:20px 0;border-bottom:1px solid #DFE4EC;align-items:start;animation:bdIzquierda .8s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+              <span style="font-family:'Cormorant Infant',serif;font-size:20px;color:#3F4F70;min-width:64px">{{ r.tiempo }}</span>
+              <div>
+                <div style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#121722;margin-bottom:6px">{{ r.modo }}</div>
+                <div style="color:#434E63;font-size:15.5px;text-wrap:pretty">{{ r.detalle }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <a href="https://maps.google.com/?q=Finca+La+Sierra+Le%C3%B3n" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 30px;border-radius:999px;background:#1F2B44;color:#F8F9FC;font-size:12px;letter-spacing:.2em;text-transform:uppercase;margin-top:30px" style-hover="background:#121722">Abrir en el mapa</a>
+      </div>
+      <div style="position:relative;aspect-ratio:1/1.06;background:#EEF1F6;border:1px solid #DFE4EC;animation:bdDerecha 1s linear both;animation-timeline:view();animation-range:entry 2% cover 24%">
+        <image-slot id="boda-mapa" shape="rect" placeholder="Captura del mapa de la finca"></image-slot>
+      </div>
+    </div>
+  </section>
+
+  <section id="playlist" data-screen-label="Playlist" style="padding:clamp(76px,10vw,132px) 26px;background:#EEF1F6">
+    <div style="max-width:900px;margin:0 auto">
+      <div style="text-align:center;animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 24%">
+        <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#8A6224;display:inline-flex;align-items:center;gap:9px"><span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto;opacity:.8"></span>La pista es cosa vuestra</div>
+        <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(38px,5.4vw,68px);line-height:1.02;letter-spacing:-.016em;margin:16px 0 18px;color:#121722">Playlist colaborativa</h2>
+        <p style="margin:0 auto;max-width:460px;color:#434E63;text-wrap:pretty">Dejadnos la canción que os apetece bailar y la añadimos a la lista que sonará esa noche.</p>
+      </div>
+      <form onSubmit="{{ anadirCancion }}" style="display:flex;gap:12px;flex-wrap:wrap;margin:clamp(30px,4vw,44px) 0 0;justify-content:center;animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+        <input name="cancion" placeholder="Canción y artista" style="flex:1;min-width:240px;min-height:54px;padding:0 20px;border:1px solid #DFE4EC;border-radius:999px;background:#FFFFFF;font-size:16px;color:#121722;outline:none" style-focus="border-color:#3F4F70;box-shadow:0 0 0 3px #E7ECF3" />
+        <button type="submit" style="min-height:54px;padding:0 30px;border:none;border-radius:999px;background:#3F4F70;color:#F8F9FC;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer" style-hover="background:#2C3A56">Añadir</button>
+      </form>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:30px;animation:bdAparecer 1s linear both;animation-timeline:view();animation-range:entry 2% cover 24%">
+        <sc-for list="{{ canciones }}" as="c" hint-placeholder-count="5">
+          <span style="display:inline-flex;align-items:center;gap:9px;padding:11px 18px;border-radius:999px;background:#E7ECF3;color:#1F2B44;font-size:14.5px;transition:background .25s ease, transform .25s ease;animation:bdPop .5s cubic-bezier(.2,1.3,.4,1) both" style-hover="background:#D5DEEC;transform:translateY(-2px)">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="5" cy="12" r="2.4"></circle><circle cx="13" cy="10" r="2.4"></circle><path d="M7.4 12V4l8-1.4V10"></path></svg>
+            {{ c }}
+          </span>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="regalos" data-screen-label="Regalos" style="padding:clamp(76px,10vw,132px) 26px;background:#F8F9FC">
+    <div style="max-width:820px;margin:0 auto;text-align:center">
+      <div style="animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 24%">
+        <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#8A6224;display:inline-flex;align-items:center;gap:9px;animation:bdBarrido 1.1s linear both;animation-timeline:view();animation-range:entry 4% cover 26%">Vuestra presencia ya es el regalo</div>
+        <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(38px,5.4vw,68px);line-height:1.02;letter-spacing:-.016em;margin:16px 0 18px;color:#121722">Si queréis regalarnos algo</h2>
+        <p style="margin:0 auto;max-width:480px;color:#434E63;text-wrap:pretty">No esperamos nada, de verdad. Si aun así os apetece contribuir, estamos ahorrando para el viaje de novios y aquí tenéis la cuenta.</p>
+      </div>
+      <div style="background:#EEF1F6;border:1px solid #DFE4EC;border-radius:8px;padding:clamp(26px,4vw,42px);margin-top:clamp(30px,4vw,44px);animation:bdEscala 1s linear both;animation-timeline:view();animation-range:entry 2% cover 22%">
+        <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#78839A">Cuenta a nombre de Paloma Fernández y David Ruiz</div>
+        <div style="font-family:'Cormorant Infant',serif;font-size:clamp(22px,3.4vw,34px);line-height:1.3;color:#121722;margin:16px 0 22px;letter-spacing:.03em;overflow-wrap:anywhere">{{ iban }}</div>
+        <button type="button" onClick="{{ copiarIban }}" style="min-height:52px;padding:0 30px;border:none;border-radius:999px;background:#1F2B44;color:#F8F9FC;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:background .25s ease" style-hover="background:#121722">{{ textoCopiar }}</button>
+        <div style="font-size:14.5px;color:#434E63;margin-top:20px">También habrá un buzón en la entrada del invernadero.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="dresscode" data-screen-label="Dress code" style="padding:clamp(76px,10vw,132px) 26px;background:#EEF1F6">
+    <div style="max-width:1080px;margin:0 auto">
+      <div style="max-width:600px;margin-bottom:clamp(36px,4.6vw,54px);animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 24%">
+        <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#8A6224;display:inline-flex;align-items:center;gap:9px"><span style="width:4px;height:4px;background:currentColor;transform:rotate(45deg);flex:0 0 auto;opacity:.8"></span>Qué ponerse</div>
+        <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(38px,5.4vw,68px);line-height:1.02;letter-spacing:-.016em;margin:16px 0 18px;color:#121722">Dress code</h2>
+        <p style="margin:0;color:#434E63;text-wrap:pretty">Etiqueta elegante. La ceremonia es al aire libre y en junio hace calor de día y fresco de noche, así que vestíos cómodos: la fiesta es larga.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:clamp(16px,2.4vw,28px)">
+        <div style="background:#FFFFFF;border:1px solid #DFE4EC;border-radius:6px;padding:28px 26px;transition:transform .3s ease, box-shadow .3s ease;animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%" style-hover="transform:translateY(-4px);box-shadow:0 22px 44px -32px rgba(20,20,15,.45)">
+          <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#3F4F70;margin-bottom:14px">Ellas</div>
+          <p style="margin:0;color:#434E63;font-size:15.5px;text-wrap:pretty">Vestido largo o midi. El suelo es de césped y grava: mejor tacón ancho o sandalia plana bonita. Un chal o chaqueta fina para la noche.</p>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #DFE4EC;border-radius:6px;padding:28px 26px;transition:transform .3s ease, box-shadow .3s ease;animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%" style-hover="transform:translateY(-4px);box-shadow:0 22px 44px -32px rgba(20,20,15,.45)">
+          <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#3F4F70;margin-bottom:14px">Ellos</div>
+          <p style="margin:0;color:#434E63;font-size:15.5px;text-wrap:pretty">Traje en tono medio o claro. La corbata es opcional y la chaqueta se puede quitar en cuanto acabe la ceremonia: nosotros lo haremos.</p>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #DFE4EC;border-radius:6px;padding:28px 26px;transition:transform .3s ease, box-shadow .3s ease;animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%" style-hover="transform:translateY(-4px);box-shadow:0 22px 44px -32px rgba(20,20,15,.45)">
+          <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#8A6224;margin-bottom:14px">Solo dos peticiones</div>
+          <p style="margin:0;color:#434E63;font-size:15.5px;text-wrap:pretty">Sin blanco entero, que ese día le toca a Paloma. Y nada de tacón de aguja fino, os lo agradecerán vuestros pies y el césped.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="rsvp" data-screen-label="RSVP" style="padding:clamp(76px,10vw,132px) 26px;background:#1F2B44;color:#EEF2F8">
+    <div style="max-width:820px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:clamp(38px,5vw,58px);animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 4% cover 24%">
+        <div style="font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:#9DB0CE">Antes del 1 de mayo de 2027</div>
+        <h2 style="font-family:'Cormorant Infant',serif;font-weight:300;font-size:clamp(38px,5.4vw,68px);line-height:1.02;letter-spacing:-.016em;margin:16px 0 0">Confirmad asistencia</h2>
+      </div>
+      <div style="{{ formStyle }}">
+        <form onSubmit="{{ enviar }}" style="display:grid;gap:22px;background:#F8F9FC;color:#121722;padding:clamp(26px,4vw,46px);border-radius:8px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:18px">
+            <label style="display:grid;gap:9px;animation:bdSubir .7s linear both;animation-timeline:view();animation-range:entry 2% cover 26%">
+              <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#434E63">Nombre y apellidos</span>
+              <input name="nombre" required="" placeholder="Paloma Fernández" style="min-height:50px;padding:0 16px;border:1px solid #DFE4EC;border-radius:6px;background:#FFFFFF;font-size:16px;color:#121722;outline:none" style-focus="border-color:#3F4F70;box-shadow:0 0 0 3px #E7ECF3" />
+            </label>
+            <label style="display:grid;gap:9px;animation:bdSubir .7s linear both;animation-timeline:view();animation-range:entry 2% cover 26%">
+              <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#434E63">Email o teléfono</span>
+              <input name="contacto" required="" placeholder="para avisaros de cambios" style="min-height:50px;padding:0 16px;border:1px solid #DFE4EC;border-radius:6px;background:#FFFFFF;font-size:16px;color:#121722;outline:none" style-focus="border-color:#3F4F70;box-shadow:0 0 0 3px #E7ECF3" />
+            </label>
+          </div>
+          <div style="display:grid;gap:11px">
+            <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#434E63">¿Vendréis?</span>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <button type="button" onClick="{{ decirSi }}" style="{{ btnSiStyle }}">Sí, allí estaremos</button>
+              <button type="button" onClick="{{ decirNo }}" style="{{ btnNoStyle }}">No podré ir</button>
+            </div>
+          </div>
+          <div style="{{ detalleStyle }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:18px">
+              <label style="display:grid;gap:9px;animation:bdSubir .7s linear both;animation-timeline:view();animation-range:entry 2% cover 26%">
+                <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#434E63">Nº de personas</span>
+                <select name="personas" style="min-height:50px;padding:0 14px;border:1px solid #DFE4EC;border-radius:6px;background:#FFFFFF;font-size:16px;color:#121722;outline:none">
+                  <option>1</option><option>2</option><option>3</option><option>4</option>
+                </select>
+              </label>
+              <label style="display:grid;gap:9px;animation:bdSubir .7s linear both;animation-timeline:view();animation-range:entry 2% cover 26%">
+                <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#434E63">Autobús</span>
+                <select name="bus" style="min-height:50px;padding:0 14px;border:1px solid #DFE4EC;border-radius:6px;background:#FFFFFF;font-size:16px;color:#121722;outline:none">
+                  <option>Ida y vuelta</option><option>Solo ida</option><option>Solo vuelta</option><option>No lo necesito</option>
+                </select>
+              </label>
+            </div>
+            <label style="display:grid;gap:9px;margin-top:18px">
+              <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#434E63">Alergias o menú especial</span>
+              <input name="menu" placeholder="Celíaco, vegetariano, sin lactosa…" style="min-height:50px;padding:0 16px;border:1px solid #DFE4EC;border-radius:6px;background:#FFFFFF;font-size:16px;color:#121722;outline:none" style-focus="border-color:#3F4F70;box-shadow:0 0 0 3px #E7ECF3" />
+            </label>
+          </div>
+          <label style="display:grid;gap:9px">
+            <span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#434E63">Un mensaje para nosotros</span>
+            <textarea name="mensaje" rows="3" placeholder="Opcional" style="padding:14px 16px;border:1px solid #DFE4EC;border-radius:6px;background:#FFFFFF;font-size:16px;color:#121722;outline:none;resize:vertical;line-height:1.5" style-focus="border-color:#3F4F70;box-shadow:0 0 0 3px #E7ECF3"></textarea>
+          </label>
+          <button type="submit" style="min-height:56px;border:none;border-radius:999px;background:#1F2B44;color:#F8F9FC;font-size:12px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;margin-top:4px" style-hover="background:#121722">{{ textoEnviar }}</button>
+          <div style="{{ errorStyle }}">{{ error }}</div>
+        </form>
+      </div>
+      <div style="{{ graciasStyle }}">
+        <div style="font-family:'Cormorant Infant',serif;font-size:clamp(34px,4.4vw,54px);line-height:1.1;color:#EEF2F8">{{ tituloGracias }}</div>
+        <p style="color:#D2DBEA;max-width:420px;margin:18px auto 0;text-wrap:pretty">{{ textoGracias }}</p>
+      </div>
+    </div>
+  </section>
+
+  <footer style="background:#0D1220;color:#7E8AA0;padding:clamp(56px,7vw,88px) 26px 40px;text-align:center;animation:bdSubir 1s linear both;animation-timeline:view();animation-range:entry 4% cover 30%">
+    <div style="font-family:'Cormorant Infant',serif;font-size:44px;color:#EEF2F8;line-height:1;animation:bdPop .9s linear both;animation-timeline:view();animation-range:entry 6% cover 34%">P<span style="font-style:italic;color:#8FA0BC;font-size:.72em;margin:0 .06em">&amp;</span>D</div>
+    <div style="font-size:12px;letter-spacing:.36em;text-transform:uppercase;margin-top:22px">26 · 06 · 2027 — Finca La Sierra, León</div>
+    <div style="display:flex;gap:26px;justify-content:center;flex-wrap:wrap;margin-top:30px;font-size:13px;letter-spacing:.1em">
+      <a href="./Save the Date azul.dc.html" style="color:#9DB0CE">Save the date</a>
+      <a href="./Sistema de marca azul.dc.html" style="color:#9DB0CE">Sistema de marca</a>
+      <a href="./Carteleria azul.dc.html" style="color:#9DB0CE">Cartelería</a>
+      <a href="mailto:hola@palomaydavid.es" style="color:#9DB0CE">hola@palomaydavid.es</a>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;endpointRsvp&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Integraciones&quot;},&quot;iban&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;ES91 2100 0418 4502 0005 1332&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Regalos&quot;},&quot;videoUrl&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Paisaje&quot;}}">
+class Component extends DCLogic {
+  state = { t: Date.now(), scroll: 0, asiste: null, enviando: false, enviado: false, error: '', ibanCopiado: false, canciones: ['Bailando — Alaska', 'Con Altura — Rosalía', 'September — Earth, Wind & Fire', 'La Flaca — Jarabe de Palo'] };
+
+  componentDidMount() {
+    this._id = setInterval(() => this.setState({ t: Date.now() }), 1000);
+    this._onScroll = () => this.setState({ scroll: window.scrollY });
+    window.addEventListener('scroll', this._onScroll, { passive: true });
+  }
+  componentWillUnmount() {
+    clearInterval(this._id);
+    clearTimeout(this._ibanTo);
+    window.removeEventListener('scroll', this._onScroll);
+  }
+
+  cuenta() {
+    let d = Math.max(0, new Date('2027-06-26T12:00:00').getTime() - this.state.t);
+    const dias = Math.floor(d / 864e5); d -= dias * 864e5;
+    const horas = Math.floor(d / 36e5); d -= horas * 36e5;
+    const min = Math.floor(d / 6e4); d -= min * 6e4;
+    const p = (n) => String(n).padStart(2, '0');
+    return { dias: String(dias), horas: p(horas), minutos: p(min), segundos: p(Math.floor(d / 1e3)) };
+  }
+
+  enviar = async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (this.state.asiste === null) { this.setState({ error: 'Indicadnos si podréis venir.' }); return; }
+    const datos = Object.fromEntries(new FormData(form).entries());
+    datos.asiste = this.state.asiste;
+    this.setState({ enviando: true, error: '' });
+    const url = this.props.endpointRsvp || '';
+    try {
+      if (url) {
+        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+        if (!r.ok) throw new Error('respuesta ' + r.status);
+      } else {
+        await new Promise((res) => setTimeout(res, 700));
+      }
+      this.setState({ enviando: false, enviado: true });
+    } catch (err) {
+      this.setState({ enviando: false, error: 'No hemos podido guardarlo. Escribidnos a hola@palomaydavid.es y lo apuntamos.' });
+    }
+  };
+
+  decirSi = () => this.setState({ asiste: 'si', error: '' });
+  decirNo = () => this.setState({ asiste: 'no', error: '' });
+
+  _paisaje = React.createRef();
+
+  progresoLectura() {
+    const d = document.documentElement;
+    const total = d.scrollHeight - window.innerHeight;
+    if (total <= 0) return 0;
+    return Math.min(1, Math.max(0, this.state.scroll / total));
+  }
+
+  progresoPaisaje() {
+    const el = this._paisaje.current;
+    if (!el) return 0;
+    const r = el.getBoundingClientRect();
+    const recorrido = r.height - window.innerHeight;
+    if (recorrido <= 0) return 0;
+    return Math.min(1, Math.max(0, -r.top / recorrido));
+  }
+
+  copiarIban = async () => {
+    const iban = this.props.iban || 'ES91 2100 0418 4502 0005 1332';
+    try { await navigator.clipboard.writeText(iban.replace(/\s/g, '')); } catch (err) { /* sin portapapeles */ }
+    this.setState({ ibanCopiado: true });
+    clearTimeout(this._ibanTo);
+    this._ibanTo = setTimeout(() => this.setState({ ibanCopiado: false }), 2600);
+  };
+
+  anadirCancion = (e) => {
+    e.preventDefault();
+    const input = e.currentTarget.elements.cancion;
+    const v = (input.value || '').trim();
+    if (!v) return;
+    this.setState((s) => ({ canciones: s.canciones.concat(v) }));
+    input.value = '';
+  };
+
+  renderVals() {
+    const s = this.state;
+    const compacto = s.scroll > 90;
+    const p = this.progresoPaisaje();
+    const suave = (x) => x * x * (3 - 2 * x);
+    const zoom = suave(Math.min(1, p / 0.72));
+    const anchoMarco = 40 + 60 * zoom;
+    const altoMarco = 46 + 54 * zoom;
+    const radio = 4 * (1 - zoom);
+    const textoP = Math.min(1, Math.max(0, (p - 0.42) / 0.26));
+    const videoUrl = this.props.videoUrl || '';
+
+    const pill = (activo) => `min-height:50px;padding:0 26px;border-radius:999px;cursor:pointer;font-size:12px;letter-spacing:.18em;text-transform:uppercase;transition:all .25s ease;border:1px solid ${activo ? '#1F2B44' : '#DFE4EC'};background:${activo ? '#1F2B44' : '#FFFFFF'};color:${activo ? '#F8F9FC' : '#434E63'}`;
+    return {
+      ...this.cuenta(),
+      canciones: s.canciones,
+      enviar: this.enviar,
+      decirSi: this.decirSi,
+      decirNo: this.decirNo,
+      anadirCancion: this.anadirCancion,
+      error: s.error,
+      textoEnviar: s.enviando ? 'Enviando…' : 'Enviar confirmación',
+      barraProgresoStyle: `position:fixed;left:0;top:0;height:2px;z-index:80;background:#8A6224;width:${(this.progresoLectura() * 100).toFixed(2)}%;transition:width .12s linear`,
+      heroFotoStyle: `position:absolute;inset:-6% 0;transform:translateY(${Math.min(60, s.scroll * 0.14).toFixed(1)}px);animation:bdZoom 2.4s cubic-bezier(.2,.7,.3,1) both;will-change:transform`,
+      refPaisaje: this._paisaje,
+      videoUrl,
+      hayVideo: !!videoUrl,
+      sinVideo: !videoUrl,
+      mediaStyle: `position:absolute;inset:0;transform:scale(${(1.18 - 0.18 * zoom).toFixed(3)});transform-origin:center;will-change:transform`,
+      marcoStyle: `position:relative;width:${anchoMarco}%;height:${altoMarco}vh;border-radius:${radio}px;overflow:hidden;background:#E7ECF3;box-shadow:0 ${44 * (1 - zoom)}px ${90 * (1 - zoom)}px -${40 * (1 - zoom)}px rgba(20,20,15,.5);will-change:width,height`,
+      veloStyle: `position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(20,23,15,${0.10 + 0.30 * zoom}) 0%, rgba(20,23,15,${0.20 + 0.42 * zoom}) 100%)`,
+      textoPaisajeStyle: `position:absolute;left:0;right:0;top:50%;transform:translateY(calc(-50% + ${26 * (1 - textoP)}px));text-align:center;padding:0 24px;opacity:${textoP};pointer-events:none`,
+      pistaPaisajeStyle: `position:absolute;left:0;right:0;bottom:clamp(22px,4vh,44px);text-align:center;transition:opacity .4s ease;opacity:${p < 0.06 ? 1 : 0};pointer-events:none`,
+      iban: this.props.iban || 'ES91 2100 0418 4502 0005 1332',
+      copiarIban: this.copiarIban,
+      textoCopiar: s.ibanCopiado ? 'Copiado' : 'Copiar número de cuenta',
+      preboda: [
+        { hora: '18:00', titulo: 'Visita a la catedral', texto: 'Los que lleguéis pronto, quedamos en la puerta oeste. Media hora larga y merece cada minuto.' },
+        { hora: '20:30', titulo: 'Vinos por el Barrio Húmedo', texto: 'Ruta corta de tapa y vino sin plan fijo. Empezamos en la Plaza de San Martín.' },
+        { hora: '22:30', titulo: 'Cena informal', texto: 'Mesa reservada a nombre de David. Avisadnos por WhatsApp si os apuntáis para ampliarla.' },
+        { hora: 'Sábado 11:00', titulo: 'Café antes de la boda', texto: 'En la cafetería del Parador, para los que durmáis allí. Sin prisa: el autobús sale a las 12:00.' }
+      ],
+      navStyle: `position:sticky;top:0;z-index:60;transition:background .4s ease, border-color .4s ease, backdrop-filter .4s ease;background:${compacto ? 'rgba(251,250,248,.88)' : 'rgba(251,250,248,0)'};backdrop-filter:blur(${compacto ? 14 : 0}px);border-bottom:1px solid ${compacto ? '#DFE4EC' : 'transparent'}`,
+      btnSiStyle: pill(s.asiste === 'si'),
+      btnNoStyle: pill(s.asiste === 'no'),
+      detalleStyle: `overflow:hidden;transition:max-height .55s cubic-bezier(.22,.75,.24,1), opacity .4s ease;max-height:${s.asiste === 'si' ? 700 : 0}px;opacity:${s.asiste === 'si' ? 1 : 0}`,
+      formStyle: `transition:opacity .5s ease, transform .5s ease;opacity:${s.enviado ? 0 : 1};transform:scale(${s.enviado ? 0.98 : 1});max-height:${s.enviado ? 0 : 4000}px;overflow:hidden;pointer-events:${s.enviado ? 'none' : 'auto'};animation:bdSubir .9s linear both;animation-timeline:view();animation-range:entry 2% cover 20%`,
+      errorStyle: `font-size:14.5px;color:#D14545;text-align:center;transition:opacity .3s ease;opacity:${s.error ? 1 : 0};min-height:${s.error ? 'auto' : '0'}`,
+      graciasStyle: `text-align:center;transition:opacity .7s ease .2s;opacity:${s.enviado ? 1 : 0};max-height:${s.enviado ? 400 : 0}px;overflow:hidden`,
+      tituloGracias: s.asiste === 'no' ? 'Os echaremos de menos' : '¡Qué alegría!',
+      textoGracias: s.asiste === 'no' ? 'Gracias por avisar. Brindaremos por vosotros y os guardamos un trozo de tarta.' : 'Apuntado. Os escribiremos unas semanas antes con los últimos detalles.',
+      programa: [
+        { hora: '12:00', titulo: 'Autobús desde León', texto: 'Salida desde la Plaza de Santo Domingo. Intentad estar cinco minutos antes.' },
+        { hora: '13:00', titulo: 'Ceremonia', texto: 'En el olivar de la finca, a la sombra. Habrá abanicos y agua fría esperando.' },
+        { hora: '14:00', titulo: 'Aperitivo y vermut', texto: 'Cava, cecina y música en directo en la terraza baja.' },
+        { hora: '16:00', titulo: 'Banquete', texto: 'Comida sentada en el invernadero. Encontraréis vuestro sitio en el plano de mesas.' },
+        { hora: '19:30', titulo: 'Baile y barra', texto: 'Primer baile, DJ y barra libre hasta el final.' },
+        { hora: '02:00', titulo: 'Recena y vuelta', texto: 'Sopa de ajo para los que sigan en pie. Autobuses de vuelta a las 02:00 y 04:30.' }
+      ],
+      hoteles: [
+        { slot: 'boda-hotel-1', categoria: 'A 18 min · con bus', nombre: 'Parador de San Marcos', texto: 'El clásico de León, junto al río. Salida y llegada del autobús en la puerta.', precio: '135 € / noche', enlace: 'https://maps.google.com/?q=Parador+de+Le%C3%B3n+San+Marcos', slotFoto: '' },
+        { slot: 'boda-hotel-2', categoria: 'A 20 min · céntrico', nombre: 'Hotel Conde Luna', texto: 'En el casco antiguo, a dos calles del Barrio Húmedo. Ideal si os quedáis el domingo.', precio: '95 € / noche', enlace: 'https://maps.google.com/?q=Hotel+Conde+Luna+Le%C3%B3n', slotFoto: '' },
+        { slot: 'boda-hotel-3', categoria: 'A 6 min · rural', nombre: 'Posada La Sierra', texto: 'Ocho habitaciones a un paso de la finca. Perfecto para familias con niños.', precio: '78 € / noche', enlace: 'https://maps.google.com/?q=Posada+La+Sierra+Le%C3%B3n', slotFoto: '' }
+      ],
+      rutas: [
+        { tiempo: '18 min', modo: 'En coche', detalle: 'Desde León por la LE-311 hasta el km 4. Aparcamiento gratuito dentro de la finca.' },
+        { tiempo: '25 min', modo: 'En autobús', detalle: 'Servicio privado gratuito: 12:00 de ida, 02:00 y 04:30 de vuelta.' },
+        { tiempo: '1 h 50', modo: 'En tren', detalle: 'AVE Madrid–León. Desde la estación, 20 min en taxi (unos 25 €).' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

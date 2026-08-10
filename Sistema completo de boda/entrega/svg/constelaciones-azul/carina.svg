@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="240" height="240" fill="none">
+  <title>Carina</title>
+  <line x1="11" y1="58" x2="30" y2="42" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="30" y1="42" x2="50" y2="51" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="50" y1="51" x2="70" y2="34" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="70" y1="34" x2="88" y2="52" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <line x1="50" y1="51" x2="58" y2="74" stroke="rgba(63,79,112,0.42)" stroke-width="0.7" stroke-linecap="round"></line>
+  <circle cx="11" cy="58" r="1.8" fill="#1F2B44"></circle>
+  <circle cx="30" cy="42" r="1.1" fill="#1F2B44"></circle>
+  <circle cx="50" cy="51" r="1" fill="#1F2B44"></circle>
+  <circle cx="70" cy="34" r="1.2" fill="#1F2B44"></circle>
+  <circle cx="88" cy="52" r="1" fill="#1F2B44"></circle>
+  <circle cx="58" cy="74" r="1" fill="#1F2B44"></circle>
+</svg>
