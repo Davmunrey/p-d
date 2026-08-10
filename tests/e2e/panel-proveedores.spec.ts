@@ -113,9 +113,27 @@ async function esperarEstado(pagina: Page, esperado: string) {
     enseñarlo en vez de mandar a mirar plazos. `toHaveURL` imprime la URL
     recibida y con eso el fallo se lee solo.
   */
-  await expect(pagina).toHaveURL(new RegExp(`estado=${esperado}(&|$)`), {
-    timeout: 30_000,
-  });
+  try {
+    await expect(pagina).toHaveURL(new RegExp(`estado=${esperado}(&|$)`), {
+      timeout: 30_000,
+    });
+  } catch (fallo) {
+    /*
+      SI NO REDIRIGE, LO SIGUIENTE QUE HAY QUE SABER ES QUÉ SE VE.
+      Una acción que lanza no cambia la URL: Next pinta el `error.tsx` del
+      panel en el sitio y la dirección se queda como estaba. Visto sólo desde
+      la URL, eso es indistinguible de «no ha pasado nada» — y son dos cosas
+      muy distintas. Se adjunta lo que la pantalla está diciendo para que el
+      registro de CI lo distinga sin tener que abrir la traza.
+    */
+    const enPantalla = await pagina
+      .locator("main")
+      .innerText()
+      .catch(() => "(no se pudo leer la pantalla)");
+    throw new Error(
+      `${(fallo as Error).message}\n\nLa pantalla decía:\n${enPantalla.slice(0, 600)}`,
+    );
+  }
 }
 
 test.describe("El módulo de proveedores", () => {
