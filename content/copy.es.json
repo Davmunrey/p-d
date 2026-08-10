@@ -143,6 +143,7 @@
     "editarRespuesta": "Cambiar la respuesta",
     "tokenInvalido": "Este enlace no es válido. Escribidnos y os mandamos uno nuevo.",
     "plazoCerrado": "El plazo para confirmar ya se ha cerrado. Escribidnos y lo miramos.",
+    "plazoCerradoContacto": "Si tenéis que cambiar algo, escribidnos y lo miramos.",
     "antesDel": "Antes del {fecha}",
     "etiquetaPaso": "Paso {actual} de {total}",
     "saludo": "Hola, {grupo}",
