@@ -349,6 +349,12 @@
   --blur-1: 6px;
   --blur-2: 12px;
 
+  /* Proporciones. Crudas y sin destino: quién las usa lo decide la capa
+   * semántica. */
+  --ratio-cuadrado: 1 / 1;
+  --ratio-paisaje: 4 / 3;
+  --ratio-panoramico: 16 / 9;
+
   /* ---------------------------------------------------------------------
    * Movimiento — las animaciones también son tokens
    * ------------------------------------------------------------------- */

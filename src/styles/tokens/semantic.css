@@ -169,6 +169,11 @@
   --radio-imagen: var(--radius-sutil);
   --radio-modal: var(--radius-amplio);
   --radio-etiqueta: var(--radius-redondo);
+
+  /* El mapa de «cómo llegar». Apaisado y no panorámico: una franja demasiado
+   * ancha deja la finca en el centro y el pueblo fuera, que es justo la
+   * referencia que hace falta para situarse. */
+  --proporcion-mapa: var(--ratio-paisaje);
   --sombra-sutil: var(--shadow-1);
   --sombra-tarjeta: var(--shadow-2);
   --sombra-elevada: var(--shadow-3);
