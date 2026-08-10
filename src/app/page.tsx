@@ -608,8 +608,15 @@ function Transporte({
   return (
     <Bloque
       seccion="transporte"
-      etiqueta={t("comoLlegar.etiqueta")}
+      /*
+        LA ENTREGA PONE AQUÍ EL NOMBRE DE LA FINCA, no un rótulo genérico: es
+        la primera vez que aparece con todas sus letras y es lo que se busca
+        cuando alguien llega a esta sección. Sin lugar configurado se cae al
+        rótulo de siempre en vez de dejar un hueco.
+      */
+      etiqueta={configuracion.lugarCeremonia ?? t("comoLlegar.etiqueta")}
       titulo={t("comoLlegar.titulo")}
+      entradilla={configuracion.direccionCeremonia ?? undefined}
     >
       <div className="grid gap-bloque lg:grid-cols-2">
         <ul className="border-t border-borde">
