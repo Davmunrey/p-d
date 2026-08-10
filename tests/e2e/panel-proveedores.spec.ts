@@ -29,7 +29,19 @@ const cadena = process.env.DATABASE_URL;
 
 const MARCA = "(DES) E2E Proveedores";
 
-test.describe.configure({ mode: "serial" });
+/*
+  NO VAN EN SERIE, Y ES UN ARREGLO, NO UNA RELAJACIÓN.
+
+  Cada test se fabrica sus propios datos por SQL —su proveedor, su categoría—
+  así que no dependen unos de otros. Ponerlos en serie sólo tenía un efecto, y
+  era malo: cuando uno se pasaba de plazo, Playwright **saltaba los siguientes**
+  («3 did not run») y reintentaba el bloque ENTERO, multiplicando el trabajo del
+  runner justo cuando iba justo de tiempo. Así, un solo viaje lento tumbaba el
+  trabajo y escondía si los demás pasaban.
+
+  Sin serie, un fallo es un fallo de un test, el reintento vuelve a ejecutar ese
+  y nada más, y el registro dice la verdad sobre los otros.
+*/
 
 async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T> {
   const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
