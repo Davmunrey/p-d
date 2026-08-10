@@ -141,6 +141,7 @@ export default async function PaginaInicio() {
     consejos,
     cuentaRegalos,
     fotosPortada,
+    fotosPaisaje,
   } = datos;
 
   // Sin configuración no hay boda que enseñar: la base respondió, pero el panel
@@ -158,6 +159,10 @@ export default async function PaginaInicio() {
     Repetir `!== null` en cada sitio que las use es como se acaba pintando media
     sección: alguien comprueba una de las dos y da por hecha la otra.
   */
+  // La misma raíz para todas las fotos: dos lecturas de la variable acaban
+  // discrepando el día que una se olvide.
+  const urlBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
   const coordenadas =
     configuracion.latitud !== null && configuracion.longitud !== null
       ? { latitud: configuracion.latitud, longitud: configuracion.longitud }
@@ -165,11 +170,7 @@ export default async function PaginaInicio() {
 
   const contenido: Partial<Record<Seccion, ReactNode>> = {
     portada: (
-      <Portada
-        configuracion={configuracion}
-        foto={fotosPortada[0] ?? null}
-        urlBase={process.env.NEXT_PUBLIC_SUPABASE_URL}
-      />
+      <Portada configuracion={configuracion} foto={fotosPortada[0] ?? null} urlBase={urlBase} />
     ),
     cuenta_atras: <CuentaAtrasSeccion configuracion={configuracion} />,
     historia: historia.length > 0 ? <Historia hitos={historia} /> : undefined,
@@ -220,6 +221,19 @@ export default async function PaginaInicio() {
       mismo criterio que el resto de la landing —antes ocultar que dejar un
       hueco a medias— aplicado a lo que aquí hace de columna vertebral.
     */
+    /*
+      MANDA LA FRASE Y NO LA FOTO. Sin frase no hay nada que decir y la sección
+      no se pinta; sin foto sí se pinta, sobre el plano hundido que ya usa la
+      portada. Esperar a la sesión de fotos para publicar una frase que ya está
+      escrita sería tenerla meses en un cajón.
+    */
+    paisaje: configuracion.frasePaisaje ? (
+      <Paisaje
+        frase={configuracion.frasePaisaje}
+        foto={fotosPaisaje[0] ?? null}
+        urlBase={urlBase}
+      />
+    ) : undefined,
     transporte: coordenadas ? (
       <Transporte rutas={rutas} configuracion={configuracion} coordenadas={coordenadas} />
     ) : undefined,
@@ -305,6 +319,7 @@ async function cargarLanding() {
     consejos,
     cuentaRegalos,
     fotosPortada,
+    fotosPaisaje,
   ] = await Promise.all([
     obtenerSecciones(),
     obtenerConfiguracion(),
@@ -318,6 +333,7 @@ async function cargarLanding() {
     obtenerConsejosVestimenta(),
     obtenerCuentaRegalos(),
     obtenerMedios("portada"),
+    obtenerMedios("paisaje"),
   ]);
 
   return {
@@ -333,6 +349,7 @@ async function cargarLanding() {
     consejos,
     cuentaRegalos,
     fotosPortada,
+    fotosPaisaje,
   };
 }
 
@@ -450,6 +467,75 @@ function Portada({
           className="alto-foto-portada"
         />
       ) : null}
+    </section>
+  );
+}
+
+/**
+ * EL PAISAJE · el respiro entre la portada y la logística
+ *
+ * La entrega lo pone justo debajo de los nombres: una foto aérea a pantalla
+ * completa con una frase encima. No es relleno. La portada da los nombres y la
+ * fecha, y de la cuenta atrás en adelante todo es logística —cuándo, dónde,
+ * cómo llegar, qué ponerse—. Esto es lo único que cuenta de dónde vienen los
+ * novios, y va en la costura entre las dos cosas.
+ *
+ * MANDA LA FRASE, NO LA FOTO. Sin frase no hay sección: una foto aérea muda es
+ * un fondo bonito que no dice nada. Sin foto SÍ hay sección, sobre el plano
+ * hundido que ya usa la portada — porque la frase es el mensaje y la foto es
+ * cómo se presenta, y esperar a la sesión de fotos para publicar una frase que
+ * ya está escrita sería dejarla en un cajón meses.
+ *
+ * EL TEXTO SE LEE CAIGA LA FOTO QUE CAIGA. Encima de la imagen va un velo que
+ * oscurece de abajo arriba: sin él, el contraste depende de qué suban, y una
+ * foto aérea a mediodía deja el texto blanco sobre cielo blanco. El velo es
+ * parte del diseño, no un parche.
+ */
+function Paisaje({
+  frase,
+  foto,
+  urlBase,
+}: {
+  frase: string;
+  foto: Medio | null;
+  urlBase: string | undefined;
+}) {
+  return (
+    <section id={anclaDe("paisaje")} className="relative isolate overflow-hidden">
+      <HuecoFoto
+        medio={foto}
+        urlBase={urlBase}
+        medidas="100vw"
+        className="alto-paisaje w-full"
+      />
+
+      {/*
+        `aria-hidden` en el velo: es color, no contenido. Y va detrás del texto
+        pero delante de la foto, que es justo lo que hace legible lo de encima.
+      */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-gradient-to-t from-velo-fuerte via-velo-suave to-transparent"
+      />
+
+      <div className="absolute inset-0 flex flex-col items-center justify-end gap-bloque p-bloque text-center">
+        {/*
+          LA FRASE ES EL TITULAR, no un párrafo suelto. Es lo único que dice la
+          sección, así que hacerla `h2` no es burocracia de accesibilidad: es lo
+          que da nombre a la sección para quien la recorre saltando de titular
+          en titular, y lo que impide que quede como un contenedor anónimo.
+        */}
+        <header>
+          <h2 className="max-w-texto font-titulo text-titulo-1 leading-titulo text-sobre-foto">
+            {frase}
+          </h2>
+        </header>
+
+        <p className="flex flex-col items-center gap-pila text-etiqueta uppercase tracking-marcado text-sobre-foto-tenue">
+          {t("paisaje.seguidBajando")}
+          <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-sobre-foto-tenue to-transparent" />
+        </p>
+      </div>
     </section>
   );
 }

@@ -1,0 +1,14 @@
+-- Rollback de 20260810234000_paisaje_enum.sql
+--
+-- NO HAY NADA QUE DESHACER, y conviene que quede escrito por qué.
+--
+-- PostgreSQL no sabe quitar un valor de un enumerado. Lo único que existe es
+-- recrear el tipo entero y reescribir todas las columnas que lo usan
+-- —`secciones_landing.seccion` y `media.seccion`—, con la tabla bloqueada
+-- mientras dura. Para un valor de más, que no molesta a nadie y que sólo ocupa
+-- sitio en un catálogo, eso es cambiar un rasguño por una operación a corazón
+-- abierto en producción.
+--
+-- El rollback de la migración siguiente sí quita la fila y la columna, que es
+-- lo que de verdad hace que la sección deje de existir. `paisaje` se queda en
+-- el enumerado como un valor que nadie usa.

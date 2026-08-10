@@ -24,6 +24,7 @@
  */
 export const SECCIONES = [
   "portada",
+  "paisaje",
   "reserva_la_fecha",
   "cuenta_atras",
   "historia",

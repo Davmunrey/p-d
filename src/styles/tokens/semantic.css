@@ -42,6 +42,13 @@
   --tinta-suave: var(--color-pizarra-600);
   --tinta-tenue: var(--color-pizarra-400);
   --tinta-inversa: var(--color-nieve-50);
+
+  /* Sobre foto. No es `tinta-inversa` por casualidad: la tinta inversa vive
+   * sobre un fondo del tema, que se conoce; ésta cae sobre una imagen que sube
+   * quien sea. Se nombran aparte para poder ajustar el velo y el texto juntos
+   * el día que una foto se resista. */
+  --tinta-sobre-foto: var(--color-nieve-50);
+  --tinta-sobre-foto-tenue: var(--color-nieve-150);
   --tinta-marca: var(--color-marino-700);
   --tinta-sobre-marca: var(--color-nieve-50);
   --tinta-sobre-accion: var(--color-nieve-50);
@@ -158,6 +165,11 @@
   --ancho-columna-minima: var(--size-columna-minima);
   --ancho-entradilla: var(--size-entradilla);
   --alto-foto-portada: var(--size-foto-portada);
+
+  /* El paisaje pide más aire que la foto de la portada: es una vista aérea, y
+   * recortada deja de leerse como paisaje. Pero no llega a pantalla completa a
+   * propósito — se tiene que ver que hay algo debajo. */
+  --alto-paisaje: var(--size-paisaje);
   --alto-cabecera: var(--size-cabecera);
   --ancho-lateral: var(--size-lateral);
   --alto-barra-movil: var(--size-barra-movil);

@@ -32,6 +32,7 @@
     "menu": "Menú",
     "secciones": {
       "portada": "Inicio",
+      "paisaje": "El origen",
       "reserva_la_fecha": "Reservad la fecha",
       "cuenta_atras": "Cuenta atrás",
       "historia": "Nuestra historia",
@@ -67,6 +68,9 @@
     "segundos": "segundos",
     "yaEsHoy": "Hoy es el día",
     "cierre": "Nos hace mucha ilusión celebrarlo con vosotros. Aquí abajo está todo lo que hay que saber."
+  },
+  "paisaje": {
+    "seguidBajando": "Seguid bajando"
   },
   "historia": {
     "etiqueta": "Cómo llegamos hasta aquí",
@@ -360,6 +364,8 @@
       "fechaBanqueteAyuda": "Opcional. Si lo dejas vacío, el calendario cuenta sólo desde la ceremonia.",
       "lugarCeremonia": "Lugar de la ceremonia",
       "direccionCeremonia": "Dirección de la ceremonia",
+      "frasePaisaje": "Frase del paisaje",
+      "frasePaisajeAyuda": "La que va bajo la portada, sobre la foto aérea. Si la dejáis vacía, esa sección no se enseña.",
       "lugarBanquete": "Lugar del banquete",
       "direccionBanquete": "Dirección del banquete",
       "latitud": "Latitud",

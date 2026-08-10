@@ -309,6 +309,7 @@
    * más y la foto empuja el contenido fuera de la pantalla.
    */
   --size-foto-portada: min(60dvh, 32.5rem);
+  --size-paisaje: min(72dvh, 40rem);
 
   /**
    * Alto de la barra de navegación. Sale una vez de aquí y sirve para tres

@@ -32,6 +32,8 @@ export interface ConfiguracionBoda {
   lugarBanquete: string | null;
   latitud: number | null;
   longitud: number | null;
+  /** La frase de la sección de paisaje. `null` mientras no se haya escrito. */
+  frasePaisaje: string | null;
   correoContacto: string | null;
   hashtag: string | null;
 }
@@ -130,6 +132,7 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
         lugar_ceremonia: string | null;
         direccion_ceremonia: string | null;
         lugar_banquete: string | null;
+        frase_paisaje: string | null;
         latitud_ceremonia: string | null;
         longitud_ceremonia: string | null;
         correo_contacto: string | null;
@@ -139,7 +142,8 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
       select
         nombre_novia, nombre_novio, fecha_hora_ceremonia, fecha_hora_banquete, fecha_limite_rsvp,
         lugar_ceremonia, direccion_ceremonia, lugar_banquete,
-        latitud_ceremonia, longitud_ceremonia, correo_contacto, hashtag
+        latitud_ceremonia, longitud_ceremonia, correo_contacto, hashtag,
+        frase_paisaje
       from public.v_configuracion_publica
       limit 1
     `,
@@ -157,6 +161,7 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
     lugarCeremonia: fila.lugar_ceremonia,
     direccionCeremonia: fila.direccion_ceremonia,
     lugarBanquete: fila.lugar_banquete,
+    frasePaisaje: fila.frase_paisaje,
     latitud: fila.latitud_ceremonia === null ? null : Number(fila.latitud_ceremonia),
     longitud: fila.longitud_ceremonia === null ? null : Number(fila.longitud_ceremonia),
     correoContacto: fila.correo_contacto,

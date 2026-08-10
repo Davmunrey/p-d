@@ -123,6 +123,8 @@
 
   /* Foco y velos */
   --color-foco: var(--foco);
+  --color-sobre-foto: var(--tinta-sobre-foto);
+  --color-sobre-foto-tenue: var(--tinta-sobre-foto-tenue);
   --color-velo: var(--velo);
   --color-velo-suave: var(--velo-suave);
   --color-velo-fuerte: var(--velo-fuerte);
@@ -279,6 +281,10 @@
 /** Alto del hueco de foto de la portada una vez la rejilla se ha apilado. */
 @utility alto-foto-portada {
   min-height: var(--alto-foto-portada);
+}
+
+@utility alto-paisaje {
+  min-height: var(--alto-paisaje);
 }
 
 /**
