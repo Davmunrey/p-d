@@ -186,6 +186,16 @@ export const RUTA_PENDIENTES = "/panel/invitados/pendientes";
 export const RUTA_GASTOS = "/panel/presupuesto/gastos";
 
 /**
+ * El calendario de pagos.
+ *
+ * Cuelga del presupuesto igual que los gastos, y por el mismo motivo: un
+ * vencimiento sin saber de qué gasto es no se puede decidir. Lo que se pregunta
+ * aquí no es «cuánto cuesta» sino «qué hay que pagar y cuándo», que es la única
+ * pregunta del módulo que no se contesta mirando importes.
+ */
+export const RUTA_PAGOS = "/panel/presupuesto/pagos";
+
+/**
  * A dónde se mandan los correos.
  *
  * Configurable a propósito, y no porque vaya a cambiar de proveedor: es lo que
