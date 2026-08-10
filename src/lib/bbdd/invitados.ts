@@ -21,6 +21,9 @@ export interface GrupoInvitacion {
   lado: "novia" | "novio" | "ambos";
   maximoAcompanantes: number;
   tokenEmitidoEn: Date | null;
+  /** Cuándo se repartió la invitación, y cuándo se recordó por última vez. */
+  invitacionEnviadaEn: Date | null;
+  recordatorioEnviadoEn: Date | null;
   personas: number;
   confirmados: number;
   rechazados: number;
@@ -68,6 +71,8 @@ interface FilaGrupo {
   lado: string;
   maximo_acompanantes: number;
   token_emitido_en: string | null;
+  invitacion_enviada_en: string | null;
+  recordatorio_enviado_en: string | null;
   /** En la lista se piden menos columnas de cada persona que en la ficha. */
   invitados: Partial<FilaPersona>[];
 }
@@ -92,6 +97,7 @@ export async function obtenerGrupos(): Promise<GrupoInvitacion[]> {
     .from("grupos_invitacion")
     .select(
       `id, nombre, lado, maximo_acompanantes, token_emitido_en,
+       invitacion_enviada_en, recordatorio_enviado_en,
        invitados ( nombre, apellidos, confirmaciones ( estado, es_vigente ) )`,
     )
     .order("nombre");
@@ -108,6 +114,12 @@ export async function obtenerGrupos(): Promise<GrupoInvitacion[]> {
       lado: fila.lado as GrupoInvitacion["lado"],
       maximoAcompanantes: fila.maximo_acompanantes,
       tokenEmitidoEn: fila.token_emitido_en ? new Date(fila.token_emitido_en) : null,
+      invitacionEnviadaEn: fila.invitacion_enviada_en
+        ? new Date(fila.invitacion_enviada_en)
+        : null,
+      recordatorioEnviadoEn: fila.recordatorio_enviado_en
+        ? new Date(fila.recordatorio_enviado_en)
+        : null,
       personas: personas.length,
       confirmados: estados.filter((estado) => estado === "confirmado").length,
       rechazados: estados.filter((estado) => estado === "rechazado").length,
@@ -134,6 +146,7 @@ export async function obtenerGrupo(id: string): Promise<DetalleGrupo | null> {
     .from("grupos_invitacion")
     .select(
       `id, nombre, lado, maximo_acompanantes, token_emitido_en,
+       invitacion_enviada_en, recordatorio_enviado_en,
        invitados ( id, nombre, apellidos, es_nino, es_acompanante, tipo_menu, alergias,
                    confirmaciones ( estado, es_vigente ) )`,
     )
@@ -174,6 +187,12 @@ function componerGrupo(
     lado: fila.lado as GrupoInvitacion["lado"],
     maximoAcompanantes: fila.maximo_acompanantes,
     tokenEmitidoEn: fila.token_emitido_en ? new Date(fila.token_emitido_en) : null,
+    invitacionEnviadaEn: fila.invitacion_enviada_en
+      ? new Date(fila.invitacion_enviada_en)
+      : null,
+    recordatorioEnviadoEn: fila.recordatorio_enviado_en
+      ? new Date(fila.recordatorio_enviado_en)
+      : null,
     personas: gente.length,
     confirmados: gente.filter((persona) => persona.estado === "confirmado").length,
     rechazados: gente.filter((persona) => persona.estado === "rechazado").length,
@@ -200,6 +219,7 @@ export async function obtenerGruposConGente(): Promise<DetalleGrupo[]> {
     .from("grupos_invitacion")
     .select(
       `id, nombre, lado, maximo_acompanantes, token_emitido_en,
+       invitacion_enviada_en, recordatorio_enviado_en,
        invitados ( id, nombre, apellidos, es_nino, es_acompanante, tipo_menu, alergias,
                    confirmaciones ( estado, es_vigente ) )`,
     )

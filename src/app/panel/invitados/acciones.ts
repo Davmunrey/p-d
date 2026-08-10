@@ -197,3 +197,56 @@ export async function quitarPersona(datos: FormData): Promise<void> {
   revalidatePath(`${RUTA_INVITADOS}/${grupoId}`);
   volver("persona-quitada", grupoId);
 }
+
+/**
+ * BODA-110 · REPARTIR LA INVITACIÓN POR WHATSAPP
+ *
+ * Marca que se ha mandado y lleva a WhatsApp con el mensaje puesto. Las dos
+ * cosas en el mismo paso porque son el mismo acto: si fueran dos botones, el
+ * segundo se olvidaría y la lista de «a quién le falta» dejaría de valer justo
+ * cuando más falta hace.
+ *
+ * EL ENLACE VIENE DEL FORMULARIO Y NO SE BUSCA EN LA BASE, y no es un atajo: la
+ * base guarda la HUELLA del token, no el token. El texto en claro sólo existe
+ * en la pantalla que acaba de emitirlo, así que o se manda desde ahí o hay que
+ * emitir uno nuevo. Es incómodo a propósito — es lo que hace que un enlace
+ * filtrado no se pueda recuperar de la base ni por quien entra al panel.
+ *
+ * POR ESO NO SE PUEDE MANDAR EL ENLACE DE OTRO GRUPO: el que viaja es el que
+ * pintó esta ficha, y al cambiar de grupo la URL pierde el `?token=` y el
+ * formulario desaparece. No hay estado que arrastrar de una ficha a la
+ * siguiente.
+ */
+export async function repartirPorWhatsApp(datos: FormData): Promise<void> {
+  const grupoId = texto(datos, "grupo_id");
+  const mensaje = texto(datos, "mensaje");
+  const esRecordatorio = datos.get("recordatorio") !== null;
+
+  if (!grupoId) volver("no-existe");
+  if (mensaje === "") volver("error", grupoId);
+
+  const supabase = await cliente();
+  const { error } = await supabase.rpc("marcar_invitacion_repartida", {
+    p_grupo_id: grupoId,
+    p_recordatorio: esRecordatorio,
+  });
+
+  if (error) {
+    if (error.message.includes("RSV06")) volver("sin-permiso", grupoId);
+    if (error.message.includes("RSV01")) volver("no-existe");
+    console.error("No se pudo anotar el reparto:", error);
+    volver("error", grupoId);
+  }
+
+  revalidatePath(`${RUTA_INVITADOS}/${grupoId}`);
+
+  /*
+    A WhatsApp, con el mensaje ya escrito.
+
+    `wa.me` sin número abre el selector de contacto, que es lo que hace falta:
+    los teléfonos de los invitados no están en la base —nadie los ha metido— y
+    quien reparte los tiene en su agenda. Pedirlos sólo para esto sería recoger
+    doscientos datos personales para ahorrarse un toque en la pantalla.
+  */
+  redirect(`https://wa.me/?text=${encodeURIComponent(mensaje)}`);
+}

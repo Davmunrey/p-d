@@ -416,3 +416,107 @@ test.describe("Exportar invitados", () => {
     await contexto.close();
   });
 });
+
+/**
+ * BODA-110 · Repartir invitaciones por WhatsApp
+ *
+ * Nadie manda doscientos correos: las invitaciones se reparten por WhatsApp, de
+ * una en una. Lo que se automatiza no es el envío —ocurre en otra aplicación—
+ * sino no equivocarse de enlace, que es el fallo con consecuencias: mandarle a
+ * una familia el enlace de otra le deja ver quién viene, qué come y qué
+ * escribieron.
+ */
+test.describe("Repartir la invitación", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  test.beforeEach(async ({ page }) => {
+    await entrar(page);
+  });
+
+  /** Crea una invitación y devuelve su ficha ya abierta, con el enlace puesto. */
+  async function crearConEnlace(page: Page, sufijo: string): Promise<string> {
+    await page.goto(RUTA_INVITADOS);
+    await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(sufijo);
+    await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
+    await expect(page).toHaveURL(FICHA);
+    return page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
+  }
+
+  test("el mensaje lleva el enlace de esta invitación y el texto de los copys", async ({
+    page,
+  }) => {
+    const enlace = await crearConEnlace(page, `${MARCA} reparto ${Date.now()}`);
+    const token = new URL(enlace).pathname.split("/").pop()!;
+
+    const mensaje = await page.locator('textarea[name="mensaje"]').inputValue();
+
+    // El texto sale de los copys, con el enlace dentro.
+    expect(mensaje).toContain(enlace);
+    expect(mensaje).toContain(
+      copy.panel.invitados.repartirPlantilla
+        .replace("{enlace}", "")
+        .trim()
+        .split("{")[0]
+        .trim(),
+    );
+
+    // Y al mandarlo se va a WhatsApp con ese mismo texto codificado.
+    const [destino] = await Promise.all([
+      page.waitForRequest((peticion) => peticion.url().startsWith("https://wa.me/")),
+      page.getByRole("button", { name: copy.panel.invitados.repartirBoton }).click(),
+    ]);
+    expect(decodeURIComponent(destino.url())).toContain(token);
+  });
+
+  /**
+   * CASO DE ERROR · El token de otro grupo no se arrastra jamás.
+   *
+   * Es el fallo que este ticket existe para evitar. Se comprueba abriendo una
+   * segunda invitación: su formulario tiene que llevar SU token, y la ficha de
+   * un grupo cuyo enlace ya no está en la URL no puede ofrecer el botón, porque
+   * no tiene ningún enlace que mandar.
+   */
+  test("cambiar de invitación cambia el enlace, y sin enlace no hay botón", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const primero = await crearConEnlace(page, `${MARCA} reparto A ${sello}`);
+    const fichaPrimera = page.url();
+
+    const segundo = await crearConEnlace(page, `${MARCA} reparto B ${sello}`);
+    expect(segundo).not.toBe(primero);
+
+    // El formulario de la segunda ficha lleva el enlace de la segunda.
+    const mensaje = await page.locator('textarea[name="mensaje"]').inputValue();
+    expect(mensaje).toContain(segundo);
+    expect(mensaje).not.toContain(primero);
+
+    // Y al volver a la primera SIN el `?token=`, no hay nada que mandar: la
+    // base guarda la huella, no el token, así que no se puede recuperar.
+    await page.goto(fichaPrimera.split("?")[0]);
+    await expect(page.locator('textarea[name="mensaje"]')).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: copy.panel.invitados.repartirBoton }),
+    ).toHaveCount(0);
+    await expect(page.getByText(copy.panel.invitados.repartirSoloConEnlace)).toBeVisible();
+  });
+
+  test("queda anotado a quién se le ha mandado ya", async ({ page }) => {
+    await crearConEnlace(page, `${MARCA} anotado ${Date.now()}`);
+    const ficha = page.url().split("?")[0];
+
+    await expect(page.getByText(copy.panel.invitados.repartirNunca)).toHaveCount(0);
+
+    await Promise.all([
+      page.waitForRequest((peticion) => peticion.url().startsWith("https://wa.me/")),
+      page.getByRole("button", { name: copy.panel.invitados.repartirBoton }).click(),
+    ]);
+
+    // De vuelta en la ficha, sin enlace en la URL: dice cuándo se mandó.
+    await page.goto(ficha);
+    await expect(page.getByText(/Invitación mandada el/)).toBeVisible();
+  });
+});

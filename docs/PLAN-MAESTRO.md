@@ -265,6 +265,7 @@ Sobre `grupos_invitacion`, `invitados` y `confirmaciones`, `anon` **no tiene nad
 - **`sugerir_cancion(token, texto)`** → añade a la playlist, con tope de diez por grupo.
 - **`datos_para_regalos()`** → el IBAN y su titular, o cero filas. Es la única puerta por la que sale un dato de `configuracion_privada`, y sólo se abre con la sección `regalos` visible.
 - **`crear_grupo_invitacion(...)`** y **`rotar_token_invitacion(grupo)`** → del panel, devuelven el token en claro una sola vez.
+- **`importar_invitados(filas)`** → da de alta en bloque la gente de un CSV, en **una** transacción: o entran todas o no entra ninguna. Reutiliza el grupo cuando ya existe uno con ese nombre, porque un CSV trae una fila por persona y una invitación son varias. No emite enlaces: importar da de alta gente, no reparte invitaciones.
 
 El plazo lo aplica un trigger contra `now()`, nunca contra una fecha enviada por el cliente. El cupo de intentos lo aplica **`exigir_cupo_rsvp()`** por origen.
 
