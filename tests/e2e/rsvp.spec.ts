@@ -150,6 +150,24 @@ test.describe("El recorrido del invitado", () => {
     // desde aquí, alguien ha abierto una puerta que no debía.
     expect(bego.origen).toBe("publico");
 
+    /*
+      Y la canción llega a la PLAYLIST, que es otra tabla.
+
+      `confirmaciones.cancion_solicitada` guarda lo que pidió esa persona; la
+      sección de playlist de la landing lee `canciones_sugeridas`, que es la
+      lista que sonará esa noche. Sin escribir en las dos, el invitado veía
+      «guardado» y la playlist seguía vacía sin que nada fallara.
+    */
+    const enLaPlaylist = await conBase(
+      (sql) => sql<{ texto: string }[]>`
+        select c.texto
+          from public.canciones_sugeridas as c
+          join public.grupos_invitacion as g on g.id = c.grupo_id
+         where g.huella_token = public.huella_token(${token})
+      `,
+    );
+    expect(enLaPlaylist.map((fila) => fila.texto)).toContain("(DES) Una canción E2E");
+
     // Y al volver, la página cuenta lo que hay guardado en lugar de pedirlo otra vez.
     await pagina.goto(`${RUTA_RSVP}/${token}`);
     await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);

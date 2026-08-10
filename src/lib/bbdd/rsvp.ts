@@ -172,9 +172,38 @@ export async function registrarConfirmacion(
     // llamada legítima siempre registra al menos una respuesta.
     if (registradas === 0) return { ok: false, motivo: "enlace" };
 
+    // Ya está guardada la respuesta, que es lo que no se puede perder. La
+    // canción va después y en su propia transacción, para que un tope o una
+    // longitud mal puesta no arrastre la confirmación entera.
+    const cancion = respuestas.find((respuesta) => respuesta.cancion_solicitada);
+    if (cancion?.cancion_solicitada) await anotarCancion(token, cancion.cancion_solicitada);
+
     return { ok: true, registradas };
   } catch (error) {
     return { ok: false, motivo: motivoDe(error) };
+  }
+}
+
+/**
+ * Manda la canción a la playlist.
+ *
+ * SON DOS TABLAS DISTINTAS Y HAY QUE ESCRIBIR EN LAS DOS. La confirmación
+ * guarda `cancion_solicitada` —lo que esa persona pidió, junto a su respuesta—
+ * y la playlist pública lee `canciones_sugeridas`, que es otra cosa: la lista
+ * que sonará esa noche. Sin este paso, el invitado escribía su canción, la
+ * pantalla decía «guardado», y la sección de playlist seguía vacía sin que
+ * nada fallara.
+ *
+ * NO PUEDE TUMBAR LA CONFIRMACIÓN. La función tiene su propio tope —diez por
+ * grupo— y su propia validación de longitud. Que una canción número once se
+ * rechace no puede costarle a nadie la respuesta de asistencia, que es lo que
+ * de verdad importa: se registra el motivo y se sigue.
+ */
+async function anotarCancion(token: string, texto: string): Promise<void> {
+  try {
+    await llamarComoAnonimo((tx) => tx`select public.sugerir_cancion(${token}, ${texto})`);
+  } catch (error) {
+    console.error("La confirmación se guardó, pero la canción no:", error);
   }
 }
 
