@@ -122,6 +122,7 @@ export const RUTA_AJUSTES = "/panel/ajustes";
 export const RUTA_INVITADOS = "/panel/invitados";
 export const RUTA_MENSAJES = "/panel/mensajes";
 export const RUTA_PROVEEDORES = "/panel/proveedores";
+export const RUTA_PRESUPUESTO = "/panel/presupuesto";
 
 /**
  * Tope de acompañantes que se puede fijar por invitación desde el panel.

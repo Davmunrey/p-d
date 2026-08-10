@@ -5,12 +5,12 @@ import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { RUTA_ACCESO, RUTA_PROVEEDORES } from "@/config/constants";
+import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   ESTADOS_PROVEEDOR,
   obtenerCategoriasProveedor,
   obtenerContratadosDeCategoria,
   obtenerFichaProveedor,
-  obtenerMonedaBoda,
   type ContactoProveedor,
   type FichaProveedor,
 } from "@/lib/bbdd/proveedores";
@@ -25,7 +25,9 @@ import {
   quitarContacto,
 } from "../acciones";
 import { AvisoProveedores } from "../aviso";
-import { formateadorDeImporte, nombreDelEstado } from "../formato";
+import { formateadorDeImporte } from "@/lib/importe";
+
+import { nombreDelEstado } from "../formato";
 
 /**
  * BODA-70 · LA FICHA DE UN PROVEEDOR
