@@ -6,6 +6,7 @@ import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { RUTA_ACCESO } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
+  loQueVaCostando,
   obtenerCategoriasPresupuesto,
   obtenerResumenPresupuesto,
   type CategoriaPresupuesto,
@@ -72,7 +73,7 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
   const totales = resumen.reduce(
     (suma, fila) => ({
       previsto: suma.previsto + fila.importePrevisto,
-      real: suma.real + (fila.real || fila.estimado),
+      real: suma.real + loQueVaCostando(fila),
     }),
     { previsto: 0, real: 0 },
   );
@@ -162,7 +163,7 @@ function Tabla({
                   {importe(fila.importePrevisto)}
                 </td>
                 <td className="py-linea pr-interno text-right tabular-nums text-tinta">
-                  {importe(fila.real || fila.estimado)}
+                  {importe(loQueVaCostando(fila))}
                 </td>
                 <td className="py-linea pr-interno text-right tabular-nums text-tinta-suave">
                   {importe(fila.pagado)}

@@ -169,3 +169,25 @@ export async function contarGastosDeCategoria(categoriaId: string): Promise<numb
 
   return count ?? 0;
 }
+
+/**
+ * LO QUE VA COSTANDO UNA CATEGORÍA.
+ *
+ * No es `real`, y confundirlos esconde dinero. `real` sólo suma las partidas
+ * ya cerradas: una categoría con el catering firmado en 8.600 € y las flores
+ * todavía estimadas en 500 € enseñaría 8.600 y las flores desaparecerían de la
+ * cuenta.
+ *
+ * Lo que hay que enseñar es «real donde lo haya, estimado donde no», partida a
+ * partida — y eso ya lo calcula la vista para su `desviacion`. En vez de
+ * repetir la suma aquí con otro criterio (que es exactamente cómo dos cifras de
+ * la misma pantalla acaban sin cuadrar), se despeja de ella:
+ *
+ *     desviacion = previsto − loQueVaCostando
+ *     loQueVaCostando = previsto − desviacion
+ *
+ * Una sola definición, la de la base, y la pantalla no puede discrepar.
+ */
+export function loQueVaCostando(fila: ResumenCategoria): number {
+  return fila.importePrevisto - fila.desviacion;
+}
