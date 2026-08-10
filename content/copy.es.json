@@ -540,5 +540,19 @@
       "errorYaContesto": "Esa invitación ha contestado mientras mirabais la lista, así que no se le ha mandado nada.",
       "errorPlazo": "El plazo se ha cerrado: a estas alturas se llama, no se recuerda."
     }
+  },
+  "correoConfirmacion": {
+    "asuntoSi": "Apuntado: nos vemos en la boda",
+    "asuntoNo": "Recibido, os echaremos de menos",
+    "saludo": "Hola:",
+    "cuerpoSi": "Hemos apuntado vuestra respuesta. Esto es lo que nos habéis dicho:",
+    "cuerpoNo": "Hemos apuntado vuestra respuesta. Gracias por decírnoslo.",
+    "vienen": "Vienen",
+    "noVienen": "No vienen",
+    "cambiar": "¿Cambia algo? Podéis modificar la respuesta desde el mismo enlace:",
+    "plazo": "Podéis cambiarla hasta el {fecha}.",
+    "sinPlazo": "Podéis cambiarla cuando queráis.",
+    "despedida": "Un abrazo,",
+    "firma": "{novia} y {novio}"
   }
 }

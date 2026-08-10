@@ -148,3 +148,13 @@ export const MAXIMO_FILAS_IMPORTACION = 500;
 
 /** La lista de quien no ha contestado. La escriben el panel y su test. */
 export const RUTA_PENDIENTES = "/panel/invitados/pendientes";
+
+/**
+ * A dónde se mandan los correos.
+ *
+ * Configurable a propósito, y no porque vaya a cambiar de proveedor: es lo que
+ * permite que el test del camino feliz apunte a un buzón de pruebas y lea lo
+ * que se mandó de verdad. Sin esto, comprobar el envío exigiría una clave real
+ * en CI o un mock de nuestro propio código, que no probaría que el correo sale.
+ */
+export const URL_RESEND = process.env.RESEND_URL ?? "https://api.resend.com";

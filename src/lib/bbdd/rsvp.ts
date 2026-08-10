@@ -236,3 +236,26 @@ function motivoDe(error: unknown): "plazo" | "intentos" | "respuestas" | "averia
 }
 
 export { ErrorDeLectura };
+
+/**
+ * A quién mandarle el acuse de recibo de este grupo.
+ *
+ * Devuelve lista vacía cuando nadie tiene correo en su ficha, que NO es un
+ * error: es el caso normal mientras los correos no se hayan ido rellenando. El
+ * ticket lo dice con todas las letras —«sin correo en la ficha, no se intenta
+ * enviar y no se marca como error»— y por eso esto no lanza.
+ */
+export async function destinatariosDeConfirmacion(token: string): Promise<string[]> {
+  try {
+    const filas = await llamarComoAnonimo(
+      (tx) => tx<{ destinatarios_confirmacion: string }[]>`
+        select public.destinatarios_confirmacion(${token})
+      `,
+    );
+    return filas.map((fila) => fila.destinatarios_confirmacion).filter(Boolean);
+  } catch (error) {
+    // Ni esto puede tumbar un RSVP ya guardado. Se anota y se sigue sin correo.
+    console.error("No se pudieron leer los destinatarios del acuse:", error);
+    return [];
+  }
+}

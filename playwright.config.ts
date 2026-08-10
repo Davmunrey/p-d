@@ -80,6 +80,22 @@ export default defineConfig({
           NEXT_PUBLIC_SUPABASE_ANON_KEY:
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "clave-de-pruebas-sin-valor",
           NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? URL_BASE,
+
+          /*
+            EL CORREO, APUNTANDO A UN PUERTO CERRADO POR DEFECTO.
+
+            Es deliberado, y es la misma idea que el Supabase inexistente de
+            arriba: así el camino de «el proveedor no responde» se recorre en
+            CADA ejecución de la suite, y no sólo en el test que lo busca. Si
+            algún día un fallo de correo tumbara una confirmación, se caerían
+            veinte tests a la vez en lugar de ninguno.
+
+            El test del acuse levanta un buzón de captura en ese puerto y lee
+            lo que se mandó de verdad.
+          */
+          RESEND_API_KEY: process.env.RESEND_API_KEY ?? "clave-de-pruebas-sin-valor",
+          CORREO_REMITENTE: process.env.CORREO_REMITENTE ?? "boda@ejemplo.test",
+          RESEND_URL: process.env.RESEND_URL ?? "http://127.0.0.1:54999",
         },
       },
 });

@@ -20,13 +20,15 @@ solo están los **nombres**.
 **Settings → Environment Variables.** Marcar las tres ramas (Production,
 Preview, Development) salvo que se indique otra cosa.
 
-| Variable                        | De dónde se saca                                                                          |
-| ------------------------------- | ----------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                  | Botón **Connect** del dashboard → pestaña **Transaction pooler**                          |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Botón **Connect** → pestaña de frameworks, o Settings → **API Keys**                      |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Igual que la anterior: salen juntas                                                       |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Settings → **API Keys** → `service_role`. **Todavía no hace falta**: ningún código la usa |
-| `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                                |
+| Variable                        | De dónde se saca                                                                                           |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                  | Botón **Connect** del dashboard → pestaña **Transaction pooler**                                           |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Botón **Connect** → pestaña de frameworks, o Settings → **API Keys**                                       |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Igual que la anterior: salen juntas                                                                        |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Settings → **API Keys** → `service_role`. **Todavía no hace falta**: ningún código la usa                  |
+| `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                                                 |
+| `RESEND_API_KEY`                | [resend.com](https://resend.com) → **API Keys**. Sin ella no se manda el acuse de recibo, y no es un error |
+| `CORREO_REMITENTE`              | La dirección desde la que se escribe, en un dominio **verificado** en Resend                               |
 
 **El pooler, no la conexión directa.** Cada petición a la web arranca una
 función efímera; con conexión directa se agotan las conexiones del servidor en
@@ -170,3 +172,20 @@ uno por aquí, dalo por comprometido y rótalo.
 
 Rotar una clave cuesta dos minutos. Una lista de invitados filtrada no se
 recupera.
+
+## El correo del acuse de recibo
+
+Se manda con [Resend](https://resend.com) y hacen falta dos variables:
+`RESEND_API_KEY` y `CORREO_REMITENTE`. **Si faltan, no se manda nada y no pasa
+nada más**: la confirmación del invitado se guarda igual y la web no cambia. Es
+a propósito — un acuse de recibo no puede costar una respuesta.
+
+El remitente tiene que estar en un dominio verificado en Resend. Con una
+dirección de un dominio sin verificar, Resend acepta la petición y luego no
+entrega, que es la forma más silenciosa de que no llegue nada.
+
+Hay una tercera variable, `RESEND_URL`, que **no hay que poner en Vercel**: por
+defecto apunta a la API de Resend. Existe para que los tests puedan levantar un
+buzón de captura y leer el correo que sale de verdad, en lugar de simular
+nuestra propia función de envío —que probaría que sabemos llamarla, no que el
+correo sale—.
