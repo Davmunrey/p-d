@@ -145,3 +145,6 @@ export const DURACION_AVISO_COPIADO = 2000;
  * cinco mil desconocidos.
  */
 export const MAXIMO_FILAS_IMPORTACION = 500;
+
+/** La lista de quien no ha contestado. La escriben el panel y su test. */
+export const RUTA_PENDIENTES = "/panel/invitados/pendientes";

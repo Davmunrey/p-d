@@ -516,6 +516,29 @@
       "muestraGrupo": "Familia Zubeldía",
       "muestraNombre": "Ainhoa",
       "muestraApellidos": "Zubeldía Gorroño"
+    },
+    "pendientes": {
+      "titulo": "Quién no ha contestado",
+      "descripcion": "Las invitaciones sin una sola respuesta, empezando por las que llevan más tiempo esperando. Se recuerda de una en una por WhatsApp, como se mandaron.",
+      "enlaceDesdeLista": "Ver quién no ha contestado",
+      "volver": "Volver a las invitaciones",
+      "vacio": "Han contestado todos. No queda nadie a quien recordarle nada.",
+      "personasCuenta": "{personas} personas",
+      "personasUna": "1 persona",
+      "sinContacto": "Todavía no se le ha mandado la invitación",
+      "contactadoEn": "Se le escribió el {fecha}",
+      "recordadoEn": "Recordado el {fecha}",
+      "recordarBoton": "Recordar por WhatsApp",
+      "mandarBoton": "Mandar la invitación",
+      "mensaje": "Mensaje",
+      "plantillaRecordatorio": "¡Hola! Que se nos echa encima la boda y nos falta vuestra respuesta. ¿Podéis confirmar en el enlace que os mandamos? Mil gracias.",
+      "sinEnlaceAviso": "A esta invitación no se le ha mandado nada todavía. El recordatorio no lleva enlace, así que primero hay que mandarle la invitación desde su ficha.",
+      "verFicha": "Ver la invitación",
+      "plazoCerradoTitulo": "El plazo ya se ha cerrado",
+      "plazoCerradoAviso": "A estas alturas un recordatorio hace pensar que todavía se llega a tiempo, y el número ya se le ha dado al catering. A quien falte, se le llama.",
+      "avisoRecordado": "Recordatorio anotado. Se ha abierto WhatsApp con el mensaje.",
+      "errorYaContesto": "Esa invitación ha contestado mientras mirabais la lista, así que no se le ha mandado nada.",
+      "errorPlazo": "El plazo se ha cerrado: a estas alturas se llama, no se recuerda."
     }
   }
 }

@@ -233,3 +233,63 @@ export async function obtenerGruposConGente(): Promise<DetalleGrupo[]> {
     })[]
   ).map(componerGrupo);
 }
+
+export interface GrupoPendiente {
+  id: string;
+  nombre: string;
+  personas: number;
+  /** Cuándo se le escribió por última vez, sea invitación o recordatorio. */
+  ultimoContacto: Date | null;
+  invitacionEnviadaEn: Date | null;
+  recordatorioEnviadoEn: Date | null;
+}
+
+/**
+ * BODA-111 · Quién no ha contestado, y desde cuándo.
+ *
+ * Sale de `v_grupos_pendientes` y no de una consulta escrita aquí, y la
+ * diferencia importa: la definición de «pendiente» —ni una sola respuesta
+ * vigente en todo el grupo— es la MISMA que aplica `marcar_recordatorio()`
+ * antes de escribir. Con dos definiciones, el día que una se afinara la
+ * pantalla ofrecería recordar a quien la base rechaza.
+ *
+ * El orden es por cuánto hace que se les escribió, y los que no han recibido
+ * nada van primero: a ésos no les falta un recordatorio, les falta la
+ * invitación, y eso es más urgente.
+ */
+export async function obtenerPendientes(): Promise<GrupoPendiente[]> {
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("v_grupos_pendientes")
+    .select(
+      "id, nombre, personas, ultimo_contacto, invitacion_enviada_en, recordatorio_enviado_en",
+    )
+    // `nullsFirst`: sin contacto ninguno es lo más urgente, no lo más reciente.
+    .order("ultimo_contacto", { ascending: true, nullsFirst: true })
+    .order("nombre");
+
+  if (error) throw new Error(`No se pudieron leer los pendientes: ${error.message}`);
+
+  return (
+    (data ?? []) as unknown as {
+      id: string;
+      nombre: string;
+      personas: number;
+      ultimo_contacto: string | null;
+      invitacion_enviada_en: string | null;
+      recordatorio_enviado_en: string | null;
+    }[]
+  ).map((fila) => ({
+    id: fila.id,
+    nombre: fila.nombre,
+    personas: fila.personas,
+    ultimoContacto: fila.ultimo_contacto ? new Date(fila.ultimo_contacto) : null,
+    invitacionEnviadaEn: fila.invitacion_enviada_en
+      ? new Date(fila.invitacion_enviada_en)
+      : null,
+    recordatorioEnviadoEn: fila.recordatorio_enviado_en
+      ? new Date(fila.recordatorio_enviado_en)
+      : null,
+  }));
+}

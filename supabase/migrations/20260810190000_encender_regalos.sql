@@ -1,0 +1,22 @@
+-- ============================================================================
+-- Encender la sección de regalos
+--
+-- Entró apagada a propósito: publicar un IBAN en una web que lee cualquiera es
+-- una decisión de los novios y no del despliegue. Los novios la han tomado, así
+-- que se enciende.
+--
+-- LO QUE ESTO NO HACE ES PUBLICAR NADA TODAVÍA, y conviene entender por qué.
+-- `datos_para_regalos()` devuelve cero filas mientras `iban_regalos` esté vacío,
+-- y la landing no pinta la sección sin cuenta —una sección de regalos con un
+-- hueco donde va el número es peor que no tenerla—. Así que hasta que alguien
+-- escriba el IBAN en el panel, la web sigue exactamente igual.
+--
+-- Lo que cambia es DÓNDE está el interruptor: a partir de aquí, escribir el
+-- IBAN en el panel es lo que lo publica. Ya no hacen falta dos actos, y no
+-- queda un segundo interruptor que se pueda olvidar en la posición equivocada
+-- —que era justo el fallo del que protegía tener sólo uno—.
+--
+-- Rollback: supabase/migrations/rollback/20260810190000_encender_regalos.sql
+-- ============================================================================
+
+update public.secciones_landing set visible = true where seccion = 'regalos';

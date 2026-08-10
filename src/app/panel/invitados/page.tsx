@@ -9,6 +9,7 @@ import {
   MAXIMO_ACOMPANANTES,
   RUTA_ACCESO,
   RUTA_INVITADOS,
+  RUTA_PENDIENTES,
   ZONA_HORARIA,
 } from "@/config/constants";
 import { obtenerGrupos } from "@/lib/bbdd/invitados";
@@ -252,6 +253,13 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
               className="text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
             >
               {t("panel.importar.enlaceDesdeLista")}
+            </Link>
+            {" · "}
+            <Link
+              href={RUTA_PENDIENTES}
+              className="text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
+            >
+              {t("panel.pendientes.enlaceDesdeLista")}
             </Link>
           </Cuerpo>
         </section>
