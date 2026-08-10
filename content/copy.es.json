@@ -305,6 +305,13 @@
       "esHoy": "Es hoy",
       "yaFue": "Ya pasó",
       "sinFecha": "Sin fecha todavía",
+      "desvios": {
+        "titulo": "Ojo al presupuesto",
+        "ayuda": "Estas categorías se han pasado de lo previsto o están a punto. Los contratos se firman con semanas de antelación: verlo ahora todavía sirve de algo.",
+        "superado": "se ha pasado de lo previsto.",
+        "cerca": "está a punto de pasarse.",
+        "verPresupuesto": "Ver el presupuesto"
+      },
       "bloqueInvitados": "Invitados",
       "bloqueLogistica": "Logística",
       "bloqueCocina": "Cocina",

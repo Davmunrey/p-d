@@ -289,3 +289,124 @@ test.describe("Las categorías del presupuesto", () => {
     expect(Number(gasto.importe_estimado)).toBe(450);
   });
 });
+
+/**
+ * BODA-64 · El aviso de desvío, en la portada del panel
+ *
+ * LO QUE SE PRUEBA AQUÍ ES QUE EL AVISO LLEGA A LA PORTADA. Los bordes de la
+ * decisión —justo en el umbral, sin presupuesto, el orden— los cubre
+ * `tests/unidad/desvios.test.ts`, que no necesita navegador. Lo que un test
+ * unitario no puede decir es si esto se ve al entrar, que es el criterio entero
+ * del ticket: quien se ha pasado con el catering no entra al módulo de
+ * presupuesto a comprobarlo, entra a mirar cuántos han confirmado.
+ *
+ * TODO EN SERIE: los dos tests mueven el mismo gasto arriba y abajo del umbral.
+ */
+test.describe.configure({ mode: "serial" });
+
+test.describe("El aviso de desvío en la portada", () => {
+  test.slow();
+
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  const NOMBRE = `${MARCA} Desvio`;
+
+  /** Una categoría de 1.000 € con un gasto que se pueda mover a voluntad. */
+  async function montar(): Promise<string> {
+    return conBase(async (sql) => {
+      const como = `${NOMBRE}%`;
+      await sql`
+        delete from public.pagos where partida_id in (
+          select p.id from public.partidas_presupuesto as p
+           join public.categorias_presupuesto as c on c.id = p.categoria_id
+          where c.nombre like ${como}
+        )
+      `;
+      await sql`
+        delete from public.partidas_presupuesto where categoria_id in (
+          select id from public.categorias_presupuesto where nombre like ${como}
+        )
+      `;
+      await sql`delete from public.categorias_presupuesto where nombre like ${como}`;
+
+      const [categoria] = await sql<{ id: string }[]>`
+        insert into public.categorias_presupuesto (nombre, importe_previsto, orden)
+        values (${`${NOMBRE} ${Date.now()}`}, 1000, 91) returning id
+      `;
+      const [gasto] = await sql<{ id: string }[]>`
+        insert into public.partidas_presupuesto (categoria_id, concepto, importe_estimado)
+        values (${categoria.id}, ${`${NOMBRE} · gasto`}, 100) returning id
+      `;
+      return gasto.id;
+    });
+  }
+
+  async function fijarGasto(gastoId: string, importe: number): Promise<void> {
+    await conBase(
+      (sql) => sql`
+        update public.partidas_presupuesto
+           set importe_estimado = ${importe}, importe_real = null
+         where id = ${gastoId}
+      `,
+    );
+  }
+
+  const aviso = (pagina: Page) =>
+    pagina.locator("section").filter({
+      has: pagina.getByRole("heading", { name: copy.panel.resumen.desvios.titulo }),
+    });
+
+  /**
+   * CAMINO FELIZ · pasarse de lo previsto saca el aviso en la portada.
+   */
+  test("superar lo previsto de una categoría avisa en la portada", async ({ page }) => {
+    const gastoId = await montar();
+
+    await entrar(page);
+
+    // De partida, 100 de 1.000: ni de lejos. La categoría no sale.
+    await page.goto(RUTA_PANEL);
+    await expect(aviso(page).getByText(NOMBRE, { exact: false })).toHaveCount(0);
+
+    // Se dispara el gasto por encima de lo previsto.
+    await fijarGasto(gastoId, 1200);
+    await page.goto(RUTA_PANEL);
+
+    const bloque = aviso(page);
+    await expect(bloque, "el aviso tiene que salir en la portada").toBeVisible();
+
+    /*
+      Y LO DICE CON PALABRAS, no sólo con el color: se busca el texto de
+      «se ha pasado», que es lo único que lee quien no distingue el rojo.
+    */
+    const linea = bloque.locator("li").filter({ hasText: NOMBRE });
+    await expect(linea).toContainText(copy.panel.resumen.desvios.superado);
+  });
+
+  /**
+   * CASO DE ERROR · bajar el gasto por debajo del umbral retira el aviso.
+   *
+   * Un aviso que sale bien pero no se va nunca es peor que no tenerlo: enseña a
+   * ignorarlo, y con él se ignora el siguiente.
+   */
+  test("bajar el gasto por debajo del umbral retira el aviso", async ({ page }) => {
+    const gastoId = await montar();
+    await fijarGasto(gastoId, 1200);
+
+    await entrar(page);
+    await page.goto(RUTA_PANEL);
+    await expect(aviso(page).locator("li").filter({ hasText: NOMBRE })).toBeVisible();
+
+    // Se corrige el gasto a algo cómodo: 300 de 1.000 no roza el umbral.
+    await fijarGasto(gastoId, 300);
+    await page.goto(RUTA_PANEL);
+
+    await expect(
+      aviso(page).locator("li").filter({ hasText: NOMBRE }),
+      "corregido el gasto, el aviso tiene que irse",
+    ).toHaveCount(0);
+  });
+});
