@@ -65,6 +65,27 @@ export const HORAS_DURACION_EVENTO = 6;
 /** Descarga del evento para el calendario. La escriben la página y su test. */
 export const RUTA_CALENDARIO = "/reserva-la-fecha/evento.ics";
 
+/**
+ * Raíz del RSVP público. El enlace de cada invitación es `${RUTA_RSVP}/token`,
+ * y esta ruta es además el ámbito de la cookie del borrador: fuera del RSVP no
+ * se manda, que es donde no pinta nada.
+ */
+export const RUTA_RSVP = "/rsvp";
+
+/**
+ * Cuánto vive el borrador del RSVP a medio rellenar.
+ *
+ * Generoso a propósito. El caso que hay que aguantar no es el de alguien que
+ * responde de un tirón, sino el de quien deja el móvil, pregunta a su hermana
+ * si va a ir, y vuelve. Media hora se queda corta; un día entero convierte un
+ * borrador en un estado que nadie recuerda haber dejado ahí.
+ */
+export const MINUTOS_BORRADOR_RSVP = 180;
+
+/** Los tres pasos del RSVP, en orden. Los escriben la página y su test. */
+export const PASOS_RSVP = ["asistencia", "detalles", "mensaje"] as const;
+export type PasoRsvp = (typeof PASOS_RSVP)[number];
+
 /** Rutas del panel privado. Se escriben en varios sitios: viven aquí. */
 export const RUTA_ACCESO = "/acceso";
 export const RUTA_CONFIRMAR_ACCESO = "/acceso/confirmar";
@@ -73,6 +94,17 @@ export const RUTA_RECUPERAR = "/acceso/recuperar";
 export const RUTA_NUEVA_CONTRASENA = "/acceso/nueva-contrasena";
 export const RUTA_CUENTA = "/panel/cuenta";
 export const RUTA_AJUSTES = "/panel/ajustes";
+export const RUTA_INVITADOS = "/panel/invitados";
+export const RUTA_MENSAJES = "/panel/mensajes";
+
+/**
+ * Tope de acompañantes que se puede fijar por invitación desde el panel.
+ *
+ * No es una regla de la boda, es un pararrayos: el campo es un número que se
+ * teclea, y un cero de más convertiría «pueden traer a dos» en «pueden traer a
+ * veinte». El aforo de verdad lo impone `invitados_aforo_grupo` en la base.
+ */
+export const MAXIMO_ACOMPANANTES = 20;
 
 /**
  * Dónde se anota la ruta que alguien pidió antes de que le mandaran a la
@@ -93,3 +125,12 @@ export const LONGITUD_MINIMA_CONTRASENA = 12;
  * espacio, no obligar a nadie a escribir más de lo que se llama.
  */
 export const LONGITUD_MINIMA_NOMBRE = 2;
+
+/**
+ * Cuánto se queda el «Copiado» en el botón del IBAN, en milisegundos.
+ *
+ * Suficiente para leerlo sin prisa y poco para que no se quede fijo: un aviso
+ * permanente deja de significar nada en cuanto se pulsa una segunda vez y ya
+ * ponía lo mismo.
+ */
+export const DURACION_AVISO_COPIADO = 2000;

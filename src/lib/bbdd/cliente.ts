@@ -97,6 +97,7 @@ export class ErrorDeLectura extends Error {
  */
 export async function leerComoAnonimo<T>(
   consulta: (tx: postgres.TransactionSql) => Promise<T>,
+  huella?: string | null,
 ): Promise<T> {
   if (!cliente) {
     const motivo =
@@ -108,6 +109,7 @@ export async function leerComoAnonimo<T>(
   try {
     return (await cliente.begin(async (tx) => {
       await tx`set local role anon`;
+      await declararOrigen(tx, huella);
       return consulta(tx);
     })) as T;
   } catch (error) {
@@ -116,4 +118,61 @@ export async function leerComoAnonimo<T>(
     console.error("Fallo al leer de la base de datos:", error);
     throw new ErrorDeLectura("No se pudo leer de la base de datos.", { cause: error });
   }
+}
+
+/**
+ * Lo mismo, pero para una llamada que ESCRIBE.
+ *
+ * Mismo rol y misma transacción; lo que cambia es qué se hace con el fallo.
+ * Aquí el error se propaga tal cual, sin envolverlo en `ErrorDeLectura`,
+ * porque quien llama necesita leerle el código a la base: `RSV03` es «el plazo
+ * se ha cerrado» y hay que decírselo al invitado con esas palabras, mientras
+ * que un fallo de conexión es una avería y se cuenta de otra manera. Envolver
+ * los dos en el mismo error los volvería indistinguibles.
+ *
+ * Escribir como `anon` no es un descuido: es exactamente el rol con el que
+ * entraría la petición por PostgREST, así que las políticas RLS y las
+ * funciones `security definer` se comportan igual aquí que allí.
+ */
+export async function llamarComoAnonimo<T>(
+  consulta: (tx: postgres.TransactionSql) => Promise<T>,
+  huella?: string | null,
+): Promise<T> {
+  if (!cliente) {
+    const motivo =
+      "Sin DATABASE_URL: no hay a dónde escribir. Configúrala en Vercel → Settings → Environment Variables.";
+    console.error(motivo);
+    throw new ErrorDeLectura(motivo);
+  }
+
+  return (await cliente.begin(async (tx) => {
+    await tx`set local role anon`;
+    await declararOrigen(tx, huella);
+    return consulta(tx);
+  })) as T;
+}
+
+/**
+ * Le cuenta a la base de dónde viene la petición.
+ *
+ * `huella_peticion()` lee `request.headers`, el ajuste que **pone PostgREST**
+ * con las cabeceras HTTP. Por SQL directo ese ajuste no existe, así que la
+ * función caía en su respaldo —`'desconocido'`— y todos los invitados
+ * compartían el mismo cupo de intentos: diez fallos de una sola persona
+ * cerraban la confirmación a los ciento veinte durante quince minutos.
+ *
+ * Se rellena aquí con la misma forma que usaría PostgREST, en lugar de cambiar
+ * la función de la base. Así el contrato sigue siendo uno solo —«mira la
+ * cabecera que reenvía el proxy»— y vale igual si algún día algo entra por la
+ * API REST.
+ *
+ * `set_local` a `true`: el ajuste vive lo que dure la transacción y no se
+ * queda pegado a la conexión, que se reutiliza para la petición de otro.
+ */
+async function declararOrigen(
+  tx: postgres.TransactionSql,
+  huella: string | null | undefined,
+): Promise<void> {
+  if (!huella) return;
+  await tx`select set_config('request.headers', ${JSON.stringify({ "x-forwarded-for": huella })}, true)`;
 }

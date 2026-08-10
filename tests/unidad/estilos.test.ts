@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -115,3 +115,66 @@ describe("capa semántica", () => {
     expect(css).toContain("prefers-color-scheme: dark");
   });
 });
+
+/**
+ * BODA-08 · EL HUECO POR EL QUE SE COLABA EL HARDCODE
+ *
+ * El bloque `@theme inline` borra ocho familias de Tailwind con `*: initial`, y
+ * por eso nadie puede escribir `bg-red-500` ni `text-2xl`. Pero las utilidades
+ * de espaciado no salen de una familia: salen de UNA variable, `--spacing`,
+ * que Tailwind trae puesta a `0.25rem`. Mientras estuvo, `p-4`, `h-11`, `w-64`
+ * y `mt-8` compilaban tan ricamente y ningún lint decía nada.
+ *
+ * Es hardcode con otra cara, y se había colado en el propio sistema de diseño.
+ *
+ * ESTO SE COMPRUEBA AQUÍ Y NO EN UN E2E porque Tailwind sólo genera las clases
+ * que encuentra en el código: una clase inyectada en el navegador mide cero
+ * exista o no la utilidad, así que un test así pasaría igual con el hueco
+ * abierto.
+ */
+describe("El vocabulario de espaciado está cerrado", () => {
+  const css = leer("src/styles/globals.css");
+
+  it("la escala numérica de Tailwind está borrada", () => {
+    expect(css, "sin `--spacing: initial`, `p-4` y `h-11` vuelven a compilar").toMatch(
+      /--spacing:\s*initial/,
+    );
+  });
+
+  it("pero el cero se queda: `top-0` lo necesita", () => {
+    // Borrar la escala entera apagaba `top-0` e `inset-0` y con ellos la barra
+    // fija de navegación, sin que nada avisara.
+    expect(css).toMatch(/--spacing-0:/);
+  });
+
+  it("ningún componente usa una medida numérica", () => {
+    const NUMERICA =
+      /\b(?:p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|gap-x|gap-y|w|h|size|min-w|min-h|space-x|space-y|inset|top|left|right|bottom)-[1-9][0-9]*(?:\.[0-9]+)?\b/;
+
+    const infractores = ficherosDeCodigo()
+      .map((ruta) => ({ ruta, texto: readFileSync(ruta, "utf8") }))
+      .filter(({ texto }) => NUMERICA.test(texto))
+      .map(({ ruta }) => ruta.replace(RAIZ, ""));
+
+    expect(
+      infractores,
+      "una medida numérica es un valor suelto: dale nombre en primitives.css",
+    ).toEqual([]);
+  });
+});
+
+/** Todos los `.ts`/`.tsx` de `src`, recorriendo carpetas a mano. */
+function ficherosDeCodigo(): string[] {
+  const encontrados: string[] = [];
+
+  const recorrer = (carpeta: string) => {
+    for (const entrada of readdirSync(carpeta, { withFileTypes: true })) {
+      const ruta = join(carpeta, entrada.name);
+      if (entrada.isDirectory()) recorrer(ruta);
+      else if (/\.tsx?$/.test(entrada.name)) encontrados.push(ruta);
+    }
+  };
+
+  recorrer(join(RAIZ, "src"));
+  return encontrados;
+}

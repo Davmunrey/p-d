@@ -1,0 +1,22 @@
+-- ============================================================================
+-- BODA-38 · Dress code: el enumerado
+--
+-- La entrega trae once secciones y la web tenía nueve. Faltaban las dos
+-- últimas antes de confirmar: «Si queréis regalarnos algo» y «Dress code».
+-- `regalos` ya existía en el enumerado desde el principio; `dresscode` no.
+--
+-- No es maquetación de relleno: es la sección que contesta la pregunta que más
+-- se hace por WhatsApp antes de una boda, y contestarla en la web ahorra
+-- treinta conversaciones idénticas.
+--
+-- ESTE FICHERO SÓLO TOCA EL ENUMERADO. PostgreSQL no deja usar un valor nuevo
+-- de un enumerado dentro de la misma transacción que lo añade, así que la
+-- tabla, las filas y los permisos van en la migración siguiente, que corre en
+-- su propia transacción. Mismo par que en BODA-20 y BODA-36.
+--
+-- Rollback: supabase/migrations/rollback/20260810150000_dresscode_enum.sql
+-- ============================================================================
+
+-- Detrás de `regalos`, que es el orden de la entrega: lo que se lleva puesto
+-- se lee justo antes de confirmar, cuando ya se ha decidido ir.
+alter type public.seccion_landing add value if not exists 'dresscode' after 'regalos';

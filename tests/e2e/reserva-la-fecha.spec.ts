@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
-import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
+import { fijarSeccionVisible } from "./utiles/secciones";
 import { NOMBRE_FICHERO_CALENDARIO, RUTA_CALENDARIO } from "../../src/config/constants";
 
 /**
@@ -158,25 +158,12 @@ test.describe("Reserva la fecha apagada", () => {
 
   test.skip(!cadena, "Hace falta DATABASE_URL para apagar la sección.");
 
-  async function fijarVisible(visible: boolean) {
-    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
-    try {
-      await sql`
-        update public.secciones_landing
-        set visible = ${visible}
-        where seccion = ${SECCION}
-      `;
-    } finally {
-      await sql.end();
-    }
-  }
-
   test.afterAll(async () => {
-    if (cadena) await fijarVisible(true);
+    if (cadena) await fijarSeccionVisible(SECCION, true);
   });
 
   test("con la sección desactivada la ruta devuelve 404", async ({ page }) => {
-    await fijarVisible(false);
+    await fijarSeccionVisible(SECCION, false);
 
     const respuesta = await page.goto(RUTA);
     expect(respuesta?.status()).toBe(404);
@@ -186,7 +173,7 @@ test.describe("Reserva la fecha apagada", () => {
   });
 
   test("con la sección desactivada el calendario tampoco se descarga", async ({ request }) => {
-    await fijarVisible(false);
+    await fijarSeccionVisible(SECCION, false);
 
     // Si no, quedaría una puerta trasera para sacar la fecha de una página que
     // se ha querido retirar.
@@ -195,7 +182,7 @@ test.describe("Reserva la fecha apagada", () => {
   });
 
   test("volver a encenderla la devuelve", async ({ page }) => {
-    await fijarVisible(true);
+    await fijarSeccionVisible(SECCION, true);
 
     const respuesta = await page.goto(RUTA);
     expect(respuesta?.status()).toBe(200);

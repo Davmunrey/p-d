@@ -119,10 +119,28 @@ jobs:
         with:
           version: latest
 
-      # Levanta Postgres, GoTrue y el buzón de correo. Es lento —descarga
-      # imágenes— y por eso va en su propio trabajo: el resto del CI no espera.
+      # Levanta Postgres y GoTrue, que es lo que hace falta para probar la
+      # puerta del panel. Es lento —descarga imágenes— y por eso va en su
+      # propio trabajo: el resto del CI no espera.
+      #
+      # SIN LOS SERVICIOS QUE NO SE USAN, y son la mitad.
+      #
+      # Arrancarlos todos costaba fallos recurrentes que no eran nuestros: el
+      # buzón de correo se plantaba con «address already in use» por el puerto
+      # 54324, y el recolector de logs se quedaba «unhealthy». En los dos casos
+      # el trabajo entero se caía por un contenedor que ningún test toca.
+      #
+      # Se queda lo que hace falta: Postgres, GoTrue —la puerta del panel—,
+      # Kong y PostgREST, que es por donde el panel lee y escribe, y el
+      # almacenamiento, del que salen las fotos de la landing. Fuera el resto.
+      #
+      # `logflare` y `vector` van juntos: vector recoge los logs PARA logflare,
+      # así que excluir uno solo deja al otro apuntando a un sitio que no
+      # existe. Fue exactamente lo que pasó.
       - name: Levantar Supabase
-        run: supabase start
+        run: >-
+          supabase start
+          -x inbucket,imgproxy,studio,logflare,vector,edge-runtime,realtime
 
       - name: Aplicar migraciones y seed
         run: supabase db reset

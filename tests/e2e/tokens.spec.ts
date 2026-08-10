@@ -267,3 +267,32 @@ test.describe("Bloques inversos", () => {
     expect(medida.relleno).toBeGreaterThanOrEqual(3);
   });
 });
+
+/**
+ * BODA-08 · El cero sobrevive al cierre del vocabulario de espaciado
+ *
+ * Cerrar el hueco de `--spacing` apagaba también `top-0` e `inset-0`, que
+ * salen de la misma escala — y con ellos la barra fija de navegación, en
+ * silencio. Aquí se comprueba lo único comprobable en un navegador: que la
+ * barra sigue pegada arriba.
+ *
+ * Lo otro —que `p-4` ya no exista— NO se puede probar así: Tailwind sólo
+ * compila las clases que encuentra en el código, de modo que cualquier clase
+ * inyectada en runtime mide cero, exista o no la utilidad. Eso se comprueba en
+ * `tests/unidad/estilos.test.ts`, que mira el CSS y el código fuente.
+ */
+test.describe("El vocabulario de espaciado está cerrado", () => {
+  test("el cero sobrevive: la barra sigue pegada arriba", async ({ page }) => {
+    await page.goto("/");
+
+    const barra = await page.evaluate(() => {
+      const fija = document.querySelector<HTMLElement>(".fixed, .sticky");
+      if (!fija) return null;
+      const estilo = getComputedStyle(fija);
+      return { posicion: estilo.position, arriba: estilo.top };
+    });
+
+    expect(barra, "no hay barra fija que comprobar").not.toBeNull();
+    expect(barra!.arriba).toBe("0px");
+  });
+});

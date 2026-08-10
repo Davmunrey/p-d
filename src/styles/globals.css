@@ -46,6 +46,30 @@
   --tracking-*: initial;
   --ease-*: initial;
 
+  /**
+   * EL HUECO QUE QUEDABA ABIERTO.
+   *
+   * Los `*: initial` de arriba borran ocho familias, y por eso nadie puede
+   * escribir `bg-red-500` ni `text-2xl`. Pero las utilidades numéricas de
+   * espaciado no salen de una familia: salen de UNA variable, `--spacing`, que
+   * Tailwind trae a `0.25rem`. Mientras estuviera, `p-4`, `h-11`, `w-64` y
+   * `mt-8` compilaban tan ricamente y ningún lint decía nada — hardcode con
+   * otra cara, y ya se estaba colando en el sistema de diseño.
+   *
+   * Borrándola, `p-4` deja de existir y el único vocabulario posible es el de
+   * abajo: `p-interno`, `h-control`, `gap-elemento`. Una medida que no tenga
+   * token no compila, que es exactamente lo que se quiere.
+   */
+  --spacing: initial;
+
+  /**
+   * El cero se queda, y hace falta. `top-0`, `left-0` e `inset-0` salen de la
+   * misma escala que `p-4`, así que borrarla los apagaba también — y con ellos
+   * la barra fija de navegación y el velo de las fotos, en silencio. No es
+   * hardcode: cero es cero en cualquier escala.
+   */
+  --spacing-0: var(--espacio-cero);
+
   /* Superficies */
   --color-fondo: var(--fondo);
   --color-superficie: var(--superficie);
@@ -154,6 +178,9 @@
   --spacing-control-compacto: var(--alto-control-compacto);
   --spacing-campo: var(--alto-campo);
   --spacing-cifra: var(--ancho-cifra);
+  --spacing-casilla: var(--lado-casilla);
+  --spacing-columna-token: var(--ancho-columna-token);
+  --spacing-barra-muestra: var(--alto-barra-muestra);
 
   /* Un solo token da `size-constelacion`: el hueco es cuadrado por definición. */
   --spacing-constelacion: var(--lado-constelacion);

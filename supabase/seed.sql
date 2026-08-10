@@ -100,6 +100,11 @@ update public.configuracion_privada set
   presupuesto_objetivo = 42000.00,
   aforo_maximo         = 150,
   telefono_contacto    = '+34 600 000 000',
+  -- IBAN de ejemplo de la documentación pública de la ISO, no una cuenta real.
+  -- Aquí porque la sección de regalos no se puede probar sin él: sin cuenta,
+  -- `datos_para_regalos()` no devuelve nada y la sección no se pinta.
+  iban_regalos         = 'ES9121000418450200051332',
+  titular_cuenta       = '(DES) Ana Ejemplo y (DES) Luis Ejemplo',
   notas_privadas       = '(DES) Fila de desarrollo. No son cifras reales.';
 
 -- La reserva de fecha nace apagada en la migración base, que es lo correcto en
@@ -110,6 +115,12 @@ update public.configuracion_privada set
 -- `regalos` se queda apagada a propósito: hace de sección de control para
 -- comprobar que una sección invisible no se cuela en la navegación.
 update public.secciones_landing set visible = true where seccion = 'reserva_la_fecha';
+
+-- Lo mismo con los regalos, y por el mismo motivo. En producción nace apagada
+-- porque encenderla ES publicar el IBAN, y eso lo deciden los novios. En
+-- desarrollo tiene que estar encendida: es la única forma de que los tests
+-- recorran la sección y de que el entorno se parezca a la web publicada.
+update public.secciones_landing set visible = true where seccion = 'regalos';
 
 
 -- ----------------------------------------------------------------------------
@@ -324,6 +335,16 @@ $$;
 -- Estructura realista para que las secciones se puedan ver y probar. Todo con
 -- el prefijo «(DES)»: los datos de verdad se cargan desde el panel.
 -- ============================================================================
+
+-- La víspera. Van con `momento = 'preboda'` y son los que separan la sección de
+-- la del día de la boda: sin al menos uno, el test que comprueba que las dos no
+-- se mezclan se saltaría solo y estaría verde sin haberse ejecutado nunca.
+insert into public.hitos_programa (hora, titulo, descripcion, orden, momento) values
+  ('19:00', '(DES) Vermut de bienvenida', 'En la plaza mayor, para quien llegue con tiempo.',      1, 'preboda'),
+  ('21:30', '(DES) Cena informal',        'Sin reserva ni protocolo: quien pueda, que se apunte.', 2, 'preboda')
+on conflict do nothing;
+
+update public.secciones_landing set visible = true where seccion = 'preboda';
 
 insert into public.hitos_programa (hora, titulo, descripcion, orden) values
   ('12:00', '(DES) Autobús desde la ciudad', 'Salida desde la plaza principal. Intentad estar cinco minutos antes.', 1),

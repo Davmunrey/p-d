@@ -6,6 +6,7 @@ import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { BotonEnlace } from "@/components/ui/boton";
+import { CampoCopiable } from "@/components/ui/campo-copiable";
 import {
   Cita,
   Conector,
@@ -22,6 +23,8 @@ import {
   obtenerAlojamientos,
   obtenerCanciones,
   obtenerConfiguracion,
+  obtenerConsejosVestimenta,
+  obtenerCuentaRegalos,
   obtenerHistoria,
   obtenerPreguntasFrecuentes,
   obtenerPrograma,
@@ -29,6 +32,8 @@ import {
   obtenerMedios,
   obtenerSecciones,
   type ConfiguracionBoda,
+  type ConsejoVestimenta,
+  type CuentaRegalos,
   type Medio,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
@@ -111,11 +116,14 @@ export default async function PaginaInicio() {
     secciones,
     configuracion,
     programa,
+    preboda,
     historia,
     alojamientos,
     rutas,
     preguntas,
     canciones,
+    consejos,
+    cuentaRegalos,
     fotosPortada,
   } = datos;
 
@@ -136,9 +144,26 @@ export default async function PaginaInicio() {
     ),
     cuenta_atras: <CuentaAtrasSeccion configuracion={configuracion} />,
     historia: historia.length > 0 ? <Historia hitos={historia} /> : undefined,
+    preboda:
+      preboda.length > 0 ? (
+        <ListaDeHoras
+          seccion="preboda"
+          etiqueta={t("preboda.etiqueta")}
+          titulo={t("preboda.titulo")}
+          entradilla={t("preboda.entradilla")}
+          realzada
+          hundida
+          hitos={preboda}
+        />
+      ) : undefined,
     programa:
       programa.length > 0 ? (
-        <Programa hitos={programa} fecha={configuracion.fechaCeremonia} />
+        <ListaDeHoras
+          seccion="programa"
+          etiqueta={formatoFecha.format(configuracion.fechaCeremonia)}
+          titulo={t("programa.titulo")}
+          hitos={programa}
+        />
       ) : undefined,
     alojamiento: alojamientos.length > 0 ? <Alojamiento sitios={alojamientos} /> : undefined,
     transporte:
@@ -146,6 +171,9 @@ export default async function PaginaInicio() {
     preguntas_frecuentes:
       preguntas.length > 0 ? <Preguntas preguntas={preguntas} /> : undefined,
     playlist: <Playlist canciones={canciones} />,
+    // Sin cuenta no hay sección: ver el comentario de `Regalos`.
+    regalos: cuentaRegalos ? <Regalos cuenta={cuentaRegalos} /> : undefined,
+    dresscode: consejos.length > 0 ? <DressCode consejos={consejos} /> : undefined,
     rsvp: <Rsvp configuracion={configuracion} />,
   };
 
@@ -197,21 +225,27 @@ async function cargarLanding() {
     secciones,
     configuracion,
     programa,
+    preboda,
     historia,
     alojamientos,
     rutas,
     preguntas,
     canciones,
+    consejos,
+    cuentaRegalos,
     fotosPortada,
   ] = await Promise.all([
     obtenerSecciones(),
     obtenerConfiguracion(),
-    obtenerPrograma(),
+    obtenerPrograma("boda"),
+    obtenerPrograma("preboda"),
     obtenerHistoria(),
     obtenerAlojamientos(),
     obtenerRutas(),
     obtenerPreguntasFrecuentes(),
     obtenerCanciones(),
+    obtenerConsejosVestimenta(),
+    obtenerCuentaRegalos(),
     obtenerMedios("portada"),
   ]);
 
@@ -219,11 +253,14 @@ async function cargarLanding() {
     secciones,
     configuracion,
     programa,
+    preboda,
     historia,
     alojamientos,
     rutas,
     preguntas,
     canciones,
+    consejos,
+    cuentaRegalos,
     fotosPortada,
   };
 }
@@ -414,18 +451,40 @@ function Historia({
   );
 }
 
-function Programa({
+/**
+ * LA LISTA DE HORAS
+ *
+ * La usan el programa del día y la víspera, que son la misma pieza con otros
+ * datos: hora a la izquierda, título y detalle a la derecha, una línea entre
+ * filas. La diferencia está en la cabecera —una lleva la fecha de la boda y la
+ * otra un rótulo— y en el realce: la preboda es un extra, así que su versalita
+ * va en bronce; el programa del día hay que leerlo sí o sí, y va sobrio.
+ */
+function ListaDeHoras({
+  seccion,
+  etiqueta,
+  titulo,
+  entradilla = null,
+  realzada = false,
+  hundida = false,
   hitos,
-  fecha,
 }: {
+  seccion: Seccion;
+  etiqueta: string;
+  titulo: string;
+  entradilla?: string | null;
+  realzada?: boolean;
+  hundida?: boolean;
   hitos: { id: string; hora: string; titulo: string; descripcion: string | null }[];
-  fecha: Date;
 }) {
   return (
     <Bloque
-      seccion="programa"
-      etiqueta={formatoFecha.format(fecha)}
-      titulo={t("programa.titulo")}
+      seccion={seccion}
+      etiqueta={etiqueta}
+      titulo={titulo}
+      entradilla={entradilla}
+      realzada={realzada}
+      hundida={hundida}
     >
       <ol className="border-t border-borde">
         {hitos.map((hito) => (
@@ -609,6 +668,80 @@ function Playlist({ canciones }: { canciones: { id: string; texto: string }[] })
   );
 }
 
+/**
+ * LOS REGALOS
+ *
+ * La sección más delicada de la web, y la entrega la resuelve con el tono
+ * exacto: primero «vuestra presencia ya es el regalo», y sólo después la
+ * cuenta. El orden no es decorativo — leerlo al revés convierte una invitación
+ * en una petición.
+ *
+ * NO SE PINTA SI NO HAY CUENTA. `datos_para_regalos()` devuelve cero filas
+ * mientras la sección esté apagada o falte el IBAN, así que aquí no se decide
+ * nada: si no hay cuenta, no hay sección, y el enlace no aparece en el menú.
+ * Una sección de regalos con un hueco donde va el número es peor que no
+ * tenerla.
+ */
+function Regalos({ cuenta }: { cuenta: CuentaRegalos }) {
+  return (
+    <Bloque
+      seccion="regalos"
+      etiqueta={t("regalos.etiqueta")}
+      titulo={t("regalos.titulo")}
+      entradilla={t("regalos.descripcion")}
+      realzada
+    >
+      <div className="mx-auto max-w-estrecho rounded-tarjeta border border-borde bg-superficie-tenue p-elemento">
+        {cuenta.titular ? (
+          <Etiqueta>{t("regalos.titular", { titular: cuenta.titular })}</Etiqueta>
+        ) : null}
+
+        <CampoCopiable
+          valor={cuenta.iban}
+          etiqueta={t("regalos.etiquetaCuenta")}
+          textoCopiar={t("regalos.copiar")}
+          textoCopiado={t("regalos.copiado")}
+        />
+
+        <Cuerpo className="mt-elemento text-pequeno">{t("regalos.buzon")}</Cuerpo>
+      </div>
+    </Bloque>
+  );
+}
+
+/**
+ * QUÉ PONERSE
+ *
+ * Es la pregunta que más se repite por WhatsApp antes de una boda, y
+ * contestarla aquí ahorra treinta conversaciones idénticas. Los bloques salen
+ * de la base —«Ellas», «Ellos», «Solo dos peticiones»— porque son consejos que
+ * dependen de la finca y de la fecha, y los novios los van a retocar.
+ */
+function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
+  return (
+    <Bloque
+      seccion="dresscode"
+      etiqueta={t("dresscode.etiqueta")}
+      titulo={t("dresscode.titulo")}
+      entradilla={t("dresscode.descripcion")}
+      hundida
+    >
+      {/* Misma rejilla que el alojamiento: son tarjetas del mismo peso. */}
+      <ul className="grid gap-elemento sm:grid-cols-2 lg:grid-cols-3">
+        {consejos.map((consejo) => (
+          <li
+            key={consejo.id}
+            className="animacion-subir-al-ver rounded-tarjeta border border-borde bg-superficie p-elemento"
+          >
+            <Titulo3 como="h3">{consejo.titulo}</Titulo3>
+            <Cuerpo className="mt-pila">{consejo.texto}</Cuerpo>
+          </li>
+        ))}
+      </ul>
+    </Bloque>
+  );
+}
+
 function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
   const idTitulo = `titulo-${anclaDe("rsvp")}`;
   return (
@@ -629,9 +762,29 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
               : null
           }
           titulo={t("rsvp.titulo")}
+          entradilla={t("rsvp.comoSeConfirma")}
           centrada
         />
-        <Cita className="mx-auto max-w-texto">{t("meta.descripcion")}</Cita>
+
+        {/*
+          Aquí no hay formulario, y es a propósito. Se confirma por el enlace
+          personal de cada invitación, que es lo que identifica al grupo: un
+          formulario abierto en la web pública dejaría a cualquiera responder
+          por cualquiera, y a los novios sin saber quién ha contestado de
+          verdad. Lo que sí hay es la manera de recuperar el enlace, porque el
+          mensaje de WhatsApp donde llegó se pierde.
+        */}
+        {configuracion.correoContacto ? (
+          <p className="mx-auto max-w-texto text-pequeno text-tinta-suave">
+            {t("rsvp.enlacePerdido")}{" "}
+            <a
+              href={`mailto:${configuracion.correoContacto}`}
+              className="border-b border-borde-fuerte transicion-color hover:text-acento"
+            >
+              {configuracion.correoContacto}
+            </a>
+          </p>
+        ) : null}
       </div>
     </section>
   );

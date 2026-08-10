@@ -164,11 +164,22 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
   };
 }
 
-export async function obtenerPrograma(): Promise<HitoPrograma[]> {
+/**
+ * Los hitos de un momento: la víspera o el día de la boda.
+ *
+ * Las dos secciones leen la MISMA tabla, filtrando por `momento`. Un hito de
+ * la preboda es exactamente lo mismo —hora, título y descripción— y lo único
+ * que cambia es el día; dos tablas iguales se acabarían separando en cuanto
+ * una ganara una columna que la otra no.
+ */
+export async function obtenerPrograma(
+  momento: "preboda" | "boda" = "boda",
+): Promise<HitoPrograma[]> {
   const filas = await leerComoAnonimo(
     (tx) => tx<{ id: string; hora: string; titulo: string; descripcion: string | null }[]>`
       select id, hora, titulo, descripcion
       from public.hitos_programa
+      where momento = ${momento}
       order by orden, hora
     `,
   );
@@ -262,6 +273,50 @@ export async function obtenerCanciones(limite = 30): Promise<Cancion[]> {
     `,
   );
   return filas.map((f) => ({ id: f.id, texto: f.texto }));
+}
+
+export interface ConsejoVestimenta {
+  id: string;
+  titulo: string;
+  texto: string;
+}
+
+/** Los bloques del dress code —«Ellas», «Ellos»…—, en su orden. */
+export async function obtenerConsejosVestimenta(): Promise<ConsejoVestimenta[]> {
+  const filas = await leerComoAnonimo(
+    (tx) => tx<{ id: string; titulo: string; texto: string }[]>`
+      select id, titulo, texto
+      from public.consejos_vestimenta
+      order by orden
+    `,
+  );
+  return filas.map((f) => ({ id: f.id, titulo: f.titulo, texto: f.texto }));
+}
+
+export interface CuentaRegalos {
+  iban: string;
+  titular: string | null;
+}
+
+/**
+ * La cuenta para los regalos, o `null`.
+ *
+ * NO SE LEE UNA TABLA, se llama a `datos_para_regalos()`. El IBAN vive en
+ * `configuracion_privada`, que `anon` no puede tocar —lo comprueba
+ * `tests/seguridad`—, y esa función es la única puerta por la que sale: se abre
+ * sólo cuando la sección de regalos está encendida.
+ *
+ * Devuelve `null` cuando no hay cuenta que enseñar, que es lo mismo que dice la
+ * base: cero filas. Aquí no se decide nada, sólo se traduce.
+ */
+export async function obtenerCuentaRegalos(): Promise<CuentaRegalos | null> {
+  const filas = await leerComoAnonimo(
+    (tx) => tx<{ iban: string; titular: string | null }[]>`
+      select iban, titular from public.datos_para_regalos()
+    `,
+  );
+  const cuenta = filas[0];
+  return cuenta ? { iban: cuenta.iban, titular: cuenta.titular } : null;
 }
 
 export interface Medio {
