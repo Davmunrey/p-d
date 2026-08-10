@@ -45,6 +45,18 @@ async function cuantasPersonas(nombre: string): Promise<number> {
   }
 }
 
+/**
+ * El botón de confirmar, EXACTO.
+ *
+ * Sin `exact`, «Importar» casa también con «Ver qué se va a importar», que
+ * está en la misma pantalla: Playwright encuentra dos botones y se niega a
+ * elegir. Peor todavía en las comprobaciones de que el botón NO está — sin
+ * `exact` contarían uno y darían por bueno lo contrario de lo que preguntan.
+ */
+function botonImportar(pagina: Page) {
+  return pagina.getByRole("button", { name: copy.panel.importar.confirmar, exact: true });
+}
+
 async function subir(pagina: Page, contenido: string) {
   await pagina.getByLabel(copy.panel.importar.fichero).setInputFiles({
     name: "invitados.csv",
@@ -108,7 +120,7 @@ test.describe("Importar invitados", () => {
     // Y hasta aquí, nada dado de alta.
     expect(await cuantasPersonas(nombre)).toBe(0);
 
-    await page.getByRole("button", { name: copy.panel.importar.confirmar }).click();
+    await botonImportar(page).click();
     await expect(page).toHaveURL(/estado=importados/);
 
     expect(await cuantasPersonas(nombre)).toBe(1);
@@ -150,9 +162,7 @@ test.describe("Importar invitados", () => {
     await expect(page.getByText(copy.panel.importar.errorSinGrupo)).toBeVisible();
 
     // Y no hay forma de importar: el botón no está, no es que esté apagado.
-    await expect(page.getByRole("button", { name: copy.panel.importar.confirmar })).toHaveCount(
-      0,
-    );
+    await expect(botonImportar(page)).toHaveCount(0);
 
     // Lo que de verdad importa: la fila buena TAMPOCO ha entrado.
     expect(await cuantasPersonas(buena)).toBe(0);
@@ -172,7 +182,7 @@ test.describe("Importar invitados", () => {
     );
 
     await subir(page, csv);
-    await page.getByRole("button", { name: copy.panel.importar.confirmar }).click();
+    await botonImportar(page).click();
     await expect(page).toHaveURL(/estado=importados/);
     expect(await cuantasPersonas(nombre)).toBe(1);
 
@@ -180,9 +190,7 @@ test.describe("Importar invitados", () => {
     await subir(page, csv);
 
     await expect(page.getByText(copy.panel.importar.erroresTituloUna)).toBeVisible();
-    await expect(page.getByRole("button", { name: copy.panel.importar.confirmar })).toHaveCount(
-      0,
-    );
+    await expect(botonImportar(page)).toHaveCount(0);
 
     // Y sigue habiendo una, no dos.
     expect(await cuantasPersonas(nombre)).toBe(1);
