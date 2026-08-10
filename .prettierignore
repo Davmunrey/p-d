@@ -5,3 +5,7 @@ playwright-report
 test-results
 .claude/skills
 src/config/tokens.generado.ts
+
+# La entrega original del sistema de marca: se versiona tal cual llegó, porque
+# es la referencia contra la que se compara. Reformatearla la invalida.
+Sistema completo de boda/

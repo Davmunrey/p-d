@@ -105,6 +105,15 @@ const eslintConfig = defineConfig([
     "test-results/**",
     // Skills de diseño de terceros: se versionan tal cual llegan del origen.
     ".claude/skills/**",
+    /**
+     * La entrega original del sistema de marca. Se versiona **tal cual llegó**:
+     * es la referencia contra la que se compara si una pantalla quedó clavada,
+     * y una referencia retocada por un `--fix` deja de servir para comparar.
+     *
+     * No es código del proyecto y no se despliega: son ficheros que se abren en
+     * el navegador para mirarlos.
+     */
+    "Sistema completo de boda/**",
   ]),
 ]);
 
