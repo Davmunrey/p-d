@@ -8,6 +8,7 @@ import {
   MAXIMO_ACOMPANANTES,
   RUTA_ACCESO,
   RUTA_INVITADOS,
+  RUTA_PENDIENTES,
 } from "@/config/constants";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
@@ -248,5 +249,43 @@ export async function repartirPorWhatsApp(datos: FormData): Promise<void> {
     quien reparte los tiene en su agenda. Pedirlos sólo para esto sería recoger
     doscientos datos personales para ahorrarse un toque en la pantalla.
   */
+  redirect(`https://wa.me/?text=${encodeURIComponent(mensaje)}`);
+}
+
+/**
+ * BODA-111 · RECORDARLE A QUIEN NO HA CONTESTADO
+ *
+ * Anota el recordatorio y lleva a WhatsApp, igual que el reparto. Lo que cambia
+ * es quién decide si se puede: aquí no basta con que la pantalla lo ofrezca.
+ *
+ * ENTRE ABRIR LA LISTA Y PULSAR EL BOTÓN PASAN MINUTOS, y en esos minutos
+ * alguien puede contestar desde su móvil. `marcar_recordatorio()` mira el
+ * estado en el instante de escribir y se niega si ya hay respuesta — el
+ * criterio del ticket es «nunca alcanza a quien ya ha respondido, en ninguna
+ * circunstancia», y una lista pintada hace un rato no puede garantizar eso.
+ *
+ * Cuando la base dice que no, NO se abre WhatsApp. Es la diferencia entre un
+ * aviso y un mensaje mandado: si se abriera igual, quien organiza tendría el
+ * texto delante y lo enviaría de todas formas.
+ */
+export async function recordarPorWhatsApp(datos: FormData): Promise<void> {
+  const grupoId = texto(datos, "grupo_id");
+  const mensaje = texto(datos, "mensaje");
+
+  if (!grupoId) volver("no-existe");
+  if (mensaje === "") volver("error", grupoId);
+
+  const supabase = await cliente();
+  const { error } = await supabase.rpc("marcar_recordatorio", { p_grupo_id: grupoId });
+
+  if (error) {
+    if (error.message.includes("REC01")) redirect(`${RUTA_PENDIENTES}?estado=ya-contesto`);
+    if (error.message.includes("REC02")) redirect(`${RUTA_PENDIENTES}?estado=plazo`);
+    if (error.message.includes("RSV06")) redirect(`${RUTA_PENDIENTES}?estado=sin-permiso`);
+    console.error("No se pudo anotar el recordatorio:", error);
+    redirect(`${RUTA_PENDIENTES}?estado=error`);
+  }
+
+  revalidatePath(RUTA_PENDIENTES);
   redirect(`https://wa.me/?text=${encodeURIComponent(mensaje)}`);
 }
