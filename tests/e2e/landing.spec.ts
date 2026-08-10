@@ -82,6 +82,35 @@ test.describe("Landing", () => {
     await expect(page.locator("h1")).toHaveCount(1);
     expect(await page.locator("h2").count()).toBeGreaterThan(0);
   });
+
+  /**
+   * BODA-17 · El conector va en Italianno, y de verdad.
+   *
+   * Comprobar la clase no valdría: diría que se ha pedido la fuente, no que
+   * haya llegado. Si `next/font` fallara o el nombre de la familia se
+   * escribiera mal, la «y» caería en la serif y la clase seguiría ahí.
+   */
+  test("la «y» entre los nombres se pinta con Italianno", async ({ page }) => {
+    const conector = page.getByText(copy.portada.conjuncion, { exact: true }).first();
+    await expect(conector).toBeVisible();
+
+    const familia = await conector.evaluate(
+      (elemento) => getComputedStyle(elemento).fontFamily,
+    );
+    expect(familia).toContain("Italianno");
+
+    // Y en bronce: es la única gota de color cálido de la portada.
+    const { conectorColor, tituloColor } = await page.evaluate((texto) => {
+      const nodos = [...document.querySelectorAll("span")];
+      const y = nodos.find((n) => n.textContent?.trim() === texto)!;
+      return {
+        conectorColor: getComputedStyle(y).color,
+        tituloColor: getComputedStyle(document.querySelector("h1")!).color,
+      };
+    }, copy.portada.conjuncion);
+
+    expect(conectorColor).not.toBe(tituloColor);
+  });
 });
 
 /**
