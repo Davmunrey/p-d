@@ -68,6 +68,21 @@ function importe(datos: FormData, campo: string): number | null | undefined {
   return Math.round(numero * 100) / 100;
 }
 
+/*
+  NO SE REVALIDA LA RUTA A LA QUE SE VA A REDIRIGIR.
+
+  Costó cinco vueltas de CI y el fallo era éste: al crear una categoría, la
+  categoría SE CREABA y la pantalla se repintaba con ella dentro, pero la URL se
+  quedaba sin el `?estado=` — y sin él no sale el aviso de «hecho». El invitado
+  ve la pantalla cambiada y ningún mensaje, que es justo la duda que el aviso
+  existe para quitar.
+
+  `revalidatePath` de la ruta destino y `redirect` a esa misma ruta compiten: el
+  refresco repinta la página donde ya estás y la redirección, que sólo añadía
+  una query, se pierde por el camino. Y es redundante además — estas pantallas
+  son `force-dynamic`, así que la redirección ya las vuelve a leer de la base
+  entera. Se revalida sólo lo que NO se va a visitar.
+*/
 function volver(estado: EstadoProveedores, proveedorId?: string): never {
   const base = proveedorId ? `${RUTA_PROVEEDORES}/${proveedorId}` : RUTA_PROVEEDORES;
   redirect(`${base}?estado=${estado}`);
@@ -117,7 +132,6 @@ export async function crearCategoria(datos: FormData): Promise<void> {
   // Cero filas y sin error es RLS callando: un lector no crea categorías.
   if (!data?.length) volver("sin-permiso");
 
-  revalidatePath(RUTA_PROVEEDORES);
   volver("categoria-creada");
 }
 
@@ -137,7 +151,6 @@ export async function borrarCategoria(datos: FormData): Promise<void> {
   if (error) volver(motivo(error));
   if (!data?.length) volver("sin-permiso");
 
-  revalidatePath(RUTA_PROVEEDORES);
   volver("categoria-borrada");
 }
 
@@ -306,7 +319,6 @@ export async function cambiarEstado(datos: FormData): Promise<void> {
   if (!data?.length) volver("sin-permiso", id);
 
   revalidatePath(RUTA_PROVEEDORES);
-  revalidatePath(`${RUTA_PROVEEDORES}/${id}`);
   volver("estado-cambiado", id);
 }
 
@@ -328,7 +340,6 @@ export async function editarProveedor(datos: FormData): Promise<void> {
   if (!data?.length) volver("sin-permiso", id);
 
   revalidatePath(RUTA_PROVEEDORES);
-  revalidatePath(`${RUTA_PROVEEDORES}/${id}`);
   volver("editado", id);
 }
 
@@ -368,7 +379,6 @@ export async function borrarProveedor(datos: FormData): Promise<void> {
   if (error) volver(motivo(error), id);
   if (!data?.length) volver("sin-permiso", id);
 
-  revalidatePath(RUTA_PROVEEDORES);
   volver("borrado");
 }
 
@@ -406,7 +416,6 @@ export async function anadirContacto(datos: FormData): Promise<void> {
   if (error) volver(motivo(error), proveedorId);
   if (!data?.length) volver("sin-permiso", proveedorId);
 
-  revalidatePath(`${RUTA_PROVEEDORES}/${proveedorId}`);
   volver("contacto-anadido", proveedorId);
 }
 
@@ -425,6 +434,5 @@ export async function quitarContacto(datos: FormData): Promise<void> {
   if (error) volver(motivo(error), proveedorId);
   if (!data?.length) volver("sin-permiso", proveedorId);
 
-  revalidatePath(`${RUTA_PROVEEDORES}/${proveedorId}`);
   volver("contacto-quitado", proveedorId);
 }

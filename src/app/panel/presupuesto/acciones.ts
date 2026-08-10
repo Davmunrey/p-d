@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO, RUTA_PRESUPUESTO } from "@/config/constants";
@@ -54,6 +53,21 @@ function importe(datos: FormData, campo: string): number | undefined {
   return Math.round(numero * 100) / 100;
 }
 
+/*
+  NO SE REVALIDA LA RUTA A LA QUE SE VA A REDIRIGIR.
+
+  Costó cinco vueltas de CI y el fallo era éste: al crear una categoría, la
+  categoría SE CREABA y la pantalla se repintaba con ella dentro, pero la URL se
+  quedaba sin el `?estado=` — y sin él no sale el aviso de «hecho». El invitado
+  ve la pantalla cambiada y ningún mensaje, que es justo la duda que el aviso
+  existe para quitar.
+
+  `revalidatePath` de la ruta destino y `redirect` a esa misma ruta compiten: el
+  refresco repinta la página donde ya estás y la redirección, que sólo añadía
+  una query, se pierde por el camino. Y es redundante además — estas pantallas
+  son `force-dynamic`, así que la redirección ya las vuelve a leer de la base
+  entera. Se revalida sólo lo que NO se va a visitar.
+*/
 function volver(estado: EstadoPresupuesto, extra?: Record<string, string>): never {
   const parametros = new URLSearchParams({ estado, ...extra });
   redirect(`${RUTA_PRESUPUESTO}?${parametros.toString()}`);
@@ -110,7 +124,6 @@ export async function crearCategoria(datos: FormData): Promise<void> {
   if (error) volver(motivo(error));
   if (!data?.length) volver("sin-permiso");
 
-  revalidatePath(RUTA_PRESUPUESTO);
   volver("categoria-creada");
 }
 
@@ -142,7 +155,6 @@ export async function editarCategoria(datos: FormData): Promise<void> {
   if (error) volver(motivo(error));
   if (!data?.length) volver("sin-permiso");
 
-  revalidatePath(RUTA_PRESUPUESTO);
   volver("categoria-editada");
 }
 
@@ -197,6 +209,5 @@ export async function borrarCategoria(datos: FormData): Promise<void> {
   if (error) volver(motivo(error));
   if (!data?.length) volver("sin-permiso");
 
-  revalidatePath(RUTA_PRESUPUESTO);
   volver(cuantos > 0 ? "gastos-movidos" : "categoria-borrada");
 }
