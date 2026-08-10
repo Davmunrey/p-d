@@ -436,8 +436,19 @@ test.describe("El embudo del proveedor", () => {
     await esperarEstado(page, "estado-cambiado");
     await expect(page.getByText(copy.panel.proveedores.avisoEstadoCambiado)).toBeVisible();
 
-    // Persiste: se comprueba recargando, no fiándose de lo que quedó pintado.
-    await page.reload();
+    /*
+      Persiste: se comprueba volviendo a pedir la ficha, no fiándose de lo que
+      quedó pintado.
+
+      Y SE VUELVE A LA URL LIMPIA, sin `?estado=`, que no es un detalle: con
+      `page.reload()` la dirección conservaba el `estado=estado-cambiado` del
+      paso anterior, así que el `esperarEstado` de más abajo se cumplía SOLO —
+      encontraba el rastro del primer cambio— y el test leía la base antes de
+      que el segundo hubiera llegado a escribir. De ahí un «esperaba
+      descartado, era presupuesto_pedido» que parecía un fallo del embudo y era
+      una espera que no esperaba nada.
+    */
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
     await expect(
       seccion(page, copy.panel.proveedores.estadoTitulo).getByLabel(
         copy.panel.proveedores.campoEstado,
