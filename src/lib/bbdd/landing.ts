@@ -263,3 +263,56 @@ export async function obtenerCanciones(limite = 30): Promise<Cancion[]> {
   );
   return filas.map((f) => ({ id: f.id, texto: f.texto }));
 }
+
+export interface Medio {
+  id: string;
+  /** Ruta relativa dentro del bucket, tal y como la valida la base. */
+  ruta: string;
+  textoAlternativo: string;
+  ancho: number | null;
+  alto: number | null;
+  /** Miniatura en base64 para pintar algo mientras carga la de verdad. */
+  marcadorBorroso: string | null;
+}
+
+/**
+ * Las imágenes publicadas de una sección, en su orden.
+ *
+ * Sólo devuelve las que están `publicado`: RLS ya lo impone para `anon`, pero
+ * se escribe igual porque esta consulta también se lee, y quien la lee tiene
+ * que ver la intención sin ir a buscar la política.
+ *
+ * El texto alternativo es `jsonb` por idioma. La boda es sólo en castellano
+ * —decisión cerrada en el plan maestro—, así que se saca `es` y se cae al
+ * primer valor que haya si alguien cargó otro idioma: una imagen sin
+ * alternativa es peor que una con la alternativa en el idioma equivocado.
+ */
+export async function obtenerMedios(seccion: Seccion): Promise<Medio[]> {
+  const filas = await leerComoAnonimo(
+    (tx) => tx<
+      {
+        id: string;
+        ruta_almacenamiento: string;
+        texto_alternativo: Record<string, string>;
+        ancho: number | null;
+        alto: number | null;
+        marcador_borroso: string | null;
+      }[]
+    >`
+      select id, ruta_almacenamiento, texto_alternativo, ancho, alto, marcador_borroso
+      from public.medios
+      where publicado and seccion = ${seccion}::public.seccion_landing
+      order by orden nulls last, creado_en
+    `,
+  );
+
+  return filas.map((f) => ({
+    id: f.id,
+    ruta: f.ruta_almacenamiento,
+    textoAlternativo:
+      f.texto_alternativo?.es ?? Object.values(f.texto_alternativo ?? {})[0] ?? "",
+    ancho: f.ancho,
+    alto: f.alto,
+    marcadorBorroso: f.marcador_borroso,
+  }));
+}

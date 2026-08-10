@@ -69,6 +69,11 @@
   --color-nieve-100: #eef2f8;
   --color-nieve-150: #eef1f6;
   --color-bruma-300: #dfe4ec;
+
+  /* El filete que separa las filas de las secciones de contenido. Más suave
+     que un borde normal: la entrega lo usa donde una línea marcada partiría
+     la lectura. */
+  --color-bruma-350: #d6dce7;
   --color-bruma-400: #b7c0d0;
 
   /* ---------------------------------------------------------------------
@@ -204,6 +209,20 @@
 
   /* Ancho mínimo de una cifra grande, para que la cuenta atrás no baile. */
   --size-cifra: 5.5rem;
+
+  /**
+   * Ancho mínimo de columna en las rejillas que se parten solas. Por debajo de
+   * esto, dos columnas dejan de leerse y pasan a apilarse. Sale de la entrega,
+   * y por eso el corte no ocurre en un breakpoint redondo sino cuando estorba.
+   */
+  --size-columna-minima: 22.5rem;
+
+  /**
+   * Alto del hueco de foto de la portada cuando la rejilla ya se ha apilado.
+   * `dvh` y no `vh`: en móvil, con la barra del navegador visible, `vh` mide de
+   * más y la foto empuja el contenido fuera de la pantalla.
+   */
+  --size-foto-portada: min(60dvh, 32.5rem);
 
   /**
    * Alto de la barra de navegación. Sale una vez de aquí y sirve para tres
