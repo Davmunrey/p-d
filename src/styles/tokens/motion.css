@@ -62,6 +62,47 @@
   }
 }
 
+/**
+ * EL CIELO DE LA CUENTA ATRÁS
+ *
+ * Dos movimientos a la vez y muy lentos: las estrellas derivan en diagonal
+ * durante 44 s y, por encima, titilan en 7 s. Ninguno de los dos se percibe
+ * como animación —a esa velocidad el ojo no sigue el movimiento—, y eso es lo
+ * que buscaba la entrega: que el fondo esté vivo sin pedir atención.
+ */
+@keyframes escala {
+  from {
+    opacity: 0%;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 100%;
+    transform: scale(1);
+  }
+}
+
+@keyframes deriva {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-40px, -26px, 0);
+  }
+}
+
+@keyframes titilar {
+  0%,
+  100% {
+    opacity: 90%;
+  }
+
+  50% {
+    opacity: 40%;
+  }
+}
+
 /* Una línea que se traza. Se usa como separador que "dibuja" la sección. */
 @keyframes trazar-horizontal {
   from {
@@ -159,6 +200,12 @@
   animation: flotar calc(var(--duration-cinematic) * 2.6) ease-in-out infinite;
 }
 
+.animacion-cielo {
+  animation:
+    deriva calc(var(--duration-cinematic) * 31) linear infinite alternate,
+    titilar calc(var(--duration-cinematic) * 5) ease-in-out infinite;
+}
+
 .animacion-trazar {
   animation: trazar-horizontal var(--transicion-cinematica) both;
   transform-origin: left;
@@ -172,7 +219,8 @@
 @supports (animation-timeline: view()) {
   .animacion-subir-al-ver,
   .animacion-aparecer-al-ver,
-  .animacion-cortina-al-ver {
+  .animacion-cortina-al-ver,
+  .animacion-escala-al-ver {
     animation-fill-mode: both;
     animation-range: entry 4% cover 24%;
     animation-timeline: view();
@@ -192,6 +240,11 @@
   .animacion-cortina-al-ver {
     animation-duration: var(--duration-slower);
     animation-name: cortina;
+  }
+
+  .animacion-escala-al-ver {
+    animation-duration: var(--duration-slow);
+    animation-name: escala;
   }
 }
 
@@ -216,12 +269,14 @@
   .animacion-trazar-vertical,
   .animacion-subir-al-ver,
   .animacion-aparecer-al-ver,
-  .animacion-cortina-al-ver {
+  .animacion-cortina-al-ver,
+  .animacion-escala-al-ver {
     animation: aparecer var(--duration-instant) var(--ease-salida) both;
     animation-timeline: auto;
   }
 
-  .animacion-flotar {
+  .animacion-flotar,
+  .animacion-cielo {
     animation: none;
   }
 

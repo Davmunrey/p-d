@@ -128,6 +128,18 @@
   --color-velado-nieve: rgb(248 249 252 / 86%);
   --color-velado-marino: rgb(16 22 35 / 86%);
 
+  /**
+   * Las estrellas del cielo de la cuenta atrás. Cuatro alfas distintas y no uno
+   * solo: un campo de puntos todos iguales se lee como una trama de imprenta,
+   * no como un cielo. La irregularidad es lo que lo hace funcionar.
+   *
+   * El blanco es el mismo de la tinta sobre oscuro, con transparencia.
+   */
+  --color-estrella-1: rgb(238 242 248 / 50%);
+  --color-estrella-2: rgb(238 242 248 / 30%);
+  --color-estrella-3: rgb(238 242 248 / 42%);
+  --color-estrella-4: rgb(238 242 248 / 28%);
+
   /* ---------------------------------------------------------------------
    * Tipografía — las tres familias de la entrega
    *
@@ -160,6 +172,13 @@
   --font-size-titulo-2: clamp(2rem, 3.4vw, 2.375rem);
   --font-size-titulo-3: 1.6875rem;
   --font-size-conector: clamp(2.75rem, 8vw, 6.5rem);
+
+  /**
+   * Las cifras de la cuenta atrás: 46–86 px. Ni display ni título — la entrega
+   * les da su propio tamaño, más contenido que el titular porque son cuatro
+   * seguidas y a tamaño de portada no cabrían en un móvil.
+   */
+  --font-size-cifra: clamp(2.875rem, 8vw, 5.375rem);
   --font-size-cita: 1.5rem;
   --font-size-cuerpo-grande: 1.1875rem;
   --font-size-cuerpo: 1rem;

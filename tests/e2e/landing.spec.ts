@@ -116,6 +116,22 @@ test.describe("Landing", () => {
   });
 
   /**
+   * BODA-20 · El cielo de la cuenta atrás.
+   */
+  test("la cuenta atrás lleva su cielo, y es decoración para quien no ve", async ({ page }) => {
+    const cielo = page.locator("#cuenta-atras .cielo-estrellado");
+    await expect(cielo).toHaveCount(1);
+
+    // Decoración pura: anunciarlo sería ruido en un lector de pantalla.
+    await expect(cielo).toHaveAttribute("aria-hidden", "true");
+
+    const capas = await cielo.evaluate(
+      (nodo) => getComputedStyle(nodo).backgroundImage.split("radial-gradient").length - 1,
+    );
+    expect(capas).toBe(4);
+  });
+
+  /**
    * BODA-17 · El conector va en Italianno, y de verdad.
    *
    * Comprobar la clase no valdría: diría que se ha pedido la fuente, no que
@@ -153,5 +169,36 @@ test.describe("Landing", () => {
 test.describe("Landing sin configurar", () => {
   test("existe un mensaje para cuando no hay datos", () => {
     expect(copy.errores.generico.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * CASO DE ERROR / ACCESIBILIDAD
+ *
+ * Un fondo en movimiento perpetuo es justo lo que marea a quien activa
+ * «movimiento reducido». El cielo de la cuenta atrás tiene que pararse del
+ * todo, no ralentizarse.
+ */
+test.describe("Cielo con movimiento reducido", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+  });
+
+  test("el cielo deja de moverse", async ({ page }) => {
+    await page.goto("/");
+
+    const emulacionActiva = await page.evaluate(
+      () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    );
+    test.skip(
+      !emulacionActiva,
+      "Este navegador no aplica la emulación de prefers-reduced-motion",
+    );
+
+    const nombre = await page
+      .locator("#cuenta-atras .cielo-estrellado")
+      .evaluate((nodo) => getComputedStyle(nodo).animationName);
+
+    expect(nombre).toBe("none");
   });
 });

@@ -345,23 +345,39 @@ function Portada({
   );
 }
 
+/**
+ * LA CUENTA ATRÁS, BAJO UN CIELO
+ *
+ * En la entrega no es una franja de color: es una noche. El fondo lleva cuatro
+ * capas de estrellas que derivan durante 44 s y titilan cada 7, tan despacio
+ * que no se leen como animación — sólo se nota que el bloque está vivo.
+ *
+ * El cielo es decoración pura, así que va `aria-hidden` y por debajo del
+ * contenido. Y se apaga entero con `prefers-reduced-motion`: un fondo en
+ * movimiento perpetuo es justo lo que marea a quien activa esa preferencia.
+ */
 function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBoda }) {
   const idTitulo = `titulo-${anclaDe("cuenta_atras")}`;
   return (
     <section
       id={anclaDe("cuenta_atras")}
       data-seccion="inversa"
-      className="px-interno py-seccion-compacta text-center"
+      className="relative overflow-hidden px-interno py-seccion-compacta text-center"
       aria-labelledby={idTitulo}
     >
-      <div className="mx-auto max-w-estrecho">
+      <div
+        aria-hidden
+        className="animacion-cielo cielo-estrellado pointer-events-none absolute -inset-bloque"
+      />
+
+      <div className="animacion-cortina-al-ver relative mx-auto max-w-estrecho">
         <Etiqueta id={idTitulo}>{t("cuentaAtras.titulo")}</Etiqueta>
         <div className="mt-elemento">
           <CuentaAtras fechaIso={configuracion.fechaCeremonia.toISOString()} />
         </div>
-        <p className="mt-bloque text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
-          {formatoFecha.format(configuracion.fechaCeremonia)}
-        </p>
+        <Cita className="mx-auto mt-bloque max-w-texto text-tinta-suave">
+          {t("cuentaAtras.cierre")}
+        </Cita>
       </div>
     </section>
   );
