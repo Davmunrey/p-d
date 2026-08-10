@@ -3,6 +3,7 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_RSVP } from "../../src/config/constants";
+import { conPlazoCerrado } from "./utiles/plazo";
 
 /**
  * BODA-55 · Confirmación de asistencia
@@ -32,6 +33,17 @@ async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T
   } finally {
     await sql.end();
   }
+}
+
+/** El correo de contacto que hay en la base, que es el que tiene que salir. */
+async function correoDeContacto(): Promise<string> {
+  const [fila] = await conBase(
+    (sql) => sql<{ correo_contacto: string | null }[]>`
+      select correo_contacto from public.configuracion_boda
+    `,
+  );
+  if (!fila?.correo_contacto) throw new Error("El seed tiene que traer correo de contacto.");
+  return fila.correo_contacto;
 }
 
 /** Crea un grupo sin contestar y devuelve su token. */
@@ -357,10 +369,223 @@ test.describe("Un enlace que no vale", () => {
     await expect(page.locator('input[type="radio"]')).toHaveCount(0);
   });
 
+  /**
+   * BODA-58 · UN TOKEN FALSO Y UNO REVOCADO TIENEN QUE SER INDISTINGUIBLES.
+   *
+   * Si la respuesta cambiara entre «este token no ha existido nunca» y
+   * «existió y se revocó», quien fuera probando cadenas sabría cuándo ha dado
+   * con la forma de un token de verdad. Y ése es justo el trabajo previo de
+   * adivinar uno.
+   *
+   * HOY ESTO SE CUMPLE POR CONSTRUCCIÓN, y el test existe para que siga
+   * cumpliéndose. La base no guarda el token sino su huella, y revocar es
+   * dejar de tener una fila con esa huella: no queda ni rastro de que existiera,
+   * así que no hay nada que pudiera contarlo. El día que alguien añada una
+   * tabla de tokens retirados para dar un mensaje más amable —«este enlace se
+   * sustituyó por otro», que es una idea razonable— este test se pondrá rojo y
+   * dirá por qué no se puede.
+   *
+   * Se comparan los dos HTML enteros y no sólo el rótulo: una diferencia en
+   * una etiqueta oculta, en el título del documento o en una meta cuenta lo
+   * mismo que una diferencia a la vista.
+   *
+   * La revocación se hace borrando el grupo y volviéndolo a emitir, que es lo
+   * que queda al alcance de un test sin sesión: el trigger `RSV06` sólo deja
+   * cambiar la huella a un editor. La rotación por el panel, con sesión, la
+   * cubre `panel-invitados.spec.ts`.
+   */
+  test("un token falso y uno revocado dan exactamente la misma respuesta", async ({
+    request,
+  }) => {
+    const revocado = await crearGrupo(`revocado-${Date.now()}`, ["(DES) Revocada"]);
+
+    // Mientras vale, vale: si esto no pasara, el resto del test compararía dos
+    // páginas de error sin haber demostrado nada.
+    const valido = await request.get(`${RUTA_RSVP}/${revocado}`);
+    expect(await valido.text()).toContain("(DES) Revocada");
+
+    await conBase(
+      (sql) => sql`
+        delete from public.grupos_invitacion
+         where huella_token = public.huella_token(${revocado})
+      `,
+    );
+
+    // Y uno que no ha existido nunca, con la misma pinta y la misma longitud:
+    // comparar contra una cadena más corta mediría el largo, no el contrato.
+    const inventado = revocado.replace(/.$/, "9");
+    expect(inventado).not.toBe(revocado);
+    expect(inventado).toHaveLength(revocado.length);
+
+    const [comoRevocado, comoInventado] = await Promise.all([
+      request.get(`${RUTA_RSVP}/${revocado}`),
+      request.get(`${RUTA_RSVP}/${inventado}`),
+    ]);
+
+    expect(comoRevocado.status()).toBe(comoInventado.status());
+
+    const htmlRevocado = await comoRevocado.text();
+    const htmlInventado = await comoInventado.text();
+
+    // El token va en la URL, así que aparece en el HTML de su propia página:
+    // se neutraliza en los dos antes de comparar, que es lo único que puede
+    // diferir legítimamente.
+    const sinToken = (html: string, token: string) => html.replaceAll(token, "TOKEN");
+
+    expect(
+      sinToken(htmlInventado, inventado),
+      "el HTML delata si el token existió: se podría adivinar uno probando",
+    ).toBe(sinToken(htmlRevocado, revocado));
+
+    // Y lo que dicen los dos es que no vale, sin contar de quién era.
+    expect(htmlRevocado).toContain(copy.rsvp.tokenInvalido);
+    expect(htmlRevocado).not.toContain("(DES) Revocada");
+  });
+
   test("la página del RSVP no se indexa", async ({ page }) => {
     // El token va en la URL. Una línea en un buscador, o una vista previa de
     // WhatsApp con el nombre del grupo, es una fuga.
     const respuesta = await page.goto(`${RUTA_RSVP}/token-que-no-existe-000000`);
     expect(respuesta?.headers()["x-robots-tag"] ?? "").toMatch(/noindex/);
+  });
+});
+
+/**
+ * BODA-56 · EDITAR LA RESPUESTA HASTA LA FECHA LÍMITE
+ *
+ * La gente cambia de planes. Si no puede cambiarlo sola acaba mandando un
+ * WhatsApp que hay que transcribir a mano, y transcribir a mano es donde se
+ * pierden los números que ya se le habían dado al catering.
+ *
+ * Lo que se prueba no es que el botón esté: es que la respuesta **cambia en la
+ * base** y que la anterior no desaparece. Un histórico que se pisa a sí mismo
+ * no sirve para contestar la única pregunta que importa cuando cambia un
+ * número —«¿desde cuándo?»—.
+ */
+test.describe("Cambiar una respuesta ya dada", () => {
+  test("se puede editar mientras haya plazo, y la anterior queda en el historial", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo(`editar-${Date.now()}`, ["(DES) Editable"]);
+
+    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const pagina = await contexto.newPage();
+
+    // Primero, que sí.
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.locator('input[value="confirmado"]').first().check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
+    await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
+
+    // Y ahora, que no: el mismo enlace reabre la respuesta.
+    await pagina.getByRole("button", { name: copy.rsvp.editarRespuesta }).click();
+    await pagina.locator('input[value="rechazado"]').first().check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
+    await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasNo);
+
+    await contexto.close();
+
+    // La base es la que manda: la vigente es la nueva y la vieja sigue ahí.
+    const filas = await conBase(
+      (sql) => sql<{ estado: string; es_vigente: boolean }[]>`
+        select c.estado, c.es_vigente
+          from public.confirmaciones as c
+          join public.invitados as i on i.id = c.invitado_id
+          join public.grupos_invitacion as g on g.id = i.grupo_id
+         where g.huella_token = public.huella_token(${token})
+         order by c.creado_en
+      `,
+    );
+
+    const vigentes = filas.filter((fila) => fila.es_vigente);
+    expect(vigentes, "tiene que haber exactamente una respuesta vigente").toHaveLength(1);
+    expect(vigentes[0].estado).toBe("rechazado");
+
+    // Y la anterior no se ha borrado: sin esto no se puede saber desde cuándo
+    // cambió un número que ya se había dado al catering.
+    expect(
+      filas.some((fila) => !fila.es_vigente && fila.estado === "confirmado"),
+      "la respuesta anterior tiene que quedar en el historial",
+    ).toBe(true);
+  });
+
+  /**
+   * CASO DE ERROR · Con el plazo cerrado se puede ver, pero no cambiar.
+   *
+   * Y no basta con esconder el botón: lo que de verdad cierra la puerta es el
+   * trigger de la base, que es lo que este test comprueba llamando a la función
+   * pública **como `anon`**, saltándose la pantalla entera. Si sólo se probara
+   * el botón, cualquiera con la URL podría seguir escribiendo.
+   */
+  test("con el plazo cerrado no se puede cambiar, y se dice a quién escribir", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo(`plazo-${Date.now()}`, ["(DES) Tarde"]);
+
+    const contexto = await browser.newContext({ javaScriptEnabled: false, locale: "es-ES" });
+    const pagina = await contexto.newPage();
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.locator('input[value="confirmado"]').first().check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
+    await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
+
+    await conPlazoCerrado(async () => {
+      await pagina.goto(`${RUTA_RSVP}/${token}`);
+
+      // Se sigue viendo lo que se contestó: cerrar el plazo no es esconder la
+      // respuesta, es no dejar cambiarla.
+      await expect(pagina.getByText("(DES) Tarde")).toBeVisible();
+
+      // El botón de cambiar no está, y en su lugar hay una explicación.
+      await expect(pagina.getByRole("button", { name: copy.rsvp.editarRespuesta })).toHaveCount(
+        0,
+      );
+      await expect(pagina.getByText(copy.rsvp.plazoCerradoContacto)).toBeVisible();
+
+      // Y a quién escribir, que es el criterio del ticket: «escribidnos» sin
+      // una dirección no le resuelve nada a nadie.
+      const correo = await correoDeContacto();
+      await expect(pagina.getByRole("link", { name: correo })).toHaveAttribute(
+        "href",
+        `mailto:${correo}`,
+      );
+
+      // Lo que de verdad cierra la puerta: forzar el envío por debajo de la
+      // pantalla, como `anon`, tampoco escribe nada.
+      const intento = conBase(
+        (sql) =>
+          sql.begin(async (tx) => {
+            await tx`set local role anon`;
+            return tx`
+              select public.registrar_confirmacion(
+                ${token},
+                ${tx.json([{ invitado_id: "00000000-0000-4000-8000-000000000000", estado: "rechazado" }])}
+              )
+            `;
+          }) as Promise<unknown>,
+      );
+
+      await expect(intento, "con el plazo cerrado la base tiene que negarse").rejects.toThrow();
+    });
+
+    await contexto.close();
+
+    // Y sigue siendo la que era.
+    const [vigente] = await conBase(
+      (sql) => sql<{ estado: string }[]>`
+        select c.estado
+          from public.confirmaciones as c
+          join public.invitados as i on i.id = c.invitado_id
+          join public.grupos_invitacion as g on g.id = i.grupo_id
+         where g.huella_token = public.huella_token(${token}) and c.es_vigente
+      `,
+    );
+    expect(vigente.estado).toBe("confirmado");
   });
 });

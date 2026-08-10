@@ -90,7 +90,7 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
 
   // Cero filas es el contrato de la base para «este enlace no vale». No se
   // dice nada más: ni si el token existió, ni de quién era.
-  if (!invitacion) return <EnlaceNoValido />;
+  if (!invitacion) return <EnlaceNoValido correo={configuracion?.correoContacto ?? null} />;
 
   const plazoCerrado = Boolean(
     configuracion?.fechaLimiteRsvp && configuracion.fechaLimiteRsvp < new Date(),
@@ -103,7 +103,12 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
   if (consulta.enviado === "1" || (yaRespondido && !consulta.paso)) {
     return (
       <Marco>
-        <RespuestaEnviada personas={invitacion.personas} token={token} cerrado={plazoCerrado} />
+        <RespuestaEnviada
+          personas={invitacion.personas}
+          token={token}
+          cerrado={plazoCerrado}
+          correo={configuracion?.correoContacto ?? null}
+        />
       </Marco>
     );
   }
@@ -115,6 +120,10 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
       <Marco>
         <Titulo1 className="text-center">{t("rsvp.titulo")}</Titulo1>
         <Cuerpo className="mt-elemento text-center">{t("rsvp.plazoCerrado")}</Cuerpo>
+        <LineaContacto
+          correo={configuracion?.correoContacto ?? null}
+          texto={t("rsvp.plazoCerradoContacto")}
+        />
       </Marco>
     );
   }
@@ -219,19 +228,55 @@ function Marco({ children }: { children: React.ReactNode }) {
  * quién era, ni cuántas personas tenía. Sólo dice que no vale y a quién
  * escribir.
  */
-function EnlaceNoValido() {
+function EnlaceNoValido({ correo }: { correo: string | null }) {
   return (
     <Marco>
       <Titulo1 className="text-center">{t("rsvp.titulo")}</Titulo1>
       <Cuerpo className="mx-auto mt-elemento max-w-texto text-center">
         {t("rsvp.tokenInvalido")}
       </Cuerpo>
+
+      {/*
+        A QUIÉN ESCRIBIR, que es lo único útil que se le puede dar a quien
+        llega aquí. «Escribidnos» sin una dirección deja a alguien mirando una
+        pantalla que no le resuelve nada.
+
+        El correo sale de la configuración y es el mismo que ya está en el pie
+        de la web pública, así que enseñarlo no cuenta nada que no se supiera.
+        Lo que NO cambia es el resto: el mensaje es idéntico exista el token o
+        no, y esta línea también, porque no depende del token.
+      */}
+      <LineaContacto correo={correo} texto={t("rsvp.enlacePerdido")} />
+
       <div className="mt-elemento flex justify-center">
         <BotonEnlace href="/" jerarquia="secundario">
           {t("saveTheDate.verLaWeb")}
         </BotonEnlace>
       </div>
     </Marco>
+  );
+}
+
+/**
+ * LA DIRECCIÓN A LA QUE ESCRIBIR.
+ *
+ * Sin correo configurado no se pinta nada: mejor una frase de menos que un
+ * «escribidnos a» seguido de un hueco. Es el mismo patrón que usa el pie de la
+ * landing, y el mismo correo.
+ */
+function LineaContacto({ correo, texto }: { correo: string | null; texto: string }) {
+  if (!correo) return null;
+
+  return (
+    <p className="mx-auto mt-elemento max-w-texto text-center text-pequeno text-tinta-suave">
+      {texto}{" "}
+      <a
+        href={`mailto:${correo}`}
+        className="border-b border-borde-fuerte transicion-color hover:text-acento"
+      >
+        {correo}
+      </a>
+    </p>
   );
 }
 
@@ -435,10 +480,12 @@ function RespuestaEnviada({
   personas,
   token,
   cerrado,
+  correo,
 }: {
   personas: PersonaInvitada[];
   token: string;
   cerrado: boolean;
+  correo: string | null;
 }) {
   const vienen = personas.filter((p) => p.estado === "confirmado");
   const noVienen = personas.filter((p) => p.estado === "rechazado");
@@ -480,6 +527,21 @@ function RespuestaEnviada({
         <p className="mt-elemento text-pequeno text-tinta-tenue">
           {t("rsvp.respuestaGuardada", { fecha: formatoFechaHora.format(respondido) })}
         </p>
+      ) : null}
+
+      {/*
+        Y si el plazo ya se ha cerrado, se dice por qué no está el botón de
+        cambiar la respuesta. Un botón que desaparece sin explicación se lee
+        como una avería, y el siguiente paso de quien lo ve es un WhatsApp
+        preguntando qué ha pasado — que es justo lo que este ticket evita.
+      */}
+      {cerrado ? (
+        <>
+          <Cuerpo className="mx-auto mt-elemento max-w-texto text-pequeno">
+            {t("rsvp.plazoCerrado")}
+          </Cuerpo>
+          <LineaContacto correo={correo} texto={t("rsvp.plazoCerradoContacto")} />
+        </>
       ) : null}
 
       <div className="mt-elemento flex flex-wrap justify-center gap-interno">
