@@ -45,7 +45,10 @@ export function Titulo1({
   className = "",
 }: PropiedadesTitulo) {
   return (
-    <Etiqueta id={id} className={`font-titulo text-titulo-1 leading-titulo ${className}`}>
+    <Etiqueta
+      id={id}
+      className={`font-titulo text-titulo-1 leading-titulo tracking-titulo ${className}`}
+    >
       {children}
     </Etiqueta>
   );
@@ -92,6 +95,50 @@ export function Titulo3({
 export function Conector({ children }: { children: ReactNode }) {
   return (
     <span className="font-conector text-conector leading-conector text-acento">{children}</span>
+  );
+}
+
+/**
+ * LA VERSALITA QUE ABRE UNA SECCIÓN
+ *
+ * Tiene dos formas, y cuál se usa no es una preferencia: es lo que la sección
+ * significa dentro de la página.
+ *
+ * La **sobria** —tinta tenue, sin adorno— abre lo que hay que leer sí o sí: el
+ * programa, el alojamiento, cómo llegar, la confirmación. Ahí la versalita
+ * rotula un dato («Sábado 26 de junio», «Finca La Sierra») y estorbaría que
+ * llamase la atención sobre sí misma.
+ *
+ * La **realzada** —bronce y un rombo delante, un cuadrado de 4 px girado 45°—
+ * abre lo que se ofrece: la playlist, la historia. Son secciones que nadie
+ * necesita para llegar a la boda, y el adorno es la manera de decir «esto es
+ * un extra» sin escribirlo.
+ *
+ * Mezclarlas al azar rompe justamente eso: si el bronce sale en todas, deja de
+ * significar nada. Por eso el realce es una decisión explícita en cada sección
+ * y no el valor por defecto.
+ *
+ * El rombo es `aria-hidden`: para quien escucha la página no significa nada, y
+ * anunciarlo sería un ruido por cada sección.
+ */
+export function EtiquetaSeccion({
+  children,
+  realzada = false,
+}: {
+  children: ReactNode;
+  realzada?: boolean;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-interno-compacto text-etiqueta uppercase tracking-seccion ${
+        realzada ? "text-acento" : "text-tinta-tenue"
+      }`}
+    >
+      {realzada ? (
+        <span aria-hidden className="size-linea rotate-45 bg-current opacity-80" />
+      ) : null}
+      {children}
+    </span>
   );
 }
 

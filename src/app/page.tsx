@@ -12,7 +12,8 @@ import {
   Cuerpo,
   Display,
   Etiqueta,
-  Titulo2,
+  EtiquetaSeccion,
+  Titulo1,
   Titulo3,
 } from "@/components/ui/tipografia";
 import { ID_CONTENIDO, IDIOMA, ZONA_HORARIA } from "@/config/constants";
@@ -394,7 +395,12 @@ function Historia({
   }[];
 }) {
   return (
-    <Bloque seccion="historia" etiqueta={null} titulo={null}>
+    <Bloque
+      seccion="historia"
+      etiqueta={t("historia.etiqueta")}
+      titulo={t("historia.titulo")}
+      realzada
+    >
       <ol className="grid gap-bloque sm:grid-cols-3">
         {hitos.map((hito) => (
           <li key={hito.id} className="animacion-subir-al-ver">
@@ -552,7 +558,12 @@ function Preguntas({
   preguntas: { id: string; pregunta: string; respuesta: string }[];
 }) {
   return (
-    <Bloque seccion="preguntas_frecuentes" etiqueta={null} titulo={null} hundida>
+    <Bloque
+      seccion="preguntas_frecuentes"
+      etiqueta={t("preguntas.etiqueta")}
+      titulo={t("preguntas.titulo")}
+      hundida
+    >
       <ul className="mx-auto max-w-estrecho border-t border-borde">
         {preguntas.map((pregunta) => (
           <li key={pregunta.id} className="border-b border-borde">
@@ -572,8 +583,14 @@ function Preguntas({
 
 function Playlist({ canciones }: { canciones: { id: string; texto: string }[] }) {
   return (
-    <Bloque seccion="playlist" etiqueta={t("playlist.etiqueta")} titulo={t("playlist.titulo")}>
-      <Cuerpo className="mx-auto max-w-texto text-center">{t("playlist.descripcion")}</Cuerpo>
+    <Bloque
+      seccion="playlist"
+      etiqueta={t("playlist.etiqueta")}
+      titulo={t("playlist.titulo")}
+      entradilla={t("playlist.descripcion")}
+      realzada
+      centrada
+    >
       {canciones.length > 0 ? (
         <ul className="mt-elemento flex flex-wrap justify-center gap-interno-compacto">
           {canciones.map((cancion) => (
@@ -598,33 +615,121 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
     <section
       id={anclaDe("rsvp")}
       data-seccion="inversa"
-      className="px-interno py-seccion-compacta text-center"
+      className="px-interno py-seccion-fluida text-center"
       aria-labelledby={idTitulo}
     >
       <div className="mx-auto max-w-estrecho">
-        {configuracion.fechaLimiteRsvp ? (
-          <Etiqueta>{formatoFecha.format(configuracion.fechaLimiteRsvp)}</Etiqueta>
-        ) : null}
-        <Titulo2 id={idTitulo} className="mt-pila">
-          {t("rsvp.titulo")}
-        </Titulo2>
-        <Cita className="mx-auto mt-elemento max-w-texto">{t("meta.descripcion")}</Cita>
+        <CabeceraSeccion
+          idTitulo={idTitulo}
+          etiqueta={
+            configuracion.fechaLimiteRsvp
+              ? t("rsvp.antesDel", {
+                  fecha: formatoFecha.format(configuracion.fechaLimiteRsvp),
+                })
+              : null
+          }
+          titulo={t("rsvp.titulo")}
+          centrada
+        />
+        <Cita className="mx-auto max-w-texto">{t("meta.descripcion")}</Cita>
       </div>
     </section>
   );
 }
 
-/** Envoltura de sección: mantiene el ritmo vertical sin repetirlo por página. */
+/**
+ * LA CABECERA DE UNA SECCIÓN
+ *
+ * El patrón que la entrega repite en todas: versalita arriba, titular grande
+ * debajo y —cuando hace falta— una entradilla corta que lo acompaña.
+ *
+ * Tiene dos composiciones, y la entrega usa las dos. En la **alineada**, que es
+ * la de las secciones con contenido debajo, la entradilla va a la derecha del
+ * titular y pegada a su línea base; el titular abre la sección por la
+ * izquierda, donde empieza a leerse todo lo demás. En la **centrada**, la de
+ * las secciones que son una invitación a hacer algo —la playlist, el RSVP—, la
+ * entradilla cae bajo el titular y todo se alinea al eje: no hay una lista que
+ * seguir, hay una sola cosa que pedir.
+ *
+ * El titular es un `h2` con el tamaño de `Titulo1`, no de `Titulo2`, y por eso
+ * va con la propiedad `como`. Es lo que dice la entrega y se nota: con el
+ * tamaño pequeño las secciones no abren, parecen subapartados de la anterior.
+ * La jerarquía del documento la sigue marcando la etiqueta, que es lo que oye
+ * un lector de pantalla.
+ *
+ * Vive suelta y no dentro de `Bloque` porque la usan dos marcos distintos: las
+ * secciones de contenido y el RSVP, que tiene su propio fondo.
+ */
+function CabeceraSeccion({
+  idTitulo,
+  etiqueta,
+  titulo,
+  entradilla = null,
+  realzada = false,
+  centrada = false,
+}: {
+  idTitulo: string;
+  etiqueta: string | null;
+  titulo: string | null;
+  /** Frase corta que acompaña al titular. Opcional: la mayoría no la lleva. */
+  entradilla?: string | null;
+  /** Bronce y rombo. Sólo las secciones que son un extra; ver `EtiquetaSeccion`. */
+  realzada?: boolean;
+  centrada?: boolean;
+}) {
+  if (!etiqueta && !titulo) return null;
+
+  const rotulo = (
+    <div>
+      {etiqueta ? <EtiquetaSeccion realzada={realzada}>{etiqueta}</EtiquetaSeccion> : null}
+      {titulo ? (
+        <Titulo1 como="h2" id={idTitulo} className="mt-pila">
+          {titulo}
+        </Titulo1>
+      ) : null}
+      {centrada && entradilla ? (
+        <Cuerpo className="mx-auto mt-pila max-w-texto">{entradilla}</Cuerpo>
+      ) : null}
+    </div>
+  );
+
+  return (
+    <header
+      className={`animacion-subir-al-ver mb-bloque-fluido ${
+        centrada ? "text-center" : "flex flex-wrap items-end justify-between gap-elemento"
+      }`}
+    >
+      {rotulo}
+      {!centrada && entradilla ? (
+        <Cuerpo className="ancho-entradilla">{entradilla}</Cuerpo>
+      ) : null}
+    </header>
+  );
+}
+
+/**
+ * EL MARCO DE UNA SECCIÓN DE CONTENIDO
+ *
+ * Mantiene el ritmo vertical sin repetirlo por página. El aire es fluido: 132
+ * px fijos dejan una sección casi vacía en un móvil, y por eso la entrega lo
+ * escribe con `clamp` en todas.
+ */
 function Bloque({
   seccion,
   etiqueta,
   titulo,
+  entradilla = null,
+  realzada = false,
+  centrada = false,
   hundida = false,
   children,
 }: {
   seccion: Seccion;
   etiqueta: string | null;
   titulo: string | null;
+  entradilla?: string | null;
+  realzada?: boolean;
+  centrada?: boolean;
   hundida?: boolean;
   children: ReactNode;
 }) {
@@ -633,20 +738,18 @@ function Bloque({
   return (
     <section
       id={ancla}
-      className={`px-interno py-seccion-compacta ${hundida ? "bg-superficie-hundida" : ""}`}
+      className={`px-interno py-seccion-fluida ${hundida ? "bg-superficie-hundida" : ""}`}
       aria-labelledby={titulo ? idTitulo : undefined}
     >
       <div className="mx-auto max-w-contenido">
-        {etiqueta || titulo ? (
-          <header className="mb-bloque">
-            {etiqueta ? <Etiqueta>{etiqueta}</Etiqueta> : null}
-            {titulo ? (
-              <Titulo2 id={idTitulo} className="mt-pila">
-                {titulo}
-              </Titulo2>
-            ) : null}
-          </header>
-        ) : null}
+        <CabeceraSeccion
+          idTitulo={idTitulo}
+          etiqueta={etiqueta}
+          titulo={titulo}
+          entradilla={entradilla}
+          realzada={realzada}
+          centrada={centrada}
+        />
         {children}
       </div>
     </section>

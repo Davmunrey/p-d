@@ -66,6 +66,10 @@
     "yaEsHoy": "Hoy es el día",
     "cierre": "Nos hace mucha ilusión celebrarlo con vosotros. Aquí abajo está todo lo que hay que saber."
   },
+  "historia": {
+    "etiqueta": "Cómo llegamos hasta aquí",
+    "titulo": "Nuestra historia"
+  },
   "programa": {
     "etiqueta": "El día, hora a hora",
     "titulo": "El día, hora a hora"
@@ -79,6 +83,10 @@
     "etiqueta": "El lugar",
     "titulo": "Cómo llegar",
     "abrirMapa": "Abrir en el mapa"
+  },
+  "preguntas": {
+    "etiqueta": "Por si os queda alguna duda",
+    "titulo": "Preguntas frecuentes"
   },
   "playlist": {
     "etiqueta": "La pista de baile es cosa de todos",
@@ -112,7 +120,8 @@
     "graciasNoTexto": "Gracias por decírnoslo. Brindaremos por vosotros y os guardaremos un trozo de tarta.",
     "editarRespuesta": "Cambiar la respuesta",
     "tokenInvalido": "Este enlace no es válido. Escribidnos y os mandamos uno nuevo.",
-    "plazoCerrado": "El plazo para confirmar ya se ha cerrado. Escribidnos y lo miramos."
+    "plazoCerrado": "El plazo para confirmar ya se ha cerrado. Escribidnos y lo miramos.",
+    "antesDel": "Antes del {fecha}"
   },
   "saveTheDate": {
     "etiqueta": "Reservad la fecha",

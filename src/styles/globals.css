@@ -133,6 +133,7 @@
   --tracking-etiqueta: var(--espaciado-etiqueta);
   --tracking-boton: var(--espaciado-boton);
   --tracking-marcado: var(--espaciado-marcado);
+  --tracking-seccion: var(--espaciado-seccion);
 
   /* Espaciado */
   --spacing-linea: var(--espacio-linea);
@@ -143,6 +144,8 @@
   --spacing-bloque: var(--espacio-bloque);
   --spacing-seccion-compacta: var(--espacio-seccion-compacta);
   --spacing-seccion: var(--espacio-seccion);
+  --spacing-seccion-fluida: var(--espacio-seccion-fluida);
+  --spacing-bloque-fluido: var(--espacio-bloque-fluido);
   --spacing-control: var(--alto-control);
   --spacing-control-compacto: var(--alto-control-compacto);
   --spacing-campo: var(--alto-campo);
@@ -212,6 +215,11 @@
 @utility rejilla-partida {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-columna-minima)), 1fr));
+}
+
+/** La entradilla que acompaña al titular de una sección. */
+@utility ancho-entradilla {
+  max-width: var(--ancho-entradilla);
 }
 
 /** Alto del hueco de foto de la portada una vez la rejilla se ha apilado. */

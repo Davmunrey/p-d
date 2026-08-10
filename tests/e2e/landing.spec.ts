@@ -162,6 +162,98 @@ test.describe("Landing", () => {
 });
 
 /**
+ * BODA-33 · La cabecera de sección.
+ *
+ * Lo que se comprueba aquí no es que el patrón esté escrito, sino que el
+ * acento sigue siendo escaso. Un componente con una propiedad `realzada` es
+ * muy fácil de encender en todas las secciones «porque queda bien», y el día
+ * que eso pasa el bronce deja de significar nada. El test lo impide.
+ */
+test.describe("Cabecera de sección", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+  });
+
+  test("ninguna sección de contenido se queda sin abrir", async ({ page }) => {
+    // La portada y la cuenta atrás tienen su propia composición; el resto
+    // comparte el patrón y ninguna puede quedarse muda.
+    const mudas = await page.evaluate(() =>
+      [...document.querySelectorAll("main section")]
+        .filter((seccion) => !["portada", "cuenta-atras"].includes(seccion.id))
+        .filter((seccion) => !seccion.querySelector("header h2"))
+        .map((seccion) => seccion.id),
+    );
+
+    expect(mudas).toEqual([]);
+  });
+
+  test("el titular abre la sección, pero sigue siendo un h2", async ({ page }) => {
+    // Tamaño de portada y jerarquía de subapartado son cosas distintas: lo
+    // primero es diseño y lo segundo es lo que oye un lector de pantalla.
+    const cabeceras = await page.evaluate(() =>
+      [...document.querySelectorAll("main section header h2")].map((titulo) => {
+        const seccion = titulo.closest("section")!;
+        const menor = seccion.querySelector("h3");
+        return {
+          id: seccion.id,
+          tam: parseFloat(getComputedStyle(titulo).fontSize),
+          tamMenor: menor ? parseFloat(getComputedStyle(menor).fontSize) : null,
+        };
+      }),
+    );
+
+    expect(cabeceras.length).toBeGreaterThan(0);
+    for (const cabecera of cabeceras) {
+      if (cabecera.tamMenor !== null) {
+        expect(
+          cabecera.tam,
+          `«${cabecera.id}» no abre: su titular no es mayor`,
+        ).toBeGreaterThan(cabecera.tamMenor);
+      }
+    }
+  });
+
+  test("el bronce es una gota: hay secciones sobrias y secciones realzadas", async ({
+    page,
+  }) => {
+    const versalitas = await page.evaluate(() =>
+      [...document.querySelectorAll("main section header > div > span:first-child")].map(
+        (span) => ({
+          id: span.closest("section")!.id,
+          color: getComputedStyle(span).color,
+          rombo: span.querySelectorAll("[aria-hidden]").length,
+        }),
+      ),
+    );
+
+    const realzadas = versalitas.filter((v) => v.rombo === 1);
+    const sobrias = versalitas.filter((v) => v.rombo === 0);
+
+    // Si algún día todas fueran realzadas, el acento habría dejado de serlo.
+    expect(realzadas.length).toBeGreaterThan(0);
+    expect(sobrias.length).toBeGreaterThan(0);
+
+    // Y son de dos colores distintos, no del mismo con un rombo de más.
+    const colores = new Set(versalitas.map((v) => v.color));
+    expect(colores.size).toBeGreaterThan(1);
+  });
+
+  /**
+   * CASO DE ERROR. El rombo es decoración pura. Si se anunciara, quien navega
+   * con lector de pantalla oiría un ruido de más en cada sección realzada.
+   */
+  test("el rombo no se anuncia y no lleva texto", async ({ page }) => {
+    const rombos = page.locator("main section header span[aria-hidden]");
+    expect(await rombos.count()).toBeGreaterThan(0);
+
+    for (const rombo of await rombos.all()) {
+      await expect(rombo).toHaveAttribute("aria-hidden", "true");
+      await expect(rombo).toHaveText("");
+    }
+  });
+});
+
+/**
  * Caso de error: la página no puede quedarse en blanco si la base de datos
  * todavía no tiene configurada la boda. Se comprueba que el texto de respaldo
  * existe en los copys, que es lo que la página pintaría.
