@@ -262,6 +262,15 @@
   --size-cifra: 5.5rem;
 
   /**
+   * Lado de una casilla o un radio del RSVP. Los nativos miden 13 px, que en un
+   * móvil se falla más de lo que se acierta. Aquí se agrandan sin sustituirlos
+   * por un control pintado a mano: los nativos ya saben ir con el teclado, con
+   * lector de pantalla y sin JavaScript, y ninguna réplica lo hace igual de
+   * bien.
+   */
+  --size-casilla: 1.25rem;
+
+  /**
    * El hueco de una constelación cuando acompaña a un texto. Es cuadrado: el
    * lienzo del mapa lo es, y darle otra proporción deformaría el cielo.
    */

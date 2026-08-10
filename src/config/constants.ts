@@ -65,6 +65,27 @@ export const HORAS_DURACION_EVENTO = 6;
 /** Descarga del evento para el calendario. La escriben la página y su test. */
 export const RUTA_CALENDARIO = "/reserva-la-fecha/evento.ics";
 
+/**
+ * Raíz del RSVP público. El enlace de cada invitación es `${RUTA_RSVP}/token`,
+ * y esta ruta es además el ámbito de la cookie del borrador: fuera del RSVP no
+ * se manda, que es donde no pinta nada.
+ */
+export const RUTA_RSVP = "/rsvp";
+
+/**
+ * Cuánto vive el borrador del RSVP a medio rellenar.
+ *
+ * Generoso a propósito. El caso que hay que aguantar no es el de alguien que
+ * responde de un tirón, sino el de quien deja el móvil, pregunta a su hermana
+ * si va a ir, y vuelve. Media hora se queda corta; un día entero convierte un
+ * borrador en un estado que nadie recuerda haber dejado ahí.
+ */
+export const MINUTOS_BORRADOR_RSVP = 180;
+
+/** Los tres pasos del RSVP, en orden. Los escriben la página y su test. */
+export const PASOS_RSVP = ["asistencia", "detalles", "mensaje"] as const;
+export type PasoRsvp = (typeof PASOS_RSVP)[number];
+
 /** Rutas del panel privado. Se escriben en varios sitios: viven aquí. */
 export const RUTA_ACCESO = "/acceso";
 export const RUTA_CONFIRMAR_ACCESO = "/acceso/confirmar";

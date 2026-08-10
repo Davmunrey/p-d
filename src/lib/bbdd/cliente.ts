@@ -117,3 +117,33 @@ export async function leerComoAnonimo<T>(
     throw new ErrorDeLectura("No se pudo leer de la base de datos.", { cause: error });
   }
 }
+
+/**
+ * Lo mismo, pero para una llamada que ESCRIBE.
+ *
+ * Mismo rol y misma transacción; lo que cambia es qué se hace con el fallo.
+ * Aquí el error se propaga tal cual, sin envolverlo en `ErrorDeLectura`,
+ * porque quien llama necesita leerle el código a la base: `RSV03` es «el plazo
+ * se ha cerrado» y hay que decírselo al invitado con esas palabras, mientras
+ * que un fallo de conexión es una avería y se cuenta de otra manera. Envolver
+ * los dos en el mismo error los volvería indistinguibles.
+ *
+ * Escribir como `anon` no es un descuido: es exactamente el rol con el que
+ * entraría la petición por PostgREST, así que las políticas RLS y las
+ * funciones `security definer` se comportan igual aquí que allí.
+ */
+export async function llamarComoAnonimo<T>(
+  consulta: (tx: postgres.TransactionSql) => Promise<T>,
+): Promise<T> {
+  if (!cliente) {
+    const motivo =
+      "Sin DATABASE_URL: no hay a dónde escribir. Configúrala en Vercel → Settings → Environment Variables.";
+    console.error(motivo);
+    throw new ErrorDeLectura(motivo);
+  }
+
+  return (await cliente.begin(async (tx) => {
+    await tx`set local role anon`;
+    return consulta(tx);
+  })) as T;
+}

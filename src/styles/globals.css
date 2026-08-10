@@ -154,6 +154,7 @@
   --spacing-control-compacto: var(--alto-control-compacto);
   --spacing-campo: var(--alto-campo);
   --spacing-cifra: var(--ancho-cifra);
+  --spacing-casilla: var(--lado-casilla);
 
   /* Un solo token da `size-constelacion`: el hueco es cuadrado por definición. */
   --spacing-constelacion: var(--lado-constelacion);

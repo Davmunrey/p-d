@@ -150,6 +150,7 @@
   --alto-control-compacto: var(--size-control-compacto);
   --alto-campo: var(--size-campo);
   --ancho-cifra: var(--size-cifra);
+  --lado-casilla: var(--size-casilla);
   --lado-constelacion: var(--size-constelacion);
   --ancho-columna-minima: var(--size-columna-minima);
   --ancho-entradilla: var(--size-entradilla);

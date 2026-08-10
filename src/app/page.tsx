@@ -629,9 +629,29 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
               : null
           }
           titulo={t("rsvp.titulo")}
+          entradilla={t("rsvp.comoSeConfirma")}
           centrada
         />
-        <Cita className="mx-auto max-w-texto">{t("meta.descripcion")}</Cita>
+
+        {/*
+          Aquí no hay formulario, y es a propósito. Se confirma por el enlace
+          personal de cada invitación, que es lo que identifica al grupo: un
+          formulario abierto en la web pública dejaría a cualquiera responder
+          por cualquiera, y a los novios sin saber quién ha contestado de
+          verdad. Lo que sí hay es la manera de recuperar el enlace, porque el
+          mensaje de WhatsApp donde llegó se pierde.
+        */}
+        {configuracion.correoContacto ? (
+          <p className="mx-auto max-w-texto text-pequeno text-tinta-suave">
+            {t("rsvp.enlacePerdido")}{" "}
+            <a
+              href={`mailto:${configuracion.correoContacto}`}
+              className="border-b border-borde-fuerte transicion-color hover:text-acento"
+            >
+              {configuracion.correoContacto}
+            </a>
+          </p>
+        ) : null}
       </div>
     </section>
   );
