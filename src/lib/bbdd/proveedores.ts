@@ -21,20 +21,27 @@ import { clienteServidor } from "@/lib/supabase/servidor";
  */
 
 /**
- * Las cinco fases que tiene hoy el enumerado de la base, en su orden de avance.
+ * Las fases del embudo, en su orden de avance.
  *
- * Se derivan de él y no al revés: añadir «presupuesto pedido» y «visitado» —que
- * pide BODA-71— es una migración que toca el enumerado, y esta lista se
- * actualiza detrás. Inventarse aquí un valor que la base no conoce sería un
- * desplegable que falla al guardar.
+ * EL ORDEN ES EL DEL ENUMERADO DE LA BASE, no una decisión de esta lista.
+ * `estado_proveedor` se ordena por el orden en que se declararon sus valores,
+ * así que un `order by estado` en SQL y este desplegable dicen lo mismo. Si
+ * algún día divergen, el que manda es el de la base — y añadir una fase es una
+ * migración, no una línea aquí: inventarse un valor que la base no conoce es
+ * un desplegable que falla al guardar.
  */
 export const ESTADOS_PROVEEDOR = [
   "investigando",
   "contactado",
+  "presupuesto_pedido",
   "presupuesto_recibido",
+  "visitado",
   "contratado",
   "descartado",
 ] as const;
+
+/** El estado en el que nace un proveedor, igual que el `default` de la tabla. */
+export const ESTADO_INICIAL_PROVEEDOR: EstadoProveedor = "investigando";
 
 export type EstadoProveedor = (typeof ESTADOS_PROVEEDOR)[number];
 
@@ -62,6 +69,8 @@ export interface Proveedor {
   importePresupuestado: number | null;
   importeAcordado: number | null;
   notas: string | null;
+  /** Por qué se descartó. La base exige que exista si —y sólo si— está descartado. */
+  motivoDescarte: string | null;
 }
 
 export interface ContactoProveedor {
@@ -116,6 +125,7 @@ interface FilaProveedor {
   importe_presupuestado: string | number | null;
   importe_acordado: string | number | null;
   notas: string | null;
+  motivo_descarte: string | null;
 }
 
 /**
@@ -147,6 +157,7 @@ function aProveedor(fila: FilaProveedor): Proveedor {
     importePresupuestado: aImporte(fila.importe_presupuestado),
     importeAcordado: aImporte(fila.importe_acordado),
     notas: fila.notas,
+    motivoDescarte: fila.motivo_descarte,
   };
 }
 
@@ -182,7 +193,8 @@ export async function obtenerProveedores(): Promise<Proveedor[]> {
     .from("proveedores")
     .select(
       `id, categoria_id, nombre, persona_contacto, correo_electronico, telefono,
-       sitio_web, estado, valoracion, importe_presupuestado, importe_acordado, notas`,
+       sitio_web, estado, valoracion, importe_presupuestado, importe_acordado, notas,
+       motivo_descarte`,
     )
     .order("nombre");
 
@@ -210,6 +222,7 @@ export async function obtenerFichaProveedor(id: string): Promise<FichaProveedor 
     .select(
       `id, categoria_id, nombre, persona_contacto, correo_electronico, telefono,
        sitio_web, estado, valoracion, importe_presupuestado, importe_acordado, notas,
+       motivo_descarte,
        categorias_proveedor ( nombre ),
        contactos_proveedor ( id, nombre, papel, correo_electronico, telefono, es_del_dia, notas ),
        partidas_presupuesto ( id, concepto, importe_estimado, importe_real ),
@@ -299,27 +312,66 @@ export function contarPorCategoria(proveedores: Proveedor[]): Map<string, number
   return cuenta;
 }
 
+/** Una categoría en la que todavía no hay nadie contratado. */
+export interface CategoriaSinCerrar {
+  id: string;
+  nombre: string;
+  /** Cuántos candidatos vivos tiene: cero es «sin empezar», tres es «hay que decidir». */
+  candidatos: number;
+}
+
 /**
- * La moneda de la boda, para escribir los importes.
+ * BODA-71 · QUÉ FALTA POR CERRAR
  *
- * Vive en `configuracion_boda` y no en una constante: la regla 1 del proyecto
- * es que un valor que puede cambiar sin que cambie la lógica es configuración.
- * Si la lectura falla se devuelve `null` y quien llama decide — pero nadie
- * inventa un «EUR» de respaldo, que sería enseñar importes en una moneda que
- * no es la de la boda y hacerlo además en silencio.
+ * La pregunta de verdad no es «¿cuántos proveedores tengo?», es «¿qué me falta
+ * por cerrar?», y una lista de proveedores no la contesta: hay que recorrerla
+ * entera comprobando categoría por categoría, buscando precisamente lo que no
+ * está.
+ *
+ * LO CALCULA LA VISTA, no esta función. `v_categorias_sin_contratar` sabe qué
+ * cuenta como cerrado, y el resumen del panel va a querer el mismo dato: dos
+ * sitios contándolo por su cuenta acaban diciendo cifras distintas la semana
+ * que alguien cambie el criterio.
  */
-export async function obtenerMonedaBoda(): Promise<string | null> {
+export async function obtenerCategoriasSinCerrar(): Promise<CategoriaSinCerrar[]> {
   const supabase = await clienteServidor();
 
   const { data, error } = await supabase
-    .from("configuracion_boda")
-    .select("moneda")
-    .maybeSingle();
+    .from("v_categorias_sin_contratar")
+    .select("id, nombre, candidatos");
 
   if (error) {
-    console.error("No se pudo leer la moneda de la boda:", error);
-    return null;
+    console.error("No se pudieron leer las categorías sin cerrar:", error);
+    return [];
   }
 
-  return (data as { moneda: string } | null)?.moneda ?? null;
+  return (data as CategoriaSinCerrar[] | null) ?? [];
+}
+
+/**
+ * Quién está ya contratado en una categoría, sin contar a uno.
+ *
+ * Es lo que hace falta para avisar antes de contratar a un segundo fotógrafo:
+ * el aviso tiene que **decir a quién**, porque «ya hay uno contratado» sin
+ * nombre obliga a ir a buscarlo para saber si es un error o es a propósito.
+ */
+export async function obtenerContratadosDeCategoria(
+  categoriaId: string,
+  exceptoId: string,
+): Promise<{ id: string; nombre: string }[]> {
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("proveedores")
+    .select("id, nombre")
+    .eq("categoria_id", categoriaId)
+    .eq("estado", "contratado")
+    .neq("id", exceptoId);
+
+  if (error) {
+    console.error("No se pudieron leer los contratados de la categoría:", error);
+    return [];
+  }
+
+  return (data as { id: string; nombre: string }[] | null) ?? [];
 }

@@ -29,7 +29,19 @@ const cadena = process.env.DATABASE_URL;
 
 const MARCA = "(DES) E2E Proveedores";
 
-test.describe.configure({ mode: "serial" });
+/*
+  NO VAN EN SERIE, Y ES UN ARREGLO, NO UNA RELAJACIÓN.
+
+  Cada test se fabrica sus propios datos por SQL —su proveedor, su categoría—
+  así que no dependen unos de otros. Ponerlos en serie sólo tenía un efecto, y
+  era malo: cuando uno se pasaba de plazo, Playwright **saltaba los siguientes**
+  («3 did not run») y reintentaba el bloque ENTERO, multiplicando el trabajo del
+  runner justo cuando iba justo de tiempo. Así, un solo viaje lento tumbaba el
+  trabajo y escondía si los demás pasaban.
+
+  Sin serie, un fallo es un fallo de un test, el reintento vuelve a ejecutar ese
+  y nada más, y el registro dice la verdad sobre los otros.
+*/
 
 async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T> {
   const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
@@ -82,11 +94,119 @@ async function primeraCategoria(pagina: Page): Promise<string> {
   return (await opcion.textContent())?.trim() ?? "";
 }
 
+/**
+ * LO QUE LE HA PASADO A ESTA PESTAÑA, PASO A PASO.
+ *
+ * Cuando una espera de URL se agota, la pregunta siguiente no es «qué se ve» —
+ * eso ya se adjunta— sino **si llegó a haber viaje**. Una acción de servidor que
+ * escribe y redirige deja un rastro muy concreto: un `POST` con su código y una
+ * navegación a la URL nueva. Distinguir «el POST no salió», «salió y respondió
+ * 500» y «respondió bien pero el navegador no se movió» son tres averías
+ * distintas con tres arreglos distintos, y desde el registro de CI no se
+ * distinguen sin esto.
+ *
+ * Se apunta en un `WeakMap` y no en una variable suelta porque cada test tiene
+ * su propia `page` y corren en paralelo fuera de CI.
+ */
+const rastro = new WeakMap<Page, string[]>();
+
+function seguirLaPista(pagina: Page): void {
+  const pasos: string[] = [];
+  rastro.set(pagina, pasos);
+
+  pagina.on("framenavigated", (marco) => {
+    if (marco === pagina.mainFrame()) pasos.push(`navega a ${marco.url()}`);
+  });
+  pagina.on("response", (respuesta) => {
+    if (respuesta.request().method() === "POST") {
+      pasos.push(`POST ${respuesta.status()} → ${respuesta.url()}`);
+    }
+  });
+  pagina.on("pageerror", (fallo) => pasos.push(`error de página: ${fallo.message}`));
+  pagina.on("console", (mensaje) => {
+    if (mensaje.type() === "error") pasos.push(`consola: ${mensaje.text()}`);
+  });
+}
+
+/** El rastro en texto, para pegarlo en el mensaje de un fallo. */
+function laPista(pagina: Page): string {
+  const pasos = rastro.get(pagina);
+  if (!pasos?.length) return "(no se apuntó ningún paso)";
+  return pasos.slice(-25).join("\n");
+}
+
+/**
+ * ESPERA LA REDIRECCIÓN ANTES DE MIRAR EL AVISO.
+ *
+ * Cada formulario de esta pantalla hace `POST` a una acción de servidor que
+ * escribe y **redirige** con el resultado en la URL. Mirar directamente el
+ * aviso mete dos cosas en el mismo cronómetro de cinco segundos: la escritura
+ * en la base y el renderizado entero de la página siguiente. En una máquina de
+ * CI cargada eso se pasa de largo, y el fallo aparece en un sitio distinto en
+ * cada reintento — que es exactamente lo que pasó, y lo que hace que un test
+ * así no diga nada cuando falla.
+ *
+ * Separarlo tiene además una ventaja de diagnóstico: si lo que falla es la
+ * espera de la URL, la acción no ha redirigido; si falla el aviso, redirigió a
+ * otro estado y el mensaje dice a cuál.
+ */
+async function esperarEstado(pagina: Page, esperado: string) {
+  /*
+    Se espera a la URL y no al aviso: la URL dice si la acción terminó y con
+    qué resultado, y el aviso llega después. Meterlo todo en el mismo plazo
+    hacía que el fallo apareciera en un punto distinto en cada intento.
+  */
+  /*
+    `toHaveURL` y no `waitForURL`, por lo que dicen al fallar.
+
+    Los dos esperan lo mismo, pero `waitForURL` sólo sabe decir «se acabó el
+    tiempo»: no cuenta dónde te has quedado. Y aquí la pregunta entera es a
+    dónde fue la redirección — si acabó en `sin-permiso` o en `error`, eso NO es
+    lentitud, es la acción diciendo que no ha podido, y el test tiene que
+    enseñarlo en vez de mandar a mirar plazos. `toHaveURL` imprime la URL
+    recibida y con eso el fallo se lee solo.
+  */
+  try {
+    await expect(pagina).toHaveURL(new RegExp(`estado=${esperado}(&|$)`), {
+      timeout: 30_000,
+    });
+  } catch (fallo) {
+    /*
+      SI NO REDIRIGE, LO SIGUIENTE QUE HAY QUE SABER ES QUÉ SE VE.
+      Una acción que lanza no cambia la URL: Next pinta el `error.tsx` del
+      panel en el sitio y la dirección se queda como estaba. Visto sólo desde
+      la URL, eso es indistinguible de «no ha pasado nada» — y son dos cosas
+      muy distintas. Se adjunta lo que la pantalla está diciendo para que el
+      registro de CI lo distinga sin tener que abrir la traza.
+    */
+    const enPantalla = await pagina
+      .locator("main")
+      .innerText()
+      .catch(() => "(no se pudo leer la pantalla)");
+    throw new Error(
+      `${(fallo as Error).message}\n\nLo que hizo la pestaña:\n${laPista(pagina)}` +
+        `\n\nLa pantalla decía:\n${enPantalla.slice(0, 600)}`,
+    );
+  }
+}
+
 test.describe("El módulo de proveedores", () => {
+  /*
+    CADA PASO DE ESTAS PANTALLAS ES UN VIAJE COMPLETO: escribir en la base,
+    redirigir, y repintar entera una página `force-dynamic` con sus consultas.
+    En el trabajo de CI que levanta Supabase en Docker eso no cabe en el plazo
+    por defecto, y el síntoma no es un fallo honesto sino uno que aparece en un
+    punto distinto en cada intento. `test.slow()` es lo que Playwright ofrece
+    para decir «esto es lento de verdad» en vez de ir subiendo plazos sueltos.
+  */
+  test.slow();
+
   test.skip(
     !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
   );
+
+  test.beforeEach(({ page }) => seguirLaPista(page));
 
   /**
    * CAMINO FELIZ · alta, edición, contacto y búsqueda con acentos.
@@ -112,7 +232,9 @@ test.describe("El módulo de proveedores", () => {
     await alta.getByRole("button", { name: copy.panel.proveedores.crear }).click();
 
     // Se va a su ficha: quien acaba de darlo de alta sigue teniendo qué apuntar.
-    await expect(page).toHaveURL(new RegExp(`${RUTA_PROVEEDORES}/[0-9a-f-]{36}`));
+    await page.waitForURL(new RegExp(`${RUTA_PROVEEDORES}/[0-9a-f-]{36}`), {
+      timeout: 15_000,
+    });
     await expect(page.getByRole("heading", { name: nombre })).toBeVisible();
 
     // El importe se ha guardado como número, no como el texto que se tecleó.
@@ -131,20 +253,17 @@ test.describe("El módulo de proveedores", () => {
     await edicion
       .getByLabel(copy.panel.proveedores.campoTelefono, { exact: true })
       .fill("+34 600 111 222");
-    await edicion
-      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
-      .selectOption({ label: copy.panel.proveedores.estados.contratado });
     await edicion.getByRole("button", { name: copy.panel.proveedores.guardar }).click();
+    await esperarEstado(page, "editado");
     await expect(page.getByText(copy.panel.proveedores.avisoEditado)).toBeVisible();
 
     const [editado] = await conBase(
-      (sql) => sql<{ estado: string; importe_acordado: string; telefono: string }[]>`
-        select estado, importe_acordado, telefono
-          from public.proveedores where id = ${guardado.id}
+      (sql) => sql<{ importe_acordado: string; telefono: string }[]>`
+        select importe_acordado, telefono from public.proveedores where id = ${guardado.id}
       `,
     );
-    expect(editado.estado).toBe("contratado");
     expect(Number(editado.importe_acordado)).toBe(2100);
+    expect(editado.telefono).toBe("+34 600 111 222");
 
     // Un segundo contacto: el del día de la boda, que no es el comercial.
     const gente = seccion(page, copy.panel.proveedores.contactosTitulo);
@@ -156,6 +275,7 @@ test.describe("El módulo de proveedores", () => {
       .fill("+34 600 333 444");
     await gente.getByLabel(copy.panel.proveedores.campoEsDelDia, { exact: true }).check();
     await gente.getByRole("button", { name: copy.panel.proveedores.anadirContacto }).click();
+    await esperarEstado(page, "contacto-anadido");
 
     await expect(page.getByText("(DES) Jefe de sala")).toBeVisible();
     // El distintivo lleva texto y no sólo color: es lo que lee un lector de
@@ -218,6 +338,7 @@ test.describe("El módulo de proveedores", () => {
     await page.goto(`${RUTA_PROVEEDORES}/${proveedorId}`);
 
     await page.getByRole("button", { name: copy.panel.proveedores.borrar }).click();
+    await esperarEstado(page, "confirmar-borrado");
 
     // No ha borrado: pregunta, y dice exactamente qué se quedaría huérfano.
     await expect(page.getByText(copy.panel.proveedores.avisoConfirmarBorrado)).toBeVisible();
@@ -231,6 +352,7 @@ test.describe("El módulo de proveedores", () => {
 
     // Ahora sí, confirmando. El gasto sobrevive: es contabilidad.
     await page.getByRole("button", { name: copy.panel.proveedores.confirmarBorrado }).click();
+    await esperarEstado(page, "borrado");
     await expect(page.getByText(copy.panel.proveedores.avisoBorrado)).toBeVisible();
 
     const restantes = await conBase(
@@ -262,6 +384,7 @@ test.describe("El módulo de proveedores", () => {
       .getByLabel(copy.panel.proveedores.campoNombreCategoria, { exact: true })
       .fill(nombreCategoria);
     await nueva.getByRole("button", { name: copy.panel.proveedores.crearCategoria }).click();
+    await esperarEstado(page, "categoria-creada");
     await expect(page.getByText(copy.panel.proveedores.avisoCategoriaCreada)).toBeVisible();
 
     const suya = seccion(page, nombreCategoria);
@@ -286,6 +409,266 @@ test.describe("El módulo de proveedores", () => {
     await page.reload();
     await expect(
       suya.getByRole("button", { name: copy.panel.proveedores.borrarCategoria }),
+    ).toHaveCount(0);
+  });
+});
+
+/**
+ * BODA-71 · El embudo, de investigando a contratado
+ *
+ * LAS DOS GUARDAS SON LO QUE JUSTIFICA EL TICKET, y las dos se comprueban
+ * contra la base y no contra la pantalla:
+ *
+ *  - Descartar sin decir por qué no escribe nada. Dentro de seis meses nadie
+ *    se acuerda, y alguien vuelve a escribir al mismo proveedor para recibir
+ *    la misma respuesta.
+ *  - Contratar a un segundo de la misma categoría pregunta antes. No se
+ *    prohíbe —hay bodas con dos fotógrafos— pero lo normal es que falte
+ *    descartar al otro, y a partir de ahí el resumen de «qué falta por cerrar»
+ *    miente en la dirección tranquilizadora.
+ */
+test.describe("El embudo del proveedor", () => {
+  /*
+    CADA PASO DE ESTAS PANTALLAS ES UN VIAJE COMPLETO: escribir en la base,
+    redirigir, y repintar entera una página `force-dynamic` con sus consultas.
+    En el trabajo de CI que levanta Supabase en Docker eso no cabe en el plazo
+    por defecto, y el síntoma no es un fallo honesto sino uno que aparece en un
+    punto distinto en cada intento. `test.slow()` es lo que Playwright ofrece
+    para decir «esto es lento de verdad» en vez de ir subiendo plazos sueltos.
+  */
+  test.slow();
+
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  test.beforeEach(({ page }) => seguirLaPista(page));
+
+  /** Un proveedor recién creado, en la categoría que se diga. */
+  async function crearProveedor(nombre: string, categoriaId?: string): Promise<string> {
+    return conBase(async (sql) => {
+      const [categoria] = categoriaId
+        ? [{ id: categoriaId }]
+        : await sql<{ id: string }[]>`
+            select id from public.categorias_proveedor order by orden, nombre limit 1
+          `;
+      const [proveedor] = await sql<{ id: string }[]>`
+        insert into public.proveedores (categoria_id, nombre)
+        values (${categoria.id}, ${nombre})
+        returning id
+      `;
+      return proveedor.id;
+    });
+  }
+
+  /**
+   * CAMINO FELIZ · avanzar de fase persiste, y descartar guarda el porqué.
+   */
+  test("el estado avanza, persiste, y al descartar se guarda por qué", async ({ page }) => {
+    const id = await crearProveedor(`${MARCA} Embudo ${Date.now()}`);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
+
+    const fase = seccion(page, copy.panel.proveedores.estadoTitulo);
+
+    // Una fase nueva de las que traía este ticket: sin ella, «le llamé» y «le
+    // pedí presupuesto» se veían igual.
+    await fase
+      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
+      .selectOption({ label: copy.panel.proveedores.estados.presupuesto_pedido });
+    await fase.getByRole("button", { name: copy.panel.proveedores.cambiarEstado }).click();
+    await esperarEstado(page, "estado-cambiado");
+    await expect(page.getByText(copy.panel.proveedores.avisoEstadoCambiado)).toBeVisible();
+
+    /*
+      Persiste: se comprueba volviendo a pedir la ficha, no fiándose de lo que
+      quedó pintado.
+
+      Y SE VUELVE A LA URL LIMPIA, sin `?estado=`, que no es un detalle: con
+      `page.reload()` la dirección conservaba el `estado=estado-cambiado` del
+      paso anterior, así que el `esperarEstado` de más abajo se cumplía SOLO —
+      encontraba el rastro del primer cambio— y el test leía la base antes de
+      que el segundo hubiera llegado a escribir. De ahí un «esperaba
+      descartado, era presupuesto_pedido» que parecía un fallo del embudo y era
+      una espera que no esperaba nada.
+    */
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
+    await expect(
+      seccion(page, copy.panel.proveedores.estadoTitulo).getByLabel(
+        copy.panel.proveedores.campoEstado,
+        { exact: true },
+      ),
+    ).toHaveValue("presupuesto_pedido");
+
+    // Descartar, ahora sí con motivo.
+    const motivo = "(DES) No tenía libre la fecha";
+    const faseTrasRecarga = seccion(page, copy.panel.proveedores.estadoTitulo);
+    await faseTrasRecarga
+      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
+      .selectOption({ label: copy.panel.proveedores.estados.descartado });
+    await faseTrasRecarga
+      .getByLabel(copy.panel.proveedores.campoMotivoDescarte, { exact: true })
+      .fill(motivo);
+    await faseTrasRecarga
+      .getByRole("button", { name: copy.panel.proveedores.cambiarEstado })
+      .click();
+    await esperarEstado(page, "estado-cambiado");
+
+    /*
+      PRIMERO LA BASE Y DESPUÉS LA PANTALLA, y en ese orden a propósito: lo que
+      el ticket promete es que el motivo QUEDA GUARDADO. Si eso falla, el test
+      tiene que decir «no se guardó», no «no lo veo» — que es lo que decía
+      antes y mandaba a buscar el problema al sitio equivocado.
+    */
+    const [descartado] = await conBase(
+      (sql) => sql<{ estado: string; motivo_descarte: string }[]>`
+        select estado, motivo_descarte from public.proveedores where id = ${id}
+      `,
+    );
+    expect(descartado.estado).toBe("descartado");
+    expect(descartado.motivo_descarte).toBe(motivo);
+
+    // Y en pantalla vuelve puesto, listo para corregirlo sin volver a teclearlo.
+    await expect(
+      seccion(page, copy.panel.proveedores.estadoTitulo).getByLabel(
+        copy.panel.proveedores.campoMotivoDescarte,
+        { exact: true },
+      ),
+    ).toHaveValue(motivo);
+  });
+
+  /**
+   * CASO DE ERROR · Descartar sin motivo no escribe nada.
+   */
+  test("descartar sin decir por qué no cambia el estado", async ({ page }) => {
+    const id = await crearProveedor(`${MARCA} Sin motivo ${Date.now()}`);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
+
+    const fase = seccion(page, copy.panel.proveedores.estadoTitulo);
+    await fase
+      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
+      .selectOption({ label: copy.panel.proveedores.estados.descartado });
+    await fase.getByRole("button", { name: copy.panel.proveedores.cambiarEstado }).click();
+    await esperarEstado(page, "descarte-sin-motivo");
+
+    await expect(page.getByText(copy.panel.proveedores.errorDescarteSinMotivo)).toBeVisible();
+
+    const [sigue] = await conBase(
+      (sql) => sql<{ estado: string }[]>`
+        select estado from public.proveedores where id = ${id}
+      `,
+    );
+    expect(sigue.estado, "sin motivo no se descarta").toBe("investigando");
+  });
+
+  /**
+   * CASO DE ERROR · Contratar a un segundo de la categoría pide confirmación.
+   */
+  test("contratar a un segundo de la misma categoría pregunta antes", async ({ page }) => {
+    const sello = Date.now();
+    const categoriaId = await conBase(async (sql) => {
+      const [categoria] = await sql<{ id: string }[]>`
+        insert into public.categorias_proveedor (nombre, orden)
+        values (${`${MARCA} Embudo ${sello}`}, 50)
+        returning id
+      `;
+      return categoria.id;
+    });
+
+    const primero = await crearProveedor(`${MARCA} Ya contratado ${sello}`, categoriaId);
+    await conBase(
+      (sql) => sql`update public.proveedores set estado = 'contratado' where id = ${primero}`,
+    );
+    const segundo = await crearProveedor(`${MARCA} El segundo ${sello}`, categoriaId);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${segundo}`);
+
+    const fase = seccion(page, copy.panel.proveedores.estadoTitulo);
+    await fase
+      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
+      .selectOption({ label: copy.panel.proveedores.estados.contratado });
+    await fase.getByRole("button", { name: copy.panel.proveedores.cambiarEstado }).click();
+    await esperarEstado(page, "confirmar-contratado");
+
+    // Pregunta, y dice a quién: «ya hay uno» sin nombre obliga a ir a buscarlo.
+    await expect(page.getByText(copy.panel.proveedores.avisoConfirmarContratado)).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: `${MARCA} Ya contratado ${sello}` }),
+    ).toBeVisible();
+
+    const [sinTocar] = await conBase(
+      (sql) => sql<{ estado: string }[]>`
+        select estado from public.proveedores where id = ${segundo}
+      `,
+    );
+    expect(sinTocar.estado, "el primer envío no puede contratar").toBe("investigando");
+
+    // Confirmando sí: hay bodas con dos fotógrafos.
+    await page
+      .getByRole("button", { name: copy.panel.proveedores.confirmarContratado })
+      .click();
+    await expect(page.getByText(copy.panel.proveedores.avisoEstadoCambiado)).toBeVisible();
+
+    const [contratado] = await conBase(
+      (sql) => sql<{ estado: string }[]>`
+        select estado from public.proveedores where id = ${segundo}
+      `,
+    );
+    expect(contratado.estado).toBe("contratado");
+  });
+
+  /**
+   * Y lo que contesta la pregunta de verdad: qué falta por cerrar.
+   */
+  test("el resumen dice qué categorías no tienen a nadie contratado", async ({ page }) => {
+    const sello = Date.now();
+    const nombreCategoria = `${MARCA} Sin cerrar ${sello}`;
+    const categoriaId = await conBase(async (sql) => {
+      const [categoria] = await sql<{ id: string }[]>`
+        insert into public.categorias_proveedor (nombre, orden)
+        values (${nombreCategoria}, 51)
+        returning id
+      `;
+      return categoria.id;
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_PROVEEDORES);
+
+    const resumen = seccion(page, copy.panel.proveedores.sinCerrarTitulo);
+    const suya = resumen.locator("li").filter({ hasText: nombreCategoria });
+
+    /*
+      Recién creada y vacía: sale, y dice que ni siquiera se ha empezado. Se
+      mira dentro de SU renglón y no en toda la sección: «sin empezar» lo dicen
+      todas las categorías vacías, así que buscarlo suelto daría por buena la
+      frase de otra.
+    */
+    await expect(suya).toHaveCount(1);
+    await expect(suya).toContainText(copy.panel.proveedores.sinCerrarSinEmpezar);
+
+    // Con alguien contratado dentro, deja de faltar.
+    const proveedor = await crearProveedor(`${MARCA} Cierra ${sello}`, categoriaId);
+    await conBase(
+      (sql) => sql`update public.proveedores set estado = 'contratado' where id = ${proveedor}`,
+    );
+
+    /*
+      Y deja de faltar. Se comprueba DENTRO del resumen: la categoría sigue
+      existiendo más abajo, con su proveedor dentro, así que buscarla en toda
+      la página encontraría esa otra y el test fallaría por lo contrario de lo
+      que quiere comprobar.
+    */
+    await page.reload();
+    await expect(
+      seccion(page, copy.panel.proveedores.sinCerrarTitulo)
+        .locator("li")
+        .filter({ hasText: nombreCategoria }),
     ).toHaveCount(0);
   });
 });

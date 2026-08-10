@@ -5,12 +5,14 @@ import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { RUTA_ACCESO, RUTA_PROVEEDORES } from "@/config/constants";
+import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   contarPorCategoria,
   ESTADOS_PROVEEDOR,
   obtenerCategoriasProveedor,
-  obtenerMonedaBoda,
+  obtenerCategoriasSinCerrar,
   obtenerProveedores,
+  type CategoriaSinCerrar,
   type CategoriaProveedor,
   type Proveedor,
 } from "@/lib/bbdd/proveedores";
@@ -20,7 +22,9 @@ import { normalizar } from "@/lib/texto";
 
 import { borrarCategoria, crearCategoria, crearProveedor } from "./acciones";
 import { AvisoProveedores } from "./aviso";
-import { formateadorDeImporte, nombreDelEstado } from "./formato";
+import { formateadorDeImporte } from "@/lib/importe";
+
+import { nombreDelEstado } from "./formato";
 
 /**
  * BODA-70 · PROVEEDORES
@@ -69,10 +73,11 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
   const busqueda = soloTexto(consulta.buscar);
   const filtroEstado = soloTexto(consulta.estado_filtro);
 
-  const [categorias, proveedores, moneda] = await Promise.all([
+  const [categorias, proveedores, moneda, sinCerrar] = await Promise.all([
     obtenerCategoriasProveedor(),
     obtenerProveedores(),
     obtenerMonedaBoda(),
+    obtenerCategoriasSinCerrar(),
   ]);
 
   /*
@@ -98,6 +103,8 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
       </header>
 
       <AvisoProveedores estado={soloTexto(consulta.estado)} />
+
+      {categorias.length > 0 ? <SinCerrar categorias={sinCerrar} /> : null}
 
       <form
         method="get"
@@ -255,6 +262,13 @@ function SeccionCategoria({
 
 /** Alta de proveedor. Sin `<details>`: el formulario está, y se ve que está. */
 function FormularioProveedor({ categorias }: { categorias: CategoriaProveedor[] }) {
+  /*
+    NO HAY DESPLEGABLE DE ESTADO AQUÍ, y no es un olvido. Un proveedor que
+    acabas de apuntar está, por definición, en «investigando». Ofrecer el
+    desplegable abría además un segundo camino hasta «contratado» que se
+    saltaba el aviso de contratar a dos de la misma categoría — y un aviso con
+    una puerta de atrás no es un aviso.
+  */
   return (
     <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
       <Titulo3 como="h2">{t("panel.proveedores.nuevoTitulo")}</Titulo3>
@@ -287,13 +301,6 @@ function FormularioProveedor({ categorias }: { categorias: CategoriaProveedor[] 
           type="text"
           maxLength={120}
         />
-        <CampoSeleccion etiqueta={t("panel.proveedores.campoEstado")} name="estado">
-          {ESTADOS_PROVEEDOR.map((estado) => (
-            <option key={estado} value={estado}>
-              {nombreDelEstado(estado)}
-            </option>
-          ))}
-        </CampoSeleccion>
         <CampoTexto
           etiqueta={t("panel.proveedores.campoCorreo")}
           name="correo_electronico"
@@ -361,6 +368,63 @@ function FormularioCategoria() {
           {t("panel.proveedores.crearCategoria")}
         </Boton>
       </form>
+    </section>
+  );
+}
+
+/**
+ * BODA-71 · LO QUE FALTA POR CERRAR, ARRIBA DEL TODO
+ *
+ * Es la pregunta que se hace quien organiza al abrir esta pantalla, y una
+ * lista de proveedores no la contesta: hay que recorrerla entera comprobando
+ * categoría por categoría si alguno está contratado, buscando precisamente lo
+ * que NO está. Aquí está contestada antes de mirar.
+ *
+ * DISTINGUE «SIN EMPEZAR» DE «HAY QUE DECIDIR», que son dos problemas
+ * distintos con dos remedios distintos: una categoría con cero candidatos
+ * necesita ponerse a buscar, y una con tres necesita una tarde de decidir. Un
+ * único «te falta esto» los confunde y hace que el segundo parezca urgente
+ * cuando el urgente es el primero.
+ *
+ * Y CUANDO NO FALTA NADA LO DICE, en vez de desaparecer. Un bloque que se
+ * esfuma no se distingue de un bloque que no ha cargado.
+ */
+function SinCerrar({ categorias }: { categorias: CategoriaSinCerrar[] }) {
+  if (categorias.length === 0) {
+    return (
+      <p className="mt-elemento rounded-campo bg-exito-fondo p-interno text-pequeno text-exito-tinta">
+        {t("panel.proveedores.todoCerrado")}
+      </p>
+    );
+  }
+
+  return (
+    <section className="mt-elemento rounded-tarjeta border border-borde bg-superficie-tenue p-interno">
+      <Titulo3 como="h2">{t("panel.proveedores.sinCerrarTitulo")}</Titulo3>
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-tenue">
+        {t("panel.proveedores.sinCerrarAyuda")}
+      </Cuerpo>
+
+      <ul className="mt-elemento flex flex-wrap gap-interno-compacto">
+        {categorias.map((categoria) => (
+          <li
+            key={categoria.id}
+            className="rounded-etiqueta bg-superficie px-interno py-linea text-pequeno text-tinta"
+          >
+            {categoria.nombre}{" "}
+            <span className="text-tinta-tenue">
+              ·{" "}
+              {categoria.candidatos === 0
+                ? t("panel.proveedores.sinCerrarSinEmpezar")
+                : categoria.candidatos === 1
+                  ? t("panel.proveedores.sinCerrarCandidatoUno")
+                  : t("panel.proveedores.sinCerrarCandidatos", {
+                      cuantos: categoria.candidatos,
+                    })}
+            </span>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

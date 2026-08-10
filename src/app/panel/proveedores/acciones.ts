@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO, RUTA_PROVEEDORES } from "@/config/constants";
-import { esEstadoProveedor } from "@/lib/bbdd/proveedores";
+import {
+  ESTADO_INICIAL_PROVEEDOR,
+  esEstadoProveedor,
+  obtenerContratadosDeCategoria,
+} from "@/lib/bbdd/proveedores";
+import { leerImporte } from "@/lib/importe";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 import { type EstadoProveedores } from "./estado";
@@ -40,30 +45,29 @@ function opcional(datos: FormData, campo: string): string | null {
 /**
  * Un importe escrito por una persona → un número, o `undefined` si no se puede.
  *
- * Se distinguen tres cosas que no son iguales: vacío (no hay importe, `null`),
- * un número, y algo que no es un número (`undefined`, que la pantalla convierte
- * en error). Devolver `null` para lo ilegible borraría en silencio el importe
- * que alguien acaba de teclear mal.
+ * La lectura vive en `@/lib/importe` porque la comparten tres pantallas —ficha
+ * de proveedor, categorías y gastos— y tres copias del mismo `replace` acaban
+ * siendo tres criterios distintos sobre el punto de los millares.
  */
 function importe(datos: FormData, campo: string): number | null | undefined {
-  const bruto = texto(datos, campo);
-  if (!bruto) return null;
-
-  // Se quitan los separadores de millar y la coma decimal pasa a punto. El
-  // euro y los espacios se caen también: se pegan desde un presupuesto en PDF.
-  const limpio = bruto
-    .replace(/[€\s]/g, "")
-    .replace(/\.(?=\d{3}(\D|$))/g, "")
-    .replace(",", ".");
-
-  const numero = Number(limpio);
-  if (!Number.isFinite(numero) || numero < 0) return undefined;
-
-  // Dos decimales, como `numeric(12,2)`. Redondear aquí evita que la base
-  // rechace un céntimo de más venido de una división.
-  return Math.round(numero * 100) / 100;
+  return leerImporte(texto(datos, campo));
 }
 
+/*
+  NO SE REVALIDA LA RUTA A LA QUE SE VA A REDIRIGIR.
+
+  Costó cinco vueltas de CI y el fallo era éste: al crear una categoría, la
+  categoría SE CREABA y la pantalla se repintaba con ella dentro, pero la URL se
+  quedaba sin el `?estado=` — y sin él no sale el aviso de «hecho». El invitado
+  ve la pantalla cambiada y ningún mensaje, que es justo la duda que el aviso
+  existe para quitar.
+
+  `revalidatePath` de la ruta destino y `redirect` a esa misma ruta compiten: el
+  refresco repinta la página donde ya estás y la redirección, que sólo añadía
+  una query, se pierde por el camino. Y es redundante además — estas pantallas
+  son `force-dynamic`, así que la redirección ya las vuelve a leer de la base
+  entera. Se revalida sólo lo que NO se va a visitar.
+*/
 function volver(estado: EstadoProveedores, proveedorId?: string): never {
   const base = proveedorId ? `${RUTA_PROVEEDORES}/${proveedorId}` : RUTA_PROVEEDORES;
   redirect(`${base}?estado=${estado}`);
@@ -113,7 +117,6 @@ export async function crearCategoria(datos: FormData): Promise<void> {
   // Cero filas y sin error es RLS callando: un lector no crea categorías.
   if (!data?.length) volver("sin-permiso");
 
-  revalidatePath(RUTA_PROVEEDORES);
   volver("categoria-creada");
 }
 
@@ -133,7 +136,6 @@ export async function borrarCategoria(datos: FormData): Promise<void> {
   if (error) volver(motivo(error));
   if (!data?.length) volver("sin-permiso");
 
-  revalidatePath(RUTA_PROVEEDORES);
   volver("categoria-borrada");
 }
 
@@ -153,7 +155,6 @@ function camposProveedor(datos: FormData):
         correo_electronico: string | null;
         telefono: string | null;
         sitio_web: string | null;
-        estado: string;
         valoracion: number | null;
         importe_presupuestado: number | null;
         importe_acordado: number | null;
@@ -181,8 +182,6 @@ function camposProveedor(datos: FormData):
     return { ok: false, estado: "valoracion" };
   }
 
-  const estadoBruto = texto(datos, "estado");
-
   /*
     UN SITIO WEB SE PEGA COMO SE COPIA: «finca-la-sierra.es», sin protocolo. La
     base exige `http://` o `https://`, así que rechazarlo sería devolver un
@@ -201,7 +200,6 @@ function camposProveedor(datos: FormData):
       correo_electronico: opcional(datos, "correo_electronico"),
       telefono: opcional(datos, "telefono"),
       sitio_web: sitioWeb,
-      estado: esEstadoProveedor(estadoBruto) ? estadoBruto : "investigando",
       valoracion,
       importe_presupuestado: presupuestado,
       importe_acordado: acordado,
@@ -217,7 +215,14 @@ export async function crearProveedor(datos: FormData): Promise<void> {
   const supabase = await cliente();
   const { data, error } = await supabase
     .from("proveedores")
-    .insert(campos.valores)
+    /*
+      EL ESTADO NO SE ELIGE AL DAR DE ALTA. Un proveedor que acabas de apuntar
+      está, por definición, en «investigando» — y ofrecer el desplegable aquí
+      abría un segundo camino a «contratado» que se saltaría el aviso de
+      contratar a dos de la misma categoría. Se cambia después, con el control
+      que sí lo comprueba.
+    */
+    .insert({ ...campos.valores, estado: ESTADO_INICIAL_PROVEEDOR })
     .select("id");
 
   if (error) volver(motivo(error));
@@ -228,6 +233,78 @@ export async function crearProveedor(datos: FormData): Promise<void> {
   // A su ficha: quien acaba de dar de alta un proveedor sigue teniendo cosas
   // que apuntar de él, y volver a la lista obliga a buscarlo otra vez.
   redirect(`${RUTA_PROVEEDORES}/${creado}?estado=creado`);
+}
+
+/**
+ * BODA-71 · CAMBIAR DE FASE
+ *
+ * Tiene su propia acción y no vive en el formulario grande, por tres razones
+ * que se refuerzan entre sí:
+ *
+ *  1. Es lo que más se hace. Un proveedor cambia de fase cinco o seis veces y
+ *     su teléfono no cambia nunca; obligar a abrir el formulario entero para
+ *     mover una fase es pedir seis pasos donde hace falta uno.
+ *  2. Se puede hacer desde la lista, que es donde se está cuando uno repasa a
+ *     quién le falta contestar.
+ *  3. Y sobre todo: **es el único camino a `contratado`**, así que el aviso de
+ *     contratar a dos de la misma categoría no se puede esquivar. Con el
+ *     estado dentro del formulario grande había dos puertas y sólo una tenía
+ *     el aviso puesto.
+ *
+ * DOS GUARDAS, Y LAS DOS SON DE LA BASE TAMBIÉN:
+ *
+ *  - Descartar exige decir por qué. Lo impone un `check`, así que sin motivo
+ *    la escritura falla de todas formas; aquí se dice antes y con una frase.
+ *  - Salir de «descartado» BORRA el motivo, y no es cosmético: el mismo
+ *    `check` prohíbe que un proveedor no descartado conserve uno. Sin esto,
+ *    recuperar a alguien que se había descartado fallaba con un error de la
+ *    base que no dice nada.
+ */
+export async function cambiarEstado(datos: FormData): Promise<void> {
+  const id = texto(datos, "id");
+  if (!id) volver("no-existe");
+
+  const nuevo = texto(datos, "estado");
+  if (!esEstadoProveedor(nuevo)) volver("estado", id);
+
+  const motivo_descarte = nuevo === "descartado" ? opcional(datos, "motivo_descarte") : null;
+  if (nuevo === "descartado" && !motivo_descarte) volver("descarte-sin-motivo", id);
+
+  const supabase = await cliente();
+
+  /*
+    CONTRATAR A UN SEGUNDO DE LA MISMA CATEGORÍA PREGUNTA ANTES.
+
+    No se prohíbe —hay bodas con dos fotógrafos, y con un DJ y un grupo— pero
+    lo normal es que sea un despiste: se contrata al bueno y se olvida
+    descartar al otro, y a partir de ahí el resumen de «qué falta por cerrar»
+    miente en la dirección tranquilizadora.
+  */
+  if (nuevo === "contratado" && texto(datos, "confirmar") !== "si") {
+    const { data: ficha } = await supabase
+      .from("proveedores")
+      .select("categoria_id")
+      .eq("id", id)
+      .maybeSingle();
+
+    const categoriaId = (ficha as { categoria_id: string } | null)?.categoria_id;
+    if (categoriaId) {
+      const otros = await obtenerContratadosDeCategoria(categoriaId, id);
+      if (otros.length > 0) volver("confirmar-contratado", id);
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("proveedores")
+    .update({ estado: nuevo, motivo_descarte })
+    .eq("id", id)
+    .select("id");
+
+  if (error) volver(motivo(error), id);
+  if (!data?.length) volver("sin-permiso", id);
+
+  revalidatePath(RUTA_PROVEEDORES);
+  volver("estado-cambiado", id);
 }
 
 export async function editarProveedor(datos: FormData): Promise<void> {
@@ -248,7 +325,6 @@ export async function editarProveedor(datos: FormData): Promise<void> {
   if (!data?.length) volver("sin-permiso", id);
 
   revalidatePath(RUTA_PROVEEDORES);
-  revalidatePath(`${RUTA_PROVEEDORES}/${id}`);
   volver("editado", id);
 }
 
@@ -288,7 +364,6 @@ export async function borrarProveedor(datos: FormData): Promise<void> {
   if (error) volver(motivo(error), id);
   if (!data?.length) volver("sin-permiso", id);
 
-  revalidatePath(RUTA_PROVEEDORES);
   volver("borrado");
 }
 
@@ -326,7 +401,6 @@ export async function anadirContacto(datos: FormData): Promise<void> {
   if (error) volver(motivo(error), proveedorId);
   if (!data?.length) volver("sin-permiso", proveedorId);
 
-  revalidatePath(`${RUTA_PROVEEDORES}/${proveedorId}`);
   volver("contacto-anadido", proveedorId);
 }
 
@@ -345,6 +419,5 @@ export async function quitarContacto(datos: FormData): Promise<void> {
   if (error) volver(motivo(error), proveedorId);
   if (!data?.length) volver("sin-permiso", proveedorId);
 
-  revalidatePath(`${RUTA_PROVEEDORES}/${proveedorId}`);
   volver("contacto-quitado", proveedorId);
 }

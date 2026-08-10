@@ -20,6 +20,19 @@ import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 type Estado = "marcado" | "cancion-ocultada" | "cancion-mostrada" | "sin-permiso" | "error";
 
+/*
+  NO SE REVALIDA LA RUTA A LA QUE SE VA A REDIRIGIR.
+
+  Lo descubrió la investigación de BODA-71: `revalidatePath` del destino y
+  `redirect` a ese mismo destino compiten, y cuando gana el refresco la
+  redirección pierde su `?estado=` — la escritura se hace, la pantalla se
+  repinta, y el aviso de «hecho» no sale nunca. Quien lo usa se queda sin saber
+  si se guardó, que es justo lo que el aviso existe para contestar.
+
+  Es redundante además: estas pantallas son `force-dynamic`, así que la
+  redirección ya las vuelve a leer de la base enteras. Se revalida sólo lo que
+  NO se va a visitar.
+*/
 function volver(estado: Estado): never {
   redirect(`${RUTA_MENSAJES}?estado=${estado}`);
 }
@@ -67,7 +80,6 @@ export async function marcarLeido(datos: FormData): Promise<void> {
   }
   if (count === 0) volver("sin-permiso");
 
-  revalidatePath(RUTA_MENSAJES);
   volver("marcado");
 }
 
@@ -101,6 +113,5 @@ export async function moderarCancion(datos: FormData): Promise<void> {
   // deja de ser dinámica: el olvido se paga con una canción retirada que sigue
   // viéndose.
   revalidatePath("/");
-  revalidatePath(RUTA_MENSAJES);
   volver(aprobar ? "cancion-mostrada" : "cancion-ocultada");
 }

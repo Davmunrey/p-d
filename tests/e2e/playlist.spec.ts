@@ -104,6 +104,7 @@ async function conInvitacionAbierta(
     javaScriptEnabled,
     locale: "es-ES",
     extraHTTPHeaders: origenPropio(),
+    reducedMotion: "reduce",
   });
   const pagina = await contexto.newPage();
   await pagina.goto(`${RUTA_RSVP}/${token}`);
