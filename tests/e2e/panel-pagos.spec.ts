@@ -190,7 +190,21 @@ test.describe("Los pagos y sus vencimientos", () => {
     await entrar(page);
     await page.goto(RUTA_PAGOS);
 
-    await filaDe(page, señal).getByRole("button", { name: pagos.marcarPagado }).click();
+    /*
+      LA FOTO DE PARTIDA, Y NO SÓLO POR DOCUMENTAR.
+
+      Pulsar en seco nada más llegar es como se pierde un envío: los specs que
+      nunca fallan rellenan un formulario antes, y ese rato es el que la página
+      necesita para quedar viva. Aquí no hay nada que rellenar, así que se
+      comprueba lo que debería verse antes de tocar —la fila y su botón— y eso
+      hace las dos cosas: deja escrito el estado inicial y espera a que el botón
+      sea de verdad pulsable.
+    */
+    const filaSeñal = filaDe(page, señal);
+    await expect(filaSeñal, "la fila del pago tiene que estar antes de marcarla").toBeVisible();
+    const marcarSeñal = filaSeñal.getByRole("button", { name: pagos.marcarPagado });
+    await expect(marcarSeñal).toBeEnabled();
+    await marcarSeñal.click();
     await esperarEstado(page, "marcado-pagado");
 
     // 1 · La base lo da por pagado, con su fecha y no con un booleano.
@@ -233,8 +247,19 @@ test.describe("Los pagos y sus vencimientos", () => {
 
     await esperarEstado(page, "no-cabe");
 
-    // El aviso lleva la cifra: quedan 600 de los 1.000, y 700 no caben.
-    await expect(page.getByRole("alert")).toContainText("600,00");
+    /*
+      SE BUSCA EL AVISO POR SU TEXTO Y NO POR `getByRole("alert")`.
+
+      Next pinta su propio anunciador de ruta —un `div` con `role="alert"` que
+      lee el título de la página a los lectores de pantalla—, así que el papel
+      `alert` devuelve DOS elementos y Playwright se niega a elegir. El texto
+      sale del copy, no copiado a mano: si cambia la frase, cambia el test con
+      ella.
+    */
+    const avisoNoCabe = pagos.errorNoCabe.split("{queda}")[0].trim();
+
+    // Y lleva la cifra: quedan 600 de los 1.000, y 700 no caben.
+    await expect(page.getByText(avisoNoCabe)).toContainText("600,00");
 
     const filas = await conBase(
       (sql) => sql<{ id: string }[]>`
@@ -253,7 +278,7 @@ test.describe("Los pagos y sus vencimientos", () => {
    * en el móvil. Así que se comprueba la palabra.
    */
   test("lo vencido y sin pagar lleva su palabra, no sólo el color", async ({ page }) => {
-    const montaje = await montar("Vencido");
+    const montaje = await montar("Atrasado");
     const atrasado = await apuntar(montaje.gastoId, 250, -7);
 
     await entrar(page);
@@ -261,13 +286,18 @@ test.describe("Los pagos y sus vencimientos", () => {
 
     const vencidos = seccion(page, pagos.vencidosTitulo);
     await expect(vencidos, "un pago con fecha pasada tiene que salir aquí").toBeVisible();
-    await expect(filaDe(page, atrasado).getByText(pagos.vencido)).toBeVisible();
+    await expect(
+      filaDe(page, atrasado).getByText(pagos.vencido, { exact: true }),
+      "la palabra tiene que estar en la fila, no sólo el color",
+    ).toBeVisible();
 
     // Y en cuanto se paga, deja de estar vencido: `vencido` mira `pagado_en`.
     await filaDe(page, atrasado).getByRole("button", { name: pagos.marcarPagado }).click();
     await esperarEstado(page, "marcado-pagado");
 
-    await expect(filaDe(page, atrasado).getByText(pagos.vencido)).toHaveCount(0);
+    await expect(filaDe(page, atrasado).getByText(pagos.vencido, { exact: true })).toHaveCount(
+      0,
+    );
   });
 
   /**
@@ -283,7 +313,21 @@ test.describe("Los pagos y sus vencimientos", () => {
     await entrar(page);
     await page.goto(RUTA_PAGOS);
 
-    await filaDe(page, pago).getByRole("button", { name: pagos.marcarPagado }).click();
+    /*
+      LA FOTO DE PARTIDA, Y NO SÓLO POR DOCUMENTAR.
+
+      Pulsar en seco nada más llegar es como se pierde un envío: los specs que
+      nunca fallan rellenan un formulario antes, y ese rato es el que la página
+      necesita para quedar viva. Aquí no hay nada que rellenar, así que se
+      comprueba lo que debería verse antes de tocar —la fila y su botón— y eso
+      hace las dos cosas: deja escrito el estado inicial y espera a que el botón
+      sea de verdad pulsable.
+    */
+    const filaPago = filaDe(page, pago);
+    await expect(filaPago, "la fila del pago tiene que estar antes de marcarla").toBeVisible();
+    const marcarPago = filaPago.getByRole("button", { name: pagos.marcarPagado });
+    await expect(marcarPago).toBeEnabled();
+    await marcarPago.click();
     await esperarEstado(page, "marcado-pagado");
     expect(await pendienteDe(montaje.categoriaId)).toBe(0);
 
