@@ -22,6 +22,9 @@ const CONTRASENA = process.env.CONTRASENA_PRUEBAS;
 /** Marca de agua, para no confundir lo que escribe el test con el seed. */
 const MARCA = "(DES) E2E Invitación";
 
+/** La ficha de una invitación. Se espera a llegar aquí antes de seguir. */
+const FICHA = new RegExp(`${RUTA_INVITADOS}/[0-9a-f-]{36}`);
+
 async function entrar(pagina: Page) {
   await pagina.goto(RUTA_ACCESO);
   await pagina.getByLabel(copy.acceso.correo).fill(CORREO_CON_ACCESO!);
@@ -66,14 +69,16 @@ test.describe("Invitaciones", () => {
 
     // Se cae en la ficha, con el enlace en claro. Se enseña una sola vez: la
     // base guarda su huella, no el token.
-    await expect(page).toHaveURL(new RegExp(`${RUTA_INVITADOS}/[0-9a-f-]{36}`));
+    await expect(page).toHaveURL(FICHA);
     const campoEnlace = page.getByLabel(copy.panel.invitados.copiarEnlace);
     await expect(campoEnlace).toBeVisible();
     const enlace = await campoEnlace.inputValue();
     expect(enlace).toContain(`${RUTA_RSVP}/`);
 
     // Una persona dentro.
-    await page.getByLabel(copy.panel.invitados.nombrePersona).fill("(DES) Olalla");
+    await page
+      .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
+      .fill("(DES) Olalla");
     await page.getByLabel(copy.panel.invitados.apellidosPersona).fill("E2E");
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
     await expect(page.getByText("(DES) Olalla E2E")).toBeVisible();
@@ -102,9 +107,21 @@ test.describe("Invitaciones", () => {
     await page.reload();
     await expect(page.getByText(copy.rsvp.vieneSi)).toBeVisible();
 
-    // También en la lista, en el recuento del grupo.
+    /*
+      También en la lista, en el recuento del grupo.
+
+      El nombre va como CADENA y no como `new RegExp(nombreGrupo)`: la marca
+      empieza por «(DES)» y esos paréntesis son un grupo de captura, así que el
+      patrón buscaba «DES E2E Invitación» —sin paréntesis— y no casaba con
+      nada. Con una cadena, Playwright compara por subcadena y sin sorpresas.
+    */
     await page.goto(`${RUTA_INVITADOS}?buscar=${encodeURIComponent(nombreGrupo)}`);
-    await expect(page.getByRole("link", { name: new RegExp(MARCA) })).toContainText("1");
+    await expect(page.getByRole("link", { name: nombreGrupo })).toContainText(
+      copy.panel.invitados.resumenEstado
+        .replace("{confirmados}", "1")
+        .replace("{rechazados}", "0")
+        .replace("{pendientes}", "0"),
+    );
   });
 
   test("la búsqueda encuentra por el nombre de una persona, no sólo del grupo", async ({
@@ -115,13 +132,16 @@ test.describe("Invitaciones", () => {
     await page.goto(RUTA_INVITADOS);
     await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(nombreGrupo);
     await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
-    await page.getByLabel(copy.panel.invitados.nombrePersona).fill("(DES) Ainhoa");
+    await expect(page).toHaveURL(FICHA);
+    await page
+      .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
+      .fill("(DES) Ainhoa");
     await page.getByLabel(copy.panel.invitados.apellidosPersona).fill("Zubeldía");
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
 
     // Sin acentos: quien busca desde el móvil no los escribe.
     await page.goto(`${RUTA_INVITADOS}?buscar=zubeldia`);
-    await expect(page.getByRole("link", { name: new RegExp(nombreGrupo) })).toBeVisible();
+    await expect(page.getByRole("link", { name: nombreGrupo })).toBeVisible();
   });
 
   /**
@@ -134,10 +154,15 @@ test.describe("Invitaciones", () => {
     await page.goto(RUTA_INVITADOS);
     await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(nombreGrupo);
     await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
+    await expect(page).toHaveURL(FICHA);
 
     const primero = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
 
+    // Esperar a que la redirección haya llegado antes de leer el campo. Sin
+    // esto se lee el enlace viejo, que sigue pintado, y el test compara una
+    // cadena consigo misma.
     await page.getByRole("button", { name: copy.panel.invitados.emitirEnlace }).click();
+    await expect(page).toHaveURL(/estado=enlace-emitido/);
     const segundo = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
     expect(segundo).not.toBe(primero);
 
@@ -166,9 +191,12 @@ test.describe("Invitaciones", () => {
     await page.goto(RUTA_INVITADOS);
     await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(nombreGrupo);
     await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
+    await expect(page).toHaveURL(FICHA);
     const enlace = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
 
-    await page.getByLabel(copy.panel.invitados.nombrePersona).fill("(DES) Xabi");
+    await page
+      .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
+      .fill("(DES) Xabi");
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
 
     // Mientras no ha contestado, sí se puede quitar: el botón está.
@@ -221,9 +249,13 @@ test.describe("Resumen del panel", () => {
       .getByLabel(copy.panel.invitados.nombreGrupo)
       .fill(`${MARCA} cifras ${Date.now()}`);
     await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
+    await expect(page).toHaveURL(FICHA);
     const enlace = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
-    await page.getByLabel(copy.panel.invitados.nombrePersona).fill("(DES) Nekane");
+    await page
+      .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
+      .fill("(DES) Nekane");
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
+    await expect(page.getByText("(DES) Nekane")).toBeVisible();
 
     const contexto = await browser.newContext({ locale: "es-ES" });
     const invitada = await contexto.newPage();
@@ -251,6 +283,6 @@ test.describe("Resumen del panel", () => {
       page.getByRole("heading", { name: copy.panel.resumen.bloqueInvitados }),
     ).toBeVisible();
     // Y la cuenta atrás dice algo concreto, no un hueco.
-    await expect(page.locator("header")).not.toContainText("{dias}");
+    await expect(page.locator("main header")).not.toContainText("{dias}");
   });
 });

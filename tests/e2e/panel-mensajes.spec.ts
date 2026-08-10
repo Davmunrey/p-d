@@ -51,9 +51,13 @@ test.describe("Bandeja de mensajes", () => {
     await page.goto(RUTA_INVITADOS);
     await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(nombreGrupo);
     await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
+    await expect(page).toHaveURL(new RegExp(`${RUTA_INVITADOS}/[0-9a-f-]{36}`));
     const enlace = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
-    await page.getByLabel(copy.panel.invitados.nombrePersona).fill("(DES) Iria");
+    await page
+      .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
+      .fill("(DES) Iria");
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
+    await expect(page.getByText("(DES) Iria")).toBeVisible();
 
     // La invitada confirma y escribe.
     const contexto = await browser.newContext({ locale: "es-ES" });
