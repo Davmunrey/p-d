@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { PARAMETRO_VOLVER, RUTA_ACCESO, RUTA_PANEL } from "@/config/constants";
+import { recordarInvitacion } from "@/lib/invitacion";
 
 /**
  * BODA-41 · LA PUERTA, ANTES DE PINTAR NADA
@@ -25,6 +26,11 @@ import { PARAMETRO_VOLVER, RUTA_ACCESO, RUTA_PANEL } from "@/config/constants";
  * `perfiles`. Repetirlo aquí costaría una consulta más en cada navegación y,
  * peor, abriría un bucle: quien tuviera sesión y el perfil desactivado iría de
  * la puerta al panel y del panel a la puerta sin parar.
+ *
+ * Y DE PASO ANOTA LA INVITACIÓN. Quien abre su enlace `/rsvp/<token>` deja
+ * aquí una cookie con él, y así la playlist de la portada sabe quién escribe.
+ * Se hace en el middleware porque es el único sitio que ve esa navegación y
+ * puede escribir cookies: una página no puede.
  */
 
 /** Rutas que exigen sesión. El resto de la web es pública. */
@@ -44,7 +50,9 @@ export async function middleware(peticion: NextRequest) {
   // Cerrado y no abierto: una variable que falta no puede acabar en una puerta
   // franca.
   if (!url || !clave) {
-    return esDelPanel(peticion.nextUrl.pathname) ? aLaPuerta(peticion) : respuesta;
+    return esDelPanel(peticion.nextUrl.pathname)
+      ? aLaPuerta(peticion)
+      : recordarInvitacion(peticion, respuesta);
   }
 
   const supabase = createServerClient(url, clave, {
@@ -75,7 +83,10 @@ export async function middleware(peticion: NextRequest) {
 
   if (esDelPanel(peticion.nextUrl.pathname)) sinGuardarEnCache(respuesta);
 
-  return respuesta;
+  // Al final y no antes: `setAll` puede haber sustituido la respuesta entera
+  // por otra al renovar la sesión, y la cookie tiene que ir en la que se
+  // devuelve. Anotarla en la primera era perderla justo al renovar.
+  return recordarInvitacion(peticion, respuesta);
 }
 
 /**

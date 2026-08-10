@@ -8,6 +8,7 @@ import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { BotonEnlace } from "@/components/ui/boton";
 import { DatosEstructurados } from "@/components/datos-estructurados";
 import { CuentaRegalos } from "@/components/ui/cuenta-regalos";
+import { FormularioPlaylist } from "@/components/ui/formulario-playlist";
 import {
   Cita,
   Conector,
@@ -38,6 +39,7 @@ import {
   type Medio,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
+import { invitacionRecordada } from "@/lib/invitacion-recordada";
 
 /**
  * LANDING
@@ -104,6 +106,18 @@ function fechaEnPuntos(fecha: Date): string {
 }
 
 export default async function PaginaInicio() {
+  /*
+    Si el navegador recuerda una invitación, la playlist enseña el campo para
+    apuntar una canción. Se lee aquí y no dentro de la sección para que la
+    portada tenga un solo sitio donde se decide qué se pinta.
+
+    NO SE COMPRUEBA CONTRA LA BASE. Sería una consulta más en cada visita a la
+    portada para adelantar un «no» que la base va a dar igualmente al escribir,
+    y por el camino gastaría cupo del cortafuegos del RSVP a quien no ha pedido
+    nada.
+  */
+  const hayInvitacion = (await invitacionRecordada()) !== null;
+
   let datos;
   try {
     datos = await cargarLanding();
@@ -186,7 +200,7 @@ export default async function PaginaInicio() {
       rutas.length > 0 ? <Transporte rutas={rutas} configuracion={configuracion} /> : undefined,
     preguntas_frecuentes:
       preguntas.length > 0 ? <Preguntas preguntas={preguntas} /> : undefined,
-    playlist: <Playlist canciones={canciones} />,
+    playlist: <Playlist canciones={canciones} puedeApuntar={hayInvitacion} />,
     // Sin cuenta no hay sección: ver el comentario de `Regalos`.
     regalos: cuentaRegalos ? <Regalos /> : undefined,
     dresscode: consejos.length > 0 ? <DressCode consejos={consejos} /> : undefined,
@@ -706,7 +720,26 @@ function Preguntas({
   );
 }
 
-function Playlist({ canciones }: { canciones: { id: string; texto: string }[] }) {
+/**
+ * LA PLAYLIST
+ *
+ * La lista se ve siempre; el campo para apuntar, sólo si el navegador recuerda
+ * una invitación. `sugerir_cancion()` exige token —la lista que sonará esa
+ * noche es de los invitados, no de internet— y enseñar un campo que va a
+ * responder «vuestro enlace no vale» a quien nunca tuvo uno es peor que no
+ * enseñarlo: se lee como que la web está rota.
+ *
+ * En su lugar va una línea que dice qué hace falta. Quien tiene invitación la
+ * ha abierto alguna vez, así que para los ciento veinte que importan el campo
+ * está ahí.
+ */
+function Playlist({
+  canciones,
+  puedeApuntar,
+}: {
+  canciones: { id: string; texto: string }[];
+  puedeApuntar: boolean;
+}) {
   return (
     <Bloque
       seccion="playlist"
@@ -716,6 +749,14 @@ function Playlist({ canciones }: { canciones: { id: string; texto: string }[] })
       realzada
       centrada
     >
+      {puedeApuntar ? (
+        <FormularioPlaylist />
+      ) : (
+        <Cuerpo className="mx-auto mt-elemento max-w-texto text-center text-pequeno text-tinta-suave">
+          {t("playlist.sinInvitacion")}
+        </Cuerpo>
+      )}
+
       {canciones.length > 0 ? (
         <ul className="mt-elemento flex flex-wrap justify-center gap-interno-compacto">
           {canciones.map((cancion) => (

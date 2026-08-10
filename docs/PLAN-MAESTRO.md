@@ -262,7 +262,7 @@ Sobre `grupos_invitacion`, `invitados` y `confirmaciones`, `anon` **no tiene nad
 
 - **`obtener_invitacion(token)`** → el grupo del token y su gente. Enumera sus columnas a mano: sin eso, un invitado recibiría el teléfono y las notas privadas de sus coinvitados, y cualquier columna futura se publicaría sola. **Cero filas significa «este enlace no vale»**, y no lanza excepción: al abortar se perdería el registro del intento y el cortafuegos dejaría de contar.
 - **`registrar_confirmacion(token, respuestas)`** → registra la respuesta del grupo, todo o nada. Escribe además menú y alergias en `invitados`, que es donde viven.
-- **`sugerir_cancion(token, texto)`** → añade a la playlist, con tope de diez por grupo.
+- **`sugerir_cancion(token, texto)`** → añade a la playlist, con tope de diez por grupo. La escriben los dos sitios donde se pide una canción: el último paso del RSVP y el campo de la sección `playlist` en la portada.
 - **`datos_para_regalos()`** → el IBAN y su titular, o cero filas. Es la única puerta por la que sale un dato de `configuracion_privada`, y sólo se abre con la sección `regalos` visible.
 - **`crear_grupo_invitacion(...)`** y **`rotar_token_invitacion(grupo)`** → del panel, devuelven el token en claro una sola vez.
 - **`importar_invitados(filas)`** → da de alta en bloque la gente de un CSV, en **una** transacción: o entran todas o no entra ninguna. Reutiliza el grupo cuando ya existe uno con ese nombre, porque un CSV trae una fila por persona y una invitación son varias. No emite enlaces: importar da de alta gente, no reparte invitaciones.
@@ -296,7 +296,7 @@ Secciones del enumerado `seccion_landing`:
 | `regalos`              | Número de cuenta en campo copiable. Nace apagada            | BODA-37 |
 | `dresscode`            | Qué ponerse, un bloque por consejo                          | BODA-38 |
 | `preguntas_frecuentes` | Acordeón nativo: etiqueta, niños, aparcamiento…             | BODA-27 |
-| `playlist`             | Canciones que sugieren los invitados                        | BODA-29 |
+| `playlist`             | Canciones que sugieren los invitados, con campo para añadir | BODA-29 |
 | `rsvp`                 | Llamada a confirmar asistencia                              | BODA-28 |
 | `reserva_la_fecha`     | **No es una sección: es una página aparte** (ver más abajo) | BODA-30 |
 
@@ -311,6 +311,8 @@ Página independiente, ligera y compartible: fecha grande, foto, «añadir al ca
 ### RSVP (`/rsvp/[token]`)
 
 El grupo se identifica por su enlace único — sin contraseñas. Formulario multipaso: asistencia por persona → menú y alergias → transporte/alojamiento → canción y mensaje. Confirmación por email (Resend) y posibilidad de editar hasta la fecha límite.
+
+**Abrir la invitación deja huella en el navegador.** El middleware guarda el token de `/rsvp/[token]` en una cookie `httpOnly` de un año, y de ahí lo saca la portada para el campo de la playlist: `sugerir_cancion()` exige token —la lista que sonará esa noche es de los invitados, no de internet entera— y en la portada no hay ninguno en la URL. Quien nunca ha abierto su invitación no ve el campo, ve la línea que explica que hace falta el enlace; enseñar un campo que sólo puede responder «vuestro enlace no vale» se lee como que la web está rota. El token **no** viaja en el HTML de la portada ni en un campo oculto: eso lo pondría en el código fuente de una página pública y en el historial del móvil, y ese token abre los datos de una familia entera. La cookie no se valida al escribirla —sería una consulta a la base en cada navegación de toda la web— porque la base la vuelve a comprobar cuando de verdad importa, al escribir, y un token inventado allí no abre nada.
 
 ---
 

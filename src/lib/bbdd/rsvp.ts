@@ -3,6 +3,7 @@ import "server-only";
 import { huellaDePeticion } from "@/lib/huella-peticion";
 
 import { ErrorDeLectura, leerComoAnonimo, llamarComoAnonimo } from "./cliente";
+import { sugerirCancion } from "./playlist";
 
 /**
  * EL RSVP PÚBLICO
@@ -206,13 +207,9 @@ export async function registrarConfirmacion(
  * de verdad importa: se registra el motivo y se sigue.
  */
 async function anotarCancion(token: string, texto: string): Promise<void> {
-  try {
-    await llamarComoAnonimo(
-      (tx) => tx`select public.sugerir_cancion(${token}, ${texto})`,
-      await huellaDePeticion(),
-    );
-  } catch (error) {
-    console.error("La confirmación se guardó, pero la canción no:", error);
+  const resultado = await sugerirCancion(token, texto);
+  if (!resultado.ok) {
+    console.error("La confirmación se guardó, pero la canción no:", resultado.motivo);
   }
 }
 
