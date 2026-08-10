@@ -131,20 +131,16 @@ test.describe("El módulo de proveedores", () => {
     await edicion
       .getByLabel(copy.panel.proveedores.campoTelefono, { exact: true })
       .fill("+34 600 111 222");
-    await edicion
-      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
-      .selectOption({ label: copy.panel.proveedores.estados.contratado });
     await edicion.getByRole("button", { name: copy.panel.proveedores.guardar }).click();
     await expect(page.getByText(copy.panel.proveedores.avisoEditado)).toBeVisible();
 
     const [editado] = await conBase(
-      (sql) => sql<{ estado: string; importe_acordado: string; telefono: string }[]>`
-        select estado, importe_acordado, telefono
-          from public.proveedores where id = ${guardado.id}
+      (sql) => sql<{ importe_acordado: string; telefono: string }[]>`
+        select importe_acordado, telefono from public.proveedores where id = ${guardado.id}
       `,
     );
-    expect(editado.estado).toBe("contratado");
     expect(Number(editado.importe_acordado)).toBe(2100);
+    expect(editado.telefono).toBe("+34 600 111 222");
 
     // Un segundo contacto: el del día de la boda, que no es el comercial.
     const gente = seccion(page, copy.panel.proveedores.contactosTitulo);
@@ -286,6 +282,227 @@ test.describe("El módulo de proveedores", () => {
     await page.reload();
     await expect(
       suya.getByRole("button", { name: copy.panel.proveedores.borrarCategoria }),
+    ).toHaveCount(0);
+  });
+});
+
+/**
+ * BODA-71 · El embudo, de investigando a contratado
+ *
+ * LAS DOS GUARDAS SON LO QUE JUSTIFICA EL TICKET, y las dos se comprueban
+ * contra la base y no contra la pantalla:
+ *
+ *  - Descartar sin decir por qué no escribe nada. Dentro de seis meses nadie
+ *    se acuerda, y alguien vuelve a escribir al mismo proveedor para recibir
+ *    la misma respuesta.
+ *  - Contratar a un segundo de la misma categoría pregunta antes. No se
+ *    prohíbe —hay bodas con dos fotógrafos— pero lo normal es que falte
+ *    descartar al otro, y a partir de ahí el resumen de «qué falta por cerrar»
+ *    miente en la dirección tranquilizadora.
+ */
+test.describe("El embudo del proveedor", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  /** Un proveedor recién creado, en la categoría que se diga. */
+  async function crearProveedor(nombre: string, categoriaId?: string): Promise<string> {
+    return conBase(async (sql) => {
+      const [categoria] = categoriaId
+        ? [{ id: categoriaId }]
+        : await sql<{ id: string }[]>`
+            select id from public.categorias_proveedor order by orden, nombre limit 1
+          `;
+      const [proveedor] = await sql<{ id: string }[]>`
+        insert into public.proveedores (categoria_id, nombre)
+        values (${categoria.id}, ${nombre})
+        returning id
+      `;
+      return proveedor.id;
+    });
+  }
+
+  /**
+   * CAMINO FELIZ · avanzar de fase persiste, y descartar guarda el porqué.
+   */
+  test("el estado avanza, persiste, y al descartar se guarda por qué", async ({ page }) => {
+    const id = await crearProveedor(`${MARCA} Embudo ${Date.now()}`);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
+
+    const fase = seccion(page, copy.panel.proveedores.estadoTitulo);
+
+    // Una fase nueva de las que traía este ticket: sin ella, «le llamé» y «le
+    // pedí presupuesto» se veían igual.
+    await fase
+      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
+      .selectOption({ label: copy.panel.proveedores.estados.presupuesto_pedido });
+    await fase.getByRole("button", { name: copy.panel.proveedores.cambiarEstado }).click();
+    await expect(page.getByText(copy.panel.proveedores.avisoEstadoCambiado)).toBeVisible();
+
+    // Persiste: se comprueba recargando, no fiándose de lo que quedó pintado.
+    await page.reload();
+    await expect(
+      seccion(page, copy.panel.proveedores.estadoTitulo).getByLabel(
+        copy.panel.proveedores.campoEstado,
+        { exact: true },
+      ),
+    ).toHaveValue("presupuesto_pedido");
+
+    // Descartar, ahora sí con motivo.
+    const motivo = "(DES) No tenía libre la fecha";
+    const faseTrasRecarga = seccion(page, copy.panel.proveedores.estadoTitulo);
+    await faseTrasRecarga
+      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
+      .selectOption({ label: copy.panel.proveedores.estados.descartado });
+    await faseTrasRecarga
+      .getByLabel(copy.panel.proveedores.campoMotivoDescarte, { exact: true })
+      .fill(motivo);
+    await faseTrasRecarga
+      .getByRole("button", { name: copy.panel.proveedores.cambiarEstado })
+      .click();
+
+    await expect(page.getByText(motivo)).toBeVisible();
+
+    const [descartado] = await conBase(
+      (sql) => sql<{ estado: string; motivo_descarte: string }[]>`
+        select estado, motivo_descarte from public.proveedores where id = ${id}
+      `,
+    );
+    expect(descartado.estado).toBe("descartado");
+    expect(descartado.motivo_descarte).toBe(motivo);
+  });
+
+  /**
+   * CASO DE ERROR · Descartar sin motivo no escribe nada.
+   */
+  test("descartar sin decir por qué no cambia el estado", async ({ page }) => {
+    const id = await crearProveedor(`${MARCA} Sin motivo ${Date.now()}`);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
+
+    const fase = seccion(page, copy.panel.proveedores.estadoTitulo);
+    await fase
+      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
+      .selectOption({ label: copy.panel.proveedores.estados.descartado });
+    await fase.getByRole("button", { name: copy.panel.proveedores.cambiarEstado }).click();
+
+    await expect(page.getByText(copy.panel.proveedores.errorDescarteSinMotivo)).toBeVisible();
+
+    const [sigue] = await conBase(
+      (sql) => sql<{ estado: string }[]>`
+        select estado from public.proveedores where id = ${id}
+      `,
+    );
+    expect(sigue.estado, "sin motivo no se descarta").toBe("investigando");
+  });
+
+  /**
+   * CASO DE ERROR · Contratar a un segundo de la categoría pide confirmación.
+   */
+  test("contratar a un segundo de la misma categoría pregunta antes", async ({ page }) => {
+    const sello = Date.now();
+    const categoriaId = await conBase(async (sql) => {
+      const [categoria] = await sql<{ id: string }[]>`
+        insert into public.categorias_proveedor (nombre, orden)
+        values (${`${MARCA} Embudo ${sello}`}, 50)
+        returning id
+      `;
+      return categoria.id;
+    });
+
+    const primero = await crearProveedor(`${MARCA} Ya contratado ${sello}`, categoriaId);
+    await conBase(
+      (sql) => sql`update public.proveedores set estado = 'contratado' where id = ${primero}`,
+    );
+    const segundo = await crearProveedor(`${MARCA} El segundo ${sello}`, categoriaId);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${segundo}`);
+
+    const fase = seccion(page, copy.panel.proveedores.estadoTitulo);
+    await fase
+      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
+      .selectOption({ label: copy.panel.proveedores.estados.contratado });
+    await fase.getByRole("button", { name: copy.panel.proveedores.cambiarEstado }).click();
+
+    // Pregunta, y dice a quién: «ya hay uno» sin nombre obliga a ir a buscarlo.
+    await expect(page.getByText(copy.panel.proveedores.avisoConfirmarContratado)).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: `${MARCA} Ya contratado ${sello}` }),
+    ).toBeVisible();
+
+    const [sinTocar] = await conBase(
+      (sql) => sql<{ estado: string }[]>`
+        select estado from public.proveedores where id = ${segundo}
+      `,
+    );
+    expect(sinTocar.estado, "el primer envío no puede contratar").toBe("investigando");
+
+    // Confirmando sí: hay bodas con dos fotógrafos.
+    await page
+      .getByRole("button", { name: copy.panel.proveedores.confirmarContratado })
+      .click();
+    await expect(page.getByText(copy.panel.proveedores.avisoEstadoCambiado)).toBeVisible();
+
+    const [contratado] = await conBase(
+      (sql) => sql<{ estado: string }[]>`
+        select estado from public.proveedores where id = ${segundo}
+      `,
+    );
+    expect(contratado.estado).toBe("contratado");
+  });
+
+  /**
+   * Y lo que contesta la pregunta de verdad: qué falta por cerrar.
+   */
+  test("el resumen dice qué categorías no tienen a nadie contratado", async ({ page }) => {
+    const sello = Date.now();
+    const nombreCategoria = `${MARCA} Sin cerrar ${sello}`;
+    const categoriaId = await conBase(async (sql) => {
+      const [categoria] = await sql<{ id: string }[]>`
+        insert into public.categorias_proveedor (nombre, orden)
+        values (${nombreCategoria}, 51)
+        returning id
+      `;
+      return categoria.id;
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_PROVEEDORES);
+
+    const resumen = seccion(page, copy.panel.proveedores.sinCerrarTitulo);
+    const suya = resumen.locator("li").filter({ hasText: nombreCategoria });
+
+    /*
+      Recién creada y vacía: sale, y dice que ni siquiera se ha empezado. Se
+      mira dentro de SU renglón y no en toda la sección: «sin empezar» lo dicen
+      todas las categorías vacías, así que buscarlo suelto daría por buena la
+      frase de otra.
+    */
+    await expect(suya).toHaveCount(1);
+    await expect(suya).toContainText(copy.panel.proveedores.sinCerrarSinEmpezar);
+
+    // Con alguien contratado dentro, deja de faltar.
+    const proveedor = await crearProveedor(`${MARCA} Cierra ${sello}`, categoriaId);
+    await conBase(
+      (sql) => sql`update public.proveedores set estado = 'contratado' where id = ${proveedor}`,
+    );
+
+    /*
+      Y deja de faltar. Se comprueba DENTRO del resumen: la categoría sigue
+      existiendo más abajo, con su proveedor dentro, así que buscarla en toda
+      la página encontraría esa otra y el test fallaría por lo contrario de lo
+      que quiere comprobar.
+    */
+    await page.reload();
+    await expect(
+      seccion(page, copy.panel.proveedores.sinCerrarTitulo)
+        .locator("li")
+        .filter({ hasText: nombreCategoria }),
     ).toHaveCount(0);
   });
 });

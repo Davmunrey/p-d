@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO, RUTA_PROVEEDORES } from "@/config/constants";
-import { esEstadoProveedor } from "@/lib/bbdd/proveedores";
+import {
+  ESTADO_INICIAL_PROVEEDOR,
+  esEstadoProveedor,
+  obtenerContratadosDeCategoria,
+} from "@/lib/bbdd/proveedores";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 import { type EstadoProveedores } from "./estado";
@@ -153,7 +157,6 @@ function camposProveedor(datos: FormData):
         correo_electronico: string | null;
         telefono: string | null;
         sitio_web: string | null;
-        estado: string;
         valoracion: number | null;
         importe_presupuestado: number | null;
         importe_acordado: number | null;
@@ -181,8 +184,6 @@ function camposProveedor(datos: FormData):
     return { ok: false, estado: "valoracion" };
   }
 
-  const estadoBruto = texto(datos, "estado");
-
   /*
     UN SITIO WEB SE PEGA COMO SE COPIA: «finca-la-sierra.es», sin protocolo. La
     base exige `http://` o `https://`, así que rechazarlo sería devolver un
@@ -201,7 +202,6 @@ function camposProveedor(datos: FormData):
       correo_electronico: opcional(datos, "correo_electronico"),
       telefono: opcional(datos, "telefono"),
       sitio_web: sitioWeb,
-      estado: esEstadoProveedor(estadoBruto) ? estadoBruto : "investigando",
       valoracion,
       importe_presupuestado: presupuestado,
       importe_acordado: acordado,
@@ -217,7 +217,14 @@ export async function crearProveedor(datos: FormData): Promise<void> {
   const supabase = await cliente();
   const { data, error } = await supabase
     .from("proveedores")
-    .insert(campos.valores)
+    /*
+      EL ESTADO NO SE ELIGE AL DAR DE ALTA. Un proveedor que acabas de apuntar
+      está, por definición, en «investigando» — y ofrecer el desplegable aquí
+      abría un segundo camino a «contratado» que se saltaría el aviso de
+      contratar a dos de la misma categoría. Se cambia después, con el control
+      que sí lo comprueba.
+    */
+    .insert({ ...campos.valores, estado: ESTADO_INICIAL_PROVEEDOR })
     .select("id");
 
   if (error) volver(motivo(error));
@@ -228,6 +235,79 @@ export async function crearProveedor(datos: FormData): Promise<void> {
   // A su ficha: quien acaba de dar de alta un proveedor sigue teniendo cosas
   // que apuntar de él, y volver a la lista obliga a buscarlo otra vez.
   redirect(`${RUTA_PROVEEDORES}/${creado}?estado=creado`);
+}
+
+/**
+ * BODA-71 · CAMBIAR DE FASE
+ *
+ * Tiene su propia acción y no vive en el formulario grande, por tres razones
+ * que se refuerzan entre sí:
+ *
+ *  1. Es lo que más se hace. Un proveedor cambia de fase cinco o seis veces y
+ *     su teléfono no cambia nunca; obligar a abrir el formulario entero para
+ *     mover una fase es pedir seis pasos donde hace falta uno.
+ *  2. Se puede hacer desde la lista, que es donde se está cuando uno repasa a
+ *     quién le falta contestar.
+ *  3. Y sobre todo: **es el único camino a `contratado`**, así que el aviso de
+ *     contratar a dos de la misma categoría no se puede esquivar. Con el
+ *     estado dentro del formulario grande había dos puertas y sólo una tenía
+ *     el aviso puesto.
+ *
+ * DOS GUARDAS, Y LAS DOS SON DE LA BASE TAMBIÉN:
+ *
+ *  - Descartar exige decir por qué. Lo impone un `check`, así que sin motivo
+ *    la escritura falla de todas formas; aquí se dice antes y con una frase.
+ *  - Salir de «descartado» BORRA el motivo, y no es cosmético: el mismo
+ *    `check` prohíbe que un proveedor no descartado conserve uno. Sin esto,
+ *    recuperar a alguien que se había descartado fallaba con un error de la
+ *    base que no dice nada.
+ */
+export async function cambiarEstado(datos: FormData): Promise<void> {
+  const id = texto(datos, "id");
+  if (!id) volver("no-existe");
+
+  const nuevo = texto(datos, "estado");
+  if (!esEstadoProveedor(nuevo)) volver("estado", id);
+
+  const motivo_descarte = nuevo === "descartado" ? opcional(datos, "motivo_descarte") : null;
+  if (nuevo === "descartado" && !motivo_descarte) volver("descarte-sin-motivo", id);
+
+  const supabase = await cliente();
+
+  /*
+    CONTRATAR A UN SEGUNDO DE LA MISMA CATEGORÍA PREGUNTA ANTES.
+
+    No se prohíbe —hay bodas con dos fotógrafos, y con un DJ y un grupo— pero
+    lo normal es que sea un despiste: se contrata al bueno y se olvida
+    descartar al otro, y a partir de ahí el resumen de «qué falta por cerrar»
+    miente en la dirección tranquilizadora.
+  */
+  if (nuevo === "contratado" && texto(datos, "confirmar") !== "si") {
+    const { data: ficha } = await supabase
+      .from("proveedores")
+      .select("categoria_id")
+      .eq("id", id)
+      .maybeSingle();
+
+    const categoriaId = (ficha as { categoria_id: string } | null)?.categoria_id;
+    if (categoriaId) {
+      const otros = await obtenerContratadosDeCategoria(categoriaId, id);
+      if (otros.length > 0) volver("confirmar-contratado", id);
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("proveedores")
+    .update({ estado: nuevo, motivo_descarte })
+    .eq("id", id)
+    .select("id");
+
+  if (error) volver(motivo(error), id);
+  if (!data?.length) volver("sin-permiso", id);
+
+  revalidatePath(RUTA_PROVEEDORES);
+  revalidatePath(`${RUTA_PROVEEDORES}/${id}`);
+  volver("estado-cambiado", id);
 }
 
 export async function editarProveedor(datos: FormData): Promise<void> {

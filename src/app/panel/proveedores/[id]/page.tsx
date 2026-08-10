@@ -8,6 +8,7 @@ import { RUTA_ACCESO, RUTA_PROVEEDORES } from "@/config/constants";
 import {
   ESTADOS_PROVEEDOR,
   obtenerCategoriasProveedor,
+  obtenerContratadosDeCategoria,
   obtenerFichaProveedor,
   obtenerMonedaBoda,
   type ContactoProveedor,
@@ -16,7 +17,13 @@ import {
 import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 
-import { anadirContacto, borrarProveedor, editarProveedor, quitarContacto } from "../acciones";
+import {
+  anadirContacto,
+  borrarProveedor,
+  cambiarEstado,
+  editarProveedor,
+  quitarContacto,
+} from "../acciones";
 import { AvisoProveedores } from "../aviso";
 import { formateadorDeImporte, nombreDelEstado } from "../formato";
 
@@ -76,6 +83,18 @@ export default async function PaginaProveedor({ params, searchParams }: Parametr
   const euros = moneda ? formateadorDeImporte(moneda) : null;
   const estado = soloTexto(consulta.estado);
 
+  /*
+    Sólo se pregunta por los ya contratados cuando hay un aviso que enseñar. El
+    aviso tiene que **decir a quién**: «ya hay uno contratado» sin nombre obliga
+    a ir a buscarlo para saber si es un error o es a propósito. Pero es una
+    consulta más, y en la visita normal —que es el noventa y nueve por ciento—
+    no hace ninguna falta.
+  */
+  const contratados =
+    estado === "confirmar-contratado"
+      ? await obtenerContratadosDeCategoria(proveedor.categoriaId, proveedor.id)
+      : [];
+
   return (
     <>
       <div className="max-w-texto">
@@ -100,6 +119,12 @@ export default async function PaginaProveedor({ params, searchParams }: Parametr
       */}
       {estado === "confirmar-borrado" && puedeEditar ? (
         <ConfirmarBorrado proveedor={proveedor} euros={euros} />
+      ) : null}
+
+      {puedeEditar ? <Fase proveedor={proveedor} /> : null}
+
+      {estado === "confirmar-contratado" && puedeEditar ? (
+        <ConfirmarContratado proveedor={proveedor} otros={contratados} />
       ) : null}
 
       <Datos proveedor={proveedor} euros={euros} />
@@ -185,6 +210,13 @@ function Datos({
           ))}
         </dl>
       )}
+
+      {proveedor.motivoDescarte ? (
+        <div className="mt-elemento max-w-texto">
+          <Etiqueta>{t("panel.proveedores.motivoDescarte")}</Etiqueta>
+          <Cuerpo className="mt-pila whitespace-pre-line">{proveedor.motivoDescarte}</Cuerpo>
+        </div>
+      ) : null}
 
       {proveedor.notas ? (
         <div className="mt-elemento max-w-texto">
@@ -383,17 +415,6 @@ function Edicion({
           ))}
         </CampoSeleccion>
         <CampoSeleccion
-          etiqueta={t("panel.proveedores.campoEstado")}
-          name="estado"
-          defaultValue={proveedor.estado}
-        >
-          {ESTADOS_PROVEEDOR.map((valor) => (
-            <option key={valor} value={valor}>
-              {nombreDelEstado(valor)}
-            </option>
-          ))}
-        </CampoSeleccion>
-        <CampoSeleccion
           etiqueta={t("panel.proveedores.campoValoracion")}
           name="valoracion"
           defaultValue={proveedor.valoracion === null ? "" : String(proveedor.valoracion)}
@@ -526,6 +547,110 @@ function ConfirmarBorrado({
         <input type="hidden" name="id" value={proveedor.id} />
         <input type="hidden" name="confirmar" value="si" />
         <Boton type="submit">{t("panel.proveedores.confirmarBorrado")}</Boton>
+        <Link
+          href={`${RUTA_PROVEEDORES}/${proveedor.id}`}
+          className="inline-flex min-h-control items-center text-pequeno text-tinta-marca underline"
+        >
+          {t("comun.cancelar")}
+        </Link>
+      </form>
+    </section>
+  );
+}
+
+/**
+ * EN QUÉ PUNTO ESTÁ, Y CÓMO SE MUEVE.
+ *
+ * Es el control que más se usa de toda la ficha: un proveedor cambia de fase
+ * cinco o seis veces y su teléfono no cambia nunca. Por eso está arriba y
+ * suelto, y no enterrado en el formulario grande.
+ *
+ * EL MOTIVO DE DESCARTE ESTÁ SIEMPRE, no aparece al elegir «descartado».
+ * Enseñarlo sólo entonces necesitaría JavaScript, y esta pantalla funciona sin
+ * él; además, un campo que aparece de golpe debajo del cursor es peor que uno
+ * que estaba ahí con su ayuda explicando cuándo toca rellenarlo. Si se
+ * descarta sin motivo, la acción lo dice y no escribe nada.
+ */
+function Fase({ proveedor }: { proveedor: FichaProveedor }) {
+  return (
+    <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
+      <Titulo3 como="h2">{t("panel.proveedores.estadoTitulo")}</Titulo3>
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-tenue">
+        {t("panel.proveedores.estadoAyuda")}
+      </Cuerpo>
+
+      <form
+        action={cambiarEstado}
+        className="mt-elemento grid gap-interno sm:grid-cols-[auto_1fr_auto] sm:items-end"
+      >
+        <input type="hidden" name="id" value={proveedor.id} />
+
+        <CampoSeleccion
+          etiqueta={t("panel.proveedores.campoEstado")}
+          name="estado"
+          defaultValue={proveedor.estado}
+        >
+          {ESTADOS_PROVEEDOR.map((valor) => (
+            <option key={valor} value={valor}>
+              {nombreDelEstado(valor)}
+            </option>
+          ))}
+        </CampoSeleccion>
+
+        <CampoTexto
+          etiqueta={t("panel.proveedores.campoMotivoDescarte")}
+          ayuda={t("panel.proveedores.campoMotivoDescarteAyuda")}
+          name="motivo_descarte"
+          type="text"
+          maxLength={1000}
+          defaultValue={proveedor.motivoDescarte ?? ""}
+        />
+
+        <Boton type="submit" jerarquia="secundario">
+          {t("panel.proveedores.cambiarEstado")}
+        </Boton>
+      </form>
+    </section>
+  );
+}
+
+/**
+ * Contratar a un segundo de la misma categoría pregunta antes.
+ *
+ * No se prohíbe —hay bodas con dos fotógrafos, y con un DJ y un grupo— pero lo
+ * normal es que sea un despiste: se contrata al bueno y se olvida descartar al
+ * otro, y a partir de ahí el resumen de «qué falta por cerrar» miente en la
+ * dirección tranquilizadora, que es la peor.
+ */
+function ConfirmarContratado({
+  proveedor,
+  otros,
+}: {
+  proveedor: FichaProveedor;
+  otros: { id: string; nombre: string }[];
+}) {
+  return (
+    <section className="mt-elemento rounded-tarjeta border border-error bg-error-fondo p-interno">
+      <Titulo3 como="h2">{t("panel.proveedores.confirmarContratadoTitulo")}</Titulo3>
+      <Cuerpo className="mt-pila max-w-texto text-pequeno">
+        {t("panel.proveedores.confirmarContratadoAyuda")}
+      </Cuerpo>
+
+      <ul className="mt-elemento grid gap-linea">
+        {otros.map((otro) => (
+          <li key={otro.id} className="text-pequeno text-tinta">
+            <Link href={`${RUTA_PROVEEDORES}/${otro.id}`} className="underline">
+              {otro.nombre}
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <form action={cambiarEstado} className="mt-elemento flex flex-wrap gap-interno">
+        <input type="hidden" name="id" value={proveedor.id} />
+        <input type="hidden" name="estado" value="contratado" />
+        <input type="hidden" name="confirmar" value="si" />
+        <Boton type="submit">{t("panel.proveedores.confirmarContratado")}</Boton>
         <Link
           href={`${RUTA_PROVEEDORES}/${proveedor.id}`}
           className="inline-flex min-h-control items-center text-pequeno text-tinta-marca underline"

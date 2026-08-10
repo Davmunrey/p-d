@@ -617,7 +617,9 @@
       "estados": {
         "investigando": "Investigando",
         "contactado": "Contactado",
+        "presupuesto_pedido": "Presupuesto pedido",
         "presupuesto_recibido": "Presupuesto recibido",
+        "visitado": "Visitado",
         "contratado": "Contratado",
         "descartado": "Descartado"
       },
@@ -637,7 +639,26 @@
       "errorNoExiste": "Ese proveedor ya no está.",
       "errorEnUso": "No se puede borrar: todavía hay cosas colgando de él.",
       "errorSinPermiso": "Vuestro perfil no puede hacer cambios aquí.",
-      "errorGuardar": "No se ha podido guardar. Probad otra vez."
+      "errorGuardar": "No se ha podido guardar. Probad otra vez.",
+      "estadoTitulo": "En qué punto está",
+      "estadoAyuda": "Cambiadlo según avance. Al descartar, contad por qué.",
+      "cambiarEstado": "Cambiar",
+      "campoMotivoDescarte": "Por qué se descarta",
+      "campoMotivoDescarteAyuda": "Sólo si lo descartáis. Dentro de seis meses no se acuerda nadie.",
+      "motivoDescarte": "Se descartó porque",
+      "sinCerrarTitulo": "Todavía sin cerrar",
+      "sinCerrarAyuda": "Categorías en las que no hay nadie contratado.",
+      "sinCerrarCandidatos": "{cuantos} candidatos",
+      "sinCerrarCandidatoUno": "1 candidato",
+      "sinCerrarSinEmpezar": "sin empezar",
+      "todoCerrado": "Todas las categorías tienen a alguien contratado.",
+      "confirmarContratadoTitulo": "Ya hay alguien contratado en esta categoría",
+      "confirmarContratadoAyuda": "Puede ser a propósito —hay bodas con dos fotógrafos— pero lo normal es que falte descartar al otro. Si es correcto, confirmadlo.",
+      "confirmarContratado": "Contratarlo igualmente",
+      "avisoEstadoCambiado": "Estado actualizado.",
+      "avisoConfirmarContratado": "Esta categoría ya tiene a alguien contratado. Confirmad abajo si aun así queréis contratar a este.",
+      "errorEstado": "Ese estado no existe.",
+      "errorDescarteSinMotivo": "Para descartar hay que decir por qué."
     }
   },
   "correoConfirmacion": {
