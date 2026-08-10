@@ -156,6 +156,19 @@ test.describe("Invitaciones", () => {
     await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
     await expect(page).toHaveURL(FICHA);
 
+    /*
+      Con alguien dentro, y no por capricho: `obtener_invitacion()` devuelve
+      una fila por persona, así que un grupo vacío devuelve cero filas — que es
+      el mismo contrato que «este enlace no vale». Sin esto, el test creía
+      estar comprobando la rotación del enlace cuando en realidad los dos
+      enlaces fallaban por estar el grupo vacío.
+    */
+    await page
+      .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
+      .fill("(DES) Uxue");
+    await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
+    await expect(page.getByText("(DES) Uxue")).toBeVisible();
+
     const primero = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
 
     // Esperar a que la redirección haya llegado antes de leer el campo. Sin

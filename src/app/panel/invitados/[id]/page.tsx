@@ -127,8 +127,24 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
       <section className="mt-bloque">
         <Titulo3 como="h2">{t("panel.invitados.personasTitulo")}</Titulo3>
 
+        {/*
+          UNA INVITACIÓN VACÍA TIENE UN ENLACE QUE NO FUNCIONA, y conviene
+          decirlo aquí y no dejar que lo descubra el invitado.
+
+          `obtener_invitacion()` devuelve una fila POR PERSONA: sin nadie
+          dentro devuelve cero filas, y cero filas es exactamente el contrato
+          que la base usa para «este enlace no vale». Desde fuera son
+          indistinguibles, así que quien abriera el enlace de un grupo vacío
+          leería que su invitación no es válida — y a nadie se le ocurriría
+          que lo que falta es meter a la gente.
+        */}
         {grupo.gente.length === 0 ? (
-          <Cuerpo className="mt-pila">{t("panel.invitados.sinPersonas")}</Cuerpo>
+          <p
+            role="status"
+            className="mt-pila rounded-campo bg-aviso-fondo p-interno text-pequeno text-aviso-tinta"
+          >
+            {t("panel.invitados.avisoSinPersonas")}
+          </p>
         ) : (
           <ul className="mt-pila grid gap-interno-compacto">
             {grupo.gente.map((persona) => (

@@ -50,6 +50,24 @@ comment on column public.mensajes_leidos.confirmacion_id is
 
 alter table public.mensajes_leidos enable row level security;
 
+/*
+  LOS PRIVILEGIOS DE TABLA, QUE NO SON LA POLÍTICA.
+  ------------------------------------------------
+  La migración base hace `revoke all on all tables in schema public from anon,
+  authenticated` y luego reparte permisos tabla por tabla. Una tabla nueva nace
+  por tanto sin ningún privilegio, y RLS no lo suple: la política dice QUÉ FILAS
+  puede tocar un rol que ya tiene permiso sobre la tabla, no le da el permiso.
+
+  Sin estas dos líneas la bandeja fallaba de la peor manera posible: la lectura
+  de marcas devolvía error, el código lo trataba como «no hay marcas» —el fallo
+  inofensivo de los dos— y todos los mensajes salían como nuevos para siempre,
+  sin un solo error a la vista. Marcar uno como leído tampoco escribía nada.
+
+  `anon` no aparece por ningún lado: esto es del panel y no de la web pública.
+*/
+grant select on public.mensajes_leidos to authenticated;
+grant insert, update, delete on public.mensajes_leidos to authenticated;
+
 -- Lo ve quien tiene acceso al panel, y lo escribe quien puede editar. Es la
 -- misma línea que el resto del panel: un lector lee la bandeja y no la marca.
 --

@@ -61,14 +61,14 @@ export default function PaginaCocina() {
         <div className="grid gap-elemento">
           {GRUPOS_COLOR.map((grupo) => (
             <div key={grupo.id}>
-              <h3 className="mb-pila text-pequeno uppercase tracking-amplio text-tinta-tenue">
+              <h3 className="mb-pila text-pequeno uppercase tracking-etiqueta text-tinta-tenue">
                 {t(`cocina.${grupo.claveCopy}`)}
               </h3>
               <ul className="grid grid-cols-2 gap-pila sm:grid-cols-3 lg:grid-cols-6">
                 {grupo.tokens.map((token) => (
                   <li key={token}>
                     <div
-                      className="h-11 w-full rounded-imagen border border-borde"
+                      className="h-control-compacto w-full rounded-imagen border border-borde"
                       style={{ backgroundColor: `var(--${token})` }}
                     />
                     <code className="mt-linea block text-diminuto text-tinta-tenue">
@@ -102,9 +102,11 @@ export default function PaginaCocina() {
         <ul className="grid gap-pila">
           {TOKENS_ESPACIADO.map((token) => (
             <li key={token} className="flex items-center gap-elemento">
-              <code className="w-64 shrink-0 text-diminuto text-tinta-tenue">--{token}</code>
+              <code className="w-columna-token shrink-0 text-diminuto text-tinta-tenue">
+                --{token}
+              </code>
               <div
-                className="h-4 rounded-etiqueta bg-marca"
+                className="h-barra-muestra rounded-etiqueta bg-marca"
                 style={{ width: `var(--${token})` }}
               />
             </li>
@@ -169,7 +171,7 @@ export default function PaginaCocina() {
         <div className="grid gap-bloque sm:grid-cols-2">
           {HEMISFERIOS.map((hemisferio) => (
             <div key={hemisferio.id}>
-              <h3 className="text-pequeno uppercase tracking-amplio text-tinta-tenue">
+              <h3 className="text-pequeno uppercase tracking-etiqueta text-tinta-tenue">
                 {t(hemisferio.claveTitulo)}
               </h3>
               <p className="mt-linea text-pequeno text-tinta-suave">

@@ -386,7 +386,6 @@
       "apellidosPersona": "Apellidos",
       "esNino": "Es menor",
       "quitar": "Quitar",
-      "sinPersonas": "Esta invitación no tiene a nadie todavía.",
       "errorNombre": "El nombre de la invitación tiene que tener al menos dos caracteres.",
       "errorNombrePersona": "El nombre de la persona tiene que tener al menos dos caracteres.",
       "errorAcompanantes": "Los acompañantes tienen que ser un número entre 0 y 20.",
@@ -396,7 +395,8 @@
       "errorQuitarConRespuesta": "No se puede quitar a alguien que ya ha contestado.",
       "personaAnadida": "Persona añadida a la invitación.",
       "personaQuitada": "Persona quitada.",
-      "copiarEnlace": "Este es el enlace. Copiadlo antes de salir de esta pantalla."
+      "copiarEnlace": "Este es el enlace. Copiadlo antes de salir de esta pantalla.",
+      "avisoSinPersonas": "Esta invitación no tiene a nadie dentro. Su enlace no funcionará hasta que añadáis al menos una persona: quien lo abra verá que no es válido."
     },
     "mensajes": {
       "titulo": "Lo que escriben los invitados",

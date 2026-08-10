@@ -271,6 +271,18 @@
   --size-casilla: 1.25rem;
 
   /**
+   * Las dos medidas de las muestras del sistema de diseño.
+   *
+   * Existen porque hasta ahora eran `w-64` y `h-4`, utilidades numéricas de
+   * Tailwind que se colaban por el único hueco que quedaba abierto. Son
+   * medidas de una pantalla concreta y no del sistema —de ahí el nombre— pero
+   * un token con nombre feo es mejor que un número suelto: al menos se sabe
+   * qué es y dónde se cambia.
+   */
+  --size-columna-token: 16rem;
+  --size-barra-muestra: 1rem;
+
+  /**
    * El hueco de una constelación cuando acompaña a un texto. Es cuadrado: el
    * lienzo del mapa lo es, y darle otra proporción deformaría el cielo.
    */
