@@ -153,14 +153,21 @@ async function crearCategoria(sufijo: string): Promise<{ id: string; nombre: str
 }
 
 /**
- * La fila de un gasto concreto, por su concepto.
+ * La fila de un gasto concreto, POR SU `id` Y NO POR SU TEXTO.
  *
- * `hasText` y no el `value` de un campo: la lista enseña filas, no formularios
- * —el formulario sólo se abre para el gasto que se va a tocar—, así que el
- * concepto está en el texto y no en un `input`.
+ * Buscar por el concepto parecía lo natural y no vale: la fila tiene dos formas
+ * —cerrada, con el concepto en un `<span>`; abierta, con el concepto dentro de
+ * un `<input value=…>`— y `hasText` **no mira el valor de un campo**. El
+ * localizador dejaba de encontrar la fila justo al abrirla, que es cuando hace
+ * falta, y el fallo («element(s) not found» esperando el campo «Acordado»)
+ * apuntaba al formulario cuando el formulario estaba bien.
+ *
+ * El `id` del `<li>` lo pone la pantalla para que el ancla de «Editar» devuelva
+ * la vista al gasto, así que no es un enganche inventado para el test: es el
+ * mismo que usa el enlace.
  */
-function filaDe(pagina: Page, concepto: string) {
-  return pagina.locator("li").filter({ hasText: concepto });
+function filaDe(pagina: Page, gastoId: string) {
+  return pagina.locator(`#gasto-${gastoId}`);
 }
 
 /**
@@ -170,13 +177,11 @@ function filaDe(pagina: Page, concepto: string) {
  * es esperar a que la navegación haya terminado: sin eso, el `fill` siguiente
  * correría contra la fila todavía cerrada.
  */
-async function abrirEdicion(pagina: Page, concepto: string) {
-  const fila = filaDe(pagina, concepto);
+async function abrirEdicion(pagina: Page, gastoId: string) {
+  const fila = filaDe(pagina, gastoId);
   await fila.getByRole("link", { name: gastos.editar }).click();
-  await expect(
-    filaDe(pagina, concepto).getByLabel(gastos.campoAcordado, { exact: true }),
-  ).toBeVisible();
-  return filaDe(pagina, concepto);
+  await expect(fila.getByLabel(gastos.campoAcordado, { exact: true })).toBeVisible();
+  return fila;
 }
 
 test.describe("Los gastos del presupuesto", () => {
@@ -321,14 +326,14 @@ test.describe("Los gastos del presupuesto", () => {
     await esperarEstado(page, "gasto-creado");
 
     const [reciente] = await conBase(
-      (sql) => sql<{ importe_real: string | null }[]>`
-        select importe_real from public.partidas_presupuesto where concepto = ${concepto}
+      (sql) => sql<{ id: string; importe_real: string | null }[]>`
+        select id, importe_real from public.partidas_presupuesto where concepto = ${concepto}
       `,
     );
     expect(reciente.importe_real, "sin acuerdo, lo acordado se queda nulo").toBeNull();
 
     // Y al cerrarlo, se guarda: es el mismo campo, ahora con valor.
-    const abierto = await abrirEdicion(page, concepto);
+    const abierto = await abrirEdicion(page, reciente.id);
     await abierto.getByLabel(gastos.campoAcordado, { exact: true }).fill("380,25");
     await abierto.getByRole("button", { name: gastos.guardar }).click();
     await esperarEstado(page, "gasto-editado");
@@ -369,7 +374,7 @@ test.describe("Los gastos del presupuesto", () => {
     await entrar(page);
     await page.goto(RUTA_GASTOS);
 
-    await filaDe(page, concepto).getByRole("button", { name: gastos.borrar }).click();
+    await filaDe(page, partidaId).getByRole("button", { name: gastos.borrar }).click();
 
     await esperarEstado(page, "tiene-pagos");
     await expect(page.getByText(gastos.errorTienePagos)).toBeVisible();
