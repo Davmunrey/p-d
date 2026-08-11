@@ -271,6 +271,14 @@
   --size-casilla: 1.25rem;
 
   /**
+   * Lado de la miniatura del gestor de medios. Cuadrada a propósito: las fotos
+   * de la landing son unas verticales y otras apaisadas, y una rejilla de
+   * miniaturas con proporciones distintas se lee como una lista rota. El
+   * recorte se hace con `object-cover`, así que se sigue reconociendo la foto.
+   */
+  --size-miniatura: 7.5rem;
+
+  /**
    * Las dos medidas de las muestras del sistema de diseño.
    *
    * Existen porque hasta ahora eran `w-64` y `h-4`, utilidades numéricas de
