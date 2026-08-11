@@ -3,6 +3,7 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_PANEL, RUTA_PROVEEDORES } from "../../src/config/constants";
+import { laPista, seguirLaPista } from "./utiles/rastro";
 
 /**
  * BODA-70 · Proveedores y sus categorías
@@ -92,47 +93,6 @@ async function primeraCategoria(pagina: Page): Promise<string> {
     .locator("option")
     .first();
   return (await opcion.textContent())?.trim() ?? "";
-}
-
-/**
- * LO QUE LE HA PASADO A ESTA PESTAÑA, PASO A PASO.
- *
- * Cuando una espera de URL se agota, la pregunta siguiente no es «qué se ve» —
- * eso ya se adjunta— sino **si llegó a haber viaje**. Una acción de servidor que
- * escribe y redirige deja un rastro muy concreto: un `POST` con su código y una
- * navegación a la URL nueva. Distinguir «el POST no salió», «salió y respondió
- * 500» y «respondió bien pero el navegador no se movió» son tres averías
- * distintas con tres arreglos distintos, y desde el registro de CI no se
- * distinguen sin esto.
- *
- * Se apunta en un `WeakMap` y no en una variable suelta porque cada test tiene
- * su propia `page` y corren en paralelo fuera de CI.
- */
-const rastro = new WeakMap<Page, string[]>();
-
-function seguirLaPista(pagina: Page): void {
-  const pasos: string[] = [];
-  rastro.set(pagina, pasos);
-
-  pagina.on("framenavigated", (marco) => {
-    if (marco === pagina.mainFrame()) pasos.push(`navega a ${marco.url()}`);
-  });
-  pagina.on("response", (respuesta) => {
-    if (respuesta.request().method() === "POST") {
-      pasos.push(`POST ${respuesta.status()} → ${respuesta.url()}`);
-    }
-  });
-  pagina.on("pageerror", (fallo) => pasos.push(`error de página: ${fallo.message}`));
-  pagina.on("console", (mensaje) => {
-    if (mensaje.type() === "error") pasos.push(`consola: ${mensaje.text()}`);
-  });
-}
-
-/** El rastro en texto, para pegarlo en el mensaje de un fallo. */
-function laPista(pagina: Page): string {
-  const pasos = rastro.get(pagina);
-  if (!pasos?.length) return "(no se apuntó ningún paso)";
-  return pasos.slice(-25).join("\n");
 }
 
 /**
