@@ -30,6 +30,7 @@
     "abrirMenu": "Abrir menú",
     "cerrarMenu": "Cerrar menú",
     "menu": "Menú",
+    "monogramaConector": "&",
     "secciones": {
       "portada": "Inicio",
       "paisaje": "El origen",
@@ -233,10 +234,6 @@
     "grupoMarca": "Marca, acción y acento",
     "grupoBordes": "Bordes",
     "grupoEstado": "Estado",
-    "temaClaro": "Claro",
-    "temaOscuro": "Oscuro",
-    "temaSistema": "Sistema",
-    "cambiarTema": "Cambiar tema",
     "pruebaMovimiento": "Reproducir animación",
     "avisoMovimiento": "Con «movimiento reducido» activado en el sistema, estas animaciones se reducen a una aparición corta.",
     "muestraTipografica": "Nos casamos",

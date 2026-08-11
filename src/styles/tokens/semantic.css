@@ -8,9 +8,20 @@
  * valor literal en este fichero, es que falta un primitivo.
  *
  * Los nombres y la asignación vienen de la tabla de tokens del sistema de
- * marca de Paloma y David, versión azul marino. El tema oscuro se resuelve
- * reasignando estos tokens: ningún componente sabe qué tema está activo, ni le
- * hace falta.
+ * marca de Paloma y David, versión azul marino.
+ *
+ * ESTA WEB ES CLARA. SIEMPRE. NO HAY TEMA OSCURO.
+ *
+ * Lo hubo, siguiendo `prefers-color-scheme`, y fue un error: la mitad de los
+ * invitados abría en el móvil una pieza que nadie había diseñado, sin haberla
+ * pedido, sólo porque llevaban el teléfono en oscuro. Una invitación de boda no
+ * cambia de piel según los ajustes de quien la abre — es una pieza impresa que
+ * resulta que se ve en una pantalla.
+ *
+ * No confundir con la SECCIÓN INVERSA de más abajo: los bloques marino de la
+ * cuenta atrás, el RSVP y el pie SÍ son de la entrega del estudio. Son parte
+ * del ritmo del diseño, se ven igual en todos los móviles, y no dependen de
+ * ningún ajuste del sistema.
  *
  * Nomenclatura: los colores de texto se llaman `tinta` para no confundirse con
  * los tamaños de texto (`--texto-titulo-1`, que es una escala tipográfica).
@@ -23,6 +34,17 @@
  */
 
 :root {
+  /**
+   * QUE EL NAVEGADOR TAMBIÉN SE ENTERE.
+   *
+   * Sin esto, un móvil en modo oscuro sigue pintando en oscuro todo lo que no
+   * es nuestro: el fondo de los campos del RSVP, la barra de desplazamiento, el
+   * selector de fecha, el relleno automático del navegador. Los tokens de
+   * arriba no llegan ahí — eso lo pinta el sistema operativo, y esta es la única
+   * declaración que le dice que no.
+   */
+  color-scheme: light;
+
   /* --- Superficies --------------------------------------------------- */
   --fondo: var(--color-nieve-50);
   --superficie: var(--color-blanco);
@@ -213,107 +235,6 @@
   --capa-velo: var(--layer-overlay);
   --capa-modal: var(--layer-modal);
   --capa-aviso: var(--layer-toast);
-}
-
-/**
- * TEMA OSCURO
- *
- * Solo reasigna semánticos. Ningún componente se entera del cambio.
- * Sin atributo se respeta la preferencia del sistema; `[data-tema]` la fuerza.
- *
- * Sobre fondo marino oscuro, el marino de la marca ya no destaca: la acción se
- * invierte y pasa a rellenarse con el tono más pálido de la escala, con tinta
- * oscura encima. El acento sube de bronce oscuro a bronce claro por lo mismo.
- */
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-tema="claro"]) {
-    --fondo: var(--color-marino-900);
-    --superficie: var(--color-marino-850);
-    --superficie-elevada: var(--color-marino-750);
-    --superficie-hundida: var(--color-marino-950);
-    --superficie-tenue: var(--color-marino-775);
-    --superficie-inversa: var(--color-nieve-50);
-    --superficie-cabecera: var(--color-velado-marino);
-    --tinta: var(--color-nieve-100);
-    --tinta-suave: var(--color-marino-200);
-    --tinta-tenue: var(--color-marino-450);
-    --tinta-inversa: var(--color-pizarra-900);
-    --tinta-marca: var(--color-marino-350);
-    --tinta-sobre-marca: var(--color-pizarra-900);
-    --tinta-sobre-accion: var(--color-pizarra-900);
-    --tinta-sobre-acento: var(--color-pizarra-900);
-    --marca: var(--color-marino-400);
-    --marca-hover: var(--color-marino-300);
-    --marca-activo: var(--color-marino-200);
-    --marca-tenue: var(--color-marino-800);
-    --accion: var(--color-marino-100);
-    --accion-hover: var(--color-blanco);
-    --acento: var(--color-bronce-300);
-    --acento-hover: var(--color-bronce-200);
-    --constelacion-estrella: var(--color-nieve-100);
-    --constelacion-trazo: var(--color-trazo-nieve);
-    --borde: var(--color-marino-775);
-    --borde-fuerte: var(--color-marino-600);
-    --borde-tenue: var(--color-marino-850);
-    --borde-filete: var(--color-marino-800);
-    --borde-marca: var(--color-marino-500);
-    --exito: var(--color-exito-oscuro);
-    --exito-fondo: var(--color-marino-800);
-    --exito-tinta: var(--color-exito-oscuro);
-    --aviso: var(--color-aviso-oscuro);
-    --aviso-fondo: var(--color-marino-800);
-    --aviso-tinta: var(--color-aviso-oscuro);
-    --error: var(--color-error-oscuro);
-    --error-fondo: var(--color-marino-800);
-    --error-tinta: var(--color-error-oscuro);
-    --foco: var(--color-bronce-300);
-    --velo: var(--color-velo-fuerte);
-  }
-}
-
-:root[data-tema="oscuro"] {
-  --fondo: var(--color-marino-900);
-  --superficie: var(--color-marino-850);
-  --superficie-elevada: var(--color-marino-750);
-  --superficie-hundida: var(--color-marino-950);
-  --superficie-tenue: var(--color-marino-775);
-  --superficie-inversa: var(--color-nieve-50);
-  --superficie-cabecera: var(--color-velado-marino);
-  --tinta: var(--color-nieve-100);
-  --tinta-suave: var(--color-marino-200);
-  --tinta-tenue: var(--color-marino-450);
-  --tinta-inversa: var(--color-pizarra-900);
-  --tinta-marca: var(--color-marino-350);
-  --tinta-sobre-marca: var(--color-pizarra-900);
-  --tinta-sobre-accion: var(--color-pizarra-900);
-  --tinta-sobre-acento: var(--color-pizarra-900);
-  --marca: var(--color-marino-400);
-  --marca-hover: var(--color-marino-300);
-  --marca-activo: var(--color-marino-200);
-  --marca-tenue: var(--color-marino-800);
-  --accion: var(--color-marino-100);
-  --accion-hover: var(--color-blanco);
-  --acento: var(--color-bronce-300);
-  --acento-hover: var(--color-bronce-200);
-  --constelacion-estrella: var(--color-nieve-100);
-  --constelacion-trazo: var(--color-trazo-nieve);
-  --borde: var(--color-marino-775);
-  --borde-fuerte: var(--color-marino-600);
-  --borde-tenue: var(--color-marino-850);
-  --borde-filete: var(--color-marino-800);
-  --borde-marca: var(--color-marino-500);
-  --exito: var(--color-exito-oscuro);
-  --exito-fondo: var(--color-marino-800);
-  --exito-tinta: var(--color-exito-oscuro);
-  --aviso: var(--color-aviso-oscuro);
-  --aviso-fondo: var(--color-marino-800);
-  --aviso-tinta: var(--color-aviso-oscuro);
-  --error: var(--color-error-oscuro);
-  --error-fondo: var(--color-marino-800);
-  --error-tinta: var(--color-error-oscuro);
-  --foco: var(--color-bronce-300);
-  --velo: var(--color-velo-fuerte);
 }
 
 /**

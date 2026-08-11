@@ -110,9 +110,28 @@ describe("capa semántica", () => {
     ).toEqual([]);
   });
 
-  it("define el tema oscuro reasignando los mismos tokens", () => {
-    expect(css).toContain('[data-tema="oscuro"]');
-    expect(css).toContain("prefers-color-scheme: dark");
+  /**
+   * NO HAY TEMA OSCURO, Y ESTE TEST ES EL PORTERO.
+   *
+   * Lo hubo. Volver a añadirlo son dos líneas y una buena intención —«que siga
+   * al sistema, que es lo moderno»—, y el resultado es que media lista de
+   * invitados abre en negro una invitación clara. Aquí se corta: si alguien
+   * escribe cualquiera de las dos reglas, este test lo dice por su nombre.
+   */
+  it("no queda ninguna regla que pinte la web en oscuro", () => {
+    expect(css, "la web no sigue la preferencia del sistema").not.toContain(
+      "prefers-color-scheme: dark",
+    );
+    expect(css, "no queda tema oscuro que forzar").not.toContain('[data-tema="oscuro"]');
+  });
+
+  /**
+   * Y la contraparte: los bloques inversos SÍ existen y no son lo mismo. La
+   * cuenta atrás, el RSVP y el pie van en marino porque los diseñó así el
+   * estudio, no porque nadie lleve el móvil en oscuro.
+   */
+  it("los bloques inversos siguen reasignando los mismos tokens", () => {
+    expect(css).toContain('[data-seccion="inversa"]');
   });
 });
 

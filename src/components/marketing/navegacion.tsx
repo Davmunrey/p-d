@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { anclaDe } from "@/config/secciones";
+import { t } from "@/lib/copy";
 
 /**
  * NAVEGACIÓN DE LA LANDING
@@ -27,14 +28,34 @@ export interface EnlaceSeccion {
   rotulo: string;
 }
 
+/**
+ * La primera LETRA de un nombre, para el monograma.
+ *
+ * Y letra de verdad, no el primer carácter: un nombre entre comillas o con un
+ * paréntesis delante daría un monograma de puntuación —«( & (»— que es
+ * exactamente lo que salía con los nombres del seed. Es raro en una boda, pero
+ * cuesta una expresión regular y evita un logo roto.
+ *
+ * `\p{L}` con el indicador `u` para que valgan los acentos y la ñ: «Álvaro» da
+ * «Á», no la letra siguiente.
+ */
+function inicial(nombre: string): string {
+  return nombre.match(/\p{L}/u)?.[0].toUpperCase() ?? "";
+}
+
 export function Navegacion({
   enlaces,
   etiqueta,
   marca,
+  nombreNovia,
+  nombreNovio,
 }: {
   enlaces: EnlaceSeccion[];
   etiqueta: string;
+  /** Los dos nombres juntos: es el nombre accesible del enlace al inicio. */
   marca: string;
+  nombreNovia: string;
+  nombreNovio: string;
 }) {
   const cabecera = useRef<HTMLElement>(null);
   const tira = useRef<HTMLUListElement>(null);
@@ -65,36 +86,97 @@ export function Navegacion({
     >
       <div className="mx-auto flex h-cabecera max-w-amplio items-center gap-interno px-interno">
         {/*
-          En móvil la marca no cabe: dos nombres largos dejaban la tira de
-          secciones reducida a «INICIO CUE…». Se esconde y la barra entera es
-          para navegar, que es a lo que se viene. Los nombres siguen siendo lo
-          primero que se lee en la portada, así que no se pierde nada.
+          EL MONOGRAMA, COMO LA ENTREGA, y no los nombres completos.
+
+          Con nombres largos, «Paloma y David» empujaba la tira de secciones y
+          se comía las primeras: en producción se leía «TRÁS» donde ponía
+          «CUENTA ATRÁS». La entrega ya lo había resuelto reduciendo la marca a
+          dos iniciales, y así cabe hasta en un móvil estrecho — que antes
+          obligaba a esconder la marca entera.
+
+          Las iniciales salen de los nombres de la base, no escritas a mano: es
+          una boda concreta, y el día que cambien los nombres cambia el logo.
         */}
         <a
           href={`#${anclaDe("portada")}`}
-          className="hidden shrink-0 font-titulo text-titulo-3 leading-titulo-corto text-tinta transicion-color hover:text-tinta-marca sm:block"
+          aria-label={marca}
+          className="flex h-cabecera shrink-0 items-center font-titulo text-titulo-3 leading-titulo-corto tracking-titulo text-tinta transicion-color hover:text-tinta-marca"
         >
-          {marca}
+          {inicial(nombreNovia)}
+          {/*
+            El nexo del monograma sale del copy como cualquier otro texto
+            visible: la entrega usa «&» en el logo y «y» en la portada, y son
+            dos decisiones tipográficas distintas que alguien puede querer
+            cambiar sin tocar código.
+          */}
+          <span aria-hidden="true" className="mx-linea text-acento italic">
+            {t("navegacion.monogramaConector")}
+          </span>
+          {inicial(nombreNovio)}
         </a>
 
-        <nav aria-label={etiqueta} className="min-w-0 flex-1">
+        {/*
+          SE RECORTA POR EL FINAL, NO POR EL PRINCIPIO.
+
+          Con `justify-end` y desbordamiento horizontal, lo que sobra se corta
+          por la IZQUIERDA: las primeras secciones quedaban fuera y no había
+          forma de llegar a ellas. Alineando al principio y empujando con margen
+          automático, la tira se desplaza hacia donde uno espera y ninguna
+          sección queda inalcanzable. Es lo que hacía la entrega.
+
+          Y el corte se desvanece en lugar de tajarse a media palabra: un rótulo
+          partido en seco parece un fallo, mientras que un degradado dice «esto
+          sigue» sin escribirlo. También de la entrega.
+        */}
+        <nav aria-label={etiqueta} className="desvanecer-final ml-auto min-w-0">
           <ul
             ref={tira}
-            className="flex items-center gap-interno overflow-x-auto sm:justify-end"
+            className="flex h-cabecera items-stretch justify-start gap-interno overflow-x-auto"
           >
             {enlaces.map((enlace) => {
               const activo = enlace.ancla === anclaActiva;
+
+              /*
+                CONFIRMAR NO ES UNA SECCIÓN MÁS, y la entrega lo dibuja así: un
+                botón relleno al final de la tira, no un rótulo igual que los
+                demás. Es lo único que se le pide al invitado, y perdido entre
+                otras trece entradas del mismo peso deja de pedirse.
+
+                Se reconoce por la sección y no por su posición: el orden lo
+                deciden los novios desde el panel, y atarlo al último elemento
+                convertiría un cambio de orden en un botón que desaparece.
+              */
+              const esConfirmar = enlace.seccion === "rsvp";
+
               return (
-                <li key={enlace.seccion} className="shrink-0">
+                <li key={enlace.seccion} className="flex shrink-0 items-stretch">
                   <a
                     href={`#${enlace.ancla}`}
                     data-ancla={enlace.ancla}
                     aria-current={activo ? "location" : undefined}
                     className={[
-                      "marca-activa block whitespace-nowrap py-linea text-etiqueta uppercase tracking-etiqueta transicion-color",
-                      activo
-                        ? "border-borde-marca text-tinta-marca"
-                        : "border-transparent text-tinta-suave hover:text-tinta",
+                      /*
+                        EL ENLACE OCUPA EL ALTO DE LA BARRA, no el de su texto.
+                        Con `py-linea` el área que se puede tocar eran 28 px, muy
+                        por debajo de los 44 que hace falta acertar con el pulgar
+                        —y esto se va a ver en móvil casi siempre—. Estirarlo no
+                        cambia nada de lo que se ve: cambia lo que se puede
+                        pulsar, que es lo que estaba mal.
+                      */
+                      "flex items-center whitespace-nowrap text-etiqueta uppercase tracking-etiqueta transicion-color",
+                      /*
+                        LA PÍLDORA NO SE ESTIRA CON LA BARRA —la centra un
+                        `my-auto`, porque un botón relleno del alto entero de la
+                        cabecera sería una mancha—, así que su altura la marcaba
+                        sólo el relleno: 34 px. Por debajo de los 44 que hace
+                        falta acertar con el pulgar, y justamente en lo ÚNICO que
+                        se le pide al invitado. El mínimo se pone explícito.
+                      */
+                      esConfirmar
+                        ? "my-auto min-h-control-compacto rounded-boton bg-accion px-elemento py-interno-compacto text-tinta-sobre-accion hover:bg-accion-hover"
+                        : activo
+                          ? "marca-activa border-borde-marca text-tinta-marca"
+                          : "marca-activa border-transparent text-tinta-suave hover:text-tinta",
                     ].join(" ")}
                   >
                     {enlace.rotulo}

@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { Boton } from "@/components/ui/boton";
 import { CampoTexto } from "@/components/ui/campo";
 import { Constelacion } from "@/components/ui/constelacion";
-import { SelectorTema } from "@/components/ui/selector-tema";
 import { Cita, Etiqueta } from "@/components/ui/tipografia";
 import {
   ANIMACIONES,
@@ -41,8 +40,9 @@ export const metadata: Metadata = {
  * Muestra todos los tokens semánticos resolviendo `var(--nombre)` en vivo.
  * No duplica ni un solo valor: si un swatch se ve mal, el token está mal.
  *
- * Sirve de verificación visual de que el tema oscuro funciona reasignando
- * semánticos, sin que ningún componente sepa qué tema está activo.
+ * Sirve de verificación visual de que la capa semántica se sostiene sola: los
+ * bloques inversos reasignan estos mismos tokens y ningún componente cambia
+ * ni una clase. No hay selector de tema porque no hay más tema que éste.
  */
 export default function PaginaCocina() {
   return (
@@ -54,7 +54,6 @@ export default function PaginaCocina() {
             {t("cocina.descripcion")}
           </p>
         </div>
-        <SelectorTema />
       </header>
 
       <Seccion titulo={t("cocina.seccionColor")}>

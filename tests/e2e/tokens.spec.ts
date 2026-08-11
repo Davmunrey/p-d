@@ -6,8 +6,9 @@ import copy from "../../content/copy.es.json";
  * BODA-02 · Sistema de design tokens
  *
  * Lo que se verifica no es que la página se vea bonita, sino que la ARQUITECTURA
- * de tokens funciona: que los semánticos resuelven, que el tema oscuro los
- * reasigna sin tocar componentes, y que la preferencia persiste.
+ * de tokens funciona: que los semánticos resuelven, que las utilidades de
+ * Tailwind apuntan a ellos en vez de copiar el valor, y que los bloques
+ * inversos los reasignan sin que ningún componente cambie una clase.
  */
 
 /** Lee el valor computado de una variable CSS en el elemento raíz. */
@@ -34,8 +35,8 @@ test.describe("Sistema de diseño", () => {
   }) => {
     // Con `@theme inline`, la utilidad `bg-superficie` compila a
     // `var(--superficie)`: no hay copia del valor, hay referencia. Esto es lo
-    // que permite que el tema oscuro y los bloques inversos funcionen
-    // reasignando semánticos, sin que ningún componente se entere.
+    // que permite que los bloques inversos funcionen reasignando semánticos,
+    // sin que ningún componente se entere.
     const { pintado, token } = await page.evaluate(() => {
       const sonda = document.createElement("div");
       sonda.className = "bg-superficie";
@@ -55,40 +56,6 @@ test.describe("Sistema de diseño", () => {
 
     expect(pintado).not.toBe("");
     expect(pintado).toBe(token);
-  });
-
-  test("el tema oscuro reasigna semánticos sin tocar componentes", async ({ page }) => {
-    const fondoClaro = await leerToken(page, "fondo");
-    const tintaClara = await leerToken(page, "tinta");
-
-    await page.getByRole("button", { name: copy.cocina.temaOscuro }).click();
-
-    await expect(page.locator("html")).toHaveAttribute("data-tema", "oscuro");
-    expect(await leerToken(page, "fondo")).not.toBe(fondoClaro);
-    expect(await leerToken(page, "tinta")).not.toBe(tintaClara);
-  });
-
-  test("la preferencia de tema sobrevive a una recarga", async ({ page }) => {
-    await page.getByRole("button", { name: copy.cocina.temaOscuro }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-tema", "oscuro");
-
-    await page.reload();
-
-    // Aplicado antes del primer pintado: sin fogonazo blanco.
-    await expect(page.locator("html")).toHaveAttribute("data-tema", "oscuro");
-    await expect(page.getByRole("button", { name: copy.cocina.temaOscuro })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-  });
-
-  test("el selector de tema es accesible por teclado", async ({ page }) => {
-    const boton = page.getByRole("button", { name: copy.cocina.temaOscuro });
-    await boton.focus();
-    await expect(boton).toBeFocused();
-
-    await page.keyboard.press("Enter");
-    await expect(page.locator("html")).toHaveAttribute("data-tema", "oscuro");
   });
 
   test("se muestran todos los grupos de tokens de color", async ({ page }) => {
@@ -294,5 +261,104 @@ test.describe("El vocabulario de espaciado está cerrado", () => {
 
     expect(barra, "no hay barra fija que comprobar").not.toBeNull();
     expect(barra!.arriba).toBe("0px");
+  });
+});
+
+/**
+ * NO HAY MODO OSCURO. NUNCA.
+ *
+ * La web nació siguiendo `prefers-color-scheme`, y eso significaba que media
+ * lista de invitados abría la invitación en oscuro sin haberlo pedido: una
+ * pieza que nadie diseñó, porque la entrega del estudio es clara. Se quitó el
+ * tema entero —no se cambió el valor por defecto, se quitó—, y esto lo sujeta.
+ *
+ * ES UN FALLO QUE NO SE VE DESDE UN NAVEGADOR EN CLARO, que es como se
+ * desarrolla y como se revisan las capturas. Sin estos tests volvería solo, y
+ * volvería invisible: el único que lo notaría es un invitado con el móvil en
+ * oscuro, y ése no puede avisar.
+ */
+test.describe("Nunca hay modo oscuro", () => {
+  /** El fondo real del `body`, de 0 (negro) a 255 (blanco). */
+  async function luminosidadDelFondo(pagina: import("@playwright/test").Page) {
+    return pagina.evaluate(() => {
+      const [r, g, b] = getComputedStyle(document.body)
+        .backgroundColor.match(/\d+/g)!
+        .map(Number);
+      return (r + g + b) / 3;
+    });
+  }
+
+  /**
+   * CAMINO FELIZ · con el móvil en oscuro, la invitación sigue siendo clara.
+   *
+   * Se mira el color real y no una clase: el fondo sale del mismo token en los
+   * dos casos, así que comprobar la clase pasaría igual estando mal.
+   */
+  test("con el sistema en oscuro, la web sigue siendo clara", async ({ browser }) => {
+    const contexto = await browser.newContext({ colorScheme: "dark" });
+    const pagina = await contexto.newPage();
+
+    try {
+      await pagina.goto("/");
+      expect(await luminosidadDelFondo(pagina), "el fondo tiene que ser claro").toBeGreaterThan(
+        200,
+      );
+    } finally {
+      await contexto.close();
+    }
+  });
+
+  /**
+   * CASO DE ERROR · ni forzándolo a mano.
+   *
+   * Es el test que de verdad impide que el tema vuelva: mientras exista
+   * cualquier regla colgando de `[data-tema]`, esto se pone oscuro. Comprueba
+   * los dos valores que llegó a haber, porque volver a añadir uno solo bastaría
+   * para que a alguien se le pusiera la invitación en negro.
+   */
+  for (const valor of ["oscuro", "sistema"]) {
+    test(`el atributo data-tema="${valor}" no enciende nada`, async ({ browser }) => {
+      const contexto = await browser.newContext({ colorScheme: "dark" });
+      const pagina = await contexto.newPage();
+
+      try {
+        await pagina.goto("/");
+        await pagina.evaluate(
+          (tema) => document.documentElement.setAttribute("data-tema", tema),
+          valor,
+        );
+
+        expect(
+          await luminosidadDelFondo(pagina),
+          "no queda ninguna regla de tema a la que agarrarse",
+        ).toBeGreaterThan(200);
+      } finally {
+        await contexto.close();
+      }
+    });
+  }
+
+  /**
+   * CASO DE ERROR · lo que pinta el sistema operativo, no nuestros tokens.
+   *
+   * Los campos del RSVP, la barra de desplazamiento, el selector de fecha y el
+   * relleno automático los pinta el navegador, y en un móvil en oscuro los pinta
+   * oscuros por mucho que nuestro CSS sea claro. `color-scheme: light` es la
+   * única declaración que le dice que no, y no se nota en las capturas: hay que
+   * afirmarlo aquí.
+   */
+  test("los controles del navegador tampoco se van a oscuro", async ({ browser }) => {
+    const contexto = await browser.newContext({ colorScheme: "dark" });
+    const pagina = await contexto.newPage();
+
+    try {
+      await pagina.goto("/");
+      const esquema = await pagina.evaluate(
+        () => getComputedStyle(document.documentElement).colorScheme,
+      );
+      expect(esquema).toBe("light");
+    } finally {
+      await contexto.close();
+    }
   });
 });

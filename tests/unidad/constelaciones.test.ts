@@ -115,16 +115,22 @@ describe("Las constelaciones respetan el sistema de tokens", () => {
     expect(GROSOR_TRAZO).toBeGreaterThan(0);
   });
 
-  it("los dos semánticos existen en los cuatro fondos del sistema", () => {
+  it("los dos semánticos existen en los tres fondos del sistema", () => {
     const semanticos = readFileSync(
       join(RAIZ, "src", "styles", "tokens", "semantic.css"),
       "utf8",
     );
 
-    // Claro, oscuro por preferencia, oscuro forzado, bloque inverso y pie.
+    /*
+      Claro, bloque inverso y pie. Eran cinco cuando existía el tema oscuro —que
+      aportaba dos: el de preferencia del sistema y el forzado—; al quitarlo se
+      quedan los tres fondos que de verdad tiene la entrega. Una constelación
+      sobre marino con el trazo de fondo claro es invisible, así que cada fondo
+      nuevo obliga a reasignar los dos tokens, y este número es el recordatorio.
+    */
     const apariciones = semanticos.match(/--constelacion-estrella:/g) ?? [];
-    expect(apariciones.length).toBe(5);
-    expect(semanticos.match(/--constelacion-trazo:/g)?.length).toBe(5);
+    expect(apariciones.length).toBe(3);
+    expect(semanticos.match(/--constelacion-trazo:/g)?.length).toBe(3);
 
     // Y sólo referencian primitivos: la capa 2 no inventa valores.
     for (const linea of semanticos.split("\n")) {

@@ -15,16 +15,6 @@
  */
 export const ID_CONTENIDO = "contenido";
 
-/** Atributo del elemento raíz que fuerza el tema. */
-export const ATRIBUTO_TEMA = "data-tema";
-
-/** Clave de `localStorage` donde se recuerda la preferencia de tema. */
-export const CLAVE_TEMA = "boda:tema";
-
-export const TEMAS = ["claro", "oscuro", "sistema"] as const;
-export type Tema = (typeof TEMAS)[number];
-export const TEMA_POR_DEFECTO: Tema = "sistema";
-
 /** Filas por página en las tablas del panel. */
 export const FILAS_POR_PAGINA = 25;
 

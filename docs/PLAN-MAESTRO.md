@@ -48,7 +48,7 @@ Arquitectura de tres capas. Una capa solo consume la anterior; nunca se salta ni
                         ▼
 ┌─ Capa 2 — Semánticos ────────────────────────────────┐
 │  --superficie, --tinta-tenue, --acento,              │  Qué significa el valor.
-│  --espacio-seccion, --radio-tarjeta                  │  Aquí vive el tema claro/oscuro.
+│  --espacio-seccion, --radio-tarjeta                  │  Aquí viven los bloques inversos.
 └───────────────────────┬──────────────────────────────┘
                         ▼
 ┌─ Capa 3 — Componente ────────────────────────────────┐
@@ -74,7 +74,7 @@ acento deje de existir: el botón se lo come.
 
 - Los tokens se definen en `src/styles/tokens/` y se exponen a Tailwind vía `@theme` (Tailwind v4), de modo que `bg-superficie` y `var(--superficie)` son el mismo token. **Una sola fuente, dos sintaxis.**
 - Prohibido en componentes: `#hex`, `rgb()`, `px` sueltos (salvo `1px` de borde), `text-[14px]`, `bg-[#fff]`.
-- Tema claro/oscuro y variantes estacionales se resuelven **reasignando semánticos**, nunca tocando componentes.
+- Los bloques inversos —cuenta atrás, RSVP, pie— y cualquier variante futura se resuelven **reasignando semánticos**, nunca tocando componentes.
 - Movimiento: duraciones y easings también son tokens (`--duration-slow`, `--ease-out-expo`), y todo respeta `prefers-reduced-motion`.
 - Lint que lo garantiza: `stylelint` (bloquea colores literales en CSS) + regla ESLint sobre valores arbitrarios de Tailwind.
 
@@ -250,6 +250,10 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 **`categorias_presupuesto`**, **`partidas_presupuesto`**, **`pagos`**. Vistas: **`v_resumen_presupuesto`** y **`v_proximos_pagos`**.
 
 **Un gasto lleva dos importes y el segundo puede estar sin poner.** `importe_estimado` es lo que se calcula que costará —`not null` con `default 0`, porque un gasto sin calcular son cero euros previstos— y `importe_real` es lo que se acabó acordando. `importe_real` nulo significa «todavía no cerrado» y hay que dejarlo nulo: un cero ahí diría que el proveedor sale gratis, y ese ahorro inventado entraría en la desviación de la categoría como dinero que sobra. Por eso la pantalla enseña «sin cerrar» y no «0,00 €», y `loQueVaCostando()` se despeja de la `desviacion` que ya calcula la vista —real donde lo haya, estimado donde no— en vez de sumar las partidas por segunda vez con otro criterio.
+
+**La web es clara. Siempre. No hay tema oscuro.** Lo hubo, siguiendo `prefers-color-scheme`, y significaba que media lista de invitados abría la invitación en oscuro sin haberlo pedido — una pieza que nadie diseñó, porque la entrega del estudio es clara. No se cambió el valor por defecto: se quitó el tema entero, con su selector y su tabla de tokens. Queda `color-scheme: light` en la raíz, que es lo único que impide que el navegador pinte en oscuro lo que no es nuestro: los campos del RSVP, la barra de desplazamiento, el selector de fecha, el relleno automático. **No confundir con los bloques inversos**: el marino de la cuenta atrás, el RSVP y el pie es de la entrega, se ve igual en todos los móviles y no depende de ningún ajuste del sistema. Es un fallo invisible desde un navegador en claro —que es como se desarrolla y como se revisan las capturas—, así que lo sujetan cuatro tests: uno mide la luminosidad real del fondo con el sistema en oscuro, dos comprueban que forzar `data-tema` a mano no enciende nada, y otro afirma el `color-scheme`. En unitarios, el CSS entregado no puede contener ni `prefers-color-scheme: dark` ni `[data-tema="oscuro"]`.
+
+**Las tipografías viven en el repositorio, no en Google.** Cormorant Infant, Jost e Italianno se sirven desde `src/fuentes` con `next/font/local`. Con `next/font/google` la compilación dependía de que Google contestara, y el mismo commit llegó a compilar en un trabajo de CI y a fallar en otro con «Can't resolve `@vercel/turbopack-next/internal/font/google/font`»: en una web cuyo diseño **es** la tipografía, eso es la compilación entera jugada a los dados. De paso, nadie le cuenta a Google quién abre la invitación —el mismo criterio por el que el mapa es OpenStreetMap— y hay un salto de red menos antes del primer texto. Son los `.woff2` del subconjunto **latin**, que cubre el castellano entero; Cormorant y Jost son variables, así que un fichero por estilo cubre todo el rango de pesos y esto pesa menos que los ocho estáticos que servía Google.
 
 **Un vídeo de fondo empieza siendo su póster.** El servidor pinta el fotograma quieto y sólo el navegador, si confirma que se puede mover, monta el `<video>`. De ahí salen tres cosas a la vez: sin JavaScript se ve el póster, con `prefers-reduced-motion` se ve el póster —un bucle aéreo a pantalla completa es justo lo que marea a quien activa esa preferencia—, y los casi ochocientos kilos del vídeo no se descargan para quien no va a verlo moverse, que en una invitación abierta desde datos móviles no es una optimización de manual. Se resuelve con `useSyncExternalStore` y no con un efecto: la preferencia es estado de fuera de React que el sistema puede cambiar solo, y su instantánea de servidor evita pintar el vídeo y quitarlo al hidratar. **El tipo lo dice la base, no la extensión**: «.mov» y «.mp4» son el mismo vídeo con distinto envoltorio, y adivinarlo mirando el final de una cadena convierte un dato en una corazonada. Un vídeo **exige** su póster, con restricción de dos mitades.
 

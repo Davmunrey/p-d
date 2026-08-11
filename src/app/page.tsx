@@ -273,6 +273,8 @@ export default async function PaginaInicio() {
         enlaces={enlaces}
         etiqueta={t("navegacion.etiquetaPrincipal")}
         marca={nombres}
+        nombreNovia={configuracion.nombreNovia}
+        nombreNovio={configuracion.nombreNovio}
       />
 
       <main id={ID_CONTENIDO}>
@@ -409,7 +411,15 @@ function Portada({
 
         <hr className="animacion-trazar my-bloque border-t border-borde-fuerte" />
 
-        <dl className="animacion-subir flex flex-wrap gap-bloque">
+        {/*
+          EL HUECO ENTRE COLUMNAS NO SIRVE CUANDO NO HAY COLUMNAS.
+
+          En escritorio, fecha y lugar van uno al lado del otro y `bloque` es la
+          separación que pide la entrega. En móvil se apilan, y ese mismo hueco
+          deja 56 px de aire entre dos líneas que se leen seguidas — la portada
+          pasaba de una pantalla a dos. Se separa lo que corresponde a cada caso.
+        */}
+        <dl className="animacion-subir flex flex-wrap gap-pila sm:gap-bloque">
           <div>
             <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
               {t("portada.etiquetaFecha")}
@@ -430,20 +440,16 @@ function Portada({
           ) : null}
         </dl>
 
-        <div className="animacion-subir mt-bloque flex flex-wrap gap-interno">
-          <BotonEnlace href={`#${anclaDe("rsvp")}`}>
-            {t("portada.confirmarAsistencia")}
-          </BotonEnlace>
-          <BotonEnlace href={`#${anclaDe("programa")}`} jerarquia="secundario">
-            {t("portada.verElDia")}
-          </BotonEnlace>
-        </div>
-
         {/*
           El aviso de que la página sigue hacia abajo. Con una portada a
           pantalla completa hay quien se queda ahí sin saber que hay más, y
           este es el trabajo que hace la entrega con dos elementos y ningún
           icono: una versalita y una raya que respira.
+
+          VA ANTES QUE LOS BOTONES, como en la entrega, y no es capricho de
+          orden: lo que sigue —la cuenta atrás, el día, cómo llegar— está justo
+          debajo, y dejar este gesto el último lo convierte en un pie de página
+          cuando es lo que enlaza la portada con el resto.
 
           `aria-hidden` porque para quien navega con lector de pantalla no
           significa nada: el documento ya continúa, y anunciar «bajad» sería
@@ -456,6 +462,15 @@ function Portada({
           {t("portada.bajad")}
           <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
         </p>
+
+        <div className="animacion-subir mt-bloque flex flex-wrap gap-interno">
+          <BotonEnlace href={`#${anclaDe("rsvp")}`}>
+            {t("portada.confirmarAsistencia")}
+          </BotonEnlace>
+          <BotonEnlace href={`#${anclaDe("programa")}`} jerarquia="secundario">
+            {t("portada.verElDia")}
+          </BotonEnlace>
+        </div>
       </div>
 
       {foto ? (
@@ -735,7 +750,7 @@ function Alojamiento({
                   href={sitio.urlReserva}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-etiqueta uppercase tracking-etiqueta text-marca transicion-color hover:text-tinta"
+                  className="inline-flex min-h-control-compacto items-center text-etiqueta uppercase tracking-etiqueta text-marca transicion-color hover:text-tinta"
                 >
                   {t("alojamiento.reservar")}
                 </a>
