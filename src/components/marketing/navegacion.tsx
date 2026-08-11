@@ -164,8 +164,16 @@ export function Navegacion({
                         pulsar, que es lo que estaba mal.
                       */
                       "flex items-center whitespace-nowrap text-etiqueta uppercase tracking-etiqueta transicion-color",
+                      /*
+                        LA PÍLDORA NO SE ESTIRA CON LA BARRA —la centra un
+                        `my-auto`, porque un botón relleno del alto entero de la
+                        cabecera sería una mancha—, así que su altura la marcaba
+                        sólo el relleno: 34 px. Por debajo de los 44 que hace
+                        falta acertar con el pulgar, y justamente en lo ÚNICO que
+                        se le pide al invitado. El mínimo se pone explícito.
+                      */
                       esConfirmar
-                        ? "my-auto rounded-boton bg-accion px-elemento py-interno-compacto text-tinta-sobre-accion hover:bg-accion-hover"
+                        ? "my-auto min-h-control-compacto rounded-boton bg-accion px-elemento py-interno-compacto text-tinta-sobre-accion hover:bg-accion-hover"
                         : activo
                           ? "marca-activa border-borde-marca text-tinta-marca"
                           : "marca-activa border-transparent text-tinta-suave hover:text-tinta",

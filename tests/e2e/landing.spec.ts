@@ -181,6 +181,84 @@ test.describe("Landing", () => {
 });
 
 /**
+ * ESTO SE VA A VER EN EL MÓVIL, Y SE TOCA CON EL PULGAR.
+ *
+ * La invitación llega por WhatsApp: casi nadie la abrirá en un escritorio. Un
+ * control de 34 px de alto se ve perfecto en una captura y se falla una de cada
+ * tres veces con el dedo, y el que más se falla es siempre el mismo —el de
+ * confirmar—, porque los botones bonitos se dibujan ajustados.
+ *
+ * 44 px es el mínimo de la WCAG (2.5.8) y el de las guías de Apple. Se mide el
+ * rectángulo REAL en el navegador, no la clase: el alto de una píldora sale de
+ * su relleno, de su tipografía y de si el contenedor la estira, y ninguna de las
+ * tres cosas se ve leyendo el `className`.
+ *
+ * SE EXIMEN LOS ENLACES DENTRO DE UNA FRASE, como los exime la propia norma:
+ * agrandar «escríbenos a hola@…» rompería el renglón, y su objetivo es la línea
+ * de texto, no un botón.
+ */
+test.describe("Se toca con el pulgar", () => {
+  /** El mínimo de la WCAG 2.5.8, en píxeles CSS. */
+  const MINIMO = 44;
+
+  test("ningún control de la landing baja del mínimo táctil", async ({ page }) => {
+    await page.goto("/");
+
+    const pequenos = await page.evaluate((minimo) => {
+      const fuera: string[] = [];
+
+      for (const nodo of document.querySelectorAll<HTMLElement>(
+        "a, button, summary, [role=button]",
+      )) {
+        const caja = nodo.getBoundingClientRect();
+
+        // Lo que no se ve no se toca. El salto «ir al contenido» vive así
+        // hasta que alguien lo enfoca, y entonces sí es un control de verdad.
+        if (caja.width === 0 || caja.height === 0) continue;
+        if (nodo.closest(".sr-only")) continue;
+
+        // Enlace dentro de un párrafo: es texto, y la norma lo exime.
+        if (nodo.closest("p")) continue;
+
+        if (caja.height < minimo) {
+          fuera.push(
+            `${nodo.tagName.toLowerCase()} «${(nodo.textContent ?? "").trim().slice(0, 30)}» ${Math.round(caja.height)}px`,
+          );
+        }
+      }
+
+      return fuera;
+    }, MINIMO);
+
+    expect(pequenos, `controles por debajo de ${MINIMO}px de alto`).toEqual([]);
+  });
+
+  /**
+   * Y los de confirmar por su nombre, aparte del barrido.
+   *
+   * Es lo ÚNICO que se le pide al invitado, así que merece un test que lo
+   * nombre: si algún día el barrido se relaja o se le añade una excepción,
+   * éste sigue diciendo que confirmar no puede encoger. Son dos —el de la barra
+   * y el del pie— y se comprueban los dos: el del pie es el que se toca cuando
+   * alguien ha bajado la invitación entera y se decide al final.
+   */
+  test("los enlaces de confirmar no encogen", async ({ page }) => {
+    await page.goto("/");
+
+    const confirmar = page.getByRole("link", {
+      name: copy.navegacion.secciones.rsvp,
+      exact: true,
+    });
+    await expect(confirmar, "la barra y el pie").toHaveCount(2);
+
+    for (const enlace of await confirmar.all()) {
+      const caja = await enlace.boundingBox();
+      expect(caja!.height, "un enlace de confirmar").toBeGreaterThanOrEqual(MINIMO);
+    }
+  });
+});
+
+/**
  * LAS FUENTES SON NUESTRAS.
  *
  * Cormorant Infant, Jost e Italianno viven en `src/fuentes` y las sirve el
