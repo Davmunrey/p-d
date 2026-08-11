@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 
 import { BUCKET_MEDIOS, RUTA_ACCESO, RUTA_MEDIOS } from "@/config/constants";
 import { SECCIONES, type Seccion } from "@/config/secciones";
@@ -69,12 +69,25 @@ function esSeccion(valor: string): valor is Seccion {
  * de CI —una subida fallaba y el log no decía nada, así que había que adivinar
  * cuál de las siete comprobaciones había saltado—. Al invitado se le sigue
  * diciendo lo mismo de siempre; esto es para quien mira el registro después.
+ *
+ * SE SUSTITUYE LA ENTRADA DEL HISTORIAL EN VEZ DE APILAR OTRA. Es el patrón
+ * clásico de enviar-redirigir-mostrar: la URL con `?estado=` es el acuse de un
+ * envío que ya ocurrió, no un sitio al que se pueda volver. Apilándola, el botón
+ * de atrás lleva a `?estado=subido` y la pantalla vuelve a felicitar por una
+ * subida hecha hace diez minutos; y encadenando acciones —subir, publicar,
+ * mover— hacen falta cuatro pulsaciones de atrás para salir de una pantalla en
+ * la que sólo se ha entrado una vez.
+ *
+ * De paso mide algo de #126: el rastro de CI enseña que la redirección viaja
+ * como `…?estado=subido;push` y que el enrutador no la aplica. Si con `replace`
+ * sí la aplica, el problema está en cómo el enrutador apila una navegación a la
+ * ruta en la que ya está.
  */
 function volver(estado: EstadoMedios): never {
   if (ESTADOS_DE_ERROR.includes(estado)) {
     console.warn(`Subida de medio rechazada: ${estado}`);
   }
-  redirect(`${RUTA_MEDIOS}?estado=${estado}`);
+  redirect(`${RUTA_MEDIOS}?estado=${estado}`, RedirectType.replace);
 }
 
 async function cliente() {
