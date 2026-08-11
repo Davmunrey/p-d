@@ -23,7 +23,12 @@ export const CLAVE_TEMA = "boda:tema";
 
 export const TEMAS = ["claro", "oscuro", "sistema"] as const;
 export type Tema = (typeof TEMAS)[number];
-export const TEMA_POR_DEFECTO: Tema = "sistema";
+/**
+ * La web es clara mientras nadie elija otra cosa: es la versión que entregó el
+ * estudio. Seguir al sistema haría que media lista de invitados viera una pieza
+ * que nadie diseñó, sin haberlo pedido.
+ */
+export const TEMA_POR_DEFECTO: Tema = "claro";
 
 /** Filas por página en las tablas del panel. */
 export const FILAS_POR_PAGINA = 25;

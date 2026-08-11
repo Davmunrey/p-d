@@ -57,12 +57,13 @@ export function SelectorTema() {
   const tema = useSyncExternalStore(suscribir, leerTema, leerTemaEnServidor);
 
   const cambiar = useCallback((nuevo: Tema) => {
-    const raiz = document.documentElement;
-    if (nuevo === "sistema") {
-      raiz.removeAttribute(ATRIBUTO_TEMA);
-    } else {
-      raiz.setAttribute(ATRIBUTO_TEMA, nuevo);
-    }
+    /*
+      LOS TRES VALORES SE ESCRIBEN, incluido «sistema». Antes se quitaba el
+      atributo para que mandara la preferencia del navegador; ahora la ausencia
+      de atributo significa «clara», que es la entrega, así que «sistema» tiene
+      que dejar su marca para que la hoja de estilos sepa a quién seguir.
+    */
+    document.documentElement.setAttribute(ATRIBUTO_TEMA, nuevo);
     window.localStorage.setItem(CLAVE_TEMA, nuevo);
     window.dispatchEvent(new Event(EVENTO_TEMA));
   }, []);

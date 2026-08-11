@@ -296,3 +296,69 @@ test.describe("El vocabulario de espaciado está cerrado", () => {
     expect(barra!.arriba).toBe("0px");
   });
 });
+
+/**
+ * LA WEB ES CLARA MIENTRAS NADIE ELIJA OTRA COSA.
+ *
+ * Nació siguiendo la preferencia del sistema, y eso significaba que media lista
+ * de invitados abría la invitación en oscuro sin haberlo pedido: una pieza que
+ * nadie diseñó, porque la entrega del estudio es clara. Se cambió el criterio, y
+ * esto lo sujeta — es un fallo que no se ve en un navegador en claro, así que
+ * sin test volvería solo.
+ */
+test.describe("El tema por defecto", () => {
+  test("con el sistema en oscuro, la web sigue siendo clara", async ({ browser }) => {
+    const contexto = await browser.newContext({ colorScheme: "dark" });
+    const pagina = await contexto.newPage();
+
+    try {
+      await pagina.goto("/");
+
+      // Nadie ha elegido nada: no hay atributo que forzar el tema.
+      await expect(pagina.locator("html")).not.toHaveAttribute("data-tema", /.*/);
+
+      /*
+        Se mira el color real y no una clase: el fondo claro y el oscuro salen
+        del mismo token, así que comprobar la clase pasaría en los dos casos.
+        El claro es muy luminoso y el oscuro muy apagado — no hay ambigüedad.
+      */
+      const luminosidad = await pagina.evaluate(() => {
+        const [r, g, b] = getComputedStyle(document.body)
+          .backgroundColor.match(/\d+/g)!
+          .map(Number);
+        return (r + g + b) / 3;
+      });
+
+      expect(luminosidad, "el fondo tiene que ser claro").toBeGreaterThan(200);
+    } finally {
+      await contexto.close();
+    }
+  });
+
+  /**
+   * Y quien SÍ lo elige, manda: «sistema» dejó de ser el valor por defecto,
+   * pero sigue significando lo que dice.
+   */
+  test("quien elige seguir al sistema, lo sigue", async ({ browser }) => {
+    const contexto = await browser.newContext({ colorScheme: "dark" });
+    const pagina = await contexto.newPage();
+
+    try {
+      await pagina.goto("/");
+      await pagina.evaluate(() =>
+        document.documentElement.setAttribute("data-tema", "sistema"),
+      );
+
+      const luminosidad = await pagina.evaluate(() => {
+        const [r, g, b] = getComputedStyle(document.body)
+          .backgroundColor.match(/\d+/g)!
+          .map(Number);
+        return (r + g + b) / 3;
+      });
+
+      expect(luminosidad, "eligiendo «sistema» y con el sistema oscuro").toBeLessThan(80);
+    } finally {
+      await contexto.close();
+    }
+  });
+});

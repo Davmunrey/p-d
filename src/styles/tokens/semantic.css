@@ -219,7 +219,12 @@
  * TEMA OSCURO
  *
  * Solo reasigna semánticos. Ningún componente se entera del cambio.
- * Sin atributo se respeta la preferencia del sistema; `[data-tema]` la fuerza.
+ *
+ * SIN ELEGIR NADA, LA WEB ES CLARA. La entrega del estudio es clara, y una
+ * invitación de boda no debería cambiar de piel según los ajustes del móvil de
+ * cada invitado: la mitad la vería en oscuro sin haberlo pedido, que no es la
+ * pieza que se diseñó. Quien quiera oscuro lo elige, y quien quiera que mande
+ * su sistema también — `[data-tema="sistema"]` existe justo para eso.
  *
  * Sobre fondo marino oscuro, el marino de la marca ya no destaca: la acción se
  * invierte y pasa a rellenarse con el tono más pálido de la escala, con tinta
@@ -227,7 +232,7 @@
  */
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-tema="claro"]) {
+  :root[data-tema="sistema"] {
     --fondo: var(--color-marino-900);
     --superficie: var(--color-marino-850);
     --superficie-elevada: var(--color-marino-750);

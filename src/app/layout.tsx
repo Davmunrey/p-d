@@ -56,7 +56,7 @@ export const metadata: Metadata = {
  * Sin esto, la página se pinta en claro y salta a oscuro al hidratarse: un
  * fogonazo blanco en la cara de quien navega de noche.
  */
-const GUION_TEMA = `try{var t=localStorage.getItem(${JSON.stringify(CLAVE_TEMA)});if(t==="claro"||t==="oscuro")document.documentElement.setAttribute(${JSON.stringify(ATRIBUTO_TEMA)},t)}catch(e){}`;
+const GUION_TEMA = `try{var t=localStorage.getItem(${JSON.stringify(CLAVE_TEMA)});if(t==="claro"||t==="oscuro"||t==="sistema")document.documentElement.setAttribute(${JSON.stringify(ATRIBUTO_TEMA)},t)}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
