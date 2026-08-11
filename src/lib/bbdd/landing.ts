@@ -72,6 +72,27 @@ export interface HitoHistoria {
   titulo: string;
   fechaTexto: string | null;
   descripcion: string | null;
+  /**
+   * La foto de ese momento, o `null`. Es opcional a propósito: la historia se
+   * escribe antes de tener las fotos escaneadas, y un hito sin imagen tiene que
+   * poder publicarse igual.
+   */
+  foto: FotoDeHito | null;
+}
+
+/**
+ * Lo que hace falta de un medio para pintar la foto de un hito.
+ *
+ * NO ES `Medio` ENTERO. Un hito nunca lleva vídeo —es un recuerdo, no un
+ * fondo—, así que arrastrar `tipo` y `posterRuta` obligaría a comprobar en la
+ * plantilla algo que la consulta ya descarta.
+ */
+export interface FotoDeHito {
+  ruta: string;
+  textoAlternativo: string;
+  ancho: number | null;
+  alto: number | null;
+  marcadorBorroso: string | null;
 }
 
 export interface Cancion {
@@ -250,21 +271,67 @@ export async function obtenerPreguntasFrecuentes(): Promise<PreguntaFrecuente[]>
   return filas.map((f) => ({ id: f.id, pregunta: f.pregunta, respuesta: f.respuesta }));
 }
 
+/**
+ * BODA-24 · Los hitos de «nuestra historia», con su foto.
+ *
+ * `LEFT JOIN` Y NO `JOIN`, que es la diferencia entre una sección que funciona
+ * y una que desaparece a medias: la historia se escribe meses antes de tener
+ * las fotos escaneadas, así que un hito sin `medio_id` es lo normal al
+ * principio y tiene que salir igual.
+ *
+ * SE EXIGE ADEMÁS QUE LA FOTO ESTÉ PUBLICADA. Un hito publicado puede apuntar a
+ * una foto que todavía es borrador —se sube la imagen, se enlaza y se deja para
+ * revisar—, y sin esta condición esa foto saldría en la web por la puerta de
+ * atrás: RLS protege `medios` cuando se pregunta por `medios`, pero aquí se
+ * está preguntando por `hitos_historia`, y el `join` se lleva lo que encuentre.
+ * En ese caso sale el hito con su texto y sin imagen, que es lo correcto.
+ *
+ * `where publicado` está de más —la política `hitos_historia_lectura_publica`
+ * ya lo impone para `anon`— y se escribe igual, por lo mismo que en
+ * `obtenerMedios`: quien lee esta consulta tiene que ver la intención sin ir a
+ * buscar la política.
+ */
 export async function obtenerHistoria(): Promise<HitoHistoria[]> {
   const filas = await leerComoAnonimo(
     (tx) => tx<
-      { id: string; titulo: string; fecha_texto: string | null; descripcion: string | null }[]
+      {
+        id: string;
+        titulo: string;
+        fecha_texto: string | null;
+        descripcion: string | null;
+        ruta_almacenamiento: string | null;
+        texto_alternativo: Record<string, string> | null;
+        ancho: number | null;
+        alto: number | null;
+        marcador_borroso: string | null;
+      }[]
     >`
-      select id, titulo, fecha_texto, descripcion
-      from public.hitos_historia
-      order by orden
+      select h.id, h.titulo, h.fecha_texto, h.descripcion,
+             m.ruta_almacenamiento, m.texto_alternativo,
+             m.ancho, m.alto, m.marcador_borroso
+      from public.hitos_historia as h
+      left join public.medios as m
+        on m.id = h.medio_id and m.publicado and m.tipo = 'imagen'
+      where h.publicado
+      order by h.orden
     `,
   );
+
   return filas.map((f) => ({
     id: f.id,
     titulo: f.titulo,
     fechaTexto: f.fecha_texto,
     descripcion: f.descripcion,
+    foto: f.ruta_almacenamiento
+      ? {
+          ruta: f.ruta_almacenamiento,
+          textoAlternativo:
+            f.texto_alternativo?.es ?? Object.values(f.texto_alternativo ?? {})[0] ?? "",
+          ancho: f.ancho,
+          alto: f.alto,
+          marcadorBorroso: f.marcador_borroso,
+        }
+      : null,
   }));
 }
 

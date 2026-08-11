@@ -335,7 +335,7 @@ Secciones del enumerado `seccion_landing`:
 | ---------------------- | ----------------------------------------------------------- | ------- |
 | `portada`              | Nombres, fecha y lugar a pantalla completa                  | BODA-22 |
 | `cuenta_atras`         | Lo que falta, calculado desde la fecha de la BBDD           | BODA-23 |
-| `historia`             | Hitos de la pareja, con reveal al entrar en pantalla        | BODA-24 |
+| `historia`             | Hitos de la pareja, con foto opcional y reveal al entrar    | BODA-24 |
 | `galeria`              | Rejilla de fotos con lightbox                               | BODA-25 |
 | `programa`             | El día hora a hora                                          | BODA-22 |
 | `ubicaciones`          | Ceremonia y banquete, con mapa                              | BODA-26 |
@@ -349,6 +349,8 @@ Secciones del enumerado `seccion_landing`:
 | `reserva_la_fecha`     | **No es una sección: es una página aparte** (ver más abajo) | BODA-30 |
 
 **Por qué la landing no se cachea.** Nació con `revalidate = 3600` y se quitó tras un fallo en producción: si la base no responde justo en el despliegue —caída, pausada por inactividad del plan gratuito, o una variable de entorno que aún no está—, lo que se hornea y se sirve **durante una hora entera** es la pantalla de «estamos preparando la web», aunque la base vuelva a los diez segundos. Ahora se consulta en cada visita: ocho consultas indexadas sobre tablas de pocas filas, lanzadas a la vez, medidas en 27 ms de mediana en local. A cambio, un cambio en el panel se ve al instante y un fallo nunca se queda pegado. Ver BODA-09.
+
+**Una foto enlazada desde otra tabla se comprueba dos veces.** Los hitos de `historia` —y lo mismo valdrá para alojamientos o proveedores— apuntan a `medios` por `medio_id`. RLS protege `medios` cuando se pregunta _por_ `medios`, pero una consulta a `hitos_historia` con un `join` se lleva lo que encuentre, así que el `publicado` de la foto se exige **en la propia condición del join**. Sin eso, enlazar una imagen recién subida y dejarla para revisar la publicaría por la puerta de atrás. El `join` es `LEFT` a propósito: la historia se escribe meses antes de tener las fotos, y un hito sin imagen tiene que salir igual.
 
 **Principios de animación:** el movimiento sirve a la narrativa, no la interrumpe. Todas las duraciones y curvas son tokens. Con `prefers-reduced-motion` los reveals se convierten en fades cortos o desaparecen. Ninguna animación puede provocar layout shift (CLS objetivo < 0.1).
 
