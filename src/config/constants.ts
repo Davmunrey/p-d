@@ -238,6 +238,30 @@ export const RUTA_PENDIENTES = "/panel/invitados/pendientes";
  */
 export const UMBRAL_AVISO_PRESUPUESTO = 0.9;
 
+/**
+ * El presupuesto de peso de la landing, comprobado en CI.
+ *
+ * La invitación se abre desde WhatsApp con datos móviles, muchas veces en el
+ * pueblo donde es la boda. El número no es un deseo: lo vigila un test E2E
+ * que suma lo que de verdad viaja al abrir la portada, y una dependencia o
+ * una foto sin optimizar lo ponen en rojo antes de llegar a producción.
+ */
+export const PESO_MAXIMO_PAGINA_KB = 1024;
+
+/**
+ * El tope de saltos de maquetación (Cumulative Layout Shift) de la landing.
+ * 0,1 es la frontera de «bueno» de las Core Web Vitals: por debajo, nada
+ * pega brincos mientras cargan las fotos.
+ */
+export const CLS_MAXIMO = 0.1;
+
+/**
+ * Cuántas imágenes pueden cargarse con prioridad al entrar. La portada la
+ * necesita; todo lo demás espera a que se llegue a su sección. Más que esto
+ * es precargar lo que quizá nadie mire, pagándolo en datos móviles.
+ */
+export const IMAGENES_PRIORITARIAS_MAXIMO = 3;
+
 export const RUTA_GASTOS = "/panel/presupuesto/gastos";
 
 /**

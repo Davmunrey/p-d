@@ -46,3 +46,6 @@ next-env.d.ts
 /.playwright
 copias-de-prueba/
 copias/
+
+# Worktrees de agentes: nunca son parte del proyecto
+.claude/worktrees/

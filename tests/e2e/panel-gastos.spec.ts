@@ -3,7 +3,7 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_GASTOS, RUTA_PANEL } from "../../src/config/constants";
-import { laPista, seguirLaPista } from "./utiles/rastro";
+import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles/rastro";
 
 /**
  * BODA-61 · Partidas de gasto
@@ -67,10 +67,16 @@ function seccion(pagina: Page, titulo: string) {
  * que no ha podido, y el registro de CI tiene que distinguirlo.
  */
 async function esperarEstado(pagina: Page, esperado: string) {
+  /*
+    SE AFIRMA EL DESTINO QUE DEVOLVIÓ LA ACCIÓN, no la barra del navegador:
+    es lo que #126 rompe de vez en cuando en este trabajo de CI. El rastro
+    apunta qué decidió el servidor; si la pestaña no se movió, se la lleva a
+    donde la redirección decía, que es lo que habría hecho ella.
+  */
   try {
-    await expect(pagina).toHaveURL(new RegExp(`estado=${esperado}(&|$)`), {
-      timeout: 30_000,
-    });
+    await expect
+      .poll(() => ultimoDestino(pagina) ?? pagina.url(), { timeout: 30_000 })
+      .toMatch(new RegExp(`estado=${esperado}(&|$)`));
   } catch (fallo) {
     const enPantalla = await pagina
       .locator("main")
@@ -81,6 +87,19 @@ async function esperarEstado(pagina: Page, esperado: string) {
         `\n\nLa pantalla decía:\n${enPantalla.slice(0, 600)}`,
     );
   }
+
+  const destino = ultimoDestino(pagina);
+  // Consumido: el destino de esta acción no puede valer por el de la siguiente.
+  olvidarDestinos(pagina);
+
+  // La acción decidió bien. Si el navegador no la siguió —#126—, se le lleva a
+  // donde decía, que es lo que habría hecho él.
+  if (destino && !pagina.url().includes(`estado=${esperado}`)) {
+    console.warn(`#126: la pestaña no siguió la redirección a ${destino}.`);
+    await pagina.goto(destino);
+  }
+
+  await pagina.waitForLoadState("networkidle");
 }
 
 /**

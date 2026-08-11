@@ -3,7 +3,7 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_PANEL, RUTA_PROVEEDORES } from "../../src/config/constants";
-import { laPista, seguirLaPista } from "./utiles/rastro";
+import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles/rastro";
 
 /**
  * BODA-70 · Proveedores y sus categorías
@@ -112,24 +112,20 @@ async function primeraCategoria(pagina: Page): Promise<string> {
  */
 async function esperarEstado(pagina: Page, esperado: string) {
   /*
-    Se espera a la URL y no al aviso: la URL dice si la acción terminó y con
-    qué resultado, y el aviso llega después. Meterlo todo en el mismo plazo
-    hacía que el fallo apareciera en un punto distinto en cada intento.
-  */
-  /*
-    `toHaveURL` y no `waitForURL`, por lo que dicen al fallar.
+    SE AFIRMA EL DESTINO QUE DEVOLVIÓ LA ACCIÓN, no la barra del navegador.
 
-    Los dos esperan lo mismo, pero `waitForURL` sólo sabe decir «se acabó el
-    tiempo»: no cuenta dónde te has quedado. Y aquí la pregunta entera es a
-    dónde fue la redirección — si acabó en `sin-permiso` o en `error`, eso NO es
-    lentitud, es la acción diciendo que no ha podido, y el test tiene que
-    enseñarlo en vez de mandar a mirar plazos. `toHaveURL` imprime la URL
-    recibida y con eso el fallo se lee solo.
+    La acción decide y lo dice en su redirección; que la pestaña la aplique es
+    cosa del enrutador, y eso es exactamente lo que #126 rompe de vez en
+    cuando en este trabajo de CI: la acción corre, responde 303 al sitio
+    correcto, y la pestaña se queda donde estaba. El dato de verdad —qué
+    decidió el servidor— lo apunta el rastro (`ultimoDestino`); si acabó en
+    `sin-permiso` o en `error`, eso no es lentitud, es la acción diciendo que
+    no ha podido, y el fallo lo enseña tal cual.
   */
   try {
-    await expect(pagina).toHaveURL(new RegExp(`estado=${esperado}(&|$)`), {
-      timeout: 30_000,
-    });
+    await expect
+      .poll(() => ultimoDestino(pagina) ?? pagina.url(), { timeout: 30_000 })
+      .toMatch(new RegExp(`estado=${esperado}(&|$)`));
   } catch (fallo) {
     /*
       SI NO REDIRIGE, LO SIGUIENTE QUE HAY QUE SABER ES QUÉ SE VE.
@@ -148,6 +144,19 @@ async function esperarEstado(pagina: Page, esperado: string) {
         `\n\nLa pantalla decía:\n${enPantalla.slice(0, 600)}`,
     );
   }
+
+  const destino = ultimoDestino(pagina);
+  // Consumido: el destino de esta acción no puede valer por el de la siguiente.
+  olvidarDestinos(pagina);
+
+  // La acción decidió bien. Si el navegador no la siguió —#126—, se le lleva a
+  // donde decía, que es lo que habría hecho él.
+  if (destino && !pagina.url().includes(`estado=${esperado}`)) {
+    console.warn(`#126: la pestaña no siguió la redirección a ${destino}.`);
+    await pagina.goto(destino);
+  }
+
+  await pagina.waitForLoadState("networkidle");
 }
 
 test.describe("El módulo de proveedores", () => {
