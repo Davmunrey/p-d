@@ -200,10 +200,11 @@ test.describe("El módulo de proveedores", () => {
       .fill("2.200,50");
     await alta.getByRole("button", { name: copy.panel.proveedores.crear }).click();
 
-    // Se va a su ficha: quien acaba de darlo de alta sigue teniendo qué apuntar.
-    await page.waitForURL(new RegExp(`${RUTA_PROVEEDORES}/[0-9a-f-]{36}`), {
-      timeout: 15_000,
-    });
+    // Se va a su ficha: quien acaba de darlo de alta sigue teniendo qué
+    // apuntar. Por el destino que devolvió la acción, no por la barra del
+    // navegador — el mismo motivo de #126 que en el resto del spec.
+    await esperarEstado(page, "creado");
+    expect(page.url()).toMatch(new RegExp(`${RUTA_PROVEEDORES}/[0-9a-f-]{36}`));
     await expect(page.getByRole("heading", { name: nombre })).toBeVisible();
 
     // El importe se ha guardado como número, no como el texto que se tecleó.

@@ -73,19 +73,14 @@ test.afterAll(async () => {
 });
 
 /**
- * Pasa axe y falla con un informe legible si hay algo crítico o serio.
- *
- * El informe enumera regla, impacto y los primeros nodos afectados: el fallo
- * de CI tiene que decir QUÉ arreglar sin abrir la traza.
+ * Lo crítico y lo serio que axe encuentre en la página, ya resumido en texto:
+ * regla, impacto y los primeros nodos afectados. Vacío significa limpio.
  */
-async function auditar(pagina: Page, donde: string) {
+async function violacionesGraves(pagina: Page): Promise<string[]> {
   const resultado = await new AxeBuilder({ page: pagina }).analyze();
 
-  const graves = resultado.violations.filter(
-    (violacion) => violacion.impact === "critical" || violacion.impact === "serious",
-  );
-
-  const informe = graves
+  return resultado.violations
+    .filter((violacion) => violacion.impact === "critical" || violacion.impact === "serious")
     .map(
       (violacion) =>
         `[${violacion.impact}] ${violacion.id}: ${violacion.help}\n` +
@@ -93,10 +88,22 @@ async function auditar(pagina: Page, donde: string) {
           .slice(0, 5)
           .map((nodo) => `    ${nodo.target.join(" ")}`)
           .join("\n"),
-    )
-    .join("\n\n");
+    );
+}
 
-  expect(graves, `Violaciones graves de accesibilidad en ${donde}:\n\n${informe}`).toEqual([]);
+/**
+ * Pasa axe y falla con un informe legible si hay algo crítico o serio.
+ *
+ * El informe enumera regla, impacto y nodos: el fallo de CI tiene que decir
+ * QUÉ arreglar sin abrir la traza.
+ */
+async function auditar(pagina: Page, donde: string) {
+  const graves = await violacionesGraves(pagina);
+
+  expect(
+    graves,
+    `Violaciones graves de accesibilidad en ${donde}:\n\n${graves.join("\n\n")}`,
+  ).toEqual([]);
 }
 
 /**
@@ -213,10 +220,24 @@ test.describe("Accesibilidad del panel", () => {
   test("todos los módulos entregados pasan axe", async ({ page }) => {
     await entrar(page);
 
+    /*
+      SE RECORREN TODOS ANTES DE FALLAR. Abortando en el primer módulo sucio,
+      cada ejecución de CI destapa un solo fallo y arreglarlos todos cuesta
+      una tarde de tandas. Recogiéndolos, un run enseña la lista entera.
+    */
+    const informes: string[] = [];
     for (const modulo of MODULOS_ENTREGADOS) {
       await page.goto(modulo.ruta);
       await page.waitForLoadState("networkidle");
-      await auditar(page, `el módulo «${modulo.clave}» (${modulo.ruta})`);
+      const graves = await violacionesGraves(page);
+      if (graves.length > 0) {
+        informes.push(`— «${modulo.clave}» (${modulo.ruta}):\n${graves.join("\n\n")}`);
+      }
     }
+
+    expect(
+      informes,
+      `Violaciones graves de accesibilidad en el panel:\n\n${informes.join("\n\n")}`,
+    ).toEqual([]);
   });
 });

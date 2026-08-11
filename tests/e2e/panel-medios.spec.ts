@@ -342,10 +342,25 @@ test.describe("El gestor de fotos y vídeos", () => {
     await esperarEstado(page, "publicado");
     await expect(fichaDe(page, alternativo).getByText(copy.panel.medios.enLaWeb)).toBeVisible();
 
+    /*
+      LA PORTADA PINTA UNA SOLA FOTO: la primera por orden. La semilla ya trae
+      la suya, así que publicar no basta — hay que subir la nuestra al frente.
+      Que al subirla aparezca es además la mitad viva del gestor: el orden que
+      se toca en el panel es el que manda en la web.
+    */
+    for (let intento = 0; intento < 6; intento++) {
+      const portada = await request.get("/");
+      if ((await portada.text()).includes(alternativo)) break;
+      await fichaDe(page, alternativo)
+        .getByRole("button", { name: copy.panel.medios.subirOrden, exact: true })
+        .click();
+      await esperarEstado(page, "movido");
+    }
+
     const publicada = await request.get("/");
     expect(
       (await publicada.text()).includes(alternativo),
-      "una vez publicada, la landing la sirve con su texto alternativo",
+      "publicada y primera en el orden, la landing la sirve con su texto alternativo",
     ).toBe(true);
 
     // Retirar no borra: vuelve a borrador y el fichero sigue donde estaba.

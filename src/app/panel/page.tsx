@@ -191,16 +191,24 @@ function Menus({ menus }: { menus: ResumenBoda["menus"] }) {
               <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
                 {t(`rsvp.menus.${menu.tipoMenu}` as "rsvp.menus.estandar")}
               </dt>
-              <dd className="mt-linea font-titulo text-titulo-2 tabular-nums text-tinta">
-                {formatoNumero.format(menu.personas)}
+              {/*
+                La nota de alergias vive DENTRO del dd, no como tercer hijo del
+                grupo: un <dl> solo admite pares dt/dd (axe: definition-list), y
+                además las alergias son parte de la definición del menú, no un
+                dato suelto.
+              */}
+              <dd className="mt-linea">
+                <span className="block font-titulo text-titulo-2 tabular-nums text-tinta">
+                  {formatoNumero.format(menu.personas)}
+                </span>
+                {menu.conAlergias > 0 ? (
+                  <Etiqueta className="mt-linea">
+                    {t("panel.resumen.conAlergias", {
+                      cuantas: formatoNumero.format(menu.conAlergias),
+                    })}
+                  </Etiqueta>
+                ) : null}
               </dd>
-              {menu.conAlergias > 0 ? (
-                <Etiqueta className="mt-linea">
-                  {t("panel.resumen.conAlergias", {
-                    cuantas: formatoNumero.format(menu.conAlergias),
-                  })}
-                </Etiqueta>
-              ) : null}
             </div>
           ))}
         </dl>
