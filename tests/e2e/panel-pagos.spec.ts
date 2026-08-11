@@ -3,6 +3,7 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_PAGOS, RUTA_PANEL } from "../../src/config/constants";
+import { laPista, seguirLaPista } from "./utiles/rastro";
 
 /**
  * BODA-62 · Pagos y calendario de vencimientos
@@ -74,7 +75,8 @@ async function esperarEstado(pagina: Page, esperado: string) {
       .innerText()
       .catch(() => "(no se pudo leer la pantalla)");
     throw new Error(
-      `${(fallo as Error).message}\n\nLa pantalla decía:\n${enPantalla.slice(0, 600)}`,
+      `${(fallo as Error).message}\n\nLo que hizo la pestaña:\n${laPista(pagina)}` +
+        `\n\nLa pantalla decía:\n${enPantalla.slice(0, 600)}`,
     );
   }
 }
@@ -187,6 +189,7 @@ test.describe("Los pagos y sus vencimientos", () => {
     // De partida: los dos pendientes, mil euros por pagar.
     expect(await pendienteDe(montaje.categoriaId), "de partida quedan los 1.000").toBe(1000);
 
+    seguirLaPista(page);
     await entrar(page);
     await page.goto(RUTA_PAGOS);
 
