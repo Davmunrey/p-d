@@ -67,9 +67,12 @@ test.describe("El peso y la estabilidad de la landing", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // Y se recorre entera: las secciones de abajo también cuentan.
+    // Y se recorre entera: las secciones de abajo también cuentan. Sin
+    // `networkidle` tras el scroll: el vídeo del paisaje descarga en bucle y
+    // la red no se calla nunca — los <img> ya están en el HTML del servidor,
+    // así que basta un respiro para lo que se inserte al entrar en pantalla.
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(500);
 
     const sinHueco = await page.$$eval("img", (imagenes) =>
       imagenes
