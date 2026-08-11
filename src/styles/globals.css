@@ -283,6 +283,25 @@
   min-height: var(--alto-foto-portada);
 }
 
+/**
+ * El borde por el que una tira que se desplaza se desvanece en lugar de
+ * cortarse. Sin esto, el último rótulo aparece partido a media palabra y se lee
+ * como un fallo de maquetación en vez de como «hay más, sigue».
+ */
+@utility desvanecer-final {
+  /*
+    `currentcolor` y no un negro literal: en una máscara sólo cuenta el canal
+    alfa, así que cualquier color opaco hace lo mismo — y éste no es un color
+    incrustado, que es lo que la regla 1 no admite.
+  */
+  mask-image: linear-gradient(
+    90deg,
+    currentcolor 0,
+    currentcolor calc(100% - var(--spacing-elemento)),
+    transparent 100%
+  );
+}
+
 @utility alto-paisaje {
   min-height: var(--alto-paisaje);
 }

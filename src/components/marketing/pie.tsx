@@ -36,12 +36,19 @@ export function Pie({
         <div className="sm:justify-self-end">
           {enlaces.length > 0 ? (
             <nav aria-label={t("pie.etiquetaNavegacion")}>
-              <ul className="flex flex-wrap gap-x-elemento gap-y-pila">
+              {/*
+                SE TOCAN CON EL PULGAR, no con un ratón. Un rótulo de versalita
+                mide dieciséis píxeles de alto: como texto se lee bien, como
+                destino táctil es una lotería. El área crece hasta el mínimo
+                cómodo sin que el rótulo cambie de tamaño ni de sitio — lo que
+                cambia es dónde vale pulsar.
+              */}
+              <ul className="flex flex-wrap gap-x-elemento">
                 {enlaces.map((enlace) => (
                   <li key={enlace.seccion}>
                     <a
                       href={`#${enlace.ancla}`}
-                      className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta"
+                      className="flex min-h-control-compacto items-center text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta"
                     >
                       {enlace.rotulo}
                     </a>
@@ -56,7 +63,7 @@ export function Pie({
               <p className="text-pequeno text-tinta-suave">{t("pie.contacto")}</p>
               <a
                 href={`mailto:${correoContacto}`}
-                className="mt-linea inline-block font-titulo text-titulo-3 text-tinta-marca transicion-color hover:text-tinta"
+                className="mt-linea inline-flex min-h-control-compacto items-center font-titulo text-titulo-3 text-tinta-marca transicion-color hover:text-tinta"
               >
                 {correoContacto}
               </a>
@@ -65,7 +72,7 @@ export function Pie({
 
           <a
             href="#portada"
-            className="mt-bloque inline-block text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta"
+            className="mt-bloque inline-flex min-h-control-compacto items-center text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta"
           >
             {t("pie.volverArriba")}
           </a>
