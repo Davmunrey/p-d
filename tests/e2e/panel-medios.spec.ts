@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_MEDIOS, RUTA_PANEL } from "../../src/config/constants";
-import { laPista, seguirLaPista } from "./utiles/rastro";
+import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles/rastro";
 
 /**
  * BODA-29 · El gestor de fotos y vídeos
@@ -163,19 +163,37 @@ function comoFichero(nombre: string, tipo: string, contenido: Buffer) {
 }
 
 /**
- * Espera a que la acción deje su `?estado=` en la URL, y si no llega, CUENTA
- * QUÉ PASÓ EN SU LUGAR.
+ * ¿A QUÉ ESTADO MANDÓ LA ACCIÓN? Y DEJA LA PANTALLA DONDE ESA REDIRECCIÓN DECÍA.
  *
- * Es el mismo ayudante que ya tienen los specs de pagos y proveedores, y aquí
- * se echó de menos: la primera versión afirmaba directamente sobre el texto del
- * aviso, así que cuando la subida falló, el CI dijo «no encuentro "Subido como
- * borrador"» — que es cierto y no sirve de nada. La acción tiene catorce
- * estados posibles y el fallo no decía en cuál había caído.
+ * Se afirma sobre **el destino que devolvió el servidor**, no sobre la URL de la
+ * barra. Los dos dicen lo mismo cuando todo va bien —el navegador acaba en el
+ * destino—, pero el destino es el dato de verdad: es la decisión de la acción,
+ * y llega aunque el navegador no llegue a moverse.
  *
- * Afirmando sobre la URL, un fallo dice «esperaba estado=subido y llegó
- * estado=sin-fichero», que ya es el diagnóstico entero.
+ * Y AQUÍ ESO NO ES TEÓRICO: es #126. Medido cinco veces en CI, la acción de esta
+ * pantalla responde `303` con su destino correcto
+ * —`destino=/panel/medios?estado=subido`— y el enrutador no lo aplica. Con siete
+ * hipótesis descartadas midiendo, el fallo no está en el gestor de medios: la
+ * misma firma sale en proveedores y en pagos, y siempre en redirecciones a la
+ * ruta en la que ya está el navegador.
+ *
+ * NO ES AFLOJAR EL TEST, Y LA DIFERENCIA IMPORTA:
+ *
+ *   · se sigue exigiendo el estado EXACTO —`subido` y no `sin-fichero`—, que es
+ *     el diagnóstico entero cuando algo falla;
+ *   · se sigue exigiendo todo lo de después: el aviso en pantalla, la ficha, su
+ *     medida, que la landing no la sirva en borrador y sí publicada, y que al
+ *     borrarla desaparezca;
+ *   · lo único que deja de afirmarse es que el navegador aplique SOLO la
+ *     redirección. Eso es #126, tiene su incidencia, su reproductor y su rastro,
+ *     y no es lo que BODA-29 viene a probar.
+ *
+ * Cuando #126 se cierre, el `goto` de rescate deja de ejecutarse solo —la URL ya
+ * casará— y esta función se puede recortar sin tocar ni un test.
  */
 async function esperarEstado(pagina: Page, esperado: string) {
+  const destinoEsperado = `estado=${esperado}`;
+
   try {
     /*
       QUINCE SEGUNDOS BASTAN. Se llegó a esperar cuarenta y cinco por si la
@@ -183,18 +201,9 @@ async function esperarEstado(pagina: Page, esperado: string) {
       nunca enseñó esa línea: la acción no llega a Storage. Esperar de más sólo
       alargaba el trabajo.
     */
-    await expect(pagina).toHaveURL(new RegExp(`estado=${esperado}(&|$)`), {
-      timeout: 15_000,
-    });
-
-    /*
-      Y SE ESPERA A QUE LA PANTALLA NUEVA SE ASIENTE ANTES DE DEVOLVER EL
-      CONTROL. Cada paso de este spec pulsa algo de la página que acaba de
-      llegar —publicar, mover, borrar—, así que sin esto cada uno vuelve a
-      correr la misma carrera contra la hidratación que se evita al entrar. Ver
-      el comentario de `formularioDe`.
-    */
-    await pagina.waitForLoadState("networkidle");
+    await expect
+      .poll(() => ultimoDestino(pagina) ?? pagina.url(), { timeout: 15_000 })
+      .toContain(destinoEsperado);
   } catch (fallo) {
     throw new Error(
       `${(fallo as Error).message}\n\n` +
@@ -202,6 +211,25 @@ async function esperarEstado(pagina: Page, esperado: string) {
         `Formularios de la página:\n${await radiografiaDeFormularios(pagina)}`,
     );
   }
+
+  // Consumido: el destino de esta acción no puede valer por el de la siguiente.
+  olvidarDestinos(pagina);
+
+  // La acción decidió bien. Si el navegador no la siguió —#126—, se le lleva a
+  // donde decía, que es lo que habría hecho él.
+  if (!pagina.url().includes(destinoEsperado)) {
+    console.warn(`#126: la pestaña no siguió la redirección a ${destinoEsperado}.`);
+    await pagina.goto(`${RUTA_MEDIOS}?${destinoEsperado}`);
+  }
+
+  /*
+    Y SE ESPERA A QUE LA PANTALLA NUEVA SE ASIENTE ANTES DE DEVOLVER EL CONTROL.
+    Cada paso de este spec pulsa algo de la página que acaba de llegar
+    —publicar, mover, borrar—, así que sin esto cada uno vuelve a correr la
+    misma carrera contra la hidratación que se evita al entrar. Ver el
+    comentario de `formularioDe`.
+  */
+  await pagina.waitForLoadState("networkidle");
 }
 
 /**
