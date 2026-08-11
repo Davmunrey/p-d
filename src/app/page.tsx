@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Fragment, type ReactNode } from "react";
 
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
@@ -19,7 +20,7 @@ import {
   Titulo1,
   Titulo3,
 } from "@/components/ui/tipografia";
-import { ID_CONTENIDO, IDIOMA, ZONA_HORARIA } from "@/config/constants";
+import { BUCKET_MEDIOS, ID_CONTENIDO, IDIOMA, ZONA_HORARIA } from "@/config/constants";
 import { anclaDe, esAncla, vaEnElMenu, type Seccion } from "@/config/secciones";
 import {
   obtenerAlojamientos,
@@ -36,6 +37,7 @@ import {
   type ConfiguracionBoda,
   type RutaLlegada,
   type ConsejoVestimenta,
+  type HitoHistoria,
   type Medio,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
@@ -173,7 +175,7 @@ export default async function PaginaInicio() {
       <Portada configuracion={configuracion} foto={fotosPortada[0] ?? null} urlBase={urlBase} />
     ),
     cuenta_atras: <CuentaAtrasSeccion configuracion={configuracion} />,
-    historia: historia.length > 0 ? <Historia hitos={historia} /> : undefined,
+    historia: historia.length > 0 ? <Historia hitos={historia} urlBase={urlBase} /> : undefined,
     preboda:
       preboda.length > 0 ? (
         <ListaDeHoras
@@ -624,16 +626,20 @@ function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBod
   );
 }
 
-function Historia({
-  hitos,
-}: {
-  hitos: {
-    id: string;
-    titulo: string;
-    fechaTexto: string | null;
-    descripcion: string | null;
-  }[];
-}) {
+/**
+ * BODA-24 · NUESTRA HISTORIA
+ *
+ * LA FOTO ES OPCIONAL EN CADA HITO, y no por comodidad: la historia se escribe
+ * meses antes de tener las fotos escaneadas. Un hito sin imagen deja su hueco
+ * en el color de fondo —igual que `HuecoFoto` en la portada— en vez de un icono
+ * de imagen rota, y la fila sigue leyéndose.
+ *
+ * EL HUECO SE RESERVA CON `aspect-hito` Y NO CON EL TAMAÑO DE LA FOTO. Las tres
+ * van en fila y vienen de sitios distintos —un carrete, un móvil, una captura—,
+ * así que respetar la proporción de cada una convertiría la fila en una
+ * escalera. Reservado el hueco, la imagen no empuja el texto al cargar.
+ */
+function Historia({ hitos, urlBase }: { hitos: HitoHistoria[]; urlBase: string | undefined }) {
   return (
     <Bloque
       seccion="historia"
@@ -644,6 +650,23 @@ function Historia({
       <ol className="grid gap-bloque sm:grid-cols-3">
         {hitos.map((hito) => (
           <li key={hito.id} className="animacion-subir-al-ver">
+            {hito.foto && urlBase ? (
+              <div className="relative mb-elemento aspect-hito overflow-hidden rounded-imagen bg-superficie-hundida">
+                <Image
+                  src={`${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${hito.foto.ruta}`}
+                  alt={hito.foto.textoAlternativo}
+                  fill
+                  // Tres columnas en escritorio, una en móvil. Sin esto el
+                  // navegador se descarga la versión de pantalla completa para
+                  // pintarla a un tercio de ancho.
+                  sizes="(min-width: 40rem) 33vw, 100vw"
+                  className="object-cover"
+                  placeholder={hito.foto.marcadorBorroso ? "blur" : "empty"}
+                  blurDataURL={hito.foto.marcadorBorroso ?? undefined}
+                />
+              </div>
+            ) : null}
+
             {hito.fechaTexto ? <Etiqueta>{hito.fechaTexto}</Etiqueta> : null}
             <Titulo3 className="mt-pila">{hito.titulo}</Titulo3>
             {hito.descripcion ? <Cuerpo className="mt-linea">{hito.descripcion}</Cuerpo> : null}

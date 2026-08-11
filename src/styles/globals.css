@@ -203,6 +203,7 @@
   --radius-modal: var(--radio-modal);
   --radius-etiqueta: var(--radio-etiqueta);
   --aspect-mapa: var(--proporcion-mapa);
+  --aspect-hito: var(--proporcion-hito);
   --shadow-sutil: var(--sombra-sutil);
   --shadow-tarjeta: var(--sombra-tarjeta);
   --shadow-elevada: var(--sombra-elevada);
