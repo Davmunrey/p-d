@@ -72,6 +72,8 @@ versalita de la portada, el conector «y», las citas, las horas del programa y 
 aro de foco—. Mezclar acción y acento en un solo token, como estaba, hace que el
 acento deje de existir: el botón se lo come.
 
+**El tono tenue es para texto grande.** axe midió lo que ningún repaso de capturas vio: `--tinta-tenue` (#78839a, de la entrega) da 3,6:1 sobre el fondo claro — de sobra para titulares (3:1), corto para texto pequeño (4,5:1). La paleta no se toca, porque el test de paleta la ata a la cartelería; lo que manda es el **uso**: las versalitas, ayudas, metas y cuerpos pequeños visten `--tinta-suave`, y `--tinta-tenue` queda para texto grande y adornos. Lo vigila la auditoría axe del CI, bloqueante sobre la landing y sobre cada módulo del panel.
+
 - Los tokens se definen en `src/styles/tokens/` y se exponen a Tailwind vía `@theme` (Tailwind v4), de modo que `bg-superficie` y `var(--superficie)` son el mismo token. **Una sola fuente, dos sintaxis.**
 - Prohibido en componentes: `#hex`, `rgb()`, `px` sueltos (salvo `1px` de borde), `text-[14px]`, `bg-[#fff]`.
 - Los bloques inversos —cuenta atrás, RSVP, pie— y cualquier variante futura se resuelven **reasignando semánticos**, nunca tocando componentes.
@@ -181,7 +183,7 @@ tests/e2e/
 
 ## 5. Modelo de datos
 
-Treinta y una tablas y ocho vistas, todas en `public`, todas con RLS activa y **todas con nombre en castellano** — regla 2, también aquí.
+Treinta y siete tablas y trece vistas, todas en `public`, todas con RLS activa y **todas con nombre en castellano** — regla 2, también aquí.
 
 La convención es uniforme: `id uuid` como clave, `creado_en` y `actualizado_en` con trigger. Las excepciones se nombran donde toca.
 
@@ -293,7 +295,21 @@ La unicidad `(seccion, orden)` es **deferrable**, y eso obliga a que reordenar s
 
 **Cómo se lee un importe teclado** (`leerImporte()`, en `src/lib/importe.ts`, compartido por la ficha de proveedor, las categorías y los gastos). Vacío es `null` y no cero; lo ilegible es un rechazo con su frase y no un `null` que borraría en silencio lo que alguien acaba de teclear mal. **No se redondea, se rechaza:** un tercer decimal es un dedo que ha resbalado y la respuesta es enseñarlo, no elegir por él —antes `8600,555` se guardaba como 8.600,56 sin decir nada—. Y con el punto manda el castellano: se quita sólo el que va seguido de exactamente tres cifras, así que `1.250` son mil doscientos cincuenta y `12.50` siguen siendo doce con cincuenta.
 
-**`tareas`** — con estado, prioridad y vencimiento.
+**`tareas`** — con estado, prioridad, vencimiento, responsable y proveedor. `plantilla_id` apunta a la fila de plantilla de la que salió, si salió de una: es la memoria que hace idempotente la generación.
+
+**`plantilla_tareas`** — las tareas típicas de organizar una boda, con su **antelación en días** y su `grupo` (`organizacion`, `ceremonia_civil`, `ceremonia_religiosa`, `viaje_de_novios`): no todas las bodas llevan lo mismo, y se elige por juego, no tarea a tarea. Vive en datos y no en código para poder retocarla sin desplegar. **`generar_tareas_desde_plantilla(grupos)`** crea las tareas de los grupos elegidos calculando la fecha límite desde `configuracion_boda` — contra la base, nunca contra el reloj del navegador — y generar dos veces no duplica: un índice único sobre `plantilla_id` es la garantía real.
+
+**`guion_dia`** — el guion de la jornada: hora (texto libre, como en `hitos_programa`: se escribe «13:15» pero también «al acabar el cóctel»), título, responsable (texto libre: quien responde del autobús jamás tendrá cuenta en el panel), orden y `hecho_en`. No es `hitos_programa` —eso es contenido público de la landing— ni `tareas` —una tarea se planifica; un punto del guion se ejecuta—. La marca de hecho es una fecha y no un booleano: «hecho a las 13:22» reconstruye la jornada.
+
+**`correcciones_recuento`** — el ajuste de última hora del catering, por tipo de menú y sin tocar `confirmaciones`: el primo que avisa a las diez de que no llega no ha «rechazado» — su confirmación es histórico inmutable; lo que cambia es la cifra que se dice por teléfono. **`v_recuento_catering`** suma confirmados más corrección por menú (la base, nunca el navegador) y **`v_alergias_por_mesa`** agrupa las alergias como las pide la cocina, con `LEFT JOIN` a mesas: una alergia sin mesa asignada es justo la que no puede perderse.
+
+**`documentos_boda`** — el expediente civil, papel a papel: titular (`novia`/`novio`/`ambos`), dónde se pide, estado, **fecha de obtención y fecha de caducidad**. Un papel no es una tarea: se consigue y empieza a morirse — la partida de nacimiento caduca a los tres meses y la boda se prepara con año y medio. Conseguido ⇔ fecha de obtención, por restricción. El aviso que importa se calcula contra la fecha de la boda: lo que caduca **antes** del enlace se avisa aunque esté conseguido. **Sin semilla a propósito**: la lista varía por comunidad y por vía (registro o notaría), y sembrarla sin confirmar con los novios sería la regla 1 disfrazada de datos (#129).
+
+**Los servicios por invitado saben a quién multiplican y qué garantiza el contrato.** `servicios.base_calculo` (`todos`/`adultos`/`ninos`) resuelve que el menú infantil no cuesta lo que el de adulto —se modela como otro servicio con base `ninos` y su tarifa— y `minimo_garantizado` guarda lo que se paga aunque falte gente. `v_servicios_importe` aplica el `greatest` y expone también la cuenta sin mínimo (`importe_calculado`), para que la pantalla pueda explicar la diferencia. Confirmar un invitado lo recalcula todo solo, porque no hay nada que recalcular: es una vista.
+
+**`proveedores.iva_incluido`** — si el presupuesto lleva el IVA dentro. La mitad de los sustos de una boda son este booleano: tres presupuestos y uno sin IVA, comparados a pelo, eligen al caro creyéndolo barato. `NULL` es «el presupuesto no lo dice», que es un estado real y un aviso en la comparativa. El tipo (21 %) es configuración de la aplicación (`PORCENTAJE_IVA`), no un dato por proveedor.
+
+**El bucket `documentos` es PRIVADO, al contrario que `medios` y por el mismo razonamiento.** Una foto se pinta con `<img src>` y no puede mandar credenciales; un contrato se descarga tras un clic de alguien con sesión, así que pasa por el servidor: URL firmada de caducidad corta (`SEGUNDOS_URL_FIRMADA`), creada por una acción que antes comprueba la sesión. La garantía de escritura es la misma ausencia que en medios —RLS activa y cero políticas— y la suite de seguridad afirma además que el bucket no es público y que `anon` no cuela una subida nombrándolo.
 
 ### Política RLS
 

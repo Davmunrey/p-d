@@ -196,7 +196,7 @@ function Datos({
         <dl className="mt-elemento grid gap-interno-compacto sm:grid-cols-2">
           {filas.map((fila) => (
             <div key={fila.etiqueta}>
-              <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+              <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
                 {fila.etiqueta}
               </dt>
               <dd className="text-cuerpo text-tinta">
@@ -247,7 +247,7 @@ function Contactos({
   return (
     <section className="mt-bloque">
       <Titulo3 como="h2">{t("panel.proveedores.contactosTitulo")}</Titulo3>
-      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-tenue">
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.proveedores.contactosAyuda")}
       </Cuerpo>
 
@@ -577,7 +577,7 @@ function Fase({ proveedor }: { proveedor: FichaProveedor }) {
   return (
     <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
       <Titulo3 como="h2">{t("panel.proveedores.estadoTitulo")}</Titulo3>
-      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-tenue">
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.proveedores.estadoAyuda")}
       </Cuerpo>
 

@@ -69,7 +69,7 @@ export function FormularioImportacion() {
             required
             className="min-h-campo w-full rounded-campo border border-borde bg-superficie px-interno py-linea text-pequeno text-tinta file:mr-interno file:rounded-boton file:border-0 file:bg-superficie-hundida file:px-interno file:py-linea file:text-etiqueta file:uppercase file:tracking-boton file:text-tinta-marca"
           />
-          <p className="text-pequeno text-tinta-tenue">{t("panel.importar.ficheroAyuda")}</p>
+          <p className="text-pequeno text-tinta-suave">{t("panel.importar.ficheroAyuda")}</p>
         </div>
         <div>
           <Boton type="submit" disabled={analizando}>
@@ -88,7 +88,7 @@ export function FormularioImportacion() {
       ) : null}
 
       {estado.columnasIgnoradas.length > 0 ? (
-        <Cuerpo className="mt-elemento max-w-texto text-pequeno text-tinta-tenue">
+        <Cuerpo className="mt-elemento max-w-texto text-pequeno text-tinta-suave">
           {t("panel.importar.ignoradas", { columnas: estado.columnasIgnoradas.join(", ") })}
         </Cuerpo>
       ) : null}
@@ -112,7 +112,7 @@ export function FormularioImportacion() {
           <ul className="mt-elemento grid gap-linea">
             {estado.errores.map((error) => (
               <li key={`${error.linea}-${error.motivo}`} className="text-pequeno text-tinta">
-                <span className="text-tinta-tenue tabular-nums">
+                <span className="text-tinta-suave tabular-nums">
                   {t("panel.importar.errorLinea", { linea: error.linea })}
                 </span>{" "}
                 · {error.motivo}
@@ -131,16 +131,16 @@ export function FormularioImportacion() {
             <table className="w-full border-collapse text-pequeno">
               <thead>
                 <tr className="border-b border-borde text-left">
-                  <th className="py-linea pr-interno font-normal text-tinta-tenue">
+                  <th className="py-linea pr-interno font-normal text-tinta-suave">
                     {t("panel.importar.columna.grupo")}
                   </th>
-                  <th className="py-linea pr-interno font-normal text-tinta-tenue">
+                  <th className="py-linea pr-interno font-normal text-tinta-suave">
                     {t("panel.importar.columna.nombre")}
                   </th>
-                  <th className="py-linea pr-interno font-normal text-tinta-tenue">
+                  <th className="py-linea pr-interno font-normal text-tinta-suave">
                     {t("panel.importar.columna.lado")}
                   </th>
-                  <th className="py-linea font-normal text-tinta-tenue">
+                  <th className="py-linea font-normal text-tinta-suave">
                     {t("panel.importar.columna.nino")}
                   </th>
                 </tr>
@@ -154,7 +154,7 @@ export function FormularioImportacion() {
                     <td className="py-linea pr-interno text-tinta">
                       {fila.grupo}
                       {estado.gruposNuevos.includes(fila.grupo) ? (
-                        <span className="ml-interno-compacto text-tinta-tenue">
+                        <span className="ml-interno-compacto text-tinta-suave">
                           {t("panel.importar.grupoNuevo")}
                         </span>
                       ) : null}

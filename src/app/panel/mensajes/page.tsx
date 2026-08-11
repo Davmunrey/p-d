@@ -201,7 +201,7 @@ function Mensaje({ mensaje, puedeEditar }: { mensaje: MensajeInvitado; puedeEdit
         {mensaje.grupoId ? (
           <Link
             href={`${RUTA_INVITADOS}/${mensaje.grupoId}`}
-            className="inline-flex min-h-control-compacto items-center text-pequeno text-tinta-tenue transicion-color hover:text-tinta"
+            className="inline-flex min-h-control-compacto items-center text-pequeno text-tinta-suave transicion-color hover:text-tinta"
           >
             {t("panel.mensajes.verGrupo")}
           </Link>
@@ -215,7 +215,7 @@ function Cancion({ cancion, puedeEditar }: { cancion: CancionSugerida; puedeEdit
   return (
     <li className="flex flex-wrap items-center justify-between gap-interno rounded-campo border border-borde px-interno py-pila">
       <div>
-        <span className={`text-cuerpo ${cancion.aprobada ? "text-tinta" : "text-tinta-tenue"}`}>
+        <span className={`text-cuerpo ${cancion.aprobada ? "text-tinta" : "text-tinta-suave"}`}>
           {cancion.texto}
         </span>
         <Etiqueta className="mt-linea">

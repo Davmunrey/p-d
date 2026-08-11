@@ -132,7 +132,7 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
               >
                 <div>
                   <span className="font-titulo text-titulo-3 text-tinta">{grupo.nombre}</span>
-                  <span className="mt-linea block text-pequeno text-tinta-tenue">
+                  <span className="mt-linea block text-pequeno text-tinta-suave">
                     {grupo.personas === 1
                       ? t("panel.invitados.personasUna")
                       : t("panel.invitados.personasCuenta", { personas: grupo.personas })}
@@ -247,7 +247,7 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
             doscientos nombres de uno en uno en el formulario de arriba no es
             una opción, y el resultado de intentarlo es que falte gente.
           */}
-          <Cuerpo className="mt-elemento max-w-texto text-pequeno text-tinta-tenue">
+          <Cuerpo className="mt-elemento max-w-texto text-pequeno text-tinta-suave">
             <Link
               href={`${RUTA_INVITADOS}/importar`}
               className="text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"

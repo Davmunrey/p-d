@@ -212,7 +212,7 @@ function SeccionCategoria({
       </div>
 
       {categoria.descripcion ? (
-        <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-tenue">
+        <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
           {categoria.descripcion}
         </Cuerpo>
       ) : null}
@@ -272,7 +272,7 @@ function FormularioProveedor({ categorias }: { categorias: CategoriaProveedor[] 
   return (
     <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
       <Titulo3 como="h2">{t("panel.proveedores.nuevoTitulo")}</Titulo3>
-      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-tenue">
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.proveedores.nuevoAyuda")}
       </Cuerpo>
 
@@ -401,7 +401,7 @@ function SinCerrar({ categorias }: { categorias: CategoriaSinCerrar[] }) {
   return (
     <section className="mt-elemento rounded-tarjeta border border-borde bg-superficie-tenue p-interno">
       <Titulo3 como="h2">{t("panel.proveedores.sinCerrarTitulo")}</Titulo3>
-      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-tenue">
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.proveedores.sinCerrarAyuda")}
       </Cuerpo>
 
@@ -412,7 +412,7 @@ function SinCerrar({ categorias }: { categorias: CategoriaSinCerrar[] }) {
             className="rounded-etiqueta bg-superficie px-interno py-linea text-pequeno text-tinta"
           >
             {categoria.nombre}{" "}
-            <span className="text-tinta-tenue">
+            <span className="text-tinta-suave">
               ·{" "}
               {categoria.candidatos === 0
                 ? t("panel.proveedores.sinCerrarSinEmpezar")

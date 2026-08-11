@@ -43,7 +43,7 @@ export default async function PaginaImportar() {
       <section className="mt-bloque max-w-texto rounded-tarjeta border border-borde p-interno">
         <Titulo3 como="h2">{t("panel.importar.columnasEsperadas")}</Titulo3>
         <Cuerpo className="mt-pila text-pequeno">{t("panel.importar.columnasAyuda")}</Cuerpo>
-        <Cuerpo className="mt-pila text-pequeno text-tinta-tenue">
+        <Cuerpo className="mt-pila text-pequeno text-tinta-suave">
           {t("panel.importar.plantillaAyuda")}
         </Cuerpo>
         <p className="mt-elemento">

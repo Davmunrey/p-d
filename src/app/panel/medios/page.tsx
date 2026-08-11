@@ -162,7 +162,7 @@ function BloqueSeccion({
       </div>
 
       {medios.length === 0 ? (
-        <Cuerpo className="mt-pila text-pequeno text-tinta-tenue">
+        <Cuerpo className="mt-pila text-pequeno text-tinta-suave">
           {t("panel.medios.seccionVacia")}
         </Cuerpo>
       ) : (
@@ -342,7 +342,7 @@ function FormularioSubida({ seccion }: { seccion: Seccion }) {
       <form action={subirMedio} className="mt-elemento grid max-w-texto gap-interno">
         <input type="hidden" name="seccion" value={seccion} />
 
-        <Cuerpo className="text-pequeno text-tinta-tenue">
+        <Cuerpo className="text-pequeno text-tinta-suave">
           {t("panel.medios.subirAyuda")}
         </Cuerpo>
 
@@ -439,7 +439,7 @@ function CampoFichero({
         aria-describedby={idAyuda}
         className="min-h-control w-full rounded-campo border border-borde bg-superficie px-interno py-interno-compacto text-pequeno text-tinta file:mr-interno file:min-h-control-compacto file:rounded-boton file:border file:border-borde-fuerte file:bg-superficie file:px-interno file:text-etiqueta file:uppercase file:tracking-boton file:text-tinta-marca"
       />
-      <span id={idAyuda} className="text-pequeno text-tinta-tenue">
+      <span id={idAyuda} className="text-pequeno text-tinta-suave">
         {ayuda}
       </span>
     </div>

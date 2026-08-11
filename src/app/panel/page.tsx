@@ -166,7 +166,7 @@ function Cifra({
 }) {
   return (
     <div className="rounded-tarjeta border border-borde p-interno">
-      <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">{rotulo}</dt>
+      <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">{rotulo}</dt>
       <dd
         className={`mt-linea font-titulo text-titulo-2 tabular-nums ${
           destacada ? "text-tinta-marca" : "text-tinta"
@@ -188,7 +188,7 @@ function Menus({ menus }: { menus: ResumenBoda["menus"] }) {
         <dl className="mt-pila grid gap-interno sm:grid-cols-2 lg:grid-cols-3">
           {menus.map((menu) => (
             <div key={menu.tipoMenu} className="rounded-tarjeta border border-borde p-interno">
-              <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+              <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
                 {t(`rsvp.menus.${menu.tipoMenu}` as "rsvp.menus.estandar")}
               </dt>
               <dd className="mt-linea font-titulo text-titulo-2 tabular-nums text-tinta">

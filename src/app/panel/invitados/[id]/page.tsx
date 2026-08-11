@@ -83,7 +83,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
     <>
       <Link
         href={RUTA_INVITADOS}
-        className="text-pequeno text-tinta-tenue transicion-color hover:text-tinta"
+        className="text-pequeno text-tinta-suave transicion-color hover:text-tinta"
       >
         {t("panel.invitados.volver")}
       </Link>
@@ -158,7 +158,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
                   defaultValue={t("panel.invitados.repartirPlantilla", { enlace })}
                   className="w-full rounded-campo border border-borde bg-superficie p-interno text-pequeno text-tinta"
                 />
-                <p className="text-pequeno text-tinta-tenue">
+                <p className="text-pequeno text-tinta-suave">
                   {t("panel.invitados.repartirAyuda")}
                 </p>
               </div>
@@ -190,7 +190,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
                 })}`
               : ""}
           </Cuerpo>
-          <Cuerpo className="mt-pila text-pequeno text-tinta-tenue">
+          <Cuerpo className="mt-pila text-pequeno text-tinta-suave">
             {t("panel.invitados.repartirSoloConEnlace")}
           </Cuerpo>
         </section>
