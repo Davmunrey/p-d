@@ -229,6 +229,112 @@ end $$;
 
 \echo ''
 \echo '========================================'
+\echo '  El bucket de medios: no escribe nadie'
+\echo '========================================'
+
+/*
+  BODA-29 · BLOQUEANTE.
+
+  El bucket es PÚBLICO para leer —una foto se pinta con `<img src>` y un
+  navegador no manda la clave de la API—, así que aquí no se comprueba la
+  lectura: se comprueba lo único que de verdad hay que defender, que es la
+  ESCRITURA. Con la clave anónima viajando en el bundle de la landing,
+  cualquiera puede intentar subir un fichero al bucket de la boda.
+
+  LO QUE SE AFIRMA ES UNA AUSENCIA, y por eso hay que afirmarlo. `storage.objects`
+  tiene RLS activada y CERO políticas, y eso deniega todo. Es un estado que se
+  rompe AÑADIENDO algo —una política «temporal» para depurar una subida, y de
+  repente `anon` escribe—, no quitándolo, así que no basta con confiar en que
+  nadie la ponga.
+
+  Y no se puede arreglar con una política que diga «anon no»: `storage.objects`
+  es de `supabase_storage_admin` y las migraciones corren como `postgres`, que
+  ahí no puede crear ninguna. Costó un despliegue descubrirlo, con un «must be
+  owner of table buckets» que en el PostgreSQL pelado de este mismo script no
+  aparece, porque aquí el rol sí es dueño.
+
+  Las subidas del panel van por una acción de servidor con la clave de servicio,
+  que comprueba `puede_editar()` y compone ella la ruta: el navegador no recibe
+  nunca un camino de escritura a Storage. Que un editor pueda subir se prueba de
+  extremo a extremo, no aquí.
+*/
+do $$
+declare
+  v_editor    uuid;
+  v_pudo      boolean;
+  v_politicas bigint;
+  v_rls       boolean;
+begin
+  select p.usuario_id into v_editor
+    from public.perfiles as p
+   where p.activo and p.rol = 'propietario'
+   limit 1;
+
+  select c.relrowsecurity into v_rls
+    from pg_class as c
+    join pg_namespace as n on n.oid = c.relnamespace
+   where n.nspname = 'storage' and c.relname = 'objects';
+  perform pg_temp.comprobar('storage.objects tiene RLS activada', coalesce(v_rls, false));
+
+  select count(*) into v_politicas
+    from pg_policies
+   where schemaname = 'storage' and tablename = 'objects';
+  perform pg_temp.comprobar(
+    'no hay ninguna política sobre storage.objects (sin política, RLS deniega)',
+    v_politicas = 0
+  );
+
+  -- --- anon no escribe. Ni conociendo la ruta. -------------------------------
+  begin
+    set local role anon;
+    insert into storage.objects (bucket_id, name)
+    values ('medios', 'portada/colada-por-anon.jpg');
+    v_pudo := true;
+  exception when others then
+    v_pudo := false;
+  end;
+  reset role;
+  perform pg_temp.comprobar('anon NO puede subir al bucket de medios', v_pudo = false);
+
+  -- --- ni con una sesión de editor: esa vía no existe ------------------------
+  begin
+    set local role authenticated;
+    perform set_config('request.jwt.claim.sub', v_editor::text, true);
+    insert into storage.objects (bucket_id, name)
+    values ('medios', 'portada/colada-por-un-editor.jpg');
+    v_pudo := true;
+  exception when others then
+    v_pudo := false;
+  end;
+  reset role;
+  perform pg_temp.comprobar(
+    'ni un editor escribe directo: se sube por la acción de servidor',
+    v_pudo = false
+  );
+
+  perform set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
+end $$;
+
+/*
+  Y que el bucket exista con la forma que espera la aplicación. Si alguien lo
+  pone en privado, la landing deja de ver las fotos sin que falle nada: el
+  `<img>` recibe un error y se queda el hueco, igual que llevaba pasando desde
+  el principio por no existir el bucket.
+*/
+do $$
+declare
+  v_publico boolean;
+  v_tope    bigint;
+begin
+  select b.public, b.file_size_limit into v_publico, v_tope
+    from storage.buckets as b where b.id = 'medios';
+
+  perform pg_temp.comprobar('el bucket «medios» existe y es público', coalesce(v_publico, false));
+  perform pg_temp.comprobar('y tiene tope de peso', coalesce(v_tope, 0) > 0);
+end $$;
+
+\echo ''
+\echo '========================================'
 \echo '  Playlist: sólo invitados, con tope'
 \echo '========================================'
 
