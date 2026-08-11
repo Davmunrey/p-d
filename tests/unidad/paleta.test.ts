@@ -48,32 +48,16 @@ const CLARO: Record<string, string> = {
   error: "#d14545",
 };
 
-/** La misma tabla, tema oscuro. */
-const OSCURO: Record<string, string> = {
-  fondo: "#101623",
-  superficie: "#151c2b",
-  "superficie-elevada": "#1c2434",
-  "superficie-hundida": "#0b1120",
-  "superficie-tenue": "#16213a",
-  "superficie-inversa": "#f8f9fc",
-  tinta: "#eef2f8",
-  "tinta-suave": "#c3cee1",
-  "tinta-tenue": "#7e8aa0",
-  "tinta-inversa": "#121722",
-  "tinta-marca": "#9db0ce",
-  marca: "#8fa0bc",
-  "marca-hover": "#aec0da",
-  "marca-activo": "#c3cee1",
-  "marca-tenue": "#141e33",
-  acento: "#e3be86",
-  "acento-hover": "#f0d6ac",
-  borde: "#16213a",
-  "borde-fuerte": "#2c3a56",
-  "borde-marca": "#3f4f70",
-  exito: "#4fae7b",
-  aviso: "#d9a425",
-  error: "#e06a6a",
-};
+/*
+  LA ENTREGA TRAE TAMBIÉN UNA TABLA OSCURA, y aquí ya no se comprueba: la web no
+  tiene tema oscuro. Se quitó porque hacía que media lista de invitados abriera
+  en negro una pieza clara sólo por llevar el móvil en oscuro. La tabla sigue en
+  la entrega de marca por si algún día vuelve; mientras no exista en el CSS,
+  comprobarla sería afirmar algo que no se pinta en ninguna pantalla.
+
+  Los tres fondos que SÍ existen —claro, bloque inverso y pie— se comprueban
+  todos, y el de contraste de más abajo los recorre uno a uno.
+*/
 
 function leer(ruta: string) {
   return readFileSync(join(RAIZ, ruta), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
@@ -104,7 +88,15 @@ function normalizar(hex: string) {
 const primitivos = declaracionesDe(leer("src/styles/tokens/primitives.css"));
 const semanticoCss = leer("src/styles/tokens/semantic.css");
 const claro = declaracionesDe(bloqueDe(semanticoCss, ":root"));
-const oscuro = declaracionesDe(bloqueDe(semanticoCss, ':root[data-tema="oscuro"]'));
+const inversa = declaracionesDe(bloqueDe(semanticoCss, '[data-seccion="inversa"]'));
+const pie = declaracionesDe(bloqueDe(semanticoCss, '[data-seccion="pie"]'));
+
+/** Los tres fondos sobre los que se pinta algo en esta web. */
+const FONDOS: [string, Map<string, string>][] = [
+  ["la página", claro],
+  ["el bloque inverso", inversa],
+  ["el pie", pie],
+];
 
 /** Resuelve un semántico hasta su literal, heredando de `:root` como el CSS. */
 function resolver(nombre: string, propias: Map<string, string>) {
@@ -130,47 +122,34 @@ describe("paleta azul marino", () => {
     },
   );
 
-  it.each(Object.entries(OSCURO))(
-    "--%s resuelve al valor entregado en tema oscuro",
-    (token, esperado) => {
-      expect(resolver(token, oscuro)).toBe(esperado);
-    },
-  );
-
   it("el acento es cálido: es lo que distingue a esta versión de la marca", () => {
     // Sobre tanto azul, un acento frío desaparece. Si alguien reasigna el
     // acento a un tono de la escala marino, el sistema pierde su único
     // contraste de temperatura y nadie lo nota mirando un swatch aislado.
-    const temas: [string, Map<string, string>][] = [
-      ["claro", claro],
-      ["oscuro", oscuro],
-    ];
-
-    for (const [tema, propias] of temas) {
+    for (const [fondo, propias] of FONDOS) {
       const hex = resolver("acento", propias).slice(1);
       const [r, , b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
-      expect(r, `El acento del tema ${tema} no es cálido`).toBeGreaterThan(b);
+      expect(r, `El acento de ${fondo} no es cálido`).toBeGreaterThan(b);
     }
   });
 
   it("la acción y el acento son colores distintos", () => {
     // El fallo que arrastraba el sistema: un solo token hacía de relleno de
     // botón y de acento, así que el acento de la entrega no existía en la web.
-    for (const propias of [claro, oscuro]) {
-      expect(resolver("accion", propias)).not.toBe(resolver("acento", propias));
+    for (const [fondo, propias] of FONDOS) {
+      expect(resolver("accion", propias), `acción y acento coinciden en ${fondo}`).not.toBe(
+        resolver("acento", propias),
+      );
     }
   });
 });
 
 /**
  * Contraste. La entrega da los colores; que se lean es responsabilidad de quien
- * los monta. Se comprueban los pares que de verdad se pintan juntos, en los
- * cuatro fondos del sistema: página clara, página oscura, bloque inverso y pie.
+ * los monta. Se comprueban los pares que de verdad se pintan juntos, en los tres
+ * fondos del sistema: página clara, bloque inverso y pie.
  */
 describe("contraste de la paleta", () => {
-  const inversa = declaracionesDe(bloqueDe(semanticoCss, '[data-seccion="inversa"]'));
-  const pie = declaracionesDe(bloqueDe(semanticoCss, '[data-seccion="pie"]'));
-
   function luminancia(hex: string) {
     const canales = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
     const lineal = canales.map((v) =>
@@ -183,13 +162,6 @@ describe("contraste de la paleta", () => {
     const [claroL, oscuroL] = [luminancia(a), luminancia(b)].sort((x, y) => y - x);
     return (claroL + 0.05) / (oscuroL + 0.05);
   }
-
-  const FONDOS: [string, Map<string, string>][] = [
-    ["tema claro", claro],
-    ["tema oscuro", oscuro],
-    ["bloque inverso", inversa],
-    ["pie", pie],
-  ];
 
   for (const [nombre, propias] of FONDOS) {
     it(`en ${nombre} el texto cumple AA sobre su fondo`, () => {

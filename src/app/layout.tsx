@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 
-import { ATRIBUTO_TEMA, CLAVE_TEMA, IDIOMA } from "@/config/constants";
+import { IDIOMA } from "@/config/constants";
 import { t } from "@/lib/copy";
 import { urlDelSitio } from "@/lib/url-sitio";
 import "@/styles/globals.css";
@@ -81,20 +81,9 @@ export const metadata: Metadata = {
   },
 };
 
-/**
- * Aplica el tema guardado ANTES del primer pintado.
- *
- * Sin esto, la página se pinta en claro y salta a oscuro al hidratarse: un
- * fogonazo blanco en la cara de quien navega de noche.
- */
-const GUION_TEMA = `try{var t=localStorage.getItem(${JSON.stringify(CLAVE_TEMA)});if(t==="claro"||t==="oscuro"||t==="sistema")document.documentElement.setAttribute(${JSON.stringify(ATRIBUTO_TEMA)},t)}catch(e){}`;
-
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang={IDIOMA} className={`${serif.variable} ${sans.variable} ${conector.variable}`}>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: GUION_TEMA }} />
-      </head>
       <body>{children}</body>
     </html>
   );

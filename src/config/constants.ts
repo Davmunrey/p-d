@@ -15,21 +15,6 @@
  */
 export const ID_CONTENIDO = "contenido";
 
-/** Atributo del elemento raíz que fuerza el tema. */
-export const ATRIBUTO_TEMA = "data-tema";
-
-/** Clave de `localStorage` donde se recuerda la preferencia de tema. */
-export const CLAVE_TEMA = "boda:tema";
-
-export const TEMAS = ["claro", "oscuro", "sistema"] as const;
-export type Tema = (typeof TEMAS)[number];
-/**
- * La web es clara mientras nadie elija otra cosa: es la versión que entregó el
- * estudio. Seguir al sistema haría que media lista de invitados viera una pieza
- * que nadie diseñó, sin haberlo pedido.
- */
-export const TEMA_POR_DEFECTO: Tema = "claro";
-
 /** Filas por página en las tablas del panel. */
 export const FILAS_POR_PAGINA = 25;
 
