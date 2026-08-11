@@ -1,22 +1,29 @@
 -- Rollback de 20260811090000_bucket_medios.sql
 --
--- Quita las políticas y devuelve el permiso revocado.
+-- Quita el bucket SÓLO SI ESTÁ VACÍO.
 --
--- EL BUCKET NO SE BORRA. `delete from storage.buckets` con objetos dentro falla
--- por clave ajena, y si no fallara sería peor: se llevaría por delante las
--- fotos que alguien subió, que no existen en ningún otro sitio. Deshacer un
--- despliegue no puede borrar el contenido de la boda.
+-- Con ficheros dentro no se toca, y no es prudencia de más: `delete from
+-- storage.buckets` con objetos falla por clave ajena, y si no fallara sería
+-- peor — se llevaría por delante las fotos que alguien subió, que no existen en
+-- ningún otro sitio. Deshacer un despliegue no puede borrar el contenido de la
+-- boda.
 --
--- Sin políticas y con RLS activada, nadie escribe: el bucket se queda ahí,
--- inerte y con sus ficheros intactos, que es exactamente lo que se quiere al
--- volver atrás. Si de verdad hay que quitarlo —una base de pruebas, un proyecto
--- que se tira— hay que vaciarlo antes:
+-- Vacío, en cambio, se borra sin pensarlo: es exactamente el estado al que se
+-- vuelve, porque antes de esta migración el bucket no existía.
+--
+-- Si de verdad hay que quitarlo con ficheros dentro —una base de pruebas, un
+-- proyecto que se tira— hay que vaciarlo a mano antes, mirando lo que se borra:
 --
 --   delete from storage.objects where bucket_id = 'medios';
---   delete from storage.buckets where id = 'medios';
+--
+-- No hay políticas que deshacer: la migración no crea ninguna. `storage.objects`
+-- es de `supabase_storage_admin` y las migraciones corren como `postgres`, que
+-- no puede crear políticas ahí. La garantía de que `anon` no escribe viene de
+-- que la tabla tiene RLS activada y CERO políticas, que es el estado de partida
+-- y no algo que esta migración haya montado.
 
-drop policy if exists medios_objetos_publica_leer on storage.objects;
-drop policy if exists medios_objetos_colaborador_leer on storage.objects;
-drop policy if exists medios_objetos_editor_escribir on storage.objects;
-
-revoke execute on function public.es_ruta_almacenamiento_valida(text) from authenticated;
+delete from storage.buckets as b
+ where b.id = 'medios'
+   and not exists (
+     select 1 from storage.objects as o where o.bucket_id = b.id
+   );

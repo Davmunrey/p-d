@@ -27,16 +27,11 @@ import {
  * en el trabajo de unitarios, que no levanta ningún PostgreSQL.
  */
 
-const MIGRACION = join(
-  __dirname,
-  "..",
-  "..",
-  "supabase",
-  "migrations",
-  "20260811090000_bucket_medios.sql",
-);
+const CARPETA = join(__dirname, "..", "..", "supabase", "migrations");
+const FICHERO = "20260811090000_bucket_medios.sql";
 
-const sql = readFileSync(MIGRACION, "utf8");
+const sql = readFileSync(join(CARPETA, FICHERO), "utf8");
+const rollback = readFileSync(join(CARPETA, "rollback", FICHERO), "utf8");
 
 /** Un mega, en bytes. Storage habla en bytes; las constantes, en megas. */
 const BYTES_POR_MEGA = 1024 * 1024;
@@ -69,31 +64,55 @@ describe("el bucket de medios", () => {
   it("el bucket es público, y eso es una decisión escrita, no un descuido", () => {
     /*
       Si alguien lo pone en privado, la landing deja de ver las fotos sin que
-      falle nada: `<img>` recibe un 400 y se queda el hueco. Es un cambio de una
-      palabra con consecuencias invisibles, así que se afirma aquí.
+      falle nada: `<img>` recibe un error y se queda el hueco. Es un cambio de
+      una palabra con consecuencias invisibles, así que se afirma aquí.
     */
     expect(sql).toMatch(/values \(\s*'medios',\s*'medios',\s*true,/);
   });
 
-  it("tiene su rollback, como toda migración", () => {
-    const rollback = readFileSync(
-      join(
-        __dirname,
-        "..",
-        "..",
-        "supabase",
-        "migrations",
-        "rollback",
-        "20260811090000_bucket_medios.sql",
-      ),
-      "utf8",
-    );
+  /**
+   * LA LECCIÓN QUE COSTÓ UN DESPLIEGUE, CONVERTIDA EN TEST.
+   *
+   * Esta migración empezó creando tres políticas sobre `storage.objects` y un
+   * `comment on table storage.buckets`. Ninguna de las dos cosas se puede: esas
+   * tablas son de `supabase_storage_admin` y las migraciones corren como
+   * `postgres`, que tiene DML pero no propiedad. `insert` sí; `create policy` y
+   * `comment on table`, no.
+   *
+   * Y NO SE VE VENIR PROBANDO EN LOCAL. En el PostgreSQL de `probar-bbdd.sh` el
+   * esquema `storage` lo crea el propio script, así que ahí `postgres` SÍ es
+   * dueño y las dos sentencias pasan tan tranquilas. El error sólo aparece en el
+   * trabajo que levanta un Supabase de verdad — o sea, después de subir.
+   *
+   * Este test es lo que hace que la próxima vez el fallo salga en el portátil.
+   */
+  it("no usa sentencias que exijan ser dueño de las tablas de Storage", () => {
+    const sinComentarios = sql.replace(/--[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
 
-    // Quita las tres políticas y NO borra el bucket: deshacer un despliegue no
-    // puede llevarse por delante las fotos de la boda.
-    expect(rollback).toContain("drop policy if exists medios_objetos_publica_leer");
-    expect(rollback).toContain("drop policy if exists medios_objetos_colaborador_leer");
-    expect(rollback).toContain("drop policy if exists medios_objetos_editor_escribir");
-    expect(rollback).not.toMatch(/^\s*delete from storage\.buckets/m);
+    expect(
+      sinComentarios,
+      "`comment on table storage.*` exige ser dueño: falla en Supabase real",
+    ).not.toMatch(/comment\s+on\s+table\s+storage\./i);
+
+    expect(
+      sinComentarios,
+      "`create policy` sobre storage.* exige ser dueño: falla en Supabase real",
+    ).not.toMatch(/create\s+policy[\s\S]*?on\s+storage\./i);
+
+    expect(
+      sinComentarios,
+      "`alter table storage.*` exige ser dueño: falla en Supabase real",
+    ).not.toMatch(/alter\s+table\s+storage\./i);
+  });
+
+  it("el rollback quita el bucket sólo si está vacío", () => {
+    // Borrar un bucket con ficheros dentro falla por clave ajena, y si no
+    // fallara sería peor: se llevaría las fotos, que no existen en otro sitio.
+    expect(rollback).toMatch(/delete from storage\.buckets/);
+    expect(rollback).toMatch(/not exists[\s\S]*storage\.objects/);
+
+    // Y tampoco él puede tocar lo que no es suyo.
+    const sinComentarios = rollback.replace(/--[^\n]*/g, "");
+    expect(sinComentarios).not.toMatch(/drop\s+policy[\s\S]*?on\s+storage\./i);
   });
 });
