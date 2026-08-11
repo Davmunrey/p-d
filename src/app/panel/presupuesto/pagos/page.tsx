@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -190,14 +190,7 @@ export default async function PaginaPagos({ searchParams }: Parametros) {
 }
 
 function Enlace({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className="inline-block text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
-    >
-      {children}
-    </Link>
-  );
+  return <EnlaceSuave href={href}>{children}</EnlaceSuave>;
 }
 
 /**

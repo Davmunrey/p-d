@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo3 } from "@/components/ui/tipografia";
 import { RUTA_PRESUPUESTO } from "@/config/constants";
 import { type Desvio } from "@/lib/bbdd/presupuesto";
@@ -60,12 +59,9 @@ export function AvisoDesvios({ desvios }: { desvios: Desvio[] }) {
         ))}
       </ul>
 
-      <Link
-        href={RUTA_PRESUPUESTO}
-        className="mt-elemento inline-block text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
-      >
+      <EnlaceSuave href={RUTA_PRESUPUESTO} className="mt-elemento">
         {t("panel.resumen.desvios.verPresupuesto")}
-      </Link>
+      </EnlaceSuave>
     </section>
   );
 }

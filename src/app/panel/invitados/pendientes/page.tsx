@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_ACCESO, RUTA_INVITADOS, ZONA_HORARIA } from "@/config/constants";
@@ -181,12 +182,9 @@ export default async function PaginaPendientes({ searchParams }: Parametros) {
       ) : null}
 
       <p className="mt-bloque">
-        <Link
-          href={RUTA_INVITADOS}
-          className="text-pequeno text-tinta-suave underline decoration-borde underline-offset-4 transicion-color hover:text-tinta"
-        >
+        <EnlaceSuave href={RUTA_INVITADOS} discreto>
           {t("panel.pendientes.volver")}
-        </Link>
+        </EnlaceSuave>
       </p>
     </>
   );

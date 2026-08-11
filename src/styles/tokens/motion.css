@@ -38,6 +38,28 @@
   }
 }
 
+/**
+ * El mismo gesto que `subir`, pero con más recorrido.
+ *
+ * `subir` es para la entrada de la portada, con la pantalla quieta y el ojo ya
+ * puesto: 22 px bastan y de más sería aparatoso. Un reveal se ve MIENTRAS SE
+ * BAJA, compitiendo con todo lo demás que se mueve en la pantalla, y en un
+ * escritorio ancho ese mismo gesto no lo percibe nadie. De ahí que tenga su
+ * propia distancia en vez de reutilizar la otra: son dos trabajos distintos que
+ * se parecen.
+ */
+@keyframes subir-al-ver {
+  from {
+    opacity: 0%;
+    transform: translateY(var(--space-elemento));
+  }
+
+  to {
+    opacity: 100%;
+    transform: translateY(0);
+  }
+}
+
 @keyframes bajar {
   from {
     opacity: 0%;
@@ -218,35 +240,42 @@
 
 @supports (animation-timeline: view()) {
   /**
-   * DÓNDE EMPIEZA Y DÓNDE ACABA EL REVEAL, QUE ES TODO EL ASUNTO.
+   * CUÁNTO DURA EL REVEAL, MEDIDO CONTRA LA PANTALLA Y NO CONTRA EL ELEMENTO.
    *
-   * Estaba en `entry 4% cover 24%` y el resultado era una landing muerta: ese
-   * tramo se recorre en un pellizco de scroll, así que para cuando el ojo llega
-   * al elemento la animación ya ha terminado. Se notaba en móvil —pantalla
-   * corta, el elemento entra despacio— y no se notaba en un escritorio alto,
-   * que es exactamente la queja que lo destapó.
+   * `entry` solo —de «asoma» a «ha entrado del todo»— dura lo que MIDE EL
+   * ELEMENTO: una cabecera de 118 px se revela entera en 118 px de scroll, o
+   * sea en un golpe de dedo. Se probó y era peor que lo que había.
    *
-   * `entry 10% entry 90%` ata el movimiento a la ENTRADA del elemento en la
-   * pantalla, y no a una mezcla de entrada y recorrido: empieza cuando asoma un
-   * poco y termina cuando ya está dentro del todo. Eso se comporta igual en una
-   * pantalla de 660 px que en una de 1200, porque «entrar» dura lo mismo en
-   * proporción a la pantalla. El 10% inicial evita que arranque antes de que se
-   * vea, y el 90% lo cierra antes del borde para que nadie lea un texto a medio
-   * aparecer.
+   * `cover 30%` se mide contra la pantalla: en un escritorio de 900 px son unos
+   * 270 px de recorrido pase lo que pase, y en un móvil de 660 px son 200. Eso
+   * es lo que hace que el movimiento se PERCIBA en una pantalla grande, donde
+   * se ve media página a la vez y un gesto pequeño se pierde entre lo demás.
+   *
+   * Empieza en `entry 0%`: en cuanto el elemento asoma. No antes —no habría
+   * nada que ver— ni después, que es lo que hacía que apareciera ya montado.
    */
   .animacion-subir-al-ver,
   .animacion-aparecer-al-ver,
   .animacion-cortina-al-ver,
   .animacion-escala-al-ver {
     animation-fill-mode: both;
-    animation-range: entry 10% entry 90%;
+    animation-range: entry 0% cover 30%;
     animation-timeline: view();
     animation-timing-function: linear;
   }
 
+  /*
+    Y VIAJA MÁS QUE LA ENTRADA DE LA PORTADA, a propósito.
+
+    `subir` mueve 22 px, que es lo que pide un titular que aparece al cargar con
+    la pantalla quieta. Bajando por una página son insuficientes: en un
+    escritorio ancho, 22 px de desplazamiento en un elemento que ocupa un tercio
+    del ancho no los ve nadie. Los reveals usan su propia distancia, y por eso
+    tienen su propio fotograma en vez de reutilizar `subir`.
+  */
   .animacion-subir-al-ver {
     animation-duration: var(--duration-slow);
-    animation-name: subir;
+    animation-name: subir-al-ver;
   }
 
   .animacion-aparecer-al-ver {
