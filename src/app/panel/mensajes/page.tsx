@@ -201,7 +201,7 @@ function Mensaje({ mensaje, puedeEditar }: { mensaje: MensajeInvitado; puedeEdit
         {mensaje.grupoId ? (
           <Link
             href={`${RUTA_INVITADOS}/${mensaje.grupoId}`}
-            className="text-pequeno text-tinta-tenue transicion-color hover:text-tinta"
+            className="inline-flex min-h-control-compacto items-center text-pequeno text-tinta-tenue transicion-color hover:text-tinta"
           >
             {t("panel.mensajes.verGrupo")}
           </Link>

@@ -113,7 +113,7 @@ export default async function PaginaPendientes({ searchParams }: Parametros) {
               <div>
                 <Link
                   href={`${RUTA_INVITADOS}/${grupo.id}`}
-                  className="font-titulo text-titulo-3 text-tinta transicion-color hover:text-tinta-marca"
+                  className="inline-flex min-h-control-compacto items-center font-titulo text-titulo-3 text-tinta transicion-color hover:text-tinta-marca"
                 >
                   {grupo.nombre}
                 </Link>
@@ -146,7 +146,7 @@ export default async function PaginaPendientes({ searchParams }: Parametros) {
                   </Cuerpo>
                   <Link
                     href={`${RUTA_INVITADOS}/${grupo.id}`}
-                    className="mt-pila inline-block text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
+                    className="mt-pila inline-flex min-h-control-compacto items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
                   >
                     {t("panel.pendientes.verFicha")}
                   </Link>

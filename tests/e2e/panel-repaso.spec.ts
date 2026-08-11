@@ -114,21 +114,36 @@ async function loQueSeSale(pagina: Page) {
   });
 }
 
-/** Controles por debajo del mínimo táctil. Los de dentro de un párrafo se eximen. */
+/**
+ * Controles por debajo del mínimo táctil.
+ *
+ * DOS EXENCIONES, Y LAS DOS SON DE LA NORMA, NO ATAJOS:
+ *
+ *   · Un enlace dentro de un párrafo tiene como objetivo la línea de texto, no
+ *     un botón. Forzarle altura rompería el renglón.
+ *   · EL OBJETIVO DE UNA CASILLA ES SU ETIQUETA. Pulsar el rótulo marca la
+ *     casilla, así que lo que hay que medir es la etiqueta entera y no el
+ *     cuadradito de 16 px. Medir el `input` daba un fallo real —la etiqueta se
+ *     quedaba en 32 px— pero señalando al elemento equivocado, y «arreglarlo»
+ *     habría sido dibujar una casilla gigante en vez de una etiqueta cómoda.
+ */
 async function loQueNoSeDejaTocar(pagina: Page, minimo: number) {
   return pagina.evaluate((tope) => {
     const pequenos: string[] = [];
     for (const nodo of document.querySelectorAll<HTMLElement>(
       "a, button, summary, input, select, [role=button]",
     )) {
-      const caja = nodo.getBoundingClientRect();
-      if (caja.width === 0 || caja.height === 0) continue;
       if (nodo.closest(".sr-only") || nodo.closest("p")) continue;
       if (nodo.getAttribute("type") === "hidden") continue;
 
+      // Si vive dentro de una etiqueta, la etiqueta es el objetivo.
+      const objetivo = nodo.closest("label") ?? nodo;
+      const caja = objetivo.getBoundingClientRect();
+      if (caja.width === 0 || caja.height === 0) continue;
+
       if (caja.height < tope) {
         pequenos.push(
-          `${nodo.tagName.toLowerCase()} «${(nodo.textContent ?? "").trim().slice(0, 24) || nodo.getAttribute("aria-label") || "?"}» ${Math.round(caja.height)}px`,
+          `${objetivo.tagName.toLowerCase()} «${(objetivo.textContent ?? "").trim().slice(0, 24) || nodo.getAttribute("aria-label") || "?"}» ${Math.round(caja.height)}px`,
         );
       }
     }
