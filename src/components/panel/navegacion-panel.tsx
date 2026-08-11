@@ -21,6 +21,27 @@ import { t } from "@/lib/copy";
  * ES CLIENTE SÓLO POR `usePathname`. Los enlaces son enlaces y funcionan sin
  * JavaScript; el subrayado del activo también, porque Next resuelve la ruta al
  * renderizar en el servidor y llega ya puesto en el HTML.
+ *
+ *
+ * SIN PRECARGA, Y NO ES UN AJUSTE FINO: ES DEJAR DE PEDIR DIECIOCHO PÁGINAS
+ * ENTERAS POR CADA VISITA.
+ *
+ * Todas las rutas del panel son `force-dynamic` —leen de la base en cada
+ * petición—, así que precargar un enlace del menú **no** es leer un fichero
+ * estático: es renderizar esa pantalla entera en el servidor, con sus consultas,
+ * para tirarla si no se pulsa. Y esta lista se pinta dos veces, la de escritorio
+ * y la del móvil, así que cada enlace se precarga por duplicado: con nueve
+ * módulos son dieciocho renderizados de más por cada pantalla que se abre. En
+ * Vercel eso son dieciocho invocaciones que se pagan y que no las pide nadie.
+ *
+ * Se ve en el registro de CI: al abrir `/panel/medios` salen dos tandas enteras
+ * de peticiones `_rsc` —una por cada copia del menú, con su propio identificador
+ * de compilación— y **todas acaban abortadas**, porque nadie llegó a pulsar.
+ *
+ * Un panel privado que usan dos personas no gana nada con eso. Lo que sí puede
+ * perder es la acción que se está enviando en ese momento: es la sospecha de
+ * #126, donde la respuesta de una acción llega bien y el enrutador no la aplica
+ * mientras tiene esa tanda de peticiones en vuelo.
  */
 
 /** Sólo se pinta lo terminado: un menú con huecos es peor que un menú corto. */
@@ -41,6 +62,7 @@ export function NavegacionPanel() {
       >
         <Link
           href="/"
+          prefetch={false}
           className="px-interno-compacto font-titulo text-titulo-3 leading-titulo-corto text-tinta-marca transicion-color hover:text-tinta"
         >
           {t("meta.titulo")}
@@ -100,6 +122,9 @@ function Enlace({
   return (
     <Link
       href={ruta}
+      // Ver la cabecera del fichero: precargar una ruta `force-dynamic` es
+      // renderizarla entera para tirarla.
+      prefetch={false}
       // `aria-current` es lo que hace que un lector de pantalla diga «página
       // actual». El color solo no lo cuenta, y el subrayado tampoco.
       aria-current={activo ? "page" : undefined}
