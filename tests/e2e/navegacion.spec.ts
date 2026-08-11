@@ -18,6 +18,13 @@ import { conSeccionApagada } from "./utiles/secciones";
  *  2. Una sección ENCENDIDA pero todavía sin construir tampoco (`galeria` y
  *     `ubicaciones`, que son BODA-25 y BODA-26). Un menú que ofrece un enlace
  *     a una sección que no existe es peor que no tener menú.
+ *
+ * Y DESDE QUE EL MENÚ NO ES EL ÍNDICE DE LA PÁGINA, una tercera: aparecer en la
+ * página no da derecho a aparecer en la barra. La landing mide unas veinte
+ * pantallas en un móvil y el menú se quedó con las que alguien busca CON PRISA
+ * —a qué hora, cómo se llega, dónde se duerme— más el botón de confirmar. Quién
+ * entra lo dice `SECCIONES_EN_MENU`; el resto se lee bajando, que es como está
+ * pensada la pieza.
  */
 
 const menu = (page: Page) =>
@@ -28,48 +35,89 @@ test.describe("Navegación", () => {
     await page.goto("/");
   });
 
-  test("el menú lista las secciones que la base de datos da por visibles", async ({ page }) => {
-    const enlaces = menu(page).getByRole("link");
+  test("el menú lleva las secciones que se buscan con prisa, y ninguna más", async ({
+    page,
+  }) => {
+    const rotulos = (await menu(page).getByRole("link").allTextContents()).map((r) => r.trim());
 
-    await expect(enlaces.filter({ hasText: copy.navegacion.secciones.portada })).toHaveCount(1);
-    await expect(enlaces.filter({ hasText: copy.navegacion.secciones.programa })).toHaveCount(
-      1,
-    );
-    await expect(enlaces.filter({ hasText: copy.navegacion.secciones.rsvp })).toHaveCount(1);
-  });
+    /*
+      `allTextContents` y no `allInnerTexts`: el segundo devuelve el texto ya
+      pasado por el `text-transform: uppercase` del CSS, así que compararía
+      contra la presentación en vez de contra el copy.
 
-  test("el orden del menú es el que manda la base de datos", async ({ page }) => {
-    // `orden` en la tabla: portada 0 · paisaje 5 · cuenta_atras 10 · historia 20 ·
-    // preboda 33 · programa 35 · transporte 50 · alojamiento 60 ·
-    // preguntas 70 · playlist 75 · regalos 76 · dresscode 77 · rsvp 80. Si
-    // alguien reordena el JSX, esto se cae.
-    // `allTextContents` y no `allInnerTexts`: el segundo devuelve el texto ya
-    // pasado por el `text-transform: uppercase` del CSS, así que compararía
-    // contra la presentación en vez de contra el copy.
-    const rotulos = await menu(page).getByRole("link").allTextContents();
-
-    expect(rotulos.map((rotulo) => rotulo.trim())).toEqual([
-      copy.navegacion.secciones.portada,
-      copy.navegacion.secciones.paisaje,
-      copy.navegacion.secciones.cuenta_atras,
-      copy.navegacion.secciones.historia,
-      copy.navegacion.secciones.preboda,
+      Se afirma la lista EXACTA y en orden, no que «estén las tres». Comprobar
+      sólo presencia dejaría pasar justo lo que se quería arreglar: que se
+      cuelen otras doce.
+    */
+    expect(rotulos).toEqual([
       copy.navegacion.secciones.programa,
       copy.navegacion.secciones.transporte,
       copy.navegacion.secciones.alojamiento,
-      copy.navegacion.secciones.preguntas_frecuentes,
-      copy.navegacion.secciones.playlist,
-      copy.navegacion.secciones.regalos,
-      copy.navegacion.secciones.dresscode,
       copy.navegacion.secciones.rsvp,
     ]);
   });
 
-  test("pulsar un enlace del menú lleva a su sección", async ({ page }) => {
-    await menu(page).getByRole("link", { name: copy.navegacion.secciones.playlist }).click();
+  /**
+   * CASO DE ERROR · lo que se lee bajando no se anuncia arriba.
+   *
+   * Estas cuatro SÍ se pintan en la página —el seed las trae con contenido— y
+   * aun así no pueden estar en la barra. Es la diferencia entre «no hay» y «no
+   * va en el menú», y es la que se rompe sola en cuanto alguien añade una
+   * sección y la mete en el menú «ya que estamos».
+   */
+  test("las secciones que sí están en la página no se cuelan en el menú", async ({ page }) => {
+    const fuera = [
+      ["historia", copy.navegacion.secciones.historia],
+      ["playlist", copy.navegacion.secciones.playlist],
+      ["dresscode", copy.navegacion.secciones.dresscode],
+      ["preguntas-frecuentes", copy.navegacion.secciones.preguntas_frecuentes],
+    ] as const;
 
-    await expect(page).toHaveURL(/#playlist$/);
-    await expect(page.locator("#playlist")).toBeInViewport();
+    for (const [ancla, rotulo] of fuera) {
+      await expect(
+        menu(page).getByRole("link", { name: rotulo, exact: true }),
+        `«${rotulo}» se lee bajando, no desde la barra`,
+      ).toHaveCount(0);
+
+      /*
+        Pero la sección SIGUE EN LA PÁGINA: no se ha escondido, se ha sacado del
+        menú. Se comprueba por su ancla y no por su titular, porque el rótulo del
+        menú y el titular de la sección son dos textos distintos a propósito —«El
+        origen» arriba, la frase del paisaje dentro— y compararlos daría un fallo
+        que no dice nada de lo que se quiere afirmar.
+      */
+      await expect(
+        page.locator(`#${ancla}`),
+        `«${rotulo}» tiene que seguir en la página`,
+      ).toHaveCount(1);
+    }
+  });
+
+  test("el orden del menú es el que manda la base de datos", async ({ page }) => {
+    /*
+      `orden` en la tabla pone programa (35) antes que transporte (50) y éste
+      antes que alojamiento (60), y `rsvp` (80) al final. El menú respeta ese
+      orden en vez del que tenga escrito `SECCIONES_EN_MENU`: quien manda sigue
+      siendo la base. Si alguien reordena el JSX, esto se cae.
+    */
+    const rotulos = (await menu(page).getByRole("link").allTextContents()).map((r) => r.trim());
+
+    expect(rotulos.indexOf(copy.navegacion.secciones.programa)).toBeLessThan(
+      rotulos.indexOf(copy.navegacion.secciones.transporte),
+    );
+    expect(rotulos.indexOf(copy.navegacion.secciones.transporte)).toBeLessThan(
+      rotulos.indexOf(copy.navegacion.secciones.alojamiento),
+    );
+    expect(rotulos.at(-1), "confirmar cierra la barra: es el botón").toBe(
+      copy.navegacion.secciones.rsvp,
+    );
+  });
+
+  test("pulsar un enlace del menú lleva a su sección", async ({ page }) => {
+    await menu(page).getByRole("link", { name: copy.navegacion.secciones.programa }).click();
+
+    await expect(page).toHaveURL(/#programa$/);
+    await expect(page.locator("#programa")).toBeInViewport();
   });
 
   test("la sección de destino no se queda debajo de la barra", async ({ page }) => {
