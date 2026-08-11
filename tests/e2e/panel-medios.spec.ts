@@ -120,6 +120,15 @@ function fichaDe(pagina: Page, alternativo: string) {
  * subiría siempre a la portada, incluso en el test que prueba la galería. El
  * campo oculto es lo único que los distingue, y es además exactamente el dato
  * que decide dónde acaba la foto.
+ *
+ * DEVUELVE TODOS LOS FORMULARIOS DE LA SECCIÓN, no sólo el de subir: dentro del
+ * mismo bloque hay uno por foto ya subida. Eso obliga a pedir el botón de subir
+ * con `exact`, porque **`getByRole` casa el nombre por subcadena** y «Subir»
+ * está dentro de «Subir en el orden»: en cuanto la sección tiene una foto, el
+ * botón de subir y el de moverla hacia arriba salen los dos y el test muere con
+ * un «resolved to 2 elements». No se ha visto todavía porque las secciones que
+ * se usan llegan vacías, pero el test de reordenar sube dos a la misma sección:
+ * la segunda subida caería siempre.
  */
 async function formularioDe(pagina: Page, seccion: string) {
   /*
@@ -277,7 +286,9 @@ test.describe("El gestor de fotos y vídeos", () => {
       .locator('input[type="file"][name="fichero"]')
       .setInputFiles(comoFichero("prueba.png", "image/png", pngMinimo()));
     await formulario.getByLabel(copy.panel.medios.alternativo).fill(alternativo);
-    await formulario.getByRole("button", { name: copy.panel.medios.subir }).click();
+    await formulario
+      .getByRole("button", { name: copy.panel.medios.subir, exact: true })
+      .click();
 
     await esperarEstado(page, "subido");
 
@@ -345,7 +356,9 @@ test.describe("El gestor de fotos y vídeos", () => {
     await formulario
       .getByLabel(copy.panel.medios.alternativo)
       .fill(`${MARCA} lo que no debería entrar`);
-    await formulario.getByRole("button", { name: copy.panel.medios.subir }).click();
+    await formulario
+      .getByRole("button", { name: copy.panel.medios.subir, exact: true })
+      .click();
 
     await esperarEstado(page, "tipo-no-admitido");
     await expect(page.getByText(copy.panel.medios.errorTipo)).toBeVisible();
@@ -372,7 +385,9 @@ test.describe("El gestor de fotos y vídeos", () => {
     await formulario
       .locator('input[name="texto_alternativo"]')
       .evaluate((campo) => campo.removeAttribute("required"));
-    await formulario.getByRole("button", { name: copy.panel.medios.subir }).click();
+    await formulario
+      .getByRole("button", { name: copy.panel.medios.subir, exact: true })
+      .click();
 
     await esperarEstado(page, "sin-alternativo");
     await expect(page.getByText(copy.panel.medios.errorSinAlternativo)).toBeVisible();
@@ -398,7 +413,9 @@ test.describe("El gestor de fotos y vídeos", () => {
         .locator('input[type="file"][name="fichero"]')
         .setInputFiles(comoFichero("prueba.png", "image/png", pngMinimo()));
       await formulario.getByLabel(copy.panel.medios.alternativo).fill(alternativo);
-      await formulario.getByRole("button", { name: copy.panel.medios.subir }).click();
+      await formulario
+        .getByRole("button", { name: copy.panel.medios.subir, exact: true })
+        .click();
       await esperarEstado(page, "subido");
     }
 
