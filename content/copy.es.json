@@ -296,7 +296,8 @@
       "tareas": "Tareas",
       "cuenta": "Mi cuenta",
       "ajustes": "Ajustes",
-      "mensajes": "Mensajes"
+      "mensajes": "Mensajes",
+      "medios": "Fotos y vídeos"
     },
     "resumen": {
       "titulo": "Resumen",
@@ -824,6 +825,46 @@
         "errorSinPermiso": "Vuestro perfil no puede hacer cambios aquí.",
         "errorGuardar": "No se ha podido guardar. Probad otra vez."
       }
+    },
+    "medios": {
+      "titulo": "Fotos y vídeos de la web",
+      "descripcion": "Todo lo que se ve en la landing sale de aquí. Nada vive en el código: se sube, se le pone texto alternativo y se publica cuando esté listo.",
+      "seccionVacia": "Todavía no hay nada en esta sección.",
+      "borrador": "Sin publicar",
+      "enLaWeb": "En la web",
+      "cuantos": "{cuantos} en la web de {total}",
+      "sinMedida": "Tamaño sin medir",
+      "medida": "{ancho} × {alto}",
+      "esVideo": "Vídeo",
+      "subirTitulo": "Subir a esta sección",
+      "subirAyuda": "Se sube como borrador: no se ve en la web hasta que lo publiques.",
+      "fichero": "Foto o vídeo",
+      "ficheroAyuda": "JPG, PNG, WebP o AVIF hasta {imagenMb} MB. Vídeo MP4 hasta {videoMb} MB.",
+      "poster": "Fotograma del vídeo",
+      "posterAyuda": "Sólo para vídeos, y es obligatorio: es lo que ve quien ha pedido no ver movimiento.",
+      "alternativo": "Qué se ve en la imagen",
+      "alternativoAyuda": "Lo que oye quien no puede verla. Entre 3 y 300 caracteres: «Los novios de espaldas mirando el valle», no «foto1».",
+      "subir": "Subir",
+      "publicar": "Publicar",
+      "despublicar": "Quitar de la web",
+      "subirOrden": "Subir en el orden",
+      "bajarOrden": "Bajar en el orden",
+      "borrar": "Borrar",
+      "guardarAlternativo": "Guardar el texto",
+      "avisoSubido": "Subido como borrador. Publícalo cuando esté listo.",
+      "avisoPublicado": "Ya se ve en la web.",
+      "avisoDespublicado": "Retirado de la web. No se ha borrado.",
+      "avisoBorrado": "Borrado, también el fichero.",
+      "avisoMovido": "Orden cambiado.",
+      "avisoAlternativo": "Texto alternativo guardado.",
+      "errorSinFichero": "No has elegido ningún fichero.",
+      "errorSinAlternativo": "Hace falta describir qué se ve, entre 3 y 300 caracteres.",
+      "errorTipo": "Ese formato no se admite. Sólo JPG, PNG, WebP, AVIF y MP4.",
+      "errorPeso": "Ese fichero pesa demasiado. Comprímelo y vuelve a intentarlo.",
+      "errorSinPoster": "Un vídeo necesita su fotograma: sin él, quien pide no ver movimiento se queda con un hueco.",
+      "errorSinConfigurar": "Falta configurar la clave de servicio de Supabase. Sin ella no se puede subir nada.",
+      "errorSinPermiso": "Sólo un editor puede tocar las fotos de la web.",
+      "errorGuardar": "No hemos podido guardar. Inténtalo de nuevo."
     }
   },
   "correoConfirmacion": {

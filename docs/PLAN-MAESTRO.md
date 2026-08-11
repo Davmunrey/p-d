@@ -235,7 +235,9 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 
 **`consejos_vestimenta`** — los bloques del dress code («Ellas», «Ellos», «Solo dos peticiones»), con `orden` y `publicado`. Es una tabla y no copy fijo porque los consejos dependen de la finca y de la fecha —el del tacón sale de conocer el suelo— y se retocan sin desplegar.
 
-**`medios`** — fotos de la landing: `ruta_almacenamiento`, `texto_alternativo`, `seccion`, `orden`, `ancho`, `alto`, `marcador_borroso` y `publicado`. Vista pública: **`v_medios_publicados`**. Ninguna imagen va en `/public`.
+**`medios`** — fotos y vídeos de la landing: `ruta_almacenamiento`, `texto_alternativo`, `seccion`, `orden`, `ancho`, `alto`, `marcador_borroso`, `tipo`, `poster_ruta` y `publicado`. Vista pública: **`v_medios_publicados`**. Ninguna imagen va en `/public`.
+
+La unicidad `(seccion, orden)` es **deferrable**, y eso obliga a que reordenar sea una función de la base —`reordenar_medio(uuid, boolean)`— y no dos `UPDATE` desde el panel: diferida significa «se comprueba al COMMIT», no «no se comprueba», y dos llamadas por PostgREST son dos transacciones, así que la primera acaba con dos filas compartiendo orden y salta igual. La permuta necesita las dos escrituras en el mismo commit. Va con `security invoker`, así que quien autoriza sigue siendo `medios_editor_escribir`.
 
 ### Proveedores, presupuesto y organización
 
@@ -377,7 +379,8 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 | **Servicios**   | Qué se contrata, precio por unidad o por invitado, recálculo automático con los confirmados                                                                           |
 | **Tareas**      | Checklist con vista lista y kanban, plantilla inicial por meses restantes                                                                                             |
 | **Seating**     | Plano drag & drop de mesas, asignación con avisos de alergias y de invitados sin mesa                                                                                 |
-| **Ajustes**     | Contenido de la landing, orden y visibilidad de secciones, subida y ordenación de fotos, textos i18n, datos de la boda, usuarios                                      |
+| **Medios**      | Fotos y vídeos de la landing agrupados por sección: subida, texto alternativo obligatorio, publicar/retirar, orden y borrado —del fichero también                     |
+| **Ajustes**     | Contenido de la landing, orden y visibilidad de secciones, textos i18n, datos de la boda, usuarios                                                                    |
 
 ---
 
@@ -507,6 +510,7 @@ Un ticket no se cierra hasta cumplir **todos** los puntos:
 8. Alta de gasto → se refleja en los totales del presupuesto y en el dashboard
 9. Confirmación de un invitado → recalcula servicios con precio por invitado
 10. Anon intenta leer `invitados` directamente vía API → **denegado por RLS**
+11. Subida de una foto al panel → **no** se ve en la landing mientras es borrador → se publica → aparece con su texto alternativo → se borra, y con ella el fichero
 
 Entorno de test: proyecto Supabase de staging con seed determinista, reseteado antes de cada suite. Los E2E corren en cada PR (bloqueantes) y en `main` tras el deploy.
 

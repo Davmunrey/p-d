@@ -181,6 +181,9 @@
   --spacing-campo: var(--alto-campo);
   --spacing-cifra: var(--ancho-cifra);
   --spacing-casilla: var(--lado-casilla);
+
+  /* Un solo token da `size-miniatura`: el hueco es cuadrado por definición. */
+  --spacing-miniatura: var(--lado-miniatura);
   --spacing-columna-token: var(--ancho-columna-token);
   --spacing-barra-muestra: var(--alto-barra-muestra);
 

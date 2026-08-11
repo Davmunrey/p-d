@@ -17,7 +17,28 @@ import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 export type RolPanel = "propietario" | "editor" | "lector";
 
 export interface Acceso {
+  /**
+   * DOS IDENTIFICADORES, Y HAY QUE MIRAR A CUÁL APUNTA CADA COLUMNA.
+   *
+   * `perfiles` tiene su propia clave primaria (`id`) y guarda aparte la de
+   * Supabase Auth (`usuario_id`). Las claves ajenas del esquema usan una u
+   * otra, y no por descuido:
+   *
+   *   · `medios.subido_por`, `documentos_proveedor.subido_por`,
+   *     `tareas.responsable_id`, `pagos.registrado_por`,
+   *     `confirmaciones.registrado_por`  → `perfiles (id)`
+   *   · `mensajes_leidos.leido_por`      → `perfiles (usuario_id)`
+   *
+   * (Ese reparto está sacado de `pg_constraint` en una base con las migraciones
+   * aplicadas, no de leer los ficheros: leyéndolos ya me equivoqué una vez.)
+   *
+   * Los dos son `uuid`, así que confundirlos compila igual de bien y revienta
+   * en la base con «Key is not present in table "perfiles"». Costó un CI: la
+   * subida de una foto guardaba el de Auth en una columna que pedía el del
+   * perfil. Antes de escribir en una columna de autoría, se mira la migración.
+   */
   usuarioId: string;
+  perfilId: string;
   correo: string | null;
   nombre: string | null;
   rol: RolPanel;
@@ -44,7 +65,7 @@ export async function accesoActual(): Promise<Acceso | null> {
 
     const { data: perfil } = await supabase
       .from("perfiles")
-      .select("nombre_completo, correo_electronico, rol, activo")
+      .select("id, nombre_completo, correo_electronico, rol, activo")
       .eq("usuario_id", data.user.id)
       .maybeSingle();
 
@@ -52,6 +73,7 @@ export async function accesoActual(): Promise<Acceso | null> {
 
     return {
       usuarioId: data.user.id,
+      perfilId: perfil.id,
       correo: perfil.correo_electronico ?? data.user.email ?? null,
       nombre: perfil.nombre_completo,
       rol: perfil.rol as RolPanel,

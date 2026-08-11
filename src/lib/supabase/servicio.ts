@@ -2,6 +2,8 @@ import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
 
+import { PLAZO_SUBIDA_MS } from "@/config/constants";
+
 /**
  * BODA-29 · EL CLIENTE QUE SE SALTA LA RLS, Y POR QUÉ EXISTE
  *
@@ -66,6 +68,34 @@ export function clienteDeServicio() {
         una sesión que no existe, en un servidor donde no hay dónde.
       */
       auth: { persistSession: false, autoRefreshToken: false },
+
+      /*
+        NINGUNA LLAMADA ESPERA PARA SIEMPRE, Y ESTE ES EL ÚNICO SITIO DONDE SE
+        PUEDE DECIR.
+
+        `fetch` sin `signal` no tiene plazo: si Storage no contesta, la promesa
+        no se resuelve nunca. Dentro de una acción de servidor eso no es lento,
+        es MUDO — no redirige, no registra nada y no suelta la función hasta que
+        la plataforma la mata. Quien subió la foto se queda con un botón que no
+        vuelve.
+
+        SE PONE AQUÍ Y NO EN CADA LLAMADA porque `upload()` no admite `signal`:
+        su tercer parámetro es `FileOptions` —`cacheControl`, `contentType`,
+        `upsert`, `duplex`, `metadata`— y nada más. Pasárselo ahí se descarta en
+        silencio; comprobado en los tipos de `@supabase/storage-js`, después de
+        haberlo hecho mal. Envolviendo el `fetch` del cliente, el plazo vale
+        para todo lo que salga por aquí y no depende de que nadie se acuerde.
+
+        Se respeta una señal que ya venga puesta: quien quiera cancelar antes,
+        manda.
+      */
+      global: {
+        fetch: (entrada, opciones) =>
+          fetch(entrada, {
+            ...opciones,
+            signal: opciones?.signal ?? AbortSignal.timeout(PLAZO_SUBIDA_MS),
+          }),
+      },
     },
   );
 }

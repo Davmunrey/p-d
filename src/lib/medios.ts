@@ -94,6 +94,14 @@ export function admitirFichero(fichero: { type: string; size: number }): Veredic
  *
  * El nombre original no se pierde: va al texto alternativo y a la fila, que es
  * donde sirve de algo. En la ruta sólo estorbaría.
+ *
+ * LA SECCIÓN VA TAL CUAL, sin transformar. La base valida cada ruta contra
+ * `es_ruta_almacenamiento_valida`, y su patrón
+ * —`^[A-Za-z0-9][A-Za-z0-9._/-]{2,254}$`— admite el guion bajo, así que
+ * `reserva_la_fecha/…` entra sin problema; comprobado ejecutando la función
+ * contra la base, no leyendo el patrón. `tests/unidad/medios.test.ts` recorre
+ * todas las secciones contra ese mismo patrón para que siga siendo cierto el
+ * día que se añada una con un carácter raro.
  */
 export function componerRuta(seccion: string, extension: string, azar: string): string {
   return `${seccion}/${azar}.${extension}`;

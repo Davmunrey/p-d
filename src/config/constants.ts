@@ -41,6 +41,17 @@ export const PESO_MAXIMO_IMAGEN_MB = 10;
 export const PESO_MAXIMO_VIDEO_MB = 50;
 
 /**
+ * Lo que se espera a que Storage acepte un fichero antes de darlo por perdido.
+ *
+ * `upload()` no trae plazo propio —por dentro es un `fetch`, y un `fetch` sin
+ * `signal` espera indefinidamente—, así que sin esto una subida que no contesta
+ * deja la acción de servidor colgada: ni redirige, ni registra nada, ni suelta
+ * la función. Treinta segundos son de sobra para los cincuenta megas de tope
+ * por una línea decente, y poco para que a nadie se le haga eterno.
+ */
+export const PLAZO_SUBIDA_MS = 30_000;
+
+/**
  * Lo que se deja subir. El mismo array que la migración pone en el bucket, y
  * un test unitario comprueba que no se separan.
  *
@@ -152,6 +163,7 @@ export const RUTA_CUENTA = "/panel/cuenta";
 export const RUTA_AJUSTES = "/panel/ajustes";
 export const RUTA_INVITADOS = "/panel/invitados";
 export const RUTA_MENSAJES = "/panel/mensajes";
+export const RUTA_MEDIOS = "/panel/medios";
 export const RUTA_PROVEEDORES = "/panel/proveedores";
 export const RUTA_PRESUPUESTO = "/panel/presupuesto";
 
