@@ -28,6 +28,36 @@ export const LONGITUD_TOKEN_INVITACION = 24;
 export const PESO_MAXIMO_IMAGEN_MB = 10;
 
 /**
+ * Peso máximo por vídeo, y es el tope del bucket entero.
+ *
+ * CINCUENTA Y NO MÁS, aunque un vídeo pueda pesar mucho más: el fondo del
+ * paisaje se descarga desde datos móviles, muchas veces en el pueblo de la boda.
+ * Un fichero que no cabe aquí no es un vídeo mal subido, es un vídeo que hay que
+ * comprimir antes.
+ *
+ * Storage sólo admite UN límite por bucket, así que éste —el mayor de los dos—
+ * es el que lleva la migración, y el de las imágenes lo impone la aplicación.
+ */
+export const PESO_MAXIMO_VIDEO_MB = 50;
+
+/**
+ * Lo que se deja subir. El mismo array que la migración pone en el bucket, y
+ * un test unitario comprueba que no se separan.
+ *
+ * SON DOS SITIOS A PROPÓSITO, no por descuido: el navegador tiene que poder
+ * decir «eso no» antes de subir cincuenta megas por una línea móvil, y el bucket
+ * tiene que volver a decirlo por su cuenta. Una comprobación que sólo vive en el
+ * cliente no es una comprobación.
+ */
+export const TIPOS_MEDIO_ADMITIDOS = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "video/mp4",
+] as const;
+
+/**
  * Bucket de Supabase Storage donde viven las fotos de la landing. La base
  * guarda sólo la ruta relativa —lo impone `es_ruta_almacenamiento_valida`—,
  * así que el bucket se nombra una vez, aquí.

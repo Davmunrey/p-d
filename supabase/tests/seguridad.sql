@@ -229,6 +229,101 @@ end $$;
 
 \echo ''
 \echo '========================================'
+\echo '  El bucket de medios: sube quien edita'
+\echo '========================================'
+
+/*
+  BODA-29 · BLOQUEANTE.
+
+  El bucket es PÚBLICO para leer —una foto se pinta con `<img src>` y un
+  navegador no manda la clave de la API—, así que aquí no se comprueba la
+  lectura: se comprueba lo único que de verdad hay que defender, que es la
+  ESCRITURA. Con la clave anónima viajando en el bundle de la landing,
+  cualquiera puede intentar subir un fichero al bucket de la boda.
+
+  Y de paso, que un editor tampoco pueda dejar un objeto donde le apetezca: el
+  prefijo tiene que ser una sección de la landing. Una ruta fuera de sitio no es
+  un capricho de orden — es un fichero que ninguna pantalla enseña, que nadie
+  encuentra para borrar, y que sigue siendo público por URL.
+*/
+do $$
+declare
+  v_editor uuid;
+  v_pudo   boolean;
+begin
+  select p.usuario_id into v_editor
+    from public.perfiles as p
+   where p.activo and p.rol = 'propietario'
+   limit 1;
+
+  -- --- anon no escribe. Ni conociendo la ruta. -------------------------------
+  begin
+    set local role anon;
+    insert into storage.objects (bucket_id, name)
+    values ('medios', 'portada/colada-por-anon.jpg');
+    v_pudo := true;
+  exception when others then
+    v_pudo := false;
+  end;
+  reset role;
+  perform pg_temp.comprobar('anon NO puede subir al bucket de medios', v_pudo = false);
+
+  -- --- un editor sí, dentro de una sección ----------------------------------
+  begin
+    set local role authenticated;
+    perform set_config('request.jwt.claim.sub', v_editor::text, true);
+    insert into storage.objects (bucket_id, name)
+    values ('medios', 'portada/prueba-de-seguridad.jpg');
+    v_pudo := true;
+  exception when others then
+    v_pudo := false;
+  end;
+  reset role;
+  perform pg_temp.comprobar('un editor sí puede subir a una sección', v_pudo);
+
+  -- --- pero no fuera de una sección -----------------------------------------
+  begin
+    set local role authenticated;
+    perform set_config('request.jwt.claim.sub', v_editor::text, true);
+    insert into storage.objects (bucket_id, name)
+    values ('otro-bucket', 'portada/prueba-de-seguridad.jpg');
+    v_pudo := true;
+  exception when others then
+    v_pudo := false;
+  end;
+  reset role;
+  perform pg_temp.comprobar('nadie sube a un bucket que no existe', v_pudo = false);
+
+  begin
+    set local role authenticated;
+    perform set_config('request.jwt.claim.sub', v_editor::text, true);
+    insert into storage.objects (bucket_id, name)
+    values ('medios', 'inventada/prueba-de-seguridad.jpg');
+    v_pudo := true;
+  exception when others then
+    v_pudo := false;
+  end;
+  reset role;
+  perform pg_temp.comprobar('un editor NO sube fuera de una sección', v_pudo = false);
+
+  -- --- y una travesía de directorios tampoco cuela ---------------------------
+  begin
+    set local role authenticated;
+    perform set_config('request.jwt.claim.sub', v_editor::text, true);
+    insert into storage.objects (bucket_id, name)
+    values ('medios', 'portada/../../etc/passwd');
+    v_pudo := true;
+  exception when others then
+    v_pudo := false;
+  end;
+  reset role;
+  perform pg_temp.comprobar('una ruta con «..» se rechaza', v_pudo = false);
+
+  perform set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
+end $$;
+
+\echo ''
+\echo '========================================'
 \echo '  Playlist: sólo invitados, con tope'
 \echo '========================================'
 

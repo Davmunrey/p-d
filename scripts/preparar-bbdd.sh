@@ -60,6 +60,53 @@ create or replace function auth.role() returns text language sql stable as $$
   select nullif(current_setting('request.jwt.claim.role', true), '') $$;
 create or replace function auth.jwt() returns jsonb language sql stable as $$
   select coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb, '{}'::jsonb) $$;
+
+-- LO QUE SUPABASE APORTA COMO «STORAGE», EN LO QUE HACE FALTA PARA PROBARLO.
+--
+-- Sin esto, la migración del bucket revienta contra un PostgreSQL pelado y el
+-- trabajo de CI de migraciones no probaría la parte del proyecto que decide
+-- quién puede subir una foto. Es el mismo trato que ya se le da a `auth`: no se
+-- simula el servicio, se recrean las TABLAS sobre las que actúan las políticas,
+-- que son las que se quiere probar.
+create schema if not exists storage;
+grant usage on schema storage to anon, authenticated, service_role;
+
+create table if not exists storage.buckets (
+  id                 text primary key,
+  name               text not null,
+  owner              uuid,
+  created_at         timestamptz default now(),
+  updated_at         timestamptz default now(),
+  public             boolean default false,
+  avif_autodetection boolean default false,
+  file_size_limit    bigint,
+  allowed_mime_types text[],
+  owner_id           text
+);
+
+create table if not exists storage.objects (
+  id               uuid primary key default extensions.gen_random_uuid(),
+  bucket_id        text references storage.buckets (id),
+  name             text,
+  owner            uuid,
+  created_at       timestamptz default now(),
+  updated_at       timestamptz default now(),
+  last_accessed_at timestamptz default now(),
+  metadata         jsonb,
+  path_tokens      text[],
+  version          text,
+  owner_id         text,
+  user_metadata    jsonb
+);
+
+-- Igual que en Supabase: la RLS viene puesta y las políticas las trae la
+-- migración. Sin `force`, el propietario de la tabla se las saltaría y la suite
+-- de seguridad daría por buena una regla que no se aplica.
+alter table storage.objects enable row level security;
+alter table storage.objects force row level security;
+
+grant select on storage.buckets to anon, authenticated, service_role;
+grant select, insert, update, delete on storage.objects to anon, authenticated, service_role;
 SQL
 chmod a+r "$PREVIO"
 psqlp "-d $BASE -q -v ON_ERROR_STOP=1 -f $PREVIO" >&2
