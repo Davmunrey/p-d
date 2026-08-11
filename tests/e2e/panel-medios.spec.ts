@@ -163,6 +163,33 @@ function comoFichero(nombre: string, tipo: string, contenido: Buffer) {
 }
 
 /**
+ * QUE LAS MINIATURAS DE LA SEMILLA NO REVIENTEN. Es una MEDICIÓN de #126, no
+ * una comodidad, y se quita en cuanto esa incidencia se cierre.
+ *
+ * La semilla siembra tres filas de `medios` cuyo objeto **no existe** en el
+ * bucket, y lo hace a propósito: así se prueba que la landing degrada con
+ * elegancia. El efecto secundario está en esta pantalla, que pinta miniaturas
+ * de todo lo subido: en CI, el navegador pide esos tres ficheros, Storage
+ * contesta un error en JSON y **ORB bloquea las tres peticiones**, justo en la
+ * ventana en la que se envía la acción.
+ *
+ * Es lo único que queda por descartar. Todo lo demás que distinguía a esta
+ * pantalla de una reproducción que SÍ pasa ya se ha probado y no era: el camino
+ * de cliente contra el nativo, la tanda de precargas del menú, apilar contra
+ * sustituir en el historial, el `multipart`, el `<details>` plegado y redirigir
+ * a la misma ruta.
+ *
+ * SE INTERCEPTA EN LA PESTAÑA Y NO SE TOCA LA SEMILLA: borrar esas filas
+ * rompería los tests de la landing que dependen de ellas, y en el mismo trabajo
+ * de CI. Aquí la respuesta se fabrica y no se escribe en ningún sitio.
+ */
+async function servirLasMiniaturas(pagina: Page) {
+  await pagina.route("**/storage/v1/object/public/**", (ruta) =>
+    ruta.fulfill({ status: 200, contentType: "image/png", body: pngMinimo() }),
+  );
+}
+
+/**
  * Espera a que la acción deje su `?estado=` en la URL, y si no llega, CUENTA
  * QUÉ PASÓ EN SU LUGAR.
  *
@@ -278,6 +305,7 @@ test.describe("El gestor de fotos y vídeos", () => {
   test("se sube como borrador, se publica y se borra", async ({ page, request }) => {
     const alternativo = `${MARCA} portada ${Date.now()}`;
 
+    await servirLasMiniaturas(page);
     await entrar(page);
     await page.goto(RUTA_MEDIOS);
 
