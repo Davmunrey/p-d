@@ -137,6 +137,13 @@ test.describe("Landing", () => {
    * Comprobar la clase no valdría: diría que se ha pedido la fuente, no que
    * haya llegado. Si `next/font` fallara o el nombre de la familia se
    * escribiera mal, la «y» caería en la serif y la clase seguiría ahí.
+   *
+   * Y TAMPOCO VALE BUSCAR «Italianno» EN LA PILA DE FAMILIAS. Ese nombre está
+   * escrito a mano en `--font-family-conector` como red de seguridad, así que
+   * aparece en el `fontFamily` calculado tanto si la fuente ha llegado como si
+   * no: un test que lo busque pasa siempre. Lo que se comprueba es que la
+   * PRIMERA familia de la pila —la que de verdad se usa— corresponde a una
+   * fuente cargada, que es la única señal que distingue las dos situaciones.
    */
   test("la «y» entre los nombres se pinta con Italianno", async ({ page }) => {
     const conector = page.getByText(copy.portada.conjuncion, { exact: true }).first();
@@ -146,6 +153,18 @@ test.describe("Landing", () => {
       (elemento) => getComputedStyle(elemento).fontFamily,
     );
     expect(familia).toContain("Italianno");
+
+    await page.evaluate(() => document.fonts.ready);
+    const llego = await conector.evaluate((elemento) => {
+      const primera = getComputedStyle(elemento)
+        .fontFamily.split(",")[0]
+        .trim()
+        .replace(/^["']|["']$/g, "");
+      return [...document.fonts].some(
+        (fuente) => fuente.family === primera && fuente.status === "loaded",
+      );
+    });
+    expect(llego, "la primera familia de la pila tiene que ser una fuente cargada").toBe(true);
 
     // Y en bronce: es la única gota de color cálido de la portada.
     const { conectorColor, tituloColor } = await page.evaluate((texto) => {
@@ -158,6 +177,67 @@ test.describe("Landing", () => {
     }, copy.portada.conjuncion);
 
     expect(conectorColor).not.toBe(tituloColor);
+  });
+});
+
+/**
+ * LAS FUENTES SON NUESTRAS.
+ *
+ * Cormorant Infant, Jost e Italianno viven en `src/fuentes` y las sirve el
+ * propio dominio. Esto no es una preferencia de estilo, arregla tres cosas que
+ * ya dieron guerra:
+ *
+ *   · La compilación dejó de depender de que Google conteste. Con
+ *     `next/font/google`, el MISMO commit compiló en un trabajo de CI y falló
+ *     en otro con «Can't resolve @vercel/turbopack-next/internal/font/google».
+ *     En una web cuyo diseño *es* la tipografía, eso es la compilación entera.
+ *   · Nadie le cuenta a Google quién abre la invitación. Mismo criterio que el
+ *     mapa de OpenStreetMap.
+ *   · Un salto de red menos antes del primer texto.
+ *
+ * Se prueba desde la red y no leyendo el código porque lo que importa es lo que
+ * el navegador PIDE: un `import` de `next/font/google` que se colara en
+ * cualquier fichero volvería a sacar peticiones a Google sin tocar esto.
+ */
+test.describe("Las fuentes", () => {
+  /** Todo lo que la página pide de fuera mientras se pinta. */
+  async function peticionesAlCargar(page: import("@playwright/test").Page) {
+    const urls: string[] = [];
+    page.on("request", (peticion) => urls.push(peticion.url()));
+    await page.goto("/");
+    await page.evaluate(() => document.fonts.ready);
+    return urls;
+  }
+
+  /**
+   * CAMINO FELIZ · los `.woff2` salen de nuestro propio origen.
+   */
+  test("las tipografías las sirve el propio dominio", async ({ page, baseURL }) => {
+    const urls = await peticionesAlCargar(page);
+    const fuentes = urls.filter((url) => url.endsWith(".woff2"));
+
+    expect(fuentes.length, "la portada tiene que pedir alguna fuente").toBeGreaterThan(0);
+
+    const origen = new URL(baseURL!).origin;
+    const ajenas = fuentes.filter((url) => new URL(url).origin !== origen);
+    expect(ajenas, "ninguna fuente puede venir de fuera").toEqual([]);
+  });
+
+  /**
+   * CASO DE ERROR · ni una sola petición a Google.
+   *
+   * Comprueba los DOS dominios, y no sólo el de los ficheros: `fonts.gstatic`
+   * sirve los `.woff2`, pero es `fonts.googleapis` quien recibe la petición de
+   * la hoja de estilos —y esa es la que va con la IP de quien abre la
+   * invitación—. Bloquear uno y dejar el otro no arregla nada.
+   */
+  test("no se le pide nada a Google", async ({ page }) => {
+    const urls = await peticionesAlCargar(page);
+
+    const aGoogle = urls.filter(
+      (url) => url.includes("fonts.googleapis.com") || url.includes("fonts.gstatic.com"),
+    );
+    expect(aGoogle, "las fuentes están en el repositorio, no en Google").toEqual([]);
   });
 });
 
