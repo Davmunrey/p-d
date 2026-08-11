@@ -135,6 +135,19 @@ export function Navegacion({
           >
             {enlaces.map((enlace) => {
               const activo = enlace.ancla === anclaActiva;
+
+              /*
+                CONFIRMAR NO ES UNA SECCIÓN MÁS, y la entrega lo dibuja así: un
+                botón relleno al final de la tira, no un rótulo igual que los
+                demás. Es lo único que se le pide al invitado, y perdido entre
+                otras trece entradas del mismo peso deja de pedirse.
+
+                Se reconoce por la sección y no por su posición: el orden lo
+                deciden los novios desde el panel, y atarlo al último elemento
+                convertiría un cambio de orden en un botón que desaparece.
+              */
+              const esConfirmar = enlace.seccion === "rsvp";
+
               return (
                 <li key={enlace.seccion} className="flex shrink-0 items-stretch">
                   <a
@@ -150,10 +163,12 @@ export function Navegacion({
                         cambia nada de lo que se ve: cambia lo que se puede
                         pulsar, que es lo que estaba mal.
                       */
-                      "marca-activa flex items-center whitespace-nowrap text-etiqueta uppercase tracking-etiqueta transicion-color",
-                      activo
-                        ? "border-borde-marca text-tinta-marca"
-                        : "border-transparent text-tinta-suave hover:text-tinta",
+                      "flex items-center whitespace-nowrap text-etiqueta uppercase tracking-etiqueta transicion-color",
+                      esConfirmar
+                        ? "my-auto rounded-boton bg-accion px-elemento py-interno-compacto text-tinta-sobre-accion hover:bg-accion-hover"
+                        : activo
+                          ? "marca-activa border-borde-marca text-tinta-marca"
+                          : "marca-activa border-transparent text-tinta-suave hover:text-tinta",
                     ].join(" ")}
                   >
                     {enlace.rotulo}
