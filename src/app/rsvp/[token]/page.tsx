@@ -502,7 +502,7 @@ function RespuestaEnviada({
       <dl className="mx-auto mt-bloque grid max-w-texto gap-pila text-left">
         {vienen.length > 0 ? (
           <div>
-            <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+            <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
               {t("rsvp.resumenVienen")}
             </dt>
             <dd className="mt-linea text-cuerpo text-tinta">
@@ -513,7 +513,7 @@ function RespuestaEnviada({
 
         {noVienen.length > 0 ? (
           <div>
-            <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+            <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
               {t("rsvp.resumenNoVienen")}
             </dt>
             <dd className="mt-linea text-cuerpo text-tinta">
@@ -524,7 +524,7 @@ function RespuestaEnviada({
       </dl>
 
       {respondido ? (
-        <p className="mt-elemento text-pequeno text-tinta-tenue">
+        <p className="mt-elemento text-pequeno text-tinta-suave">
           {t("rsvp.respuestaGuardada", { fecha: formatoFechaHora.format(respondido) })}
         </p>
       ) : null}

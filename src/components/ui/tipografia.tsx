@@ -131,7 +131,7 @@ export function EtiquetaSeccion({
   return (
     <span
       className={`inline-flex items-center gap-interno-compacto text-etiqueta uppercase tracking-seccion ${
-        realzada ? "text-acento" : "text-tinta-tenue"
+        realzada ? "text-acento" : "text-tinta-suave"
       }`}
     >
       {realzada ? (
@@ -155,7 +155,7 @@ export function Etiqueta({
   return (
     <span
       id={id}
-      className={`block text-etiqueta uppercase tracking-etiqueta text-tinta-tenue ${className}`}
+      className={`block text-etiqueta uppercase tracking-etiqueta text-tinta-suave ${className}`}
     >
       {children}
     </span>

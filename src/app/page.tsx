@@ -443,7 +443,7 @@ function Portada({
         */}
         <dl className="animacion-subir flex flex-wrap gap-pila sm:gap-bloque">
           <div>
-            <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+            <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
               {t("portada.etiquetaFecha")}
             </dt>
             <dd className="mt-linea font-titulo text-titulo-2 text-tinta-marca tabular-nums">
@@ -454,7 +454,7 @@ function Portada({
           </div>
           {lugar ? (
             <div>
-              <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+              <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
                 {t("portada.etiquetaLugar")}
               </dt>
               <dd className="mt-linea font-titulo text-titulo-2 text-tinta-marca">{lugar}</dd>
@@ -479,7 +479,7 @@ function Portada({
         */}
         <p
           aria-hidden
-          className="animacion-aparecer mt-elemento flex items-center gap-interno-compacto text-diminuto uppercase tracking-marcado text-tinta-tenue"
+          className="animacion-aparecer mt-elemento flex items-center gap-interno-compacto text-diminuto uppercase tracking-marcado text-tinta-suave"
         >
           {t("portada.bajad")}
           <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-borde-fuerte to-transparent" />

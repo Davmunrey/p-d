@@ -81,7 +81,7 @@ export function CuentaAtras({ fechaIso }: { fechaIso: string }) {
           <div className="font-titulo text-cifra font-light leading-none tabular-nums">
             {bloque.valor}
           </div>
-          <div className="mt-linea text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+          <div className="mt-linea text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
             {bloque.etiqueta}
           </div>
         </div>

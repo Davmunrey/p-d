@@ -115,7 +115,11 @@ test.describe("El peso y la estabilidad de la landing", () => {
         await new Promise((listo) => setTimeout(listo, 120));
       }
     });
-    await page.waitForLoadState("networkidle");
+
+    // Nada de `networkidle` aquí: el vídeo del paisaje sigue descargando en
+    // bucle y la red no se calla nunca. Medio segundo da tiempo a que el
+    // observador anote los últimos saltos, que es lo único que se espera.
+    await page.waitForTimeout(500);
 
     const cls = await page.evaluate(() => (window as typeof window & { __cls: number }).__cls);
     expect(
