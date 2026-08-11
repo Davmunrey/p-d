@@ -266,3 +266,81 @@ export const URL_RESEND = process.env.RESEND_URL ?? "https://api.resend.com";
  * rastreadores sin que nadie haya abierto la página. Ver BODA-28.
  */
 export const RUTA_CUENTA_REGALOS = "/regalos/cuenta";
+
+/**
+ * Los módulos que llegan con la entrega grande: tareas, mesas, documentos de
+ * la boda y las pantallas del día. Las rutas viven aquí y no en literales por
+ * la regla de siempre: un enlace escrito dos veces acaba escrito de dos
+ * maneras.
+ */
+export const RUTA_TAREAS = "/panel/tareas";
+
+export const RUTA_MESAS = "/panel/mesas";
+
+export const RUTA_DOCUMENTOS = "/panel/documentos";
+
+/**
+ * Las pantallas del día de la boda. Todo lo que se mira desde el móvil, de
+ * pie y con prisa, cuelga de aquí: el guion, la agenda de contactos, el
+ * buscador de invitados, el recuento del catering y el plan B en papel.
+ */
+export const RUTA_DIA = "/panel/dia";
+
+export const RUTA_AGENDA_DIA = "/panel/dia/agenda";
+
+export const RUTA_BUSCAR_DIA = "/panel/dia/buscar";
+
+export const RUTA_RECUENTO = "/panel/dia/recuento";
+
+export const RUTA_EXPORTAR_DIA = "/panel/dia/exportar";
+
+/**
+ * La comparativa de presupuestos dentro de una categoría. Cuelga de
+ * proveedores porque compara proveedores; la categoría llega por query.
+ */
+export const RUTA_COMPARADOR = "/panel/proveedores/comparar";
+
+/**
+ * El IVA general, para poner los presupuestos en la misma base antes de
+ * compararlos. Es configuración de la aplicación y no un dato por proveedor:
+ * lo que se guarda de cada uno es su cifra y si la dio con o sin IVA.
+ */
+export const PORCENTAJE_IVA = 21;
+
+/**
+ * El bucket PRIVADO de contratos y facturas. El nombre está duplicado a
+ * conciencia en `20260811140800_bucket_documentos.sql`; un test unitario
+ * comprueba que no discrepan, igual que con el de medios.
+ */
+export const BUCKET_DOCUMENTOS = "documentos";
+
+/**
+ * Tope de peso de un documento. Un contrato escaneado a doble cara cabe de
+ * sobra; lo que no cabe es que alguien suba un vídeo al bucket de contratos.
+ */
+export const PESO_MAXIMO_DOCUMENTO_MB = 20;
+
+/**
+ * Lo que se admite en el bucket de documentos: contratos y facturas llegan
+ * como PDF o como foto. La lista está duplicada a conciencia en la migración
+ * del bucket, que es la última línea de defensa; ésta es la primera.
+ */
+export const TIPOS_DOCUMENTO_ADMITIDOS = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+] as const;
+
+/**
+ * Cuánto vive una URL firmada de descarga de un documento. Corta a propósito:
+ * lo que se firma es «este clic», no «este fichero para siempre» — un enlace
+ * copiado a un chat caduca antes de que nadie lo abra.
+ */
+export const SEGUNDOS_URL_FIRMADA = 300;
+
+/**
+ * Dónde guarda el navegador lo marcado en el guion del día mientras no hay
+ * cobertura. En una finca sin señal, lo marcado no puede perderse: se apunta
+ * aquí y se reenvía al volver la conexión.
+ */
+export const CLAVE_ALMACEN_DIA = "boda-guion-dia";

@@ -35,6 +35,13 @@ jobs:
       - name: Formato
         run: npm run format:check
 
+      # La Definition of Done exige unitarios en verde, y este era el único
+      # sitio del CI donde no corrían: `verificar` los incluye en local y el
+      # hook de husky también, pero un push directo o un entorno sin hooks se
+      # los saltaba. Ahora el verde de la PR significa lo que dice el DoD.
+      - name: Tests unitarios
+        run: npm test
+
   base-de-datos:
     name: Migraciones y seguridad de la BBDD
     runs-on: ubuntu-latest

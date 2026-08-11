@@ -1,12 +1,16 @@
 import {
   RUTA_AJUSTES,
   RUTA_CUENTA,
+  RUTA_DIA,
+  RUTA_DOCUMENTOS,
   RUTA_INVITADOS,
   RUTA_MEDIOS,
   RUTA_MENSAJES,
+  RUTA_MESAS,
   RUTA_PANEL,
   RUTA_PRESUPUESTO,
   RUTA_PROVEEDORES,
+  RUTA_TAREAS,
 } from "./constants";
 
 /**
@@ -45,12 +49,14 @@ export const MODULOS = [
   { clave: "invitados", ruta: RUTA_INVITADOS, entregado: true },
   { clave: "mensajes", ruta: RUTA_MENSAJES, entregado: true },
   { clave: "medios", ruta: RUTA_MEDIOS, entregado: true },
-  { clave: "mesas", ruta: `${RUTA_PANEL}/mesas`, entregado: false },
+  { clave: "mesas", ruta: RUTA_MESAS, entregado: false },
   { clave: "menus", ruta: `${RUTA_PANEL}/menus`, entregado: false },
   { clave: "actividades", ruta: `${RUTA_PANEL}/actividades`, entregado: false },
   { clave: "proveedores", ruta: RUTA_PROVEEDORES, entregado: true },
   { clave: "presupuesto", ruta: RUTA_PRESUPUESTO, entregado: true },
-  { clave: "tareas", ruta: `${RUTA_PANEL}/tareas`, entregado: false },
+  { clave: "tareas", ruta: RUTA_TAREAS, entregado: false },
+  { clave: "documentos", ruta: RUTA_DOCUMENTOS, entregado: false },
+  { clave: "dia", ruta: RUTA_DIA, entregado: false },
   { clave: "ajustes", ruta: RUTA_AJUSTES, entregado: true },
   { clave: "cuenta", ruta: RUTA_CUENTA, entregado: true },
 ] as const satisfies readonly Modulo[];

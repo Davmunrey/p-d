@@ -61,7 +61,11 @@ declare
     'categorias_proveedor', 'categorias_presupuesto', 'partidas_presupuesto',
     'pagos', 'tareas', 'mesas', 'perfiles', 'registro_auditoria',
     'configuracion_privada', 'intentos_rsvp', 'invitaciones_panel',
-    'parametros_seguridad'
+    'parametros_seguridad',
+    -- BODA-105: aquí dentro hay DNI y certificados de nacimiento.
+    'documentos_boda',
+    -- BODA-82/100/103: gestión interna; a un invitado no le incumbe nada.
+    'plantilla_tareas', 'guion_dia', 'correcciones_recuento'
   ];
 begin
   foreach t in array privadas loop
@@ -331,6 +335,53 @@ begin
 
   perform pg_temp.comprobar('el bucket «medios» existe y es público', coalesce(v_publico, false));
   perform pg_temp.comprobar('y tiene tope de peso', coalesce(v_tope, 0) > 0);
+end $$;
+
+\echo ''
+\echo '========================================'
+\echo '  El bucket de documentos: PRIVADO'
+\echo '========================================'
+
+/*
+  BODA-72 · BLOQUEANTE.
+
+  Al contrario que el de medios, este bucket guarda contratos con datos
+  bancarios y firmas y NO es público: nadie lee por URL directa. La descarga
+  legítima pasa por una acción de servidor que comprueba la sesión y firma
+  una URL de caducidad corta con la clave de servicio.
+
+  La escritura la deniega la misma ausencia que en medios: RLS activada y
+  cero políticas sobre `storage.objects` (ya afirmado arriba, y vale para
+  todos los buckets a la vez). Aquí se afirma lo propio de éste: que existe,
+  que es privado y que `anon` tampoco cuela una subida nombrándolo.
+*/
+do $$
+declare
+  v_publico boolean;
+  v_tope    bigint;
+  v_pudo    boolean;
+begin
+  select b.public, b.file_size_limit into v_publico, v_tope
+    from storage.buckets as b where b.id = 'documentos';
+
+  perform pg_temp.comprobar(
+    'el bucket «documentos» existe y NO es público',
+    v_publico is not null and not v_publico
+  );
+  perform pg_temp.comprobar('y tiene tope de peso', coalesce(v_tope, 0) > 0);
+
+  begin
+    set local role anon;
+    insert into storage.objects (bucket_id, name)
+    values ('documentos', 'contratos/colado-por-anon.pdf');
+    v_pudo := true;
+  exception when others then
+    v_pudo := false;
+  end;
+  reset role;
+  perform pg_temp.comprobar('anon NO puede subir al bucket de documentos', v_pudo = false);
+
+  perform set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
 end $$;
 
 \echo ''

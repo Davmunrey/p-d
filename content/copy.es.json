@@ -297,7 +297,9 @@
       "cuenta": "Mi cuenta",
       "ajustes": "Ajustes",
       "mensajes": "Mensajes",
-      "medios": "Fotos y vídeos"
+      "medios": "Fotos y vídeos",
+      "documentos": "Documentos",
+      "dia": "Día de la boda"
     },
     "resumen": {
       "titulo": "Resumen",
@@ -865,6 +867,18 @@
       "errorSinConfigurar": "Falta configurar la clave de servicio de Supabase. Sin ella no se puede subir nada.",
       "errorSinPermiso": "Sólo un editor puede tocar las fotos de la web.",
       "errorGuardar": "No hemos podido guardar. Inténtalo de nuevo."
+    },
+    "tareas": {
+      "titulo": "Tareas"
+    },
+    "mesas": {
+      "titulo": "Mesas"
+    },
+    "documentos": {
+      "titulo": "Documentos de la boda"
+    },
+    "dia": {
+      "titulo": "El día de la boda"
     }
   },
   "correoConfirmacion": {
