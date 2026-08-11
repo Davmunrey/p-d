@@ -152,7 +152,7 @@ jobs:
         run: ./scripts/preparar-acceso-pruebas.sh
 
       - name: Recoger las claves del Supabase local
-        run: supabase status -o env | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/; s/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/; s/^DB_URL=/DATABASE_URL=/' | tr -d '"' >> "$GITHUB_ENV"
+        run: supabase status -o env | sed 's/^API_URL=/NEXT_PUBLIC_SUPABASE_URL=/; s/^ANON_KEY=/NEXT_PUBLIC_SUPABASE_ANON_KEY=/; s/^DB_URL=/DATABASE_URL=/; s/^SERVICE_ROLE_KEY=/SUPABASE_SERVICE_ROLE_KEY=/' | tr -d '"' >> "$GITHUB_ENV"
 
       - name: Probar el recorrido completo del acceso
         env:

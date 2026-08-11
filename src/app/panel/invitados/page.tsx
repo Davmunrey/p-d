@@ -185,7 +185,7 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
                 {COLUMNAS_EXPORTABLES.map((columna) => (
                   <label
                     key={columna.id}
-                    className="flex cursor-pointer items-center gap-interno-compacto rounded-etiqueta border border-borde px-interno py-linea transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue"
+                    className="flex min-h-control-compacto cursor-pointer items-center gap-interno-compacto rounded-etiqueta border border-borde px-interno py-linea transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue"
                   >
                     <input
                       type="checkbox"

@@ -20,7 +20,7 @@ import {
   Titulo3,
 } from "@/components/ui/tipografia";
 import { ID_CONTENIDO, IDIOMA, ZONA_HORARIA } from "@/config/constants";
-import { anclaDe, esAncla, type Seccion } from "@/config/secciones";
+import { anclaDe, esAncla, vaEnElMenu, type Seccion } from "@/config/secciones";
 import {
   obtenerAlojamientos,
   obtenerCanciones,
@@ -249,11 +249,25 @@ export default async function PaginaInicio() {
   // El orden lo pone la base de datos; el filtro, lo que de verdad hay hecho.
   const aPintar = secciones.filter((seccion) => esAncla(seccion) && contenido[seccion]);
 
-  const enlaces = aPintar.map((seccion) => ({
-    seccion,
-    ancla: anclaDe(seccion),
-    rotulo: t(`navegacion.secciones.${seccion}`),
-  }));
+  /*
+    EL MENÚ NO ES EL ÍNDICE DE LA PÁGINA.
+
+    Llevaba una entrada por sección —quince— y en un móvil eso era una tira que
+    había que arrastrar, con las últimas fuera de la pantalla. Ahora lleva sólo
+    las que alguien busca CON PRISA, que es la única razón por la que un menú
+    existe en una página que se lee bajando: la mañana de la boda se pregunta a
+    qué hora es, cómo se llega y dónde se duerme. Más el botón de confirmar.
+
+    Quién entra lo decide `SECCIONES_EN_MENU`, y sigue mandando el filtro de
+    arriba: una sección sin contenido no aparece tampoco aquí.
+  */
+  const enlaces = aPintar
+    .filter((seccion) => vaEnElMenu(seccion))
+    .map((seccion) => ({
+      seccion,
+      ancla: anclaDe(seccion),
+      rotulo: t(`navegacion.secciones.${seccion}`),
+    }));
 
   return (
     <>
@@ -409,7 +423,13 @@ function Portada({
           <Display como="p">{configuracion.nombreNovio}</Display>
         </div>
 
-        <hr className="animacion-trazar my-bloque border-t border-borde-fuerte" />
+        {/*
+          LA MISMA LÓGICA QUE EL HUECO DE ABAJO: en escritorio esta raya separa
+          dos bloques que respiran; en móvil, 56 px por arriba y otros 56 por
+          abajo son 112 px de pantalla para una línea de un píxel, en el único
+          sitio donde la pantalla se acaba.
+        */}
+        <hr className="animacion-trazar my-elemento border-t border-borde-fuerte sm:my-bloque" />
 
         {/*
           EL HUECO ENTRE COLUMNAS NO SIRVE CUANDO NO HAY COLUMNAS.
@@ -463,7 +483,18 @@ function Portada({
           <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
         </p>
 
-        <div className="animacion-subir mt-bloque flex flex-wrap gap-interno">
+        {/*
+          PEGADOS AL «BAJAD», Y NO POR AHORRAR ESPACIO.
+
+          Con 56 px por encima, el «bajad» se quedaba flotando solo en mitad de
+          un hueco: demasiado lejos del lugar para ser su pie y demasiado lejos
+          de los botones para ser su entradilla. Acercándolo, la versalita y su
+          raya vuelven a leerse como lo que son —el gesto que enlaza con lo que
+          viene— y de paso «Confirmar asistencia» entra ENTERO en la pantalla de
+          un móvil, que antes se cortaba por la mitad. Es la única acción que se
+          le pide a un invitado: no puede pedir que le busquen.
+        */}
+        <div className="animacion-subir mt-elemento flex flex-wrap gap-interno sm:mt-bloque">
           <BotonEnlace href={`#${anclaDe("rsvp")}`}>
             {t("portada.confirmarAsistencia")}
           </BotonEnlace>

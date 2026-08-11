@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -104,12 +105,9 @@ export default async function PaginaGastos({ searchParams }: Parametros) {
       <header className="max-w-texto">
         <Titulo2 como="h1">{t("panel.presupuesto.gastos.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.presupuesto.gastos.descripcion")}</Cuerpo>
-        <Link
-          href={RUTA_PRESUPUESTO}
-          className="mt-pila inline-block text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
-        >
+        <EnlaceSuave href={RUTA_PRESUPUESTO} className="mt-pila">
           {t("panel.presupuesto.gastos.volver")}
-        </Link>
+        </EnlaceSuave>
       </header>
 
       <AvisoGastos estado={estado} />
@@ -319,7 +317,7 @@ function Fila({
             */}
             <Link
               href={`${RUTA_GASTOS}?editar=${gasto.id}#gasto-${gasto.id}`}
-              className="text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
+              className="inline-flex min-h-control-compacto items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
             >
               {t("panel.presupuesto.gastos.editar")}
             </Link>
@@ -433,7 +431,7 @@ function Edicion({
           */}
           <Link
             href={`${RUTA_GASTOS}#gasto-${gasto.id}`}
-            className="text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
+            className="inline-flex min-h-control-compacto items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
           >
             {t("panel.presupuesto.gastos.cancelar")}
           </Link>

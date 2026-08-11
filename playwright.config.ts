@@ -82,6 +82,17 @@ export default defineConfig({
           NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? URL_BASE,
 
           /*
+            LA CLAVE DE SERVICIO, VACÍA POR DEFECTO Y A PROPÓSITO.
+
+            Sólo la tiene el trabajo de CI que levanta Supabase de verdad. En
+            cualquier otro sitio llega vacía, `haySubidaDeMedios` es `false` y la
+            pantalla de medios lo dice en vez de reventar. Así el camino de «no
+            está configurado» se recorre en cada ejecución de la suite, que es
+            justo el que nadie prueba y el que se ve el día del despliegue.
+          */
+          SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+
+          /*
             EL CORREO, APUNTANDO A UN PUERTO CERRADO POR DEFECTO.
 
             Es deliberado, y es la misma idea que el Supabase inexistente de

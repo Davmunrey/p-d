@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { RUTA_ACCESO, RUTA_INVITADOS } from "@/config/constants";
 import { t } from "@/lib/copy";
@@ -59,12 +59,9 @@ export default async function PaginaImportar() {
       <FormularioImportacion />
 
       <p className="mt-bloque">
-        <Link
-          href={RUTA_INVITADOS}
-          className="text-pequeno text-tinta-suave underline decoration-borde underline-offset-4 transicion-color hover:text-tinta"
-        >
+        <EnlaceSuave href={RUTA_INVITADOS} discreto>
           {t("panel.importar.volver")}
-        </Link>
+        </EnlaceSuave>
       </p>
     </>
   );

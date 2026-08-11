@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_ACCESO, RUTA_INVITADOS, ZONA_HORARIA } from "@/config/constants";
@@ -112,7 +113,7 @@ export default async function PaginaPendientes({ searchParams }: Parametros) {
               <div>
                 <Link
                   href={`${RUTA_INVITADOS}/${grupo.id}`}
-                  className="font-titulo text-titulo-3 text-tinta transicion-color hover:text-tinta-marca"
+                  className="inline-flex min-h-control-compacto items-center font-titulo text-titulo-3 text-tinta transicion-color hover:text-tinta-marca"
                 >
                   {grupo.nombre}
                 </Link>
@@ -145,7 +146,7 @@ export default async function PaginaPendientes({ searchParams }: Parametros) {
                   </Cuerpo>
                   <Link
                     href={`${RUTA_INVITADOS}/${grupo.id}`}
-                    className="mt-pila inline-block text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
+                    className="mt-pila inline-flex min-h-control-compacto items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
                   >
                     {t("panel.pendientes.verFicha")}
                   </Link>
@@ -181,12 +182,9 @@ export default async function PaginaPendientes({ searchParams }: Parametros) {
       ) : null}
 
       <p className="mt-bloque">
-        <Link
-          href={RUTA_INVITADOS}
-          className="text-pequeno text-tinta-suave underline decoration-borde underline-offset-4 transicion-color hover:text-tinta"
-        >
+        <EnlaceSuave href={RUTA_INVITADOS} discreto>
           {t("panel.pendientes.volver")}
-        </Link>
+        </EnlaceSuave>
       </p>
     </>
   );

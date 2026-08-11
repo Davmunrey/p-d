@@ -38,6 +38,28 @@
   }
 }
 
+/**
+ * El mismo gesto que `subir`, pero con más recorrido.
+ *
+ * `subir` es para la entrada de la portada, con la pantalla quieta y el ojo ya
+ * puesto: 22 px bastan y de más sería aparatoso. Un reveal se ve MIENTRAS SE
+ * BAJA, compitiendo con todo lo demás que se mueve en la pantalla, y en un
+ * escritorio ancho ese mismo gesto no lo percibe nadie. De ahí que tenga su
+ * propia distancia en vez de reutilizar la otra: son dos trabajos distintos que
+ * se parecen.
+ */
+@keyframes subir-al-ver {
+  from {
+    opacity: 0%;
+    transform: translateY(var(--space-elemento));
+  }
+
+  to {
+    opacity: 100%;
+    transform: translateY(0);
+  }
+}
+
 @keyframes bajar {
   from {
     opacity: 0%;
@@ -217,19 +239,43 @@
 }
 
 @supports (animation-timeline: view()) {
+  /**
+   * CUÁNTO DURA EL REVEAL, MEDIDO CONTRA LA PANTALLA Y NO CONTRA EL ELEMENTO.
+   *
+   * `entry` solo —de «asoma» a «ha entrado del todo»— dura lo que MIDE EL
+   * ELEMENTO: una cabecera de 118 px se revela entera en 118 px de scroll, o
+   * sea en un golpe de dedo. Se probó y era peor que lo que había.
+   *
+   * `cover 30%` se mide contra la pantalla: en un escritorio de 900 px son unos
+   * 270 px de recorrido pase lo que pase, y en un móvil de 660 px son 200. Eso
+   * es lo que hace que el movimiento se PERCIBA en una pantalla grande, donde
+   * se ve media página a la vez y un gesto pequeño se pierde entre lo demás.
+   *
+   * Empieza en `entry 0%`: en cuanto el elemento asoma. No antes —no habría
+   * nada que ver— ni después, que es lo que hacía que apareciera ya montado.
+   */
   .animacion-subir-al-ver,
   .animacion-aparecer-al-ver,
   .animacion-cortina-al-ver,
   .animacion-escala-al-ver {
     animation-fill-mode: both;
-    animation-range: entry 4% cover 24%;
+    animation-range: entry 0% cover 30%;
     animation-timeline: view();
     animation-timing-function: linear;
   }
 
+  /*
+    Y VIAJA MÁS QUE LA ENTRADA DE LA PORTADA, a propósito.
+
+    `subir` mueve 22 px, que es lo que pide un titular que aparece al cargar con
+    la pantalla quieta. Bajando por una página son insuficientes: en un
+    escritorio ancho, 22 px de desplazamiento en un elemento que ocupa un tercio
+    del ancho no los ve nadie. Los reveals usan su propia distancia, y por eso
+    tienen su propio fotograma en vez de reutilizar `subir`.
+  */
   .animacion-subir-al-ver {
     animation-duration: var(--duration-slow);
-    animation-name: subir;
+    animation-name: subir-al-ver;
   }
 
   .animacion-aparecer-al-ver {

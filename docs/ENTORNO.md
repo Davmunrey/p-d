@@ -20,15 +20,15 @@ solo están los **nombres**.
 **Settings → Environment Variables.** Marcar las tres ramas (Production,
 Preview, Development) salvo que se indique otra cosa.
 
-| Variable                        | De dónde se saca                                                                                           |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                  | Botón **Connect** del dashboard → pestaña **Transaction pooler**                                           |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Botón **Connect** → pestaña de frameworks, o Settings → **API Keys**                                       |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Igual que la anterior: salen juntas                                                                        |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Settings → **API Keys** → `service_role`. **Todavía no hace falta**: ningún código la usa                  |
-| `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                                                 |
-| `RESEND_API_KEY`                | [resend.com](https://resend.com) → **API Keys**. Sin ella no se manda el acuse de recibo, y no es un error |
-| `CORREO_REMITENTE`              | La dirección desde la que se escribe, en un dominio **verificado** en Resend                               |
+| Variable                        | De dónde se saca                                                                                                                              |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                  | Botón **Connect** del dashboard → pestaña **Transaction pooler**                                                                              |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Botón **Connect** → pestaña de frameworks, o Settings → **API Keys**                                                                          |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Igual que la anterior: salen juntas                                                                                                           |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Settings → **API Keys** → `service_role`. **Hace falta para subir fotos** (BODA-29): Storage no admite escrituras con la sesión de un usuario |
+| `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                                                                                    |
+| `RESEND_API_KEY`                | [resend.com](https://resend.com) → **API Keys**. Sin ella no se manda el acuse de recibo, y no es un error                                    |
+| `CORREO_REMITENTE`              | La dirección desde la que se escribe, en un dominio **verificado** en Resend                                                                  |
 
 **El pooler, no la conexión directa.** Cada petición a la web arranca una
 función efímera; con conexión directa se agotan las conexiones del servidor en

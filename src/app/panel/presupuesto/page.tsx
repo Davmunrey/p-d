@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -87,18 +87,8 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
         <Titulo2 como="h1">{t("panel.presupuesto.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.presupuesto.descripcion")}</Cuerpo>
         <div className="mt-pila flex flex-wrap gap-interno">
-          <Link
-            href={RUTA_GASTOS}
-            className="inline-block text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
-          >
-            {t("panel.presupuesto.verGastos")}
-          </Link>
-          <Link
-            href={RUTA_PAGOS}
-            className="inline-block text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
-          >
-            {t("panel.presupuesto.verPagos")}
-          </Link>
+          <EnlaceSuave href={RUTA_GASTOS}>{t("panel.presupuesto.verGastos")}</EnlaceSuave>
+          <EnlaceSuave href={RUTA_PAGOS}>{t("panel.presupuesto.verPagos")}</EnlaceSuave>
         </div>
       </header>
 
