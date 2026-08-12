@@ -59,9 +59,14 @@ import { invitacionRecordada } from "@/lib/invitacion-recordada";
  *
  * Una sección se enseña si cumple las dos cosas: que la base de datos la dé
  * por visible **y** que haya contenido que pintar. La segunda condición no es
- * un capricho: `galeria` y `ubicaciones` están encendidas desde el primer día
- * y todavía no existen (son BODA-25 y BODA-26). Sin ese filtro, el menú
- * ofrecería dos enlaces que no llevan a ninguna parte.
+ * un capricho: `ubicaciones` está encendida desde el primer día y todavía no
+ * existe (es BODA-26). Sin ese filtro, el menú ofrecería un enlace que no
+ * lleva a ninguna parte.
+ *
+ * Y SIGUE HACIENDO FALTA CON LA SECCIÓN YA ESCRITA, que es lo que enseñó la
+ * galería al entrar (BODA-25): existe el código, pero mientras no haya ninguna
+ * foto publicada no hay galería que enseñar, y el filtro la deja fuera sola.
+ * «Todavía no está hecha» y «hoy está vacía» acaban en el mismo sitio.
  *
  * NO SE CACHEA, y es un cambio respecto a cómo nació.
  *
