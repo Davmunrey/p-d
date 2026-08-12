@@ -1,6 +1,7 @@
 import { deflateSync } from "node:zlib";
 
 import { expect, test, type Page } from "@playwright/test";
+import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_MEDIOS, RUTA_PANEL } from "../../src/config/constants";
@@ -21,6 +22,7 @@ import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles
 
 const CORREO_CON_ACCESO = process.env.CORREO_CON_ACCESO;
 const CONTRASENA = process.env.CONTRASENA_PRUEBAS;
+const cadena = process.env.DATABASE_URL;
 
 /** Lo que se escribe en el texto alternativo, para reconocer lo nuestro. */
 const MARCA = "(DES) E2E medios";
@@ -112,19 +114,52 @@ function fichaDe(pagina: Page, alternativo: string) {
   return pagina.locator("li").filter({ has: pagina.locator(`input[value="${alternativo}"]`) });
 }
 
+/** Una fila de `medios`, con lo justo para saber dónde está y en qué puesto. */
+interface PuestoDeMedio {
+  texto: string;
+  seccion: string;
+  orden: number | null;
+}
+
 /**
- * Los textos alternativos de la pantalla, en el orden en que se pintan.
+ * Dónde está cada foto y en qué puesto, **preguntándoselo a la base**.
  *
- * Es la lista tal y como la ve quien mira: el orden de la página ES el orden
- * de la sección, y es lo único contra lo que tiene sentido afirmar una
- * permuta.
+ * El orden que se ve en la web sale de `medios.orden`, así que es ahí donde
+ * hay que mirar para afirmar una permuta. Leerlo del DOM engañaría: los
+ * campos de texto alternativo salen en las dieciséis secciones, y dos fotos
+ * que acabaran en secciones distintas parecerían ordenadas entre sí.
+ *
+ * El texto alternativo es `jsonb` por idioma; se lee el de la boda, que es el
+ * mismo que exige el trigger al insertar.
  */
-async function ordenDeLaPagina(pagina: Page): Promise<string[]> {
-  return pagina
-    .locator('input[name="texto_alternativo"]')
-    .evaluateAll((campos) =>
-      campos.map((campo) => (campo as HTMLInputElement).value).filter(Boolean),
-    );
+async function ordenEnLaBase(textos: string[]): Promise<PuestoDeMedio[]> {
+  const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+  try {
+    const filas = await sql<PuestoDeMedio[]>`
+      select
+        m.texto_alternativo ->> c.idioma_por_defecto as texto,
+        m.seccion::text                              as seccion,
+        m.orden
+      from public.medios as m
+      cross join public.configuracion_boda as c
+      where m.texto_alternativo ->> c.idioma_por_defecto = any (${textos})
+      order by m.orden
+    `;
+    // En el orden en que se pidieron: los tests razonan sobre «la primera» y
+    // «la segunda», no sobre lo que devuelva la base.
+    return textos
+      .map((texto) => filas.find((fila) => fila.texto === texto))
+      .filter((fila): fila is PuestoDeMedio => Boolean(fila));
+  } finally {
+    await sql.end();
+  }
+}
+
+/** Las filas, en una línea cada una, para que un fallo se lea sin abrir nada. */
+function describir(filas: PuestoDeMedio[]): string {
+  return filas
+    .map((fila) => `  ${fila.seccion} · orden ${fila.orden} · ${fila.texto}`)
+    .join("\n");
 }
 
 /**
@@ -308,7 +343,7 @@ test.describe.configure({ mode: "serial", retries: 0, timeout: 45_000 });
 
 test.describe("El gestor de fotos y vídeos", () => {
   test.skip(
-    !CORREO_CON_ACCESO || !CONTRASENA,
+    !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
   );
 
@@ -478,38 +513,53 @@ test.describe("El gestor de fotos y vídeos", () => {
     }
 
     /*
-      QUIÉN ADELANTA A QUIÉN LO DECIDE EL ORDEN QUE HAY, no el de subida.
+      QUIÉN VA DETRÁS LO DICE LA BASE, no el orden en que se subieron ni el
+      orden de la página.
 
-      El botón de subir NO SE PINTA en la primera foto de una sección —no hay a
-      dónde subir—, así que dar por hecho cuál de las dos va detrás convierte
-      un orden inesperado en una espera de cuarenta y cinco segundos contra un
-      botón que no existe, sin decir por qué. Se lee la lista, se coge la que
-      va detrás y se la manda arriba: la permuta se prueba igual, y si el orden
-      no es el que se creía, el fallo lo enseña en vez de esconderlo.
+      El botón de subir NO SE PINTA en la primera foto de su sección —no hay a
+      dónde subir—, así que suponer cuál de las dos va detrás convierte
+      cualquier sorpresa en una espera de cuarenta y cinco segundos contra un
+      botón que no existe, sin decir por qué. Y leerlo del DOM tampoco vale:
+      `input[name="texto_alternativo"]` sale en TODAS las secciones, así que
+      dos fotos que acabaran en secciones distintas seguirían pareciendo
+      ordenadas entre sí.
+
+      La columna `orden` de `medios` es el dato de verdad —es lo que decide qué
+      pinta la web— y es lo que se lee aquí. De paso, esto afirma lo primero
+      que hay que afirmar y que ningún test decía: que la foto acabó en la
+      sección a la que se subió.
     */
-    const ordenInicial = await ordenDeLaPagina(page);
-    const puestoPrimera = ordenInicial.indexOf(primera);
-    const puestoSegunda = ordenInicial.indexOf(segunda);
+    const antes = await ordenEnLaBase([primera, segunda]);
 
     expect(
-      Math.min(puestoPrimera, puestoSegunda),
-      `las dos fotos tienen que estar en la lista. Orden leído:\n${ordenInicial.join("\n")}`,
-    ).toBeGreaterThanOrEqual(0);
+      antes.map((fila) => fila.seccion),
+      `las dos fotos tienen que estar en «galeria». Lo que hay:\n${describir(antes)}`,
+    ).toEqual(["galeria", "galeria"]);
 
-    const [detras, delante] =
-      puestoSegunda > puestoPrimera ? [segunda, primera] : [primera, segunda];
+    const [delante, detras] =
+      antes[0].orden! < antes[1].orden! ? [antes[0], antes[1]] : [antes[1], antes[0]];
 
-    await fichaDe(page, detras)
-      .getByRole("button", { name: copy.panel.medios.subirOrden })
-      .click();
+    const botonSubir = fichaDe(page, detras.texto).getByRole("button", {
+      name: copy.panel.medios.subirOrden,
+    });
+
+    // Fallar aquí en cinco segundos y con la lista delante, en vez de en
+    // cuarenta y cinco contra un locator mudo.
+    await expect(
+      botonSubir,
+      `«${detras.texto}» va detrás y tenía que poder subir. En la base:\n${describir(antes)}`,
+    ).toHaveCount(1);
+
+    await botonSubir.click();
     await esperarEstado(page, "movido");
 
-    const alternativos = await ordenDeLaPagina(page);
+    const despues = await ordenEnLaBase([primera, segunda]);
+    const puestos = new Map(despues.map((fila) => [fila.texto, fila.orden]));
 
     expect(
-      alternativos.indexOf(detras),
-      `«${detras}» tenía que haber adelantado a «${delante}». Orden resultante:\n${alternativos.join("\n")}`,
-    ).toBeLessThan(alternativos.indexOf(delante));
+      puestos.get(detras.texto)!,
+      `«${detras.texto}» tenía que haber adelantado a «${delante.texto}». En la base:\n${describir(despues)}`,
+    ).toBeLessThan(puestos.get(delante.texto)!);
 
     for (const alternativo of [primera, segunda]) {
       await fichaDe(page, alternativo)
