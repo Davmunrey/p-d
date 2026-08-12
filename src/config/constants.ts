@@ -368,3 +368,17 @@ export const SEGUNDOS_URL_FIRMADA = 300;
  * aquí y se reenvía al volver la conexión.
  */
 export const CLAVE_ALMACEN_DIA = "boda-guion-dia";
+
+/**
+ * A partir de cuántos días una tarea deja de estar «en su fecha» y pasa a
+ * «vence pronto».
+ *
+ * UNA SEMANA, y el número importa: con tres días, media lista aparece tranquila
+ * el lunes y en rojo el jueves, sin margen para hacer nada; con un mes, la
+ * mitad del tablero está siempre avisando y el aviso deja de significar algo.
+ *
+ * Los días los cuenta la base —`v_tareas.dias_para_vencer`, con su fecha— y
+ * este umbral sólo decide dónde se pone la raya. Que estén separados es lo que
+ * permite cambiar el criterio sin tocar una migración.
+ */
+export const DIAS_VENCE_PRONTO = 7;

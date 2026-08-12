@@ -106,6 +106,13 @@ const eslintConfig = defineConfig([
     // Skills de diseño de terceros: se versionan tal cual llegan del origen.
     ".claude/skills/**",
     /**
+     * Copias de trabajo de los agentes. Son clones del repositorio con su
+     * propio `.next` compilado dentro, así que revisarlas significa revisar
+     * código minificado ajeno: dieciséis mil avisos que sepultan los de
+     * verdad. No se versionan (ver `.gitignore`) y no son código del proyecto.
+     */
+    ".claude/worktrees/**",
+    /**
      * La entrega del estudio de marca: las piezas en HTML, sus SVG y el runtime
      * de la herramienta con la que se hicieron. Es material de referencia, no
      * código del proyecto — de ahí salen los valores de `primitives.css`, pero

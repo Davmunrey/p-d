@@ -54,7 +54,7 @@ export const MODULOS = [
   { clave: "actividades", ruta: `${RUTA_PANEL}/actividades`, entregado: false },
   { clave: "proveedores", ruta: RUTA_PROVEEDORES, entregado: true },
   { clave: "presupuesto", ruta: RUTA_PRESUPUESTO, entregado: true },
-  { clave: "tareas", ruta: RUTA_TAREAS, entregado: false },
+  { clave: "tareas", ruta: RUTA_TAREAS, entregado: true },
   { clave: "documentos", ruta: RUTA_DOCUMENTOS, entregado: false },
   { clave: "dia", ruta: RUTA_DIA, entregado: false },
   { clave: "ajustes", ruta: RUTA_AJUSTES, entregado: true },
