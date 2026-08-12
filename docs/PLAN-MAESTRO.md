@@ -291,7 +291,9 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 
 **Cómo se lee un importe teclado** (`leerImporte()`, en `src/lib/importe.ts`, compartido por la ficha de proveedor, las categorías y los gastos). Vacío es `null` y no cero; lo ilegible es un rechazo con su frase y no un `null` que borraría en silencio lo que alguien acaba de teclear mal. **No se redondea, se rechaza:** un tercer decimal es un dedo que ha resbalado y la respuesta es enseñarlo, no elegir por él —antes `8600,555` se guardaba como 8.600,56 sin decir nada—. Y con el punto manda el castellano: se quita sólo el que va seguido de exactamente tres cifras, así que `1.250` son mil doscientos cincuenta y `12.50` siguen siendo doce con cincuenta.
 
-**`tareas`** — con estado, prioridad y vencimiento.
+**`tareas`** — con estado, prioridad y vencimiento, más `orden`: el sitio manual de cada tarjeta dentro de su columna del tablero. Nulo es «donde caiga» —mandan la prioridad y la fecha— y sólo pasa a tener número cuando alguien la mueve; con un `not null default 0`, todas las tareas nuevas nacerían empatadas en la primera posición.
+
+**`v_tareas` cuenta los días que faltan con la fecha de la base**, igual que `v_pagos` decide qué está vencido, y por el mismo motivo: preguntárselo al navegador es preguntárselo a un reloj que puede estar mal puesto. La vista devuelve los días —negativo es tarde, cero es hoy, nulo es una tarea sin plazo— y **no** una etiqueta cerrada: a partir de cuántos días algo «vence pronto» es una decisión de producto y vive con las demás en `src/config/constants.ts`, no incrustada en SQL. De paso resuelve el nombre del responsable y del proveedor con `left join`, para que una tarea sin asignar —que es la mitad de la lista al empezar— siga saliendo en el tablero.
 
 ### Política RLS
 

@@ -254,3 +254,26 @@ export const URL_RESEND = process.env.RESEND_URL ?? "https://api.resend.com";
  * rastreadores sin que nadie haya abierto la página. Ver BODA-28.
  */
 export const RUTA_CUENTA_REGALOS = "/regalos/cuenta";
+
+/**
+ * El módulo de tareas del panel.
+ *
+ * OJO AL INTEGRAR: si la rama que trae los demás módulos grandes ya declara
+ * `RUTA_TAREAS`, ésta sobra — es la misma ruta y el mismo valor, y dos
+ * declaraciones del mismo nombre no compilan. Se borra la que quede repetida.
+ */
+export const RUTA_TAREAS = "/panel/tareas";
+
+/**
+ * A partir de cuántos días una tarea deja de estar «en su fecha» y pasa a
+ * «vence pronto».
+ *
+ * UNA SEMANA, y el número importa: con tres días, media lista aparece tranquila
+ * el lunes y en rojo el jueves, sin margen para hacer nada; con un mes, la
+ * mitad del tablero está siempre avisando y el aviso deja de significar algo.
+ *
+ * Los días los cuenta la base —`v_tareas.dias_para_vencer`, con su fecha— y
+ * este umbral sólo decide dónde se pone la raya. Que estén separados es lo que
+ * permite cambiar el criterio sin tocar una migración.
+ */
+export const DIAS_VENCE_PRONTO = 7;
