@@ -1,4 +1,4 @@
--- Rollback de 20260812090000_documentos_boda.sql
+-- Rollback de 20260812090100_documentos_boda.sql
 --
 -- Se lleva la tabla de documentos y con ella sus filas. Antes de ejecutarlo hay
 -- que apuntar en otro sitio qué papeles están pedidos y cuáles caducan: eso lo

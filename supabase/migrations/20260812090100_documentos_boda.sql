@@ -1,5 +1,5 @@
 -- ============================================================================
--- 20260812090000_documentos_boda.sql
+-- 20260812090100_documentos_boda.sql
 -- Ticket: BODA-105 (#129) · Los papeles de la boda civil
 --
 -- Qué hace este fichero:
@@ -30,7 +30,7 @@
 -- esta boda y dar por hecho lo que sólo confirma el juzgado. La pantalla vacía
 -- lo explica en vez de callarse.
 --
--- Rollback: supabase/migrations/rollback/20260812090000_documentos_boda.sql
+-- Rollback: supabase/migrations/rollback/20260812090100_documentos_boda.sql
 -- ============================================================================
 
 begin;
