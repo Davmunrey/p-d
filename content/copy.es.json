@@ -294,6 +294,7 @@
       "proveedores": "Proveedores",
       "presupuesto": "Presupuesto",
       "tareas": "Tareas",
+      "documentos": "Documentos",
       "cuenta": "Mi cuenta",
       "ajustes": "Ajustes",
       "mensajes": "Mensajes"
@@ -824,6 +825,76 @@
         "errorSinPermiso": "Vuestro perfil no puede hacer cambios aquí.",
         "errorGuardar": "No se ha podido guardar. Probad otra vez."
       }
+    },
+    "documentos": {
+      "titulo": "Documentos",
+      "descripcion": "Los papeles de la boda civil: quién pide cada uno, dónde se pide y hasta cuándo vale.",
+      "caducanTitulo": "Caducan antes de la boda",
+      "caducanAyuda": "Estos papeles dejan de valer antes del día de la ceremonia, aunque ya los tengáis en la mano. Habrá que volver a pedirlos.",
+      "caducaAntes": "Caduca antes de la boda: habrá que pedirlo de nuevo",
+      "ningunoCaduca": "Ninguno de los papeles apuntados caduca antes de la boda.",
+      "caducaEl": "Caduca el {fecha}",
+      "noCaduca": "No caduca",
+      "obtenidoEl": "Conseguido el {fecha}",
+      "sinObtener": "Todavía sin conseguir",
+      "vacioTitulo": "Todavía no hay ningún papel apuntado",
+      "vacio": "No viene ninguno puesto a propósito: la lista depende del registro civil donde presentéis el expediente, de la nacionalidad de cada uno y de si alguno estuvo casado antes. Ponerla por vosotros sería inventárnosla.",
+      "vacioAyuda": "Pedidla en vuestro juzgado o registro y apuntadla aquí con sus caducidades. Es lo único que avisa cuando un papel deja de valer antes de la boda.",
+      "cuantos": "{cuantos} documentos",
+      "cuantosUno": "1 documento",
+      "titulares": {
+        "novia": "La novia",
+        "novio": "El novio",
+        "ambos": "Los dos"
+      },
+      "estados": {
+        "pendiente": "Pendiente",
+        "solicitado": "Solicitado",
+        "conseguido": "Conseguido"
+      },
+      "grupos": {
+        "pendiente": "Por pedir",
+        "solicitado": "Pedidos y esperando",
+        "conseguido": "Conseguidos"
+      },
+      "grupoVacio": {
+        "pendiente": "No queda ninguno por pedir.",
+        "solicitado": "No hay ninguno pedido a la espera.",
+        "conseguido": "Todavía no tenéis ninguno en la mano."
+      },
+      "marcarConseguido": "Ya lo tenemos",
+      "editar": "Editar",
+      "borrar": "Borrar",
+      "borrarDeVerdad": "Borrarlo de todas formas",
+      "guardar": "Guardar cambios",
+      "cancelar": "Cancelar",
+      "apuntar": "Apuntar el documento",
+      "editarTitulo": "Editar el documento",
+      "nuevoTitulo": "Apuntar un documento",
+      "nuevoAyuda": "Con el título basta. La caducidad se añade cuando os la digan, y es la que dispara el aviso.",
+      "campoTitulo": "Documento",
+      "campoDeQuien": "De quién es",
+      "campoDonde": "Dónde se pide",
+      "campoDondeAyuda": "Registro Civil de Cuenca, cita previa en la sede electrónica…",
+      "campoEstado": "En qué punto está",
+      "campoObtenido": "Conseguido el",
+      "campoObtenidoAyuda": "Obligatorio si está conseguido.",
+      "campoCaduca": "Caduca el",
+      "campoCaducaAyuda": "Dejadlo vacío si no caduca.",
+      "campoNotas": "Notas",
+      "avisoApuntado": "Documento apuntado.",
+      "avisoEditado": "Cambios guardados.",
+      "avisoBorrado": "Documento borrado.",
+      "avisoConseguido": "Apuntado como conseguido. Su caducidad se sigue vigilando.",
+      "avisoConfirmarBorrado": "Se va a borrar el documento y todo lo que hayáis apuntado de él. Confirmadlo si estáis seguros.",
+      "errorTitulo": "Escribid cómo se llama el documento, entre 2 y 160 letras.",
+      "errorDeQuien": "Decid de quién es el papel.",
+      "errorEstado": "Ese estado no existe.",
+      "errorSinFechaObtencion": "Un documento conseguido necesita la fecha en la que se recogió: es lo que permite saber si sigue valiendo el día de la boda.",
+      "errorFecha": "Esa fecha no se entiende. Usad el calendario del campo.",
+      "errorNoExiste": "Ese documento ya no está.",
+      "errorSinPermiso": "Vuestro perfil no puede hacer cambios aquí.",
+      "errorGuardar": "No se ha podido guardar. Probad otra vez."
     }
   },
   "correoConfirmacion": {

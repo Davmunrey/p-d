@@ -71,9 +71,56 @@ import type { Page } from "@playwright/test";
  */
 const rastro = new WeakMap<Page, string[]>();
 
+/**
+ * LOS DESTINOS QUE HA DEVUELTO EL SERVIDOR, EN CRUDO
+ *
+ * Es el rastro reducido al único dato que sirve para AFIRMAR en vez de para
+ * diagnosticar. `laPista` compone un texto para leerlo un humano; esto guarda
+ * las cabeceras tal cual para que un test pueda decir «la acción devolvió
+ * `?estado=conseguido`» sin depender de que el navegador llegue a aplicar la
+ * navegación.
+ *
+ * POR QUÉ NO BASTA CON MIRAR LA URL DE LA PESTAÑA (el fallo #126): entre que el
+ * servidor contesta con el destino y que el enrutador de Next lo aplica hay un
+ * viaje más —la petición `_rsc` a por la página nueva—, y en una máquina de CI
+ * cargada ese viaje a veces no termina dentro del plazo. El test se caía
+ * diciendo «la URL sigue siendo la de antes», que suena a que la acción no hizo
+ * nada cuando en realidad había escrito en la base y había contestado bien.
+ *
+ * Afirmando sobre el destino DEVUELTO, esas dos cosas se separan: si el destino
+ * es el que se esperaba, la acción hizo su trabajo; que el navegador tarde en
+ * pintarlo es un problema distinto, y se resuelve con un `goto` de rescate
+ * porque la pantalla destino se puede pedir directamente.
+ */
+const destinos = new WeakMap<Page, string[]>();
+
+/**
+ * El último destino que devolvió una acción de servidor, o `null`.
+ *
+ * Sale de `location` o de `x-action-redirect` —las dos cabeceras con las que
+ * puede redirigir Next— y se devuelve sin tocar salvo por el `;push` que el
+ * camino de cliente le pega detrás.
+ */
+export function ultimoDestino(pagina: Page): string | null {
+  const vistos = destinos.get(pagina);
+  return vistos?.length ? vistos[vistos.length - 1] : null;
+}
+
+/**
+ * Olvida los destinos apuntados hasta ahora.
+ *
+ * Se llama JUSTO ANTES de pulsar. Sin esto, un test que hace dos envíos seguidos
+ * leería el destino del primero y daría por bueno el segundo sin haberlo
+ * mirado — que es un test en verde que no prueba nada.
+ */
+export function olvidarDestinos(pagina: Page): void {
+  destinos.set(pagina, []);
+}
+
 export function seguirLaPista(pagina: Page): void {
   const pasos: string[] = [];
   rastro.set(pagina, pasos);
+  destinos.set(pagina, []);
 
   // Antes de la primera acción, los `_rsc` son prefetch de rutina y son
   // decenas; después, son el enrutador yendo a por la página nueva. Sólo
@@ -102,6 +149,8 @@ export function seguirLaPista(pagina: Page): void {
       pasos.push(
         `POST vuelve ${respuesta.status()} · destino=${destino ?? "(ninguno en cabeceras)"}`,
       );
+      // El mismo dato, sin componer, para que un test pueda afirmar sobre él.
+      if (destino) destinos.get(pagina)?.push(destino);
       return;
     }
 
