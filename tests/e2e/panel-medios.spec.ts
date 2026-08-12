@@ -113,6 +113,21 @@ function fichaDe(pagina: Page, alternativo: string) {
 }
 
 /**
+ * Los textos alternativos de la pantalla, en el orden en que se pintan.
+ *
+ * Es la lista tal y como la ve quien mira: el orden de la página ES el orden
+ * de la sección, y es lo único contra lo que tiene sentido afirmar una
+ * permuta.
+ */
+async function ordenDeLaPagina(pagina: Page): Promise<string[]> {
+  return pagina
+    .locator('input[name="texto_alternativo"]')
+    .evaluateAll((campos) =>
+      campos.map((campo) => (campo as HTMLInputElement).value).filter(Boolean),
+    );
+}
+
+/**
  * El formulario de subida de UNA sección concreta, ya desplegado.
  *
  * Se llega a él por el campo oculto que lleva dentro y no por el orden de la
@@ -462,22 +477,39 @@ test.describe("El gestor de fotos y vídeos", () => {
       await esperarEstado(page, "subido");
     }
 
-    // La segunda sube: ahora tiene que ir por delante de la primera.
-    await fichaDe(page, segunda)
+    /*
+      QUIÉN ADELANTA A QUIÉN LO DECIDE EL ORDEN QUE HAY, no el de subida.
+
+      El botón de subir NO SE PINTA en la primera foto de una sección —no hay a
+      dónde subir—, así que dar por hecho cuál de las dos va detrás convierte
+      un orden inesperado en una espera de cuarenta y cinco segundos contra un
+      botón que no existe, sin decir por qué. Se lee la lista, se coge la que
+      va detrás y se la manda arriba: la permuta se prueba igual, y si el orden
+      no es el que se creía, el fallo lo enseña en vez de esconderlo.
+    */
+    const ordenInicial = await ordenDeLaPagina(page);
+    const puestoPrimera = ordenInicial.indexOf(primera);
+    const puestoSegunda = ordenInicial.indexOf(segunda);
+
+    expect(
+      Math.min(puestoPrimera, puestoSegunda),
+      `las dos fotos tienen que estar en la lista. Orden leído:\n${ordenInicial.join("\n")}`,
+    ).toBeGreaterThanOrEqual(0);
+
+    const [detras, delante] =
+      puestoSegunda > puestoPrimera ? [segunda, primera] : [primera, segunda];
+
+    await fichaDe(page, detras)
       .getByRole("button", { name: copy.panel.medios.subirOrden })
       .click();
     await esperarEstado(page, "movido");
 
-    const alternativos = await page
-      .locator('input[name="texto_alternativo"]')
-      .evaluateAll((campos) =>
-        campos.map((campo) => (campo as HTMLInputElement).value).filter(Boolean),
-      );
+    const alternativos = await ordenDeLaPagina(page);
 
     expect(
-      alternativos.indexOf(segunda),
-      "la segunda tiene que haber adelantado a la primera",
-    ).toBeLessThan(alternativos.indexOf(primera));
+      alternativos.indexOf(detras),
+      `«${detras}» tenía que haber adelantado a «${delante}». Orden resultante:\n${alternativos.join("\n")}`,
+    ).toBeLessThan(alternativos.indexOf(delante));
 
     for (const alternativo of [primera, segunda]) {
       await fichaDe(page, alternativo)
