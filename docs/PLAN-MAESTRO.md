@@ -227,7 +227,13 @@ La convención es uniforme: `id uuid` como clave, `creado_en` y `actualizado_en`
 
 **`mesas`** — mesas del banquete: nombre, capacidad, forma y posición para el plano.
 
+**La capacidad la vigila el panel, no la base, y es a propósito.** La tabla deja que una mesa se pase de aforo porque durante el reparto se pasa todo el rato: se mete a la familia entera y luego se sacan dos. Lo que no puede pasar es que se sobrepase **sin enterarse**, así que la comprobación vive en las acciones que sientan gente —`sentarInvitado` y `sentarGrupo`— con el recuento hecho en la base justo antes de escribir, nunca sobre lo que tenía pintado la pantalla: entre que se pintó y se pulsó el botón, la otra mitad de la pareja ha sentado a tres personas desde su móvil. Al negarse, el aviso dice cuántos caben y cuántos saldrían; «no caben» a secas obliga a ir a contar.
+
+**La posición es de la mesa y no del navegador, y se mueve sin ratón.** `posicion_x` y `posicion_y` van en unidades del plano (0 a 10 000, las dos o ninguna por `check`) y la pantalla las convierte a porcentaje, así que el mismo plano vale en un móvil y en el proyector de la finca sin guardar un solo píxel. Se colocan escribiendo las coordenadas o con cuatro botones de empujar por mesa, cada uno su propio formulario: arrastrar es más cómodo con un ratón y **no funciona** con el teclado, con un lector de pantalla ni con el móvil en la finca, que es donde se abre esto el día antes. La presidencia no es una columna sino una forma —`imperial`—, porque una columna `es_presidencia` admite dos y ninguna, y las dos cosas se descubren el día de la boda.
+
 Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, alojamiento) y **`v_menus_confirmados`** (menús por tipo y cuántos llevan alergias).
+
+**`v_alergias_por_mesa`** — quién tiene alergia anotada, en qué mesa se sienta y qué menú lleva. Es vista y no un filtro en la pantalla porque «alergia que importa» son tres condiciones fáciles de olvidar en una de dos copias —confirmación vigente, estado `confirmado`, texto no vacío— y este es el dato del proyecto donde equivocarse tiene consecuencias médicas. El `left join` contra `mesas` es deliberado: quien tiene alergia y **todavía no está sentado** sale igual, con `mesa` a nulo, que es la fila que hay que resolver antes de mandar el reparto a la cocina y la que un `join` normal haría desaparecer justo mientras el reparto está a medias.
 
 ### Contenido de la landing
 
@@ -390,17 +396,17 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 
 ## 7. Panel de gestión (`/app`)
 
-| Módulo          | Contenido                                                                                                                                                             |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Dashboard**   | KPIs: días restantes, confirmados/pendientes, % presupuesto consumido, próximos pagos y tareas                                                                        |
-| **Invitados**   | Tabla con filtros y búsqueda, alta individual o import CSV, gestión de grupos, generación y copia de enlaces de invitación, envío por WhatsApp/email, export          |
-| **Presupuesto** | Categorías con previsto vs real, gráfica de reparto, calendario de pagos, alertas de desvío                                                                           |
-| **Proveedores** | Lista agrupada por categoría con búsqueda que aguanta acentos, ficha por proveedor con su gente, pipeline de estado, comparativa de presupuestos, documentos adjuntos |
-| **Servicios**   | Qué se contrata, precio por unidad o por invitado, recálculo automático con los confirmados                                                                           |
-| **Tareas**      | Checklist con vista lista y kanban, plantilla inicial por meses restantes                                                                                             |
-| **Seating**     | Plano drag & drop de mesas, asignación con avisos de alergias y de invitados sin mesa                                                                                 |
-| **Medios**      | Fotos y vídeos de la landing agrupados por sección: subida, texto alternativo obligatorio, publicar/retirar, orden y borrado —del fichero también                     |
-| **Ajustes**     | Contenido de la landing, orden y visibilidad de secciones, textos i18n, datos de la boda, usuarios                                                                    |
+| Módulo          | Contenido                                                                                                                                                                                           |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard**   | KPIs: días restantes, confirmados/pendientes, % presupuesto consumido, próximos pagos y tareas                                                                                                      |
+| **Invitados**   | Tabla con filtros y búsqueda, alta individual o import CSV, gestión de grupos, generación y copia de enlaces de invitación, envío por WhatsApp/email, export                                        |
+| **Presupuesto** | Categorías con previsto vs real, gráfica de reparto, calendario de pagos, alertas de desvío                                                                                                         |
+| **Proveedores** | Lista agrupada por categoría con búsqueda que aguanta acentos, ficha por proveedor con su gente, pipeline de estado, comparativa de presupuestos, documentos adjuntos                               |
+| **Servicios**   | Qué se contrata, precio por unidad o por invitado, recálculo automático con los confirmados                                                                                                         |
+| **Tareas**      | Checklist con vista lista y kanban, plantilla inicial por meses restantes                                                                                                                           |
+| **Seating**     | Plano de la sala que se coloca con coordenadas y flechas (sin ratón y sin JavaScript), reparto por grupo de invitación, tope de aforo comprobado en la base, alergias por mesa y exportación en CSV |
+| **Medios**      | Fotos y vídeos de la landing agrupados por sección: subida, texto alternativo obligatorio, publicar/retirar, orden y borrado —del fichero también                                                   |
+| **Ajustes**     | Contenido de la landing, orden y visibilidad de secciones, textos i18n, datos de la boda, usuarios                                                                                                  |
 
 ---
 

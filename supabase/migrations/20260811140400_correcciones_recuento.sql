@@ -7,8 +7,6 @@
 --      SIN tocar la confirmación del invitado.
 --   2. `v_recuento_catering`: la cifra que se le dice al catering, calculada
 --      por la base — confirmados por menú más su corrección.
---   3. `v_alergias_por_mesa`: las alergias agrupadas por mesa, que es como
---      las necesita la cocina.
 --
 -- POR QUÉ UNA TABLA APARTE. El primo que avisa a las diez de que no llega no
 -- ha «rechazado»: su confirmación es historia real y el histórico de
@@ -90,32 +88,15 @@ comment on view public.v_recuento_catering is
   'proyecto; la pantalla la enseña, no la recalcula.';
 
 -- ---------------------------------------------------------------------------
--- 3. Las alergias como las pide la cocina: por mesa
+-- 3. Las alergias por mesa: las publica la migración de mesas
 -- ---------------------------------------------------------------------------
-
-create or replace view public.v_alergias_por_mesa
-with (security_invoker = on) as
-select
-  me.nombre     as mesa,
-  me.id         as mesa_id,
-  i.nombre,
-  i.apellidos,
-  i.tipo_menu,
-  i.es_nino,
-  i.alergias
-from public.invitados as i
-join public.confirmaciones as f
-  on f.invitado_id = i.id and f.es_vigente
-left join public.mesas as me
-  on me.id = i.mesa_id
-where f.estado = 'confirmado'
-  and i.alergias is not null
-order by me.nombre nulls last, i.apellidos, i.nombre;
-
-comment on view public.v_alergias_por_mesa is
-  'Quién lleva alergias y en qué mesa se sienta. El `left join` es a '
-  'propósito: una alergia sin mesa asignada es justo la que no puede '
-  'perderse de la lista.';
+--
+-- `v_alergias_por_mesa` nació aquí y se ha ido a
+-- `20260812090000_alergias_por_mesa.sql`, que es donde vive el módulo que la
+-- usa. Allí además excluye la cadena vacía —que la columna admite y no es una
+-- alergia— y documenta las tres condiciones que la definen. Una vista con dos
+-- definiciones acaba con dos comportamientos, y ésta es la lista que se le da
+-- a la cocina.
 
 -- ---------------------------------------------------------------------------
 -- 4. Privilegios y políticas
@@ -124,7 +105,6 @@ comment on view public.v_alergias_por_mesa is
 grant select on public.correcciones_recuento to authenticated;
 grant insert, update, delete on public.correcciones_recuento to authenticated;
 grant select on public.v_recuento_catering to authenticated;
-grant select on public.v_alergias_por_mesa to authenticated;
 
 drop policy if exists correcciones_recuento_leer on public.correcciones_recuento;
 create policy correcciones_recuento_leer on public.correcciones_recuento

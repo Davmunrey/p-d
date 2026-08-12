@@ -49,7 +49,7 @@ export const MODULOS = [
   { clave: "invitados", ruta: RUTA_INVITADOS, entregado: true },
   { clave: "mensajes", ruta: RUTA_MENSAJES, entregado: true },
   { clave: "medios", ruta: RUTA_MEDIOS, entregado: true },
-  { clave: "mesas", ruta: RUTA_MESAS, entregado: false },
+  { clave: "mesas", ruta: RUTA_MESAS, entregado: true },
   { clave: "menus", ruta: `${RUTA_PANEL}/menus`, entregado: false },
   { clave: "actividades", ruta: `${RUTA_PANEL}/actividades`, entregado: false },
   { clave: "proveedores", ruta: RUTA_PROVEEDORES, entregado: true },

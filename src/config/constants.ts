@@ -382,3 +382,44 @@ export const CLAVE_ALMACEN_DIA = "boda-guion-dia";
  * permite cambiar el criterio sin tocar una migración.
  */
 export const DIAS_VENCE_PRONTO = 7;
+
+/** Descarga del reparto por mesa, para el catering y para la finca. */
+export const RUTA_MESAS_EXPORTAR = "/panel/mesas/exportar";
+
+/**
+ * El lado del lienzo del plano, en unidades del plano.
+ *
+ * ES EL MISMO NÚMERO QUE `mesas_posicion_dentro_del_lienzo`, y eso no es una
+ * duplicación por descuido: la base tiene que negarse a guardar una coordenada
+ * fuera del lienzo pase la escritura por donde pase, y la pantalla tiene que
+ * saber entre qué y qué escala para pintar. Si algún día crece, crece en los
+ * dos sitios — y la migración es la que manda.
+ *
+ * Las unidades NO son píxeles: el lienzo se pinta en porcentaje sobre el ancho
+ * que haya, así que el mismo plano vale en un móvil y en un proyector.
+ */
+export const LADO_PLANO_MESAS = 10000;
+
+/**
+ * Cuánto se mueve una mesa con cada pulsación de una flecha.
+ *
+ * DOSCIENTAS CINCUENTA UNIDADES SON UN 2,5 % DEL LIENZO: cuarenta pulsaciones
+ * cruzan la sala de lado a lado. Un paso más fino convertiría colocar una mesa
+ * en una sesión de clics, y uno más grueso haría imposible separar dos mesas
+ * que casi se tocan — que es justo el ajuste para el que existen las flechas.
+ *
+ * Las flechas existen porque el plano se coloca SIN ratón y SIN JavaScript: son
+ * botones de un formulario, así que funcionan con el teclado, con un lector de
+ * pantalla y con la conexión de la finca.
+ */
+export const PASO_PLANO_MESAS = 250;
+
+/**
+ * Cuánta gente cabe en una mesa, como mínimo y como máximo.
+ *
+ * Los mismos números que `mesas_capacidad_rango`. No son una regla de la boda
+ * —hay mesas de seis y mesas imperiales de treinta— sino una red contra el
+ * dedazo: un 200 en vez de un 20 descuadraría el reparto entero.
+ */
+export const CAPACIDAD_MINIMA_MESA = 1;
+export const CAPACIDAD_MAXIMA_MESA = 30;
