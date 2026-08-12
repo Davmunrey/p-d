@@ -77,6 +77,16 @@
     "etiqueta": "Cómo llegamos hasta aquí",
     "titulo": "Nuestra historia"
   },
+  "galeria": {
+    "etiqueta": "Un vistazo",
+    "titulo": "Nuestras fotos",
+    "entradilla": "Unas cuantas de las nuestras. Pulsad en cualquiera para verla entera.",
+    "visorEtiqueta": "Galería a pantalla completa",
+    "contador": "Foto {actual} de {total}",
+    "anterior": "Anterior",
+    "siguiente": "Siguiente",
+    "cerrar": "Cerrar"
+  },
   "preboda": {
     "etiqueta": "La víspera",
     "titulo": "Si llegáis antes de tiempo",

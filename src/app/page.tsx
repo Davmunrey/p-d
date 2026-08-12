@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Fragment, type ReactNode } from "react";
 
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
+import { Galeria } from "@/components/marketing/galeria";
 import { HuecoFoto } from "@/components/marketing/hueco-foto";
 import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
@@ -28,6 +29,7 @@ import {
   obtenerConfiguracion,
   obtenerConsejosVestimenta,
   obtenerCuentaRegalos,
+  obtenerGaleria,
   obtenerHistoria,
   obtenerPreguntasFrecuentes,
   obtenerPrograma,
@@ -144,6 +146,7 @@ export default async function PaginaInicio() {
     cuentaRegalos,
     fotosPortada,
     fotosPaisaje,
+    fotosGaleria,
   } = datos;
 
   // Sin configuración no hay boda que enseñar: la base respondió, pero el panel
@@ -176,6 +179,8 @@ export default async function PaginaInicio() {
     ),
     cuenta_atras: <CuentaAtrasSeccion configuracion={configuracion} />,
     historia: historia.length > 0 ? <Historia hitos={historia} urlBase={urlBase} /> : undefined,
+    galeria:
+      fotosGaleria.length > 0 ? <Galeria fotos={fotosGaleria} urlBase={urlBase} /> : undefined,
     preboda:
       preboda.length > 0 ? (
         <ListaDeHoras
@@ -338,6 +343,7 @@ async function cargarLanding() {
     cuentaRegalos,
     fotosPortada,
     fotosPaisaje,
+    fotosGaleria,
   ] = await Promise.all([
     obtenerSecciones(),
     obtenerConfiguracion(),
@@ -352,6 +358,7 @@ async function cargarLanding() {
     obtenerCuentaRegalos(),
     obtenerMedios("portada"),
     obtenerMedios("paisaje"),
+    obtenerGaleria(),
   ]);
 
   return {
@@ -368,6 +375,7 @@ async function cargarLanding() {
     cuentaRegalos,
     fotosPortada,
     fotosPaisaje,
+    fotosGaleria,
   };
 }
 
