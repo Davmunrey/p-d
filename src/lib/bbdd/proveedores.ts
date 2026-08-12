@@ -49,6 +49,54 @@ export function esEstadoProveedor(valor: string): valor is EstadoProveedor {
   return (ESTADOS_PROVEEDOR as readonly string[]).includes(valor);
 }
 
+/**
+ * BODA-72 · Qué clase de papel es cada adjunto.
+ *
+ * El orden es el del enumerado `tipo_documento_proveedor` y también el del
+ * ciclo real de una contratación: se pide presupuesto, se firma contrato, llega
+ * la factura. Lo demás es «otro», que es el `default` de la columna.
+ */
+export const TIPOS_DOCUMENTO = ["presupuesto", "contrato", "factura", "otro"] as const;
+
+export type TipoDocumento = (typeof TIPOS_DOCUMENTO)[number];
+
+export function esTipoDocumento(valor: string): valor is TipoDocumento {
+  return (TIPOS_DOCUMENTO as readonly string[]).includes(valor);
+}
+
+/**
+ * BODA-74 · A quién multiplica un servicio por invitado.
+ *
+ * El orden es el del enumerado `base_servicio`. `todos` es el valor neutro y
+ * el `default`: `servicios_base_solo_por_invitado` obliga a que un servicio de
+ * precio cerrado lo lleve, porque en él la base no significa nada.
+ */
+export const BASES_SERVICIO = ["todos", "adultos", "ninos"] as const;
+
+export type BaseServicio = (typeof BASES_SERVICIO)[number];
+
+/** El valor neutro, igual que el `default` de la columna. */
+export const BASE_SERVICIO_NEUTRA: BaseServicio = "todos";
+
+export function esBaseServicio(valor: string): valor is BaseServicio {
+  return (BASES_SERVICIO as readonly string[]).includes(valor);
+}
+
+/**
+ * Un identificador de la base, antes de mandárselo a PostgREST.
+ *
+ * `?categoria=inexistente` es una URL que alguien va a escribir —o que va a
+ * quedar en un marcador cuando se borre una categoría—, y comparar eso con una
+ * columna `uuid` no devuelve «no hay nada»: devuelve un `22P02` de PostgreSQL.
+ * Un error de sintaxis de SQL no es lo que hay que enseñarle a nadie, así que
+ * lo que no tiene forma de identificador ni llega a salir de aquí.
+ */
+const ES_IDENTIFICADOR = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function esIdentificador(valor: string): boolean {
+  return ES_IDENTIFICADOR.test(valor);
+}
+
 export interface CategoriaProveedor {
   id: string;
   nombre: string;
@@ -71,6 +119,14 @@ export interface Proveedor {
   notas: string | null;
   /** Por qué se descartó. La base exige que exista si —y sólo si— está descartado. */
   motivoDescarte: string | null;
+  /**
+   * BODA-73 · Si `importePresupuestado` lleva el IVA dentro.
+   *
+   * `null` NO ES «no lo sabemos todavía por vaguería»: es «el presupuesto no lo
+   * dice», que es un estado real y frecuentísimo, y la comparativa lo enseña
+   * como aviso en lugar de inventarse la otra cifra.
+   */
+  ivaIncluido: boolean | null;
 }
 
 export interface ContactoProveedor {
@@ -126,7 +182,13 @@ interface FilaProveedor {
   importe_acordado: string | number | null;
   notas: string | null;
   motivo_descarte: string | null;
+  iva_incluido: boolean | null;
 }
+
+/** Las columnas del proveedor que se piden siempre. Una lista, no tres copias. */
+const COLUMNAS_PROVEEDOR = `id, categoria_id, nombre, persona_contacto, correo_electronico,
+   telefono, sitio_web, estado, valoracion, importe_presupuestado, importe_acordado, notas,
+   motivo_descarte, iva_incluido`;
 
 /**
  * `numeric` llega como CADENA, no como número.
@@ -158,6 +220,7 @@ function aProveedor(fila: FilaProveedor): Proveedor {
     importeAcordado: aImporte(fila.importe_acordado),
     notas: fila.notas,
     motivoDescarte: fila.motivo_descarte,
+    ivaIncluido: fila.iva_incluido,
   };
 }
 
@@ -191,11 +254,7 @@ export async function obtenerProveedores(): Promise<Proveedor[]> {
 
   const { data, error } = await supabase
     .from("proveedores")
-    .select(
-      `id, categoria_id, nombre, persona_contacto, correo_electronico, telefono,
-       sitio_web, estado, valoracion, importe_presupuestado, importe_acordado, notas,
-       motivo_descarte`,
-    )
+    .select(COLUMNAS_PROVEEDOR)
     .order("nombre");
 
   if (error) {
@@ -215,14 +274,16 @@ export async function obtenerProveedores(): Promise<Proveedor[]> {
  * no puedes» ya es contar algo.
  */
 export async function obtenerFichaProveedor(id: string): Promise<FichaProveedor | null> {
+  // Un `/panel/proveedores/loquesea` es «no existe», no un error de sintaxis de
+  // PostgreSQL. Ver `esIdentificador`.
+  if (!esIdentificador(id)) return null;
+
   const supabase = await clienteServidor();
 
   const { data, error } = await supabase
     .from("proveedores")
     .select(
-      `id, categoria_id, nombre, persona_contacto, correo_electronico, telefono,
-       sitio_web, estado, valoracion, importe_presupuestado, importe_acordado, notas,
-       motivo_descarte,
+      `${COLUMNAS_PROVEEDOR},
        categorias_proveedor ( nombre ),
        contactos_proveedor ( id, nombre, papel, correo_electronico, telefono, es_del_dia, notas ),
        partidas_presupuesto ( id, concepto, importe_estimado, importe_real ),
@@ -374,4 +435,267 @@ export async function obtenerContratadosDeCategoria(
   }
 
   return (data as { id: string; nombre: string }[] | null) ?? [];
+}
+
+/* -------------------------------------------------------------------------- */
+/*  BODA-72 · Documentos del proveedor                                        */
+/* -------------------------------------------------------------------------- */
+
+export interface DocumentoProveedor {
+  id: string;
+  tipo: TipoDocumento;
+  nombre: string;
+  tipoMime: string | null;
+  tamanoBytes: number | null;
+  creadoEn: string;
+  /** Quién lo subió. `null` si esa persona ya no está: el papel sigue valiendo. */
+  subidoPor: string | null;
+}
+
+interface FilaDocumento {
+  id: string;
+  tipo: string;
+  nombre: string;
+  tipo_mime: string | null;
+  tamano_bytes: string | number | null;
+  creado_en: string;
+  perfiles: { nombre_completo: string | null } | { nombre_completo: string | null }[] | null;
+}
+
+/**
+ * Los papeles de un proveedor, del más reciente al más antiguo.
+ *
+ * NO SE DEVUELVE LA RUTA DE STORAGE, y no es un olvido. La pantalla no la
+ * necesita —la descarga va por identificador y quien firma la URL es el
+ * servidor— así que sacarla hasta el HTML sólo serviría para publicar dónde
+ * vive cada contrato dentro del bucket. Lo que no se pinta no se filtra.
+ *
+ * EL ORDEN ES POR FECHA Y NO POR TIPO. La pregunta que trae aquí a alguien es
+ * «¿está ya el contrato firmado?», y lo último subido es lo último que pasó.
+ */
+export async function obtenerDocumentosProveedor(
+  proveedorId: string,
+): Promise<DocumentoProveedor[]> {
+  if (!esIdentificador(proveedorId)) return [];
+
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("documentos_proveedor")
+    .select(
+      "id, tipo, nombre, tipo_mime, tamano_bytes, creado_en, perfiles ( nombre_completo )",
+    )
+    .eq("proveedor_id", proveedorId)
+    .order("creado_en", { ascending: false });
+
+  if (error) {
+    console.error("No se pudieron leer los documentos del proveedor:", error);
+    return [];
+  }
+
+  return ((data as unknown as FilaDocumento[] | null) ?? []).map((fila) => {
+    // PostgREST devuelve la relación como objeto o como lista de uno según cómo
+    // deduzca la cardinalidad. Se acepta cualquiera de las dos formas.
+    const perfil = Array.isArray(fila.perfiles) ? fila.perfiles[0] : fila.perfiles;
+
+    return {
+      id: fila.id,
+      tipo: fila.tipo as TipoDocumento,
+      nombre: fila.nombre,
+      tipoMime: fila.tipo_mime,
+      /*
+        `bigint` llega como CADENA por el mismo motivo que `numeric`: en
+        JavaScript no cabe entero cualquier valor de 64 bits. Un adjunto de
+        veinte megas cabría de sobra, pero la conversión se hace en el borde y
+        no se supone en cada sitio que lo use.
+      */
+      tamanoBytes: aImporte(fila.tamano_bytes),
+      creadoEn: fila.creado_en,
+      subidoPor: perfil?.nombre_completo ?? null,
+    };
+  });
+}
+
+/**
+ * La ruta dentro del bucket de UN documento, para firmarla o para borrarla.
+ *
+ * Va aparte de la lista a propósito: es el único dato que la pantalla no
+ * necesita y las dos acciones sí. Se pide por identificador con el cliente de
+ * SESIÓN —o sea, con RLS delante—, así que quien no puede ver el documento no
+ * lo descarga ni acertando el identificador.
+ */
+export async function obtenerRutaDocumento(
+  documentoId: string,
+  proveedorId: string,
+): Promise<string | null> {
+  if (!esIdentificador(documentoId) || !esIdentificador(proveedorId)) return null;
+
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("documentos_proveedor")
+    .select("ruta_almacenamiento")
+    .eq("id", documentoId)
+    // Y DEL PROVEEDOR QUE DICE LA URL: sin esto, el identificador de un
+    // documento valdría desde la ficha de cualquier otro.
+    .eq("proveedor_id", proveedorId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("No se pudo leer la ruta del documento:", error);
+    return null;
+  }
+
+  return (data as { ruta_almacenamiento: string } | null)?.ruta_almacenamiento ?? null;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  BODA-74 · Servicios, con la cuenta hecha por la base                      */
+/* -------------------------------------------------------------------------- */
+
+export interface ServicioProveedor {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  precioUnitario: number;
+  cantidad: number;
+  porInvitado: boolean;
+  baseCalculo: BaseServicio;
+  minimoGarantizado: number | null;
+  /** Lo que saldría hoy contando confirmados, sin el mínimo del contrato. */
+  importeCalculado: number | null;
+  /** Lo que se va a pagar: lo anterior, pero nunca por debajo del mínimo. */
+  importeTotal: number | null;
+}
+
+interface FilaServicio {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  precio_unitario: string | number;
+  cantidad: number;
+  por_invitado: boolean;
+  base_calculo: string;
+  minimo_garantizado: string | number | null;
+  importe_calculado: string | number | null;
+  importe_total: string | number | null;
+}
+
+/**
+ * Lo contratado a un proveedor, con su importe ya resuelto.
+ *
+ * SE LEE DE `v_servicios_importe` Y NO DE `servicios`, y ahí está la mitad del
+ * ticket. La cuenta de un servicio por invitado —a cuántos multiplica según
+ * `base_calculo`, y que nunca baje del mínimo garantizado— vive en la vista.
+ * Replicarla en TypeScript sería tener dos fórmulas que empiezan iguales y
+ * dejan de coincidir en silencio la semana que alguien cambie una.
+ *
+ * Por eso confirmar un invitado más no dispara ningún recálculo: no hay nada
+ * que recalcular, es una vista.
+ */
+export async function obtenerServiciosProveedor(
+  proveedorId: string,
+): Promise<ServicioProveedor[]> {
+  if (!esIdentificador(proveedorId)) return [];
+
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("v_servicios_importe")
+    .select(
+      `id, nombre, descripcion, precio_unitario, cantidad, por_invitado,
+       base_calculo, minimo_garantizado, importe_calculado, importe_total`,
+    )
+    .eq("proveedor_id", proveedorId)
+    .order("nombre");
+
+  if (error) {
+    console.error("No se pudieron leer los servicios del proveedor:", error);
+    return [];
+  }
+
+  return ((data as FilaServicio[] | null) ?? []).map((fila) => ({
+    id: fila.id,
+    nombre: fila.nombre,
+    descripcion: fila.descripcion,
+    precioUnitario: aImporte(fila.precio_unitario) ?? 0,
+    cantidad: fila.cantidad,
+    porInvitado: fila.por_invitado,
+    baseCalculo: fila.base_calculo as BaseServicio,
+    minimoGarantizado: aImporte(fila.minimo_garantizado),
+    importeCalculado: aImporte(fila.importe_calculado),
+    importeTotal: aImporte(fila.importe_total),
+  }));
+}
+
+/* -------------------------------------------------------------------------- */
+/*  BODA-73 · La comparativa de una categoría                                 */
+/* -------------------------------------------------------------------------- */
+
+export interface ProveedorComparado extends Proveedor {
+  /** Qué incluye, por nombre. Suele ser la columna que decide de verdad. */
+  servicios: string[];
+}
+
+/** Una categoría por identificador, o `null` si no la hay —o no se puede ver—. */
+export async function obtenerCategoria(id: string): Promise<CategoriaProveedor | null> {
+  if (!esIdentificador(id)) return null;
+
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("categorias_proveedor")
+    .select("id, nombre, descripcion, orden")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("No se pudo leer la categoría:", error);
+    return null;
+  }
+
+  return (data as FilaCategoria | null) ?? null;
+}
+
+/**
+ * Los candidatos de UNA categoría, con lo que incluye cada uno.
+ *
+ * COMPARAR CATEGORÍAS DISTINTAS ES IMPOSIBLE POR CONSTRUCCIÓN: entra un
+ * identificador y sale su lista. No existe una firma que admita dos, así que no
+ * hay pantalla que pueda mezclarlas — y poner el precio de un fotógrafo al lado
+ * del de un catering no es una comparación, es una suma disfrazada.
+ *
+ * EL ORDEN LO PONE EL DINERO, no el alfabeto: se compara para elegir, y lo
+ * primero que se mira es cuánto pide cada uno. Quien todavía no ha dado precio
+ * va al final, que es donde está en la decisión.
+ */
+export async function obtenerComparativa(categoriaId: string): Promise<ProveedorComparado[]> {
+  if (!esIdentificador(categoriaId)) return [];
+
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("proveedores")
+    .select(`${COLUMNAS_PROVEEDOR}, servicios ( nombre )`)
+    .eq("categoria_id", categoriaId)
+    .order("nombre");
+
+  if (error) {
+    console.error("No se pudo leer la comparativa de la categoría:", error);
+    return [];
+  }
+
+  const filas =
+    (data as unknown as (FilaProveedor & { servicios: { nombre: string }[] })[] | null) ?? [];
+
+  return filas
+    .map((fila) => ({
+      ...aProveedor(fila),
+      servicios: (fila.servicios ?? []).map((servicio) => servicio.nombre).sort(),
+    }))
+    .sort((uno, otro) => {
+      if (uno.importePresupuestado === null) return otro.importePresupuestado === null ? 0 : 1;
+      if (otro.importePresupuestado === null) return -1;
+      return uno.importePresupuestado - otro.importePresupuestado;
+    });
 }
