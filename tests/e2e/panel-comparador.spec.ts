@@ -9,6 +9,7 @@ import {
   RUTA_PANEL,
   RUTA_PROVEEDORES,
 } from "../../src/config/constants";
+import { formateadorDeImporte } from "../../src/lib/importe";
 import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles/rastro";
 
 /**
@@ -40,6 +41,32 @@ async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T
   } finally {
     await sql.end();
   }
+}
+
+/**
+ * CÓMO SE ESCRIBE UN IMPORTE — PREGUNTÁNDOSELO A QUIEN LOS ESCRIBE.
+ *
+ * Aquí había tres cifras a mano —«2.000,00», «3.630,00», «1.800,00»— y las tres
+ * estaban mal, pero no por poco: estaban mal por creer que el punto de los
+ * millares va siempre. En castellano no va. La RAE deja los números de cuatro
+ * cifras sin separador —2000, no 2.000— y `Intl.NumberFormat` con `es-ES` hace
+ * exactamente eso: agrupa a partir de cinco. La pantalla llevaba razón.
+ *
+ * Y ES LA SEGUNDA VEZ que este proyecto tropieza con lo mismo: el test del
+ * presupuesto ya se cayó por escribir «1.250,50» donde la página pone
+ * «1250,50». Escribir la cifra a mano por tercera vez sería pedir la tercera.
+ *
+ * Así que no se escribe: se le pide el formato al mismo módulo que lo aplica en
+ * la pantalla, con la moneda que hay de verdad en la configuración de la boda.
+ * Si mañana cambia la moneda —o la regla de agrupar—, este test sigue diciendo
+ * lo que quiere decir, que es «la cifra sale como salen las cifras del panel»,
+ * y no «la cifra sale con un punto».
+ */
+async function comoSeEscribenLosImportes(): Promise<(importe: number) => string> {
+  const [configuracion] = await conBase(
+    (sql) => sql<{ moneda: string }[]>`select moneda from public.configuracion_boda limit 1`,
+  );
+  return formateadorDeImporte(configuracion.moneda);
 }
 
 async function entrar(pagina: Page) {
@@ -83,7 +110,7 @@ async function esperarEstado(pagina: Page, esperado: string) {
 /**
  * Un renglón de la comparativa, por su concepto.
  *
- * SE AFIRMA POR FILA Y NO SOBRE LA PÁGINA ENTERA. «2.000,00» sale dos veces —es
+ * SE AFIRMA POR FILA Y NO SOBRE LA PÁGINA ENTERA. «2000,00» sale dos veces —es
  * lo presupuestado por uno y lo que otro pide sin IVA— y buscarlo suelto daría
  * por buena la cifra equivocada. Un `th scope="row"` es un `rowheader`, así que
  * la fila se localiza por lo que significa y no por su posición.
@@ -207,27 +234,29 @@ test.describe("La comparativa de una categoría", () => {
       copy.panel.proveedores.conIva.replace("{iva}", String(PORCENTAJE_IVA)),
     );
 
-    // Las cifras tal cual se presupuestaron.
-    await expect(presupuestado).toContainText("2.000,00");
-    await expect(presupuestado).toContainText("3.630,00");
-    await expect(presupuestado).toContainText("1.800,00");
+    const euros = await comoSeEscribenLosImportes();
 
-    // Y puestas en la misma base: quien dio 2000 sin IVA pide 2.420 con él, y
-    // quien dio 3.630 con IVA pide 3.000 sin él. Comparadas a pelo, el primero
+    // Las cifras tal cual se presupuestaron.
+    await expect(presupuestado).toContainText(euros(2000));
+    await expect(presupuestado).toContainText(euros(3630));
+    await expect(presupuestado).toContainText(euros(1800));
+
+    // Y puestas en la misma base: quien dio 2000 sin IVA pide 2420 con él, y
+    // quien dio 3630 con IVA pide 3000 sin él. Comparadas a pelo, el primero
     // parecía el barato.
-    await expect(sin).toContainText("2.000,00");
-    await expect(sin).toContainText("3.000,00");
-    await expect(con).toContainText("2.420,00");
-    await expect(con).toContainText("3.630,00");
+    await expect(sin).toContainText(euros(2000));
+    await expect(sin).toContainText(euros(3000));
+    await expect(con).toContainText(euros(2420));
+    await expect(con).toContainText(euros(3630));
 
     /*
       LO QUE NO SE INVENTA. El tercero no dice si su cifra lleva IVA, así que su
-      1.800 no aparece en ninguna de las dos filas convertidas — ni como 1.800
-      ni como 2.178 — y en su lugar sale el aviso pegado a la cifra.
+      1800 no aparece en ninguna de las dos filas convertidas — ni como 1800
+      ni como 2178 — y en su lugar sale el aviso pegado a la cifra.
     */
     await expect(presupuestado).toContainText(copy.panel.proveedores.ivaNoLoDice);
-    await expect(sin).not.toContainText("1.800,00");
-    await expect(con).not.toContainText("2.178,00");
+    await expect(sin).not.toContainText(euros(1800));
+    await expect(con).not.toContainText(euros(2178));
 
     // Qué incluye, que es la columna que decide cuando dos cifras se parecen.
     await expect(fila(page, copy.panel.proveedores.queIncluye)).toContainText(

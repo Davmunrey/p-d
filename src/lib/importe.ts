@@ -5,8 +5,8 @@ import { IDIOMA } from "@/config/constants";
  *
  * Vive suelto porque lo necesitan dos módulos que no se conocen —proveedores y
  * presupuesto— y porque una copia en cada uno acaba siendo dos formas distintas
- * de escribir el mismo número: la lista diciendo «8600 €» y el resumen
- * «8.600,00 €» para el mismo gasto.
+ * de escribir el mismo número: la lista diciendo «12000 €» y el resumen
+ * «12.000,00 €» para el mismo gasto.
  */
 
 /**
@@ -20,6 +20,16 @@ import { IDIOMA } from "@/config/constants";
  * eso llega desde la pantalla, que es quien ha leído la configuración. Fijar
  * «EUR» aquí sería exactamente el hardcode que prohíbe la regla 1, aunque hoy
  * acertara.
+ *
+ * OJO CON LAS CUATRO CIFRAS, que es donde se equivoca todo el mundo: 2000 € se
+ * escribe «2000,00 €», sin punto. El separador de millar aparece a partir de
+ * cinco cifras —«12.000,00 €»—, y no es un capricho de la librería: la RAE deja
+ * los números de cuatro cifras sin separador, y `es-ES` lo cumple.
+ *
+ * Importa porque casi todo lo que se compara en una boda cae justo ahí, entre
+ * mil y diez mil. Dos tests se han caído ya escribiendo «2.000,00» a mano
+ * contra una pantalla que ponía «2000,00»; los dos daban por buena la regla
+ * inglesa. Un importe esperado no se teclea: se pide aquí.
  */
 export function formateadorDeImporte(moneda: string): (importe: number) => string {
   const formato = new Intl.NumberFormat(IDIOMA, {

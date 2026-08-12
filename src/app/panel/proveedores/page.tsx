@@ -211,7 +211,14 @@ function SeccionCategoria({
               aria-label={t("panel.proveedores.compararCategoria", {
                 categoria: categoria.nombre,
               })}
-              className="text-pequeno text-tinta-marca underline"
+              /*
+                EL ÁREA QUE SE PUEDE TOCAR ES LA BARRA ENTERA, no la altura de
+                su texto. Nació con 21 px de alto —el cuerpo de la letra— y eso
+                es la mitad de los 44 que hace falta acertar con el pulgar; el
+                repaso táctil del panel lo cazó el mismo día. Estirarlo no
+                cambia nada de lo que se ve: cambia lo que se puede pulsar.
+              */
+              className="inline-flex min-h-control-compacto items-center text-pequeno text-tinta-marca underline"
             >
               {t("panel.proveedores.comparar")}
             </Link>
