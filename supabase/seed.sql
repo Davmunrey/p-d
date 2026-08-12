@@ -257,9 +257,20 @@ insert into public.tareas (titulo, descripcion, estado, prioridad, fecha_limite,
   ('(DES) Reservar el autobús', '(DES)', 'en_progreso', 'media',
    (now() + interval '90 days')::date, '(DES) Transporte');
 
+-- LAS COORDENADAS SON DEL LIENZO DEL PLANO, NO PÍXELES: van de 0 a 10 000, el
+-- mismo tope que impone `mesas_posicion_dentro_del_lienzo`, y la pantalla las
+-- convierte a porcentaje. Estaban en 100 y 300 —de cuando no había plano que
+-- pintarlas— y ahí las dos mesas salían pegadas una encima de otra en la
+-- esquina superior izquierda: el plano no parecía vacío, parecía roto.
+--
+-- Con estas tres queda una sala reconocible: la presidencia arriba y en el
+-- centro, dos redondas abajo, y la pista de baile —que es una referencia fija
+-- de la pantalla, no una fila— en medio. Sirve además para ver que la mesa
+-- imperial se distingue de las demás.
 insert into public.mesas (nombre, capacidad, forma, posicion_x, posicion_y) values
-  ('(DES) Mesa 1', 10, 'redonda', 100.00, 100.00),
-  ('(DES) Mesa 2', 10, 'redonda', 300.00, 100.00);
+  ('(DES) Presidencia', 8, 'imperial', 5000.00, 1500.00),
+  ('(DES) Mesa 1', 10, 'redonda', 2500.00, 7000.00),
+  ('(DES) Mesa 2', 10, 'redonda', 7500.00, 7000.00);
 
 -- Sentamos a la Familia Uno para que el plano no salga vacío.
 update public.invitados
