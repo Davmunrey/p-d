@@ -107,7 +107,26 @@
   --exito-tinta: var(--color-exito-claro);
   --aviso: var(--color-aviso-claro);
   --aviso-fondo: var(--color-nieve-150);
-  --aviso-tinta: var(--color-aviso-claro);
+
+  /**
+   * LA TINTA DEL AVISO NO ES EL COLOR DEL AVISO, y aquí es donde se separan.
+   *
+   * El ámbar de la entrega (#b8860b) da 3,25:1 sobre el claro: de sobra para
+   * un elemento de interfaz —un icono, un filete, un relleno, que piden 3:1—
+   * y corto para TEXTO, que pide 4,5:1. Lo midió axe sobre el módulo de mesas,
+   * donde las alergias se avisan con este color y en cuerpo pequeño; ninguna
+   * captura lo habría enseñado.
+   *
+   * `--aviso` se queda como está —lo ata el test de paleta a la cartelería— y
+   * lo que cambia es la tinta: el bronce 600 de la misma entrega, que sube a
+   * 5,4:1 sobre superficie y 4,8:1 sobre el fondo del propio aviso. Es la
+   * misma familia y la misma decisión que con `--tinta-tenue`: el color de
+   * marca manda en las manchas, no en las letras pequeñas.
+   *
+   * El verde y el rojo no necesitan el mismo tratamiento: medidos, dan 5,3:1
+   * y 4,5:1.
+   */
+  --aviso-tinta: var(--color-bronce-600);
   --error: var(--color-error-claro);
   --error-fondo: var(--color-error-fondo-claro);
   --error-tinta: var(--color-error-claro);
