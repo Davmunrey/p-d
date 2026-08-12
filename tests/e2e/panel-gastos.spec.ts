@@ -59,6 +59,21 @@ function seccion(pagina: Page, titulo: string) {
 }
 
 /**
+ * Lo que se afirma cuando NINGUNA acción ha redirigido todavía.
+ *
+ * ANTES SE CAÍA A `pagina.url()`, Y ESO ERA UN VERDE FALSO. Cuando el
+ * navegador no aplica la redirección —#126— el ayudante lleva la pestaña a
+ * mano al destino, así que la URL se queda con ese `?estado=` puesto. Si el
+ * paso siguiente no llegaba a enviar nada, la comprobación miraba esa misma
+ * URL, encontraba el estado del paso ANTERIOR y daba el visto bueno: fue así
+ * como una foto que nunca se subió pasó por subida.
+ *
+ * Con un texto que no case nunca, la ausencia de destino es lo que es —la
+ * acción no salió— y el fallo lo dice con esas palabras.
+ */
+const SIN_DESTINO = "(ninguna acción ha redirigido: ¿llegó a enviarse el formulario?)";
+
+/**
  * ESPERA LA REDIRECCIÓN ANTES DE MIRAR NADA MÁS.
  *
  * La URL dice si la acción terminó y con qué resultado; el aviso llega después.
@@ -75,7 +90,7 @@ async function esperarEstado(pagina: Page, esperado: string) {
   */
   try {
     await expect
-      .poll(() => ultimoDestino(pagina) ?? pagina.url(), { timeout: 30_000 })
+      .poll(() => ultimoDestino(pagina) ?? SIN_DESTINO, { timeout: 30_000 })
       .toMatch(new RegExp(`estado=${esperado}(&|$)`));
   } catch (fallo) {
     const enPantalla = await pagina
@@ -218,6 +233,10 @@ test.describe("Los gastos del presupuesto", () => {
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
   );
 
+  // El rastro, en TODOS los tests: sin él `ultimoDestino` no ve nada y la
+  // espera se queda sin poder decir qué decidió la acción.
+  test.beforeEach(({ page }) => seguirLaPista(page));
+
   /**
    * CAMINO FELIZ · apuntar un gasto mueve el total de su categoría y el general.
    */
@@ -225,7 +244,6 @@ test.describe("Los gastos del presupuesto", () => {
     const categoria = await crearCategoria("Feliz");
     const concepto = `${MARCA} Ramo de novia`;
 
-    seguirLaPista(page);
     await entrar(page);
     await page.goto(RUTA_GASTOS);
 
