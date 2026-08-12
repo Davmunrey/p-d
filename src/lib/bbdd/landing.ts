@@ -452,3 +452,89 @@ export async function obtenerMedios(seccion: Seccion): Promise<Medio[]> {
     posterRuta: f.poster_ruta,
   }));
 }
+
+/**
+ * BODA-25 · Una foto de la galería.
+ *
+ * NO ES `Medio`, y la diferencia está en dos campos que aquí NO admiten nulo.
+ * Una rejilla se compone de huecos, y un hueco sin medidas no se puede
+ * reservar: la foto entra al cargar, empuja a las de al lado y la página pega
+ * un salto justo cuando alguien iba a pulsar. Exigirlas en el tipo le ahorra al
+ * componente preguntar «¿y si faltan?» y decidir sobre la marcha qué pinta en
+ * ese hueco.
+ *
+ * Tampoco lleva `tipo` ni `posterRuta`: la galería es de fotos. Un vídeo se
+ * abre, se pausa y se cierra —otra pieza entera—, y arrastrar esos campos
+ * obligaría a comprobar en la plantilla algo que la consulta ya descarta.
+ */
+export interface FotoGaleria {
+  id: string;
+  /** Ruta relativa dentro del bucket, tal y como la valida la base. */
+  ruta: string;
+  textoAlternativo: string;
+  ancho: number;
+  alto: number;
+  /** Miniatura en base64 para pintar algo mientras carga la de verdad. */
+  marcadorBorroso: string | null;
+}
+
+/**
+ * Las fotos publicadas de la galería, en el orden que les puso el panel.
+ *
+ * LO QUE NO SE PUEDE PINTAR SE DESCARTA EN LA CONSULTA, no en la plantilla:
+ *
+ * - `tipo = 'imagen'`, por lo que dice `FotoGaleria`.
+ * - `ancho` y `alto` no nulos. La base los admite vacíos a propósito —hay
+ *   formatos que el servidor no sabe medir, y un AVIF sin medir es mejor que un
+ *   AVIF rechazado—, pero una foto sin medidas no entra en una rejilla sin
+ *   provocar el salto de maquetación que el plan maestro quiere evitar. La
+ *   restricción `medios_dimensiones_coherentes` ya obliga a que las dos vayan
+ *   juntas, así que preguntar por una bastaría; se preguntan las dos porque el
+ *   día que alguien la relaje, esto no se enteraría.
+ *
+ * EL TEXTO ALTERNATIVO NO SE COMPRUEBA, y es a propósito: el disparador
+ * `medios_validar_texto_alternativo` no deja entrar un medio sin alternativa de
+ * entre 3 y 300 caracteres en el idioma de la boda. Repetirlo aquí sería fingir
+ * que la base puede devolver algo que no puede devolver.
+ *
+ * `where publicado` está de más —RLS ya lo impone para `anon`— y se escribe
+ * igual, por lo mismo que en `obtenerMedios`: quien lee esta consulta tiene que
+ * ver la intención sin ir a buscar la política.
+ */
+export async function obtenerGaleria(): Promise<FotoGaleria[]> {
+  // Con nombre y tipado: el día que `galeria` deje de ser un valor del
+  // enumerado, esto no compila en lugar de devolver cero filas en silencio.
+  const seccion: Seccion = "galeria";
+
+  const filas = await leerComoAnonimo(
+    (tx) => tx<
+      {
+        id: string;
+        ruta_almacenamiento: string;
+        texto_alternativo: Record<string, string>;
+        ancho: number;
+        alto: number;
+        marcador_borroso: string | null;
+      }[]
+    >`
+      select id, ruta_almacenamiento, texto_alternativo, ancho, alto, marcador_borroso
+      from public.medios
+      where publicado
+        and seccion = ${seccion}::public.seccion_landing
+        and tipo = 'imagen'
+        and ancho is not null
+        and alto is not null
+      order by orden nulls last, creado_en
+    `,
+  );
+
+  return filas.map((f) => ({
+    id: f.id,
+    ruta: f.ruta_almacenamiento,
+    textoAlternativo:
+      f.texto_alternativo?.es ?? Object.values(f.texto_alternativo ?? {})[0] ?? "",
+    ancho: f.ancho,
+    alto: f.alto,
+    marcadorBorroso: f.marcador_borroso,
+  }));
+}
