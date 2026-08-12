@@ -65,7 +65,13 @@ export function CuentaAtras({ fechaIso }: { fechaIso: string }) {
 
   return (
     <div
-      className="flex flex-wrap justify-center gap-elemento"
+      /*
+        EN MÓVIL, DOS POR DOS. Con cuatro bloques en una fila que envuelve, un
+        390 px partía el contador en tres arriba y uno abajo — un huérfano
+        centrado que parecía un descuido. La rejilla de dos columnas reparte el
+        peso igual; desde `sm` vuelve la fila única de la entrega.
+      */
+      className="grid grid-cols-2 justify-items-center gap-elemento sm:flex sm:flex-wrap sm:justify-center"
       // Un contador que se relee entero cada segundo es ruido insoportable con
       // lector de pantalla. Se anuncia el conjunto una vez y se calla.
       aria-live="off"
@@ -81,7 +87,7 @@ export function CuentaAtras({ fechaIso }: { fechaIso: string }) {
           <div className="font-titulo text-cifra font-light leading-none tabular-nums">
             {bloque.valor}
           </div>
-          <div className="mt-linea text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+          <div className="mt-linea text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
             {bloque.etiqueta}
           </div>
         </div>

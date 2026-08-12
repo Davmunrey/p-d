@@ -107,10 +107,59 @@
   --exito-tinta: var(--color-exito-claro);
   --aviso: var(--color-aviso-claro);
   --aviso-fondo: var(--color-nieve-150);
-  --aviso-tinta: var(--color-aviso-claro);
+
+  /**
+   * LA TINTA DEL AVISO NO ES EL COLOR DEL AVISO, y aquí es donde se separan.
+   *
+   * El ámbar de la entrega (#b8860b) da 3,25:1 sobre el claro: de sobra para
+   * un elemento de interfaz —un icono, un filete, un relleno, que piden 3:1—
+   * y corto para TEXTO, que pide 4,5:1. Lo midió axe sobre el módulo de mesas,
+   * donde las alergias se avisan con este color y en cuerpo pequeño; ninguna
+   * captura lo habría enseñado.
+   *
+   * `--aviso` se queda como está —lo ata el test de paleta a la cartelería— y
+   * lo que cambia es la tinta: el bronce 600 de la misma entrega, que sube a
+   * 5,4:1 sobre superficie y 4,8:1 sobre el fondo del propio aviso. Es la
+   * misma familia y la misma decisión que con `--tinta-tenue`: el color de
+   * marca manda en las manchas, no en las letras pequeñas.
+   *
+   * El verde y el rojo no necesitan el mismo tratamiento: medidos, dan 5,3:1
+   * y 4,5:1.
+   */
+  --aviso-tinta: var(--color-bronce-600);
   --error: var(--color-error-claro);
   --error-fondo: var(--color-error-fondo-claro);
   --error-tinta: var(--color-error-claro);
+
+  /**
+   * --- Gráficas (BODA-63) ---------------------------------------------
+   *
+   * TRES TOKENS Y NO DOCE, y es la decisión de fondo de las gráficas.
+   *
+   * Lo normal en una gráfica es una paleta propia: doce colores distintos, uno
+   * por categoría. Aquí sería exactamente lo que prohíbe la regla 1 —una
+   * paleta que no cambia con el tema— y además rompería la marca: esta
+   * identidad tiene un azul, un bronce y nada más. Doce colores serían doce
+   * decisiones ajenas a ella.
+   *
+   * Así que las gráficas se diseñan para necesitar poco color. El reparto por
+   * categoría no lleva un color por barra: lleva su nombre al lado, que además
+   * se lee. Y donde de verdad hay dos series que comparar —previsto contra
+   * real— hay dos tokens y se distinguen también por posición y por cifra, no
+   * sólo por color.
+   *
+   * SON MANCHAS, NO LETRAS: el umbral que tienen que cumplir es 3:1 contra la
+   * superficie, el de los elementos de interfaz. Lo comprueba
+   * `tests/unidad/paleta.test.ts` en los dos temas, que es el caso de error del
+   * ticket.
+   *
+   * El previsto NO es el marino 400 que pedía el ojo: medido, da 2,65:1 sobre
+   * blanco y se queda corto. Es el 450, que da 3,48:1 — la diferencia entre los
+   * dos no se ve en una captura y sí en el medidor.
+   */
+  --serie-previsto: var(--color-marino-450);
+  --serie-real: var(--color-marino-700);
+  --serie-exceso: var(--color-error-claro);
 
   /**
    * --- Foco (accesibilidad) -------------------------------------------
@@ -181,6 +230,7 @@
   --alto-campo: var(--size-campo);
   --ancho-cifra: var(--size-cifra);
   --lado-casilla: var(--size-casilla);
+  --lado-miniatura: var(--size-miniatura);
   --ancho-columna-token: var(--size-columna-token);
   --alto-barra-muestra: var(--size-barra-muestra);
   --lado-constelacion: var(--size-constelacion);
@@ -281,6 +331,18 @@
   --borde-fuerte: var(--color-marino-500);
   --borde-tenue: var(--color-marino-775);
   --borde-filete: var(--color-marino-600);
+
+  /**
+   * Las series se invierten como todo lo demás: sobre marino, un marino oscuro
+   * no es una barra, es un agujero. Medidas contra `--superficie` de aquí dan
+   * 6,0:1, 13,5:1 y 4,9:1 — las tres por encima del 3:1 de una mancha.
+   *
+   * ES EL CASO DE ERROR DEL TICKET, literalmente: «con el tema oscuro, los
+   * colores siguen cumpliendo contraste». Por eso están aquí y no heredadas.
+   */
+  --serie-previsto: var(--color-marino-400);
+  --serie-real: var(--color-marino-100);
+  --serie-exceso: var(--color-error-oscuro);
   --foco: var(--color-bronce-300);
 }
 
@@ -301,5 +363,16 @@
   --constelacion-trazo: var(--color-trazo-nieve);
   --tinta-sobre-acento: var(--color-pizarra-900);
   --borde: var(--color-marino-800);
+
+  /**
+   * Las series también aquí, y no por si acaso: heredarlas de `:root` deja el
+   * marino oscuro del «real» a 1,3:1 sobre el pizarra del pie. Hoy no hay
+   * ninguna gráfica en el pie y probablemente no la haya nunca, pero un tema
+   * que reasigna la paleta la reasigna entera — a medias es justo como se cuela
+   * un color que nadie ha mirado.
+   */
+  --serie-previsto: var(--color-marino-400);
+  --serie-real: var(--color-marino-100);
+  --serie-exceso: var(--color-error-oscuro);
   --foco: var(--color-bronce-300);
 }

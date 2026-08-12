@@ -71,9 +71,44 @@ import type { Page } from "@playwright/test";
  */
 const rastro = new WeakMap<Page, string[]>();
 
+/**
+ * A DÓNDE DIJO LA ÚLTIMA ACCIÓN QUE FUERA, aparte del texto del rastro.
+ *
+ * El rastro se lee cuando algo falla; esto se puede AFIRMAR. Es la decisión del
+ * servidor —a qué estado mandó la acción— sin depender de que el navegador
+ * llegue a aplicarla, que es exactamente lo que #126 rompe.
+ */
+const destinos = new WeakMap<Page, string[]>();
+
+/**
+ * El destino de la última redirección de acción, ya sin el `;push` / `;replace`
+ * que Next le pega detrás. `undefined` si todavía no ha habido ninguna.
+ */
+export function ultimoDestino(pagina: Page): string | undefined {
+  const vistos = destinos.get(pagina);
+  return vistos?.length ? vistos[vistos.length - 1].split(";")[0] : undefined;
+}
+
+/**
+ * Borra los destinos apuntados, para que el de una acción no valga por el de la
+ * siguiente.
+ *
+ * SIN ESTO HAY UN FALSO VERDE, y no es teórico: el test de reordenar sube dos
+ * fotos seguidas y las dos esperan `estado=subido`. Si la segunda subida no
+ * hiciera nada, el destino de la PRIMERA seguiría ahí y la afirmación pasaría
+ * sin que se hubiera subido nada. Consumiéndolo, una acción que no redirige
+ * deja el registro vacío y el test cae, que es lo que tiene que pasar.
+ */
+export function olvidarDestinos(pagina: Page): void {
+  destinos.get(pagina)?.splice(0);
+}
+
 export function seguirLaPista(pagina: Page): void {
   const pasos: string[] = [];
   rastro.set(pagina, pasos);
+
+  const vistos: string[] = [];
+  destinos.set(pagina, vistos);
 
   // Antes de la primera acción, los `_rsc` son prefetch de rutina y son
   // decenas; después, son el enrutador yendo a por la página nueva. Sólo
@@ -99,6 +134,7 @@ export function seguirLaPista(pagina: Page): void {
       huboPost = true;
       const cabeceras = respuesta.headers();
       const destino = cabeceras["location"] ?? cabeceras["x-action-redirect"];
+      if (destino) vistos.push(destino);
       pasos.push(
         `POST vuelve ${respuesta.status()} · destino=${destino ?? "(ninguno en cabeceras)"}`,
       );

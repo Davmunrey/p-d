@@ -58,7 +58,7 @@ function EnvolturaCampo({ etiqueta, ayuda, error, children }: Envoltura) {
       })}
 
       {ayuda ? (
-        <span id={idAyuda} className="text-pequeno text-tinta-tenue">
+        <span id={idAyuda} className="text-pequeno text-tinta-suave">
           {ayuda}
         </span>
       ) : null}

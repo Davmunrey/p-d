@@ -262,6 +262,158 @@ test.describe("El vocabulario de espaciado está cerrado", () => {
     expect(barra, "no hay barra fija que comprobar").not.toBeNull();
     expect(barra!.arriba).toBe("0px");
   });
+
+  /**
+   * EL RITMO DE LA LANDING SALE DE LOS TOKENS, MEDIDO EN EL NAVEGADOR
+   *
+   * Que no haya `px` sueltos en el código lo vigila stylelint. Lo que nadie
+   * vigilaba es el resultado: una sección con un `mt-` de más, un componente
+   * que trae su propio relleno, o un token cambiado a medias dejan la página
+   * con un escalón que sólo se ve bajando despacio — y bajando despacio no
+   * revisa nadie una web que se abre desde WhatsApp.
+   *
+   * Aquí se mide lo pintado y se compara contra los DOS ritmos del sistema,
+   * leídos de las propias variables:
+   *
+   *   · `--espacio-seccion-fluida` — las secciones de contenido, que respiran
+   *     con el ancho de la pantalla;
+   *   · `--espacio-seccion-compacta` — los bloques que no son contenido: la
+   *     portada, la cuenta atrás y el pie.
+   *
+   * Cualquier tercer valor es, por definición, un espaciado que no está en el
+   * sistema. No se enumera qué sección va en qué grupo a propósito: el día que
+   * se añada una nueva, entra sola en la comprobación.
+   *
+   * LA ÚNICA EXCEPCIÓN SON LAS SECCIONES A PANTALLA COMPLETA —la portada y el
+   * paisaje—, que no ponen aire porque lo pone su contenido dentro. Y no se
+   * reconocen por su nombre sino por lo que hacen: llenar la pantalla. Así una
+   * sección normal que se quedara sin relleno no puede colarse por esa puerta.
+   */
+  test("cada sección respira uno de los dos ritmos del sistema", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    const medida = await page.evaluate(() => {
+      const raiz = getComputedStyle(document.documentElement);
+      const enPixeles = (valor: string) => {
+        const sonda = document.createElement("div");
+        sonda.style.height = valor;
+        sonda.style.position = "absolute";
+        document.body.append(sonda);
+        const alto = sonda.getBoundingClientRect().height;
+        sonda.remove();
+        return Math.round(alto);
+      };
+
+      const permitidos = [
+        raiz.getPropertyValue("--espacio-seccion-fluida"),
+        raiz.getPropertyValue("--espacio-seccion-compacta"),
+      ].map((valor) => enPixeles(valor.trim()));
+
+      const secciones = [...document.querySelectorAll<HTMLElement>("main section[id]")].map(
+        (seccion) => {
+          const estilo = getComputedStyle(seccion);
+          const arriba = Math.round(parseFloat(estilo.paddingTop));
+          const abajo = Math.round(parseFloat(estilo.paddingBottom));
+          return {
+            id: seccion.id,
+            arriba,
+            abajo,
+            // Llena la pantalla y no pone relleno propio: su aire va dentro.
+            aPantallaCompleta:
+              arriba === 0 &&
+              abajo === 0 &&
+              seccion.getBoundingClientRect().height >= window.innerHeight * 0.6,
+          };
+        },
+      );
+
+      return { permitidos, secciones };
+    });
+
+    expect(medida.secciones.length, "no se ha pintado ninguna sección").toBeGreaterThan(0);
+
+    const deContenido = medida.secciones.filter((seccion) => !seccion.aPantallaCompleta);
+
+    const fuera = deContenido.filter(
+      (seccion) =>
+        !medida.permitidos.includes(seccion.arriba) ||
+        !medida.permitidos.includes(seccion.abajo),
+    );
+
+    expect(
+      fuera,
+      `Estas secciones no usan ninguno de los ritmos del sistema (${medida.permitidos.join(
+        " o ",
+      )} px):\n` +
+        fuera.map((s) => `  #${s.id}: ${s.arriba}px arriba, ${s.abajo}px abajo`).join("\n"),
+    ).toEqual([]);
+
+    // Y arriba y abajo, lo mismo: una sección con más aire por un lado que por
+    // el otro descoloca todo lo que viene detrás.
+    const asimetricas = deContenido.filter((seccion) => seccion.arriba !== seccion.abajo);
+    expect(
+      asimetricas.map((s) => `#${s.id}: ${s.arriba}/${s.abajo}`),
+      "el aire de una sección tiene que ser el mismo arriba que abajo",
+    ).toEqual([]);
+  });
+
+  /**
+   * TODAS LAS SECCIONES EMPIEZAN EN LA MISMA COLUMNA
+   *
+   * Es lo que el ojo sigue al bajar: si una sección arranca cuatro píxeles más
+   * adentro que la anterior, la página se lee «torcida» sin que nadie sepa
+   * decir por qué. El margen lateral es un token —`px-interno`— y aquí se
+   * comprueba que todas lo respetan de verdad, en los tres tamaños.
+   *
+   * Las secciones a pantalla completa quedan fuera por lo mismo que en el
+   * ritmo: van de borde a borde a propósito, y su margen lo pone el bloque de
+   * dentro.
+   */
+  for (const [nombre, ancho] of [
+    ["móvil", 390],
+    ["tableta", 768],
+    ["escritorio", 1280],
+  ] as const) {
+    test(`las secciones comparten margen lateral en ${nombre}`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: 900 });
+      await page.goto("/");
+      await page.waitForLoadState("networkidle");
+
+      const margenes = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>("main section[id]")]
+          .map((seccion) => {
+            const estilo = getComputedStyle(seccion);
+            const caja = seccion.getBoundingClientRect();
+            return {
+              id: seccion.id,
+              izquierda: Math.round(parseFloat(estilo.paddingLeft)),
+              derecha: Math.round(parseFloat(estilo.paddingRight)),
+              aPantallaCompleta:
+                Math.round(parseFloat(estilo.paddingTop)) === 0 &&
+                caja.height >= window.innerHeight * 0.6,
+            };
+          })
+          .filter((seccion) => !seccion.aPantallaCompleta),
+      );
+
+      const distintos = [...new Set(margenes.map((m) => m.izquierda))];
+
+      expect(
+        distintos.length,
+        `Hay ${distintos.length} márgenes laterales distintos (${distintos.join(", ")} px):\n` +
+          margenes.map((m) => `  #${m.id}: ${m.izquierda}px`).join("\n"),
+      ).toBe(1);
+
+      // Simétrico, además: un lateral distinto del otro descentra el contenido
+      // sin que se note hasta que se mira con una regla.
+      const torcidas = margenes.filter((m) => m.izquierda !== m.derecha);
+      expect(
+        torcidas.map((m) => `#${m.id}: ${m.izquierda}/${m.derecha}`),
+        "el margen lateral tiene que ser el mismo a izquierda y derecha",
+      ).toEqual([]);
+    });
+  }
 });
 
 /**

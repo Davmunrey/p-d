@@ -5,6 +5,7 @@ import {
   PESO_MAXIMO_VIDEO_MB,
   TIPOS_MEDIO_ADMITIDOS,
 } from "@/config/constants";
+import { SECCIONES } from "@/config/secciones";
 import { admitirFichero, componerRuta, identificadorDeRuta, topeEnMegas } from "@/lib/medios";
 
 /**
@@ -135,5 +136,29 @@ describe("componer la ruta", () => {
    */
   it("dos azares distintos dan rutas distintas", () => {
     expect(identificadorDeRuta(0.1)).not.toBe(identificadorDeRuta(0.2));
+  });
+
+  /**
+   * LA RUTA QUE COMPONEMOS TIENE QUE SER UNA QUE LA BASE ACEPTE.
+   *
+   * `medios_ruta_valida` rechaza con un CHECK cualquier ruta que no case con
+   * `es_ruta_almacenamiento_valida`, y eso ocurre DESPUÉS de haber subido el
+   * fichero a Storage: el error saldría en forma de violación de restricción,
+   * con el objeto ya ocupando sitio.
+   *
+   * Hoy pasan todas —el patrón admite el guion bajo, así que las secciones con
+   * nombre compuesto entran tal cual—, y de eso se trata: esto no arregla nada,
+   * vigila que siga siendo verdad. Se recorren TODAS y no una muestra, para que
+   * la sección que se añada dentro de un año se pruebe sola.
+   */
+  it("toda sección compone una ruta que la base acepta", () => {
+    // El MISMO patrón que `es_ruta_almacenamiento_valida`, copiado del SQL.
+    const comoLaBase = /^[A-Za-z0-9][A-Za-z0-9._/-]{2,254}$/;
+
+    for (const seccion of SECCIONES) {
+      const ruta = componerRuta(seccion, "jpg", identificadorDeRuta(0.42));
+      expect(ruta, `«${ruta}» no la aceptaría la base`).toMatch(comoLaBase);
+      expect(ruta).not.toContain("..");
+    }
   });
 });

@@ -181,6 +181,31 @@ describe("contraste de la paleta", () => {
       ).toBeGreaterThanOrEqual(4.5);
     });
 
+    /**
+     * BODA-63 · LAS BARRAS DE LAS GRÁFICAS SON MANCHAS, NO LETRAS.
+     *
+     * El umbral que les toca es 3:1, el de los elementos de interfaz. Se mide
+     * contra `--superficie` y no contra `--fondo` porque las gráficas viven
+     * dentro de una tarjeta, que es lo que tienen detrás de verdad.
+     *
+     * ES EL CASO DE ERROR DEL TICKET —«con el tema oscuro, los colores siguen
+     * cumpliendo contraste»— y por eso se comprueba en los dos temas y no sólo
+     * en el claro. El pie entra en el bucle por venir con los demás: allí no
+     * hay ninguna gráfica, pero heredar mal tampoco sería inofensivo.
+     *
+     * Aquí se cazó `--serie-previsto` en marino 400: 2,65:1 sobre blanco. La
+     * diferencia con el 450 no se ve en una captura y sí en el medidor.
+     */
+    it(`en ${nombre} las series de las gráficas se despegan de la superficie`, () => {
+      const superficie = resolver("superficie", propias);
+      for (const serie of ["serie-previsto", "serie-real", "serie-exceso"]) {
+        expect(
+          Number(contraste(resolver(serie, propias), superficie).toFixed(2)),
+          `${serie} sobre ${nombre}`,
+        ).toBeGreaterThanOrEqual(3);
+      }
+    });
+
     it(`en ${nombre} el acento y el aro de foco se despegan del fondo`, () => {
       const fondo = resolver("fondo", propias);
       // El acento solo se usa en tamaños grandes (cita, conector, cifras) y el

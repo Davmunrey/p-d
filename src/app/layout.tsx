@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 
+import { Analitica } from "@/components/analitica";
 import { IDIOMA } from "@/config/constants";
 import { t } from "@/lib/copy";
 import { urlDelSitio } from "@/lib/url-sitio";
@@ -84,7 +85,16 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang={IDIOMA} className={`${serif.variable} ${sans.variable} ${conector.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/*
+          LA ANALÍTICA VA AQUÍ Y NO EN LA LANDING, aunque sólo mida la landing y
+          el embudo: es el único sitio que envuelve también al RSVP, que es la
+          mitad que importa. No pinta nada —devuelve `null`— y sin clave ni
+          consentimiento no arranca siquiera.
+        */}
+        <Analitica />
+      </body>
     </html>
   );
 }

@@ -41,6 +41,17 @@ export const PESO_MAXIMO_IMAGEN_MB = 10;
 export const PESO_MAXIMO_VIDEO_MB = 50;
 
 /**
+ * Lo que se espera a que Storage acepte un fichero antes de darlo por perdido.
+ *
+ * `upload()` no trae plazo propio —por dentro es un `fetch`, y un `fetch` sin
+ * `signal` espera indefinidamente—, así que sin esto una subida que no contesta
+ * deja la acción de servidor colgada: ni redirige, ni registra nada, ni suelta
+ * la función. Treinta segundos son de sobra para los cincuenta megas de tope
+ * por una línea decente, y poco para que a nadie se le haga eterno.
+ */
+export const PLAZO_SUBIDA_MS = 30_000;
+
+/**
  * Lo que se deja subir. El mismo array que la migración pone en el bucket, y
  * un test unitario comprueba que no se separan.
  *
@@ -152,6 +163,7 @@ export const RUTA_CUENTA = "/panel/cuenta";
 export const RUTA_AJUSTES = "/panel/ajustes";
 export const RUTA_INVITADOS = "/panel/invitados";
 export const RUTA_MENSAJES = "/panel/mensajes";
+export const RUTA_MEDIOS = "/panel/medios";
 export const RUTA_PROVEEDORES = "/panel/proveedores";
 export const RUTA_PRESUPUESTO = "/panel/presupuesto";
 
@@ -226,6 +238,30 @@ export const RUTA_PENDIENTES = "/panel/invitados/pendientes";
  */
 export const UMBRAL_AVISO_PRESUPUESTO = 0.9;
 
+/**
+ * El presupuesto de peso de la landing, comprobado en CI.
+ *
+ * La invitación se abre desde WhatsApp con datos móviles, muchas veces en el
+ * pueblo donde es la boda. El número no es un deseo: lo vigila un test E2E
+ * que suma lo que de verdad viaja al abrir la portada, y una dependencia o
+ * una foto sin optimizar lo ponen en rojo antes de llegar a producción.
+ */
+export const PESO_MAXIMO_PAGINA_KB = 1024;
+
+/**
+ * El tope de saltos de maquetación (Cumulative Layout Shift) de la landing.
+ * 0,1 es la frontera de «bueno» de las Core Web Vitals: por debajo, nada
+ * pega brincos mientras cargan las fotos.
+ */
+export const CLS_MAXIMO = 0.1;
+
+/**
+ * Cuántas imágenes pueden cargarse con prioridad al entrar. La portada la
+ * necesita; todo lo demás espera a que se llegue a su sección. Más que esto
+ * es precargar lo que quizá nadie mire, pagándolo en datos móviles.
+ */
+export const IMAGENES_PRIORITARIAS_MAXIMO = 3;
+
 export const RUTA_GASTOS = "/panel/presupuesto/gastos";
 
 /**
@@ -237,6 +273,39 @@ export const RUTA_GASTOS = "/panel/presupuesto/gastos";
  * pregunta del módulo que no se contesta mirando importes.
  */
 export const RUTA_PAGOS = "/panel/presupuesto/pagos";
+
+/**
+ * Las gráficas del presupuesto (BODA-63).
+ *
+ * Cuelgan del presupuesto porque no son un módulo: son la misma información de
+ * `/panel/presupuesto` mirada de lejos. Nadie entra aquí a hacer nada, se entra
+ * a ver si esto va bien o va mal.
+ */
+export const RUTA_GRAFICAS = "/panel/presupuesto/graficas";
+
+/**
+ * EL LIENZO DE LAS GRÁFICAS, en unidades suyas.
+ *
+ * Un SVG necesita un sistema de coordenadas y ese sistema no es un color ni un
+ * espaciado: es geometría, y va con nombre aquí, como el plano de las mesas.
+ * Se dibuja siempre sobre este ancho y el navegador lo escala al hueco que
+ * tenga, así que el número no es «píxeles» — es la unidad en la que están
+ * escritas las barras.
+ */
+export const ANCHO_GRAFICA = 1000;
+
+/** Alto de una barra y hueco hasta la siguiente, en unidades del lienzo. */
+export const ALTO_BARRA_GRAFICA = 44;
+export const HUECO_BARRA_GRAFICA = 16;
+
+/**
+ * Cuánto del ancho se reserva para el rótulo de la categoría.
+ *
+ * Va en proporción y no en unidades fijas porque las barras se dibujan sobre lo
+ * que queda: si el rótulo creciera sin que esto lo supiera, las barras se
+ * saldrían del lienzo por la derecha.
+ */
+export const PARTE_ROTULO_GRAFICA = 0.32;
 
 /**
  * A dónde se mandan los correos.
@@ -254,3 +323,182 @@ export const URL_RESEND = process.env.RESEND_URL ?? "https://api.resend.com";
  * rastreadores sin que nadie haya abierto la página. Ver BODA-28.
  */
 export const RUTA_CUENTA_REGALOS = "/regalos/cuenta";
+
+/**
+ * Los módulos que llegan con la entrega grande: tareas, mesas, documentos de
+ * la boda y las pantallas del día. Las rutas viven aquí y no en literales por
+ * la regla de siempre: un enlace escrito dos veces acaba escrito de dos
+ * maneras.
+ */
+export const RUTA_TAREAS = "/panel/tareas";
+
+export const RUTA_MESAS = "/panel/mesas";
+
+/**
+ * Los papeles de la boda civil.
+ *
+ * Es un módulo del panel y no una pestaña del presupuesto ni una lista de
+ * tareas: lo que se pregunta aquí —«¿sigue valiendo el empadronamiento el día
+ * de la boda?»— no se contesta con una casilla de hecho/sin hacer, porque un
+ * documento conseguido puede dejar de servir sin que nadie lo toque. Ver
+ * BODA-105.
+ */
+export const RUTA_DOCUMENTOS = "/panel/documentos";
+
+/**
+ * Las pantallas del día de la boda. Todo lo que se mira desde el móvil, de
+ * pie y con prisa, cuelga de aquí: el guion, la agenda de contactos, el
+ * buscador de invitados, el recuento del catering y el plan B en papel.
+ */
+export const RUTA_DIA = "/panel/dia";
+
+export const RUTA_AGENDA_DIA = "/panel/dia/agenda";
+
+export const RUTA_BUSCAR_DIA = "/panel/dia/buscar";
+
+export const RUTA_RECUENTO = "/panel/dia/recuento";
+
+export const RUTA_EXPORTAR_DIA = "/panel/dia/exportar";
+
+/**
+ * La comparativa de presupuestos dentro de una categoría. Cuelga de
+ * proveedores porque compara proveedores; la categoría llega por query.
+ */
+export const RUTA_COMPARADOR = "/panel/proveedores/comparar";
+
+/**
+ * El IVA general, para poner los presupuestos en la misma base antes de
+ * compararlos. Es configuración de la aplicación y no un dato por proveedor:
+ * lo que se guarda de cada uno es su cifra y si la dio con o sin IVA.
+ */
+export const PORCENTAJE_IVA = 21;
+
+/**
+ * El bucket PRIVADO de contratos y facturas. El nombre está duplicado a
+ * conciencia en `20260811140800_bucket_documentos.sql`; un test unitario
+ * comprueba que no discrepan, igual que con el de medios.
+ */
+export const BUCKET_DOCUMENTOS = "documentos";
+
+/**
+ * Tope de peso de un documento. Un contrato escaneado a doble cara cabe de
+ * sobra; lo que no cabe es que alguien suba un vídeo al bucket de contratos.
+ */
+export const PESO_MAXIMO_DOCUMENTO_MB = 20;
+
+/**
+ * Lo que se admite en el bucket de documentos: contratos y facturas llegan
+ * como PDF o como foto. La lista está duplicada a conciencia en la migración
+ * del bucket, que es la última línea de defensa; ésta es la primera.
+ */
+export const TIPOS_DOCUMENTO_ADMITIDOS = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+] as const;
+
+/**
+ * Cuánto vive una URL firmada de descarga de un documento. Corta a propósito:
+ * lo que se firma es «este clic», no «este fichero para siempre» — un enlace
+ * copiado a un chat caduca antes de que nadie lo abra.
+ */
+export const SEGUNDOS_URL_FIRMADA = 300;
+
+/**
+ * Dónde guarda el navegador lo marcado en el guion del día mientras no hay
+ * cobertura. En una finca sin señal, lo marcado no puede perderse: se apunta
+ * aquí y se reenvía al volver la conexión.
+ */
+export const CLAVE_ALMACEN_DIA = "boda-guion-dia";
+
+/**
+ * A partir de cuántos días una tarea deja de estar «en su fecha» y pasa a
+ * «vence pronto».
+ *
+ * UNA SEMANA, y el número importa: con tres días, media lista aparece tranquila
+ * el lunes y en rojo el jueves, sin margen para hacer nada; con un mes, la
+ * mitad del tablero está siempre avisando y el aviso deja de significar algo.
+ *
+ * Los días los cuenta la base —`v_tareas.dias_para_vencer`, con su fecha— y
+ * este umbral sólo decide dónde se pone la raya. Que estén separados es lo que
+ * permite cambiar el criterio sin tocar una migración.
+ */
+export const DIAS_VENCE_PRONTO = 7;
+
+/** Descarga del reparto por mesa, para el catering y para la finca. */
+export const RUTA_MESAS_EXPORTAR = "/panel/mesas/exportar";
+
+/**
+ * El lado del lienzo del plano, en unidades del plano.
+ *
+ * ES EL MISMO NÚMERO QUE `mesas_posicion_dentro_del_lienzo`, y eso no es una
+ * duplicación por descuido: la base tiene que negarse a guardar una coordenada
+ * fuera del lienzo pase la escritura por donde pase, y la pantalla tiene que
+ * saber entre qué y qué escala para pintar. Si algún día crece, crece en los
+ * dos sitios — y la migración es la que manda.
+ *
+ * Las unidades NO son píxeles: el lienzo se pinta en porcentaje sobre el ancho
+ * que haya, así que el mismo plano vale en un móvil y en un proyector.
+ */
+export const LADO_PLANO_MESAS = 10000;
+
+/**
+ * Cuánto se mueve una mesa con cada pulsación de una flecha.
+ *
+ * DOSCIENTAS CINCUENTA UNIDADES SON UN 2,5 % DEL LIENZO: cuarenta pulsaciones
+ * cruzan la sala de lado a lado. Un paso más fino convertiría colocar una mesa
+ * en una sesión de clics, y uno más grueso haría imposible separar dos mesas
+ * que casi se tocan — que es justo el ajuste para el que existen las flechas.
+ *
+ * Las flechas existen porque el plano se coloca SIN ratón y SIN JavaScript: son
+ * botones de un formulario, así que funcionan con el teclado, con un lector de
+ * pantalla y con la conexión de la finca.
+ */
+export const PASO_PLANO_MESAS = 250;
+
+/**
+ * Cuánta gente cabe en una mesa, como mínimo y como máximo.
+ *
+ * Los mismos números que `mesas_capacidad_rango`. No son una regla de la boda
+ * —hay mesas de seis y mesas imperiales de treinta— sino una red contra el
+ * dedazo: un 200 en vez de un 20 descuadraría el reparto entero.
+ */
+export const CAPACIDAD_MINIMA_MESA = 1;
+export const CAPACIDAD_MAXIMA_MESA = 30;
+
+/**
+ * OBSERVABILIDAD (BODA-93) · las claves y el ritmo de muestreo.
+ *
+ * TODO ESTO SE APAGA SOLO SI NO HAY CLAVE. Sin `SENTRY_DSN` no se arranca
+ * Sentry y sin `NEXT_PUBLIC_POSTHOG_KEY` no se arranca PostHog: en local y en
+ * CI no hay ninguna de las dos, así que no sale ni una petición a ningún sitio.
+ * Es lo contrario de lo habitual —una clave de mentira para «que no falle»—, y
+ * es a propósito: una clave de mentira manda datos reales a un sitio que nadie
+ * mira.
+ */
+export const SENTRY_DSN = process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN ?? "";
+
+export const POSTHOG_CLAVE = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "";
+
+/** Dónde vive PostHog. Configurable porque tienen nube europea y americana. */
+export const POSTHOG_SERVIDOR =
+  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
+
+/**
+ * Cuántas trazas de rendimiento se mandan, de 0 a 1.
+ *
+ * Un décimo, y no todas: el plan gratuito de Sentry tiene un tope mensual, y
+ * una boda tiene un pico de visitas el día que se manda la invitación. Gastar
+ * la cuota en trazas de un día bueno dejaría sin sitio a los errores del día
+ * malo, que son los que hacen falta.
+ */
+export const MUESTREO_TRAZAS = 0.1;
+
+/**
+ * El nombre del aviso de confirmaciones que fallan.
+ *
+ * Es una constante y no una cadena suelta porque la regla de alerta de Sentry
+ * se escribe contra este texto exacto: cambiarlo aquí sin cambiarlo allí apaga
+ * el aviso en silencio, que es la peor forma de perderlo.
+ */
+export const AVISO_CONFIRMACION_FALLIDA = "confirmacion-fallida";

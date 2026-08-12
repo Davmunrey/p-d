@@ -117,7 +117,7 @@ export default async function PaginaPendientes({ searchParams }: Parametros) {
                 >
                   {grupo.nombre}
                 </Link>
-                <span className="mt-linea block text-pequeno text-tinta-tenue">
+                <span className="mt-linea block text-pequeno text-tinta-suave">
                   {grupo.personas === 1
                     ? t("panel.pendientes.personasUna")
                     : t("panel.pendientes.personasCuenta", { personas: grupo.personas })}

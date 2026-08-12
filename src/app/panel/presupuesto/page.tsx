@@ -4,7 +4,7 @@ import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO, RUTA_GASTOS, RUTA_PAGOS } from "@/config/constants";
+import { RUTA_ACCESO, RUTA_GASTOS, RUTA_GRAFICAS, RUTA_PAGOS } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   loQueVaCostando,
@@ -89,6 +89,9 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
         <div className="mt-pila flex flex-wrap gap-interno">
           <EnlaceSuave href={RUTA_GASTOS}>{t("panel.presupuesto.verGastos")}</EnlaceSuave>
           <EnlaceSuave href={RUTA_PAGOS}>{t("panel.presupuesto.verPagos")}</EnlaceSuave>
+          <EnlaceSuave href={RUTA_GRAFICAS}>
+            {t("panel.presupuesto.graficas.enlace")}
+          </EnlaceSuave>
         </div>
       </header>
 
@@ -143,19 +146,19 @@ function Tabla({
         <table className="w-full border-collapse text-pequeno">
           <thead>
             <tr className="border-b border-borde text-left">
-              <th className="py-linea pr-interno font-normal text-tinta-tenue">
+              <th className="py-linea pr-interno font-normal text-tinta-suave">
                 {t("panel.presupuesto.columnaCategoria")}
               </th>
-              <th className="py-linea pr-interno text-right font-normal text-tinta-tenue">
+              <th className="py-linea pr-interno text-right font-normal text-tinta-suave">
                 {t("panel.presupuesto.columnaPrevisto")}
               </th>
-              <th className="py-linea pr-interno text-right font-normal text-tinta-tenue">
+              <th className="py-linea pr-interno text-right font-normal text-tinta-suave">
                 {t("panel.presupuesto.columnaGastado")}
               </th>
-              <th className="py-linea pr-interno text-right font-normal text-tinta-tenue">
+              <th className="py-linea pr-interno text-right font-normal text-tinta-suave">
                 {t("panel.presupuesto.columnaPagado")}
               </th>
-              <th className="py-linea text-right font-normal text-tinta-tenue">
+              <th className="py-linea text-right font-normal text-tinta-suave">
                 {t("panel.presupuesto.columnaDesviacion")}
               </th>
             </tr>
@@ -279,7 +282,7 @@ function Edicion({ categorias }: { categorias: CategoriaPresupuesto[] }) {
   return (
     <section className="mt-bloque">
       <Titulo3 como="h2">{t("panel.presupuesto.editarTitulo")}</Titulo3>
-      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-tenue">
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.presupuesto.editarAyuda")}
       </Cuerpo>
 

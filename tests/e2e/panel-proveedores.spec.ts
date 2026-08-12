@@ -3,7 +3,7 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_PANEL, RUTA_PROVEEDORES } from "../../src/config/constants";
-import { laPista, seguirLaPista } from "./utiles/rastro";
+import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles/rastro";
 
 /**
  * BODA-70 · Proveedores y sus categorías
@@ -96,6 +96,21 @@ async function primeraCategoria(pagina: Page): Promise<string> {
 }
 
 /**
+ * Lo que se afirma cuando NINGUNA acción ha redirigido todavía.
+ *
+ * ANTES SE CAÍA A `pagina.url()`, Y ESO ERA UN VERDE FALSO. Cuando el
+ * navegador no aplica la redirección —#126— el ayudante lleva la pestaña a
+ * mano al destino, así que la URL se queda con ese `?estado=` puesto. Si el
+ * paso siguiente no llegaba a enviar nada, la comprobación miraba esa misma
+ * URL, encontraba el estado del paso ANTERIOR y daba el visto bueno: fue así
+ * como una foto que nunca se subió pasó por subida.
+ *
+ * Con un texto que no case nunca, la ausencia de destino es lo que es —la
+ * acción no salió— y el fallo lo dice con esas palabras.
+ */
+const SIN_DESTINO = "(ninguna acción ha redirigido: ¿llegó a enviarse el formulario?)";
+
+/**
  * ESPERA LA REDIRECCIÓN ANTES DE MIRAR EL AVISO.
  *
  * Cada formulario de esta pantalla hace `POST` a una acción de servidor que
@@ -112,24 +127,20 @@ async function primeraCategoria(pagina: Page): Promise<string> {
  */
 async function esperarEstado(pagina: Page, esperado: string) {
   /*
-    Se espera a la URL y no al aviso: la URL dice si la acción terminó y con
-    qué resultado, y el aviso llega después. Meterlo todo en el mismo plazo
-    hacía que el fallo apareciera en un punto distinto en cada intento.
-  */
-  /*
-    `toHaveURL` y no `waitForURL`, por lo que dicen al fallar.
+    SE AFIRMA EL DESTINO QUE DEVOLVIÓ LA ACCIÓN, no la barra del navegador.
 
-    Los dos esperan lo mismo, pero `waitForURL` sólo sabe decir «se acabó el
-    tiempo»: no cuenta dónde te has quedado. Y aquí la pregunta entera es a
-    dónde fue la redirección — si acabó en `sin-permiso` o en `error`, eso NO es
-    lentitud, es la acción diciendo que no ha podido, y el test tiene que
-    enseñarlo en vez de mandar a mirar plazos. `toHaveURL` imprime la URL
-    recibida y con eso el fallo se lee solo.
+    La acción decide y lo dice en su redirección; que la pestaña la aplique es
+    cosa del enrutador, y eso es exactamente lo que #126 rompe de vez en
+    cuando en este trabajo de CI: la acción corre, responde 303 al sitio
+    correcto, y la pestaña se queda donde estaba. El dato de verdad —qué
+    decidió el servidor— lo apunta el rastro (`ultimoDestino`); si acabó en
+    `sin-permiso` o en `error`, eso no es lentitud, es la acción diciendo que
+    no ha podido, y el fallo lo enseña tal cual.
   */
   try {
-    await expect(pagina).toHaveURL(new RegExp(`estado=${esperado}(&|$)`), {
-      timeout: 30_000,
-    });
+    await expect
+      .poll(() => ultimoDestino(pagina) ?? SIN_DESTINO, { timeout: 30_000 })
+      .toMatch(new RegExp(`estado=${esperado}(&|$)`));
   } catch (fallo) {
     /*
       SI NO REDIRIGE, LO SIGUIENTE QUE HAY QUE SABER ES QUÉ SE VE.
@@ -148,6 +159,29 @@ async function esperarEstado(pagina: Page, esperado: string) {
         `\n\nLa pantalla decía:\n${enPantalla.slice(0, 600)}`,
     );
   }
+
+  const destino = ultimoDestino(pagina);
+  // Consumido: el destino de esta acción no puede valer por el de la siguiente.
+  olvidarDestinos(pagina);
+
+  /*
+    Y SE VA AL DESTINO SIEMPRE, aunque la barra ya lo lleve puesto.
+
+    Antes se iba sólo «si el navegador no lo siguió», mirando la URL. Y la URL
+    miente: un rescate anterior deja esa misma dirección, así que en el paso
+    siguiente «ya estoy ahí» significaba «me quedo con la pantalla de hace dos
+    pasos» — y el test miraba un render viejo, sin lo que acababa de
+    escribirse. Recargar cuesta milisegundos contra un servidor local; mirar
+    una pantalla vieja cuesta una ejecución de CI entera.
+  */
+  if (destino) {
+    if (!pagina.url().includes(`estado=${esperado}`)) {
+      console.warn(`#126: la pestaña no siguió la redirección a ${destino}.`);
+    }
+    await pagina.goto(destino);
+  }
+
+  await pagina.waitForLoadState("networkidle");
 }
 
 test.describe("El módulo de proveedores", () => {
@@ -191,10 +225,11 @@ test.describe("El módulo de proveedores", () => {
       .fill("2.200,50");
     await alta.getByRole("button", { name: copy.panel.proveedores.crear }).click();
 
-    // Se va a su ficha: quien acaba de darlo de alta sigue teniendo qué apuntar.
-    await page.waitForURL(new RegExp(`${RUTA_PROVEEDORES}/[0-9a-f-]{36}`), {
-      timeout: 15_000,
-    });
+    // Se va a su ficha: quien acaba de darlo de alta sigue teniendo qué
+    // apuntar. Por el destino que devolvió la acción, no por la barra del
+    // navegador — el mismo motivo de #126 que en el resto del spec.
+    await esperarEstado(page, "creado");
+    expect(page.url()).toMatch(new RegExp(`${RUTA_PROVEEDORES}/[0-9a-f-]{36}`));
     await expect(page.getByRole("heading", { name: nombre })).toBeVisible();
 
     // El importe se ha guardado como número, no como el texto que se tecleó.

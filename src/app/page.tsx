@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Fragment, type ReactNode } from "react";
 
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
+import { Galeria } from "@/components/marketing/galeria";
 import { HuecoFoto } from "@/components/marketing/hueco-foto";
 import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
@@ -28,6 +29,7 @@ import {
   obtenerConfiguracion,
   obtenerConsejosVestimenta,
   obtenerCuentaRegalos,
+  obtenerGaleria,
   obtenerHistoria,
   obtenerPreguntasFrecuentes,
   obtenerPrograma,
@@ -57,9 +59,14 @@ import { invitacionRecordada } from "@/lib/invitacion-recordada";
  *
  * Una sección se enseña si cumple las dos cosas: que la base de datos la dé
  * por visible **y** que haya contenido que pintar. La segunda condición no es
- * un capricho: `galeria` y `ubicaciones` están encendidas desde el primer día
- * y todavía no existen (son BODA-25 y BODA-26). Sin ese filtro, el menú
- * ofrecería dos enlaces que no llevan a ninguna parte.
+ * un capricho: `ubicaciones` está encendida desde el primer día y todavía no
+ * existe (es BODA-26). Sin ese filtro, el menú ofrecería un enlace que no
+ * lleva a ninguna parte.
+ *
+ * Y SIGUE HACIENDO FALTA CON LA SECCIÓN YA ESCRITA, que es lo que enseñó la
+ * galería al entrar (BODA-25): existe el código, pero mientras no haya ninguna
+ * foto publicada no hay galería que enseñar, y el filtro la deja fuera sola.
+ * «Todavía no está hecha» y «hoy está vacía» acaban en el mismo sitio.
  *
  * NO SE CACHEA, y es un cambio respecto a cómo nació.
  *
@@ -144,6 +151,7 @@ export default async function PaginaInicio() {
     cuentaRegalos,
     fotosPortada,
     fotosPaisaje,
+    fotosGaleria,
   } = datos;
 
   // Sin configuración no hay boda que enseñar: la base respondió, pero el panel
@@ -176,6 +184,8 @@ export default async function PaginaInicio() {
     ),
     cuenta_atras: <CuentaAtrasSeccion configuracion={configuracion} />,
     historia: historia.length > 0 ? <Historia hitos={historia} urlBase={urlBase} /> : undefined,
+    galeria:
+      fotosGaleria.length > 0 ? <Galeria fotos={fotosGaleria} urlBase={urlBase} /> : undefined,
     preboda:
       preboda.length > 0 ? (
         <ListaDeHoras
@@ -338,6 +348,7 @@ async function cargarLanding() {
     cuentaRegalos,
     fotosPortada,
     fotosPaisaje,
+    fotosGaleria,
   ] = await Promise.all([
     obtenerSecciones(),
     obtenerConfiguracion(),
@@ -352,6 +363,7 @@ async function cargarLanding() {
     obtenerCuentaRegalos(),
     obtenerMedios("portada"),
     obtenerMedios("paisaje"),
+    obtenerGaleria(),
   ]);
 
   return {
@@ -368,6 +380,7 @@ async function cargarLanding() {
     cuentaRegalos,
     fotosPortada,
     fotosPaisaje,
+    fotosGaleria,
   };
 }
 
@@ -443,7 +456,7 @@ function Portada({
         */}
         <dl className="animacion-subir flex flex-wrap gap-pila sm:gap-bloque">
           <div>
-            <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+            <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
               {t("portada.etiquetaFecha")}
             </dt>
             <dd className="mt-linea font-titulo text-titulo-2 text-tinta-marca tabular-nums">
@@ -454,7 +467,7 @@ function Portada({
           </div>
           {lugar ? (
             <div>
-              <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+              <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
                 {t("portada.etiquetaLugar")}
               </dt>
               <dd className="mt-linea font-titulo text-titulo-2 text-tinta-marca">{lugar}</dd>
@@ -479,7 +492,7 @@ function Portada({
         */}
         <p
           aria-hidden
-          className="animacion-aparecer mt-elemento flex items-center gap-interno-compacto text-diminuto uppercase tracking-marcado text-tinta-tenue"
+          className="animacion-aparecer mt-elemento flex items-center gap-interno-compacto text-diminuto uppercase tracking-marcado text-tinta-suave"
         >
           {t("portada.bajad")}
           <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-borde-fuerte to-transparent" />

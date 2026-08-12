@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO, RUTA_PROVEEDORES } from "@/config/constants";
+import { RUTA_ACCESO, RUTA_COMPARADOR, RUTA_PROVEEDORES } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   contarPorCategoria,
@@ -195,6 +195,36 @@ function SeccionCategoria({
           </Etiqueta>
 
           {/*
+            BODA-73 · COMPARAR, DESDE DONDE SE MIRA.
+
+            EL ENLACE APARECE A PARTIR DE DOS, y no es una sutileza: una
+            comparativa de un solo candidato es una tabla de una columna, o sea
+            la ficha con más pasos. Ofrecerla siempre enseñaría a no pulsarla.
+
+            El nombre de la categoría va en el nombre accesible porque hay un
+            «Comparar» por cabecera y, en una lista de nueve categorías, nueve
+            enlaces con el mismo texto no dicen a dónde van.
+          */}
+          {total > 1 ? (
+            <Link
+              href={`${RUTA_COMPARADOR}?categoria=${categoria.id}`}
+              aria-label={t("panel.proveedores.compararCategoria", {
+                categoria: categoria.nombre,
+              })}
+              /*
+                EL ÁREA QUE SE PUEDE TOCAR ES LA BARRA ENTERA, no la altura de
+                su texto. Nació con 21 px de alto —el cuerpo de la letra— y eso
+                es la mitad de los 44 que hace falta acertar con el pulgar; el
+                repaso táctil del panel lo cazó el mismo día. Estirarlo no
+                cambia nada de lo que se ve: cambia lo que se puede pulsar.
+              */
+              className="inline-flex min-h-control-compacto items-center text-pequeno text-tinta-marca underline"
+            >
+              {t("panel.proveedores.comparar")}
+            </Link>
+          ) : null}
+
+          {/*
             BORRAR SÓLO SI ESTÁ VACÍA, y el botón se quita en vez de
             deshabilitarse. La base lo impide igualmente —`on delete restrict`
             desde `proveedores`— pero ofrecer un botón que sólo puede dar un
@@ -212,7 +242,7 @@ function SeccionCategoria({
       </div>
 
       {categoria.descripcion ? (
-        <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-tenue">
+        <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
           {categoria.descripcion}
         </Cuerpo>
       ) : null}
@@ -272,7 +302,7 @@ function FormularioProveedor({ categorias }: { categorias: CategoriaProveedor[] 
   return (
     <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
       <Titulo3 como="h2">{t("panel.proveedores.nuevoTitulo")}</Titulo3>
-      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-tenue">
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.proveedores.nuevoAyuda")}
       </Cuerpo>
 
@@ -401,7 +431,7 @@ function SinCerrar({ categorias }: { categorias: CategoriaSinCerrar[] }) {
   return (
     <section className="mt-elemento rounded-tarjeta border border-borde bg-superficie-tenue p-interno">
       <Titulo3 como="h2">{t("panel.proveedores.sinCerrarTitulo")}</Titulo3>
-      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-tenue">
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.proveedores.sinCerrarAyuda")}
       </Cuerpo>
 
@@ -412,7 +442,7 @@ function SinCerrar({ categorias }: { categorias: CategoriaSinCerrar[] }) {
             className="rounded-etiqueta bg-superficie px-interno py-linea text-pequeno text-tinta"
           >
             {categoria.nombre}{" "}
-            <span className="text-tinta-tenue">
+            <span className="text-tinta-suave">
               ·{" "}
               {categoria.candidatos === 0
                 ? t("panel.proveedores.sinCerrarSinEmpezar")

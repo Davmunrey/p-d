@@ -3,7 +3,7 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_GASTOS, RUTA_PANEL } from "../../src/config/constants";
-import { laPista, seguirLaPista } from "./utiles/rastro";
+import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles/rastro";
 
 /**
  * BODA-61 · Partidas de gasto
@@ -59,6 +59,21 @@ function seccion(pagina: Page, titulo: string) {
 }
 
 /**
+ * Lo que se afirma cuando NINGUNA acción ha redirigido todavía.
+ *
+ * ANTES SE CAÍA A `pagina.url()`, Y ESO ERA UN VERDE FALSO. Cuando el
+ * navegador no aplica la redirección —#126— el ayudante lleva la pestaña a
+ * mano al destino, así que la URL se queda con ese `?estado=` puesto. Si el
+ * paso siguiente no llegaba a enviar nada, la comprobación miraba esa misma
+ * URL, encontraba el estado del paso ANTERIOR y daba el visto bueno: fue así
+ * como una foto que nunca se subió pasó por subida.
+ *
+ * Con un texto que no case nunca, la ausencia de destino es lo que es —la
+ * acción no salió— y el fallo lo dice con esas palabras.
+ */
+const SIN_DESTINO = "(ninguna acción ha redirigido: ¿llegó a enviarse el formulario?)";
+
+/**
  * ESPERA LA REDIRECCIÓN ANTES DE MIRAR NADA MÁS.
  *
  * La URL dice si la acción terminó y con qué resultado; el aviso llega después.
@@ -67,10 +82,16 @@ function seccion(pagina: Page, titulo: string) {
  * que no ha podido, y el registro de CI tiene que distinguirlo.
  */
 async function esperarEstado(pagina: Page, esperado: string) {
+  /*
+    SE AFIRMA EL DESTINO QUE DEVOLVIÓ LA ACCIÓN, no la barra del navegador:
+    es lo que #126 rompe de vez en cuando en este trabajo de CI. El rastro
+    apunta qué decidió el servidor; si la pestaña no se movió, se la lleva a
+    donde la redirección decía, que es lo que habría hecho ella.
+  */
   try {
-    await expect(pagina).toHaveURL(new RegExp(`estado=${esperado}(&|$)`), {
-      timeout: 30_000,
-    });
+    await expect
+      .poll(() => ultimoDestino(pagina) ?? SIN_DESTINO, { timeout: 30_000 })
+      .toMatch(new RegExp(`estado=${esperado}(&|$)`));
   } catch (fallo) {
     const enPantalla = await pagina
       .locator("main")
@@ -81,6 +102,29 @@ async function esperarEstado(pagina: Page, esperado: string) {
         `\n\nLa pantalla decía:\n${enPantalla.slice(0, 600)}`,
     );
   }
+
+  const destino = ultimoDestino(pagina);
+  // Consumido: el destino de esta acción no puede valer por el de la siguiente.
+  olvidarDestinos(pagina);
+
+  /*
+    Y SE VA AL DESTINO SIEMPRE, aunque la barra ya lo lleve puesto.
+
+    Antes se iba sólo «si el navegador no lo siguió», mirando la URL. Y la URL
+    miente: un rescate anterior deja esa misma dirección, así que en el paso
+    siguiente «ya estoy ahí» significaba «me quedo con la pantalla de hace dos
+    pasos» — y el test miraba un render viejo, sin lo que acababa de
+    escribirse. Recargar cuesta milisegundos contra un servidor local; mirar
+    una pantalla vieja cuesta una ejecución de CI entera.
+  */
+  if (destino) {
+    if (!pagina.url().includes(`estado=${esperado}`)) {
+      console.warn(`#126: la pestaña no siguió la redirección a ${destino}.`);
+    }
+    await pagina.goto(destino);
+  }
+
+  await pagina.waitForLoadState("networkidle");
 }
 
 /**
@@ -199,6 +243,10 @@ test.describe("Los gastos del presupuesto", () => {
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
   );
 
+  // El rastro, en TODOS los tests: sin él `ultimoDestino` no ve nada y la
+  // espera se queda sin poder decir qué decidió la acción.
+  test.beforeEach(({ page }) => seguirLaPista(page));
+
   /**
    * CAMINO FELIZ · apuntar un gasto mueve el total de su categoría y el general.
    */
@@ -206,7 +254,6 @@ test.describe("Los gastos del presupuesto", () => {
     const categoria = await crearCategoria("Feliz");
     const concepto = `${MARCA} Ramo de novia`;
 
-    seguirLaPista(page);
     await entrar(page);
     await page.goto(RUTA_GASTOS);
 

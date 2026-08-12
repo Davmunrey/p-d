@@ -245,7 +245,7 @@ function Cifra({
 }) {
   return (
     <div>
-      <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">{rotulo}</dt>
+      <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">{rotulo}</dt>
       <dd
         className={`mt-linea text-titulo-3 tabular-nums ${
           error ? "text-error" : destacada ? "text-tinta" : "text-tinta-suave"
@@ -313,7 +313,7 @@ function Fila({
     <div className="flex flex-wrap items-baseline justify-between gap-interno">
       <div>
         <span className="text-cuerpo text-tinta">{pago.concepto}</span>
-        <span className="mt-linea block text-pequeno text-tinta-tenue">
+        <span className="mt-linea block text-pequeno text-tinta-suave">
           {pago.categoria}
           {pago.proveedor ? ` · ${pago.proveedor}` : ""} · {quienPaga(pago)}
         </span>
@@ -324,7 +324,7 @@ function Fila({
           <span className="block text-cuerpo tabular-nums text-tinta">
             {euros ? euros(pago.importe) : ""}
           </span>
-          <span className="mt-linea block text-pequeno text-tinta-tenue">
+          <span className="mt-linea block text-pequeno text-tinta-suave">
             {pago.pagadoEn
               ? `${t("panel.presupuesto.pagos.pagadoEl")} ${formatoDia.format(comoDia(pago.pagadoEn))}`
               : formatoDia.format(comoDia(pago.fechaVencimiento))}

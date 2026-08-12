@@ -22,15 +22,18 @@
     "prebuild": "npm run tokens"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.70.0",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.2",
     "next": "16.2.12",
     "postgres": "^3.4.9",
+    "posthog-js": "^1.415.7",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.50.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.6.3",

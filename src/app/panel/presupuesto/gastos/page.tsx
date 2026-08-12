@@ -176,7 +176,7 @@ function Totales({
       <Titulo3 como="h2">{t("panel.presupuesto.gastos.totalTitulo")}</Titulo3>
       <dl className="mt-elemento flex flex-wrap gap-bloque">
         <div>
-          <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+          <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
             {t("panel.presupuesto.gastos.totalPrevisto")}
           </dt>
           <dd className="mt-linea text-titulo-3 tabular-nums text-tinta-suave">
@@ -184,7 +184,7 @@ function Totales({
           </dd>
         </div>
         <div>
-          <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-tenue">
+          <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
             {t("panel.presupuesto.gastos.totalReal")}
           </dt>
           <dd className="mt-linea text-titulo-3 tabular-nums text-tinta">
@@ -232,7 +232,7 @@ function Categoria({
       </div>
 
       {gastos.length === 0 ? (
-        <Cuerpo className="mt-elemento text-pequeno text-tinta-tenue">
+        <Cuerpo className="mt-elemento text-pequeno text-tinta-suave">
           {t("panel.presupuesto.gastos.sinGastos")}
         </Cuerpo>
       ) : (
@@ -289,7 +289,7 @@ function Fila({
     <div className="flex flex-wrap items-baseline justify-between gap-interno">
       <div>
         <span className="text-cuerpo text-tinta">{gasto.concepto}</span>
-        <span className="mt-linea block text-pequeno text-tinta-tenue">
+        <span className="mt-linea block text-pequeno text-tinta-suave">
           {gasto.proveedor ?? t("panel.presupuesto.gastos.sinProveedor")}
           {/* Pagada lleva su palabra y no sólo un color: un punto verde no lo
               lee ni un daltónico ni un lector de pantalla. */}
@@ -302,7 +302,7 @@ function Fila({
           <span className="block text-cuerpo tabular-nums text-tinta">
             {importe(gasto.importeReal)}
           </span>
-          <span className="mt-linea block text-pequeno tabular-nums text-tinta-tenue">
+          <span className="mt-linea block text-pequeno tabular-nums text-tinta-suave">
             {t("panel.presupuesto.gastos.columnaEstimado")} {importe(gasto.importeEstimado)}
           </span>
         </div>

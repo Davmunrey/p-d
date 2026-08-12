@@ -72,6 +72,10 @@ versalita de la portada, el conector «y», las citas, las horas del programa y 
 aro de foco—. Mezclar acción y acento en un solo token, como estaba, hace que el
 acento deje de existir: el botón se lo come.
 
+**El ritmo de la landing se mide en el navegador, no se confía.** Stylelint impide escribir un `px` suelto, pero no ve el resultado: un `mt-` de más, un componente que trae su propio relleno o un token cambiado a medias dejan un escalón que sólo se aprecia bajando despacio, y así no revisa nadie una web que se abre desde WhatsApp. Un test mide lo pintado y lo compara contra los **dos** ritmos del sistema, leídos de las propias variables —`--espacio-seccion-fluida` para las secciones de contenido, `--espacio-seccion-compacta` para los bloques que no lo son—; cualquier tercer valor es, por definición, un espaciado que no está en el sistema. Lo mismo con el margen lateral, en los tres tamaños: una sola columna para todas. La única excepción son las secciones **a pantalla completa**, y se reconocen por lo que hacen —llenar la pantalla— y no por su nombre, para que una sección que se quedara sin relleno no pueda colarse por esa puerta.
+
+**El tono tenue es para texto grande.** axe midió lo que ningún repaso de capturas vio: `--tinta-tenue` (#78839a, de la entrega) da 3,6:1 sobre el fondo claro — de sobra para titulares (3:1), corto para texto pequeño (4,5:1). La paleta no se toca, porque el test de paleta la ata a la cartelería; lo que manda es el **uso**: las versalitas, ayudas, metas y cuerpos pequeños visten `--tinta-suave`, y `--tinta-tenue` queda para texto grande y adornos. Lo vigila la auditoría axe del CI, bloqueante sobre la landing y sobre cada módulo del panel — y ya ha cazado un segundo caso de la misma familia en un módulo recién escrito: `--aviso-tinta` era el ámbar de la entrega (3,25:1) y las alergias del reparto se avisan con él en cuerpo pequeño. El color del aviso (`--aviso`) se queda; la **tinta** del aviso pasa al bronce 600 de la misma entrega, que llega a 5,4:1. El verde y el rojo no lo necesitan: medidos, dan 5,3:1 y 4,5:1.
+
 - Los tokens se definen en `src/styles/tokens/` y se exponen a Tailwind vía `@theme` (Tailwind v4), de modo que `bg-superficie` y `var(--superficie)` son el mismo token. **Una sola fuente, dos sintaxis.**
 - Prohibido en componentes: `#hex`, `rgb()`, `px` sueltos (salvo `1px` de borde), `text-[14px]`, `bg-[#fff]`.
 - Los bloques inversos —cuenta atrás, RSVP, pie— y cualquier variante futura se resuelven **reasignando semánticos**, nunca tocando componentes.
@@ -181,7 +185,7 @@ tests/e2e/
 
 ## 5. Modelo de datos
 
-Treinta y una tablas y ocho vistas, todas en `public`, todas con RLS activa y **todas con nombre en castellano** — regla 2, también aquí.
+Treinta y siete tablas y trece vistas, todas en `public`, todas con RLS activa y **todas con nombre en castellano** — regla 2, también aquí.
 
 La convención es uniforme: `id uuid` como clave, `creado_en` y `actualizado_en` con trigger. Las excepciones se nombran donde toca.
 
@@ -223,7 +227,13 @@ La convención es uniforme: `id uuid` como clave, `creado_en` y `actualizado_en`
 
 **`mesas`** — mesas del banquete: nombre, capacidad, forma y posición para el plano.
 
+**La capacidad la vigila el panel, no la base, y es a propósito.** La tabla deja que una mesa se pase de aforo porque durante el reparto se pasa todo el rato: se mete a la familia entera y luego se sacan dos. Lo que no puede pasar es que se sobrepase **sin enterarse**, así que la comprobación vive en las acciones que sientan gente —`sentarInvitado` y `sentarGrupo`— con el recuento hecho en la base justo antes de escribir, nunca sobre lo que tenía pintado la pantalla: entre que se pintó y se pulsó el botón, la otra mitad de la pareja ha sentado a tres personas desde su móvil. Al negarse, el aviso dice cuántos caben y cuántos saldrían; «no caben» a secas obliga a ir a contar.
+
+**La posición es de la mesa y no del navegador, y se mueve sin ratón.** `posicion_x` y `posicion_y` van en unidades del plano (0 a 10 000, las dos o ninguna por `check`) y la pantalla las convierte a porcentaje, así que el mismo plano vale en un móvil y en el proyector de la finca sin guardar un solo píxel. Se colocan escribiendo las coordenadas o con cuatro botones de empujar por mesa, cada uno su propio formulario: arrastrar es más cómodo con un ratón y **no funciona** con el teclado, con un lector de pantalla ni con el móvil en la finca, que es donde se abre esto el día antes. La presidencia no es una columna sino una forma —`imperial`—, porque una columna `es_presidencia` admite dos y ninguna, y las dos cosas se descubren el día de la boda.
+
 Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, alojamiento) y **`v_menus_confirmados`** (menús por tipo y cuántos llevan alergias).
+
+**`v_alergias_por_mesa`** — quién tiene alergia anotada, en qué mesa se sienta y qué menú lleva. Es vista y no un filtro en la pantalla porque «alergia que importa» son tres condiciones fáciles de olvidar en una de dos copias —confirmación vigente, estado `confirmado`, texto no vacío— y este es el dato del proyecto donde equivocarse tiene consecuencias médicas. El `left join` contra `mesas` es deliberado: quien tiene alergia y **todavía no está sentado** sale igual, con `mesa` a nulo, que es la fila que hay que resolver antes de mandar el reparto a la cocina y la que un `join` normal haría desaparecer justo mientras el reparto está a medias.
 
 ### Contenido de la landing
 
@@ -235,7 +245,9 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 
 **`consejos_vestimenta`** — los bloques del dress code («Ellas», «Ellos», «Solo dos peticiones»), con `orden` y `publicado`. Es una tabla y no copy fijo porque los consejos dependen de la finca y de la fecha —el del tacón sale de conocer el suelo— y se retocan sin desplegar.
 
-**`medios`** — fotos de la landing: `ruta_almacenamiento`, `texto_alternativo`, `seccion`, `orden`, `ancho`, `alto`, `marcador_borroso` y `publicado`. Vista pública: **`v_medios_publicados`**. Ninguna imagen va en `/public`.
+**`medios`** — fotos y vídeos de la landing: `ruta_almacenamiento`, `texto_alternativo`, `seccion`, `orden`, `ancho`, `alto`, `marcador_borroso`, `tipo`, `poster_ruta` y `publicado`. Vista pública: **`v_medios_publicados`**. Ninguna imagen va en `/public`.
+
+La unicidad `(seccion, orden)` es **deferrable**, y eso obliga a que reordenar sea una función de la base —`reordenar_medio(uuid, boolean)`— y no dos `UPDATE` desde el panel: diferida significa «se comprueba al COMMIT», no «no se comprueba», y dos llamadas por PostgREST son dos transacciones, así que la primera acaba con dos filas compartiendo orden y salta igual. La permuta necesita las dos escrituras en el mismo commit. Va con `security invoker`, así que quien autoriza sigue siendo `medios_editor_escribir`.
 
 ### Proveedores, presupuesto y organización
 
@@ -248,6 +260,10 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 **Por qué `contactos_proveedor` existe además de las columnas de contacto de `proveedores`.** Quien te vende el catering no es quien está en la cocina, y el número del comercial a las once de la noche no lo coge nadie: lo que hace falta el día de la boda es el móvil del jefe de sala. Las columnas de `proveedores` se quedan como contacto principal —el que sale en la lista sin abrir la ficha— y esta tabla es «además de», no «en vez de». Su `es_del_dia` es lo que ordenará la agenda de BODA-101. La clave ajena es `on delete cascade`, al revés que el resto de esta parte del esquema: un contacto no es contabilidad y no tiene sentido conservarlo sin su proveedor.
 
 **`categorias_presupuesto`**, **`partidas_presupuesto`**, **`pagos`**. Vistas: **`v_resumen_presupuesto`** y **`v_proximos_pagos`**.
+
+**`documentos_boda`** — los papeles del expediente matrimonial civil, con sus caducidades. Vista: **`v_documentos_boda`**.
+
+**Un documento conseguido puede no servir, y por eso esto no es una lista de tareas.** El certificado de empadronamiento vale tres meses y el literal de nacimiento seis: el que se pide en enero para una boda de septiembre está vigente hoy y **no sirve el día de la boda**. Una casilla de hecho/sin hacer no puede contestar esa pregunta, porque la respuesta cambia sola con el calendario sin que nadie toque nada. La comparación —`caduca_en` contra la fecha de la ceremonia llevada antes a su `zona_horaria`— la hace `v_documentos_boda` y no el frontend: preguntárselo al reloj del navegador es un aviso que sale un día tarde, y con un plazo de tres meses ese día cuenta. El aviso vale **igual estando conseguido**, que es cuando de verdad hace falta, porque es el estado en el que nadie vuelve a mirarlo. La tabla exige además que `conseguido` y `obtenido_en` vayan juntos —las dos mitades del `check`—: sin la fecha no hay forma de saber si el plazo sigue vivo, y con la fecha colgando de un documento no conseguido habría dos verdades sobre lo mismo. **No se siembra ninguna lista de partida**: los papeles dependen del registro civil, de la nacionalidad de cada uno y de si alguno estuvo casado antes, así que ponerla por defecto sería inventarse el expediente de esta boda; la pantalla vacía lo explica en lugar de callarse.
 
 **Un gasto lleva dos importes y el segundo puede estar sin poner.** `importe_estimado` es lo que se calcula que costará —`not null` con `default 0`, porque un gasto sin calcular son cero euros previstos— y `importe_real` es lo que se acabó acordando. `importe_real` nulo significa «todavía no cerrado» y hay que dejarlo nulo: un cero ahí diría que el proveedor sale gratis, y ese ahorro inventado entraría en la desviación de la categoría como dinero que sobra. Por eso la pantalla enseña «sin cerrar» y no «0,00 €», y `loQueVaCostando()` se despeja de la `desviacion` que ya calcula la vista —real donde lo haya, estimado donde no— en vez de sumar las partidas por segunda vez con otro criterio.
 
@@ -291,7 +307,23 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 
 **Cómo se lee un importe teclado** (`leerImporte()`, en `src/lib/importe.ts`, compartido por la ficha de proveedor, las categorías y los gastos). Vacío es `null` y no cero; lo ilegible es un rechazo con su frase y no un `null` que borraría en silencio lo que alguien acaba de teclear mal. **No se redondea, se rechaza:** un tercer decimal es un dedo que ha resbalado y la respuesta es enseñarlo, no elegir por él —antes `8600,555` se guardaba como 8.600,56 sin decir nada—. Y con el punto manda el castellano: se quita sólo el que va seguido de exactamente tres cifras, así que `1.250` son mil doscientos cincuenta y `12.50` siguen siendo doce con cincuenta.
 
-**`tareas`** — con estado, prioridad y vencimiento.
+**`tareas`** — con estado, prioridad, vencimiento, responsable y proveedor. `plantilla_id` apunta a la fila de plantilla de la que salió, si salió de una: es la memoria que hace idempotente la generación. Y `orden`: el sitio manual de cada tarjeta dentro de su columna del tablero. Nulo es «donde caiga» —mandan la prioridad y la fecha— y sólo pasa a tener número cuando alguien la mueve; con un `not null default 0`, todas las tareas nuevas nacerían empatadas en la primera posición.
+
+**`v_tareas` cuenta los días que faltan con la fecha de la base**, igual que `v_pagos` decide qué está vencido, y por el mismo motivo: preguntárselo al navegador es preguntárselo a un reloj que puede estar mal puesto. La vista devuelve los días —negativo es tarde, cero es hoy, nulo es una tarea sin plazo— y **no** una etiqueta cerrada: a partir de cuántos días algo «vence pronto» es una decisión de producto y vive con las demás en `src/config/constants.ts`, no incrustada en SQL. De paso resuelve el nombre del responsable y del proveedor con `left join`, para que una tarea sin asignar —que es la mitad de la lista al empezar— siga saliendo en el tablero.
+
+**`plantilla_tareas`** — las tareas típicas de organizar una boda, con su **antelación en días** y su `grupo` (`organizacion`, `ceremonia_civil`, `ceremonia_religiosa`, `viaje_de_novios`): no todas las bodas llevan lo mismo, y se elige por juego, no tarea a tarea. Vive en datos y no en código para poder retocarla sin desplegar. **`generar_tareas_desde_plantilla(grupos)`** crea las tareas de los grupos elegidos calculando la fecha límite desde `configuracion_boda` — contra la base, nunca contra el reloj del navegador — y generar dos veces no duplica: un índice único sobre `plantilla_id` es la garantía real.
+
+**`guion_dia`** — el guion de la jornada: hora (texto libre, como en `hitos_programa`: se escribe «13:15» pero también «al acabar el cóctel»), título, responsable (texto libre: quien responde del autobús jamás tendrá cuenta en el panel), orden y `hecho_en`. No es `hitos_programa` —eso es contenido público de la landing— ni `tareas` —una tarea se planifica; un punto del guion se ejecuta—. La marca de hecho es una fecha y no un booleano: «hecho a las 13:22» reconstruye la jornada.
+
+**`correcciones_recuento`** — el ajuste de última hora del catering, por tipo de menú y sin tocar `confirmaciones`: el primo que avisa a las diez de que no llega no ha «rechazado» — su confirmación es histórico inmutable; lo que cambia es la cifra que se dice por teléfono. **`v_recuento_catering`** suma confirmados más corrección por menú (la base, nunca el navegador) y **`v_alergias_por_mesa`** agrupa las alergias como las pide la cocina, con `LEFT JOIN` a mesas: una alergia sin mesa asignada es justo la que no puede perderse.
+
+**`documentos_boda`** — el expediente civil, papel a papel: titular (`novia`/`novio`/`ambos`), dónde se pide, estado, **fecha de obtención y fecha de caducidad**. Un papel no es una tarea: se consigue y empieza a morirse — la partida de nacimiento caduca a los tres meses y la boda se prepara con año y medio. Conseguido ⇔ fecha de obtención, por restricción. El aviso que importa se calcula contra la fecha de la boda: lo que caduca **antes** del enlace se avisa aunque esté conseguido. **Sin semilla a propósito**: la lista varía por comunidad y por vía (registro o notaría), y sembrarla sin confirmar con los novios sería la regla 1 disfrazada de datos (#129).
+
+**Los servicios por invitado saben a quién multiplican y qué garantiza el contrato.** `servicios.base_calculo` (`todos`/`adultos`/`ninos`) resuelve que el menú infantil no cuesta lo que el de adulto —se modela como otro servicio con base `ninos` y su tarifa— y `minimo_garantizado` guarda lo que se paga aunque falte gente. `v_servicios_importe` aplica el `greatest` y expone también la cuenta sin mínimo (`importe_calculado`), para que la pantalla pueda explicar la diferencia. Confirmar un invitado lo recalcula todo solo, porque no hay nada que recalcular: es una vista.
+
+**`proveedores.iva_incluido`** — si el presupuesto lleva el IVA dentro. La mitad de los sustos de una boda son este booleano: tres presupuestos y uno sin IVA, comparados a pelo, eligen al caro creyéndolo barato. `NULL` es «el presupuesto no lo dice», que es un estado real y un aviso en la comparativa. El tipo (21 %) es configuración de la aplicación (`PORCENTAJE_IVA`), no un dato por proveedor.
+
+**El bucket `documentos` es PRIVADO, al contrario que `medios` y por el mismo razonamiento.** Una foto se pinta con `<img src>` y no puede mandar credenciales; un contrato se descarga tras un clic de alguien con sesión, así que pasa por el servidor: URL firmada de caducidad corta (`SEGUNDOS_URL_FIRMADA`), creada por una acción que antes comprueba la sesión. La garantía de escritura es la misma ausencia que en medios —RLS activa y cero políticas— y la suite de seguridad afirma además que el bucket no es público y que `anon` no cuela una subida nombrándolo.
 
 ### Política RLS
 
@@ -364,20 +396,34 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 
 **Abrir la invitación deja huella en el navegador.** El middleware guarda el token de `/rsvp/[token]` en una cookie `httpOnly` de un año, y de ahí lo saca la portada para el campo de la playlist: `sugerir_cancion()` exige token —la lista que sonará esa noche es de los invitados, no de internet entera— y en la portada no hay ninguno en la URL. Quien nunca ha abierto su invitación no ve el campo, ve la línea que explica que hace falta el enlace; enseñar un campo que sólo puede responder «vuestro enlace no vale» se lee como que la web está rota. El token **no** viaja en el HTML de la portada ni en un campo oculto: eso lo pondría en el código fuente de una página pública y en el historial del móvil, y ese token abre los datos de una familia entera. La cookie no se valida al escribirla —sería una consulta a la base en cada navegación de toda la web— porque la base la vuelve a comprobar cuando de verdad importa, al escribir, y un token inventado allí no abre nada.
 
+**El día de la boda es el único módulo que no se usa sentado**, y eso cambia cómo está escrito. El guion (`guion_dia`) se marca de pie, con una mano y con la cobertura de una finca en mitad del campo: por eso es la **única pantalla del panel con estado en el navegador**. Al pulsar, la marca se apunta en `localStorage` y se pinta como guardada; después se intenta mandar; si no sale, se reintenta cuando el navegador avisa de que ha vuelto la conexión. Lo que manda es el servidor salvo lo que sigue en la cola, así que dos móviles marcando a la vez no se pisan. La cola vive detrás de `useSyncExternalStore` y no de un `useEffect` con `setState`: el servidor no tiene `localStorage`, y leerlo al montar es o un error de hidratación o un render encadenado.
+
+**Los teléfonos y el buscador se pintan enteros en el servidor y se filtran en el navegador**, y no es una optimización: es el criterio de los tickets. La lista viaja una vez con la página y escribir no consulta nada, así que buscar sigue funcionando cuando el móvil se queda sin datos — que es exactamente cuando alguien pregunta en qué mesa está. Un buscador que consulta por cada letra sería igual de instantáneo con wifi y estaría muerto el día que hace falta.
+
+**La corrección del recuento no toca la confirmación de nadie.** Quien dijo que venía y falla dos horas antes dijo que venía, y reescribir su confirmación borraría ese dato. Lo que cambia es lo que se le pide al catering: vive en `correcciones_recuento`, una fila por menú, y lo suma `v_recuento_catering`. Los niños se cuentan por `es_nino` y no por su menú —un menor puede llevar sin gluten— y quien no ha contestado va aparte, nunca sumado a un menú que nadie ha pedido por él.
+
+**Las gráficas usan tres tokens de color y no doce.** Lo normal es una paleta propia de gráficas; aquí sería el hardcode que prohíbe la regla 1 y rompería una identidad que tiene un azul y un bronce. Se diseñan para necesitar poco color: el reparto por categoría lleva el nombre al lado, no un color por barra, y donde de verdad hay dos series se distinguen también por posición y por cifra. Son manchas, así que el umbral es 3:1 contra la superficie, y lo comprueba el test de paleta **en los dos temas** — que es como se descubrió que el pie heredaba las series claras sobre su fondo casi negro. Cada gráfica lleva su tabla con la misma información y calculada por las mismas funciones: el `<svg>` va `aria-hidden` porque para quien no lo ve no es nada.
+
+**Nada de lo que sale hacia Sentry o PostHog lleva datos de nadie.** `/rsvp/<token>` es una credencial y va dentro de la URL de cualquier informe de error, así que todo pasa antes por `src/lib/observabilidad/limpiar.ts`. El token se corta **por estructura** —se sustituye el segmento entero detrás de `/rsvp/`— y no por su aspecto: es base64 sin forma y los de desarrollo se llaman «desarrollo-familia-uno-000000», así que ninguna expresión regular acierta con los dos. Correos y teléfonos sí van por patrón. Las cookies, las cabeceras y el bloque `user` que Sentry rellena con la IP se tiran enteros. Sin clave no se arranca ninguna de las dos herramientas, así que en local y en CI no sale ni una petición.
+
 ---
 
 ## 7. Panel de gestión (`/app`)
 
-| Módulo          | Contenido                                                                                                                                                             |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Dashboard**   | KPIs: días restantes, confirmados/pendientes, % presupuesto consumido, próximos pagos y tareas                                                                        |
-| **Invitados**   | Tabla con filtros y búsqueda, alta individual o import CSV, gestión de grupos, generación y copia de enlaces de invitación, envío por WhatsApp/email, export          |
-| **Presupuesto** | Categorías con previsto vs real, gráfica de reparto, calendario de pagos, alertas de desvío                                                                           |
-| **Proveedores** | Lista agrupada por categoría con búsqueda que aguanta acentos, ficha por proveedor con su gente, pipeline de estado, comparativa de presupuestos, documentos adjuntos |
-| **Servicios**   | Qué se contrata, precio por unidad o por invitado, recálculo automático con los confirmados                                                                           |
-| **Tareas**      | Checklist con vista lista y kanban, plantilla inicial por meses restantes                                                                                             |
-| **Seating**     | Plano drag & drop de mesas, asignación con avisos de alergias y de invitados sin mesa                                                                                 |
-| **Ajustes**     | Contenido de la landing, orden y visibilidad de secciones, subida y ordenación de fotos, textos i18n, datos de la boda, usuarios                                      |
+| Módulo             | Contenido                                                                                                                                                                                                      |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard**      | KPIs: días restantes, confirmados/pendientes, % presupuesto consumido, próximos pagos y tareas                                                                                                                 |
+| **Invitados**      | Tabla con filtros y búsqueda, alta individual o import CSV, gestión de grupos, generación y copia de enlaces de invitación, envío por WhatsApp/email, export                                                   |
+| **Presupuesto**    | Categorías con previsto vs real, gráfica de reparto, calendario de pagos, alertas de desvío                                                                                                                    |
+| **Proveedores**    | Lista agrupada por categoría con búsqueda que aguanta acentos, ficha por proveedor con su gente, pipeline de estado, comparativa de presupuestos, documentos adjuntos                                          |
+| **Servicios**      | Qué se contrata, precio por unidad o por invitado, recálculo automático con los confirmados                                                                                                                    |
+| **Tareas**         | Checklist con vista lista y kanban, plantilla inicial por meses restantes                                                                                                                                      |
+| **Seating**        | Plano de la sala que se coloca con coordenadas y flechas (sin ratón y sin JavaScript), reparto por grupo de invitación, tope de aforo comprobado en la base, alergias por mesa y exportación en CSV            |
+| **Medios**         | Fotos y vídeos de la landing agrupados por sección: subida, texto alternativo obligatorio, publicar/retirar, orden y borrado —del fichero también                                                              |
+| **Documentos**     | Los papeles del expediente civil, con su titular y su caducidad comparada contra la fecha de la boda. Sin lista de partida: la pantalla vacía explica por qué                                                  |
+| **Día de la boda** | Guion de la jornada que se marca desde el móvil y **aguanta sin cobertura**, teléfonos de los contratados con enlace de llamada, buscador de invitados sin acentos, recuento del catering y hoja para imprimir |
+| **Gráficas**       | En qué se va el dinero, lo que llevamos gastado mes a mes y previsto contra real. Cada gráfica con su tabla equivalente                                                                                        |
+| **Ajustes**        | Contenido de la landing, orden y visibilidad de secciones, textos i18n, datos de la boda, usuarios                                                                                                             |
 
 ---
 
@@ -507,6 +553,7 @@ Un ticket no se cierra hasta cumplir **todos** los puntos:
 8. Alta de gasto → se refleja en los totales del presupuesto y en el dashboard
 9. Confirmación de un invitado → recalcula servicios con precio por invitado
 10. Anon intenta leer `invitados` directamente vía API → **denegado por RLS**
+11. Subida de una foto al panel → **no** se ve en la landing mientras es borrador → se publica → aparece con su texto alternativo → se borra, y con ella el fichero
 
 Entorno de test: proyecto Supabase de staging con seed determinista, reseteado antes de cada suite. Los E2E corren en cada PR (bloqueantes) y en `main` tras el deploy.
 
