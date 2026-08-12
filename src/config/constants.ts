@@ -275,6 +275,39 @@ export const RUTA_GASTOS = "/panel/presupuesto/gastos";
 export const RUTA_PAGOS = "/panel/presupuesto/pagos";
 
 /**
+ * Las gráficas del presupuesto (BODA-63).
+ *
+ * Cuelgan del presupuesto porque no son un módulo: son la misma información de
+ * `/panel/presupuesto` mirada de lejos. Nadie entra aquí a hacer nada, se entra
+ * a ver si esto va bien o va mal.
+ */
+export const RUTA_GRAFICAS = "/panel/presupuesto/graficas";
+
+/**
+ * EL LIENZO DE LAS GRÁFICAS, en unidades suyas.
+ *
+ * Un SVG necesita un sistema de coordenadas y ese sistema no es un color ni un
+ * espaciado: es geometría, y va con nombre aquí, como el plano de las mesas.
+ * Se dibuja siempre sobre este ancho y el navegador lo escala al hueco que
+ * tenga, así que el número no es «píxeles» — es la unidad en la que están
+ * escritas las barras.
+ */
+export const ANCHO_GRAFICA = 1000;
+
+/** Alto de una barra y hueco hasta la siguiente, en unidades del lienzo. */
+export const ALTO_BARRA_GRAFICA = 44;
+export const HUECO_BARRA_GRAFICA = 16;
+
+/**
+ * Cuánto del ancho se reserva para el rótulo de la categoría.
+ *
+ * Va en proporción y no en unidades fijas porque las barras se dibujan sobre lo
+ * que queda: si el rótulo creciera sin que esto lo supiera, las barras se
+ * saldrían del lienzo por la derecha.
+ */
+export const PARTE_ROTULO_GRAFICA = 0.32;
+
+/**
  * A dónde se mandan los correos.
  *
  * Configurable a propósito, y no porque vaya a cambiar de proveedor: es lo que

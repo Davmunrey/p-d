@@ -1034,6 +1034,33 @@
         "errorNoExiste": "Ese gasto ya no está.",
         "errorSinPermiso": "Vuestro perfil no puede hacer cambios aquí.",
         "errorGuardar": "No se ha podido guardar. Probad otra vez."
+      },
+      "graficas": {
+        "titulo": "Cómo va el dinero",
+        "entradilla": "El presupuesto visto de lejos: en qué se va, cuánto llevamos gastado y dónde nos hemos pasado.",
+        "enlace": "Ver las gráficas",
+        "volver": "Volver al presupuesto",
+        "vacio": "Todavía no hay nada que dibujar. En cuanto haya categorías con importe y algún pago hecho, aquí aparecen las gráficas.",
+        "repartoTitulo": "En qué se va el dinero",
+        "repartoEntradilla": "Lo gastado de verdad, categoría a categoría, de lo que más se lleva a lo que menos.",
+        "repartoVacio": "Todavía no hay ningún gasto real apuntado, así que no hay reparto que enseñar.",
+        "evolucionTitulo": "Lo que llevamos gastado",
+        "evolucionEntradilla": "Sólo lo pagado de verdad, mes a mes y acumulado. Los meses sin ningún pago no aparecen.",
+        "evolucionVacio": "Todavía no se ha pagado nada, así que no hay evolución que dibujar.",
+        "comparativaTitulo": "Previsto contra real",
+        "comparativaEntradilla": "Lo que se apuntó al principio frente a lo que está costando. En rojo, lo que se ha pasado.",
+        "comparativaVacio": "Todavía no hay ninguna categoría con importe previsto.",
+        "columnaCategoria": "Categoría",
+        "columnaImporte": "Gastado",
+        "columnaParte": "Parte del total",
+        "columnaMes": "Mes",
+        "columnaPagado": "Pagado ese mes",
+        "columnaAcumulado": "Acumulado",
+        "columnaPrevisto": "Previsto",
+        "columnaReal": "Real",
+        "columnaDesviacion": "Diferencia",
+        "laTabla": "La misma información, en una tabla",
+        "porcentaje": "{numero} %"
       }
     },
     "medios": {

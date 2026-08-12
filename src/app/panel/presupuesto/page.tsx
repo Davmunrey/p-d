@@ -4,7 +4,7 @@ import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO, RUTA_GASTOS, RUTA_PAGOS } from "@/config/constants";
+import { RUTA_ACCESO, RUTA_GASTOS, RUTA_GRAFICAS, RUTA_PAGOS } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   loQueVaCostando,
@@ -89,6 +89,9 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
         <div className="mt-pila flex flex-wrap gap-interno">
           <EnlaceSuave href={RUTA_GASTOS}>{t("panel.presupuesto.verGastos")}</EnlaceSuave>
           <EnlaceSuave href={RUTA_PAGOS}>{t("panel.presupuesto.verPagos")}</EnlaceSuave>
+          <EnlaceSuave href={RUTA_GRAFICAS}>
+            {t("panel.presupuesto.graficas.enlace")}
+          </EnlaceSuave>
         </div>
       </header>
 

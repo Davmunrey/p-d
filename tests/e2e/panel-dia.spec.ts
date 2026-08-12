@@ -131,10 +131,20 @@ async function sembrar(sello: number): Promise<Sembrado> {
       returning id
     `;
 
-    // El descartado existe para comprobar que NO sale: es el caso de error de #68.
+    /*
+      El descartado existe para comprobar que NO sale: es el caso de error de
+      #68.
+
+      Y LLEVA SU MOTIVO PORQUE LA BASE LO EXIGE. `proveedores_descartado_con_
+      motivo` obliga a que un descartado tenga escrito por qué —y a que el que
+      no lo está no lo tenga—, así que sembrarlo sin motivo no es un atajo: es
+      un estado que la aplicación no puede producir. Aquí se cayeron los siete
+      tests de este fichero de una vez, todos en esta línea.
+    */
     await sql`
-      insert into public.proveedores (categoria_id, nombre, estado, telefono)
-      values (${categoria.id}, ${descartado}, 'descartado', ${"+34 911 111 111"})
+      insert into public.proveedores (categoria_id, nombre, estado, telefono, motivo_descarte)
+      values (${categoria.id}, ${descartado}, 'descartado', ${"+34 911 111 111"},
+              ${"Se fue de precio"})
     `;
 
     await sql`
@@ -163,14 +173,22 @@ async function sembrar(sello: number): Promise<Sembrado> {
     `;
 
     /*
-      SE CONFIRMA DE VERDAD, y no se toca la confirmación inicial a mano: la
-      base crea una `pendiente` al dar de alta al invitado, así que confirmarlo
-      es actualizar la vigente. Sembrarlo de otro modo probaría un estado que
-      la aplicación no produce nunca.
+      SE CONFIRMA REGISTRANDO UNA RESPUESTA NUEVA, no editando la que había.
+
+      La base crea una `pendiente` al dar de alta al invitado, y de ahí sale la
+      tentación de hacerle un `update`. No se puede: `proteger_historial_
+      confirmaciones` lo rechaza con «las confirmaciones son inmutables:
+      registra una respuesta nueva» (CNF01). Y hace bien — lo que alguien
+      contestó el martes no se reescribe el jueves, se añade encima.
+
+      Así que se inserta, que es exactamente lo que hace el RSVP, y el trigger
+      se encarga de dejar vigente la última. Es el mismo molde que usa la
+      siembra de mesas.
     */
     await sql`
-      update public.confirmaciones set estado = 'confirmado'
-       where invitado_id = ${persona.id} and es_vigente
+      insert into public.confirmaciones
+        (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
+      values (${persona.id}, 'confirmado', 'publico', false, false)
     `;
 
     return {
@@ -418,13 +436,21 @@ test.describe("El día de la boda", () => {
       .filter({ has: page.getByRole("rowheader", { name: copy.rsvp.menus.sin_gluten }) });
     await expect(fila).toBeVisible();
 
-    const confirmadosAntes = await conBase(
-      async (sql) =>
+    /*
+      `count(*)` ES `bigint` Y LLEGA COMO CADENA. No cabe entero en un número de
+      JavaScript, así que el driver lo deja en texto — igual que los `numeric`
+      del presupuesto. Aquí se ve poco («"2"» frente a `2`) y muerde después:
+      `"2" - 1` da 1, pero `total` también viene en texto, y comparar `"1"` con
+      `1` falla sin que el mensaje diga por qué. Se convierte al leer.
+    */
+    const confirmadosAntes = await conBase(async (sql) =>
+      Number(
         (
-          await sql<{ personas: number }[]>`
-            select personas from public.v_menus_confirmados where tipo_menu = 'sin_gluten'
-          `
+          await sql<{ personas: string }[]>`
+              select personas from public.v_menus_confirmados where tipo_menu = 'sin_gluten'
+            `
         )[0]?.personas ?? 0,
+      ),
     );
     await expect(fila).toContainText(String(confirmadosAntes));
 
@@ -451,7 +477,7 @@ test.describe("El día de la boda", () => {
       dijo que venía dijo que venía, y ese dato es suyo.
     */
     const despues = await conBase(async (sql) => {
-      const [recuento] = await sql<{ confirmados: number; ajuste: number; total: number }[]>`
+      const [recuento] = await sql<{ confirmados: string; ajuste: number; total: string }[]>`
         select confirmados, ajuste, total
           from public.v_recuento_catering where tipo_menu = 'sin_gluten'
       `;
@@ -460,16 +486,21 @@ test.describe("El día de la boda", () => {
         join public.invitados as i on i.id = f.invitado_id
         where i.apellidos = ${sembrado.invitado.apellidos} and f.es_vigente
       `;
-      return { recuento, invitado };
+      return {
+        confirmados: Number(recuento.confirmados),
+        ajuste: Number(recuento.ajuste),
+        total: Number(recuento.total),
+        estado: invitado.estado,
+      };
     });
 
-    expect(despues.recuento.ajuste, "la corrección tiene que haberse guardado").toBe(-1);
-    expect(despues.recuento.confirmados, "los confirmados no los toca una corrección").toBe(
+    expect(despues.ajuste, "la corrección tiene que haberse guardado").toBe(-1);
+    expect(despues.confirmados, "los confirmados no los toca una corrección").toBe(
       confirmadosAntes,
     );
-    expect(despues.recuento.total).toBe(confirmadosAntes - 1);
+    expect(despues.total).toBe(confirmadosAntes - 1);
     expect(
-      despues.invitado.estado,
+      despues.estado,
       "corregir el recuento NO puede cambiar lo que contestó un invitado",
     ).toBe("confirmado");
 

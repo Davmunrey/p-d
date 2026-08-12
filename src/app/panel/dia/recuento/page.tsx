@@ -104,7 +104,13 @@ export default async function PaginaRecuento({ searchParams }: Parametros) {
         </>
       )}
 
-      {puedeEditar ? <Corregir lineas={lineas} /> : null}
+      {/*
+        NO SE OFRECE CORREGIR LO QUE NO EXISTE. Sin ninguna línea, el
+        desplegable de menús sale vacío y el formulario sólo puede terminar en
+        «ese menú no existe»: un botón que no puede funcionar, que es justo lo
+        que la regla 3 no deja mergear.
+      */}
+      {puedeEditar && lineas.length > 0 ? <Corregir lineas={lineas} /> : null}
 
       <Alergias alergias={alergias} />
     </>

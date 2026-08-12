@@ -308,12 +308,29 @@ export interface LineaDelRecuento {
 
 interface FilaRecuento {
   tipo_menu: string;
-  confirmados: number;
-  con_alergias: number;
-  ajuste: number;
-  total: number;
+  confirmados: string | number;
+  con_alergias: string | number;
+  ajuste: string | number;
+  total: string | number;
   nota: string | null;
   corregido_en: string | null;
+}
+
+/**
+ * UNA CUENTA DE LA BASE NO LLEGA COMO NÚMERO, y aquí eso importaba.
+ *
+ * `count(*)` es `bigint`, y un `bigint` no cabe entero en un número de
+ * JavaScript: por eso llega como cadena, igual que los `numeric` del
+ * presupuesto. Se ve en cuanto se mira —«2»— y no se ve en absoluto hasta que
+ * algo suma: `"1" + "2"` da `"12"`, y el total del catering pasa de tres a
+ * doce sin un solo error por ninguna parte.
+ *
+ * Se convierte en el borde y una sola vez, como `aImporte`.
+ */
+function aCuenta(valor: string | number | null): number {
+  if (valor === null) return 0;
+  const numero = typeof valor === "number" ? valor : Number(valor);
+  return Number.isFinite(numero) ? numero : 0;
 }
 
 /**
@@ -339,10 +356,10 @@ export async function obtenerRecuento(): Promise<LineaDelRecuento[]> {
 
   return ((data as FilaRecuento[] | null) ?? []).map((fila) => ({
     tipoMenu: fila.tipo_menu,
-    confirmados: fila.confirmados,
-    conAlergias: fila.con_alergias,
-    ajuste: fila.ajuste,
-    total: fila.total,
+    confirmados: aCuenta(fila.confirmados),
+    conAlergias: aCuenta(fila.con_alergias),
+    ajuste: aCuenta(fila.ajuste),
+    total: aCuenta(fila.total),
     nota: fila.nota,
     corregidoEn: fila.corregido_en,
   }));
