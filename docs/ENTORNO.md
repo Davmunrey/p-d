@@ -29,6 +29,9 @@ Preview, Development) salvo que se indique otra cosa.
 | `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                                                                                    |
 | `RESEND_API_KEY`                | [resend.com](https://resend.com) → **API Keys**. Sin ella no se manda el acuse de recibo, y no es un error                                    |
 | `CORREO_REMITENTE`              | La dirección desde la que se escribe, en un dominio **verificado** en Resend                                                                  |
+| `SENTRY_DSN`                    | [sentry.io](https://sentry.io) → proyecto → **Settings → Client Keys (DSN)**. Sin ella no se arranca Sentry, y no es un error                 |
+| `NEXT_PUBLIC_POSTHOG_KEY`       | [posthog.com](https://posthog.com) → **Project settings → Project API key**. Sin ella no se arranca la analítica                              |
+| `NEXT_PUBLIC_POSTHOG_HOST`      | Opcional. `https://eu.i.posthog.com` por defecto; sólo se cambia si el proyecto está en la nube americana                                     |
 
 **El pooler, no la conexión directa.** Cada petición a la web arranca una
 función efímera; con conexión directa se agotan las conexiones del servidor en
@@ -59,6 +62,33 @@ dos; tocar sólo una deja el otro sistema fallando por autenticación.
 llevar el prefijo `NEXT_PUBLIC_`, porque eso la metería en el JavaScript que
 descarga cualquier visitante y le daría acceso completo a la lista de invitados
 y al presupuesto.
+
+### Observabilidad (BODA-93)
+
+**Sin clave no se arranca nada, y es a propósito.** En local y en CI no hay ni
+`SENTRY_DSN` ni `NEXT_PUBLIC_POSTHOG_KEY`, así que no sale ni una petición hacia
+ningún tercero y los tests no dependen de que un servicio externo esté de pie.
+Lo contrario —una clave de mentira «para que no falle»— manda datos reales a un
+sitio que nadie mira.
+
+**Qué NO sale de aquí, pase lo que pase.** Todo lo que se manda pasa antes por
+`src/lib/observabilidad/limpiar.ts`, que quita el token de las invitaciones, los
+correos y los teléfonos, y por `antesDeMandar`, que además tira enteras las
+cookies, las cabeceras y el bloque `user` que Sentry rellena con la IP. Está
+probado en `tests/unidad/observabilidad.test.ts` y vigilado sobre el tráfico de
+verdad en `tests/e2e/observabilidad.spec.ts`.
+
+**La alerta de confirmaciones fallidas se configura a mano**, una vez, en
+Sentry: **Alerts → Create Alert → Issues**, con el filtro
+`message:"confirmacion-fallida"` y el umbral que se quiera (por ejemplo, más de
+tres en una hora). El nombre del mensaje es la constante
+`AVISO_CONFIRMACION_FALLIDA` de `src/config/constants.ts`: si se cambia ahí, hay
+que cambiarlo también en la regla, o la alerta se apaga en silencio.
+
+**Lo que no se puede probar en CI**: que un error provocado a propósito llegue
+al panel de Sentry hace falta comprobarlo a mano sobre el preview, porque leerlo
+de vuelta exige un token de la API de Sentry que no va a estar en el
+repositorio. Se hace una vez tras configurar el DSN.
 
 Si falta `DATABASE_URL`, **la web despliega igual** y muestra que está en
 preparación, dejando el error en el log del servidor. Se decidió así tras un

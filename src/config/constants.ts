@@ -465,3 +465,40 @@ export const PASO_PLANO_MESAS = 250;
  */
 export const CAPACIDAD_MINIMA_MESA = 1;
 export const CAPACIDAD_MAXIMA_MESA = 30;
+
+/**
+ * OBSERVABILIDAD (BODA-93) · las claves y el ritmo de muestreo.
+ *
+ * TODO ESTO SE APAGA SOLO SI NO HAY CLAVE. Sin `SENTRY_DSN` no se arranca
+ * Sentry y sin `NEXT_PUBLIC_POSTHOG_KEY` no se arranca PostHog: en local y en
+ * CI no hay ninguna de las dos, así que no sale ni una petición a ningún sitio.
+ * Es lo contrario de lo habitual —una clave de mentira para «que no falle»—, y
+ * es a propósito: una clave de mentira manda datos reales a un sitio que nadie
+ * mira.
+ */
+export const SENTRY_DSN = process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN ?? "";
+
+export const POSTHOG_CLAVE = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "";
+
+/** Dónde vive PostHog. Configurable porque tienen nube europea y americana. */
+export const POSTHOG_SERVIDOR =
+  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
+
+/**
+ * Cuántas trazas de rendimiento se mandan, de 0 a 1.
+ *
+ * Un décimo, y no todas: el plan gratuito de Sentry tiene un tope mensual, y
+ * una boda tiene un pico de visitas el día que se manda la invitación. Gastar
+ * la cuota en trazas de un día bueno dejaría sin sitio a los errores del día
+ * malo, que son los que hacen falta.
+ */
+export const MUESTREO_TRAZAS = 0.1;
+
+/**
+ * El nombre del aviso de confirmaciones que fallan.
+ *
+ * Es una constante y no una cadena suelta porque la regla de alerta de Sentry
+ * se escribe contra este texto exacto: cambiarlo aquí sin cambiarlo allí apaga
+ * el aviso en silencio, que es la peor forma de perderlo.
+ */
+export const AVISO_CONFIRMACION_FALLIDA = "confirmacion-fallida";

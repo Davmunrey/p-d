@@ -72,6 +72,14 @@ async function sembrar(sello: number): Promise<Sembrado> {
   const importeGrande = 3000;
   const importePequeno = 1000;
 
+  /*
+    SE SIEMBRA SOBRE LIMPIO. Sin esto, cada test añade dos categorías más y a la
+    tercera el nombre de una categoría sale en dos tablas distintas de la misma
+    pantalla: Playwright corta con «strict mode violation» y el fallo sólo
+    aparece a partir del segundo test.
+  */
+  await limpiar();
+
   await conBase(async (sql) => {
     for (const [nombre, previsto, real] of [
       [grande, 2500, importeGrande],
@@ -133,9 +141,19 @@ test.describe("Las gráficas del presupuesto", () => {
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
   );
 
-  /** La fila de una tabla, por el nombre de su categoría. */
-  const fila = (pagina: Page, nombre: string) =>
-    pagina.locator("tr").filter({ has: pagina.getByRole("rowheader", { name: nombre }) });
+  /** Una sección de la pantalla, por su titular. */
+  const seccion = (pagina: Page, titulo: string) =>
+    pagina.locator("section", { has: pagina.getByRole("heading", { name: titulo }) });
+
+  /**
+   * La fila de una categoría DENTRO de una sección.
+   *
+   * El ámbito no sobra: la misma categoría es `rowheader` en la tabla del
+   * reparto y en la de previsto contra real, así que buscarla en la página
+   * entera devuelve dos filas y Playwright se planta. Aquí se cayó el test.
+   */
+  const fila = (ambito: ReturnType<typeof seccion>, nombre: string, pagina: Page) =>
+    ambito.locator("tr").filter({ has: pagina.getByRole("rowheader", { name: nombre }) });
 
   test("se llega desde el presupuesto y la tabla dice lo mismo que la base", async ({
     page,
@@ -149,7 +167,11 @@ test.describe("Las gráficas del presupuesto", () => {
     await page.getByRole("link", { name: copy.panel.presupuesto.graficas.enlace }).click();
     await expect(page).toHaveURL(new RegExp(RUTA_GRAFICAS));
 
-    const grande = fila(page, sembrado.grande);
+    const grande = fila(
+      seccion(page, copy.panel.presupuesto.graficas.repartoTitulo),
+      sembrado.grande,
+      page,
+    );
     await expect(grande).toBeVisible();
 
     /*
@@ -193,11 +215,7 @@ test.describe("Las gráficas del presupuesto", () => {
     await entrar(page);
     await page.goto(RUTA_GRAFICAS);
 
-    const reparto = page.locator("section", {
-      has: page.getByRole("heading", {
-        name: copy.panel.presupuesto.graficas.repartoTitulo,
-      }),
-    });
+    const reparto = seccion(page, copy.panel.presupuesto.graficas.repartoTitulo);
 
     const anchoDe = async (categoria: string) => {
       const grupo = reparto.locator("svg g").filter({ hasText: categoria });
@@ -254,13 +272,11 @@ test.describe("Las gráficas del presupuesto", () => {
     ];
 
     for (const { titulo, vacio } of secciones) {
-      const seccion = page.locator("section", {
-        has: page.getByRole("heading", { name: titulo }),
-      });
-      await expect(seccion, `falta la sección «${titulo}»`).toBeVisible();
+      const ambito = seccion(page, titulo);
+      await expect(ambito, `falta la sección «${titulo}»`).toBeVisible();
 
-      const dibuja = await seccion.locator("svg").count();
-      const explica = await seccion.getByText(vacio).count();
+      const dibuja = await ambito.locator("svg").count();
+      const explica = await ambito.getByText(vacio).count();
 
       expect(
         dibuja + explica,
@@ -289,17 +305,41 @@ test.describe("Las gráficas del presupuesto", () => {
     await entrar(page);
     await page.goto(RUTA_GRAFICAS);
 
-    const svgs = page.locator("main svg");
-    const cuantas = await svgs.count();
-    expect(cuantas, "tiene que haber gráficas que comprobar").toBeGreaterThan(0);
+    /*
+      SE RECORREN LAS SECCIONES Y NO `main svg`. Buscar por `main` ata el test a
+      una etiqueta del layout que no tiene nada que ver con lo que se afirma; si
+      un día el panel envuelve el contenido de otra forma, este test se cae
+      diciendo «no hay gráficas» cuando las hay. Las secciones son de esta
+      pantalla y son lo que se está comprobando.
+    */
+    let dibujadas = 0;
 
-    for (let i = 0; i < cuantas; i += 1) {
-      await expect(
-        svgs.nth(i),
-        "un `<svg>` sin `aria-hidden` se le lee a alguien como un montón de nada",
-      ).toHaveAttribute("aria-hidden", "true");
+    for (const titulo of [
+      copy.panel.presupuesto.graficas.repartoTitulo,
+      copy.panel.presupuesto.graficas.evolucionTitulo,
+      copy.panel.presupuesto.graficas.comparativaTitulo,
+    ]) {
+      const ambito = seccion(page, titulo);
+      const svgs = ambito.locator("svg");
+      const cuantas = await svgs.count();
+
+      for (let i = 0; i < cuantas; i += 1) {
+        await expect(
+          svgs.nth(i),
+          "un `<svg>` sin `aria-hidden` se le lee a alguien como un montón de nada",
+        ).toHaveAttribute("aria-hidden", "true");
+      }
+
+      // Y si dibuja, tiene su tabla al lado: es la parte que sí se puede leer.
+      if (cuantas > 0) {
+        dibujadas += cuantas;
+        expect(
+          await ambito.locator("table").count(),
+          `«${titulo}» dibuja pero no trae tabla`,
+        ).toBeGreaterThanOrEqual(cuantas);
+      }
     }
 
-    expect(await page.locator("main table").count()).toBeGreaterThanOrEqual(cuantas);
+    expect(dibujadas, "tiene que haber alguna gráfica que comprobar").toBeGreaterThan(0);
   });
 });

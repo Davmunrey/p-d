@@ -112,6 +112,8 @@ async function sembrar(sello: number): Promise<Sembrado> {
     mesa: `${MARCA} Mesa ${sello}`,
   };
 
+  await limpiar();
+
   return conBase(async (sql) => {
     await sql`
       insert into public.guion_dia (hora, titulo, responsable, orden)
@@ -203,7 +205,19 @@ async function sembrar(sello: number): Promise<Sembrado> {
   });
 }
 
-test.afterAll(async () => {
+/**
+ * TODO LO SEMBRADO SE VA, Y SE VA ANTES DE CADA SIEMBRA.
+ *
+ * Nació sólo como `afterAll` y eso era el error: cada test sembraba encima del
+ * anterior, así que a la tercera había tres «Rocío» con el mismo teléfono y
+ * tres invitadas con la misma alergia. Los localizadores dejaban de ser únicos
+ * y Playwright cortaba por lo sano —«strict mode violation: resolved to 3
+ * elements»—, que además es un fallo que sólo aparece a partir del segundo
+ * test y desaparece al ejecutar ese test solo.
+ *
+ * Sembrar sobre limpio es más lento y no admite discusión sobre qué hay dentro.
+ */
+async function limpiar() {
   if (!cadena) return;
   await conBase(async (sql) => {
     await sql`delete from public.guion_dia where titulo like ${`${MARCA}%`}`;
@@ -220,7 +234,9 @@ test.afterAll(async () => {
     await sql`delete from public.proveedores where nombre like ${`${MARCA}%`}`;
     await sql`delete from public.categorias_proveedor where nombre like ${`${MARCA}%`}`;
   });
-});
+}
+
+test.afterAll(limpiar);
 
 test.describe("El día de la boda", () => {
   test.slow();
@@ -454,9 +470,17 @@ test.describe("El día de la boda", () => {
     );
     await expect(fila).toContainText(String(confirmadosAntes));
 
-    // Y la alergia aparece con su mesa, que es la mitad del dato.
-    await expect(page.getByText("Celíaca")).toBeVisible();
-    await expect(page.getByText(sembrado.invitado.mesa)).toBeVisible();
+    /*
+      Y LA ALERGIA APARECE CON SU MESA, que es la mitad del dato: «dos celíacos»
+      no le sirve a quien reparte platos.
+
+      Se busca la fila entera y no «Celíaca» suelto: la base de pruebas tiene
+      más invitados con alergias —los del seed—, así que la palabra sola sale
+      varias veces y el localizador dejaría de ser único.
+    */
+    const suAlergia = page.locator("li").filter({ hasText: sembrado.invitado.apellidos });
+    await expect(suAlergia).toContainText("Celíaca");
+    await expect(suAlergia).toContainText(sembrado.invitado.mesa);
 
     // Se corrige a la baja: alguien ha fallado a última hora.
     await page.getByLabel(copy.panel.dia.recuento.campoMenu, { exact: true }).selectOption({

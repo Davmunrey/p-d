@@ -1,6 +1,7 @@
 import "server-only";
 
 import { huellaDePeticion } from "@/lib/huella-peticion";
+import { avisarDeConfirmacionFallida } from "@/lib/observabilidad/avisar";
 
 import { ErrorDeLectura, leerComoAnonimo, llamarComoAnonimo } from "./cliente";
 import { sugerirCancion } from "./playlist";
@@ -229,6 +230,17 @@ function motivoDe(error: unknown): "plazo" | "intentos" | "respuestas" | "averia
   if (texto.includes(MOTIVOS_RSVP.respuestasInvalidas)) return "respuestas";
 
   console.error("Fallo al registrar la confirmación:", error);
+
+  /*
+    Y ADEMÁS SE AVISA (BODA-93). Éste es el único de los cuatro motivos que es
+    culpa nuestra: los otros tres son respuestas correctas del sistema —plazo
+    cerrado, demasiados intentos, respuestas que no cuadran— y contarlos como
+    fallo dispararía el aviso el día que más gente entra tarde.
+
+    Un `console.error` se lee si alguien está mirando los registros. Nadie mira
+    los registros un domingo por la noche, que es cuando se confirma una boda.
+  */
+  avisarDeConfirmacionFallida("averia", error);
   return "averia";
 }
 
