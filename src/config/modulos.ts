@@ -55,7 +55,7 @@ export const MODULOS = [
   { clave: "proveedores", ruta: RUTA_PROVEEDORES, entregado: true },
   { clave: "presupuesto", ruta: RUTA_PRESUPUESTO, entregado: true },
   { clave: "tareas", ruta: RUTA_TAREAS, entregado: true },
-  { clave: "documentos", ruta: RUTA_DOCUMENTOS, entregado: false },
+  { clave: "documentos", ruta: RUTA_DOCUMENTOS, entregado: true },
   { clave: "dia", ruta: RUTA_DIA, entregado: false },
   { clave: "ajustes", ruta: RUTA_AJUSTES, entregado: true },
   { clave: "cuenta", ruta: RUTA_CUENTA, entregado: true },

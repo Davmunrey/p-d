@@ -301,6 +301,15 @@ export const RUTA_TAREAS = "/panel/tareas";
 
 export const RUTA_MESAS = "/panel/mesas";
 
+/**
+ * Los papeles de la boda civil.
+ *
+ * Es un módulo del panel y no una pestaña del presupuesto ni una lista de
+ * tareas: lo que se pregunta aquí —«¿sigue valiendo el empadronamiento el día
+ * de la boda?»— no se contesta con una casilla de hecho/sin hacer, porque un
+ * documento conseguido puede dejar de servir sin que nadie lo toque. Ver
+ * BODA-105.
+ */
 export const RUTA_DOCUMENTOS = "/panel/documentos";
 
 /**
