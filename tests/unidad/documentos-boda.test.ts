@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -23,10 +23,24 @@ import copy from "../../content/copy.es.json";
  * tampoco está ahí — está entre el tipo de la base y el fichero de copys.
  */
 
-const MIGRACION = readFileSync(
-  join(__dirname, "..", "..", "supabase", "migrations", "20260812090000_documentos_boda.sql"),
-  "utf8",
-);
+/**
+ * SE BUSCA POR EL ASUNTO, NO POR EL SELLO.
+ *
+ * El número de delante cambia: dos módulos escritos a la vez chocaron con el
+ * mismo `20260812090000` —`schema_migrations` lo usa de clave primaria y el
+ * despliegue se paró— y hubo que volver a sellar ésta. Un test que abre la
+ * migración por su nombre completo se rompe en cada rebautizo, y el fallo que
+ * da no habla de documentos: habla de un fichero que no existe.
+ */
+const CARPETA = join(__dirname, "..", "..", "supabase", "migrations");
+
+const NOMBRE = readdirSync(CARPETA).find((fichero) => fichero.endsWith("_documentos_boda.sql"));
+
+if (!NOMBRE) {
+  throw new Error("No hay ninguna migración de `documentos_boda` en supabase/migrations.");
+}
+
+const MIGRACION = readFileSync(join(CARPETA, NOMBRE), "utf8");
 
 /** Los valores de un `asegurar_enum('nombre', array['a', 'b'])` de la migración. */
 function valoresDelEnum(nombre: string): string[] {
