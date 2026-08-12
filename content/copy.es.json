@@ -1237,7 +1237,103 @@
       "errorGuardar": "No se ha podido guardar. Probad otra vez."
     },
     "dia": {
-      "titulo": "El día de la boda"
+      "titulo": "El día de la boda",
+      "entradilla": "Todo lo que hace falta el mismo día: qué toca ahora, a quién llamar y quién se sienta dónde.",
+      "volver": "Volver al día de la boda",
+      "atajos": {
+        "guion": "El guion",
+        "agenda": "Teléfonos",
+        "buscar": "Buscar a alguien",
+        "recuento": "Recuento",
+        "exportar": "Llevárselo en papel"
+      },
+      "guion": {
+        "titulo": "El guion de la jornada",
+        "vacio": "Todavía no hay guion. Se escribe punto a punto: la hora, qué pasa y quién responde de ello.",
+        "tocaAhora": "Ahora toca",
+        "todoHecho": "Todo hecho. Que la disfrutéis.",
+        "marcar": "Marcar hecho",
+        "desmarcar": "Deshacer",
+        "marcarEste": "Marcar hecho: {titulo}",
+        "desmarcarEste": "Deshacer: {titulo}",
+        "hechoA": "Hecho a las {hora}",
+        "responsable": "Responde {nombre}",
+        "sinConexion": "Sin conexión. Lo marcado se guarda aquí y se manda solo al volver la cobertura.",
+        "pendientes": "{numero} sin mandar",
+        "reintentar": "Mandar ahora",
+        "sinPermiso": "No se pudo guardar: esta cuenta sólo puede mirar."
+      },
+      "agenda": {
+        "titulo": "Teléfonos del día",
+        "entradilla": "Sólo los proveedores contratados, en el orden en que intervienen.",
+        "vacio": "Todavía no hay ningún proveedor contratado, así que no hay a quién llamar.",
+        "campoBuscar": "Buscar por nombre o categoría",
+        "sinResultados": "Ningún proveedor contratado se llama así.",
+        "llamarA": "Llamar a {nombre}",
+        "escribirA": "Escribir a {nombre}",
+        "contactoDelDia": "El del día",
+        "sinTelefono": "Sin teléfono apuntado"
+      },
+      "buscar": {
+        "titulo": "¿Dónde se sienta?",
+        "entradilla": "Un apellido y sale su mesa, su menú y sus alergias.",
+        "campo": "Nombre o apellido",
+        "ayuda": "Con acentos o sin ellos: «gonzalez» encuentra «González».",
+        "escribeAlgo": "Escribid un nombre y aparecerá aquí.",
+        "sinResultados": "Nadie se llama «{texto}». Probad con el apellido, o con menos letras.",
+        "resultados": "{numero} de {total}",
+        "mesa": "Mesa",
+        "sinMesa": "Sin mesa",
+        "menu": "Menú",
+        "alergias": "Alergias",
+        "nino": "Niño",
+        "sinConfirmar": "No ha confirmado"
+      },
+      "recuento": {
+        "titulo": "Recuento para el catering",
+        "entradilla": "La cifra que se canta por teléfono. La suma la base de datos, no esta pantalla.",
+        "vacio": "Todavía no hay nadie confirmado, así que no hay nada que contar.",
+        "columnaMenu": "Menú",
+        "columnaConfirmados": "Confirmados",
+        "columnaAjuste": "Corrección",
+        "columnaTotal": "Total",
+        "conAlergias": "{numero} con alergias",
+        "total": "Total de menús",
+        "ninos": "Niños",
+        "adultos": "Adultos",
+        "sinContestar": "Sin contestar",
+        "sinContestarAviso": "No se suman a ningún menú: nadie ha pedido nada por ellos.",
+        "corregidoEl": "Corregido el {fecha}",
+        "corregirTitulo": "Corregir a última hora",
+        "corregirAyuda": "Suma o resta sobre lo confirmado, sin tocar lo que contestó cada invitado. En negativo también: −2.",
+        "campoMenu": "Menú",
+        "campoAjuste": "Corrección",
+        "campoNota": "Por qué",
+        "guardar": "Guardar la corrección",
+        "copiar": "Copiar para WhatsApp",
+        "copiado": "Copiado",
+        "alergiasTitulo": "Alergias, mesa por mesa",
+        "alergiasVacio": "Nadie ha apuntado ninguna alergia."
+      },
+      "exportar": {
+        "titulo": "Llevárselo en papel",
+        "entradilla": "El plan B de todo lo demás: en una finca sin cobertura, lo único que funciona seguro es el papel.",
+        "descargar": "Descargar la hoja de cálculo",
+        "descargarAyuda": "Se abre en Excel con los acentos y las eñes bien.",
+        "imprimir": "Imprimir por mesas",
+        "imprimirAyuda": "Una hoja ordenada por mesa, con el menú y las alergias de cada uno.",
+        "generadoEl": "Generado el {fecha}",
+        "esUnaFotoFija": "Es una foto fija: lo que cambie después no está aquí.",
+        "mesaSinNombre": "Sin mesa",
+        "contactos": "Teléfonos del día"
+      },
+      "avisos": {
+        "corregido": "Corrección guardada.",
+        "sinPermiso": "Esta cuenta sólo puede mirar, así que no se ha guardado nada.",
+        "menuInvalido": "Ese menú no existe.",
+        "ajusteInvalido": "La corrección tiene que ser un número entero entre −500 y 500.",
+        "error": "No se ha podido guardar. Volved a intentarlo."
+      }
     }
   },
   "correoConfirmacion": {
