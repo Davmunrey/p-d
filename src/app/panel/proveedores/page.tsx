@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO, RUTA_PROVEEDORES } from "@/config/constants";
+import { RUTA_ACCESO, RUTA_COMPARADOR, RUTA_PROVEEDORES } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   contarPorCategoria,
@@ -193,6 +193,29 @@ function SeccionCategoria({
               ? t("panel.proveedores.cuantosUno")
               : t("panel.proveedores.cuantos", { cuantos: total })}
           </Etiqueta>
+
+          {/*
+            BODA-73 · COMPARAR, DESDE DONDE SE MIRA.
+
+            EL ENLACE APARECE A PARTIR DE DOS, y no es una sutileza: una
+            comparativa de un solo candidato es una tabla de una columna, o sea
+            la ficha con más pasos. Ofrecerla siempre enseñaría a no pulsarla.
+
+            El nombre de la categoría va en el nombre accesible porque hay un
+            «Comparar» por cabecera y, en una lista de nueve categorías, nueve
+            enlaces con el mismo texto no dicen a dónde van.
+          */}
+          {total > 1 ? (
+            <Link
+              href={`${RUTA_COMPARADOR}?categoria=${categoria.id}`}
+              aria-label={t("panel.proveedores.compararCategoria", {
+                categoria: categoria.nombre,
+              })}
+              className="text-pequeno text-tinta-marca underline"
+            >
+              {t("panel.proveedores.comparar")}
+            </Link>
+          ) : null}
 
           {/*
             BORRAR SÓLO SI ESTÁ VACÍA, y el botón se quita en vez de
