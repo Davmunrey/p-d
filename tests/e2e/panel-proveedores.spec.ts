@@ -164,10 +164,20 @@ async function esperarEstado(pagina: Page, esperado: string) {
   // Consumido: el destino de esta acción no puede valer por el de la siguiente.
   olvidarDestinos(pagina);
 
-  // La acción decidió bien. Si el navegador no la siguió —#126—, se le lleva a
-  // donde decía, que es lo que habría hecho él.
-  if (destino && !pagina.url().includes(`estado=${esperado}`)) {
-    console.warn(`#126: la pestaña no siguió la redirección a ${destino}.`);
+  /*
+    Y SE VA AL DESTINO SIEMPRE, aunque la barra ya lo lleve puesto.
+
+    Antes se iba sólo «si el navegador no lo siguió», mirando la URL. Y la URL
+    miente: un rescate anterior deja esa misma dirección, así que en el paso
+    siguiente «ya estoy ahí» significaba «me quedo con la pantalla de hace dos
+    pasos» — y el test miraba un render viejo, sin lo que acababa de
+    escribirse. Recargar cuesta milisegundos contra un servidor local; mirar
+    una pantalla vieja cuesta una ejecución de CI entera.
+  */
+  if (destino) {
+    if (!pagina.url().includes(`estado=${esperado}`)) {
+      console.warn(`#126: la pestaña no siguió la redirección a ${destino}.`);
+    }
     await pagina.goto(destino);
   }
 
