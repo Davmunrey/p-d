@@ -34,6 +34,17 @@ const HEMISFERIOS: readonly {
   { id: "sur", claveTitulo: "cocina.hemisferioSur", claveNota: "cocina.hemisferioSurNota" },
 ];
 
+/**
+ * SE PINTA EN CADA PETICIÓN, NO AL CONSTRUIR.
+ *
+ * Esta página lee la configuración para enseñar el monograma de verdad, y eso
+ * la ataba al momento de la construcción: si la base no contestaba —o iba por
+ * detrás del código, que es lo que pasó— Next fallaba al prerenderizar
+ * `/cocina` y se llevaba por delante el DESPLIEGUE ENTERO. Un catálogo interno
+ * no puede tener ese poder. Es la misma decisión que ya tenía la portada.
+ */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: t("cocina.titulo"),
   robots: { index: false, follow: false },
@@ -54,10 +65,12 @@ export default async function PaginaCocina() {
     LOS NOMBRES SALEN DE LA BASE, como en cualquier otra pantalla. Un catálogo
     de marca que enseña un monograma inventado enseña una marca que no existe, y
     la regla 3 del proyecto no hace excepción con las páginas internas. Sin
-    configuración todavía, la sección de identidad no se pinta: antes ocultar
-    que mentir.
+    configuración todavía —o si la base no contesta— la sección de identidad no
+    se pinta y el resto del catálogo sigue sirviendo: los tokens, los
+    componentes y las reglas no dependen de la base para nada. Antes media
+    página que ninguna.
   */
-  const configuracion = await obtenerConfiguracion();
+  const configuracion = await obtenerConfiguracion().catch(() => null);
 
   return (
     <main className="mx-auto max-w-contenido px-interno py-seccion-compacta">
