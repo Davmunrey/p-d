@@ -94,14 +94,28 @@ jobs:
         with:
           version: latest
 
+      # ENLAZAR PUEDE FALLAR SIN QUE SE CAIGA EL MUNDO, y aquí está el porqué.
+      #
+      # `SUPABASE_ACCESS_TOKEN` es un token personal y caduca. Cuando caducó,
+      # este paso empezó a responder «Unauthorized» y el trabajo moría antes de
+      # tocar la base: dos merges salieron a producción con el esquema viejo
+      # detrás y la web se quedó en la pantalla de respaldo, porque el código
+      # pedía una columna que todavía no existía.
+      #
+      # Que un token personal sea lo único que separa a producción de quedarse
+      # atrás es el fallo. Por eso ahora, si el CLI no puede entrar, se aplica
+      # por el camino de repuesto, que usa `DATABASE_URL` —la misma cadena que
+      # ya emplea `mantener-viva.yml`— y no depende de ningún token.
       - name: Enlazar con el proyecto
+        id: enlace
         if: steps.credenciales.outputs.hay == 'si'
+        continue-on-error: true
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: supabase link --project-ref "${{ steps.credenciales.outputs.proyecto }}"
 
       - name: Ver qué se va a aplicar
-        if: steps.credenciales.outputs.hay == 'si'
+        if: steps.credenciales.outputs.hay == 'si' && steps.enlace.outcome == 'success'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -110,16 +124,43 @@ jobs:
         run: supabase migration list --linked
 
       - name: Aplicar
-        if: steps.credenciales.outputs.hay == 'si'
+        if: steps.credenciales.outputs.hay == 'si' && steps.enlace.outcome == 'success'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: supabase db push --linked --include-all
 
       - name: Comprobar que quedó al día
-        if: steps.credenciales.outputs.hay == 'si'
+        if: steps.credenciales.outputs.hay == 'si' && steps.enlace.outcome == 'success'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         # Si algo quedó sin aplicar, mejor enterarse aquí que dentro de un mes.
         run: supabase migration list --linked
+
+      # ── CAMINO DE REPUESTO ────────────────────────────────────────────────
+      #
+      # Habla directamente con Postgres. Lee de la tabla de control qué
+      # versiones están aplicadas y ejecuta en orden las que falten; cada
+      # migración trae su propio `begin`/`commit`, así que o entra entera o no
+      # entra. Se planta si hay más pendientes de las razonables, que es lo que
+      # pasaría si la tabla de control no se pudiera leer y el script creyera
+      # que la base está vacía.
+      - name: Aplicar sin el CLI, porque el enlace falló
+        if: steps.credenciales.outputs.hay == 'si' && steps.enlace.outcome == 'failure'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::'supabase link' falló (¿token caducado?) y tampoco hay DATABASE_URL para el camino de repuesto. No se ha aplicado nada. Ver docs/ENTORNO.md."
+            exit 1
+          fi
+          echo "::warning::'supabase link' falló: es casi seguro que SUPABASE_ACCESS_TOKEN ha caducado. Se aplican las migraciones por Postgres. Renueva el token en Supabase → Account → Access Tokens."
+          # El runner de Ubuntu trae el cliente de Postgres, pero este camino
+          # sólo se usa cuando algo ya ha ido mal: no es el momento de
+          # descubrir que falta una herramienta.
+          command -v psql >/dev/null || {
+            sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+          }
+
+          ./scripts/aplicar-migraciones.sh
