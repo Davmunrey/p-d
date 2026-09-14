@@ -808,7 +808,15 @@
   --color-velo-escena-lejos-arriba: rgb(20 23 15 / 10%);
   --color-velo-escena-lejos-abajo: rgb(20 23 15 / 20%);
   --color-velo-escena-cerca-arriba: rgb(20 23 15 / 40%);
-  --color-velo-escena-cerca-abajo: rgb(20 23 15 / 62%);
+
+  /*
+    EL 60 % ES UN TOPE, NO UN GUSTO. La entrega acota el velo bajo texto sobre
+    foto entre el 20 % y el 60 %, y ésta es la parte más oscura del único sitio
+    de la web donde hay texto encima de una imagen. Estaba en 62, dos puntos
+    por encima de la regla: invisibles a ojo y comprobables con un medidor, que
+    es exactamente la clase de deriva que el repaso de marca existe para cazar.
+  */
+  --color-velo-escena-cerca-abajo: rgb(20 23 15 / 60%);
 
   /* Cuándo pasa cada cosa, en tanto por ciento del recorrido de la escena: el
      marco acaba de crecer al 72 %, la frase entra entre el 42 y el 68, y la
