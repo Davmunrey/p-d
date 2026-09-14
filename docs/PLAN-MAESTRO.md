@@ -98,6 +98,41 @@ El proyecto instala skills de diseño en [`.claude/skills/`](../.claude/skills/R
 
 Orden de precedencia si algo entra en conflicto: **estas reglas fundacionales > skills de diseño > preferencia personal.** Una skill nunca justifica hardcodear un valor: su criterio se materializa cambiando **tokens**, no componentes.
 
+#### Tono de voz
+
+Lo escribe el sistema de marca y hasta BODA-125 no estaba recogido en ninguna parte del repo, así que lo único que lo mantenía era que quien escribiera se acordara:
+
+> Cuidado y cercano, en segunda persona del plural. Frases cortas y directas, con calidez pero sin chistes ni exclamaciones de más. Información primero; la elegancia está en no adornar.
+
+| Sí                                    | No                                           |
+| ------------------------------------- | -------------------------------------------- |
+| Habrá autobús desde León a las 12:00. | ¡¡El día más feliz de nuestras vidas!!       |
+| Confirmadnos antes del 1 de mayo.     | Se ruega puntualidad y decoro en el recinto. |
+|                                       | No te lo puedes perder 🎉                    |
+
+`tests/unidad/tono-de-voz.test.ts` lo comprueba sobre `copy.es.json`: ningún copy de invitado con doble exclamación, con emoji ni tuteando. **Comprueba lo que la web dice, no lo que cita**: lo que va entre comillas se salta, porque un título de canción es de otro. Y el panel queda fuera, porque ahí la web les habla a los novios y tutearles es lo natural.
+
+#### Fotografía
+
+> Luz natural, nada de filtros cálidos ni virados. Preferimos el plano abierto —la vista aérea de la portada— y el detalle honesto: manos, mesa puesta, campo. Blanco y negro solo si la escena ya funciona en color.
+
+- **Encuadre:** vertical en tarjetas y portada; 4:3 en galerías. El horizonte, recto siempre.
+- **Color:** verdes y tierras. Si la escena tiene un color chillón, se recorta o se descarta.
+- **Texto sobre foto:** siempre con velo oscuro **del 20 % al 60 %**. Nunca texto oliva sobre imagen.
+- **Nunca:** collages, marcos con sombra dura, viñeteados ni fotos de banco con modelos ajenos.
+
+El tope del velo tiene nombre propio, `--velo-foto`, separado de `--velo-fuerte` (72 %), que es para lo que **no** lleva texto encima —el fondo del visor de galería—. Separarlos por nombre es lo que impide que alguien coja el que más oscurece «para que se lea mejor» y se salte la regla sin enterarse. `cimientos.spec.ts` mide los tokens, no el degradado pintado: en reposo la escena del paisaje está en su estado lejano, al 10 y al 20 %, y medir la pantalla sin hacer scroll daría por buena cualquier cosa.
+
+#### Antes de publicar
+
+De las seis comprobaciones que la entrega pide antes de mandar a imprenta, tres valen también para la web; las otras tres —cuerpo mínimo en puntos, sangre de 3 mm y tintas en CMYK— sólo tienen sentido sobre papel.
+
+1. El monograma respira: margen igual a la altura de la «D».
+2. Una sola «y» en Italianno por pieza.
+3. Constelación dentro de círculo o cuadrado con aire, nunca recortada.
+
+**La regla 2 cuenta la «y» suelta, no los elementos en Italianno**, y la diferencia es la regla entera. La propia Landing del estudio usa esa letra dos veces en la portada: la «y» suelta entre los nombres y la frase «y continúa en León» del paisaje. Si contara elementos, la entrega se saltaría su propia regla, y el catálogo de marca —que la usa en el monograma, en su titular y en la muestra de familia— se la saltaría tres veces. Lo que la regla protege es que el gesto no se gaste: la «y» suelta en cursiva inglesa es la firma de la pieza, y dos firmas no son una firma.
+
 ---
 
 ## 3. Stack
