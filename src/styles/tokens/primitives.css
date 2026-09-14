@@ -218,6 +218,16 @@
   /* La ficha de canción de la playlist (14,5 px) y el monograma del pie (44). */
   --font-size-chip: 0.9063rem;
   --font-size-monograma-pie: 2.75rem;
+
+  /* Los cuatro componentes del catálogo de la entrega: la píldora de estado
+     (13,5 px), el aviso y el texto de una tarjeta (15 px, el mismo escalón
+     para los dos), la meta en versalita de la tarjeta (10,5) y su título en
+     serif (25). Ninguno cae en la escala de texto de la landing, y por eso
+     tienen nombre propio en vez de redondearse al vecino más cercano. */
+  --font-size-etiqueta-estado: 0.8438rem;
+  --font-size-aviso: 0.9375rem;
+  --font-size-meta: 0.6563rem;
+  --font-size-titulo-tarjeta: 1.5625rem;
   --font-weight-light: 300;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -266,6 +276,12 @@
 
   /* Las etiquetas de aviso al pie del programa: apenas abiertas. */
   --letter-spacing-suave: 0.06em;
+
+  /* La versalita con la que el catálogo rotula sus fichas y escribe la meta de
+     una tarjeta. Coincide en valor con la del naipe del Save the Date, y son
+     dos tokens a propósito: retocar la fecha de un naipe no puede mover de
+     sitio la meta de una tarjeta de hotel. */
+  --letter-spacing-meta: 0.28em;
 
   /* La línea de fecha y lugar del pie: la versalita más abierta de la pieza. */
   --letter-spacing-pie: 0.36em;
@@ -340,6 +356,16 @@
   --space-chip-x: 1.125rem;
   --space-chips-arriba: 1.875rem;
   --space-galeria: clamp(0.875rem, 2vw, 1.625rem);
+
+  /* Los rellenos que escribe el catálogo: la píldora (9 y 16), el aviso
+     (18 y 20) y el cuerpo de una tarjeta (22), más el aire de 9 px entre la
+     meta de la tarjeta y su título. */
+  --space-pildora-y: 0.5625rem;
+  --space-pildora-x: 1rem;
+  --space-aviso-y: 1.125rem;
+  --space-aviso-x: 1.25rem;
+  --space-tarjeta-cuerpo: 1.375rem;
+  --space-meta: 0.5625rem;
 
   /* Cuánto viaja un elemento al entrar: 26 px, subiendo o desde un lado. */
   --space-reveal: 1.625rem;
@@ -463,11 +489,16 @@
   --radius-0: 0;
   --radius-sutil: 0.125rem;
   --radius-suave: 0.25rem;
+  --radius-papel: 0.1875rem;
   --radius-caja: 0.375rem;
   --radius-amplio: 0.625rem;
   --radius-redondo: 999px;
   --border-width-1: 1px;
   --border-width-2: 2px;
+
+  /* El anillo de 3 px que la entrega pone alrededor de un campo enfocado. Es
+     el único sitio del sistema donde un trazo pasa de dos píxeles. */
+  --border-width-3: 3px;
   --shadow-1: 0 1px 2px rgb(20 20 15 / 7%);
 
   /* La sombra que levanta una tarjeta al pasar el ratón en la Landing aplicada
@@ -486,6 +517,13 @@
   --scale-zoom: 1.12;
   --scale-paralaje: 1.1;
   --scale-pop: 0.6;
+  --scale-reveal: 0.94;
+
+  /* El cielo de la cuenta atrás deriva 40 × 26 px y titila del 90 al 40 %. */
+  --shift-deriva-x: -2.5rem;
+  --shift-deriva-y: -1.625rem;
+  --opacity-titilar-cielo-alta: 90%;
+  --opacity-titilar-cielo-baja: 40%;
   --shift-paralaje: 5%;
 
   /* Proporciones. Crudas y sin destino: quién las usa lo decide la capa
@@ -551,6 +589,252 @@
   --width-entradilla-centrada: 30rem;
   --width-entradilla-llegar: 28.75rem;
   --width-cita: 32.5rem;
+
+  /* ---------------------------------------------------------------------
+   * Save the Date — el sobre, el sello y los dos naipes
+   *
+   * La pieza de la entrega (`Save the Date azul.dc.html`) es un papel que se
+   * abre: tiene sus propios tonos de papel, sus sombras y una coreografía con
+   * tiempos y giros escritos uno a uno. Todo eso está aquí y no en el
+   * componente, que sólo los nombra.
+   *
+   * Los tonos de papel se ordenan por claridad como el resto de la escala
+   * nieve/bruma; los alfas están sobre colores que ya existen (pizarra 400,
+   * marino 420 y 500), no sobre los verdes de la entrega oliva que la pieza
+   * arrastra en sus sombras.
+   * ------------------------------------------------------------------- */
+
+  --color-nieve-60: #f6f8fc;
+  --color-nieve-70: #f5f7fa;
+  --color-nieve-80: #f2f5f9;
+  --color-nieve-90: #ebeff5;
+  --color-bruma-200: #e9edf3;
+  --color-bruma-220: #e2e8f1;
+  --color-bruma-240: #e1e7f0;
+  --color-bruma-260: #dde4ee;
+  --color-bruma-280: #dae1eb;
+  --color-bruma-320: #d8dee8;
+  --color-bruma-330: #d4dbe7;
+  --color-marino-380: #a3adc1;
+  --color-marino-470: #4a5a7e;
+  --color-marino-640: #2a3757;
+  --color-velo-nieve-95: rgb(248 249 252 / 95%);
+  --color-velo-nieve-60: rgb(248 249 252 / 60%);
+  --color-velo-nieve-0: rgb(248 249 252 / 0%);
+  --color-brillo-papel: rgb(255 255 255 / 60%);
+  --color-brillo-papel-0: rgb(255 255 255 / 0%);
+  --color-trama-sobre: rgb(120 131 154 / 7%);
+  --color-anillo-sello: rgb(63 79 112 / 30%);
+  --color-anillo-sello-0: rgb(63 79 112 / 0%);
+  --color-trazo-solapa: rgb(139 151 172 / 50%);
+  --shadow-sobre: 0 1px 2px rgb(20 20 15 / 8%), 0 36px 76px -44px rgb(20 20 15 / 45%);
+  --shadow-solapa: 0 12px 24px -16px rgb(20 20 15 / 40%);
+  --shadow-sello: 0 12px 26px -14px rgb(20 20 15 / 55%);
+  --shadow-naipe: 0 1px 2px rgb(20 20 15 / 5%), 0 22px 52px -26px rgb(20 20 15 / 40%);
+  --shadow-naipe-foto: 0 1px 2px rgb(20 20 15 / 5%), 0 22px 50px -28px rgb(20 20 15 / 45%);
+
+  /* El aire de la página, el escenario y lo que cuelga debajo. */
+  --space-sobre-arriba: clamp(1.5rem, 4.6vw, 3.125rem);
+  --space-sobre-abajo: clamp(2rem, 5vw, 3.625rem);
+  --space-sangrado-cielo: 2.5rem;
+  --space-escenario-arriba: clamp(0.625rem, 1.8vw, 1.125rem);
+  --space-pista-sobre: clamp(0.875rem, 2.4vw, 1.5rem);
+  --space-pie-sobre: clamp(0.375rem, 1.8vw, 1rem);
+  --space-nota-sobre: clamp(1rem, 2.4vw, 1.5rem);
+  --space-volver-sobre: clamp(0.875rem, 2.2vw, 1.375rem);
+  --space-remite-abajo: clamp(0.75rem, 2.4vw, 1.375rem);
+  --space-hueco-boton: 0.75rem;
+  --space-lira-solapa: 6%;
+  --size-raya-cabecera: clamp(1.25rem, 6vw, 3.25rem);
+  --size-raya-vertical: clamp(1.25rem, 3.4vw, 2.25rem);
+  --size-escenario: min(35rem, 60vh);
+  --size-escenario-minimo: 20rem;
+  --size-naipe: 29.375rem;
+  --size-sello: clamp(3.875rem, 12.5vw, 5rem);
+  --size-anillo-sello: 0.9375rem;
+  --size-icono: 0.875rem;
+  --size-paso-trama: 0.5625rem;
+  --size-solapa: 64%;
+  --size-lira-solapa: 34%;
+  --size-lira-solapa-alto: 54%;
+  --size-pie-sobre: 22.5rem;
+  --width-escenario: min(35rem, 94vw);
+  --width-sobre: min(31.25rem, 92vw);
+  --width-nota-sobre: 27.5rem;
+  --ratio-sobre: 3 / 2;
+  --ratio-naipe: 0.7;
+  --perspective-sobre: 1700px;
+
+  /* Los rótulos del sobre y de la página. */
+  --font-size-remite: clamp(0.4375rem, 1.5vw, 0.5625rem);
+  --font-size-sello: clamp(1.1875rem, 4vw, 1.5625rem);
+  --font-size-sello-ampersand: 1.05em;
+  --font-size-nota-sobre: clamp(1rem, 2.4vw, 1.3125rem);
+  --letter-spacing-remite: 0.42em;
+
+  /**
+   * LA TARJETA SE MIDE EN `cqh`: es un naipe de proporción fija cuyo alto lo
+   * decide la pantalla, y todo lo que lleva dentro —la Lira, los nombres, el
+   * año, la cuenta atrás— escala con él. Son las medidas de la entrega, en
+   * centésimas del alto del naipe.
+   */
+  --font-size-naipe-rotulo: 2.5cqh;
+  --font-size-naipe-nombre: 8.4cqh;
+  --font-size-naipe-conector: 8cqh;
+  --font-size-naipe-fecha: 2.7cqh;
+  --font-size-naipe-anno: 13cqh;
+  --font-size-naipe-cifra: 6cqh;
+  --font-size-naipe-unidad: 2.1cqh;
+  --line-height-naipe-nombre: 1.06;
+  --line-height-naipe-anno: 0.96;
+  --letter-spacing-naipe-fecha: 0.28em;
+  --letter-spacing-naipe-lugar: 0.24em;
+  --letter-spacing-naipe-unidad: 0.14em;
+  --space-naipe-y: 5cqh;
+  --space-naipe-x: 6cqh;
+  --space-naipe-marco: 2.4cqh;
+  --space-naipe-hueco: 2.4cqh;
+  --space-naipe-hueco-rotulo: 2.6cqh;
+  --space-naipe-separador: 2.8cqh;
+  --space-naipe-hueco-raya: 1.6cqh;
+  --space-naipe-hueco-corto: 0.8cqh;
+  --space-naipe-hueco-cifras: 1.4cqh;
+  --space-naipe-foto: 3.4cqh;
+  --size-naipe-lira: 11cqh;
+  --size-naipe-raya: 5cqh;
+  --size-naipe-rombo: 0.9cqh;
+
+  /**
+   * LA COREOGRAFÍA. Los tiempos, giros y desplazamientos con los que la pieza
+   * se abre, en el orden en que pasan: la cabecera baja, el escenario crece,
+   * el sello se va, la solapa gira, la foto asoma, la tarjeta asoma, los dos
+   * naipes salen y el pie aparece. Por debajo de 760 px los naipes acaban más
+   * juntos y un punto más pequeños.
+   */
+  --duration-pausado: 1100ms;
+  --duration-escenario: 1300ms;
+  --duration-sosegado: 700ms;
+  --duration-naipe: 1050ms;
+  --duration-sello: 600ms;
+  --duration-pie-sobre: 800ms;
+  --duration-pista-sobre: 450ms;
+  --duration-latido: 3000ms;
+  --duration-flotar-sobre: 3600ms;
+  --duration-deriva-lenta: 52000ms;
+  --duration-titilar-lento: 9000ms;
+  --ease-muelle-sobre: cubic-bezier(0.16, 1.1, 0.3, 1);
+  --delay-corto: 120ms;
+  --delay-sobre: 150ms;
+  --delay-tarjeta: 250ms;
+  --delay-escenario: 300ms;
+  --delay-pie-sobre: 350ms;
+  --rotate-solapa: -172deg;
+  --rotate-sello: -14deg;
+  --rotate-sacudida-1: -1.6deg;
+  --rotate-sacudida-2: 1.1deg;
+  --rotate-sacudida-3: -0.5deg;
+  --rotate-foto-dentro: -3deg;
+  --rotate-tarjeta-dentro: 2deg;
+  --rotate-foto-asoma: -4deg;
+  --rotate-tarjeta-asoma: 3deg;
+  --rotate-foto-fuera: -7.5deg;
+  --rotate-tarjeta-fuera: 4.5deg;
+  --rotate-foto-fuera-movil: -7deg;
+  --rotate-tarjeta-fuera-movil: 4deg;
+  --scale-escenario: 0.965;
+  --scale-sello-hover: 1.07;
+  --scale-naipe-dentro: 0.5;
+  --scale-foto-asoma: 0.74;
+  --scale-tarjeta-asoma: 0.8;
+  --scale-naipe-fuera-movil: 0.94;
+  --shift-centro: -50%;
+  --shift-naipe-dentro-y: 14%;
+  --shift-foto-asoma-y: -6%;
+  --shift-tarjeta-asoma-y: -2%;
+  --shift-foto-fuera-x: -122%;
+  --shift-tarjeta-fuera-x: 22%;
+  --shift-foto-fuera-x-movil: -64%;
+  --shift-foto-fuera-y-movil: -54%;
+  --shift-tarjeta-fuera-x-movil: -38%;
+  --shift-tarjeta-fuera-y-movil: -44%;
+  --shift-flotar-sobre: -0.3125rem;
+  --shift-deriva-lenta-x: -2.125rem;
+  --shift-deriva-lenta-y: -1.375rem;
+  --shift-pie-sobre: 0.875rem;
+  --opacity-titilar-alta: 85%;
+  --opacity-titilar-baja: 40%;
+  --opacity-lira-solapa: 50%;
+  --opacity-ampersand-sello: 90%;
+
+  /* Dónde se posa el sello sobre el sobre: al 58 % de su alto. */
+  --position-sello: 58%;
+
+  /* Las capas del escenario: cuatro escalones, del naipe guardado al sello. */
+  --layer-escena-1: 1;
+  --layer-escena-2: 2;
+  --layer-escena-3: 3;
+  --layer-escena-4: 4;
+
+  /* ---------------------------------------------------------------------
+   * El paisaje — la escena de scroll
+   *
+   * La Landing aplicada no pinta el paisaje como una franja: lo pinta como una
+   * escena de tres pantallas de alto con un panel pegado dentro. Al bajar, el
+   * marco crece de un recuadro centrado a pantalla completa, la foto se aleja,
+   * el velo se oscurece y la frase aparece a mitad de recorrido.
+   *
+   * Los números son los del script de la entrega, transcritos uno a uno.
+   * ------------------------------------------------------------------- */
+
+  --size-escena: 300dvh;
+  --size-panel-escena: 100dvh;
+
+  /* El marco al empezar mide 40 % de ancho y 46 vh de alto, centrado. Lo que
+     se recorta por cada lado es lo que sobra a la mitad: (100−40)/2 y
+     (100−46)/2. Los dos en porcentaje, porque el panel mide exactamente una
+     pantalla y ahí un 27 % y 27 vh son el mismo sitio. */
+  --inset-marco-x: 30%;
+  --inset-marco-y: 27%;
+  --radius-marco: 0.25rem;
+
+  /* La sombra que levanta el marco pequeño del papel, y su final: la misma
+     receta con el alcance y el alfa a cero, para que interpole sin saltos. */
+  --shadow-marco: 0 2.75rem 2.8125rem rgb(20 20 15 / 50%);
+  --shadow-marco-final: 0 0 0 rgb(20 20 15 / 0%);
+  --scale-foto-lejos: 1.18;
+
+  /* El velo sobre la foto, en sus dos extremos: de lejos apenas tiñe, de cerca
+     es lo que hace legible el titular encima. */
+  --color-velo-escena-lejos-arriba: rgb(20 23 15 / 10%);
+  --color-velo-escena-lejos-abajo: rgb(20 23 15 / 20%);
+  --color-velo-escena-cerca-arriba: rgb(20 23 15 / 40%);
+  --color-velo-escena-cerca-abajo: rgb(20 23 15 / 62%);
+
+  /* Cuándo pasa cada cosa, en tanto por ciento del recorrido de la escena: el
+     marco acaba de crecer al 72 %, la frase entra entre el 42 y el 68, y la
+     pista se apaga dentro del primer 6. */
+  --tramo-marco: 72%;
+  --tramo-texto-inicio: 42%;
+  --tramo-texto-fin: 68%;
+  --tramo-pista: 6%;
+
+  /* La curva de la escena. La entrega usa x²·(3−2x) —la «smoothstep» clásica,
+     que arranca y frena a velocidad cero—; ésta es la cúbica de Bézier que más
+     se le parece. */
+  --ease-suavizado: cubic-bezier(0.4, 0, 0.6, 1);
+
+  /* La frase, en sus tres líneas: la versalita reusa la escala de etiqueta; el
+     titular y el cierre en cursiva tienen la suya. */
+  --font-size-escena: clamp(2.375rem, 7.4vw, 6.125rem);
+  --font-size-conector-escena: clamp(1.875rem, 5vw, 4rem);
+  --space-titular-escena: clamp(0.875rem, 2vw, 1.5rem);
+  --space-cierre-escena: 0.375rem;
+  --space-escena-lado: 1.5rem;
+  --space-pista-escena: clamp(1.375rem, 4vh, 2.75rem);
+
+  /* Lo que separa la pista de su raya. Doce píxeles: no está en la escala del
+     catálogo porque es el aire de un rótulo pequeño sobre su propio adorno. */
+  --space-pista-raya: 0.75rem;
 
   /* Los puntos de ruptura viven en el bloque `@theme` de globals.css:
      las media queries se resuelven en compilación y no aceptan var(). */

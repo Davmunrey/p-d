@@ -27,8 +27,24 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 export type JerarquiaBoton = "primario" | "secundario" | "terciario";
 
+/**
+ * DESACTIVADO SE PINTA CON COLOR, NO CON OPACIDAD.
+ *
+ * `opacity-50` parecía lo mismo y no lo es: vuelve el relleno traslúcido, así
+ * que el gris resultante depende de lo que haya detrás —uno en la landing, otro
+ * dentro de un bloque inverso, otro sobre el pie—, y se lleva por delante
+ * también el borde y el texto en la misma proporción. Un botón apagado acababa
+ * siendo un botón encendido a medio borrar.
+ *
+ * Los dos semánticos dan el relleno y la tinta que escribe la entrega, y el
+ * bloque inverso los reasigna: ahí el botón encendido es claro, así que el
+ * apagado tiene que oscurecerse en vez de aclararse para seguir
+ * distinguiéndose. `disabled:border-transparent` apaga además el contorno del
+ * secundario, que si no se quedaba marcado sobre un relleno que ya no invita a
+ * nada.
+ */
 const BASE =
-  "inline-flex items-center justify-center gap-interno-compacto text-boton uppercase tracking-boton transicion-color disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex items-center justify-center gap-interno-compacto text-boton uppercase tracking-boton transicion-color disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-transparent disabled:bg-accion-desactivada disabled:text-tinta-desactivada";
 
 const JERARQUIAS: Record<JerarquiaBoton, string> = {
   primario: "rounded-boton bg-accion px-elemento text-tinta-sobre-accion hover:bg-accion-hover",

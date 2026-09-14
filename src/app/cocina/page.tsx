@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 
+import { Aviso } from "@/components/ui/aviso";
 import { Boton } from "@/components/ui/boton";
 import { CampoTexto } from "@/components/ui/campo";
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
+import { Tarjeta } from "@/components/ui/tarjeta";
 import { Constelacion } from "@/components/ui/constelacion";
 import { Cita, Etiqueta } from "@/components/ui/tipografia";
 import {
@@ -195,27 +198,61 @@ export default function PaginaCocina() {
         </div>
       </Seccion>
 
+      {/*
+        LOS CUATRO COMPONENTES DEL CATÁLOGO, con los rótulos de la entrega. Cada
+        ficha lleva su `data-prueba` porque es el gancho por el que los tests
+        entran a leer los valores computados: buscar «el primer botón de la
+        página» ata el test a un orden que cambia en cuanto se añade una ficha.
+      */}
       <Seccion titulo={t("cocina.seccionComponentes")}>
         <div className="grid gap-elemento sm:grid-cols-2">
-          <div className="grid content-start gap-pila">
-            <Etiqueta>{t("cocina.botonPrimario")}</Etiqueta>
+          <Ficha titulo={t("cocina.grupoBotones")} prueba="botones">
             <div className="flex flex-wrap items-center gap-interno">
               <Boton>{t("cocina.botonPrimario")}</Boton>
               <Boton jerarquia="secundario">{t("cocina.botonSecundario")}</Boton>
               <Boton jerarquia="terciario">{t("cocina.botonTerciario")}</Boton>
               <Boton disabled>{t("cocina.botonDesactivado")}</Boton>
             </div>
-          </div>
+          </Ficha>
 
-          <div className="grid content-start gap-pila">
-            <CampoTexto etiqueta={t("rsvp.nombre")} placeholder="Paloma Fernández" />
-            <CampoTexto
-              etiqueta={t("rsvp.contacto")}
-              ayuda={t("rsvp.contactoAyuda")}
-              error={t("errores.emailInvalido")}
-              defaultValue="correo@"
+          <Ficha titulo={t("cocina.grupoCampos")} prueba="campos">
+            <div className="grid gap-pila">
+              <CampoTexto etiqueta={t("rsvp.nombre")} placeholder="Paloma Fernández" />
+              <CampoTexto
+                etiqueta={t("rsvp.contacto")}
+                ayuda={t("rsvp.contactoAyuda")}
+                error={t("errores.emailInvalido")}
+                defaultValue="correo@"
+              />
+            </div>
+          </Ficha>
+
+          <Ficha titulo={t("cocina.grupoEtiquetas")} prueba="etiquetas">
+            <div className="flex flex-wrap gap-interno-compacto">
+              <EtiquetaEstado>{t("cocina.etiquetaNeutra")}</EtiquetaEstado>
+              <EtiquetaEstado variante="marca">{t("cocina.etiquetaMarca")}</EtiquetaEstado>
+              <EtiquetaEstado variante="contorno">
+                {t("cocina.etiquetaContorno")}
+              </EtiquetaEstado>
+              <EtiquetaEstado variante="exito">{t("cocina.etiquetaConfirmado")}</EtiquetaEstado>
+            </div>
+            <Aviso className="mt-pila" titulo={t("cocina.avisoRotulo")}>
+              {t("cocina.avisoTexto")}
+            </Aviso>
+          </Ficha>
+
+          <Ficha titulo={t("cocina.grupoTarjeta")} prueba="tarjeta">
+            <Tarjeta
+              meta={t("cocina.tarjetaMeta")}
+              titulo={t("cocina.tarjetaTitulo")}
+              texto={t("cocina.tarjetaTexto")}
+              imagen={
+                <span className="grid h-full place-items-center text-meta uppercase tracking-meta text-tinta-tenue">
+                  {t("cocina.tarjetaImagen")}
+                </span>
+              }
             />
-          </div>
+          </Ficha>
         </div>
 
         {/*
@@ -232,11 +269,55 @@ export default function PaginaCocina() {
             <Boton>{t("cocina.botonPrimario")}</Boton>
             <Boton jerarquia="secundario">{t("cocina.botonSecundario")}</Boton>
             <Boton jerarquia="terciario">{t("cocina.botonTerciario")}</Boton>
+            <Boton disabled>{t("cocina.botonDesactivado")}</Boton>
+          </div>
+
+          {/*
+            Aquí es donde se ve si un componente ha colado un color: dentro del
+            bloque inverso el relleno de lo desactivado, el anillo del campo y
+            el fondo de la nota se dan la vuelta solos. Si alguno se quedara
+            igual que arriba, sería que lleva el color escrito en la clase.
+          */}
+          <div className="mt-pila flex flex-wrap gap-interno-compacto">
+            <EtiquetaEstado>{t("cocina.etiquetaNeutra")}</EtiquetaEstado>
+            <EtiquetaEstado variante="marca">{t("cocina.etiquetaMarca")}</EtiquetaEstado>
+            <EtiquetaEstado variante="contorno">{t("cocina.etiquetaContorno")}</EtiquetaEstado>
+            <EtiquetaEstado variante="exito">{t("cocina.etiquetaConfirmado")}</EtiquetaEstado>
+          </div>
+          <div className="mt-pila grid gap-pila sm:grid-cols-2">
+            <CampoTexto etiqueta={t("rsvp.nombre")} placeholder="Paloma Fernández" />
+            <Aviso titulo={t("cocina.avisoRotulo")}>{t("cocina.avisoTexto")}</Aviso>
           </div>
           <Cita className="mt-pila">{t("cocina.muestraTipografica")}</Cita>
         </div>
       </Seccion>
     </main>
+  );
+}
+
+/**
+ * La caja con borde en la que la entrega presenta cada componente: un rótulo
+ * en versalita arriba y la pieza debajo. El `data-prueba` es el gancho de los
+ * tests, y va aquí y no en cada componente para que el test pueda leer también
+ * el hueco alrededor.
+ */
+function Ficha({
+  titulo,
+  prueba,
+  children,
+}: {
+  titulo: string;
+  prueba: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="rounded-tarjeta border border-borde bg-superficie p-tarjeta"
+      data-prueba={`componente-${prueba}`}
+    >
+      <Etiqueta className="block">{titulo}</Etiqueta>
+      <div className="mt-pila">{children}</div>
+    </div>
   );
 }
 

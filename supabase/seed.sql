@@ -92,7 +92,9 @@ update public.configuracion_boda set
   direccion_banquete   = '(DES) Camino del Ejemplo, 1',
   latitud_banquete     = 40.416775,
   longitud_banquete    = -3.703790,
-  frase_paisaje        = '(DES) Todo empezó entre dos ciudades y continúa en una tercera',
+  paisaje_intro        = '(DES) Todo empezó entre',
+  paisaje_titulo       = '(DES) Dos ciudades',
+  paisaje_cierre       = '(DES) y continúa en una tercera',
   ciudad_ceremonia     = '(DES) León',
   avisos_programa      = array[
     '(DES) Etiqueta elegante · ceremonia al aire libre',
@@ -293,7 +295,11 @@ values
    'portada', 0, 2000, 1333, true),
   ('desarrollo/galeria-borrador.jpg',
    '{"es": "(DES) Borrador que no debe verse en la landing"}'::jsonb,
-   'galeria', 0, 1600, 1067, false);
+   'galeria', 0, 1600, 1067, false),
+  -- La foto que sale del sobre en el Save the Date, con la tarjeta.
+  ('desarrollo/reserva-la-fecha.jpg',
+   '{"es": "(DES) Los novios con su perra, Hati"}'::jsonb,
+   'reserva_la_fecha', 0, 1400, 2000, true);
 
 
 -- ----------------------------------------------------------------------------

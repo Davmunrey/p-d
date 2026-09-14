@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -418,9 +419,9 @@ function Contacto({
         {/* El distintivo no es sólo un color: lleva texto, que es lo que lee
             un lector de pantalla y lo que se ve con el sol de junio. */}
         {contacto.esDelDia ? (
-          <span className="rounded-etiqueta bg-marca-tenue px-interno-compacto py-linea text-etiqueta uppercase tracking-etiqueta text-tinta-marca">
+          <EtiquetaEstado tamano="versalita-compacta">
             {t("panel.proveedores.esDelDia")}
-          </span>
+          </EtiquetaEstado>
         ) : null}
 
         {puedeEditar ? (

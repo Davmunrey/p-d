@@ -96,6 +96,25 @@ export const HORAS_DURACION_EVENTO = 6;
 /** Descarga del evento para el calendario. La escriben la página y su test. */
 export const RUTA_CALENDARIO = "/reserva-la-fecha/evento.ics";
 
+/**
+ * LOS TIEMPOS DEL SOBRE, en milisegundos desde que se toca el sello: cuándo
+ * asoma la foto, cuándo asoma la tarjeta y cuándo el sobre se va y los dos
+ * naipes se colocan con el pie debajo. Son los de la entrega. Un test
+ * comprueba que van en orden y que todo está a la vista antes de dos
+ * segundos: más es hacer esperar a quien ya ha tocado.
+ */
+export const FASES_APERTURA_SOBRE_MS = { foto: 720, tarjeta: 1180, fuera: 1900 } as const;
+
+/**
+ * El parámetro con el que el sobre llega abierto desde el servidor.
+ *
+ * Es lo que manda el sello cuando no hay JavaScript —o todavía no ha
+ * llegado—: el sello es el botón de un formulario GET, y la página se vuelve a
+ * pintar con la tarjeta a la vista. Con JavaScript el envío se intercepta y el
+ * sobre se abre sin recargar; sin él, se abre igual.
+ */
+export const PARAMETRO_SOBRE_ABIERTO = "abierto";
+
 /** El sistema de marca vivo. El pie de la landing enlaza a él, como la entrega. */
 export const RUTA_COCINA = "/cocina";
 

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { redirect } from "next/navigation";
 
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
@@ -358,16 +359,20 @@ function Plazo({
  * texto es de los más pequeños de la pantalla. El estado lo dicen el fondo y el
  * borde —que no tienen que llegar a ese listón— y la palabra de dentro se lee
  * en tinta, a 16:1.
+ *
+ * Eso es exactamente lo que son las variantes «marcadas» de `EtiquetaEstado`:
+ * nacieron de esta pantalla, que era la única del panel que ya había hecho bien
+ * la cuenta. Aquí queda el envoltorio con el nombre que usa el tablero, y la
+ * píldora la pinta el componente como todas las demás.
  */
 function Distintivo({ alarmante, children }: { alarmante: boolean; children: ReactNode }) {
   return (
-    <span
-      className={`rounded-etiqueta border px-interno-compacto py-linea text-diminuto uppercase tracking-etiqueta text-tinta ${
-        alarmante ? "border-error bg-error-fondo" : "border-aviso bg-aviso-fondo"
-      }`}
+    <EtiquetaEstado
+      variante={alarmante ? "error-marcada" : "aviso-marcada"}
+      tamano="versalita-compacta"
     >
       {children}
-    </span>
+    </EtiquetaEstado>
   );
 }
 

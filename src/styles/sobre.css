@@ -1,0 +1,409 @@
+/**
+ * CAPA 3 — EL SOBRE DEL SAVE THE DATE
+ *
+ * La única pieza del sistema con una coreografía: un sobre que se abre, dos
+ * naipes que salen de él y un pie que aparece debajo. Tailwind no tiene
+ * vocabulario para una solapa que gira en 3D ni para un naipe que cambia de
+ * sitio según la fase, así que la pieza tiene su hoja. Es capa de componente:
+ * consume sólo semánticos, no hay aquí ni un color ni un tiempo escrito.
+ *
+ * LAS FASES SON ATRIBUTOS, NO CLASES. `[data-abierto]`, `[data-foto]`,
+ * `[data-tarjeta]` y `[data-fuera]` los pone el componente sobre `.pieza-sobre`
+ * a medida que pasan los tiempos, y cada uno arrastra lo que le toca. Con el
+ * sobre servido ya abierto —sin JavaScript, tras tocar el sello— van los cuatro
+ * puestos desde el servidor y la tarjeta se lee igual.
+ *
+ * Los porcentajes de los recortes (`clip-path`) y de los degradados son la
+ * geometría de la pieza —dónde se cierra el pico del sobre, por dónde entra la
+ * luz—, del mismo orden que las coordenadas de una constelación: cambiarlos es
+ * dibujar otro sobre, no ajustar un token.
+ */
+
+/* --------------------------------------------------------------------------
+ * La cabecera: la raya que se traza bajo «Guardad el día»
+ * ----------------------------------------------------------------------- */
+
+.raya-cabecera {
+  background: linear-gradient(var(--borde-fuerte), transparent);
+  height: var(--alto-raya-vertical);
+  width: var(--grosor-filete);
+}
+
+/* --------------------------------------------------------------------------
+ * El escenario
+ *
+ * `isolation: isolate` encierra las capas del sobre: sus `z-index` son
+ * escalones entre ellas y no compiten con nada de fuera.
+ * ----------------------------------------------------------------------- */
+
+.escenario {
+  height: var(--alto-escenario);
+  isolation: isolate;
+  margin-top: var(--espacio-escenario-arriba);
+  min-height: var(--alto-escenario-minimo);
+  position: relative;
+  width: var(--ancho-escenario);
+}
+
+/* --------------------------------------------------------------------------
+ * El sobre
+ * ----------------------------------------------------------------------- */
+
+.sobre {
+  aspect-ratio: var(--proporcion-sobre);
+  bottom: 0;
+  left: 50%;
+  perspective: var(--perspectiva-sobre);
+  position: absolute;
+  transform: translateX(var(--centrado));
+  transition:
+    opacity var(--transicion-sobre) var(--retardo-sobre),
+    transform var(--transicion-sobre) var(--retardo-sobre);
+  width: var(--ancho-sobre);
+  z-index: var(--capa-sobre);
+}
+
+.sobre-cuerpo {
+  background: linear-gradient(
+    165deg,
+    var(--papel-sobre-arriba) 0%,
+    var(--papel-sobre-abajo) 100%
+  );
+  border: var(--grosor-filete) solid var(--borde-sobre);
+  border-radius: var(--radio-sobre);
+  box-shadow: var(--sombra-sobre);
+  inset: 0;
+  position: absolute;
+}
+
+/* La trama diagonal del papel, casi invisible: es lo que lo hace papel. */
+.sobre-trama {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--trama-sobre) 0 var(--grosor-filete),
+    transparent var(--grosor-filete) var(--paso-trama)
+  );
+  border-radius: var(--radio-sobre);
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+/*
+  El dorso —la parte del sobre por delante de los naipes— se recorta en pico.
+  El brillo que le entra por la izquierda y el remite llevan el mismo recorte,
+  para no asomar por encima del pico.
+*/
+.sobre-dorso,
+.sobre-brillo,
+.sobre-remite {
+  clip-path: polygon(0 0, 50% 40%, 100% 0, 100% 100%, 0 100%);
+  inset: 0;
+  position: absolute;
+  z-index: var(--capa-dorso);
+}
+
+.sobre-dorso {
+  background: linear-gradient(
+    178deg,
+    var(--papel-dorso-arriba) 0%,
+    var(--papel-dorso-abajo) 100%
+  );
+  border-radius: var(--radio-sobre);
+}
+
+.sobre-brillo {
+  background: linear-gradient(108deg, var(--brillo-papel) 0%, var(--brillo-papel-final) 48%);
+  pointer-events: none;
+}
+
+.sobre-remite {
+  align-items: flex-end;
+  display: flex;
+  justify-content: center;
+  padding-bottom: var(--espacio-remite-abajo);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+ * La solapa: gira desde su borde de arriba y, abierta, pasa detrás del dorso
+ * ----------------------------------------------------------------------- */
+
+.solapa {
+  height: var(--alto-solapa);
+  inset: 0 0 auto;
+  position: absolute;
+  transform: rotateX(0);
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  transition: transform var(--transicion-solapa);
+  z-index: var(--capa-solapa);
+}
+
+.solapa-papel {
+  background: linear-gradient(
+    188deg,
+    var(--papel-solapa-arriba) 0%,
+    var(--papel-solapa-abajo) 100%
+  );
+  box-shadow: var(--sombra-solapa);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  inset: 0;
+  position: absolute;
+}
+
+/* La Lira impresa en la solapa, boca abajo: se lee bien cuando la solapa gira. */
+.solapa-lira {
+  align-items: flex-start;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  opacity: var(--opacidad-lira-solapa);
+  padding-top: var(--espacio-lira-solapa);
+  position: absolute;
+}
+
+.solapa-lira > * {
+  height: var(--alto-lira-solapa);
+  width: var(--ancho-lira-solapa);
+}
+
+.pieza-sobre[data-abierto] .solapa {
+  transform: rotateX(var(--giro-solapa));
+  z-index: var(--capa-solapa-abierta);
+}
+
+/* --------------------------------------------------------------------------
+ * El sello: el botón que abre. Late mientras espera; al abrir se encoge y gira
+ * ----------------------------------------------------------------------- */
+
+.sello-hueco {
+  left: 50%;
+  position: absolute;
+  top: var(--posicion-sello);
+  transform: translate(var(--centrado), var(--centrado)) scale(1) rotate(0);
+  transition:
+    opacity var(--transicion-sello-fundido),
+    transform var(--transicion-sello);
+  z-index: var(--capa-sello);
+}
+
+.sello {
+  background: radial-gradient(
+    120% 120% at 34% 26%,
+    var(--sello-brillo) 0%,
+    var(--sello-medio) 48%,
+    var(--sello-fondo) 100%
+  );
+  border-radius: var(--radio-boton);
+  display: grid;
+  height: var(--lado-sello);
+  place-items: center;
+  transition: transform var(--transicion-sello-escala);
+  width: var(--lado-sello);
+}
+
+/*
+  SÓLO DONDE HAY RATÓN DE VERDAD. En una pantalla táctil no existe «pasar por
+  encima»: el `:hover` se dispara al tocar y se queda pegado hasta que se toca
+  otra cosa, así que el sello se quedaba agrandado después de pulsarlo. Y la
+  invitación llega por WhatsApp, o sea que el móvil es el caso normal, no la
+  excepción.
+
+  De paso arregla un fallo del test que no era del test: mientras el sello
+  crece y encoge bajo el puntero, su caja cambia en cada fotograma, y la
+  comprobación de estabilidad que Playwright hace antes de pulsar no llega a
+  cerrarse nunca.
+*/
+@media (hover: hover) {
+  .sello:hover {
+    transform: scale(var(--escala-sello-hover));
+  }
+}
+
+.pieza-sobre[data-abierto] .sello-hueco {
+  opacity: 0%;
+  pointer-events: none;
+  transform: translate(var(--centrado), var(--centrado)) scale(var(--escala-sello-cerrado))
+    rotate(var(--giro-sello));
+}
+
+/* El «&» del sello va en Italianno, un punto más grande y algo apagado. */
+.sello-ampersand {
+  opacity: var(--opacidad-ampersand-sello);
+}
+
+/* --------------------------------------------------------------------------
+ * Los naipes: la foto y la tarjeta, guardados dentro hasta que se abre
+ *
+ * El naipe mide de alto lo que el escenario deje (menos un margen) y nunca
+ * más de lo que la entrega fija; el ancho sale de la proporción. Dentro del
+ * sobre está encogido a la mitad y girado un poco; asoma por arriba cuando le
+ * toca y se coloca a un lado cuando el sobre se va.
+ * ----------------------------------------------------------------------- */
+
+.naipe {
+  aspect-ratio: var(--proporcion-naipe);
+  container-type: size;
+  height: min(calc(100% - var(--margen-naipe)), var(--alto-naipe));
+  left: 50%;
+  opacity: 0%;
+  position: absolute;
+  top: 50%;
+  transform-origin: center;
+  transition:
+    transform var(--transicion-naipe),
+    opacity var(--transicion-naipe-fundido);
+  width: auto;
+  will-change: transform;
+  z-index: var(--capa-naipe-guardado);
+}
+
+.naipe-foto {
+  transform: translate(var(--centrado), var(--desplazamiento-naipe-dentro))
+    rotate(var(--giro-foto-dentro)) scale(var(--escala-naipe-dentro));
+}
+
+.naipe-tarjeta {
+  transform: translate(var(--centrado), var(--desplazamiento-naipe-dentro))
+    rotate(var(--giro-tarjeta-dentro)) scale(var(--escala-naipe-dentro));
+}
+
+/* Fase 2: la foto asoma; la tarjeta espera un momento antes de moverse. */
+.pieza-sobre[data-foto] .naipe-foto {
+  opacity: 100%;
+  transform: translate(var(--centrado), var(--desplazamiento-foto-asoma))
+    rotate(var(--giro-foto-asoma)) scale(var(--escala-foto-asoma));
+}
+
+.pieza-sobre[data-foto] .naipe-tarjeta {
+  transition-delay: var(--retardo-tarjeta-naipe);
+}
+
+/* Fase 3: la tarjeta asoma y lo que lleva escrito se revela un poco después. */
+.pieza-sobre[data-tarjeta] .naipe-tarjeta {
+  opacity: 100%;
+  transform: translate(var(--centrado), var(--desplazamiento-tarjeta-asoma))
+    rotate(var(--giro-tarjeta-asoma)) scale(var(--escala-tarjeta-asoma));
+}
+
+.tarjeta-contenido {
+  opacity: 0%;
+  transition: opacity var(--transicion-tarjeta-fundido);
+}
+
+.pieza-sobre[data-tarjeta] .tarjeta-contenido {
+  opacity: 100%;
+  transition-delay: var(--retardo-tarjeta-contenido);
+}
+
+/*
+  Fase 4: el sobre se va y los naipes se colocan, la foto a la izquierda y la
+  tarjeta a la derecha. En un móvil se solapan y se encogen un punto, porque
+  uno al lado del otro no caben.
+*/
+.pieza-sobre[data-fuera] .sobre {
+  opacity: 0%;
+}
+
+.pieza-sobre[data-fuera] .naipe-foto {
+  transform: translate(
+      var(--desplazamiento-foto-fuera-x-movil),
+      var(--desplazamiento-foto-fuera-y-movil)
+    )
+    rotate(var(--giro-foto-fuera-movil)) scale(var(--escala-naipe-fuera-movil));
+  z-index: var(--capa-foto-fuera);
+
+  /*
+    Desde el punto de ruptura `md` del sistema —el de Tailwind, para no
+    escribir otro— los naipes se abren a los lados a tamaño natural.
+    `@variant` es la forma de nombrarlo desde CSS sin repetir el número.
+  */
+  @variant md {
+    transform: translate(var(--desplazamiento-foto-fuera-x), var(--centrado))
+      rotate(var(--giro-foto-fuera));
+  }
+}
+
+.pieza-sobre[data-fuera] .naipe-tarjeta {
+  transform: translate(
+      var(--desplazamiento-tarjeta-fuera-x-movil),
+      var(--desplazamiento-tarjeta-fuera-y-movil)
+    )
+    rotate(var(--giro-tarjeta-fuera-movil)) scale(var(--escala-naipe-fuera-movil));
+  z-index: var(--capa-tarjeta-fuera);
+
+  @variant md {
+    transform: translate(var(--desplazamiento-tarjeta-fuera-x), var(--centrado))
+      rotate(var(--giro-tarjeta-fuera));
+  }
+}
+
+/* Sin foto publicada, la tarjeta se queda sola y centrada, sin girar. */
+.pieza-sobre[data-fuera][data-sin-foto] .naipe-tarjeta {
+  transform: translate(var(--centrado), var(--centrado));
+
+  @variant md {
+    transform: translate(var(--centrado), var(--centrado));
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Las dos caras de papel: la foto y la tarjeta
+ * ----------------------------------------------------------------------- */
+
+.tarjeta-foto {
+  background: var(--papel-foto);
+  border: var(--grosor-filete) solid var(--borde);
+  box-shadow: var(--sombra-naipe-foto);
+}
+
+.tarjeta {
+  background: linear-gradient(
+    165deg,
+    var(--papel-tarjeta-arriba) 0%,
+    var(--papel-tarjeta-abajo) 100%
+  );
+  border: var(--grosor-filete) solid var(--borde);
+  box-shadow: var(--sombra-naipe);
+}
+
+/* --------------------------------------------------------------------------
+ * La pista y el pie: lo que hay debajo del escenario
+ * ----------------------------------------------------------------------- */
+
+.pista-sobre {
+  margin-top: var(--espacio-pista-sobre);
+  transition: opacity var(--transicion-pista-sobre);
+}
+
+.pieza-sobre[data-abierto] .pista-sobre {
+  opacity: 0%;
+}
+
+/*
+  El pie no ocupa sitio hasta que el sobre se ha ido: plegado con `max-height`
+  para que la página no reserve su hueco vacío bajo el sobre cerrado, y con
+  `inert` desde el componente para que nadie llegue a sus botones con el
+  teclado mientras no se ven.
+*/
+.pie-sobre {
+  max-height: 0;
+  opacity: 0%;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateY(var(--recorrido-pie-sobre));
+  transition:
+    opacity var(--transicion-pie-sobre-fundido) var(--retardo-pie-sobre),
+    transform var(--transicion-pie-sobre) var(--retardo-pie-sobre),
+    max-height var(--transicion-pie-sobre);
+}
+
+.pieza-sobre[data-fuera] .pie-sobre {
+  margin-top: var(--espacio-pie-sobre);
+  max-height: var(--alto-pie-sobre);
+  opacity: 100%;
+  pointer-events: auto;
+  transform: none;
+}

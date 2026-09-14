@@ -1,0 +1,157 @@
+/**
+ * CAPA 3 — LA ESCENA DEL PAISAJE
+ *
+ * La pieza de movimiento central de la Landing: una sección de tres pantallas
+ * de alto con un panel pegado dentro. Al bajar, el marco se abre de un recuadro
+ * centrado a pantalla completa, la foto se aleja, el velo se oscurece y la
+ * frase entra por el centro. Es la escena de la entrega, sin una línea de
+ * JavaScript: la mueve el propio scroll a través de una línea de tiempo con
+ * nombre (`view-timeline-name`) que declara la sección y consumen sus hijos.
+ *
+ * Capa de componente: consume sólo semánticos. Los porcentajes que quedan
+ * escritos son geometría de la escena —dónde empieza y acaba cada gesto dentro
+ * del recorrido—, del mismo orden que las coordenadas de una constelación.
+ *
+ * EL MARCO SE ABRE RECORTANDO, NO CRECIENDO. La entrega anima `width` y
+ * `height`, que obliga al navegador a recalcular la maquetación en cada
+ * fotograma y mete saltos en el CLS. Aquí el marco ocupa siempre la pantalla
+ * entera y lo que se anima es su `clip-path`, que es la misma imagen en
+ * pantalla sin tocar una sola caja. La sombra va en `drop-shadow` por lo mismo:
+ * una `box-shadow` se recortaría con el marco, un filtro sigue al recorte.
+ *
+ * DOS ESTADOS Y NO UNO. Fuera del `@supports` —un navegador sin líneas de
+ * tiempo de scroll— y con `prefers-reduced-motion`, no hay escena: la sección
+ * mide lo que medía, el marco se ve entero y la frase está a la vista desde el
+ * principio. Nunca se esconde nada esperando un scroll que quizá no ocurra.
+ */
+
+/* --------------------------------------------------------------------------
+ * La pieza quieta: lo que ve quien no tiene escena o no la quiere
+ * ----------------------------------------------------------------------- */
+
+.escena-paisaje {
+  position: relative;
+}
+
+.panel-paisaje {
+  min-height: var(--alto-paisaje);
+  overflow: hidden;
+  position: relative;
+}
+
+.marco-paisaje {
+  inset: 0;
+  position: absolute;
+}
+
+.foto-paisaje {
+  inset: 0;
+  position: absolute;
+}
+
+/* Quieto, el velo es el de cerca: es el que hace legible el titular encima. */
+.velo-paisaje {
+  background-image: linear-gradient(
+    180deg,
+    var(--velo-escena-cerca-arriba) 0%,
+    var(--velo-escena-cerca-abajo) 100%
+  );
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+/* La frase va centrada en el panel, no apoyada abajo: es lo que hace la
+   entrega, y es lo que deja al titular en el eje de la foto. */
+.texto-paisaje {
+  inset-inline: 0;
+  padding-inline: var(--espacio-escena-lado);
+  position: absolute;
+  text-align: center;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.pista-paisaje {
+  bottom: var(--espacio-pista-escena);
+  inset-inline: 0;
+  position: absolute;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+ * La escena
+ *
+ * Sólo donde el navegador sabe atar una animación al scroll y sólo si nadie ha
+ * pedido menos movimiento. La sección declara la línea de tiempo y sus hijos la
+ * consumen por nombre; el tramo `contain 0% → 100%` de un elemento más alto que
+ * la pantalla es exactamente el recorrido que la entrega llama `p`: cero cuando
+ * el borde de arriba toca el de la pantalla, uno cuando el de abajo la alcanza.
+ * ----------------------------------------------------------------------- */
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .escena-paisaje {
+      height: var(--alto-escena);
+      view-timeline-name: --escena-paisaje;
+    }
+
+    .panel-paisaje {
+      height: var(--alto-panel-escena);
+      min-height: 0;
+      position: sticky;
+      top: 0;
+    }
+
+    /*
+      Ninguna de estas animaciones lleva `animation-duration`, y es a propósito:
+      con una línea de tiempo de progreso su valor inicial (`auto`) significa
+      «todo el tramo». Ponerle un tiempo la ataría al reloj en vez de al scroll.
+    */
+    .marco-paisaje {
+      animation-fill-mode: both;
+      animation-name: acercar-marco;
+      animation-range: contain 0% contain var(--tramo-marco-escena);
+      animation-timeline: --escena-paisaje;
+      animation-timing-function: var(--suavizado-escena);
+      will-change: clip-path;
+    }
+
+    .foto-paisaje {
+      animation-fill-mode: both;
+      animation-name: alejar-foto;
+      animation-range: contain 0% contain var(--tramo-marco-escena);
+      animation-timeline: --escena-paisaje;
+      animation-timing-function: var(--suavizado-escena);
+      will-change: transform;
+    }
+
+    .velo-paisaje {
+      animation-fill-mode: both;
+      animation-name: velar-escena;
+      animation-range: contain 0% contain var(--tramo-marco-escena);
+      animation-timeline: --escena-paisaje;
+      animation-timing-function: var(--suavizado-escena);
+    }
+
+    /* La frase entra a mitad de recorrido y sin curva: la entrega la sube con
+       una rampa recta, y una curva aquí la haría aparecer de golpe. */
+    .texto-paisaje {
+      animation-fill-mode: both;
+      animation-name: revelar-frase;
+      animation-range: contain var(--tramo-texto-escena-inicio) contain
+        var(--tramo-texto-escena-fin);
+      animation-timeline: --escena-paisaje;
+      animation-timing-function: linear;
+    }
+
+    /* «Seguid bajando» ya ha cumplido en cuanto alguien baja. */
+    .pista-paisaje {
+      animation-fill-mode: both;
+      animation-name: apagar-pista;
+      animation-range: contain 0% contain var(--tramo-pista-escena);
+      animation-timeline: --escena-paisaje;
+      animation-timing-function: linear;
+    }
+  }
+}

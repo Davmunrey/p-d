@@ -49,6 +49,11 @@ const formatoLargo = new Intl.DateTimeFormat(IDIOMA, {
 
 const formatoDia = new Intl.DateTimeFormat(IDIOMA, { weekday: "long", timeZone: ZONA_HORARIA });
 
+const formatoAnio = new Intl.DateTimeFormat(IDIOMA, {
+  year: "numeric",
+  timeZone: ZONA_HORARIA,
+});
+
 /**
  * «Sábado 26 de junio»: la cabecera del programa y de la víspera, y la fecha
  * de la tarjeta del Save the Date.
@@ -86,4 +91,13 @@ export function nombreDelDia(fecha: Date): string {
  */
 export function vispera(fecha: Date): Date {
   return new Date(fecha.getTime() - 24 * 60 * 60 * 1000);
+}
+
+/**
+ * «2027»: el año solo. La tarjeta del Save the Date lo escribe en su propia
+ * línea, grande, debajo de «Sábado 26 de junio». En la zona de la boda, como
+ * todo lo demás: una ceremonia en Nochevieja no cambia de año por el servidor.
+ */
+export function anio(fecha: Date): string {
+  return formatoAnio.format(fecha);
 }

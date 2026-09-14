@@ -518,3 +518,266 @@ test.describe("Nunca hay modo oscuro", () => {
     }
   });
 });
+
+/**
+ * BODA-123 · Los cuatro componentes del catálogo
+ *
+ * La entrega del sistema de marca dibuja cuatro piezas —botones, campos,
+ * etiquetas y avisos, tarjeta— y hasta este ticket el repo las pintaba a mano
+ * en cada pantalla, con dos estados que además no coincidían con la entrega.
+ *
+ * Lo que se comprueba aquí no es el aspecto, sino que el VALOR COMPUTADO sale
+ * del token y no de una clase con el color escrito dentro. Por eso cada
+ * afirmación compara contra el token resuelto en el propio navegador, nunca
+ * contra un hex copiado en el test: un literal aquí sólo demostraría que
+ * alguien copió el mismo número en dos sitios.
+ */
+test.describe("Los componentes del catálogo", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/cocina");
+  });
+
+  /** Pinta un token de color en una sonda y devuelve el `rgb()` que computa. */
+  async function comoColor(page: import("@playwright/test").Page, token: string) {
+    return page.evaluate((nombre) => {
+      const sonda = document.createElement("div");
+      sonda.style.color = getComputedStyle(document.documentElement)
+        .getPropertyValue(nombre)
+        .trim();
+      document.body.appendChild(sonda);
+      const valor = getComputedStyle(sonda).color;
+      sonda.remove();
+      return valor;
+    }, `--${token}`);
+  }
+
+  test("las cuatro fichas del catálogo están, con los rótulos de la entrega", async ({
+    page,
+  }) => {
+    for (const rotulo of [
+      copy.cocina.grupoBotones,
+      copy.cocina.grupoCampos,
+      copy.cocina.grupoEtiquetas,
+      copy.cocina.grupoTarjeta,
+    ]) {
+      await expect(
+        page.getByText(rotulo, { exact: true }),
+        `falta la ficha «${rotulo}»`,
+      ).toBeVisible();
+    }
+  });
+
+  /**
+   * EL CASO QUE DE VERDAD IMPORTA ES EL `outline`.
+   *
+   * El campo llevaba `focus:outline-none`, que anulaba el aro de bronce que el
+   * `:focus-visible` global le da a toda la página, y dejaba como único aviso
+   * de foco un borde que cambia de gris a azul. Sin la última afirmación de
+   * este test, el ticket se puede dar por hecho con el foco todavía apagado.
+   */
+  test("un campo enfocado tiene el anillo de tres píxeles y no pierde su aro", async ({
+    page,
+  }) => {
+    const campo = page.locator('[data-prueba="componente-campos"] input').first();
+    await expect(campo).toBeVisible();
+
+    const enReposo = await campo.evaluate((nodo) => getComputedStyle(nodo).boxShadow);
+    expect(enReposo, "sin enfocar no puede haber anillo: si no, siempre estaría puesto").toBe(
+      "none",
+    );
+
+    await campo.focus();
+    await expect(campo).toBeFocused();
+
+    const grosor = await leerToken(page, "anillo-campo-ancho");
+    expect(grosor, "el anillo de la entrega mide tres píxeles").toBe("3px");
+
+    /*
+      SE LEE CON `poll`, PORQUE EL CAMPO TRANSICIONA. El borde y el anillo no
+      saltan a su valor: viajan hasta él durante la transición de color del
+      campo. Una lectura única justo después de enfocar devuelve el fotograma de
+      en medio —un anillo de 0,68 px al 23 % en vez de uno de 3 px— y el test
+      acusa al componente de un valor que sí acaba poniendo. `poll` reintenta
+      hasta que la transición se cierra.
+    */
+    await expect
+      .poll(async () => campo.evaluate((nodo) => getComputedStyle(nodo).boxShadow))
+      // `box-shadow` computa como «color 0px 0px 0px <grosor>».
+      .toContain(`0px 0px 0px ${grosor}`);
+
+    await expect
+      .poll(async () => campo.evaluate((nodo) => getComputedStyle(nodo).boxShadow))
+      .toContain(await comoColor(page, "anillo-campo"));
+
+    await expect
+      .poll(async () => campo.evaluate((nodo) => getComputedStyle(nodo).borderTopColor))
+      .toBe(await comoColor(page, "marca"));
+
+    expect(
+      await campo.evaluate((nodo) => getComputedStyle(nodo).outlineStyle),
+      "el aro de foco global sigue ahí: era lo que `focus:outline-none` se llevaba",
+    ).not.toBe("none");
+  });
+
+  test("un botón desactivado se pinta con color propio, no con opacidad", async ({ page }) => {
+    const apagado = page.getByRole("button", { name: copy.cocina.botonDesactivado }).first();
+    await expect(apagado).toBeVisible();
+    await expect(apagado).toBeDisabled();
+
+    const pintado = await apagado.evaluate((nodo) => {
+      const estilo = getComputedStyle(nodo);
+      return {
+        fondo: estilo.backgroundColor,
+        tinta: estilo.color,
+        opacidad: estilo.opacity,
+      };
+    });
+
+    expect(pintado.fondo).toBe(await comoColor(page, "accion-desactivada"));
+    expect(pintado.tinta).toBe(await comoColor(page, "tinta-desactivada"));
+    expect(
+      pintado.opacidad,
+      "con opacidad el gris depende de lo que haya debajo, y cambia en cada bloque",
+    ).toBe("1");
+  });
+
+  /** CASO DE ERROR: un botón apagado no hace nada al pulsarlo. */
+  test("un botón desactivado no responde al clic", async ({ page }) => {
+    const apagado = page.getByRole("button", { name: copy.cocina.botonDesactivado }).first();
+    await expect(apagado).toBeVisible();
+
+    // `pointer-events: none` es lo que impide que el clic llegue siquiera. Se
+    // comprueba con `force`, que salta la comprobación de Playwright y prueba
+    // el CSS de verdad en vez de fiarse del atributo `disabled`.
+    expect(await apagado.evaluate((nodo) => getComputedStyle(nodo).pointerEvents)).toBe("none");
+
+    let pulsado = false;
+    await page.exposeFunction("avisarPulsacion", () => {
+      pulsado = true;
+    });
+    await apagado.evaluate((nodo) => {
+      nodo.addEventListener("click", () => {
+        (window as unknown as { avisarPulsacion: () => void }).avisarPulsacion();
+      });
+    });
+    await apagado.click({ force: true }).catch(() => undefined);
+    expect(pulsado, "un botón apagado no puede disparar su acción").toBe(false);
+  });
+
+  test("las cuatro etiquetas de la entrega se pintan con sus cuatro colores", async ({
+    page,
+  }) => {
+    const ficha = page.locator('[data-prueba="componente-etiquetas"]');
+    await expect(ficha).toBeVisible();
+
+    const esperado: [string, string][] = [
+      [copy.cocina.etiquetaNeutra, "superficie-tenue"],
+      [copy.cocina.etiquetaMarca, "accion"],
+      [copy.cocina.etiquetaConfirmado, "exito-fondo"],
+    ];
+
+    for (const [texto, token] of esperado) {
+      const etiqueta = ficha.getByText(texto, { exact: true });
+      await expect(etiqueta, `falta la etiqueta «${texto}»`).toBeVisible();
+      expect(
+        await etiqueta.evaluate((nodo) => getComputedStyle(nodo).backgroundColor),
+        `«${texto}» no sale de --${token}`,
+      ).toBe(await comoColor(page, token));
+    }
+
+    // La de contorno es la única sin fondo: es un borde y nada más.
+    const contorno = ficha.getByText(copy.cocina.etiquetaContorno, { exact: true });
+    await expect(contorno).toBeVisible();
+    const trazo = await contorno.evaluate((nodo) => {
+      const estilo = getComputedStyle(nodo);
+      return { fondo: estilo.backgroundColor, borde: estilo.borderTopColor };
+    });
+    expect(trazo.fondo, "la etiqueta de contorno va sin relleno").toBe("rgba(0, 0, 0, 0)");
+    expect(trazo.borde).toBe(await comoColor(page, "borde-fuerte"));
+  });
+
+  test("la tarjeta lleva su imagen en 4:3 y su meta en versalita", async ({ page }) => {
+    const ficha = page.locator('[data-prueba="componente-tarjeta"]');
+    await expect(ficha).toBeVisible();
+
+    const meta = ficha.getByText(copy.cocina.tarjetaMeta, { exact: true });
+    await expect(meta).toBeVisible();
+    expect(await meta.evaluate((nodo) => getComputedStyle(nodo).textTransform)).toBe(
+      "uppercase",
+    );
+
+    await expect(ficha.getByRole("heading", { name: copy.cocina.tarjetaTitulo })).toBeVisible();
+
+    const hueco = ficha.locator(".aspect-foto-tarjeta").first();
+    await expect(hueco).toBeVisible();
+    const caja = await hueco.boundingBox();
+    expect(caja, "la imagen de la tarjeta tiene que ocupar sitio").not.toBeNull();
+    expect(caja!.width / caja!.height).toBeCloseTo(4 / 3, 1);
+  });
+
+  /**
+   * CASO DE ERROR DEL TICKET, y el que prueba que no hay color escrito en
+   * ninguna clase: dentro de un bloque inverso los mismos componentes, sin
+   * cambiar ni una clase, tienen que salir con otros valores. Si alguno
+   * coincidiera con el de arriba, es que lleva el color dentro.
+   */
+  test("dentro de un bloque inverso lo desactivado y el anillo se dan la vuelta", async ({
+    page,
+  }) => {
+    const inverso = page.locator('[data-prueba="bloque-inverso"]');
+    await expect(inverso).toBeVisible();
+
+    const apagadoClaro = page
+      .locator('[data-prueba="componente-botones"]')
+      .getByRole("button", { name: copy.cocina.botonDesactivado });
+    const apagadoInverso = inverso.getByRole("button", {
+      name: copy.cocina.botonDesactivado,
+    });
+    await expect(apagadoClaro).toBeVisible();
+    await expect(apagadoInverso).toBeVisible();
+
+    const fondoDe = (locator: ReturnType<typeof page.locator>) =>
+      locator.evaluate((nodo) => getComputedStyle(nodo).backgroundColor);
+
+    expect(
+      await fondoDe(apagadoInverso),
+      "un botón apagado dentro de un bloque inverso no puede ser del mismo gris",
+    ).not.toBe(await fondoDe(apagadoClaro));
+
+    /*
+      El anillo se compara contra el de arriba y no contra el token de la raíz,
+      y la diferencia importa: `--anillo-campo` está reasignado DENTRO del
+      bloque inverso, así que leerlo en `document.documentElement` devolvería el
+      valor claro y el test afirmaría lo contrario de lo que quiere afirmar.
+    */
+    const anilloDe = async (locator: ReturnType<typeof page.locator>) => {
+      await expect(locator).toBeVisible();
+      await locator.focus();
+      await expect(locator).toBeFocused();
+
+      // El anillo viaja durante la transición del campo: se espera a que pare.
+      let anterior = "";
+      await expect
+        .poll(async () => {
+          const ahora = await locator.evaluate((nodo) => getComputedStyle(nodo).boxShadow);
+          const quieto = ahora === anterior;
+          anterior = ahora;
+          return quieto;
+        })
+        .toBe(true);
+
+      return anterior;
+    };
+
+    const anilloClaro = await anilloDe(
+      page.locator('[data-prueba="componente-campos"] input').first(),
+    );
+    const anilloInverso = await anilloDe(inverso.locator("input").first());
+
+    expect(anilloClaro, "sin foco no habría anillo que comparar").not.toBe("none");
+    expect(
+      anilloInverso,
+      "el anillo de un campo dentro de un bloque inverso tiene que oscurecerse",
+    ).not.toBe(anilloClaro);
+  });
+});

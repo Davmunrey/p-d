@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   CAPACIDAD_MAXIMA_MESA,
@@ -298,11 +299,11 @@ function SinSentar({
       <div className="flex flex-wrap items-baseline justify-between gap-interno">
         <Titulo3 como="h2">{titulo}</Titulo3>
         {personas > 0 ? (
-          <span className="rounded-etiqueta bg-aviso-fondo px-interno py-linea text-pequeno text-aviso-tinta">
+          <EtiquetaEstado variante="aviso" tamano="compacta" className="px-interno">
             {personas === 1
               ? t("panel.mesas.grupoPersonasUna")
               : t("panel.mesas.grupoPersonas", { cuantas: personas })}
-          </span>
+          </EtiquetaEstado>
         ) : null}
       </div>
 
@@ -623,15 +624,19 @@ function BloqueMesa({
           {presidencia ? (
             <span className="text-tinta-marca">{t("panel.mesas.presidencia")}</span>
           ) : null}
-          <span
-            className={
-              sentados.length > mesa.capacidad
-                ? "rounded-etiqueta bg-aviso-fondo px-interno py-linea text-aviso-tinta"
-                : "text-tinta"
-            }
-          >
-            {ocupacionDe(mesa, sentados.length)}
-          </span>
+          {/*
+            Pasarse de capacidad es un aviso, y por eso ahí —y sólo ahí— la
+            ocupación se pinta como etiqueta. Dentro de capacidad es un dato
+            más de la fila y sigue siendo texto suelto: ponerle píldora a todo
+            dejaría de distinguir lo que hay que mirar.
+          */}
+          {sentados.length > mesa.capacidad ? (
+            <EtiquetaEstado variante="aviso" tamano="compacta" className="px-interno">
+              {ocupacionDe(mesa, sentados.length)}
+            </EtiquetaEstado>
+          ) : (
+            <span className="text-tinta">{ocupacionDe(mesa, sentados.length)}</span>
+          )}
         </div>
       </div>
 
@@ -658,9 +663,9 @@ function BloqueMesa({
                   </span>
                 ) : null}
                 {persona.estado !== ESTADO_CONFIRMADO ? (
-                  <span className="rounded-etiqueta bg-aviso-fondo px-interno py-linea text-pequeno text-aviso-tinta">
+                  <EtiquetaEstado variante="aviso" tamano="compacta" className="px-interno">
                     {t("panel.invitados.pendienteRespuesta")}
-                  </span>
+                  </EtiquetaEstado>
                 ) : null}
               </div>
 

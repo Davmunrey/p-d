@@ -86,21 +86,30 @@ test.describe("El catálogo del sistema de marca", () => {
 });
 
 /**
- * El Save the Date se abre en un móvil, desde WhatsApp. Por eso estas pruebas
- * fijan el alto en vez de heredar el del proyecto: lo que se comprueba aquí
- * depende de cuánta pantalla hay, no de cuál es el navegador.
+ * El Save the Date lleva la Lira dos veces, y las dos son de la entrega: impresa
+ * en la solapa del sobre, boca abajo y como filigrana, y dentro de la tarjeta
+ * con las estrellas al 120 %. Se abre en un móvil, desde WhatsApp, así que
+ * estas pruebas fijan ese alto.
  */
 test.describe("La constelación del Save the Date", () => {
   const MOVIL = { width: 390, height: 844 };
-  const VENTANA_BAJA = { width: 1280, height: 720 };
 
-  test("Lira abre la página en un móvil de hoy", async ({ page }) => {
+  test("Lira va impresa en la solapa y dentro de la tarjeta", async ({ page }) => {
     await page.setViewportSize(MOVIL);
     await page.goto("/reserva-la-fecha");
 
-    const dibujo = page.locator("main svg").first();
-    await expect(dibujo).toBeVisible();
-    expect(await dibujo.locator("circle").count()).toBeGreaterThanOrEqual(4);
+    // Las dos constelaciones; el icono del calendario del pie no cuenta.
+    const dibujos = page.locator(".solapa svg, .naipe-tarjeta svg");
+    await expect(dibujos).toHaveCount(2);
+
+    for (const dibujo of [dibujos.nth(0), dibujos.nth(1)]) {
+      expect(await dibujo.locator("circle").count()).toBeGreaterThanOrEqual(4);
+    }
+
+    // Y la de la tarjeta brilla más: sus estrellas van a escala 1,2 (BODA-122).
+    const enSolapa = await page.locator(".solapa svg circle").first().getAttribute("r");
+    const enTarjeta = await page.locator(".naipe-tarjeta svg circle").first().getAttribute("r");
+    expect(Number(enTarjeta)).toBeCloseTo(Number(enSolapa) * 1.2, 5);
   });
 
   /**
@@ -112,42 +121,30 @@ test.describe("La constelación del Save the Date", () => {
     await page.setViewportSize(MOVIL);
     await page.goto("/reserva-la-fecha");
 
-    const dibujo = page.locator("main svg").first();
-    await expect(dibujo).toHaveAttribute("aria-hidden", "true");
-    await expect(dibujo.locator("title")).toHaveCount(0);
+    const dibujos = page.locator(".solapa svg, .naipe-tarjeta svg");
+    await expect(dibujos).toHaveCount(2);
+    for (const dibujo of [dibujos.nth(0), dibujos.nth(1)]) {
+      await expect(dibujo).toHaveAttribute("aria-hidden", "true");
+      await expect(dibujo.locator("title")).toHaveCount(0);
+    }
   });
 
   /**
-   * CASO DE ERROR. La página promete caber de una vez, y un adorno no puede
-   * romper esa promesa. En una ventana baja la constelación se retira sola.
+   * CASO DE ERROR. Con el sobre cerrado sólo se ve la de la solapa; la de la
+   * tarjeta espera dentro, sin pintarse, hasta que se toca el sello.
    */
-  test("en una pantalla baja el adorno se retira y la página sigue cabiendo", async ({
-    page,
-  }) => {
-    await page.setViewportSize(VENTANA_BAJA);
-    await page.goto("/reserva-la-fecha");
-
-    await expect(page.locator("main svg").first()).toBeHidden();
-
-    const medidas = await page.evaluate(() => ({
-      alto: document.documentElement.scrollHeight,
-      ventana: window.innerHeight,
-    }));
-    expect(medidas.alto).toBeLessThanOrEqual(medidas.ventana + 1);
-  });
-
-  test("y donde sí cabe, sigue cabiendo con la constelación puesta", async ({ page }) => {
+  test("cerrada, se ve la de la solapa; abierta, la de la tarjeta", async ({ page }) => {
     await page.setViewportSize(MOVIL);
     await page.goto("/reserva-la-fecha");
 
-    const medidas = await page.evaluate(() => ({
-      alto: document.documentElement.scrollHeight,
-      ventana: window.innerHeight,
-      adorno: document.querySelector("main svg")!.getBoundingClientRect().height,
-    }));
+    await expect(page.locator(".solapa svg")).toBeVisible();
+    await expect(page.locator(".naipe-tarjeta")).toHaveCSS("opacity", "0");
 
-    expect(medidas.adorno).toBeGreaterThan(0);
-    expect(medidas.alto).toBeLessThanOrEqual(medidas.ventana + 1);
+    await expect(page.locator(".pieza-sobre")).toHaveAttribute("data-hidratado", "");
+    await page.getByRole("button", { name: copy.saveTheDate.abrir }).click();
+    await expect(page.locator(".pieza-sobre")).toHaveAttribute("data-fuera", "");
+    await expect(page.locator(".naipe-tarjeta")).toHaveCSS("opacity", "1");
+    await expect(page.locator(".naipe-tarjeta svg")).toBeVisible();
   });
 });
 

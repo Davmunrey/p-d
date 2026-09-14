@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { fechaConDia, fechaEnPuntos, fechaLarga, nombreDelDia, vispera } from "@/lib/fechas";
+import {
+  anio,
+  fechaConDia,
+  fechaEnPuntos,
+  fechaLarga,
+  nombreDelDia,
+  vispera,
+} from "@/lib/fechas";
 
 /**
  * BODA-115 · Cómo se escriben las fechas
@@ -30,6 +37,13 @@ describe("las fechas de la marca", () => {
 
   it("el nombre del día va en minúscula, para dentro de una frase", () => {
     expect(nombreDelDia(SABADO)).toBe("sábado");
+  });
+
+  it("«2027»: el año solo, para la línea grande de la tarjeta", () => {
+    expect(anio(SABADO)).toBe("2027");
+    // Contado en la zona de la boda: una Nochevieja a las 23:30 UTC ya es el
+    // año siguiente en Madrid.
+    expect(anio(new Date("2027-12-31T23:30:00Z"))).toBe("2028");
   });
 
   it("la víspera de un sábado es el viernes", () => {

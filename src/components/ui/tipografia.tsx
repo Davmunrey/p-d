@@ -115,10 +115,26 @@ export function Titulo3({
  * de pantalla lee «Paloma y David» de corrido, y esa «y» no es decoración
  * tipográfica para quien escucha: es la conjunción.
  */
-export function Conector({ children }: { children: ReactNode }) {
-  return (
-    <span className="font-conector text-conector leading-conector text-acento">{children}</span>
-  );
+export function Conector({
+  children,
+  tamano = "conector",
+}: {
+  children: ReactNode;
+  /**
+   * El escalón. `conector` es la «y» de la portada, fluida; `naipe` la de la
+   * tarjeta del Save the Date, que se mide contra el alto del naipe; y `sello`
+   * el «&» del sello, que hereda el color de las iniciales en vez del acento.
+   */
+  tamano?: "conector" | "naipe" | "sello" | "escena";
+}) {
+  const escalon = {
+    conector: "text-conector leading-conector text-acento",
+    naipe: "text-naipe-conector leading-compacto text-acento",
+    sello: "sello-ampersand text-sello-ampersand leading-compacto text-current",
+    escena: "text-conector-escena leading-titulo-corto text-acento-sobre-foto",
+  }[tamano];
+
+  return <span className={`font-conector ${escalon}`}>{children}</span>;
 }
 
 /**
@@ -179,10 +195,11 @@ export function EtiquetaSeccion({
  * versalita salía en Cormorant sin que nadie lo hubiera pedido. En la entrega
  * toda versalita es Jost; aquí se garantiza.
  *
- * Los tres ajustes son los tres que la entrega usa y ninguno más: el escalón
- * de 12 px para el modo de ruta y la versalita de la portada; el espaciado de
- * sección (.4em) para «Cuenta atrás»; y el tono de marca para los títulos de
- * tarjeta del dress code.
+ * Los ajustes son los que la entrega usa y ninguno más: el escalón de 12 px
+ * para el modo de ruta y la versalita de la portada; el espaciado de sección
+ * (.4em) para «Cuenta atrás»; el tono de marca para los títulos de tarjeta del
+ * dress code; y el acento para «Guardad el día», la única versalita en bronce
+ * del Save the Date.
  */
 export function Etiqueta({
   id,
@@ -199,7 +216,7 @@ export function Etiqueta({
   como?: ElementType;
   tamano?: "etiqueta" | "boton";
   espaciado?: "etiqueta" | "seccion" | "boton" | "marcado";
-  tono?: "suave" | "tinta" | "marca";
+  tono?: "suave" | "tinta" | "marca" | "acento";
   className?: string;
 }) {
   const clases = [
@@ -211,7 +228,12 @@ export function Etiqueta({
       boton: "tracking-boton",
       marcado: "tracking-marcado",
     }[espaciado],
-    { suave: "text-tinta-suave", tinta: "text-tinta", marca: "text-marca" }[tono],
+    {
+      suave: "text-tinta-suave",
+      tinta: "text-tinta",
+      marca: "text-marca",
+      acento: "text-acento",
+    }[tono],
     className,
   ].join(" ");
 

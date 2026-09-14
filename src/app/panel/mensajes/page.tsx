@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { Boton } from "@/components/ui/boton";
 import { CampoTexto } from "@/components/ui/campo";
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_ACCESO, RUTA_INVITADOS, ZONA_HORARIA } from "@/config/constants";
 import {
@@ -170,9 +171,9 @@ function Mensaje({ mensaje, puedeEditar }: { mensaje: MensajeInvitado; puedeEdit
           })}
         </Etiqueta>
         {mensaje.leido ? null : (
-          <span className="rounded-etiqueta bg-marca px-interno py-linea text-diminuto uppercase tracking-etiqueta text-tinta-sobre-marca">
+          <EtiquetaEstado variante="marca" tamano="versalita">
             {t("panel.mensajes.nuevo")}
-          </span>
+          </EtiquetaEstado>
         )}
       </div>
 

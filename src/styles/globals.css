@@ -2,6 +2,8 @@
 @import "./tokens/primitives.css";
 @import "./tokens/semantic.css";
 @import "./tokens/motion.css";
+@import "./sobre.css";
+@import "./paisaje.css";
 
 /**
  * Las carpetas de skills son documentación de terceros con ejemplos de código,
@@ -88,6 +90,10 @@
   --color-tinta-sobre-marca: var(--tinta-sobre-marca);
   --color-tinta-sobre-accion: var(--tinta-sobre-accion);
   --color-tinta-sobre-acento: var(--tinta-sobre-acento);
+  --color-tinta-pista: var(--tinta-pista);
+  --color-tinta-remite: var(--tinta-remite);
+  --color-tinta-sello: var(--tinta-sello);
+  --color-hueco-foto-naipe: var(--hueco-foto-naipe);
 
   /* Marca, acción y acento */
   --color-marca: var(--marca);
@@ -109,6 +115,7 @@
   --color-borde-tenue: var(--borde-tenue);
   --color-borde-filete: var(--borde-filete);
   --color-borde-marca: var(--borde-marca);
+  --color-borde-naipe: var(--borde-naipe);
 
   /* Estado */
   --color-exito: var(--exito);
@@ -121,10 +128,20 @@
   --color-error-fondo: var(--error-fondo);
   --color-error-tinta: var(--error-tinta);
 
+  /* Desactivado, nota informativa y la tinta de la píldora de marca */
+  --color-accion-desactivada: var(--accion-desactivada);
+  --color-tinta-desactivada: var(--tinta-desactivada);
+  --color-nota-fondo: var(--nota-fondo);
+  --color-nota-tinta: var(--nota-tinta);
+  --color-nota-tinta-fuerte: var(--nota-tinta-fuerte);
+  --color-etiqueta-marca-tinta: var(--etiqueta-marca-tinta);
+
   /* Foco y velos */
   --color-foco: var(--foco);
   --color-sobre-foto: var(--tinta-sobre-foto);
   --color-sobre-foto-tenue: var(--tinta-sobre-foto-tenue);
+  --color-sobre-foto-fria: var(--tinta-sobre-foto-fria);
+  --color-acento-sobre-foto: var(--acento-sobre-foto);
   --color-velo: var(--velo);
   --color-velo-suave: var(--velo-suave);
   --color-velo-fuerte: var(--velo-fuerte);
@@ -159,7 +176,25 @@
   --text-cifra-dato-menor: var(--texto-cifra-dato-menor);
   --text-enlace-pie: var(--texto-enlace-pie);
   --text-chip: var(--texto-chip);
+  --text-etiqueta-estado: var(--texto-etiqueta-estado);
+  --text-aviso: var(--texto-aviso);
+  --text-meta: var(--texto-meta);
+  --text-titulo-tarjeta: var(--texto-titulo-tarjeta);
   --text-monograma-pie: var(--texto-monograma-pie);
+  --text-remite: var(--texto-remite);
+  --text-sello: var(--texto-sello);
+  --text-sello-ampersand: var(--texto-sello-ampersand);
+  --text-nota-sobre: var(--texto-nota-sobre);
+  --text-pista-sobre: var(--texto-pista-sobre);
+  --text-naipe-rotulo: var(--texto-naipe-rotulo);
+  --text-naipe-nombre: var(--texto-naipe-nombre);
+  --text-naipe-conector: var(--texto-naipe-conector);
+  --text-naipe-fecha: var(--texto-naipe-fecha);
+  --text-naipe-anno: var(--texto-naipe-anno);
+  --text-naipe-cifra: var(--texto-naipe-cifra);
+  --text-naipe-unidad: var(--texto-naipe-unidad);
+  --text-escena: var(--texto-escena);
+  --text-conector-escena: var(--texto-conector-escena);
   --font-weight-titulo: var(--peso-titulo);
   --font-weight-titulo-menor: var(--peso-titulo-menor);
   --font-weight-cuerpo: var(--peso-cuerpo);
@@ -173,6 +208,8 @@
   --leading-cuerpo: var(--interlineado-cuerpo);
   --leading-hito: var(--interlineado-hito);
   --leading-compacto: var(--interlineado-compacto);
+  --leading-naipe-nombre: var(--interlineado-naipe-nombre);
+  --leading-naipe-anno: var(--interlineado-naipe-anno);
   --tracking-display: var(--espaciado-display);
   --tracking-titulo: var(--espaciado-titulo);
   --tracking-normal: var(--espaciado-normal);
@@ -182,11 +219,17 @@
   --tracking-seccion: var(--espaciado-seccion);
   --tracking-menu: var(--espaciado-menu);
   --tracking-pildora: var(--espaciado-pildora);
+  --tracking-meta: var(--espaciado-meta);
   --tracking-monograma: var(--espaciado-monograma);
   --tracking-pista: var(--espaciado-pista);
   --tracking-enlace-pie: var(--espaciado-enlace-pie);
   --tracking-pie: var(--espaciado-pie);
   --tracking-aviso: var(--espaciado-aviso);
+  --tracking-remite: var(--espaciado-remite);
+  --tracking-volver: var(--espaciado-volver);
+  --tracking-naipe-fecha: var(--espaciado-naipe-fecha);
+  --tracking-naipe-lugar: var(--espaciado-naipe-lugar);
+  --tracking-naipe-unidad: var(--espaciado-naipe-unidad);
 
   /* Espaciado */
   --spacing-linea: var(--espacio-linea);
@@ -214,7 +257,7 @@
   --spacing-acciones: var(--espacio-acciones);
   --spacing-cifras: var(--espacio-cifras);
   --spacing-contador: var(--espacio-contador);
-  --spacing-cita: var(--espacio-cita);
+  --spacing-cita-arriba: var(--espacio-cita);
   --spacing-tarjeta: var(--espacio-tarjeta);
   --spacing-tarjeta-fluida: var(--espacio-tarjeta-fluida);
   --spacing-rejilla-fluida: var(--espacio-rejilla-fluida);
@@ -229,8 +272,45 @@
   --spacing-pie-abajo: var(--espacio-pie-abajo);
   --spacing-chip-y: var(--espacio-chip-y);
   --spacing-chip-x: var(--espacio-chip-x);
+  --spacing-pildora-y: var(--espacio-pildora-y);
+  --spacing-pildora-x: var(--espacio-pildora-x);
+  --spacing-aviso-y: var(--espacio-aviso-y);
+  --spacing-aviso-x: var(--espacio-aviso-x);
+  --spacing-tarjeta-cuerpo: var(--espacio-tarjeta-cuerpo);
+  --spacing-meta: var(--espacio-meta);
   --spacing-chips-arriba: var(--espacio-chips-arriba);
   --spacing-galeria: var(--espacio-galeria);
+  --spacing-sobre-arriba: var(--espacio-sobre-arriba);
+  --spacing-sobre-abajo: var(--espacio-sobre-abajo);
+  --spacing-sangrado-cielo: var(--sangrado-cielo);
+  --spacing-escenario-arriba: var(--espacio-escenario-arriba);
+  --spacing-pista-sobre: var(--espacio-pista-sobre);
+  --spacing-nota-sobre-abajo: var(--espacio-nota-sobre);
+  --spacing-volver-sobre: var(--espacio-volver-sobre);
+  --spacing-remite-abajo: var(--espacio-remite-abajo);
+  --spacing-hueco-boton: var(--espacio-hueco-boton);
+  --spacing-raya-cabecera: var(--ancho-raya-cabecera);
+  --spacing-raya-vertical: var(--alto-raya-vertical);
+  --spacing-sello: var(--lado-sello);
+  --spacing-icono: var(--lado-icono);
+  --spacing-naipe-y: var(--espacio-naipe-y);
+  --spacing-naipe-x: var(--espacio-naipe-x);
+  --spacing-naipe-marco: var(--espacio-naipe-marco);
+  --spacing-naipe-hueco: var(--espacio-naipe-hueco);
+  --spacing-naipe-hueco-rotulo: var(--espacio-naipe-hueco-rotulo);
+  --spacing-naipe-separador: var(--espacio-naipe-separador);
+  --spacing-naipe-hueco-raya: var(--espacio-naipe-hueco-raya);
+  --spacing-naipe-hueco-corto: var(--espacio-naipe-hueco-corto);
+  --spacing-naipe-hueco-cifras: var(--espacio-naipe-hueco-cifras);
+  --spacing-naipe-foto: var(--espacio-naipe-foto);
+  --spacing-naipe-lira: var(--lado-naipe-lira);
+  --spacing-naipe-raya: var(--ancho-naipe-raya);
+  --spacing-naipe-rombo: var(--lado-naipe-rombo);
+  --spacing-titular-escena: var(--espacio-titular-escena);
+  --spacing-cierre-escena: var(--espacio-cierre-escena);
+  --spacing-escena-lado: var(--espacio-escena-lado);
+  --spacing-pista-escena: var(--espacio-pista-escena);
+  --spacing-pista-raya: var(--espacio-pista-raya);
   --spacing-control-grande: var(--alto-control-grande);
   --spacing-fundido-foto: var(--ancho-fundido-foto);
   --spacing-raya-pista: var(--alto-raya-pista);
@@ -268,12 +348,30 @@
   --aspect-foto-tarjeta: var(--proporcion-foto-tarjeta);
   --aspect-foto-tira: var(--proporcion-foto-tira);
   --aspect-hito: var(--proporcion-hito);
+
+  /*
+    EL ANILLO SE COMPONE AQUÍ Y NO EN LA CAPA SEMÁNTICA porque su color cambia
+    con el bloque —marino claro sobre fondo claro, marino oscuro dentro de un
+    bloque inverso— y un primitivo, que es donde viven los literales, no puede
+    depender del tema. Los tres ceros son la definición de un anillo: sin
+    desplazamiento y sin difuminado. Lo único configurable, el grosor y el
+    color, son los dos semánticos.
+  */
+  --shadow-anillo-campo: 0 0 0 var(--anillo-campo-ancho) var(--anillo-campo);
   --shadow-sutil: var(--sombra-sutil);
   --shadow-tarjeta: var(--sombra-tarjeta);
   --shadow-elevada: var(--sombra-elevada);
   --shadow-modal: var(--sombra-modal);
 
-  /* Anchos */
+  /*
+   * Anchos.
+   *
+   * NINGÚN NOMBRE DE AQUÍ PUEDE REPETIRSE EN EL ESPACIADO. `max-w-cita` no
+   * mira primero en `--container-*`: si existe `--spacing-cita`, Tailwind lo
+   * resuelve por ahí y la cita se queda con el ancho de un margen. Pasó —la
+   * cita de la cuenta atrás medía 46 px y la columna apilada 64— y ahora lo
+   * vigila un test unitario.
+   */
   --container-texto: var(--ancho-texto);
   --container-estrecho: var(--ancho-estrecho);
   --container-contenido: var(--ancho-contenido);
@@ -281,10 +379,11 @@
   --container-medio: var(--ancho-medio);
   --container-cuenta: var(--ancho-cuenta);
   --container-playlist: var(--ancho-playlist);
-  --container-cabecera: var(--ancho-cabecera);
+  --container-cabecera-seccion: var(--ancho-cabecera);
   --container-entradilla-centrada: var(--ancho-entradilla-centrada);
   --container-entradilla-llegar: var(--ancho-entradilla-llegar);
   --container-cita: var(--ancho-cita);
+  --container-nota-sobre: var(--ancho-nota-sobre);
 }
 
 /**
@@ -305,16 +404,12 @@
 /**
  * PANTALLA ALTA — el único punto de ruptura que mide el alto
  *
- * Todo el diseño responde al ancho menos una cosa: el Save the Date, que
- * promete caber de una vez sin que nadie haga scroll. Ahí el ancho da igual y
- * lo que manda es cuánto alto hay.
- *
- * Sirve para que un adorno ceda el sitio a la información. La página necesita
- * unos 690 px de contenido y la constelación cuesta 108 más; por debajo de
- * este umbral no caben las dos, y lo que se va es el adorno. Los móviles de
- * hoy pasan de 840 px de alto, así que la constelación se ve donde de verdad
- * se abre esta página — en el móvil, desde WhatsApp— y desaparece en una
- * ventana de escritorio baja, que es donde menos falta hace.
+ * Todo el diseño responde al ancho menos una cosa: la invitación (`/rsvp`),
+ * que enseña la Lira sobre los nombres sólo cuando hay alto de sobra para que
+ * el adorno no empuje el formulario fuera de la primera pantalla. El Save the
+ * Date ya no la usa —su Lira va impresa en la tarjeta y en la solapa—, pero el
+ * criterio sigue siendo el mismo donde se usa: un adorno cede el sitio a la
+ * información.
  *
  * Va como valor directo por lo mismo que los breakpoints de arriba: una media
  * query no acepta `var()`.
@@ -462,6 +557,33 @@
     180px 200px,
     300px 270px,
     220px 250px;
+}
+
+/**
+ * EL CIELO CLARO DEL SAVE THE DATE: el mismo truco en dos tonos de bruma
+ * sobre el fondo de la página, con rejillas un punto más grandes. Y el velo
+ * que lo aclara por el centro, para que el sobre se lea sobre él.
+ */
+@utility cielo-claro {
+  background-image:
+    radial-gradient(circle at 16% 22%, var(--estrella-clara-1) 1.4px, transparent 0),
+    radial-gradient(circle at 68% 12%, var(--estrella-clara-2) 1.1px, transparent 0),
+    radial-gradient(circle at 84% 58%, var(--estrella-clara-1) 1.5px, transparent 0),
+    radial-gradient(circle at 32% 78%, var(--estrella-clara-2) 1.2px, transparent 0);
+  background-size:
+    260px 230px,
+    190px 200px,
+    310px 270px,
+    230px 250px;
+}
+
+@utility velo-cielo {
+  background: radial-gradient(
+    56% 44% at 50% 42%,
+    var(--velo-cielo-centro) 0%,
+    var(--velo-cielo-medio) 58%,
+    var(--velo-cielo-borde) 100%
+  );
 }
 
 /**

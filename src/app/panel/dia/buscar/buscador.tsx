@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { CampoTexto } from "@/components/ui/campo";
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import type { InvitadoDelDia } from "@/lib/bbdd/dia";
 import { t } from "@/lib/copy";
 import { normalizar } from "@/lib/texto";
@@ -149,9 +150,9 @@ function Resultado({ invitado }: { invitado: InvitadoDelDia }) {
               único de esta ficha que, si se pasa por alto, manda a alguien al
               hospital.
             */}
-            <dd className="rounded-etiqueta bg-aviso-fondo px-interno-compacto py-linea text-aviso-tinta">
+            <EtiquetaEstado como="dd" variante="aviso" tamano="compacta">
               {invitado.alergias}
-            </dd>
+            </EtiquetaEstado>
           </div>
         ) : null}
       </dl>

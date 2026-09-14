@@ -1,24 +1,61 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import copy from "../../content/copy.es.json";
 import { fijarSeccionVisible } from "./utiles/secciones";
-import { NOMBRE_FICHERO_CALENDARIO, RUTA_CALENDARIO } from "../../src/config/constants";
+import {
+  NOMBRE_FICHERO_CALENDARIO,
+  PARAMETRO_SOBRE_ABIERTO,
+  RUTA_CALENDARIO,
+} from "../../src/config/constants";
 
 /**
  * BODA-30 · Reserva la fecha
+ * BODA-121 · El sobre de la entrega
  *
- * Lo primero que se manda a los invitados. Se comprueba lo mismo de siempre —
- * que los datos salen de la base y no de un literal— y una cosa más que este
- * ticket sí exige: que la página **deje de existir** si se apaga su fila de
- * `secciones_landing`.
+ * Lo primero que se manda a los invitados: un sobre cerrado con un sello que,
+ * al tocarlo, suelta la foto y la tarjeta con quién, cuándo y dónde. Se
+ * comprueba lo de siempre —que los datos salen de la base y no de un literal—
+ * y lo que la pieza promete: que se abre con el dedo, con el teclado y sin
+ * JavaScript; que se puede volver a cerrar; que cabe en un móvil; y que la
+ * página **deja de existir** si se apaga su fila de `secciones_landing`.
  *
- * Ese caso de error se prueba de verdad, apagando el interruptor contra la
+ * Ese último caso se prueba de verdad, apagando el interruptor contra la
  * base real y comprobando el 404. Un test que solo mirara el copy no probaría
  * nada: la página seguiría en pie con la sección apagada y el test pasaría.
  */
 
 const SECCION = "reserva_la_fecha";
 const RUTA = "/reserva-la-fecha";
+
+/** Un móvil de hoy: donde se abre esta página casi siempre. */
+const MOVIL = { width: 390, height: 844 };
+
+const pieza = (page: Page) => page.locator(".pieza-sobre");
+const sello = (page: Page) => page.getByRole("button", { name: copy.saveTheDate.abrir });
+const tarjeta = (page: Page) => page.locator(".naipe-tarjeta");
+
+/**
+ * Toca el sello con el componente ya despierto y espera a la última fase.
+ *
+ * Se espera a `data-hidratado` a propósito: antes de hidratar, el sello manda
+ * el formulario y la página se recarga abierta — que es correcto, pero no es
+ * lo que se está probando aquí. Eso tiene su propio bloque más abajo.
+ */
+async function abrirElSobre(page: Page) {
+  await expect(pieza(page)).toHaveAttribute("data-hidratado", "");
+  await sello(page).click();
+  await expect(pieza(page)).toHaveAttribute("data-fuera", "");
+}
+
+/** Cuánto ocupa el documento frente a la ventana, para saber si hay scroll. */
+function medir(page: Page) {
+  return page.evaluate(() => ({
+    alto: document.documentElement.scrollHeight,
+    ventana: window.innerHeight,
+    anchoDocumento: document.documentElement.scrollWidth,
+    anchoVentana: window.innerWidth,
+  }));
+}
 
 /**
  * TODO EL FICHERO EN SERIE, y no solo el bloque que toca la base de datos.
@@ -37,38 +74,122 @@ test.describe("Reserva la fecha", () => {
     await page.goto(RUTA);
   });
 
-  test("responde y muestra los nombres de la base de datos", async ({ page }) => {
+  test("llega cerrado: el sello es un botón y la tarjeta espera dentro", async ({ page }) => {
+    // `exact`: la nota del pie también dice «guardad el día», en minúscula.
+    await expect(page.getByText(copy.saveTheDate.cabecera, { exact: true })).toBeVisible();
+    await expect(sello(page)).toBeVisible();
+    await expect(sello(page)).toBeEnabled();
+    await expect(page.getByText(copy.saveTheDate.pista)).toBeVisible();
+
+    // Lo que no se ve no se alcanza: ni la tarjeta ni los botones del pie.
+    await expect(tarjeta(page)).toHaveAttribute("inert", "");
+    await expect(page.locator(".pie-sobre")).toHaveAttribute("inert", "");
+    await expect(tarjeta(page)).toHaveCSS("opacity", "0");
+    await expect(pieza(page)).not.toHaveAttribute("data-abierto", /.*/);
+  });
+
+  test("al tocar el sello se abre y se lee la tarjeta con los datos de la base", async ({
+    page,
+  }) => {
+    await abrirElSobre(page);
+
+    // El prefijo (DES) solo existe en el seed: si se ve, viene de la base.
     const titulo = page.getByRole("heading", { level: 1 });
     await expect(titulo).toBeVisible();
-    // El prefijo (DES) solo existe en el seed: si se ve, viene de la base.
     await expect(titulo).toContainText("(DES)");
-  });
 
-  test("muestra la fecha y el lugar de la base de datos", async ({ page }) => {
+    // La fecha en dos líneas: «Sábado 26 de junio» y el año debajo.
     const fecha = page.locator("time");
     await expect(fecha).toBeVisible();
-    // `datetime` en ISO: es lo que leen los lectores de pantalla y lo que
-    // usará el `.ics` de BODA-31.
     await expect(fecha).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T/);
+    await expect(fecha).toHaveText(/^[A-ZÁÉÍÓÚ][a-záéíóúñ]+ \d{1,2} de [a-záéíóú]+$/);
+    await expect(tarjeta(page).getByText(/^\d{4}$/)).toBeVisible();
 
     await expect(page.getByText(/\(DES\).*[Ff]inca/).first()).toBeVisible();
+    await expect(page.getByRole("timer")).toBeVisible();
+
+    // El pie: la nota, los dos botones y la forma de cerrarlo.
+    await expect(page.getByText(copy.saveTheDate.nota)).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: copy.saveTheDate.anadirCalendario }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: copy.saveTheDate.verLaWeb })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: copy.saveTheDate.volverAlSobre }),
+    ).toBeVisible();
+
+    // El sobre se ha ido y no se puede volver a tocar; el foco está en la tarjeta.
+    await expect(page.locator(".sobre")).toHaveAttribute("inert", "");
+    await expect(tarjeta(page)).toBeFocused();
   });
 
-  test("cabe en una pantalla de móvil sin desplazarse", async ({ page }) => {
-    const desbordamiento = await page.evaluate(() => ({
-      alto: document.documentElement.scrollHeight,
-      ventana: window.innerHeight,
-      anchoDocumento: document.documentElement.scrollWidth,
-      anchoVentana: window.innerWidth,
-    }));
+  test("la cuenta atrás de la tarjeta va en vivo", async ({ page }) => {
+    await abrirElSobre(page);
+
+    const contador = page.getByRole("timer");
+    const antes = await contador.innerText();
+    await expect.poll(() => contador.innerText(), { timeout: 3000 }).not.toBe(antes);
+  });
+
+  test("se abre con el teclado, el foco sigue a la pieza y se vuelve a cerrar", async ({
+    page,
+  }) => {
+    await expect(pieza(page)).toHaveAttribute("data-hidratado", "");
+    await sello(page).focus();
+    await page.keyboard.press("Enter");
+    await expect(pieza(page)).toHaveAttribute("data-fuera", "");
+    await expect(tarjeta(page)).toBeFocused();
+
+    await page.getByRole("button", { name: copy.saveTheDate.volverAlSobre }).click();
+
+    await expect(pieza(page)).not.toHaveAttribute("data-abierto", /.*/);
+    await expect(sello(page)).toBeFocused();
+    await expect(tarjeta(page)).toHaveAttribute("inert", "");
+    await expect(page.locator(".pie-sobre")).toHaveAttribute("inert", "");
+  });
+
+  test("cabe en la pantalla sin desplazarse, cerrado en cualquier ventana", async ({
+    page,
+  }) => {
+    const cerrado = await medir(page);
 
     // Un píxel de margen por el redondeo de los navegadores.
-    expect(desbordamiento.alto).toBeLessThanOrEqual(desbordamiento.ventana + 1);
+    expect(cerrado.alto).toBeLessThanOrEqual(cerrado.ventana + 1);
     // Y nunca scroll horizontal, ni en el móvil más estrecho.
-    expect(desbordamiento.anchoDocumento).toBeLessThanOrEqual(desbordamiento.anchoVentana + 1);
+    expect(cerrado.anchoDocumento).toBeLessThanOrEqual(cerrado.anchoVentana + 1);
+  });
+
+  /**
+   * Abierto, la página crece por abajo con el pie —la entrega también—, así
+   * que lo que se promete es otra cosa: que la tarjeta se lee entera sin tocar
+   * nada, que el pie empieza a la vista, y que nunca hay scroll horizontal.
+   */
+  test("y abierto, la tarjeta se lee entera en un móvil de hoy", async ({ page }) => {
+    await page.setViewportSize(MOVIL);
+    await page.goto(RUTA);
+    await abrirElSobre(page);
+    await expect(
+      page.getByRole("button", { name: copy.saveTheDate.volverAlSobre }),
+    ).toBeVisible();
+
+    await expect
+      .poll(async () => {
+        const naipe = await tarjeta(page).boundingBox();
+        const nota = await page.getByText(copy.saveTheDate.nota).boundingBox();
+        const ventana = page.viewportSize()!;
+        return {
+          tarjetaEntera: !!naipe && naipe.y >= 0 && naipe.y + naipe.height <= ventana.height,
+          notaALaVista: !!nota && nota.y < ventana.height,
+        };
+      })
+      .toEqual({ tarjetaEntera: true, notaALaVista: true });
+
+    const abierto = await medir(page);
+    expect(abierto.anchoDocumento).toBeLessThanOrEqual(abierto.anchoVentana + 1);
   });
 
   test("desde aquí se llega a la web completa", async ({ page }) => {
+    await abrirElSobre(page);
     await page.getByRole("link", { name: copy.saveTheDate.verLaWeb }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.locator("#portada")).toBeVisible();
@@ -82,12 +203,90 @@ test.describe("Reserva la fecha", () => {
   });
 
   test("el botón de calendario apunta al fichero y se descarga", async ({ page }) => {
+    await abrirElSobre(page);
     const boton = page.getByRole("link", { name: copy.saveTheDate.anadirCalendario });
 
     await expect(boton).toBeVisible();
     await expect(boton).toHaveAttribute("href", RUTA_CALENDARIO);
     // `download` para que el navegador lo guarde en vez de intentar pintarlo.
     await expect(boton).toHaveAttribute("download", "");
+  });
+});
+
+/**
+ * CASO DE ERROR · Sin JavaScript el sobre se abre igual.
+ *
+ * El sello es el botón de un formulario GET: sin script —o antes de que
+ * llegue, en la conexión del pueblo— la pulsación recarga la página con
+ * `?abierto` y el servidor la pinta ya abierta. Nunca un botón que no hace
+ * nada.
+ */
+test.describe("Reserva la fecha sin JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("el sello abre la invitación recargando la página", async ({ page }) => {
+    await page.goto(RUTA);
+    await expect(sello(page)).toBeVisible();
+    await expect(tarjeta(page)).toHaveAttribute("inert", "");
+
+    /*
+      SE PULSA CON `force`, Y SÓLO EN ESTE TEST. Con el JavaScript de la página
+      apagado, las comprobaciones que Playwright hace antes de pulsar —que el
+      elemento esté quieto, que sea él quien recibe el puntero— no llegan a
+      cerrarse: se quedan esperando a que el escenario, que entra con una
+      escala de 1,3 s, «se estabilice», y agotan el tiempo entero.
+
+      No se afloja nada que este fichero no compruebe ya. Que el sello se ve y
+      que se pulsa de la forma normal lo afirman los tests de arriba, que corren
+      en los dos navegadores. Lo que se comprueba AQUÍ es otra cosa —que el
+      formulario GET recarga la página con el parámetro puesto, sin una línea de
+      script— y para eso el estado de la animación da igual.
+    */
+    await sello(page).click({ force: true });
+
+    await expect(page).toHaveURL(new RegExp(`\\?${PARAMETRO_SOBRE_ABIERTO}=1`));
+    await expect(pieza(page)).toHaveAttribute("data-fuera", "");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("(DES)");
+    await expect(page.getByRole("timer")).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: copy.saveTheDate.anadirCalendario }),
+    ).toBeVisible();
+
+    // Y volver a cerrarlo es cargar la página sin el parámetro.
+    await page
+      .getByRole("button", { name: copy.saveTheDate.volverAlSobre })
+      .click({ force: true });
+    await expect(page).not.toHaveURL(new RegExp(PARAMETRO_SOBRE_ABIERTO));
+    await expect(sello(page)).toBeVisible();
+    await expect(tarjeta(page)).toHaveAttribute("inert", "");
+  });
+});
+
+/**
+ * CASO DE ERROR · Con movimiento reducido no hay coreografía.
+ *
+ * Ni bucles —el sello no late, la pista no flota, el cielo no deriva— ni dos
+ * segundos de espera: al tocar el sello se salta a la última fase.
+ */
+test.describe("Reserva la fecha con movimiento reducido", () => {
+  test.use({ contextOptions: { reducedMotion: "reduce" } });
+
+  test("nada se mueve en bucle y el sobre se abre de golpe", async ({ page }) => {
+    await page.goto(RUTA);
+
+    const enBucle = await page.evaluate(
+      () =>
+        document
+          .getAnimations()
+          .filter((animacion) => animacion.effect?.getTiming().iterations === Infinity).length,
+    );
+    expect(enBucle).toBe(0);
+
+    await expect(pieza(page)).toHaveAttribute("data-hidratado", "");
+    await sello(page).click();
+    // Muy por debajo de los 1900 ms de la apertura animada.
+    await expect(pieza(page)).toHaveAttribute("data-fuera", "", { timeout: 1000 });
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 });
 
@@ -188,6 +387,7 @@ test.describe("Reserva la fecha apagada", () => {
 
     const respuesta = await page.goto(RUTA);
     expect(respuesta?.status()).toBe(200);
+    await expect(sello(page)).toBeVisible();
     await expect(page.getByRole("heading", { level: 1 })).toContainText("(DES)");
   });
 });
