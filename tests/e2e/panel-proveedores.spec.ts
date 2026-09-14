@@ -607,6 +607,23 @@ test.describe("El embudo del proveedor", () => {
     await page
       .getByRole("button", { name: copy.panel.proveedores.confirmarContratado })
       .click();
+
+    /*
+      POR EL AYUDANTE, COMO LOS OTROS DIEZ ENVÍOS DE ESTE FICHERO.
+
+      Este era el único sitio del spec que afirmaba sobre la pantalla justo
+      después de un envío sin pasar por `esperarEstado`, y por eso era el único
+      expuesto a #126: la acción responde con su redirección, el enrutador de
+      cliente no la aplica, la pestaña se queda en la pantalla de confirmar y
+      el aviso —que se pinta desde el `?estado=` del destino— no llega a
+      existir. `toBeVisible` reintenta, pero reintenta sobre una página que ya
+      no va a cambiar sola.
+
+      El ayudante afirma el destino que DEVOLVIÓ la acción, que es el dato de
+      verdad, y va a él. No se afloja nada: el aviso se sigue exigiendo, y
+      además se exige que el servidor haya decidido «estado-cambiado».
+    */
+    await esperarEstado(page, "estado-cambiado");
     await expect(page.getByText(copy.panel.proveedores.avisoEstadoCambiado)).toBeVisible();
 
     const [contratado] = await conBase(
