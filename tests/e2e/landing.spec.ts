@@ -1006,20 +1006,6 @@ test.describe("El movimiento es el de la entrega", () => {
       .toBeLessThan(0);
   });
 
-  test("las fichas de la playlist entran con el pop elástico", async ({ page }) => {
-    await page.goto("/");
-    const ficha = await page
-      .locator("#playlist ul > li")
-      .first()
-      .evaluate((nodo) => ({
-        nombre: getComputedStyle(nodo).animationName,
-        curva: getComputedStyle(nodo).animationTimingFunction,
-      }));
-    expect(ficha.nombre).toBe("pop");
-    // La curva con muelle: cubic-bezier(.2, 1.3, .4, 1), que sobrepasa el 1.
-    expect(ficha.curva).toBe("cubic-bezier(0.2, 1.3, 0.4, 1)");
-  });
-
   test("el cielo de la cuenta atrás deriva en 44 s exactos", async ({ page }) => {
     await page.goto("/");
     const cielo = await page
@@ -1069,7 +1055,9 @@ test.describe("El movimiento es el de la entrega", () => {
   /**
    * CASO DE ERROR. Con «movimiento reducido», los retardos de la portada se
    * anulan: si no, «bajad» tardaría 1,6 s en aparecer aunque su fundido durase
-   * 100 ms, y las fichas y las fotos tienen que estar a la vista sin más.
+   * 100 ms, y los reveals tienen que estar a la vista sin más. El pop de las
+   * fichas de la playlist se comprueba en `playlist.spec.ts`, que es donde se
+   * apunta una canción de verdad: el seed no trae ninguna.
    */
   test("con movimiento reducido nada espera ni se queda oculto", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -1086,14 +1074,16 @@ test.describe("El movimiento es el de la entrega", () => {
       ];
       return {
         retardos: retardos.map((n) => getComputedStyle(n).animationDelay),
-        ficha: getComputedStyle(document.querySelector("#playlist ul > li")!).animationName,
+        reveal: getComputedStyle(
+          document.querySelector("#cuenta-atras .animacion-cortina-al-ver")!,
+        ).animationName,
         pista: getComputedStyle(document.querySelector("#portada .animacion-flotar")!)
           .animationName,
       };
     });
 
     expect(new Set(estado.retardos)).toEqual(new Set(["0s"]));
-    expect(estado.ficha).toBe("aparecer");
+    expect(estado.reveal).toBe("aparecer");
     expect(estado.pista).toBe("none");
 
     // El fundido dura 100 ms: se espera a que acabe, no se mira a mitad.

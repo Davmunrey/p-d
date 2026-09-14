@@ -148,6 +148,7 @@ test.describe("La playlist colaborativa", () => {
    */
   test("con la invitación abierta se apunta una canción, sin JavaScript", async ({
     browser,
+    page,
   }) => {
     const { token, grupoId } = await crearGrupo("feliz");
     const contexto = await conInvitacionAbierta(browser, token, false);
@@ -165,6 +166,20 @@ test.describe("La playlist colaborativa", () => {
 
     // Lo que ve quien la ha apuntado: su canción, ya en la lista.
     await expect(pagina.locator("#playlist").getByText(cancion)).toBeVisible();
+
+    // Y entra con el pop elástico de la entrega (BODA-120): la curva con
+    // muelle, cubic-bezier(.2, 1.3, .4, 1), que sobrepasa el 1. Se mira desde
+    // una pestaña normal: el contexto de la invitación reduce el movimiento.
+    await page.goto("/");
+    const ficha = await page
+      .locator("#playlist ul > li")
+      .filter({ hasText: cancion })
+      .evaluate((nodo) => ({
+        nombre: getComputedStyle(nodo).animationName,
+        curva: getComputedStyle(nodo).animationTimingFunction,
+      }));
+    expect(ficha.nombre).toBe("pop");
+    expect(ficha.curva).toBe("cubic-bezier(0.2, 1.3, 0.4, 1)");
 
     // Y lo que importa de verdad: que esté escrita, y atribuida a su grupo.
     const [fila] = await conBase(
