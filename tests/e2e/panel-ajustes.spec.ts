@@ -178,4 +178,58 @@ test.describe("Ajustes de la boda", () => {
       copy.panel.ajustes.guardado,
     );
   });
+
+  /**
+   * BODA-114 y BODA-116 · La ciudad y los avisos del programa se editan aquí
+   * y se ven en la landing. Se restauran al acabar: el seed los deja puestos
+   * y el resto de la suite cuenta con ellos.
+   */
+  test("la ciudad y los avisos del programa se guardan y salen en la landing", async ({
+    page,
+  }) => {
+    const ciudad = page.getByLabel(copy.panel.ajustes.ciudad);
+    const avisos = page.getByLabel(copy.panel.ajustes.avisosPrograma);
+    const ciudadOriginal = await ciudad.inputValue();
+    const avisosOriginales = await avisos.inputValue();
+
+    await ciudad.fill("(DES) Astorga");
+    await avisos.fill("(DES) Aviso uno\n\n(DES) Aviso dos\n");
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+    await expect(page.locator("main").getByRole("status")).toContainText(
+      copy.panel.ajustes.guardado,
+    );
+
+    await page.goto("/");
+    await expect(page.locator("#portada p").first()).toContainText("(DES) Astorga", {
+      ignoreCase: true,
+    });
+    // Las líneas en blanco no cuentan: dos avisos, no cuatro.
+    await expect(page.locator("#programa ol + ul li")).toHaveCount(2);
+    await expect(page.locator("#programa ol + ul")).toContainText("(DES) Aviso dos");
+
+    await page.goto(RUTA_AJUSTES);
+    await page.getByLabel(copy.panel.ajustes.ciudad).fill(ciudadOriginal);
+    await page.getByLabel(copy.panel.ajustes.avisosPrograma).fill(avisosOriginales);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+    await expect(page.locator("main").getByRole("status")).toContainText(
+      copy.panel.ajustes.guardado,
+    );
+  });
+
+  /**
+   * CASO DE ERROR. Siete avisos no caben en una fila de etiquetas: se rechazan
+   * antes de llegar a la base, con un mensaje en castellano, y no se guarda
+   * nada de lo demás.
+   */
+  test("más de seis avisos se rechazan y no se guarda nada", async ({ page }) => {
+    const avisos = page.getByLabel(copy.panel.ajustes.avisosPrograma);
+    const antes = await avisos.inputValue();
+
+    await avisos.fill(["a", "b", "c", "d", "e", "f", "g"].map((l) => `(DES) ${l}`).join("\n"));
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+
+    await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorAvisos);
+    await page.goto(RUTA_AJUSTES);
+    await expect(page.getByLabel(copy.panel.ajustes.avisosPrograma)).toHaveValue(antes);
+  });
 });

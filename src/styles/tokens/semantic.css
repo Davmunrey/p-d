@@ -234,6 +234,7 @@
   --espaciado-pista: var(--letter-spacing-pista);
   --espaciado-enlace-pie: var(--letter-spacing-enlace-pie);
   --espaciado-pie: var(--letter-spacing-pie);
+  --espaciado-aviso: var(--letter-spacing-suave);
 
   /* --- Espaciado semántico ------------------------------------------- */
   --espacio-cero: var(--space-0);
@@ -278,6 +279,7 @@
   --espacio-chip-y: var(--space-chip-y);
   --espacio-chip-x: var(--space-chip-x);
   --espacio-chips-arriba: var(--space-chips-arriba);
+  --espacio-galeria: var(--space-galeria);
   --alto-control: var(--size-control);
   --alto-control-compacto: var(--size-control-compacto);
   --alto-campo: var(--size-campo);
@@ -287,6 +289,7 @@
   --ancho-tarjeta-minima: var(--size-tarjeta-minima);
   --ancho-consejo-minimo: var(--size-consejo-minimo);
   --ancho-columna-llegar: var(--size-columna-llegar);
+  --ancho-foto-tira: var(--size-foto-tira);
   --ancho-cifra: var(--size-cifra);
   --lado-casilla: var(--size-casilla);
   --lado-miniatura: var(--size-miniatura);
@@ -320,8 +323,10 @@
    * la columna de al lado colgando. */
   --proporcion-mapa: var(--ratio-mapa);
 
-  /* La foto que corona una tarjeta de hotel: 4/3, la proporción de galería. */
+  /* La foto que corona una tarjeta de hotel y los huecos de la tira de fotos:
+   * 4/3, la proporción de galería del catálogo. */
   --proporcion-foto-tarjeta: var(--ratio-paisaje);
+  --proporcion-foto-tira: var(--ratio-paisaje);
 
   /* La foto de un hito de «nuestra historia». Cuadrada porque las tres van en
    * fila y son fotos de origen distinto —un carrete, un móvil, una captura—:

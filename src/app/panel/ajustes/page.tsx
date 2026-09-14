@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 
 import { Boton } from "@/components/ui/boton";
-import { CampoTexto } from "@/components/ui/campo";
+import { CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO } from "@/config/constants";
+import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO, TOPE_AVISOS_PROGRAMA } from "@/config/constants";
 import { accesoActual } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import { t } from "@/lib/copy";
@@ -38,6 +38,7 @@ const AVISOS: Record<string, { texto: string; error: boolean }> = {
   coordenadas: { texto: t("panel.ajustes.errorCoordenadas"), error: true },
   hashtag: { texto: t("panel.ajustes.errorHashtag"), error: true },
   correo: { texto: t("panel.ajustes.errorCorreo"), error: true },
+  avisos: { texto: t("panel.ajustes.errorAvisos"), error: true },
   "sin-permiso": { texto: t("panel.ajustes.errorSinPermiso"), error: true },
   error: { texto: t("panel.ajustes.errorGuardar"), error: true },
 };
@@ -52,6 +53,8 @@ interface Configuracion {
   fecha_limite_rsvp: string;
   zona_horaria: string;
   frase_paisaje: string | null;
+  ciudad_ceremonia: string | null;
+  avisos_programa: string[] | null;
   lugar_ceremonia: string | null;
   direccion_ceremonia: string | null;
   latitud_ceremonia: number | null;
@@ -95,7 +98,8 @@ export default async function PaginaAjustes({
       "nombre_novia, nombre_novio, hashtag, correo_contacto, fecha_hora_ceremonia, " +
         "fecha_hora_banquete, fecha_limite_rsvp, zona_horaria, lugar_ceremonia, " +
         "direccion_ceremonia, latitud_ceremonia, longitud_ceremonia, lugar_banquete, " +
-        "direccion_banquete, latitud_banquete, longitud_banquete, frase_paisaje",
+        "direccion_banquete, latitud_banquete, longitud_banquete, frase_paisaje, " +
+        "ciudad_ceremonia, avisos_programa",
     )
     .maybeSingle<Configuracion>();
 
@@ -179,6 +183,32 @@ export default async function PaginaAjustes({
             name="direccion_ceremonia"
             etiqueta={t("panel.ajustes.direccionCeremonia")}
             defaultValue={data?.direccion_ceremonia ?? ""}
+            disabled={soloLectura}
+          />
+          {/*
+            LA CIUDAD VA APARTE DE LA DIRECCIÓN: la entrega dice «Nos casamos en
+            León» en la portada y «tres hoteles de León» en el alojamiento, y de
+            una dirección postal no se saca «León» sin adivinar.
+          */}
+          <CampoTexto
+            name="ciudad_ceremonia"
+            etiqueta={t("panel.ajustes.ciudad")}
+            ayuda={t("panel.ajustes.ciudadAyuda")}
+            defaultValue={data?.ciudad_ceremonia ?? ""}
+            maxLength={80}
+            disabled={soloLectura}
+          />
+          {/*
+            LOS AVISOS DEL PROGRAMA SON CONTENIDO DE ESTA BODA —«césped y grava:
+            cuidado con los tacones»— y no rótulos de la interfaz: por eso se
+            editan aquí y no viven en el fichero de copys. Uno por línea.
+          */}
+          <CampoTextoLargo
+            name="avisos_programa"
+            etiqueta={t("panel.ajustes.avisosPrograma")}
+            ayuda={t("panel.ajustes.avisosProgramaAyuda")}
+            defaultValue={(data?.avisos_programa ?? []).join("\n")}
+            rows={TOPE_AVISOS_PROGRAMA}
             disabled={soloLectura}
           />
           {/*

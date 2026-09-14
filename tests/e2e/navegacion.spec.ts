@@ -49,10 +49,11 @@ test.describe("Navegación", () => {
       sólo presencia dejaría pasar justo lo que se quería arreglar: que se
       cuelen otras doce.
     */
+    // En el orden de la entrega (BODA-114): alojamiento antes que cómo llegar.
     expect(rotulos).toEqual([
       copy.navegacion.secciones.programa,
-      copy.navegacion.secciones.transporte,
       copy.navegacion.secciones.alojamiento,
+      copy.navegacion.secciones.transporte,
       copy.navegacion.secciones.rsvp,
     ]);
   });
@@ -95,18 +96,19 @@ test.describe("Navegación", () => {
 
   test("el orden del menú es el que manda la base de datos", async ({ page }) => {
     /*
-      `orden` en la tabla pone programa (35) antes que transporte (50) y éste
-      antes que alojamiento (60), y `rsvp` (80) al final. El menú respeta ese
-      orden en vez del que tenga escrito `SECCIONES_EN_MENU`: quien manda sigue
-      siendo la base. Si alguien reordena el JSX, esto se cae.
+      `orden` en la tabla pone programa (35) antes que alojamiento (50) y éste
+      antes que transporte (60) —el orden de la entrega, BODA-114— y `rsvp`
+      (80) al final. El menú respeta ese orden en vez del que tenga escrito
+      `SECCIONES_EN_MENU`: quien manda sigue siendo la base. Si alguien
+      reordena el JSX, esto se cae.
     */
     const rotulos = (await menu(page).getByRole("link").allTextContents()).map((r) => r.trim());
 
     expect(rotulos.indexOf(copy.navegacion.secciones.programa)).toBeLessThan(
-      rotulos.indexOf(copy.navegacion.secciones.transporte),
-    );
-    expect(rotulos.indexOf(copy.navegacion.secciones.transporte)).toBeLessThan(
       rotulos.indexOf(copy.navegacion.secciones.alojamiento),
+    );
+    expect(rotulos.indexOf(copy.navegacion.secciones.alojamiento)).toBeLessThan(
+      rotulos.indexOf(copy.navegacion.secciones.transporte),
     );
     expect(rotulos.at(-1), "confirmar cierra la barra: es el botón").toBe(
       copy.navegacion.secciones.rsvp,

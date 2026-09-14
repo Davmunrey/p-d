@@ -7,6 +7,7 @@ import { CampoCopiable } from "@/components/ui/campo-copiable";
 import { Etiqueta } from "@/components/ui/tipografia";
 import { RUTA_CUENTA_REGALOS } from "@/config/constants";
 import { t } from "@/lib/copy";
+import { formatearIban } from "@/lib/iban";
 
 /**
  * BODA-28 · EL NÚMERO DE CUENTA SE REVELA AL PULSAR
@@ -61,6 +62,7 @@ export function CuentaRegalos() {
         ) : null}
         <CampoCopiable
           valor={estado.cuenta.iban}
+          valorMostrado={formatearIban(estado.cuenta.iban)}
           etiqueta={t("regalos.etiquetaCuenta")}
           textoCopiar={t("regalos.copiar")}
           textoCopiado={t("regalos.copiado")}

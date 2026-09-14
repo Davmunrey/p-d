@@ -34,6 +34,14 @@ export interface ConfiguracionBoda {
   longitud: number | null;
   /** La frase de la sección de paisaje. `null` mientras no se haya escrito. */
   frasePaisaje: string | null;
+  /**
+   * La ciudad de la boda: «Nos casamos en León». Es un dato aparte de la
+   * dirección porque la entrega los usa en sitios distintos —la ciudad en la
+   * portada y en las frases, la dirección en «cómo llegar»—.
+   */
+  ciudadCeremonia: string | null;
+  /** Las etiquetas al pie del programa. Vacío si no hay ninguna. */
+  avisosPrograma: string[];
   correoContacto: string | null;
   hashtag: string | null;
 }
@@ -161,6 +169,8 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
         direccion_ceremonia: string | null;
         lugar_banquete: string | null;
         frase_paisaje: string | null;
+        ciudad_ceremonia: string | null;
+        avisos_programa: string[] | null;
         latitud_ceremonia: string | null;
         longitud_ceremonia: string | null;
         correo_contacto: string | null;
@@ -171,7 +181,7 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
         nombre_novia, nombre_novio, fecha_hora_ceremonia, fecha_hora_banquete, fecha_limite_rsvp,
         lugar_ceremonia, direccion_ceremonia, lugar_banquete,
         latitud_ceremonia, longitud_ceremonia, correo_contacto, hashtag,
-        frase_paisaje
+        frase_paisaje, ciudad_ceremonia, avisos_programa
       from public.v_configuracion_publica
       limit 1
     `,
@@ -190,6 +200,8 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
     direccionCeremonia: fila.direccion_ceremonia,
     lugarBanquete: fila.lugar_banquete,
     frasePaisaje: fila.frase_paisaje,
+    ciudadCeremonia: fila.ciudad_ceremonia,
+    avisosPrograma: fila.avisos_programa ?? [],
     latitud: fila.latitud_ceremonia === null ? null : Number(fila.latitud_ceremonia),
     longitud: fila.longitud_ceremonia === null ? null : Number(fila.longitud_ceremonia),
     correoContacto: fila.correo_contacto,

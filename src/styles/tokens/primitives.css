@@ -264,6 +264,9 @@
   --letter-spacing-pista: 0.34em;
   --letter-spacing-enlace-pie: 0.1em;
 
+  /* Las etiquetas de aviso al pie del programa: apenas abiertas. */
+  --letter-spacing-suave: 0.06em;
+
   /* La línea de fecha y lugar del pie: la versalita más abierta de la pieza. */
   --letter-spacing-pie: 0.36em;
 
@@ -336,6 +339,7 @@
   --space-chip-y: 0.6875rem;
   --space-chip-x: 1.125rem;
   --space-chips-arriba: 1.875rem;
+  --space-galeria: clamp(0.875rem, 2vw, 1.625rem);
 
   /* Cuánto viaja un elemento que entra deslizando desde un lado. */
   --space-reveal-lateral: 1.625rem;
@@ -358,6 +362,9 @@
   --size-tarjeta-minima: 17.5rem;
   --size-consejo-minimo: 15rem;
   --size-columna-llegar: 21.25rem;
+
+  /* Ancho mínimo de un hueco de la tira de fotos (260 px). */
+  --size-foto-tira: 16.25rem;
 
   /* Ancho mínimo de una cifra grande, para que la cuenta atrás no baile. */
   --size-cifra: 5.5rem;

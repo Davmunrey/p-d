@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO, RUTA_AJUSTES } from "@/config/constants";
+import {
+  LONGITUD_MAXIMA_AVISO_PROGRAMA,
+  LONGITUD_MINIMA_NOMBRE,
+  RUTA_ACCESO,
+  RUTA_AJUSTES,
+  TOPE_AVISOS_PROGRAMA,
+} from "@/config/constants";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 import { instanteDesdeLocal } from "@/lib/zona-horaria";
 
@@ -37,6 +43,7 @@ type Estado =
   | "coordenadas"
   | "hashtag"
   | "correo"
+  | "avisos"
   | "sin-permiso"
   | "error";
 
@@ -51,6 +58,24 @@ function texto(datos: FormData, campo: string): string {
 /** Un campo de texto vacío es `null` en la base, no la cadena vacía. */
 function textoONulo(datos: FormData, campo: string): string | null {
   return texto(datos, campo) || null;
+}
+
+/**
+ * Los avisos del programa, uno por línea. Las líneas en blanco se ignoran —son
+ * lo que deja un intro de más— y lo que queda tiene que caber: como mucho
+ * `TOPE_AVISOS_PROGRAMA`, y ninguno más largo de lo que cabe en una etiqueta.
+ * Devuelve `null` si no hay ninguno, que es como la base dice «sin avisos».
+ */
+function avisosDelPrograma(datos: FormData): string[] | null | undefined {
+  const lineas = texto(datos, "avisos_programa")
+    .split(/\r?\n/)
+    .map((linea) => linea.trim())
+    .filter(Boolean);
+  if (lineas.length === 0) return null;
+  const caben =
+    lineas.length <= TOPE_AVISOS_PROGRAMA &&
+    lineas.every((linea) => linea.length <= LONGITUD_MAXIMA_AVISO_PROGRAMA);
+  return caben ? lineas : undefined;
 }
 
 /**
@@ -131,6 +156,9 @@ export async function guardarAjustes(datos: FormData) {
     // fácil de cometer copiando la fecha de arriba.
     if (limite.getTime() > ceremonia.getTime()) volver("limite-tarde");
 
+    const avisos = avisosDelPrograma(datos);
+    if (avisos === undefined) volver("avisos");
+
     const banqueteTexto = texto(datos, "fecha_hora_banquete");
     const banquete = banqueteTexto ? instanteDesdeLocal(banqueteTexto, zona) : null;
     if (banqueteTexto && !banquete) volver("banquete-antes");
@@ -148,6 +176,8 @@ export async function guardarAjustes(datos: FormData) {
           fecha_hora_banquete: banquete ? banquete.toISOString() : null,
           fecha_limite_rsvp: limite.toISOString(),
           frase_paisaje: textoONulo(datos, "frase_paisaje"),
+          ciudad_ceremonia: textoONulo(datos, "ciudad_ceremonia"),
+          avisos_programa: avisos,
           lugar_ceremonia: textoONulo(datos, "lugar_ceremonia"),
           direccion_ceremonia: textoONulo(datos, "direccion_ceremonia"),
           latitud_ceremonia: latCeremonia,

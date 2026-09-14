@@ -10,6 +10,7 @@ import { IDIOMA, PASOS_RSVP, ZONA_HORARIA, type PasoRsvp } from "@/config/consta
 import { obtenerConfiguracion } from "@/lib/bbdd/landing";
 import { obtenerInvitacion, type PersonaInvitada } from "@/lib/bbdd/rsvp";
 import { t } from "@/lib/copy";
+import { fechaLarga } from "@/lib/fechas";
 import { leerBorrador, type Borrador } from "@/lib/rsvp-borrador";
 
 import { avanzar, reabrir } from "./acciones";
@@ -44,13 +45,6 @@ export const metadata: Metadata = {
   title: t("rsvp.titulo"),
   robots: { index: false, follow: false, nocache: true },
 };
-
-const formatoFecha = new Intl.DateTimeFormat(IDIOMA, {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: ZONA_HORARIA,
-});
 
 const formatoFechaHora = new Intl.DateTimeFormat(IDIOMA, {
   day: "numeric",
@@ -161,13 +155,18 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
         <Cuerpo className="mx-auto mt-pila max-w-texto">
           {configuracion?.fechaLimiteRsvp
             ? t("rsvp.entradilla", {
-                fecha: formatoFecha.format(configuracion.fechaLimiteRsvp),
+                fecha: fechaLarga(configuracion.fechaLimiteRsvp),
               })
             : t("rsvp.entradillaSinPlazo")}
         </Cuerpo>
       </header>
 
-      {consulta.fallo ? <Aviso motivo={soloTexto(consulta.fallo)} /> : null}
+      {consulta.fallo ? (
+        <Aviso
+          motivo={soloTexto(consulta.fallo)}
+          correo={configuracion?.correoContacto ?? null}
+        />
+      ) : null}
 
       <form action={avanzar} className="mt-bloque grid gap-elemento">
         <input type="hidden" name="token" value={token} />
@@ -280,7 +279,13 @@ function LineaContacto({ correo, texto }: { correo: string | null; texto: string
   );
 }
 
-function Aviso({ motivo }: { motivo: string | undefined }) {
+/**
+ * Cuando no se ha podido guardar, la entrega da una salida —«escribidnos a
+ * hola@… y lo apuntamos»— en vez de un «inténtalo luego» sin más. El correo
+ * sale de la configuración; sin correo, queda la versión que invita a
+ * reintentar.
+ */
+function Aviso({ motivo, correo }: { motivo: string | undefined; correo: string | null }) {
   const texto =
     motivo === "plazo"
       ? t("rsvp.plazoCerrado")
@@ -288,7 +293,9 @@ function Aviso({ motivo }: { motivo: string | undefined }) {
         ? t("rsvp.tokenInvalido")
         : motivo === "respuestas"
           ? t("rsvp.errorCaducado")
-          : t("rsvp.errorEnviando");
+          : correo
+            ? t("rsvp.errorEnviando", { correo })
+            : t("rsvp.errorEnviandoSinCorreo");
 
   return (
     <p

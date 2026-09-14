@@ -115,7 +115,9 @@ test.describe("Evento para el calendario", () => {
 
     expect(ics).toContain(`DTSTART:${esperada}`);
     expect(ics).toContain("(DES) Finca de pruebas");
-    expect(ics).toMatch(/SUMMARY:.*\(DES\)/);
+    // «Boda de Ana y Luis» y «Nos casamos. Guardad el día.», como la entrega.
+    expect(ics).toMatch(/SUMMARY:Boda de .*\(DES\)/);
+    expect(ics).toContain("DESCRIPTION:Nos casamos. Guardad el día.");
   });
 
   test("el evento no acaba cuando empieza el banquete", async ({ request }) => {

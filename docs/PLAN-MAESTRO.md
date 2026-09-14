@@ -363,28 +363,30 @@ El orden y la visibilidad de las secciones salen de `secciones_landing`, no del 
 
 Secciones del enumerado `seccion_landing`:
 
-| Valor                  | Qué es                                                      | Ticket  |
-| ---------------------- | ----------------------------------------------------------- | ------- |
-| `portada`              | Nombres, fecha y lugar a pantalla completa                  | BODA-22 |
-| `cuenta_atras`         | Lo que falta, calculado desde la fecha de la BBDD           | BODA-23 |
-| `historia`             | Hitos de la pareja, con foto opcional y reveal al entrar    | BODA-24 |
-| `galeria`              | Rejilla de fotos con lightbox                               | BODA-25 |
-| `programa`             | El día hora a hora                                          | BODA-22 |
-| `ubicaciones`          | Ceremonia y banquete, con mapa                              | BODA-26 |
-| `transporte`           | Cómo llegar: coche, tren, autobús                           | BODA-26 |
-| `alojamiento`          | Hoteles recomendados con tarifa y enlace de reserva         | BODA-27 |
-| `regalos`              | Número de cuenta en campo copiable. Nace apagada            | BODA-37 |
-| `dresscode`            | Qué ponerse, un bloque por consejo                          | BODA-38 |
-| `preguntas_frecuentes` | Acordeón nativo: etiqueta, niños, aparcamiento…             | BODA-27 |
-| `playlist`             | Canciones que sugieren los invitados, con campo para añadir | BODA-29 |
-| `rsvp`                 | Llamada a confirmar asistencia                              | BODA-28 |
-| `reserva_la_fecha`     | **No es una sección: es una página aparte** (ver más abajo) | BODA-30 |
+| Valor                  | Qué es                                                          | Ticket            |
+| ---------------------- | --------------------------------------------------------------- | ----------------- |
+| `portada`              | Nombres, fecha y lugar a pantalla completa                      | BODA-22           |
+| `cuenta_atras`         | Lo que falta, calculado desde la fecha de la BBDD               | BODA-23           |
+| `historia`             | Hitos de la pareja, con foto opcional y reveal al entrar        | BODA-24           |
+| `galeria`              | Tira de fotos 4/3 entre el programa y el alojamiento, con visor | BODA-25, BODA-114 |
+| `programa`             | El día hora a hora                                              | BODA-22           |
+| `ubicaciones`          | Ceremonia y banquete, con mapa                                  | BODA-26           |
+| `transporte`           | Cómo llegar: coche, tren, autobús                               | BODA-26           |
+| `alojamiento`          | Hoteles recomendados con tarifa y enlace de reserva             | BODA-27           |
+| `regalos`              | Número de cuenta en campo copiable. Nace apagada                | BODA-37           |
+| `dresscode`            | Qué ponerse, un bloque por consejo                              | BODA-38           |
+| `preguntas_frecuentes` | Acordeón nativo: etiqueta, niños, aparcamiento…                 | BODA-27           |
+| `playlist`             | Canciones que sugieren los invitados, con campo para añadir     | BODA-29           |
+| `rsvp`                 | Llamada a confirmar asistencia                                  | BODA-28           |
+| `reserva_la_fecha`     | **No es una sección: es una página aparte** (ver más abajo)     | BODA-30           |
 
 **Por qué la landing no se cachea.** Nació con `revalidate = 3600` y se quitó tras un fallo en producción: si la base no responde justo en el despliegue —caída, pausada por inactividad del plan gratuito, o una variable de entorno que aún no está—, lo que se hornea y se sirve **durante una hora entera** es la pantalla de «estamos preparando la web», aunque la base vuelva a los diez segundos. Ahora se consulta en cada visita: ocho consultas indexadas sobre tablas de pocas filas, lanzadas a la vez, medidas en 27 ms de mediana en local. A cambio, un cambio en el panel se ve al instante y un fallo nunca se queda pegado. Ver BODA-09.
 
 **Una foto enlazada desde otra tabla se comprueba dos veces.** Los hitos de `historia` —y lo mismo valdrá para alojamientos o proveedores— apuntan a `medios` por `medio_id`. RLS protege `medios` cuando se pregunta _por_ `medios`, pero una consulta a `hitos_historia` con un `join` se lleva lo que encuentre, así que el `publicado` de la foto se exige **en la propia condición del join**. Sin eso, enlazar una imagen recién subida y dejarla para revisar la publicaría por la puerta de atrás. El `join` es `LEFT` a propósito: la historia se escribe meses antes de tener las fotos, y un hito sin imagen tiene que salir igual.
 
 **La tipografía se mide contra la Landing aplicada, no contra el catálogo.** La entrega trae dos escalas que no coinciden —el Sistema de marca (display 52–108, título-1 máx. 58, cuerpo 16) y la Landing (58–124, 68 con pendiente 5.4vw, botones a 12 px)— y la web sigue a la Landing en todo lo que se ve grande y al catálogo en el cuerpo (BODA-108, BODA-109, BODA-126). Dos reglas salieron de la auditoría: **el peso viaja con el componente** (`peso-titulo` en `Display`/`Titulo1`, `peso-titulo-menor` en `Titulo2`/`Titulo3`), porque la regla base `h1–h4` sólo alcanza a esas etiquetas y un `Display como="p"` se quedaba en 400; y **toda versalita lleva la familia del cuerpo escrita** (`Etiqueta` la pone), porque una versalita pintada como `h3` heredaba la serif de los titulares. Los escalones que la Landing usa además de la escala del catálogo tienen token propio (`--texto-boton`, `--texto-hito`, `--texto-hora`, `--texto-dato`, `--texto-cifra-dato`, `--texto-monograma`) y `tests/e2e/landing.spec.ts` los mide en el navegador, con un caso de error que recorre la página entera buscando versalitas en serif.
+
+**Los copys y los datos que la entrega escribe a mano viven donde toca** (BODA-114 a BODA-116). La ciudad de la boda es una columna (`configuracion_boda.ciudad_ceremonia`) y no se deduce de la dirección: la portada dice «Nos casamos en {ciudad}», el alojamiento «tres hoteles de {ciudad}» —la cantidad en letra sale de la lista—, y el pie «{lugar}, {ciudad}»; sin ciudad, cada frase tiene su variante. Los avisos al pie del programa («Césped y grava: cuidado con los tacones finos») son contenido, no interfaz: `configuracion_boda.avisos_programa text[]`, editados en Ajustes, hasta seis y validados por `avisos_programa_validos()` en la base. Las fechas se escriben con los formateadores de `src/lib/fechas.ts` y sólo con ellos: «Sábado 26 de junio» (`fechaConDia`, la cabecera del programa; la víspera lleva el día anterior), «1 de mayo de 2027» (`fechaLarga`, los plazos) y «26 · 06 · 2027» (`fechaEnPuntos`). El orden de las secciones es el de la entrega —alojamiento antes que cómo llegar, la galería entre el programa y el alojamiento— y la migración que lo pone sólo toca las filas que nadie ha movido desde el panel. La galería es la tira de la entrega: sin cabecera visible, a 1400, con todas las fotos publicadas (la entrega deja tres huecos porque son tres los que caben, y un tope escondería fotos). El IBAN se enseña de cuatro en cuatro y se copia sin espacios.
 
 **El ritmo y la composición también se miden contra la Landing aplicada** (BODA-110 a BODA-113). El margen lateral de toda sección es de 26 px (`--margen-lateral`), los anchos son cinco y se eligen por nombre en `Bloque` (`contenido` 1180, `medio` 1080, `playlist` 900, `estrecho` 820, `amplio` 1400), y los huecos que en la entrega son `clamp` tienen cada uno su token fluido con nombre —la portada, la cuenta atrás, las filas, las tarjetas—. Hay tres ritmos verticales y no dos: el fluido de las secciones, el compacto fluido de la cuenta atrás (64–104) y el compacto fijo del catálogo; `tokens.spec.ts` admite esos tres y ninguno más. `CabeceraSeccion` tiene tres composiciones (alineada, apilada y centrada) porque la entrega usa las tres; «cómo llegar» pinta la suya dentro de la columna de texto para que el mapa suba a la altura del titular. Las filas del programa llevan el filete vertical de un píxel de la entrega y entran deslizando; el pie es el de la entrega, centrado, con el monograma, la fecha en puntos y el lugar, y enlaza al Save the Date y al sistema de marca vivo (`/cocina`). «Cartelería» no se enlaza: es de imprenta.
 
