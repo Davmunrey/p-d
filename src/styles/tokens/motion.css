@@ -327,6 +327,78 @@
   }
 }
 
+/**
+ * LA ESCENA DEL PAISAJE
+ *
+ * Cuatro gestos atados al mismo recorrido de scroll: el marco se abre, la foto
+ * se aleja, el velo se oscurece y la frase sube al centro. Ninguno mueve una
+ * caja — el marco se abre recortando (`clip-path`) en vez de creciendo de
+ * ancho y alto, que es como lo hacía la entrega: así la escena no provoca ni
+ * un salto de maquetación, y el CLS de la landing no se entera de que existe.
+ */
+@keyframes acercar-marco {
+  from {
+    clip-path: inset(var(--recorte-marco-y) var(--recorte-marco-x) round var(--radio-marco));
+    filter: drop-shadow(var(--sombra-marco));
+  }
+
+  to {
+    clip-path: inset(0% 0% round 0);
+    filter: drop-shadow(var(--sombra-marco-final));
+  }
+}
+
+@keyframes alejar-foto {
+  from {
+    transform: scale(var(--escala-foto-lejos));
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes velar-escena {
+  from {
+    background-image: linear-gradient(
+      180deg,
+      var(--velo-escena-lejos-arriba) 0%,
+      var(--velo-escena-lejos-abajo) 100%
+    );
+  }
+
+  to {
+    background-image: linear-gradient(
+      180deg,
+      var(--velo-escena-cerca-arriba) 0%,
+      var(--velo-escena-cerca-abajo) 100%
+    );
+  }
+}
+
+/* La frase sube los mismos 26 px que cualquier reveal, pero desde el centro. */
+@keyframes revelar-frase {
+  from {
+    opacity: 0%;
+    transform: translateY(calc(-50% + var(--recorrido-reveal)));
+  }
+
+  to {
+    opacity: 100%;
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes apagar-pista {
+  from {
+    opacity: 100%;
+  }
+
+  to {
+    opacity: 0%;
+  }
+}
+
 /* --------------------------------------------------------------------------
  * Transiciones
  *

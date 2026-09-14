@@ -32,8 +32,15 @@ export interface ConfiguracionBoda {
   lugarBanquete: string | null;
   latitud: number | null;
   longitud: number | null;
-  /** La frase de la sección de paisaje. `null` mientras no se haya escrito. */
-  frasePaisaje: string | null;
+  /**
+   * Las tres líneas de la escena del paisaje. La entrega las escribe con tres
+   * tipografías distintas, así que son tres campos y no una frase partida: el
+   * titular es el único obligatorio —es el `h2` de la sección y sin él no hay
+   * sección—, la versalita que lo abre y el cierre en cursiva son opcionales.
+   */
+  paisajeIntro: string | null;
+  paisajeTitulo: string | null;
+  paisajeCierre: string | null;
   /**
    * La ciudad de la boda: «Nos casamos en León». Es un dato aparte de la
    * dirección porque la entrega los usa en sitios distintos —la ciudad en la
@@ -168,7 +175,9 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
         lugar_ceremonia: string | null;
         direccion_ceremonia: string | null;
         lugar_banquete: string | null;
-        frase_paisaje: string | null;
+        paisaje_intro: string | null;
+        paisaje_titulo: string | null;
+        paisaje_cierre: string | null;
         ciudad_ceremonia: string | null;
         avisos_programa: string[] | null;
         latitud_ceremonia: string | null;
@@ -181,7 +190,7 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
         nombre_novia, nombre_novio, fecha_hora_ceremonia, fecha_hora_banquete, fecha_limite_rsvp,
         lugar_ceremonia, direccion_ceremonia, lugar_banquete,
         latitud_ceremonia, longitud_ceremonia, correo_contacto, hashtag,
-        frase_paisaje, ciudad_ceremonia, avisos_programa
+        paisaje_intro, paisaje_titulo, paisaje_cierre, ciudad_ceremonia, avisos_programa
       from public.v_configuracion_publica
       limit 1
     `,
@@ -199,7 +208,9 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
     lugarCeremonia: fila.lugar_ceremonia,
     direccionCeremonia: fila.direccion_ceremonia,
     lugarBanquete: fila.lugar_banquete,
-    frasePaisaje: fila.frase_paisaje,
+    paisajeIntro: fila.paisaje_intro,
+    paisajeTitulo: fila.paisaje_titulo,
+    paisajeCierre: fila.paisaje_cierre,
     ciudadCeremonia: fila.ciudad_ceremonia,
     avisosPrograma: fila.avisos_programa ?? [],
     latitud: fila.latitud_ceremonia === null ? null : Number(fila.latitud_ceremonia),

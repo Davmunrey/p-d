@@ -125,12 +125,13 @@ export function Conector({
    * tarjeta del Save the Date, que se mide contra el alto del naipe; y `sello`
    * el «&» del sello, que hereda el color de las iniciales en vez del acento.
    */
-  tamano?: "conector" | "naipe" | "sello";
+  tamano?: "conector" | "naipe" | "sello" | "escena";
 }) {
   const escalon = {
     conector: "text-conector leading-conector text-acento",
     naipe: "text-naipe-conector leading-compacto text-acento",
     sello: "sello-ampersand text-sello-ampersand leading-compacto text-current",
+    escena: "text-conector-escena leading-titulo-corto text-acento-sobre-foto",
   }[tamano];
 
   return <span className={`font-conector ${escalon}`}>{children}</span>;

@@ -745,6 +745,67 @@
   --layer-escena-3: 3;
   --layer-escena-4: 4;
 
+  /* ---------------------------------------------------------------------
+   * El paisaje — la escena de scroll
+   *
+   * La Landing aplicada no pinta el paisaje como una franja: lo pinta como una
+   * escena de tres pantallas de alto con un panel pegado dentro. Al bajar, el
+   * marco crece de un recuadro centrado a pantalla completa, la foto se aleja,
+   * el velo se oscurece y la frase aparece a mitad de recorrido.
+   *
+   * Los números son los del script de la entrega, transcritos uno a uno.
+   * ------------------------------------------------------------------- */
+
+  --size-escena: 300dvh;
+  --size-panel-escena: 100dvh;
+
+  /* El marco al empezar mide 40 % de ancho y 46 vh de alto, centrado. Lo que
+     se recorta por cada lado es lo que sobra a la mitad: (100−40)/2 y
+     (100−46)/2. Los dos en porcentaje, porque el panel mide exactamente una
+     pantalla y ahí un 27 % y 27 vh son el mismo sitio. */
+  --inset-marco-x: 30%;
+  --inset-marco-y: 27%;
+  --radius-marco: 0.25rem;
+
+  /* La sombra que levanta el marco pequeño del papel, y su final: la misma
+     receta con el alcance y el alfa a cero, para que interpole sin saltos. */
+  --shadow-marco: 0 2.75rem 2.8125rem rgb(20 20 15 / 50%);
+  --shadow-marco-final: 0 0 0 rgb(20 20 15 / 0%);
+  --scale-foto-lejos: 1.18;
+
+  /* El velo sobre la foto, en sus dos extremos: de lejos apenas tiñe, de cerca
+     es lo que hace legible el titular encima. */
+  --color-velo-escena-lejos-arriba: rgb(20 23 15 / 10%);
+  --color-velo-escena-lejos-abajo: rgb(20 23 15 / 20%);
+  --color-velo-escena-cerca-arriba: rgb(20 23 15 / 40%);
+  --color-velo-escena-cerca-abajo: rgb(20 23 15 / 62%);
+
+  /* Cuándo pasa cada cosa, en tanto por ciento del recorrido de la escena: el
+     marco acaba de crecer al 72 %, la frase entra entre el 42 y el 68, y la
+     pista se apaga dentro del primer 6. */
+  --tramo-marco: 72%;
+  --tramo-texto-inicio: 42%;
+  --tramo-texto-fin: 68%;
+  --tramo-pista: 6%;
+
+  /* La curva de la escena. La entrega usa x²·(3−2x) —la «smoothstep» clásica,
+     que arranca y frena a velocidad cero—; ésta es la cúbica de Bézier que más
+     se le parece. */
+  --ease-suavizado: cubic-bezier(0.4, 0, 0.6, 1);
+
+  /* La frase, en sus tres líneas: la versalita reusa la escala de etiqueta; el
+     titular y el cierre en cursiva tienen la suya. */
+  --font-size-escena: clamp(2.375rem, 7.4vw, 6.125rem);
+  --font-size-conector-escena: clamp(1.875rem, 5vw, 4rem);
+  --space-titular-escena: clamp(0.875rem, 2vw, 1.5rem);
+  --space-cierre-escena: 0.375rem;
+  --space-escena-lado: 1.5rem;
+  --space-pista-escena: clamp(1.375rem, 4vh, 2.75rem);
+
+  /* Lo que separa la pista de su raya. Doce píxeles: no está en la escala del
+     catálogo porque es el aire de un rótulo pequeño sobre su propio adorno. */
+  --space-pista-raya: 0.75rem;
+
   /* Los puntos de ruptura viven en el bloque `@theme` de globals.css:
      las media queries se resuelven en compilación y no aceptan var(). */
 }

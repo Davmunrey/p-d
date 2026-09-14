@@ -92,7 +92,9 @@ update public.configuracion_boda set
   direccion_banquete   = '(DES) Camino del Ejemplo, 1',
   latitud_banquete     = 40.416775,
   longitud_banquete    = -3.703790,
-  frase_paisaje        = '(DES) Todo empezó entre dos ciudades y continúa en una tercera',
+  paisaje_intro        = '(DES) Todo empezó entre',
+  paisaje_titulo       = '(DES) Dos ciudades',
+  paisaje_cierre       = '(DES) y continúa en una tercera',
   ciudad_ceremonia     = '(DES) León',
   avisos_programa      = array[
     '(DES) Etiqueta elegante · ceremonia al aire libre',

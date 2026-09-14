@@ -563,6 +563,44 @@
   --capa-foto-fuera: var(--layer-escena-3);
   --capa-tarjeta-fuera: var(--layer-escena-4);
 
+  /* --- El paisaje: la escena de scroll -------------------------------- */
+  --alto-escena: var(--size-escena);
+  --alto-panel-escena: var(--size-panel-escena);
+  --recorte-marco-x: var(--inset-marco-x);
+  --recorte-marco-y: var(--inset-marco-y);
+  --radio-marco: var(--radius-marco);
+  --sombra-marco: var(--shadow-marco);
+  --sombra-marco-final: var(--shadow-marco-final);
+  --escala-foto-lejos: var(--scale-foto-lejos);
+  --velo-escena-lejos-arriba: var(--color-velo-escena-lejos-arriba);
+  --velo-escena-lejos-abajo: var(--color-velo-escena-lejos-abajo);
+  --velo-escena-cerca-arriba: var(--color-velo-escena-cerca-arriba);
+  --velo-escena-cerca-abajo: var(--color-velo-escena-cerca-abajo);
+  --tramo-marco-escena: var(--tramo-marco);
+  --tramo-texto-escena-inicio: var(--tramo-texto-inicio);
+  --tramo-texto-escena-fin: var(--tramo-texto-fin);
+  --tramo-pista-escena: var(--tramo-pista);
+  --suavizado-escena: var(--ease-suavizado);
+  --texto-escena: var(--font-size-escena);
+  --texto-conector-escena: var(--font-size-conector-escena);
+  --espacio-titular-escena: var(--space-titular-escena);
+  --espacio-cierre-escena: var(--space-cierre-escena);
+  --espacio-escena-lado: var(--space-escena-lado);
+  --espacio-pista-escena: var(--space-pista-escena);
+  --espacio-pista-raya: var(--space-pista-raya);
+
+  /**
+   * LOS DOS TONOS QUE SÓLO EXISTEN SOBRE UNA FOTO.
+   *
+   * La versalita de la escena va en el marino claro y el cierre en el bronce
+   * claro — los mismos que el bloque inverso reasigna, pero aquí no hay bloque
+   * inverso: hay una fotografía debajo. El acento de raíz es el bronce oscuro
+   * y sobre una foto velada no se lee; por eso tienen nombre propio en vez de
+   * heredarse.
+   */
+  --tinta-sobre-foto-fria: var(--color-marino-200);
+  --acento-sobre-foto: var(--color-bronce-300);
+
   /* --- Anchos de contenido ------------------------------------------- */
   --ancho-texto: var(--width-prose);
   --ancho-estrecho: var(--width-narrow);

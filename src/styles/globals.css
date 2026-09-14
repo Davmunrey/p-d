@@ -3,6 +3,7 @@
 @import "./tokens/semantic.css";
 @import "./tokens/motion.css";
 @import "./sobre.css";
+@import "./paisaje.css";
 
 /**
  * Las carpetas de skills son documentación de terceros con ejemplos de código,
@@ -131,6 +132,8 @@
   --color-foco: var(--foco);
   --color-sobre-foto: var(--tinta-sobre-foto);
   --color-sobre-foto-tenue: var(--tinta-sobre-foto-tenue);
+  --color-sobre-foto-fria: var(--tinta-sobre-foto-fria);
+  --color-acento-sobre-foto: var(--acento-sobre-foto);
   --color-velo: var(--velo);
   --color-velo-suave: var(--velo-suave);
   --color-velo-fuerte: var(--velo-fuerte);
@@ -178,6 +181,8 @@
   --text-naipe-anno: var(--texto-naipe-anno);
   --text-naipe-cifra: var(--texto-naipe-cifra);
   --text-naipe-unidad: var(--texto-naipe-unidad);
+  --text-escena: var(--texto-escena);
+  --text-conector-escena: var(--texto-conector-escena);
   --font-weight-titulo: var(--peso-titulo);
   --font-weight-titulo-menor: var(--peso-titulo-menor);
   --font-weight-cuerpo: var(--peso-cuerpo);
@@ -282,6 +287,11 @@
   --spacing-naipe-lira: var(--lado-naipe-lira);
   --spacing-naipe-raya: var(--ancho-naipe-raya);
   --spacing-naipe-rombo: var(--lado-naipe-rombo);
+  --spacing-titular-escena: var(--espacio-titular-escena);
+  --spacing-cierre-escena: var(--espacio-cierre-escena);
+  --spacing-escena-lado: var(--espacio-escena-lado);
+  --spacing-pista-escena: var(--espacio-pista-escena);
+  --spacing-pista-raya: var(--espacio-pista-raya);
   --spacing-control-grande: var(--alto-control-grande);
   --spacing-fundido-foto: var(--ancho-fundido-foto);
   --spacing-raya-pista: var(--alto-raya-pista);

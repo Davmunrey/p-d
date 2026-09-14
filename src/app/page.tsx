@@ -6,6 +6,7 @@ import { Galeria } from "@/components/marketing/galeria";
 import { HuecoFoto } from "@/components/marketing/hueco-foto";
 import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
+import { VideoDeFondo } from "@/components/marketing/video-de-fondo";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { BotonEnlace } from "@/components/ui/boton";
 import { DatosEstructurados } from "@/components/datos-estructurados";
@@ -237,9 +238,11 @@ export default async function PaginaInicio() {
       portada. Esperar a la sesión de fotos para publicar una frase que ya está
       escrita sería tenerla meses en un cajón.
     */
-    paisaje: configuracion.frasePaisaje ? (
+    paisaje: configuracion.paisajeTitulo ? (
       <Paisaje
-        frase={configuracion.frasePaisaje}
+        intro={configuracion.paisajeIntro}
+        titulo={configuracion.paisajeTitulo}
+        cierre={configuracion.paisajeCierre}
         foto={fotosPaisaje[0] ?? null}
         urlBase={urlBase}
       />
@@ -557,68 +560,134 @@ function Portada({
 }
 
 /**
- * EL PAISAJE · el respiro entre la portada y la logística
+ * EL PAISAJE · la escena que separa la portada de la logística
  *
- * La entrega lo pone justo debajo de los nombres: una foto aérea a pantalla
- * completa con una frase encima. No es relleno. La portada da los nombres y la
- * fecha, y de la cuenta atrás en adelante todo es logística —cuándo, dónde,
- * cómo llegar, qué ponerse—. Esto es lo único que cuenta de dónde vienen los
- * novios, y va en la costura entre las dos cosas.
+ * La entrega lo pone justo debajo de los nombres, y no como una franja: como
+ * una ESCENA DE TRES PANTALLAS DE ALTO con un panel pegado dentro. Al bajar, un
+ * recuadro pequeño y centrado se abre hasta ocupar la pantalla entera, la foto
+ * se aleja, el velo se oscurece y la frase entra por el centro. No es relleno:
+ * la portada da los nombres y la fecha, y de la cuenta atrás en adelante todo
+ * es logística —cuándo, dónde, cómo llegar, qué ponerse—. Esto es lo único que
+ * cuenta de dónde vienen los novios, y va en la costura entre las dos cosas.
  *
- * MANDA LA FRASE, NO LA FOTO. Sin frase no hay sección: una foto aérea muda es
- * un fondo bonito que no dice nada. Sin foto SÍ hay sección, sobre el plano
- * hundido que ya usa la portada — porque la frase es el mensaje y la foto es
- * cómo se presenta, y esperar a la sesión de fotos para publicar una frase que
- * ya está escrita sería dejarla en un cajón meses.
+ * TODO EL MOVIMIENTO ESTÁ EN `paisaje.css` Y NO AQUÍ. La escena la mueve el
+ * scroll a través de una línea de tiempo con nombre; este componente no sabe
+ * nada de ella, sólo pone las clases. Donde el navegador no sepa de líneas de
+ * tiempo de scroll —o donde alguien haya pedido menos movimiento— no hay
+ * escena: la sección mide lo que medía y la frase está a la vista desde el
+ * principio. Nunca se esconde nada esperando un scroll que quizá no ocurra.
+ *
+ * MANDA EL TITULAR, NO LA FOTO. Sin titular no hay sección: una vista aérea
+ * muda es un fondo bonito que no dice nada. Sin foto SÍ hay sección, sobre el
+ * plano de marca claro que la propia entrega pinta detrás del marco — porque la
+ * frase es el mensaje y la foto es cómo se presenta, y esperar a la sesión de
+ * fotos para publicar una frase que ya está escrita sería dejarla en un cajón
+ * meses. Las otras dos líneas son opcionales una a una.
  *
  * EL TEXTO SE LEE CAIGA LA FOTO QUE CAIGA. Encima de la imagen va un velo que
- * oscurece de abajo arriba: sin él, el contraste depende de qué suban, y una
- * foto aérea a mediodía deja el texto blanco sobre cielo blanco. El velo es
- * parte del diseño, no un parche.
+ * se oscurece según el marco se abre: sin él, el contraste depende de qué
+ * suban, y una foto aérea a mediodía deja el texto blanco sobre cielo blanco.
+ * El velo es parte del diseño, no un parche.
  */
 function Paisaje({
-  frase,
+  intro,
+  titulo,
+  cierre,
   foto,
   urlBase,
 }: {
-  frase: string;
+  intro: string | null;
+  titulo: string;
+  cierre: string | null;
   foto: Medio | null;
   urlBase: string | undefined;
 }) {
+  const idTitulo = `titulo-${anclaDe("paisaje")}`;
+  const enElBucket = (ruta: string) =>
+    `${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${ruta}`;
+
+  const fuente = foto && urlBase ? enElBucket(foto.ruta) : null;
+
+  /*
+    Lo dice la base —el campo `tipo`—, no el final de la ruta: «.mov» y «.mp4»
+    son el mismo vídeo con distinto envoltorio, y adivinarlo mirando una cadena
+    convierte un dato en una corazonada. El vídeo se monta por su propia rama
+    porque se rinde solo ante `prefers-reduced-motion` y deja el fotograma.
+  */
+  const esVideo = Boolean(foto?.tipo === "video" && foto.posterRuta && fuente);
+
   return (
-    <section id={anclaDe("paisaje")} className="relative isolate overflow-hidden">
-      <HuecoFoto
-        medio={foto}
-        urlBase={urlBase}
-        medidas="100vw"
-        className="alto-paisaje w-full"
-      />
+    <section id={anclaDe("paisaje")} aria-labelledby={idTitulo} className="escena-paisaje">
+      <div className="panel-paisaje bg-fondo">
+        <div className="marco-paisaje bg-superficie-tenue">
+          <div className="foto-paisaje">
+            {esVideo ? (
+              <VideoDeFondo
+                fuente={fuente!}
+                poster={enElBucket(foto!.posterRuta!)}
+                textoAlternativo={foto!.textoAlternativo}
+                className="h-full w-full object-cover"
+              />
+            ) : fuente ? (
+              <Image
+                src={fuente}
+                alt={foto!.textoAlternativo}
+                fill
+                sizes="100vw"
+                className="object-cover"
+                // El marcador borroso lo calcula quien sube la imagen. Sin él,
+                // el hueco se queda en el plano de marca, que ya es un estado
+                // digno y además es el que pinta la entrega.
+                placeholder={foto!.marcadorBorroso ? "blur" : "empty"}
+                blurDataURL={foto!.marcadorBorroso ?? undefined}
+              />
+            ) : null}
+          </div>
 
-      {/*
-        `aria-hidden` en el velo: es color, no contenido. Y va detrás del texto
-        pero delante de la foto, que es justo lo que hace legible lo de encima.
-      */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-t from-velo-fuerte via-velo-suave to-transparent"
-      />
+          {/* Es color, no contenido: detrás del texto y delante de la foto. */}
+          <div aria-hidden="true" className="velo-paisaje" />
+        </div>
 
-      <div className="absolute inset-0 flex flex-col items-center justify-end gap-bloque p-bloque text-center">
         {/*
-          LA FRASE ES EL TITULAR, no un párrafo suelto. Es lo único que dice la
-          sección, así que hacerla `h2` no es burocracia de accesibilidad: es lo
-          que da nombre a la sección para quien la recorre saltando de titular
-          en titular, y lo que impide que quede como un contenedor anónimo.
+          LAS TRES LÍNEAS DE LA ENTREGA. El titular es el `h2` —es lo que la
+          sección dice, y lo que le da nombre a quien la recorre saltando de
+          titular en titular—; la versalita que lo abre y el cierre en cursiva
+          son párrafos, porque leídos sueltos no son encabezados de nada.
         */}
-        <header>
-          <h2 className="max-w-texto font-titulo text-titulo-1 leading-titulo text-sobre-foto">
-            {frase}
+        <header className="texto-paisaje">
+          {intro ? (
+            <p className="font-cuerpo peso-cuerpo text-etiqueta uppercase tracking-marcado text-sobre-foto-fria">
+              {intro}
+            </p>
+          ) : null}
+
+          <h2
+            id={idTitulo}
+            className={`font-titulo peso-titulo text-escena leading-titulo tracking-titulo text-sobre-foto ${
+              intro ? "mt-titular-escena" : ""
+            }`}
+          >
+            {titulo}
           </h2>
+
+          {cierre ? (
+            <p className="mt-cierre-escena">
+              <Conector tamano="escena">{cierre}</Conector>
+            </p>
+          ) : null}
         </header>
 
-        <p className="flex flex-col items-center gap-pila text-etiqueta uppercase tracking-pista text-sobre-foto-tenue">
-          {t("paisaje.seguidBajando")}
-          <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-sobre-foto-tenue to-transparent" />
+        {/*
+          LA PISTA NO VA SOBRE LA FOTO, VA SOBRE LA PÁGINA. Al empezar la escena
+          el marco es un recuadro pequeño y «seguid bajando» queda fuera de él,
+          sobre el plano claro: en tinta de foto sería blanco sobre blanco. Va
+          en el gris tenue de la entrega, que es el que se lee ahí.
+        */}
+        <p className="pista-paisaje">
+          <span className="inline-flex flex-col items-center gap-pista-raya text-etiqueta uppercase tracking-pista text-tinta-tenue">
+            {t("paisaje.seguidBajando")}
+            <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
+          </span>
         </p>
       </div>
     </section>

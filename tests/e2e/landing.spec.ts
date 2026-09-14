@@ -575,7 +575,13 @@ test.describe("La tipografía es la de la entrega", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/");
 
-    const titular = await medir(page, "main section header h2");
+    /*
+      El paisaje queda fuera a propósito: su titular no es el de una sección de
+      contenido, es el de la ESCENA, y la entrega le da su propia escala
+      (38–98 px contra 38–68). Medir el primero que aparezca en el documento
+      daría 94 px y diría que la escala está rota cuando está bien.
+    */
+    const titular = await medir(page, "main section:not(#paisaje) header h2");
     // 5.4vw a 1280 son 69,12: el clamp topa en 68. Con 5vw se quedaba en 64.
     expect(titular.tamano).toBe(68);
     expect(titular.peso).toBe(300);
