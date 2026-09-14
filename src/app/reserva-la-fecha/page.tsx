@@ -2,27 +2,27 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
-import { BotonEnlace } from "@/components/ui/boton";
-import { Constelacion } from "@/components/ui/constelacion";
-import { Conector, Etiqueta, Titulo3 } from "@/components/ui/tipografia";
-import { CONSTELACION_NOVIOS } from "@/config/constelaciones";
-import { IDIOMA, RUTA_CALENDARIO, ZONA_HORARIA } from "@/config/constants";
-import { obtenerConfiguracion, obtenerSecciones } from "@/lib/bbdd/landing";
+import { SobreReserva } from "@/components/marketing/sobre-reserva";
+import { IDIOMA, PARAMETRO_SOBRE_ABIERTO, ZONA_HORARIA } from "@/config/constants";
+import { obtenerConfiguracion, obtenerMedios, obtenerSecciones } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
+import { anio, fechaConDia } from "@/lib/fechas";
 
 /**
  * RESERVA LA FECHA
  *
  * Lo primero que se manda a los invitados, meses antes de la invitación. Se
- * abre casi siempre desde WhatsApp, en móvil, y se mira dos segundos: tiene que
- * decir quién, cuándo y dónde sin que nadie haga scroll.
+ * abre casi siempre desde WhatsApp, en móvil, y es la pieza de la entrega: un
+ * sobre cerrado con un sello que, al tocarlo, suelta la foto y la tarjeta con
+ * quién, cuándo y dónde. El sobre vive en `SobreReserva`; aquí se leen los
+ * datos y se componen los textos.
  *
  * NO SE CACHEA, y es lo contrario que la landing. Su existencia depende de una
  * fila de `secciones_landing`, así que revalidar cada hora significaría que
  * apagarla desde el panel tarda una hora en surtir efecto —o, peor, que se
- * sigue enseñando una página que ya se quiso retirar—. Es una consulta a dos
- * tablas de once y una filas: sale más barato preguntar que explicar por qué
- * el interruptor no hace nada.
+ * sigue enseñando una página que ya se quiso retirar—. Es una consulta a tres
+ * tablas cortas: sale más barato preguntar que explicar por qué el
+ * interruptor no hace nada.
  */
 export const dynamic = "force-dynamic";
 
@@ -56,13 +56,19 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function PaginaReservaLaFecha() {
+export default async function PaginaReservaLaFecha({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   let secciones;
   let configuracion;
+  let fotos;
   try {
-    [secciones, configuracion] = await Promise.all([
+    [secciones, configuracion, fotos] = await Promise.all([
       obtenerSecciones(),
       obtenerConfiguracion(),
+      obtenerMedios("reserva_la_fecha"),
     ]);
   } catch {
     // La avería ya está en el log. Aquí no se puede saber si la sección estaba
@@ -80,74 +86,46 @@ export default async function PaginaReservaLaFecha() {
   // Sin configuración no hay nada que reservar. Se dice, no se finge.
   if (!configuracion) return <EnPreparacion />;
 
+  const consulta = await searchParams;
+  const { nombreNovia, nombreNovio, fechaCeremonia, ciudadCeremonia } = configuracion;
   const lugar = configuracion.lugarCeremonia ?? configuracion.lugarBanquete;
 
-  // El relleno vertical es corto a propósito: la página ya ocupa la pantalla
-  // entera y centra su contenido, así que `py-seccion-compacta` solo servía
-  // para empujar el bloque fuera de la ventana en pantallas bajas. El criterio
-  // de este ticket es que quepa sin hacer scroll, no el ritmo de la landing.
+  // «Paloma & David · León» en el dorso del sobre; «Finca La Sierra · León» en
+  // la tarjeta. Sin ciudad, lo que haya: nunca un «· null».
+  const nombresConAmpersand = `${nombreNovia} ${t("navegacion.monogramaConector")} ${nombreNovio}`;
+  const remite = ciudadCeremonia
+    ? t("saveTheDate.remite", { nombres: nombresConAmpersand, ciudad: ciudadCeremonia })
+    : nombresConAmpersand;
+  const lugarConCiudad =
+    lugar && ciudadCeremonia
+      ? t("saveTheDate.lugarYCiudad", { lugar, ciudad: ciudadCeremonia })
+      : (lugar ?? ciudadCeremonia);
+
+  /*
+    LA PÁGINA ES CLARA, con el cielo de puntos derivando detrás y un velo que
+    lo aclara por el centro para que el sobre se lea. Todo cuelga de la
+    columna central y se centra en el alto que sobre.
+  */
   return (
-    <main
-      data-seccion="inversa"
-      className="grid min-h-dvh place-items-center px-interno py-pila text-center"
-    >
-      <div className="mx-auto w-full max-w-estrecho">
-        {/*
-          Lira, la constelación de los novios, abre la pieza igual que en la
-          entrega. Va sin rotular: aquí es adorno sobre unos nombres, y
-          anunciarle «Lira» a quien escucha la página no le diría nada.
+    <main className="relative flex min-h-dvh flex-col items-center overflow-x-hidden px-pila pt-sobre-arriba pb-sobre-abajo">
+      <div
+        aria-hidden="true"
+        className="animacion-cielo-claro cielo-claro pointer-events-none absolute -inset-sangrado-cielo"
+      />
+      <div aria-hidden="true" className="velo-cielo pointer-events-none absolute inset-0" />
 
-          Y sólo aparece si hay alto de sobra. Esta página promete caber de una
-          vez —se abre en WhatsApp y se mira dos segundos—, así que cuando el
-          adorno y la información no caben juntos, el que se va es el adorno.
-        */}
-        <div className="mx-auto mb-elemento hidden size-constelacion pantalla-alta:block">
-          <Constelacion clave={CONSTELACION_NOVIOS} />
-        </div>
-
-        <Etiqueta>{t("saveTheDate.etiqueta")}</Etiqueta>
-
-        {/* Un solo h1 con los dos nombres: es el título de la página, y para un
-            lector de pantalla partirlo en dos encabezados no significa nada. */}
-        <h1 className="mt-pila font-titulo text-display leading-display tracking-display">
-          {configuracion.nombreNovia}
-          <span className="block">
-            <Conector>{t("portada.conjuncion")}</Conector>
-          </span>
-          {configuracion.nombreNovio}
-        </h1>
-
-        <hr className="mx-auto my-pila w-full border-t border-borde-fuerte" />
-
-        <p className="font-titulo text-titulo-2">
-          <time dateTime={configuracion.fechaCeremonia.toISOString()}>
-            {formatoFechaLarga.format(configuracion.fechaCeremonia)}
-          </time>
-        </p>
-        {lugar ? (
-          <Titulo3 como="p" className="mt-linea text-tinta-suave">
-            {lugar}
-          </Titulo3>
-        ) : null}
-
-        <p className="mx-auto mt-pila max-w-texto text-pequeno text-tinta-suave">
-          {t("saveTheDate.nota")}
-        </p>
-
-        <div className="mt-elemento flex flex-wrap justify-center gap-interno">
-          {/*
-            Enlace normal y no `next/link`: el destino no es una página, es un
-            fichero que se descarga. Con el enrutador de Next por medio, el
-            navegador intentaría navegar a él.
-          */}
-          <BotonEnlace href={RUTA_CALENDARIO} prefetch={false} download>
-            {t("saveTheDate.anadirCalendario")}
-          </BotonEnlace>
-          <BotonEnlace href="/" jerarquia="secundario">
-            {t("saveTheDate.verLaWeb")}
-          </BotonEnlace>
-        </div>
-      </div>
+      <SobreReserva
+        nombreNovia={nombreNovia}
+        nombreNovio={nombreNovio}
+        fechaIso={fechaCeremonia.toISOString()}
+        fechaTexto={fechaConDia(fechaCeremonia)}
+        anio={anio(fechaCeremonia)}
+        lugar={lugarConCiudad}
+        remite={remite}
+        foto={fotos.find((medio) => medio.tipo === "imagen") ?? null}
+        urlBase={process.env.NEXT_PUBLIC_SUPABASE_URL}
+        abiertoAlLlegar={consulta[PARAMETRO_SOBRE_ABIERTO] !== undefined}
+      />
     </main>
   );
 }

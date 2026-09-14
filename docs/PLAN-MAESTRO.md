@@ -396,7 +396,9 @@ Secciones del enumerado `seccion_landing`:
 
 ### Reserva la fecha (`/reserva-la-fecha`)
 
-Página independiente, ligera y compartible: fecha grande, foto, «añadir al calendario» (`.ics` generado desde `configuracion_boda`) y Open Graph propio para que se vea bien en WhatsApp. La ruta va en castellano como el resto del producto, y existe sólo si su fila de `secciones_landing` está visible: apagada, devuelve 404 en vez de una página a medias.
+Página independiente, ligera y compartible, y **es la pieza de la entrega** (BODA-121): una página clara con el cielo de puntos derivando detrás, «Guardad el día» entre dos rayas, y un sobre cerrado con un sello que late. Al tocarlo, la solapa gira, asoma la foto publicada en la sección `reserva_la_fecha` del gestor de medios, asoma la tarjeta y el sobre se va: quedan los dos naipes y, debajo, la nota, «añadir al calendario» (`.ics` generado desde `configuracion_boda`), «ver la web» y «volver a meterlo en el sobre». La tarjeta lleva la Lira, «Reservad la fecha», los nombres, la fecha en dos líneas, el lugar con la ciudad y una cuenta atrás compacta, y **se mide en `cqh`**: es un naipe de proporción fija cuyo alto lo decide la pantalla, y todo lo de dentro escala con él. Los tiempos de la apertura son constantes (`FASES_APERTURA_SOBRE_MS`); los tonos de papel, sombras, giros y desplazamientos son tokens en tres capas, y la coreografía vive en `src/styles/sobre.css` como capa de componente, a partir de cuatro atributos de datos que pone el componente.
+
+El sello es el botón de un formulario GET: **sin JavaScript —o antes de hidratar— la pulsación recarga la página con `?abierto` y el servidor la pinta ya abierta.** Con movimiento reducido no hay bucles ni espera: se salta a la última fase. El foco sigue a la pieza (a la tarjeta al abrir, al sello al cerrar) y lo que no se ve va `inert`. Open Graph propio para que se vea bien en WhatsApp. La ruta va en castellano como el resto del producto, y existe sólo si su fila de `secciones_landing` está visible: apagada, devuelve 404 en vez de una página a medias.
 
 ### RSVP (`/rsvp/[token]`)
 

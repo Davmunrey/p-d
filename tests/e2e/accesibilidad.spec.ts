@@ -165,10 +165,20 @@ test.describe("Accesibilidad de la parte pública", () => {
     await auditar(page, "la landing");
   });
 
-  test("la página de reserva la fecha pasa axe", async ({ page }) => {
+  test("la página de reserva la fecha pasa axe, con el sobre cerrado y abierto", async ({
+    page,
+  }) => {
     await page.goto("/reserva-la-fecha");
     await page.waitForLoadState("networkidle");
-    await auditar(page, "/reserva-la-fecha");
+    await esperarEntradas(page);
+    await auditar(page, "/reserva-la-fecha con el sobre cerrado");
+
+    // Y una vez abierto, que es cuando la tarjeta y los botones entran en juego.
+    await expect(page.locator(".pieza-sobre")).toHaveAttribute("data-hidratado", "");
+    await page.getByRole("button", { name: copy.saveTheDate.abrir }).click();
+    await expect(page.locator(".pieza-sobre")).toHaveAttribute("data-fuera", "");
+    await esperarEntradas(page);
+    await auditar(page, "/reserva-la-fecha con el sobre abierto");
   });
 
   test("la invitación pasa axe en cada paso", async ({ page }) => {

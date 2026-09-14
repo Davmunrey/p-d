@@ -293,7 +293,11 @@ values
    'portada', 0, 2000, 1333, true),
   ('desarrollo/galeria-borrador.jpg',
    '{"es": "(DES) Borrador que no debe verse en la landing"}'::jsonb,
-   'galeria', 0, 1600, 1067, false);
+   'galeria', 0, 1600, 1067, false),
+  -- La foto que sale del sobre en el Save the Date, con la tarjeta.
+  ('desarrollo/reserva-la-fecha.jpg',
+   '{"es": "(DES) Los novios con su perra, Hati"}'::jsonb,
+   'reserva_la_fecha', 0, 1400, 2000, true);
 
 
 -- ----------------------------------------------------------------------------

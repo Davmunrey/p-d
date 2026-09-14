@@ -182,6 +182,29 @@ describe("El vocabulario de espaciado está cerrado", () => {
   });
 });
 
+/**
+ * BODA-121 · UN ANCHO NO PUEDE LLAMARSE COMO UN ESPACIADO.
+ *
+ * `max-w-cita` no mira primero en `--container-*`: si existe un
+ * `--spacing-cita`, Tailwind resuelve la utilidad por el espaciado y la cita
+ * se queda con el ancho de un margen. Pasó con la cita de la cuenta atrás
+ * (46 px en vez de 520) y con la columna apilada de una cabecera (64 en vez
+ * de 620), y ninguna captura lo enseñó porque el texto simplemente se partía.
+ */
+describe("Los anchos y los espaciados no comparten nombre", () => {
+  const css = leer("src/styles/globals.css");
+
+  it("ningún --container-* tiene un --spacing-* homónimo", () => {
+    const espaciados = new Set([...css.matchAll(/--spacing-([\w-]+):/g)].map((m) => m[1]));
+    const anchos = [...css.matchAll(/--container-([\w-]+):/g)].map((m) => m[1]);
+
+    expect(
+      anchos.filter((nombre) => espaciados.has(nombre)),
+      "max-w-<nombre> se resolvería por el espaciado: renombra uno de los dos",
+    ).toEqual([]);
+  });
+});
+
 /** Todos los `.ts`/`.tsx` de `src`, recorriendo carpetas a mano. */
 function ficherosDeCodigo(): string[] {
   const encontrados: string[] = [];

@@ -124,7 +124,7 @@
 @keyframes escala {
   from {
     opacity: 0%;
-    transform: scale(0.94);
+    transform: scale(var(--escala-inicial, var(--escala-reveal)));
   }
 
   to {
@@ -139,18 +139,18 @@
   }
 
   to {
-    transform: translate3d(-40px, -26px, 0);
+    transform: translate3d(var(--deriva-x), var(--deriva-y), 0);
   }
 }
 
 @keyframes titilar {
   0%,
   100% {
-    opacity: 90%;
+    opacity: var(--titilar-alta);
   }
 
   50% {
-    opacity: 40%;
+    opacity: var(--titilar-baja);
   }
 }
 
@@ -277,6 +277,56 @@
   }
 }
 
+/**
+ * EL SAVE THE DATE. El escenario se sacude cuando se rompe el sello; el sello
+ * late mientras espera; la pista flota cinco píxeles hacia arriba (no cae como
+ * «bajad»: aquí no señala una dirección, llama la atención sobre el sello).
+ */
+@keyframes sacudir {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+
+  22% {
+    transform: rotate(var(--giro-sacudida-1));
+  }
+
+  48% {
+    transform: rotate(var(--giro-sacudida-2));
+  }
+
+  74% {
+    transform: rotate(var(--giro-sacudida-3));
+  }
+}
+
+@keyframes latido {
+  0%,
+  100% {
+    box-shadow:
+      var(--sombra-sello),
+      0 0 0 0 var(--anillo-sello);
+  }
+
+  50% {
+    box-shadow:
+      var(--sombra-sello),
+      0 0 0 var(--alcance-anillo-sello) var(--anillo-sello-final);
+  }
+}
+
+@keyframes flotar-arriba {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(var(--recorrido-flotar-sobre));
+  }
+}
+
 /* --------------------------------------------------------------------------
  * Transiciones
  *
@@ -345,6 +395,53 @@
   animation:
     deriva var(--periodo-deriva) linear infinite alternate,
     titilar var(--periodo-titilar) ease-in-out infinite;
+}
+
+/**
+ * LAS ENTRADAS DEL SAVE THE DATE: la cabecera baja en 1,1 s, la raya se traza
+ * medio segundo después, el escenario crece del 96,5 % en 1,3 s; y los bucles
+ * del sobre cerrado: el sello late cada 3 s, la pista flota cada 3,6 y el
+ * cielo claro deriva en 52 s titilando cada 9.
+ */
+.animacion-bajar-pausado {
+  animation: bajar var(--transicion-cabecera-sobre) both;
+  animation-delay: var(--retardo-cabecera-sobre);
+}
+
+.animacion-trazar-vertical-pausado {
+  animation: trazar-vertical var(--transicion-cabecera-sobre) both;
+  animation-delay: var(--retardo-raya-sobre);
+  transform-origin: top;
+}
+
+.animacion-escalar-escenario {
+  --escala-inicial: var(--escala-escenario);
+
+  animation: escala var(--transicion-escenario) both;
+  animation-delay: var(--retardo-escenario);
+}
+
+.animacion-sacudir {
+  animation: sacudir var(--periodo-sacudida) ease-in-out;
+}
+
+.animacion-latido {
+  animation: latido var(--periodo-latido) ease-in-out infinite;
+}
+
+.animacion-flotar-arriba {
+  animation: flotar-arriba var(--periodo-flotar-sobre) ease-in-out infinite;
+}
+
+.animacion-cielo-claro {
+  --deriva-x: var(--deriva-lenta-x);
+  --deriva-y: var(--deriva-lenta-y);
+  --titilar-alta: var(--opacidad-titilar-alta);
+  --titilar-baja: var(--opacidad-titilar-baja);
+
+  animation:
+    deriva var(--periodo-deriva-lenta) linear infinite alternate,
+    titilar var(--periodo-titilar-lento) ease-in-out infinite;
 }
 
 /**
@@ -597,6 +694,9 @@
   .animacion-trazar-vertical,
   .animacion-aparecer-lento,
   .animacion-pop,
+  .animacion-bajar-pausado,
+  .animacion-trazar-vertical-pausado,
+  .animacion-escalar-escenario,
   .animacion-subir-al-ver,
   .animacion-aparecer-al-ver,
   .animacion-cortina-al-ver,
@@ -616,6 +716,10 @@
   */
   .animacion-flotar,
   .animacion-cielo,
+  .animacion-cielo-claro,
+  .animacion-latido,
+  .animacion-flotar-arriba,
+  .animacion-sacudir,
   .animacion-paralaje,
   .animacion-paralaje-portada,
   .cabecera-compacta {

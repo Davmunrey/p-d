@@ -68,6 +68,8 @@
     "horas": "horas",
     "minutos": "minutos",
     "segundos": "segundos",
+    "minCorto": "min",
+    "segCorto": "seg",
     "yaEsHoy": "Hoy es el día",
     "cierre": "Nos hace mucha ilusión celebrarlo con vosotros. Aquí abajo está todo lo que hay que saber."
   },
@@ -225,9 +227,13 @@
   },
   "saveTheDate": {
     "etiqueta": "Reservad la fecha",
+    "cabecera": "Guardad el día",
     "abrir": "Abrir la invitación",
     "pista": "Tocad el sello para abrir",
-    "nota": "La invitación con todos los detalles llegará más adelante.",
+    "remite": "{nombres} · {ciudad}",
+    "lugarYCiudad": "{lugar} · {ciudad}",
+    "volverAlSobre": "Volver a meterlo en el sobre",
+    "nota": "La invitación con todos los detalles llegará más adelante. De momento, guardad el día.",
     "anadirCalendario": "Añadir al calendario",
     "verLaWeb": "Ver la web",
     "icsTitulo": "Boda de {nombres}",

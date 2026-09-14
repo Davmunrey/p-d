@@ -90,6 +90,34 @@ describe("escala tipográfica", () => {
     expect(Math.round(remes[1])).toBe(maximo);
   });
 
+  it.each([
+    ["font-size-remite", 7, 9],
+    ["font-size-sello", 19, 25],
+    ["font-size-nota-sobre", 16, 21],
+  ])("--%s es fluido entre %s y %s px (BODA-121)", (token, minimo, maximo) => {
+    const remes = [...valor(token)!.matchAll(/([\d.]+)rem/g)].map((m) => Number(m[1]) * 16);
+    expect(remes.length).toBe(2);
+    expect(Math.round(remes[0])).toBe(minimo);
+    expect(Math.round(remes[1])).toBe(maximo);
+  });
+
+  /**
+   * BODA-121 · LA TARJETA SE MIDE CONTRA SU PROPIO ALTO. Un naipe de proporción
+   * fija cuyo alto lo decide la pantalla: todo lo de dentro va en `cqh`, que
+   * es lo que hace que sea la misma tarjeta en un móvil y en un monitor.
+   */
+  it.each([
+    ["font-size-naipe-rotulo", "2.5cqh"],
+    ["font-size-naipe-nombre", "8.4cqh"],
+    ["font-size-naipe-conector", "8cqh"],
+    ["font-size-naipe-fecha", "2.7cqh"],
+    ["font-size-naipe-anno", "13cqh"],
+    ["font-size-naipe-cifra", "6cqh"],
+    ["font-size-naipe-unidad", "2.1cqh"],
+  ])("--%s mide %s del alto del naipe", (token, esperado) => {
+    expect(valor(token)).toBe(esperado);
+  });
+
   it("las horas y el monograma van a interlínea 1; los hitos a 1.15", () => {
     expect(valor("line-height-compacto")).toBe("1");
     expect(valor("line-height-hito")).toBe("1.15");

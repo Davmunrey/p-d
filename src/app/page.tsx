@@ -657,7 +657,7 @@ function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBod
         <div className="mt-contador">
           <CuentaAtras fechaIso={configuracion.fechaCeremonia.toISOString()} />
         </div>
-        <Cita className="mx-auto mt-cita max-w-cita text-tinta-suave">
+        <Cita className="mx-auto mt-cita-arriba max-w-cita text-tinta-suave">
           {t("cuentaAtras.cierre")}
         </Cita>
       </div>
@@ -1351,7 +1351,7 @@ function CabeceraSeccion({
         : "max-w-texto";
 
   const rotulo = (
-    <div className={composicion === "apilada" ? "max-w-cabecera" : undefined}>
+    <div className={composicion === "apilada" ? "max-w-cabecera-seccion" : undefined}>
       {etiqueta ? (
         <EtiquetaSeccion
           realzada={realzada}

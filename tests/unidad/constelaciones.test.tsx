@@ -201,9 +201,11 @@ describe("Las constelaciones respetan el sistema de tokens", () => {
       sobre marino con el trazo de fondo claro es invisible, así que cada fondo
       nuevo obliga a reasignar los dos tokens, y este número es el recordatorio.
     */
+    // Los tres fondos del sistema y la solapa del sobre del Save the Date,
+    // donde la Lira va impresa como filigrana (BODA-121).
     const apariciones = semanticos.match(/--constelacion-estrella:/g) ?? [];
-    expect(apariciones.length).toBe(3);
-    expect(semanticos.match(/--constelacion-trazo:/g)?.length).toBe(3);
+    expect(apariciones.length).toBe(4);
+    expect(semanticos.match(/--constelacion-trazo:/g)?.length).toBe(4);
 
     // Y sólo referencian primitivos: la capa 2 no inventa valores.
     for (const linea of semanticos.split("\n")) {
