@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 
 import { Aviso } from "@/components/ui/aviso";
+import { Monograma } from "@/components/ui/monograma";
 import { Boton } from "@/components/ui/boton";
 import { CampoTexto } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Tarjeta } from "@/components/ui/tarjeta";
 import { Constelacion } from "@/components/ui/constelacion";
-import { Cita, Etiqueta } from "@/components/ui/tipografia";
+import { Cita, Cuerpo, Etiqueta } from "@/components/ui/tipografia";
 import {
   ANIMACIONES,
   GRUPOS_COLOR,
@@ -16,6 +17,7 @@ import {
   TOKENS_TIPOGRAFIA,
 } from "@/config/tokens";
 import { CONSTELACIONES, type Hemisferio } from "@/config/constelaciones";
+import { obtenerConfiguracion } from "@/lib/bbdd/landing";
 import { t, type ClaveCopy } from "@/lib/copy";
 
 /** Los dos grupos del catálogo, en el orden en que la entrega los presenta. */
@@ -32,6 +34,17 @@ const HEMISFERIOS: readonly {
   { id: "sur", claveTitulo: "cocina.hemisferioSur", claveNota: "cocina.hemisferioSurNota" },
 ];
 
+/**
+ * SE PINTA EN CADA PETICIÓN, NO AL CONSTRUIR.
+ *
+ * Esta página lee la configuración para enseñar el monograma de verdad, y eso
+ * la ataba al momento de la construcción: si la base no contestaba —o iba por
+ * detrás del código, que es lo que pasó— Next fallaba al prerenderizar
+ * `/cocina` y se llevaba por delante el DESPLIEGUE ENTERO. Un catálogo interno
+ * no puede tener ese poder. Es la misma decisión que ya tenía la portada.
+ */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: t("cocina.titulo"),
   robots: { index: false, follow: false },
@@ -47,7 +60,18 @@ export const metadata: Metadata = {
  * bloques inversos reasignan estos mismos tokens y ningún componente cambia
  * ni una clase. No hay selector de tema porque no hay más tema que éste.
  */
-export default function PaginaCocina() {
+export default async function PaginaCocina() {
+  /*
+    LOS NOMBRES SALEN DE LA BASE, como en cualquier otra pantalla. Un catálogo
+    de marca que enseña un monograma inventado enseña una marca que no existe, y
+    la regla 3 del proyecto no hace excepción con las páginas internas. Sin
+    configuración todavía —o si la base no contesta— la sección de identidad no
+    se pinta y el resto del catálogo sigue sirviendo: los tokens, los
+    componentes y las reglas no dependen de la base para nada. Antes media
+    página que ninguna.
+  */
+  const configuracion = await obtenerConfiguracion().catch(() => null);
+
   return (
     <main className="mx-auto max-w-contenido px-interno py-seccion-compacta">
       <header className="mb-bloque flex flex-wrap items-end justify-between gap-elemento">
@@ -291,6 +315,123 @@ export default function PaginaCocina() {
           <Cita className="mt-pila">{t("cocina.muestraTipografica")}</Cita>
         </div>
       </Seccion>
+
+      {/*
+        LAS CUATRO SECCIONES DE MARCA QUE NO ESTABAN EN NINGÚN SITIO. No son
+        decorativas: son las reglas que deciden cómo se escribe un copy y cómo
+        se sube una foto, y hasta ahora vivían sólo en el HTML que entregó el
+        estudio. Aquí están donde se consultan.
+      */}
+      {configuracion ? (
+        <Seccion titulo={t("cocina.seccionIdentidad")}>
+          <div className="grid gap-elemento sm:grid-cols-2 lg:grid-cols-4">
+            {(
+              [
+                ["principal", "cocina.identidadPrincipal", "bg-superficie"],
+                ["apilado", "cocina.identidadApilado", "bg-superficie"],
+                ["sello", "cocina.identidadSello", "bg-accion"],
+                ["secundaria", "cocina.identidadSecundaria", "bg-superficie-tenue"],
+              ] as const
+            ).map(([variante, clave, fondo]) => (
+              <div key={variante}>
+                <div
+                  className={`grid aspect-foto-tarjeta place-items-center rounded-tarjeta border border-borde ${fondo}`}
+                  data-prueba={`monograma-${variante}`}
+                >
+                  <Monograma
+                    nombreNovia={configuracion.nombreNovia}
+                    nombreNovio={configuracion.nombreNovio}
+                    variante={variante}
+                  />
+                </div>
+                <span className="mt-linea block text-meta uppercase tracking-meta text-tinta-tenue">
+                  {t(clave)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-elemento grid gap-elemento sm:grid-cols-3">
+            <Ficha titulo={t("cocina.identidadRespeto")} prueba="area-respeto">
+              <Cuerpo>{t("cocina.identidadRespetoTexto")}</Cuerpo>
+            </Ficha>
+            <Ficha titulo={t("cocina.identidadMinimo")} prueba="tamano-minimo">
+              <Cuerpo>{t("cocina.identidadMinimoTexto")}</Cuerpo>
+            </Ficha>
+            <Ficha titulo={t("cocina.identidadNunca")} prueba="identidad-nunca" tono="error">
+              <Cuerpo>{t("cocina.identidadNuncaTexto")}</Cuerpo>
+            </Ficha>
+          </div>
+        </Seccion>
+      ) : null}
+
+      <Seccion titulo={t("cocina.seccionVoz")}>
+        <div className="grid gap-elemento sm:grid-cols-3">
+          <Ficha titulo={t("cocina.vozComo")} prueba="voz-como" tono="acento">
+            <Cuerpo>{t("cocina.vozComoTexto")}</Cuerpo>
+          </Ficha>
+
+          <Ficha titulo={t("cocina.vozSi")} prueba="voz-si" tono="exito">
+            <ul className="grid gap-pila">
+              {["cocina.vozSiUno", "cocina.vozSiDos"].map((clave) => (
+                <li key={clave} className="font-titulo text-cita leading-cita text-tinta">
+                  {t(clave as ClaveCopy)}
+                </li>
+              ))}
+            </ul>
+          </Ficha>
+
+          <Ficha titulo={t("cocina.vozNo")} prueba="voz-no" tono="error">
+            <ul className="grid gap-pila">
+              {["cocina.vozNoUno", "cocina.vozNoDos", "cocina.vozNoTres"].map((clave) => (
+                <li key={clave} className="font-titulo text-cita leading-cita text-tinta-suave">
+                  {t(clave as ClaveCopy)}
+                </li>
+              ))}
+            </ul>
+          </Ficha>
+        </div>
+      </Seccion>
+
+      <Seccion titulo={t("cocina.seccionFoto")}>
+        <Cuerpo className="mb-elemento max-w-texto">{t("cocina.fotoEntradilla")}</Cuerpo>
+        <div className="grid gap-elemento sm:grid-cols-2 lg:grid-cols-4">
+          <Ficha titulo={t("cocina.fotoEncuadre")} prueba="foto-encuadre">
+            <Cuerpo>{t("cocina.fotoEncuadreTexto")}</Cuerpo>
+          </Ficha>
+          <Ficha titulo={t("cocina.fotoColor")} prueba="foto-color">
+            <Cuerpo>{t("cocina.fotoColorTexto")}</Cuerpo>
+          </Ficha>
+          <Ficha titulo={t("cocina.fotoTexto")} prueba="foto-texto">
+            <Cuerpo>{t("cocina.fotoTextoTexto")}</Cuerpo>
+          </Ficha>
+          <Ficha titulo={t("cocina.fotoNunca")} prueba="foto-nunca" tono="error">
+            <Cuerpo>{t("cocina.fotoNuncaTexto")}</Cuerpo>
+          </Ficha>
+        </div>
+      </Seccion>
+
+      <Seccion titulo={t("cocina.seccionRepaso")}>
+        <Cuerpo className="mb-elemento max-w-texto">{t("cocina.repasoEntradilla")}</Cuerpo>
+        <ol className="border-t border-borde">
+          {[
+            "cocina.repasoUno",
+            "cocina.repasoDos",
+            "cocina.repasoTres",
+            "cocina.repasoFecha",
+          ].map((clave, indice) => (
+            <li
+              key={clave}
+              className="rejilla-dato items-baseline gap-interno border-b border-borde py-pila"
+            >
+              <span className="font-titulo text-titulo-3 text-borde-fuerte">
+                {String(indice + 1).padStart(2, "0")}
+              </span>
+              <Cuerpo>{t(clave as ClaveCopy)}</Cuerpo>
+            </li>
+          ))}
+        </ol>
+      </Seccion>
     </main>
   );
 }
@@ -301,21 +442,36 @@ export default function PaginaCocina() {
  * tests, y va aquí y no en cada componente para que el test pueda leer también
  * el hueco alrededor.
  */
+const TONOS_FICHA = {
+  base: { caja: "bg-superficie", rotulo: "suave" },
+  acento: { caja: "bg-superficie", rotulo: "acento" },
+  exito: { caja: "bg-exito-fondo", rotulo: "suave" },
+  error: { caja: "bg-error-fondo", rotulo: "suave" },
+} as const;
+
 function Ficha({
   titulo,
   prueba,
+  tono = "base",
   children,
 }: {
   titulo: string;
   prueba: string;
+  /* Las fichas de «Sí» y «No» de la entrega van sobre verde y sobre rosa: el
+     color ES la regla, y en blanco las dos se leerían igual de bien. */
+  tono?: keyof typeof TONOS_FICHA;
   children: React.ReactNode;
 }) {
+  const forma = TONOS_FICHA[tono];
+
   return (
     <div
-      className="rounded-tarjeta border border-borde bg-superficie p-tarjeta"
+      className={`rounded-tarjeta border border-borde p-tarjeta ${forma.caja}`}
       data-prueba={`componente-${prueba}`}
     >
-      <Etiqueta className="block">{titulo}</Etiqueta>
+      <Etiqueta className="block" tono={forma.rotulo}>
+        {titulo}
+      </Etiqueta>
       <div className="mt-pila">{children}</div>
     </div>
   );

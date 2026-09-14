@@ -1,8 +1,8 @@
 import { RUTA_COCINA } from "@/config/constants";
 import { rutaDe } from "@/config/secciones";
+import { Monograma } from "@/components/ui/monograma";
 import { t } from "@/lib/copy";
 import { fechaEnPuntos } from "@/lib/fechas";
-import { inicial } from "@/lib/nombres";
 
 /**
  * PIE DE LA LANDING
@@ -37,7 +37,6 @@ export function Pie({
   correoContacto: string | null;
   hashtag: string | null;
 }) {
-  const nombres = `${nombreNovia} ${t("portada.conjuncion")} ${nombreNovio}`;
   const fecha = fechaEnPuntos(fechaCeremonia);
 
   const enlaces = [
@@ -58,15 +57,13 @@ export function Pie({
           en la barra. Para quien escucha la página son los dos nombres: las
           letras sueltas no significan nada leídas de una en una.
         */}
-        <p className="animacion-pop-al-ver font-titulo peso-titulo-menor text-monograma-pie leading-compacto text-tinta">
-          <span className="sr-only">{nombres}</span>
-          <span aria-hidden="true">
-            {inicial(nombreNovia)}
-            <span className="mx-linea text-ampersand text-tinta-marca italic">
-              {t("navegacion.monogramaConector")}
-            </span>
-            {inicial(nombreNovio)}
-          </span>
+        <p className="animacion-pop-al-ver">
+          <Monograma
+            nombreNovia={nombreNovia}
+            nombreNovio={nombreNovio}
+            variante="apilado"
+            className="block"
+          />
         </p>
 
         {/* Sin lugar configurado se queda la fecha sola, nunca «— null». */}

@@ -149,6 +149,36 @@ El tercero va en _Variables_ y no en _Secrets_ porque no lo es: aparece en la
 URL del panel de Supabase. Guardarlo como secreto solo conseguiría que los
 registros lo taparan con asteriscos justo cuando hace falta leerlo.
 
+### El token caduca, y eso ya tumbó producción una vez
+
+`SUPABASE_ACCESS_TOKEN` es un token **personal** y tiene fecha de caducidad.
+Cuando caducó, `supabase link` empezó a responder «Unauthorized» y el flujo de
+migraciones murió en su primer paso. El despliegue de Vercel no se entera de
+eso: siguió publicando, así que dos merges salieron a producción con el esquema
+viejo detrás y la portada se quedó en «Estamos preparando la web», con este
+error en los registros de Vercel:
+
+```
+Fallo al leer de la base de datos: column "paisaje_intro" does not exist
+```
+
+Por eso el flujo tiene ahora un **camino de repuesto**: si el CLI no puede
+entrar, aplica las migraciones con `scripts/aplicar-migraciones.sh`, que habla
+directamente con Postgres a través de `DATABASE_URL` —la misma cadena que ya
+usa `mantener-viva.yml`— y no depende de ningún token. Deja un aviso en el
+registro para que se renueve el token, pero la base queda al día.
+
+El script se planta si encuentra más de cinco migraciones pendientes: eso casi
+siempre significa que no pudo leer la tabla de control y que en realidad están
+aplicadas, y seguir adelante reharía el esquema entero sobre datos de verdad.
+Para una base nueva de verdad, `FORZAR=si`.
+
+También se puede llamar a mano:
+
+```bash
+DATABASE_URL="postgres://..." ./scripts/aplicar-migraciones.sh
+```
+
 Mientras falte alguno de los tres, el flujo **se salta con un aviso** en lugar
 de fallar: no tiene sentido teñir de rojo un despliegue por una configuración
 que aún no está.

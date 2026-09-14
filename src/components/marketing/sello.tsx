@@ -1,8 +1,7 @@
 import type { Ref } from "react";
 
-import { Conector } from "@/components/ui/tipografia";
+import { Monograma } from "@/components/ui/monograma";
 import { t } from "@/lib/copy";
-import { inicial } from "@/lib/nombres";
 
 /**
  * EL SELLO DEL SOBRE
@@ -37,14 +36,12 @@ export function Sello({
       aria-label={t("saveTheDate.abrir")}
       className="sello animacion-latido cursor-pointer border-0 p-0"
     >
-      <span
-        aria-hidden="true"
-        className="font-titulo text-sello leading-compacto text-tinta-sello"
-      >
-        {inicial(nombreNovia)}
-        <Conector tamano="sello">{t("navegacion.monogramaConector")}</Conector>
-        {inicial(nombreNovio)}
-      </span>
+      <Monograma
+        nombreNovia={nombreNovia}
+        nombreNovio={nombreNovio}
+        variante="sello"
+        nombreAccesible={false}
+      />
     </button>
   );
 }

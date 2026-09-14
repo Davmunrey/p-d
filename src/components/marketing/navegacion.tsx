@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { anclaDe } from "@/config/secciones";
-import { t } from "@/lib/copy";
-import { inicial } from "@/lib/nombres";
+import { Monograma } from "@/components/ui/monograma";
 
 /**
  * NAVEGACIÓN DE LA LANDING
@@ -96,19 +95,17 @@ export function Navegacion({
             cuerpo, que es como la entrega dibuja el monograma en la barra: no
             es un titular pequeño, es una marca, y tiene sus propios tokens.
           */
-          className="flex h-cabecera shrink-0 items-center font-titulo peso-titulo-menor text-monograma leading-compacto tracking-monograma text-tinta-marca transicion-color hover:text-tinta"
+          className="flex h-cabecera shrink-0 items-center transicion-color hover:text-tinta"
         >
-          {inicial(nombreNovia)}
           {/*
-            El nexo del monograma sale del copy como cualquier otro texto
-            visible: la entrega usa «&» en el logo y «y» en la portada, y son
-            dos decisiones tipográficas distintas que alguien puede querer
-            cambiar sin tocar código.
+            El enlace ya se anuncia con `aria-label`, así que el monograma se
+            calla: si no, quien escucha oiría los dos nombres dos veces.
           */}
-          <span aria-hidden="true" className="mx-linea text-ampersand text-marca italic">
-            {t("navegacion.monogramaConector")}
-          </span>
-          {inicial(nombreNovio)}
+          <Monograma
+            nombreNovia={nombreNovia}
+            nombreNovio={nombreNovio}
+            nombreAccesible={false}
+          />
         </a>
 
         {/*

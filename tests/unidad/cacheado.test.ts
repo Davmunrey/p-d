@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -26,7 +26,45 @@ function leer(ruta: string) {
     .replace(/\/\/[^\n]*/g, "");
 }
 
-const PAGINAS_CON_DATOS = ["src/app/page.tsx", "src/app/reserva-la-fecha/page.tsx"];
+/**
+ * LA LISTA SE BUSCA, NO SE ESCRIBE.
+ *
+ * Estaban enumeradas a mano dos páginas, y por ahí se coló el fallo: `/cocina`
+ * pasó a leer la configuración para enseñar el monograma de verdad, nadie la
+ * añadió aquí, y al no ser dinámica Next intentó prerenderizarla. La base iba
+ * por detrás del código, la lectura falló, y se cayó el DESPLIEGUE ENTERO por
+ * una página de catálogo que nadie visita.
+ *
+ * Una lista escrita a mano sólo protege de lo que ya conocías. Ahora se
+ * recorren todas las páginas que importan de `@/lib/bbdd/`, que es la
+ * definición exacta de «lee de la base».
+ */
+function paginasQueLeenDeLaBase(): string[] {
+  const encontradas: string[] = [];
+
+  const recorrer = (carpeta: string) => {
+    for (const entrada of readdirSync(join(RAIZ, carpeta), { withFileTypes: true })) {
+      const ruta = `${carpeta}/${entrada.name}`;
+      if (entrada.isDirectory()) recorrer(ruta);
+      else if (entrada.name === "page.tsx" && leer(ruta).includes("@/lib/bbdd/")) {
+        encontradas.push(ruta);
+      }
+    }
+  };
+
+  recorrer("src/app");
+  return encontradas.sort();
+}
+
+const PAGINAS_CON_DATOS = paginasQueLeenDeLaBase();
+
+it("se encuentran las páginas que leen de la base", () => {
+  // Si un día no encuentra ninguna, el barrido se ha roto y los tests de abajo
+  // pasarían en vacío, que es la forma de fallar que no se ve.
+  expect(PAGINAS_CON_DATOS.length).toBeGreaterThan(20);
+  expect(PAGINAS_CON_DATOS).toContain("src/app/page.tsx");
+  expect(PAGINAS_CON_DATOS).toContain("src/app/cocina/page.tsx");
+});
 
 describe.each(PAGINAS_CON_DATOS)("%s", (ruta) => {
   const fuente = leer(ruta);

@@ -222,6 +222,16 @@
   --velo-suave: var(--color-velo-suave);
   --velo-fuerte: var(--color-velo-fuerte);
 
+  /**
+   * EL VELO QUE VA DEBAJO DE UN TEXTO, y no es `--velo-fuerte`. La entrega
+   * acota el velo sobre foto entre el 20 % y el 60 %; el fuerte del sistema
+   * está en el 72 % y existe para lo que NO lleva texto encima —el fondo negro
+   * del visor de galería, donde cuanto más tape mejor—. Separarlos por nombre
+   * es lo que impide que alguien coja el que más oscurece «para que se lea
+   * mejor» y se salte la regla sin enterarse.
+   */
+  --velo-foto: var(--color-velo-escena-cerca-abajo);
+
   /* --- Tipografía semántica ------------------------------------------ */
   --fuente-titulo: var(--font-family-serif);
   --fuente-cuerpo: var(--font-family-sans);
