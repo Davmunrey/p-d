@@ -341,8 +341,16 @@
   --space-chips-arriba: 1.875rem;
   --space-galeria: clamp(0.875rem, 2vw, 1.625rem);
 
-  /* Cuánto viaja un elemento que entra deslizando desde un lado. */
-  --space-reveal-lateral: 1.625rem;
+  /* Cuánto viaja un elemento al entrar: 26 px, subiendo o desde un lado. */
+  --space-reveal: 1.625rem;
+
+  /* La pista «bajad» cae 7 px y se apaga; la foto de portada baja hasta 60 px
+     mientras se hace scroll, en los primeros 428 px de recorrido (60 / 0,14),
+     y sangra un 6 % por arriba y por abajo para que ese viaje no deje borde. */
+  --space-pista-recorrido: 0.4375rem;
+  --space-paralaje-portada: 3.75rem;
+  --size-scroll-paralaje: 26.75rem;
+  --size-umbral-cabecera: 5.625rem;
 
   /* Altura de los controles: el objetivo táctil cómodo en móvil. */
   --size-control: 3.25rem;
@@ -469,6 +477,16 @@
   --shadow-4: 0 40px 90px -30px rgb(20 20 15 / 55%);
   --blur-1: 6px;
   --blur-2: 12px;
+  --blur-3: 14px;
+
+  /* Opacidades, sangrados y escalas del movimiento. */
+  --opacity-pista-alta: 80%;
+  --opacity-pista-baja: 35%;
+  --bleed-foto: 6%;
+  --scale-zoom: 1.12;
+  --scale-paralaje: 1.1;
+  --scale-pop: 0.6;
+  --shift-paralaje: 5%;
 
   /* Proporciones. Crudas y sin destino: quién las usa lo decide la capa
    * semántica. */
@@ -484,13 +502,28 @@
   --duration-instant: 100ms;
   --duration-fast: 250ms;
   --duration-normal: 400ms;
+  --duration-medium: 500ms;
   --duration-slow: 900ms;
   --duration-slower: 1200ms;
   --duration-cinematic: 1400ms;
+  --duration-escena: 2400ms;
+  --duration-pista: 2600ms;
+  --duration-titilar: 7000ms;
+  --duration-deriva: 44000ms;
   --ease-salida: cubic-bezier(0.2, 0.7, 0.3, 1);
   --ease-entrada: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-suave: cubic-bezier(0.22, 0.75, 0.24, 1);
+  --ease-muelle: cubic-bezier(0.2, 1.3, 0.4, 1);
   --ease-lineal: linear;
+
+  /* Los retardos con los que entra la portada, de la versalita a la pista. */
+  --delay-1: 200ms;
+  --delay-2: 350ms;
+  --delay-3: 500ms;
+  --delay-4: 800ms;
+  --delay-5: 950ms;
+  --delay-6: 1100ms;
+  --delay-7: 1600ms;
 
   /* ---------------------------------------------------------------------
    * Capas y anchos

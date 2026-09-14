@@ -29,7 +29,7 @@
 @keyframes subir {
   from {
     opacity: 0%;
-    transform: translateY(var(--space-pila));
+    transform: translateY(var(--recorrido-reveal));
   }
 
   to {
@@ -68,7 +68,7 @@
 @keyframes entrar-izquierda {
   from {
     opacity: 0%;
-    transform: translateX(calc(var(--space-reveal-lateral) * -1));
+    transform: translateX(calc(var(--recorrido-reveal) * -1));
   }
 
   to {
@@ -80,7 +80,7 @@
 @keyframes entrar-derecha {
   from {
     opacity: 0%;
-    transform: translateX(var(--space-reveal-lateral));
+    transform: translateX(var(--recorrido-reveal));
   }
 
   to {
@@ -178,7 +178,7 @@
 /* Zoom lento de una foto al entrar: cinematográfico, nunca brusco. */
 @keyframes acercar {
   from {
-    transform: scale(1.12);
+    transform: scale(var(--escala-zoom));
   }
 
   to {
@@ -186,14 +186,94 @@
   }
 }
 
+/**
+ * LA PISTA «BAJAD» CAE Y SE APAGA, no flota hacia arriba: señala la dirección
+ * en la que hay que ir. Siete píxeles y del 80 % al 35 %, en 2,6 s, como en
+ * la entrega.
+ */
 @keyframes flotar {
   0%,
   100% {
+    opacity: var(--opacidad-pista-alta);
     transform: translateY(0);
   }
 
   50% {
-    transform: translateY(calc(var(--space-linea) * -1.25));
+    opacity: var(--opacidad-pista-baja);
+    transform: translateY(var(--recorrido-pista));
+  }
+}
+
+/* El «pop» elástico de una ficha o un monograma: desde el 60 %, con muelle. */
+@keyframes pop {
+  from {
+    opacity: 0%;
+    transform: scale(var(--escala-pop));
+  }
+
+  to {
+    opacity: 100%;
+    transform: scale(1);
+  }
+}
+
+/* Una foto que se descubre de izquierda a derecha, como una cortina. */
+@keyframes barrido {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Paralaje dentro de un marco: la foto, algo más grande, viaja al bajar. */
+@keyframes paralaje-foto {
+  from {
+    transform: translateY(calc(var(--desplazamiento-paralaje) * -1))
+      scale(var(--escala-paralaje));
+  }
+
+  to {
+    transform: translateY(var(--desplazamiento-paralaje)) scale(var(--escala-paralaje));
+  }
+}
+
+/* La foto de portada baja despacio con el scroll: hasta 60 px, a 0,14. */
+@keyframes paralaje-portada {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(var(--paralaje-portada));
+  }
+}
+
+/* La barra de lectura: lo leído, de 0 a todo el ancho. */
+@keyframes leer {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* La cabecera pasa de transparente a velada en los primeros 90 px de scroll. */
+@keyframes compactar-cabecera {
+  from {
+    backdrop-filter: blur(0);
+    background-color: transparent;
+    border-color: transparent;
+  }
+
+  to {
+    backdrop-filter: blur(var(--desenfoque-cabecera));
+    background-color: var(--superficie-cabecera);
+    border-color: var(--borde-tenue);
   }
 }
 
@@ -235,6 +315,16 @@
   animation: aparecer var(--transicion-aparicion) both;
 }
 
+/* El fundido de la portada es más largo (1,2 s) que el de un visor (0,9). */
+.animacion-aparecer-lento {
+  animation: aparecer var(--transicion-fundido-portada) both;
+}
+
+/* `backwards` por lo mismo que los reveals: la ficha se levanta al pasar. */
+.animacion-pop {
+  animation: pop var(--transicion-muelle) backwards;
+}
+
 .animacion-subir {
   animation: subir var(--transicion-cinematica) both;
 }
@@ -244,17 +334,94 @@
 }
 
 .animacion-acercar {
-  animation: acercar var(--duration-cinematic) var(--ease-salida) both;
+  animation: acercar var(--transicion-escena) both;
 }
 
 .animacion-flotar {
-  animation: flotar calc(var(--duration-cinematic) * 2.6) ease-in-out infinite;
+  animation: flotar var(--periodo-pista) ease-in-out infinite;
 }
 
 .animacion-cielo {
   animation:
-    deriva calc(var(--duration-cinematic) * 31) linear infinite alternate,
-    titilar calc(var(--duration-cinematic) * 5) ease-in-out infinite;
+    deriva var(--periodo-deriva) linear infinite alternate,
+    titilar var(--periodo-titilar) ease-in-out infinite;
+}
+
+/**
+ * Una tarjeta que se levanta al pasar el ratón: cuatro píxeles, sombra y el
+ * borde a la marca, en 0,3 s. Y una ficha que se levanta dos. Ninguno de los
+ * dos es un `hover:` de Tailwind porque el `transition` tiene que ir siempre,
+ * no sólo en el estado que entra: si no, la tarjeta sube suave y baja a saltos.
+ */
+.elevar-al-pasar {
+  transition:
+    transform var(--transicion-transformacion),
+    box-shadow var(--transicion-transformacion),
+    border-color var(--transicion-transformacion);
+}
+
+.elevar-al-pasar:hover {
+  border-color: var(--borde-marca);
+  box-shadow: var(--sombra-tarjeta);
+  transform: translateY(calc(var(--espacio-linea) * -1));
+}
+
+.levantar-al-pasar {
+  transition:
+    transform var(--transicion-color),
+    background-color var(--transicion-color);
+}
+
+.levantar-al-pasar:hover {
+  background-color: var(--marca-tenue);
+  transform: translateY(calc(var(--espacio-linea) * -0.5));
+}
+
+/**
+ * LA FOTO DE PORTADA SANGRA un 6 % por arriba y por abajo: el paralaje la
+ * baja hasta 60 px y sin ese margen se vería el borde del hueco.
+ */
+.sangrado-foto {
+  inset: calc(var(--sangrado-foto) * -1) 0;
+}
+
+/*
+  LO QUE VA LIGADO AL SCROLL DEL DOCUMENTO —la barra de lectura, la cabecera
+  que se compacta, el paralaje de la portada— no existe sin `scroll()`: la
+  barra se esconde, la cabecera se queda velada como siempre y la foto quieta.
+  Nada de esto necesita JavaScript.
+*/
+.barra-lectura {
+  display: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .barra-lectura {
+    animation: leer linear both;
+    animation-timeline: scroll(root);
+    background-color: var(--acento);
+    display: block;
+    height: var(--grosor-barra-lectura);
+    inset-inline: 0;
+    pointer-events: none;
+    position: fixed;
+    top: 0;
+    transform-origin: left;
+    z-index: var(--capa-barra-lectura);
+  }
+
+  .cabecera-compacta {
+    animation: compactar-cabecera linear both;
+    animation-range: 0 var(--umbral-cabecera);
+    animation-timeline: scroll(root);
+  }
+
+  .animacion-paralaje-portada {
+    animation: paralaje-portada linear both;
+    animation-range: 0 var(--recorrido-scroll-paralaje);
+    animation-timeline: scroll(root);
+    will-change: transform;
+  }
 }
 
 .animacion-trazar {
@@ -265,6 +432,44 @@
 .animacion-trazar-vertical {
   animation: trazar-vertical var(--transicion-aparicion) both;
   transform-origin: top;
+}
+
+/**
+ * LOS RETARDOS DE LA PORTADA: siete elementos que entran de la versalita a la
+ * pista, de 0,2 s a 1,6 s, como en la entrega. Son utilidades y no un
+ * `nth-child` porque el orden de entrada es una decisión de composición, no
+ * del DOM, y porque con `prefers-reduced-motion` hay que anularlos todos.
+ *
+ * VAN DESPUÉS DE TODAS LAS ENTRADAS, y el orden importa: `animation` es un
+ * atajo que pone `animation-delay` a cero, así que una clase de entrada
+ * declarada más abajo que el retardo se lo comía. Pasó con la raya.
+ */
+.retardo-1 {
+  animation-delay: var(--retardo-portada-1);
+}
+
+.retardo-2 {
+  animation-delay: var(--retardo-portada-2);
+}
+
+.retardo-3 {
+  animation-delay: var(--retardo-portada-3);
+}
+
+.retardo-4 {
+  animation-delay: var(--retardo-portada-4);
+}
+
+.retardo-5 {
+  animation-delay: var(--retardo-portada-5);
+}
+
+.retardo-6 {
+  animation-delay: var(--retardo-portada-6);
+}
+
+.retardo-7 {
+  animation-delay: var(--retardo-portada-7);
 }
 
 @supports (animation-timeline: view()) {
@@ -283,14 +488,25 @@
    * Empieza en `entry 0%`: en cuanto el elemento asoma. No antes —no habría
    * nada que ver— ni después, que es lo que hacía que apareciera ya montado.
    */
+
+  /*
+    `backwards` Y NO `both`: antes de entrar, el elemento está como dice el
+    primer fotograma (oculto); al acabar, vuelve a ser suyo. Con `both`, la
+    animación se quedaba con el `transform` para siempre y una tarjeta que se
+    levanta al pasar el ratón no podía levantarse: la animación ganaba al hover.
+    El estado final de todos estos fotogramas es el natural, así que soltarlo
+    no cambia nada que se vea.
+  */
   .animacion-subir-al-ver,
   .animacion-aparecer-al-ver,
   .animacion-cortina-al-ver,
   .animacion-escala-al-ver,
   .animacion-izquierda-al-ver,
   .animacion-derecha-al-ver,
-  .animacion-trazar-vertical-al-ver {
-    animation-fill-mode: both;
+  .animacion-trazar-vertical-al-ver,
+  .animacion-pop-al-ver,
+  .animacion-barrido-al-ver {
+    animation-fill-mode: backwards;
     animation-range: entry 0% cover 30%;
     animation-timeline: view();
     animation-timing-function: linear;
@@ -341,6 +557,23 @@
     animation-name: trazar-vertical;
     transform-origin: top;
   }
+
+  .animacion-pop-al-ver {
+    animation-duration: var(--duration-slow);
+    animation-name: pop;
+  }
+
+  .animacion-barrido-al-ver {
+    animation-duration: var(--duration-slower);
+    animation-name: barrido;
+  }
+
+  /* El paralaje dura lo que la foto tarda en cruzar la pantalla entera. */
+  .animacion-paralaje {
+    animation: paralaje-foto linear both;
+    animation-range: cover 0% cover 100%;
+    animation-timeline: view();
+  }
 }
 
 /* Escalonado de listas: cada hijo entra un poco después que el anterior. */
@@ -362,25 +595,47 @@
   .animacion-acercar,
   .animacion-trazar,
   .animacion-trazar-vertical,
+  .animacion-aparecer-lento,
+  .animacion-pop,
   .animacion-subir-al-ver,
   .animacion-aparecer-al-ver,
   .animacion-cortina-al-ver,
   .animacion-escala-al-ver,
   .animacion-izquierda-al-ver,
   .animacion-derecha-al-ver,
-  .animacion-trazar-vertical-al-ver {
+  .animacion-trazar-vertical-al-ver,
+  .animacion-pop-al-ver,
+  .animacion-barrido-al-ver {
     animation: aparecer var(--duration-instant) var(--ease-salida) both;
     animation-timeline: auto;
   }
 
+  /*
+    Lo que se mueve en bucle o con el scroll se para del todo. La barra de
+    lectura NO: mide cuánto se ha leído y no es decoración; quieta, mentiría.
+  */
   .animacion-flotar,
-  .animacion-cielo {
+  .animacion-cielo,
+  .animacion-paralaje,
+  .animacion-paralaje-portada,
+  .cabecera-compacta {
     animation: none;
   }
 
+  .elevar-al-pasar:hover,
+  .levantar-al-pasar:hover {
+    transform: none;
+  }
+
+  /*
+    `animation-delay: 0s` es lo que hace que la portada entera esté a la vista
+    a la vez: con los retardos puestos, «bajad» tardaría 1,6 s en aparecer
+    aunque su fundido durase 100 ms.
+  */
   *,
   *::before,
   *::after {
+    animation-delay: 0s !important;
     animation-duration: var(--duration-instant) !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;

@@ -85,7 +85,9 @@ export function Galeria({
         <VisorGaleria fotos={paraElVisor}>
           <ul className="rejilla-tira gap-galeria">
             {fotos.map((foto, indice) => (
-              <li key={foto.id} className="animacion-subir-al-ver">
+              // Cada foto se descubre con un barrido y, dentro de su marco,
+              // viaja despacio mientras cruza la pantalla: la entrega.
+              <li key={foto.id} className="animacion-barrido-al-ver">
                 {/*
                   UN ENLACE Y NO UN BOTÓN, aunque casi siempre abra el visor: sin
                   JavaScript sigue llevando a alguna parte, que es justo lo que
@@ -103,7 +105,7 @@ export function Galeria({
                     width={foto.ancho}
                     height={foto.alto}
                     sizes={MEDIDAS_MINIATURA}
-                    className="aspect-foto-tira w-full object-cover"
+                    className="animacion-paralaje aspect-foto-tira w-full object-cover"
                     // El marcador lo calcula quien sube la foto. Sin él, el
                     // hueco se queda en el color de fondo, que ya es un estado
                     // digno mientras carga.

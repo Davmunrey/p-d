@@ -82,11 +82,27 @@ function rotuloMoverA(estado: string): string {
  * lo que tiene sentido afirmar una permuta.
  */
 async function ordenDeLaColumna(pagina: Page, columna: string): Promise<string[]> {
-  return seccion(pagina, columna)
-    .locator('li[id^="tarea-"]')
-    .evaluateAll((tarjetas) =>
-      tarjetas.map((tarjeta) => (tarjeta as HTMLElement).id.replace("tarea-", "")),
-    );
+  const tarjetas = seccion(pagina, columna).locator('li[id^="tarea-"]');
+
+  /*
+    SE ESPERA A QUE LA COLUMNA ESTÉ PINTADA ANTES DE LEERLA, y esto no es un
+    adorno: es el arreglo de un fallo intermitente que llevaba tiempo pasando
+    por «flaky».
+
+    `evaluateAll` es la única lectura de todo el panel que NO reintenta. Si la
+    pantalla todavía no es el tablero —la navegación no ha terminado, o la
+    consulta no ha traído nada— devuelve una lista vacía EN SILENCIO, y el
+    fallo que salta después dice «la tarea no estaba en la columna» y enseña
+    una lista vacía, que apunta al sitio equivocado: parece que el módulo de
+    tareas ha perdido la tarjeta cuando lo que pasó es que se leyó demasiado
+    pronto. Esperar a la primera tarjeta convierte la lectura en una espera de
+    verdad, y si de verdad no hay ninguna, el fallo lo dice por su nombre.
+  */
+  await expect(tarjetas.first()).toBeVisible();
+
+  return tarjetas.evaluateAll((lista) =>
+    lista.map((tarjeta) => (tarjeta as HTMLElement).id.replace("tarea-", "")),
+  );
 }
 
 /**
@@ -386,6 +402,13 @@ test.describe("El módulo de tareas", () => {
 
     await entrar(page);
     await page.goto(tablero);
+
+    /*
+      Y ANTES DE LEER EL ORDEN, QUE ESTÉ LO QUE ESTE TEST ACABA DE ESCRIBIR.
+      Esperar a «una tarjeta cualquiera» no basta: el tablero puede estar
+      pintado con las tareas de la plantilla y sin las dos de aquí todavía.
+    */
+    await expect(tarjeta(page, mia.segunda)).toBeVisible();
 
     const antes = await ordenDeLaColumna(page, copy.panel.tareas.estados.pendiente);
     const puesto = antes.indexOf(mia.segunda);

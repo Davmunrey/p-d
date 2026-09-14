@@ -56,9 +56,34 @@ export function HuecoFoto({
   */
   const esVideo = medio?.tipo === "video" && medio.posterRuta && fuente && urlBase;
 
+  /*
+    LA FOTO DE PORTADA ENTRA COMO EN LA ENTREGA: el hueco aparece en fundido,
+    la imagen hace un zoom lento de 2,4 s (del 112 % al 100 %) y baja despacio
+    con el scroll —hasta 60 px, a 0,14— sangrando un 6 % para que el viaje no
+    deje borde. Sólo la prioritaria: el paisaje tiene su propia escena.
+  */
+  const animada = prioritaria && fuente && !esVideo;
+
   return (
-    <div className={`relative overflow-hidden bg-superficie-hundida ${className}`}>
-      {esVideo ? (
+    <div
+      className={`relative overflow-hidden bg-superficie-hundida ${
+        prioritaria ? "animacion-aparecer-lento" : ""
+      } ${className}`}
+    >
+      {animada ? (
+        <div className="animacion-paralaje-portada sangrado-foto absolute">
+          <Image
+            src={fuente}
+            alt={medio!.textoAlternativo}
+            fill
+            sizes={medidas}
+            priority
+            className="animacion-acercar object-cover"
+            placeholder={medio!.marcadorBorroso ? "blur" : "empty"}
+            blurDataURL={medio!.marcadorBorroso ?? undefined}
+          />
+        </div>
+      ) : esVideo ? (
         <VideoDeFondo
           fuente={fuente!}
           poster={enElBucket(medio!.posterRuta!)}
