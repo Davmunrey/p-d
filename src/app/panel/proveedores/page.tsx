@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -437,9 +438,12 @@ function SinCerrar({ categorias }: { categorias: CategoriaSinCerrar[] }) {
 
       <ul className="mt-elemento flex flex-wrap gap-interno-compacto">
         {categorias.map((categoria) => (
-          <li
+          <EtiquetaEstado
+            como="li"
             key={categoria.id}
-            className="rounded-etiqueta bg-superficie px-interno py-linea text-pequeno text-tinta"
+            variante="superficie"
+            tamano="compacta"
+            className="px-interno"
           >
             {categoria.nombre}{" "}
             <span className="text-tinta-suave">
@@ -452,7 +456,7 @@ function SinCerrar({ categorias }: { categorias: CategoriaSinCerrar[] }) {
                       cuantos: categoria.candidatos,
                     })}
             </span>
-          </li>
+          </EtiquetaEstado>
         ))}
       </ul>
     </section>

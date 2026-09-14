@@ -128,6 +128,14 @@
   --color-error-fondo: var(--error-fondo);
   --color-error-tinta: var(--error-tinta);
 
+  /* Desactivado, nota informativa y la tinta de la píldora de marca */
+  --color-accion-desactivada: var(--accion-desactivada);
+  --color-tinta-desactivada: var(--tinta-desactivada);
+  --color-nota-fondo: var(--nota-fondo);
+  --color-nota-tinta: var(--nota-tinta);
+  --color-nota-tinta-fuerte: var(--nota-tinta-fuerte);
+  --color-etiqueta-marca-tinta: var(--etiqueta-marca-tinta);
+
   /* Foco y velos */
   --color-foco: var(--foco);
   --color-sobre-foto: var(--tinta-sobre-foto);
@@ -168,6 +176,10 @@
   --text-cifra-dato-menor: var(--texto-cifra-dato-menor);
   --text-enlace-pie: var(--texto-enlace-pie);
   --text-chip: var(--texto-chip);
+  --text-etiqueta-estado: var(--texto-etiqueta-estado);
+  --text-aviso: var(--texto-aviso);
+  --text-meta: var(--texto-meta);
+  --text-titulo-tarjeta: var(--texto-titulo-tarjeta);
   --text-monograma-pie: var(--texto-monograma-pie);
   --text-remite: var(--texto-remite);
   --text-sello: var(--texto-sello);
@@ -207,6 +219,7 @@
   --tracking-seccion: var(--espaciado-seccion);
   --tracking-menu: var(--espaciado-menu);
   --tracking-pildora: var(--espaciado-pildora);
+  --tracking-meta: var(--espaciado-meta);
   --tracking-monograma: var(--espaciado-monograma);
   --tracking-pista: var(--espaciado-pista);
   --tracking-enlace-pie: var(--espaciado-enlace-pie);
@@ -259,6 +272,12 @@
   --spacing-pie-abajo: var(--espacio-pie-abajo);
   --spacing-chip-y: var(--espacio-chip-y);
   --spacing-chip-x: var(--espacio-chip-x);
+  --spacing-pildora-y: var(--espacio-pildora-y);
+  --spacing-pildora-x: var(--espacio-pildora-x);
+  --spacing-aviso-y: var(--espacio-aviso-y);
+  --spacing-aviso-x: var(--espacio-aviso-x);
+  --spacing-tarjeta-cuerpo: var(--espacio-tarjeta-cuerpo);
+  --spacing-meta: var(--espacio-meta);
   --spacing-chips-arriba: var(--espacio-chips-arriba);
   --spacing-galeria: var(--espacio-galeria);
   --spacing-sobre-arriba: var(--espacio-sobre-arriba);
@@ -329,6 +348,16 @@
   --aspect-foto-tarjeta: var(--proporcion-foto-tarjeta);
   --aspect-foto-tira: var(--proporcion-foto-tira);
   --aspect-hito: var(--proporcion-hito);
+
+  /*
+    EL ANILLO SE COMPONE AQUÍ Y NO EN LA CAPA SEMÁNTICA porque su color cambia
+    con el bloque —marino claro sobre fondo claro, marino oscuro dentro de un
+    bloque inverso— y un primitivo, que es donde viven los literales, no puede
+    depender del tema. Los tres ceros son la definición de un anillo: sin
+    desplazamiento y sin difuminado. Lo único configurable, el grosor y el
+    color, son los dos semánticos.
+  */
+  --shadow-anillo-campo: 0 0 0 var(--anillo-campo-ancho) var(--anillo-campo);
   --shadow-sutil: var(--sombra-sutil);
   --shadow-tarjeta: var(--sombra-tarjeta);
   --shadow-elevada: var(--sombra-elevada);

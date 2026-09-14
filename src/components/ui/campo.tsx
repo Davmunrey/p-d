@@ -31,8 +31,23 @@ interface Envoltura {
   className?: string;
 }
 
+/**
+ * FUERA `focus:outline-none`, Y ES EL ARREGLO MÁS IMPORTANTE DE ESTE FICHERO.
+ *
+ * Esa clase anulaba el `:focus-visible` global —el aro de bronce de dos
+ * píxeles que lleva toda la página— y dejaba al campo con un cambio de borde
+ * como único indicador de foco. Un borde que pasa de gris a azul no basta:
+ * quien navega con el teclado no tiene forma de saber dónde está si el único
+ * aviso es un color que cambia un punto.
+ *
+ * Ahora conviven los dos, que es lo que pide la entrega y lo que pide la
+ * accesibilidad: por fuera el aro de bronce, con su separación, y pegado al
+ * borde el anillo marino de tres píxeles del catálogo. El primero se ve desde
+ * el otro lado de la habitación; el segundo es el que hace que el campo parezca
+ * encendido.
+ */
 const CLASES_CONTROL =
-  "w-full border bg-superficie text-cuerpo text-tinta transicion-color placeholder:text-tinta-tenue focus:outline-none focus-visible:border-borde-marca";
+  "w-full border bg-superficie text-cuerpo text-tinta transicion-color placeholder:text-tinta-tenue focus-visible:border-marca focus-visible:shadow-anillo-campo";
 
 /**
  * Dos formas, y sólo dos: la caja de siempre y la píldora que la entrega usa

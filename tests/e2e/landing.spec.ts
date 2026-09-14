@@ -969,18 +969,26 @@ test.describe("El movimiento es el de la entrega", () => {
   test("la foto de portada aparece en fundido y hace el zoom lento", async ({ page }) => {
     await page.goto("/");
 
-    const foto = await page
-      .locator("#portada img")
-      .first()
-      .evaluate((img) => ({
-        nombre: getComputedStyle(img).animationName,
-        duracion: getComputedStyle(img).animationDuration,
-        fundido: getComputedStyle(img.closest(".animacion-aparecer-lento")!).animationName,
-      }));
+    /*
+      SE LEE CON `poll` Y NO DE UNA VEZ. `getComputedStyle` devuelve lo que hay
+      en ese instante, y en un móvil la foto de portada tarda en llegar: si se
+      pregunta antes de que la imagen esté montada, `animationName` vale cadena
+      vacía y el test acusa de no animar a algo que sí anima. `poll` reintenta
+      hasta que la respuesta deja de estar vacía, que es justo lo que hace
+      `expect(...).toBeVisible()` y lo que un `evaluate` suelto no hace.
+    */
+    const locator = page.locator("#portada img").first();
+    await expect(locator).toBeVisible();
 
-    expect(foto.nombre).toBe("acercar");
-    expect(foto.duracion).toBe("2.4s");
-    expect(foto.fundido).toBe("aparecer");
+    await expect
+      .poll(async () =>
+        locator.evaluate((img) => ({
+          nombre: getComputedStyle(img).animationName,
+          duracion: getComputedStyle(img).animationDuration,
+          fundido: getComputedStyle(img.closest(".animacion-aparecer-lento")!).animationName,
+        })),
+      )
+      .toEqual({ nombre: "acercar", duracion: "2.4s", fundido: "aparecer" });
   });
 
   test("la pista «bajad» cae y se apaga en 2,6 s", async ({ page }) => {

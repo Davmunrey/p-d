@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_ACCESO, RUTA_DIA, ZONA_HORARIA } from "@/config/constants";
 import {
@@ -322,9 +323,9 @@ function Alergias({
               <span className="text-cuerpo text-tinta">
                 {[fila.nombre, fila.apellidos].filter(Boolean).join(" ")}
               </span>
-              <span className="rounded-etiqueta bg-aviso-fondo px-interno-compacto py-linea text-pequeno text-aviso-tinta">
+              <EtiquetaEstado variante="aviso" tamano="compacta">
                 {fila.alergias}
-              </span>
+              </EtiquetaEstado>
             </li>
           ))}
         </ul>

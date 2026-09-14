@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { Boton } from "@/components/ui/boton";
 import { CampoTexto } from "@/components/ui/campo";
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   BUCKET_MEDIOS,
@@ -232,15 +233,9 @@ function Ficha({
 
       <div className="grid gap-pila">
         <div className="flex flex-wrap items-center gap-interno-compacto">
-          <span
-            className={`rounded-etiqueta px-interno py-linea text-diminuto uppercase tracking-etiqueta ${
-              medio.publicado
-                ? "bg-marca text-tinta-sobre-marca"
-                : "border border-borde-fuerte text-tinta-suave"
-            }`}
-          >
+          <EtiquetaEstado variante={medio.publicado ? "marca" : "contorno"} tamano="versalita">
             {medio.publicado ? t("panel.medios.enLaWeb") : t("panel.medios.borrador")}
-          </span>
+          </EtiquetaEstado>
 
           {medio.tipo === "video" ? <Etiqueta>{t("panel.medios.esVideo")}</Etiqueta> : null}
 

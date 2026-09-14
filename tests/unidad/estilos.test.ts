@@ -205,6 +205,60 @@ describe("Los anchos y los espaciados no comparten nombre", () => {
   });
 });
 
+/**
+ * BODA-123 · NINGUNA PANTALLA PINTA SU PROPIA PÍLDORA.
+ *
+ * El criterio de aceptación del ticket, escrito como lo que es: un grep. La
+ * píldora de estado vive en `etiqueta-estado.tsx` y en ningún otro sitio; en
+ * cuanto una pantalla vuelve a escribir `rounded-etiqueta` junto a un fondo,
+ * el sistema se ha partido otra vez en veinte copias parecidas.
+ *
+ * NO SE PROHÍBE `rounded-etiqueta` A SECAS, y la diferencia es importante: ese
+ * radio también es la FORMA de otras cosas —una mesa redonda del plano, una
+ * barra de muestra del catálogo, un chip con casilla—, y prohibirlo entero
+ * obligaría a inventar un segundo token para el mismo círculo. Lo que se
+ * persigue es el radio ACOMPAÑADO DE UN FONDO o de un borde, que es la firma
+ * de una etiqueta y de nada más.
+ */
+describe("La píldora de estado sólo se escribe en un sitio", () => {
+  const COMPONENTE = join("src", "components", "ui", "etiqueta-estado.tsx");
+
+  /* `rounded-etiqueta` seguido, en la misma lista de clases, de un relleno o
+     de un borde: `bg-*` o `border border-*`. */
+  const PILDORA = /rounded-etiqueta[^"'`]*\b(?:bg-[\w-]+|border\s+border-[\w-]+)/;
+
+  /**
+   * LAS TRES EXCEPCIONES, CON SU MOTIVO ESCRITO.
+   *
+   * En estos tres sitios el radio redondo está por la FORMA y no porque lo que
+   * se pinta sea una etiqueta. Van enumeradas una a una —y no con un patrón que
+   * las cubra de refilón— para que añadir una cuarta cueste explicarla: una
+   * lista de excepciones sin razones se convierte en la lista de todo.
+   */
+  const EXCEPCIONES: Record<string, string> = {
+    [join("src", "app", "cocina", "page.tsx")]:
+      "la barra que mide un token de espaciado en el catálogo: es una regla, no una etiqueta",
+    [join("src", "app", "panel", "invitados", "page.tsx")]:
+      "un `label` con casilla dentro (`has-checked:`): se pulsa y se marca, una etiqueta no",
+    [join("src", "app", "panel", "mesas", "page.tsx")]:
+      "un enlace de navegación a una mesa, y el contorno de una mesa redonda del plano",
+  };
+
+  it("ninguna pantalla escribe una etiqueta de estado a mano", () => {
+    const infractores = ficherosDeCodigo()
+      .filter((ruta) => !ruta.endsWith(COMPONENTE))
+      .filter((ruta) => !Object.keys(EXCEPCIONES).some((fin) => ruta.endsWith(fin)))
+      .map((ruta) => ({ ruta, texto: readFileSync(ruta, "utf8") }))
+      .filter(({ texto }) => PILDORA.test(texto))
+      .map(({ ruta }) => ruta.replace(RAIZ, ""));
+
+    expect(
+      infractores,
+      "usa <EtiquetaEstado> en vez de repetir sus clases: src/components/ui/etiqueta-estado.tsx",
+    ).toEqual([]);
+  });
+});
+
 /** Todos los `.ts`/`.tsx` de `src`, recorriendo carpetas a mano. */
 function ficherosDeCodigo(): string[] {
   const encontrados: string[] = [];

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { CampoTexto } from "@/components/ui/campo";
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import type { ProveedorEnLaAgenda } from "@/lib/bbdd/dia";
 import { t } from "@/lib/copy";
 import { paraLlamar } from "@/lib/telefono";
@@ -116,9 +117,9 @@ function FichaDeProveedor({ proveedor }: { proveedor: ProveedorEnLaAgenda }) {
               </span>
 
               {contacto.esDelDia ? (
-                <span className="rounded-etiqueta bg-exito-fondo px-interno-compacto py-linea text-pequeno text-exito-tinta">
+                <EtiquetaEstado variante="exito" tamano="compacta">
                   {t("panel.dia.agenda.contactoDelDia")}
-                </span>
+                </EtiquetaEstado>
               ) : null}
 
               {contacto.telefono ? (

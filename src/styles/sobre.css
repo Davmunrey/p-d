@@ -204,8 +204,22 @@
   width: var(--lado-sello);
 }
 
-.sello:hover {
-  transform: scale(var(--escala-sello-hover));
+/*
+  SÓLO DONDE HAY RATÓN DE VERDAD. En una pantalla táctil no existe «pasar por
+  encima»: el `:hover` se dispara al tocar y se queda pegado hasta que se toca
+  otra cosa, así que el sello se quedaba agrandado después de pulsarlo. Y la
+  invitación llega por WhatsApp, o sea que el móvil es el caso normal, no la
+  excepción.
+
+  De paso arregla un fallo del test que no era del test: mientras el sello
+  crece y encoge bajo el puntero, su caja cambia en cada fotograma, y la
+  comprobación de estabilidad que Playwright hace antes de pulsar no llega a
+  cerrarse nunca.
+*/
+@media (hover: hover) {
+  .sello:hover {
+    transform: scale(var(--escala-sello-hover));
+  }
 }
 
 .pieza-sobre[data-abierto] .sello-hueco {

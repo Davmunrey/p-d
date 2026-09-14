@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { Boton, BotonEnlace } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_ACCESO, RUTA_DOCUMENTOS, ZONA_HORARIA } from "@/config/constants";
 import { obtenerDiasDeLaBoda } from "@/lib/bbdd/ajustes";
@@ -350,9 +351,9 @@ function Fila({
           móvil.
         */}
         {documento.caducaAntesDeLaBoda ? (
-          <span className="rounded-etiqueta bg-error-fondo px-interno py-linea text-pequeno text-error-tinta">
+          <EtiquetaEstado variante="error" tamano="compacta" className="px-interno">
             {t("panel.documentos.caducaAntes")}
-          </span>
+          </EtiquetaEstado>
         ) : null}
       </div>
 

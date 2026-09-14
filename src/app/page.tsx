@@ -11,6 +11,8 @@ import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { BotonEnlace } from "@/components/ui/boton";
 import { DatosEstructurados } from "@/components/datos-estructurados";
 import { CuentaRegalos } from "@/components/ui/cuenta-regalos";
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
+import { Tarjeta } from "@/components/ui/tarjeta";
 import { FormularioPlaylist } from "@/components/ui/formulario-playlist";
 import {
   Cita,
@@ -892,12 +894,9 @@ function ListaDeHoras({
       {avisos.length > 0 ? (
         <ul className="mt-elemento flex flex-wrap items-center gap-fila-hueco border-t border-borde pt-hueco-fluido">
           {avisos.map((aviso) => (
-            <li
-              key={aviso}
-              className="rounded-etiqueta bg-superficie-tenue px-pila py-chip-y text-pequeno tracking-aviso text-tinta-marca"
-            >
+            <EtiquetaEstado como="li" key={aviso} tamano="aviso">
               {aviso}
-            </li>
+            </EtiquetaEstado>
           ))}
         </ul>
       ) : null}
@@ -969,12 +968,17 @@ function Alojamiento({
     >
       <ul className="rejilla-tarjetas gap-rejilla-fluida">
         {sitios.map((sitio) => (
-          <li
+          <Tarjeta
             key={sitio.id}
-            className="animacion-subir-al-ver elevar-al-pasar flex flex-col overflow-hidden rounded-tarjeta border border-borde bg-superficie"
-          >
-            {sitio.foto && urlBase ? (
-              <div className="relative aspect-foto-tarjeta bg-superficie-hundida">
+            como="li"
+            tamano="amplia"
+            nivelTitulo="h3"
+            className="animacion-subir-al-ver elevar-al-pasar"
+            meta={sitio.distintivo ?? undefined}
+            titulo={sitio.nombre}
+            texto={sitio.descripcion ?? undefined}
+            imagen={
+              sitio.foto && urlBase ? (
                 <Image
                   src={`${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${sitio.foto.ruta}`}
                   alt={sitio.foto.textoAlternativo}
@@ -986,17 +990,10 @@ function Alojamiento({
                   placeholder={sitio.foto.marcadorBorroso ? "blur" : "empty"}
                   blurDataURL={sitio.foto.marcadorBorroso ?? undefined}
                 />
-              </div>
-            ) : null}
-            <div className="flex flex-1 flex-col p-tarjeta">
-              {sitio.distintivo ? <Etiqueta>{sitio.distintivo}</Etiqueta> : null}
-              <Titulo3 como="h3" className="mt-hueco-corto">
-                {sitio.nombre}
-              </Titulo3>
-              {sitio.descripcion ? (
-                <Cuerpo className="mt-hueco-corto flex-1">{sitio.descripcion}</Cuerpo>
-              ) : null}
-              <div className="mt-pila flex items-baseline justify-between gap-interno border-t border-borde-tenue pt-interno">
+              ) : undefined
+            }
+            pie={
+              <>
                 {sitio.precioTexto ? (
                   <span className="font-titulo peso-titulo-menor text-cifra-dato text-tinta-marca">
                     {sitio.precioTexto}
@@ -1014,9 +1011,9 @@ function Alojamiento({
                     {t("alojamiento.reservar")}
                   </a>
                 ) : null}
-              </div>
-            </div>
-          </li>
+              </>
+            }
+          />
         ))}
       </ul>
     </Bloque>
@@ -1213,12 +1210,14 @@ function Playlist({
       {canciones.length > 0 ? (
         <ul className="mt-chips-arriba flex flex-wrap justify-center gap-hueco-corto">
           {canciones.map((cancion) => (
-            <li
+            <EtiquetaEstado
+              como="li"
               key={cancion.id}
-              className="animacion-pop levantar-al-pasar rounded-etiqueta bg-superficie-tenue px-chip-x py-chip-y text-chip text-tinta-marca"
+              tamano="chip"
+              className="animacion-pop levantar-al-pasar"
             >
               {cancion.texto}
-            </li>
+            </EtiquetaEstado>
           ))}
         </ul>
       ) : (

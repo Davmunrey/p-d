@@ -109,6 +109,26 @@
   --aviso-fondo: var(--color-nieve-150);
 
   /**
+   * LA NOTA NO ES UN AVISO, aunque hoy compartan color de fondo. El aviso
+   * advierte de algo que puede salir mal; la nota sólo cuenta un dato que
+   * conviene tener a mano («Plazo: las confirmaciones se cierran el 1 de
+   * mayo»). Separarlos ahora cuesta una línea; juntarlos obliga a que el día
+   * que un aviso se vuelva ámbar, media web se vuelva ámbar con él.
+   */
+  --nota-fondo: var(--color-nieve-150);
+  --nota-tinta: var(--color-pizarra-600);
+  --nota-tinta-fuerte: var(--color-pizarra-900);
+
+  /**
+   * La tinta de la píldora de marca. No vale `--tinta-sobre-marca`: ésa es
+   * nieve-50, el blanco del fondo de la página, y la entrega escribe la
+   * píldora en nieve-100, medio punto más cálido. Sobre marino-700 la
+   * diferencia no se ve; en el bloque inverso, donde la píldora se da la
+   * vuelta, sí — y es ahí donde este token se gana el sitio.
+   */
+  --etiqueta-marca-tinta: var(--color-nieve-100);
+
+  /**
    * LA TINTA DEL AVISO NO ES EL COLOR DEL AVISO, y aquí es donde se separan.
    *
    * El ámbar de la entrega (#b8860b) da 3,25:1 sobre el claro: de sobra para
@@ -172,6 +192,31 @@
   --foco-ancho: var(--border-width-2);
   --foco-separacion: var(--space-linea);
 
+  /**
+   * EL ANILLO DEL CAMPO NO ES EL ARO DE FOCO, y son dos cosas a la vez a
+   * propósito. El aro de bronce de arriba es el indicador de accesibilidad y
+   * lo pinta el `:focus-visible` global de toda la página, por fuera y con
+   * separación. Este anillo es el halo marino que la entrega dibuja pegado al
+   * borde de un campo enfocado: es decoración, va por dentro y no sustituye a
+   * nada. Hasta ahora el campo llevaba `outline: none` y se quedaba sin el
+   * primero, que es justo lo que este ticket viene a arreglar.
+   */
+  --anillo-campo: var(--color-marino-100);
+  --anillo-campo-ancho: var(--border-width-3);
+
+  /**
+   * --- Desactivado -----------------------------------------------------
+   *
+   * Un botón apagado se pinta con COLOR PROPIO, no bajándole la opacidad al
+   * encendido. La opacidad arrastra también la sombra y el borde, deja el
+   * relleno traslúcido —así que el color final depende de lo que haya debajo—
+   * y da un gris distinto en cada fondo del sistema. Dos tokens lo resuelven
+   * de una vez y el resultado es el mismo en la landing, en el bloque inverso
+   * y en el pie.
+   */
+  --accion-desactivada: var(--color-marino-100);
+  --tinta-desactivada: var(--color-marino-420);
+
   /* --- Superposiciones ----------------------------------------------- */
   --velo: var(--color-velo-medio);
   --velo-suave: var(--color-velo-suave);
@@ -207,6 +252,12 @@
   --texto-cifra-dato-menor: var(--font-size-cifra-dato-menor);
   --texto-enlace-pie: var(--font-size-pequeno);
   --texto-chip: var(--font-size-chip);
+
+  /* Los cuatro componentes del catálogo. */
+  --texto-etiqueta-estado: var(--font-size-etiqueta-estado);
+  --texto-aviso: var(--font-size-aviso);
+  --texto-meta: var(--font-size-meta);
+  --texto-titulo-tarjeta: var(--font-size-titulo-tarjeta);
   --texto-monograma-pie: var(--font-size-monograma-pie);
   --peso-titulo: var(--font-weight-light);
   --peso-titulo-menor: var(--font-weight-regular);
@@ -230,6 +281,7 @@
   --espaciado-seccion: var(--letter-spacing-seccion);
   --espaciado-menu: var(--letter-spacing-boton);
   --espaciado-pildora: var(--letter-spacing-pildora);
+  --espaciado-meta: var(--letter-spacing-meta);
   --espaciado-monograma: var(--letter-spacing-monograma);
   --espaciado-pista: var(--letter-spacing-pista);
   --espaciado-enlace-pie: var(--letter-spacing-enlace-pie);
@@ -278,6 +330,14 @@
   --espacio-pie-abajo: var(--space-pie-abajo);
   --espacio-chip-y: var(--space-chip-y);
   --espacio-chip-x: var(--space-chip-x);
+
+  /* Los rellenos del catálogo: píldora, aviso y cuerpo de tarjeta. */
+  --espacio-pildora-y: var(--space-pildora-y);
+  --espacio-pildora-x: var(--space-pildora-x);
+  --espacio-aviso-y: var(--space-aviso-y);
+  --espacio-aviso-x: var(--space-aviso-x);
+  --espacio-tarjeta-cuerpo: var(--space-tarjeta-cuerpo);
+  --espacio-meta: var(--space-meta);
   --espacio-chips-arriba: var(--space-chips-arriba);
   --espacio-galeria: var(--space-galeria);
   --alto-control: var(--size-control);
@@ -677,6 +737,20 @@
   --serie-real: var(--color-marino-100);
   --serie-exceso: var(--color-error-oscuro);
   --foco: var(--color-bronce-300);
+
+  /**
+   * Lo desactivado también se da la vuelta. Heredar el par claro dejaría un
+   * botón apagado en marino-100 —el mismo relleno que aquí tiene el botón
+   * ENCENDIDO— y las dos jerarquías se volverían indistinguibles justo en el
+   * bloque del RSVP, que es donde más importa saber si se puede pulsar.
+   */
+  --accion-desactivada: var(--color-marino-600);
+  --tinta-desactivada: var(--color-marino-400);
+  --anillo-campo: var(--color-marino-600);
+  --nota-fondo: var(--color-marino-775);
+  --nota-tinta: var(--color-marino-200);
+  --nota-tinta-fuerte: var(--color-nieve-100);
+  --etiqueta-marca-tinta: var(--color-marino-800);
 }
 
 [data-seccion="pie"] {
@@ -708,6 +782,15 @@
   --serie-real: var(--color-marino-100);
   --serie-exceso: var(--color-error-oscuro);
   --foco: var(--color-bronce-300);
+
+  /* Por lo mismo que en el bloque inverso: aquí la acción también es clara. */
+  --accion-desactivada: var(--color-marino-800);
+  --tinta-desactivada: var(--color-marino-450);
+  --anillo-campo: var(--color-marino-800);
+  --nota-fondo: var(--color-marino-900);
+  --nota-tinta: var(--color-marino-350);
+  --nota-tinta-fuerte: var(--color-nieve-100);
+  --etiqueta-marca-tinta: var(--color-pizarra-950);
 }
 
 /**

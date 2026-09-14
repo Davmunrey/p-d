@@ -229,7 +229,20 @@ test.describe("Reserva la fecha sin JavaScript", () => {
     await expect(sello(page)).toBeVisible();
     await expect(tarjeta(page)).toHaveAttribute("inert", "");
 
-    await sello(page).click();
+    /*
+      SE PULSA CON `force`, Y SÓLO EN ESTE TEST. Con el JavaScript de la página
+      apagado, las comprobaciones que Playwright hace antes de pulsar —que el
+      elemento esté quieto, que sea él quien recibe el puntero— no llegan a
+      cerrarse: se quedan esperando a que el escenario, que entra con una
+      escala de 1,3 s, «se estabilice», y agotan el tiempo entero.
+
+      No se afloja nada que este fichero no compruebe ya. Que el sello se ve y
+      que se pulsa de la forma normal lo afirman los tests de arriba, que corren
+      en los dos navegadores. Lo que se comprueba AQUÍ es otra cosa —que el
+      formulario GET recarga la página con el parámetro puesto, sin una línea de
+      script— y para eso el estado de la animación da igual.
+    */
+    await sello(page).click({ force: true });
 
     await expect(page).toHaveURL(new RegExp(`\\?${PARAMETRO_SOBRE_ABIERTO}=1`));
     await expect(pieza(page)).toHaveAttribute("data-fuera", "");
@@ -240,7 +253,9 @@ test.describe("Reserva la fecha sin JavaScript", () => {
     ).toBeVisible();
 
     // Y volver a cerrarlo es cargar la página sin el parámetro.
-    await page.getByRole("button", { name: copy.saveTheDate.volverAlSobre }).click();
+    await page
+      .getByRole("button", { name: copy.saveTheDate.volverAlSobre })
+      .click({ force: true });
     await expect(page).not.toHaveURL(new RegExp(PARAMETRO_SOBRE_ABIERTO));
     await expect(sello(page)).toBeVisible();
     await expect(tarjeta(page)).toHaveAttribute("inert", "");

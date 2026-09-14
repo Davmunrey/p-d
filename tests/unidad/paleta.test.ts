@@ -206,6 +206,41 @@ describe("contraste de la paleta", () => {
       }
     });
 
+    /**
+     * BODA-123 · UN BOTÓN APAGADO TIENE QUE PARECER APAGADO.
+     *
+     * Lo que se mide aquí NO es si el rótulo de un botón desactivado cumple
+     * AA. No tiene que cumplirlo: la 1.4.3 de las WCAG deja fuera —«Incidental:
+     * ... inactive user interface component»— el texto de un control que no se
+     * puede usar, precisamente porque apagarlo es la señal. Medido con esta
+     * misma función, el par que escribe la entrega (marino-100 de relleno,
+     * marino-420 de tinta) da 2,48:1 en el tema claro, y son los colores del
+     * estudio, letra por letra.
+     *
+     * Lo que sí es un defecto —y lo que este test caza— es que un botón
+     * apagado se parezca a uno encendido. Pasaba con `opacity-50`: dentro de un
+     * bloque inverso, donde la acción es clara, medio blanco sobre marino
+     * seguía leyéndose como un botón pulsable. Por eso se exige separación
+     * entre los dos rellenos, en los tres fondos, y que el apagado no se
+     * confunda con la página que tiene detrás.
+     */
+    it(`en ${nombre} un botón apagado no se confunde con uno encendido`, () => {
+      const apagado = resolver("accion-desactivada", propias);
+      const encendido = resolver("accion", propias);
+
+      expect(
+        Number(contraste(apagado, encendido).toFixed(2)),
+        `el relleno apagado y el encendido son casi el mismo en ${nombre}`,
+      ).toBeGreaterThanOrEqual(1.5);
+
+      // Y su tinta tiene que separarse del propio relleno lo bastante para que
+      // se lea que pone algo, aunque no llegue al umbral de un texto activo.
+      expect(
+        Number(contraste(resolver("tinta-desactivada", propias), apagado).toFixed(2)),
+        `la tinta apagada desaparece sobre su relleno en ${nombre}`,
+      ).toBeGreaterThanOrEqual(2);
+    });
+
     it(`en ${nombre} el acento y el aro de foco se despegan del fondo`, () => {
       const fondo = resolver("fondo", propias);
       // El acento solo se usa en tamaños grandes (cita, conector, cifras) y el

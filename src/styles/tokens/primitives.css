@@ -218,6 +218,16 @@
   /* La ficha de canción de la playlist (14,5 px) y el monograma del pie (44). */
   --font-size-chip: 0.9063rem;
   --font-size-monograma-pie: 2.75rem;
+
+  /* Los cuatro componentes del catálogo de la entrega: la píldora de estado
+     (13,5 px), el aviso y el texto de una tarjeta (15 px, el mismo escalón
+     para los dos), la meta en versalita de la tarjeta (10,5) y su título en
+     serif (25). Ninguno cae en la escala de texto de la landing, y por eso
+     tienen nombre propio en vez de redondearse al vecino más cercano. */
+  --font-size-etiqueta-estado: 0.8438rem;
+  --font-size-aviso: 0.9375rem;
+  --font-size-meta: 0.6563rem;
+  --font-size-titulo-tarjeta: 1.5625rem;
   --font-weight-light: 300;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -266,6 +276,12 @@
 
   /* Las etiquetas de aviso al pie del programa: apenas abiertas. */
   --letter-spacing-suave: 0.06em;
+
+  /* La versalita con la que el catálogo rotula sus fichas y escribe la meta de
+     una tarjeta. Coincide en valor con la del naipe del Save the Date, y son
+     dos tokens a propósito: retocar la fecha de un naipe no puede mover de
+     sitio la meta de una tarjeta de hotel. */
+  --letter-spacing-meta: 0.28em;
 
   /* La línea de fecha y lugar del pie: la versalita más abierta de la pieza. */
   --letter-spacing-pie: 0.36em;
@@ -340,6 +356,16 @@
   --space-chip-x: 1.125rem;
   --space-chips-arriba: 1.875rem;
   --space-galeria: clamp(0.875rem, 2vw, 1.625rem);
+
+  /* Los rellenos que escribe el catálogo: la píldora (9 y 16), el aviso
+     (18 y 20) y el cuerpo de una tarjeta (22), más el aire de 9 px entre la
+     meta de la tarjeta y su título. */
+  --space-pildora-y: 0.5625rem;
+  --space-pildora-x: 1rem;
+  --space-aviso-y: 1.125rem;
+  --space-aviso-x: 1.25rem;
+  --space-tarjeta-cuerpo: 1.375rem;
+  --space-meta: 0.5625rem;
 
   /* Cuánto viaja un elemento al entrar: 26 px, subiendo o desde un lado. */
   --space-reveal: 1.625rem;
@@ -469,6 +495,10 @@
   --radius-redondo: 999px;
   --border-width-1: 1px;
   --border-width-2: 2px;
+
+  /* El anillo de 3 px que la entrega pone alrededor de un campo enfocado. Es
+     el único sitio del sistema donde un trazo pasa de dos píxeles. */
+  --border-width-3: 3px;
   --shadow-1: 0 1px 2px rgb(20 20 15 / 7%);
 
   /* La sombra que levanta una tarjeta al pasar el ratón en la Landing aplicada

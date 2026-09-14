@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { Boton } from "@/components/ui/boton";
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import { PORCENTAJE_IVA, RUTA_ACCESO, RUTA_PROVEEDORES } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
@@ -223,9 +224,9 @@ function Tabla({
                   comparar con el de al lado dentro de dos segundos.
                 */}
                 {bases[indice].indeterminado ? (
-                  <span className="mt-pila block rounded-etiqueta bg-aviso-fondo px-interno-compacto py-linea text-pequeno text-aviso-tinta">
+                  <EtiquetaEstado variante="aviso" tamano="compacta" className="mt-pila block">
                     {t("panel.proveedores.ivaNoLoDice")}
-                  </span>
+                  </EtiquetaEstado>
                 ) : null}
               </Celda>
             ))}
@@ -303,9 +304,9 @@ function Tabla({
               {candidatos.map((candidato) => (
                 <Celda key={candidato.id}>
                   {candidato.estado === "contratado" ? (
-                    <span className="rounded-etiqueta bg-exito-fondo px-interno-compacto py-linea text-pequeno text-exito-tinta">
+                    <EtiquetaEstado variante="exito" tamano="compacta">
                       {t("panel.proveedores.yaContratado")}
-                    </span>
+                    </EtiquetaEstado>
                   ) : (
                     <form action={elegirProveedor}>
                       <input type="hidden" name="categoria_id" value={categoria.id} />
