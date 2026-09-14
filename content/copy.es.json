@@ -38,7 +38,7 @@
       "cuenta_atras": "Cuenta atrás",
       "historia": "Nuestra historia",
       "galeria": "Galería",
-      "programa": "El día",
+      "programa": "Programa",
       "ubicaciones": "Dónde",
       "transporte": "Cómo llegar",
       "alojamiento": "Alojamiento",
@@ -47,7 +47,7 @@
       "preguntas_frecuentes": "Preguntas",
       "playlist": "Playlist",
       "rsvp": "Confirmar",
-      "preboda": "La víspera"
+      "preboda": "Preboda"
     }
   },
   "portada": {
@@ -59,7 +59,8 @@
     "conjuncion": "y",
     "enPreparacion": "Estamos preparando la web",
     "enPreparacionTexto": "Vuelve en un rato y aquí estará todo.",
-    "bajad": "Bajad"
+    "bajad": "Bajad",
+    "etiqueta": "Nos casamos en {ciudad}"
   },
   "cuentaAtras": {
     "titulo": "Cuenta atrás",
@@ -90,8 +91,9 @@
   "preboda": {
     "etiqueta": "La víspera",
     "titulo": "Si llegáis antes de tiempo",
-    "entradilla": "Muchos venís de fuera y el día antes da para mucho. Esto es lo que habrá.",
-    "cierre": "Nada de esto es obligatorio ni hace falta confirmarlo: pasaos por donde os apetezca."
+    "entradilla": "Muchos vendréis de fuera y el {dia} da para mucho. Nosotros estaremos por {ciudad}: venid a saludar.",
+    "cierre": "Nada de esto es obligatorio ni hace falta confirmarlo: pasaos por donde os apetezca.",
+    "entradillaSinCiudad": "Muchos vendréis de fuera y el {dia} da para mucho. Venid a saludar."
   },
   "programa": {
     "etiqueta": "El día, hora a hora",
@@ -100,9 +102,13 @@
   "alojamiento": {
     "etiqueta": "Dónde dormir",
     "titulo": "Alojamiento",
-    "reservar": "Reservar",
-    "entradilla": "Hemos bloqueado habitaciones en varios hoteles con tarifa cerrada. Reservad diciendo «Boda {nombres}» antes del {fecha}.",
-    "entradillaSinPlazo": "Hemos bloqueado habitaciones en varios hoteles con tarifa cerrada. Reservad diciendo «Boda {nombres}»."
+    "reservar": "Reservar →",
+    "entradilla": "Hemos bloqueado habitaciones en {hoteles} con tarifa cerrada. Reservad diciendo «Boda {nombres}» antes del {fecha}.",
+    "entradillaSinPlazo": "Hemos bloqueado habitaciones en {hoteles} con tarifa cerrada. Reservad diciendo «Boda {nombres}».",
+    "hotelesDeCiudad": "{cuantos} hoteles de {ciudad}",
+    "hoteles": "{cuantos} hoteles",
+    "hotelDeCiudad": "un hotel de {ciudad}",
+    "hotel": "un hotel"
   },
   "comoLlegar": {
     "etiqueta": "El lugar",
@@ -139,7 +145,7 @@
     "descripcion": "No esperamos nada, de verdad. Si aun así os apetece contribuir, estamos ahorrando para el viaje de novios y aquí tenéis la cuenta.",
     "titular": "Cuenta a nombre de {titular}",
     "etiquetaCuenta": "Número de cuenta",
-    "copiar": "Copiar",
+    "copiar": "Copiar número de cuenta",
     "copiado": "Copiado",
     "buzon": "También habrá un buzón en la entrada del invernadero.",
     "revelar": "Ver el número de cuenta",
@@ -169,10 +175,10 @@
     "enviar": "Enviar confirmación",
     "enviando": "Enviando…",
     "indicadAsistencia": "Indicadnos si podréis venir.",
-    "graciasSi": "Qué alegría",
-    "graciasSiTexto": "Queda apuntado. Os escribiremos unas semanas antes con los últimos detalles.",
+    "graciasSi": "¡Qué alegría!",
+    "graciasSiTexto": "Apuntado. Os escribiremos unas semanas antes con los últimos detalles.",
     "graciasNo": "Os echaremos de menos",
-    "graciasNoTexto": "Gracias por decírnoslo. Brindaremos por vosotros y os guardaremos un trozo de tarta.",
+    "graciasNoTexto": "Gracias por avisar. Brindaremos por vosotros y os guardamos un trozo de tarta.",
     "editarRespuesta": "Cambiar la respuesta",
     "tokenInvalido": "Este enlace no es válido. Escribidnos y os mandamos uno nuevo.",
     "plazoCerrado": "El plazo para confirmar ya se ha cerrado. Escribidnos y lo miramos.",
@@ -211,10 +217,11 @@
     "resumenNoVienen": "No pueden venir",
     "respuestaGuardada": "Respuesta enviada el {fecha}",
     "errorSinRespuesta": "Falta indicar si viene {nombre}.",
-    "errorEnviando": "No hemos podido guardar la respuesta. Volvedlo a intentar en un momento.",
+    "errorEnviando": "No hemos podido guardarlo. Escribidnos a {correo} y lo apuntamos.",
     "errorCaducado": "La respuesta se ha quedado a medias. Empezad de nuevo, es un momento.",
     "comoSeConfirma": "Cada invitación lleva su propio enlace. Buscadlo en el mensaje que os mandamos y desde ahí podréis confirmar por todo el grupo.",
-    "enlacePerdido": "¿No encontráis el enlace? Escribidnos y os mandamos uno nuevo."
+    "enlacePerdido": "¿No encontráis el enlace? Escribidnos y os mandamos uno nuevo.",
+    "errorEnviandoSinCorreo": "No hemos podido guardarlo. Volvedlo a intentar en un momento."
   },
   "saveTheDate": {
     "etiqueta": "Reservad la fecha",
@@ -222,7 +229,9 @@
     "pista": "Tocad el sello para abrir",
     "nota": "La invitación con todos los detalles llegará más adelante.",
     "anadirCalendario": "Añadir al calendario",
-    "verLaWeb": "Ver la web"
+    "verLaWeb": "Ver la web",
+    "icsTitulo": "Boda de {nombres}",
+    "icsDescripcion": "Nos casamos. Guardad el día."
   },
   "pie": {
     "escribidnos": "Escribidnos",
@@ -230,7 +239,8 @@
     "contacto": "Cualquier duda, escribidnos",
     "volverArriba": "Volver arriba",
     "fechaLugar": "{fecha} — {lugar}",
-    "sistemaDeMarca": "Sistema de marca"
+    "sistemaDeMarca": "Sistema de marca",
+    "lugarYCiudad": "{lugar}, {ciudad}"
   },
   "cocina": {
     "titulo": "Sistema de diseño",
@@ -399,7 +409,12 @@
       "errorHashtag": "El hashtag empieza por almohadilla y sigue con letras, números o guion bajo.",
       "errorCorreo": "Ese correo no tiene buena pinta.",
       "errorSinPermiso": "No se ha guardado nada: tus permisos no alcanzan para cambiar los ajustes de la boda.",
-      "errorGuardar": "No hemos podido guardar los ajustes. Inténtalo de nuevo."
+      "errorGuardar": "No hemos podido guardar los ajustes. Inténtalo de nuevo.",
+      "ciudad": "Ciudad de la boda",
+      "ciudadAyuda": "La que nombra la portada («Nos casamos en León») y las frases que la citan. Vacía, la portada enseña la dirección.",
+      "avisosPrograma": "Avisos al pie del programa",
+      "avisosProgramaAyuda": "Uno por línea, hasta seis. Salen como etiquetas bajo el programa del día: «Etiqueta elegante · ceremonia al aire libre». Vacío, no se pinta nada.",
+      "errorAvisos": "Los avisos del programa son como mucho seis, y ninguno pasa de 120 caracteres."
     },
     "invitados": {
       "titulo": "Invitados",

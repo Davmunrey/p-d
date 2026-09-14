@@ -186,6 +186,7 @@
   --tracking-pista: var(--espaciado-pista);
   --tracking-enlace-pie: var(--espaciado-enlace-pie);
   --tracking-pie: var(--espaciado-pie);
+  --tracking-aviso: var(--espaciado-aviso);
 
   /* Espaciado */
   --spacing-linea: var(--espacio-linea);
@@ -229,6 +230,7 @@
   --spacing-chip-y: var(--espacio-chip-y);
   --spacing-chip-x: var(--espacio-chip-x);
   --spacing-chips-arriba: var(--espacio-chips-arriba);
+  --spacing-galeria: var(--espacio-galeria);
   --spacing-control-grande: var(--alto-control-grande);
   --spacing-fundido-foto: var(--ancho-fundido-foto);
   --spacing-raya-pista: var(--alto-raya-pista);
@@ -264,6 +266,7 @@
   --radius-fila: var(--radio-fila);
   --aspect-mapa: var(--proporcion-mapa);
   --aspect-foto-tarjeta: var(--proporcion-foto-tarjeta);
+  --aspect-foto-tira: var(--proporcion-foto-tira);
   --aspect-hito: var(--proporcion-hito);
   --shadow-sutil: var(--sombra-sutil);
   --shadow-tarjeta: var(--sombra-tarjeta);
@@ -377,6 +380,12 @@
 @utility rejilla-consejos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-consejo-minimo)), 1fr));
+}
+
+/** La tira de fotos: tantos huecos 4/3 por fila como quepan a 260 px. */
+@utility rejilla-tira {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-foto-tira)), 1fr));
 }
 
 /** «Cómo llegar»: texto a un lado y mapa al otro, centrados verticalmente. */

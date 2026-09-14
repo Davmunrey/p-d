@@ -49,8 +49,10 @@ export async function GET(peticion: Request) {
     // Estable mientras no cambie la fecha: volver a descargarlo actualiza el
     // evento en vez de duplicarlo.
     identificador: `boda-${configuracion.fechaCeremonia.toISOString().slice(0, 10)}@${new URL(origen).hostname}`,
-    titulo: nombres,
-    descripcion: t("meta.descripcion"),
+    // «Boda de Paloma y David» y «Nos casamos. Guardad el día.», como el
+    // fichero de la entrega: es lo que se lee en la agenda meses después.
+    titulo: t("saveTheDate.icsTitulo", { nombres }),
+    descripcion: t("saveTheDate.icsDescripcion"),
     lugar: [lugar, direccion].filter(Boolean).join(", ") || null,
     latitud: configuracion.latitud,
     longitud: configuracion.longitud,

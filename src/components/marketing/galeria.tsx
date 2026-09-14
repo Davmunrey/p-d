@@ -1,7 +1,6 @@
 import Image from "next/image";
 
 import { VisorGaleria, type FotoDelVisor } from "@/components/marketing/visor-galeria";
-import { Cuerpo, EtiquetaSeccion, Titulo1 } from "@/components/ui/tipografia";
 import { BUCKET_MEDIOS } from "@/config/constants";
 import { anclaDe } from "@/config/secciones";
 import type { FotoGaleria } from "@/lib/bbdd/landing";
@@ -20,24 +19,31 @@ import { t } from "@/lib/copy";
  * cada una es un enlace de verdad: la sección promete que se ven las fotos, y
  * eso se cumple con o sin visor.
  *
- * DOS COLUMNAS YA EN EL MÓVIL, y no una como en «nuestra historia». Son cosas
- * distintas: allí cada foto acompaña a un texto que hay que leer, aquí las
- * fotos SON el contenido y se recorren de un vistazo. A una columna, veinte
- * fotos son veinte pantallas de scroll; a dos, se ojean.
+ * ES LA TIRA DE LA ENTREGA (BODA-114), no una sección con cabecera: cuelga
+ * del programa, a 1400 px, con huecos 4/3 que se reparten el ancho —tres en
+ * un escritorio, uno en un móvil— y sin un titular que la anuncie. La entrega
+ * deja tres huecos porque son tres los que caben; aquí se pintan TODAS las
+ * fotos publicadas, porque la página enseña lo que el panel publica y un tope
+ * escondería fotos sin decirlo.
  *
- * EL HUECO ES CUADRADO PARA TODAS, con la foto recortada dentro. Vienen de
- * sitios distintos —una réflex, un móvil en vertical, una captura— y respetar
- * la proporción de cada una convertiría la rejilla en una escalera. El recorte
- * es sólo de la miniatura: el visor las enseña enteras.
+ * EL TITULAR EXISTE PERO NO SE VE. Para quien escucha la página, una tira de
+ * imágenes sin nombre es «imagen, imagen, imagen»; con un `h2` sólo para el
+ * lector de pantalla, la sección se llama «Nuestras fotos» y se puede saltar.
+ * Es lo único que la tira añade a la entrega.
+ *
+ * EL HUECO ES 4/3 PARA TODAS, con la foto recortada dentro. Vienen de sitios
+ * distintos —una réflex, un móvil en vertical, una captura— y respetar la
+ * proporción de cada una convertiría la tira en una escalera. El recorte es
+ * sólo de la miniatura: el visor las enseña enteras.
  */
 
 /**
  * Cuánto ocupa una miniatura en cada tamaño de pantalla, para que el navegador
- * no se descargue la versión de pantalla completa y la pinte a un cuarto de
- * ancho. Va emparejado con las columnas de la rejilla de abajo: si cambia una,
- * cambia el otro.
+ * no se descargue la versión de pantalla completa y la pinte a un tercio de
+ * ancho. Va emparejado con la rejilla de abajo: a partir de tres huecos por
+ * fila, un tercio; por debajo, la pantalla entera.
  */
-const MEDIDAS_MINIATURA = "(min-width: 64rem) 25vw, (min-width: 40rem) 33vw, 50vw";
+const MEDIDAS_MINIATURA = "(min-width: 48rem) 33vw, 100vw";
 
 export function Galeria({
   fotos,
@@ -71,25 +77,13 @@ export function Galeria({
 
   return (
     <section id={ancla} className="px-margen py-seccion-fluida" aria-labelledby={idTitulo}>
-      <div className="mx-auto max-w-contenido">
-        {/*
-          La cabecera de siempre: versalita, titular y una entradilla a su
-          derecha. Realzada —bronce y rombo— porque la galería es de las
-          secciones que se ofrecen, no de las que hay que leer para llegar a la
-          boda.
-        */}
-        <header className="animacion-subir-al-ver mb-bloque-fluido flex flex-wrap items-end justify-between gap-elemento">
-          <div>
-            <EtiquetaSeccion realzada>{t("galeria.etiqueta")}</EtiquetaSeccion>
-            <Titulo1 como="h2" id={idTitulo} className="mt-pila">
-              {t("galeria.titulo")}
-            </Titulo1>
-          </div>
-          <Cuerpo className="ancho-entradilla">{t("galeria.entradilla")}</Cuerpo>
+      <div className="mx-auto max-w-amplio">
+        <header className="sr-only">
+          <h2 id={idTitulo}>{t("galeria.titulo")}</h2>
         </header>
 
         <VisorGaleria fotos={paraElVisor}>
-          <ul className="grid grid-cols-2 gap-interno sm:grid-cols-3 lg:grid-cols-4">
+          <ul className="rejilla-tira gap-galeria">
             {fotos.map((foto, indice) => (
               <li key={foto.id} className="animacion-subir-al-ver">
                 {/*
@@ -109,7 +103,7 @@ export function Galeria({
                     width={foto.ancho}
                     height={foto.alto}
                     sizes={MEDIDAS_MINIATURA}
-                    className="aspect-hito w-full object-cover"
+                    className="aspect-foto-tira w-full object-cover"
                     // El marcador lo calcula quien sube la foto. Sin él, el
                     // hueco se queda en el color de fondo, que ya es un estado
                     // digno mientras carga.

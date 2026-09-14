@@ -25,14 +25,26 @@ import { DURACION_AVISO_COPIADO } from "@/config/constants";
  */
 
 interface Propiedades {
+  /** Lo que se copia: el valor tal cual, sin adornos. */
   valor: string;
+  /**
+   * Lo que se enseña, si es distinto de lo que se copia: un IBAN agrupado de
+   * cuatro en cuatro se lee, pero pegado con espacios lo rechazan bancos.
+   */
+  valorMostrado?: string;
   /** Rótulo accesible del campo: sin él el lector de pantalla dice «edición». */
   etiqueta: string;
   textoCopiar: string;
   textoCopiado: string;
 }
 
-export function CampoCopiable({ valor, etiqueta, textoCopiar, textoCopiado }: Propiedades) {
+export function CampoCopiable({
+  valor,
+  valorMostrado = valor,
+  etiqueta,
+  textoCopiar,
+  textoCopiado,
+}: Propiedades) {
   const campo = useRef<HTMLInputElement>(null);
   const [copiado, setCopiado] = useState(false);
 
@@ -62,7 +74,7 @@ export function CampoCopiable({ valor, etiqueta, textoCopiar, textoCopiado }: Pr
       <input
         ref={campo}
         readOnly
-        value={valor}
+        value={valorMostrado}
         aria-label={etiqueta}
         className="min-h-campo min-w-0 flex-1 rounded-campo border border-borde bg-superficie px-interno font-codigo text-pequeno text-tinta"
       />

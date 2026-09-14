@@ -861,3 +861,76 @@ test.describe("El ritmo y la composición son los de la entrega", () => {
     }
   });
 });
+
+/**
+ * BODA-114 a BODA-116 · Lo que la entrega escribe y en qué orden lo pone.
+ *
+ * Los copys que nombran la ciudad, las fechas escritas como en la entrega, los
+ * avisos al pie del programa y el orden de las secciones. Todo sale de la
+ * base: el seed marca la ciudad y los avisos con «(DES)», así que verlos en
+ * pantalla es la prueba de que no hay un literal escondido.
+ */
+test.describe("Los copys y el orden de la entrega", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+  });
+
+  test("la portada dice «Nos casamos en» la ciudad de la base", async ({ page }) => {
+    const versalita = page.locator("#portada p").first();
+    await expect(versalita).toHaveText(
+      copy.portada.etiqueta.replace("{ciudad}", "(DES) León"),
+      { ignoreCase: true },
+    );
+  });
+
+  test("el programa lleva la fecha como «Sábado 26 de junio» y la víspera, el día antes", async ({
+    page,
+  }) => {
+    const dia = await page.locator("#programa header span").first().textContent();
+    const vispera = await page.locator("#preboda header span").first().textContent();
+
+    // Día de la semana con inicial mayúscula, número y mes; ni coma ni año.
+    const forma = /^[A-ZÁÉÍÓÚ][a-záéíóú]+ \d{1,2} de [a-z]+$/;
+    expect(dia?.trim()).toMatch(forma);
+    expect(vispera?.trim()).toMatch(forma);
+    expect(vispera).not.toBe(dia);
+  });
+
+  test("el alojamiento cuenta los hoteles en letra y nombra la ciudad", async ({ page }) => {
+    // El seed trae tres hoteles y la ciudad «(DES) León».
+    await expect(page.locator("#alojamiento header p")).toContainText(
+      "tres hoteles de (DES) León",
+    );
+    // Y el plazo, sin día de la semana: «antes del 1 de mayo de 2027».
+    await expect(page.locator("#alojamiento header p")).toContainText(
+      /antes del \d{1,2} de [a-z]+ de \d{4}\./,
+    );
+  });
+
+  test("los avisos del programa se pintan como etiquetas al pie de la lista", async ({
+    page,
+  }) => {
+    const avisos = page.locator("#programa ol + ul li");
+    await expect(avisos).toHaveCount(2);
+    await expect(avisos.first()).toContainText("(DES) Etiqueta elegante");
+  });
+
+  test("el alojamiento va antes que «cómo llegar», y el menú lo hereda", async ({ page }) => {
+    const orden = await page.evaluate(() =>
+      [...document.querySelectorAll("main section[id]")].map((seccion) => seccion.id),
+    );
+    expect(orden.indexOf("alojamiento")).toBeLessThan(orden.indexOf("transporte"));
+
+    const menu = await page
+      .getByRole("navigation", { name: copy.navegacion.etiquetaPrincipal })
+      .getByRole("link")
+      .evaluateAll((enlaces) => enlaces.map((enlace) => enlace.getAttribute("href")));
+    expect(menu.indexOf("#alojamiento")).toBeLessThan(menu.indexOf("#transporte"));
+  });
+
+  test("el pie escribe el lugar con la ciudad detrás", async ({ page }) => {
+    await expect(
+      page.getByRole("contentinfo").getByText(/— \(DES\) Finca de pruebas, \(DES\) León$/),
+    ).toBeVisible();
+  });
+});

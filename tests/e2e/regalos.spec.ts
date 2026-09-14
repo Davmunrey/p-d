@@ -131,9 +131,10 @@ test.describe("La sección de regalos", () => {
     const seccion = page.locator("#regalos");
     await seccion.getByRole("button", { name: copy.regalos.revelar }).click();
 
-    // Ahora sí: el número, su titular, y el botón de copiar.
+    // Ahora sí: el número —agrupado de cuatro en cuatro, como se lee—, su
+    // titular, y el botón de copiar.
     const campo = seccion.getByLabel(copy.regalos.etiquetaCuenta);
-    await expect(campo).toHaveValue(IBAN);
+    await expect(campo).toHaveValue(IBAN.match(/.{1,4}/g)!.join(" "));
     await expect(seccion.getByText(TITULAR)).toBeVisible();
 
     await seccion.getByRole("button", { name: copy.regalos.copiar }).click();
@@ -141,7 +142,8 @@ test.describe("La sección de regalos", () => {
 
     if (leePortapapeles) {
       const copiado = await page.evaluate(() => navigator.clipboard.readText());
-      expect(copiado, "copiar tiene que dejar el IBAN en el portapapeles").toBe(IBAN);
+      // Sin espacios: es lo que aceptan todos los formularios de transferencia.
+      expect(copiado, "copiar tiene que dejar el IBAN limpio en el portapapeles").toBe(IBAN);
     }
   });
 

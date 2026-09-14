@@ -93,6 +93,11 @@ update public.configuracion_boda set
   latitud_banquete     = 40.416775,
   longitud_banquete    = -3.703790,
   frase_paisaje        = '(DES) Todo empezó entre dos ciudades y continúa en una tercera',
+  ciudad_ceremonia     = '(DES) León',
+  avisos_programa      = array[
+    '(DES) Etiqueta elegante · ceremonia al aire libre',
+    '(DES) Césped y grava: cuidado con los tacones finos'
+  ],
   correo_contacto      = 'hola@ejemplo.test',
   moneda               = 'EUR',
   idioma_por_defecto   = 'es';

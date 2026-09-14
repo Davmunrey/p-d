@@ -21,7 +21,7 @@ import {
   Titulo1,
   Titulo3,
 } from "@/components/ui/tipografia";
-import { BUCKET_MEDIOS, ID_CONTENIDO, IDIOMA, ZONA_HORARIA } from "@/config/constants";
+import { BUCKET_MEDIOS, ID_CONTENIDO } from "@/config/constants";
 import { anclaDe, esAncla, vaEnElMenu, type Seccion } from "@/config/secciones";
 import {
   obtenerAlojamientos,
@@ -44,7 +44,8 @@ import {
   type Medio,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
-import { fechaEnPuntos } from "@/lib/fechas";
+import { fechaConDia, fechaEnPuntos, fechaLarga, nombreDelDia, vispera } from "@/lib/fechas";
+import { numeroEnLetra } from "@/lib/numeros";
 import { enlaceMapaEmbebido, enlaceMapaExterno } from "@/lib/mapa";
 import { invitacionRecordada } from "@/lib/invitacion-recordada";
 
@@ -87,14 +88,6 @@ import { invitacionRecordada } from "@/lib/invitacion-recordada";
  * cambio en el panel.
  */
 export const dynamic = "force-dynamic";
-
-const formatoFecha = new Intl.DateTimeFormat(IDIOMA, {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: ZONA_HORARIA,
-});
 
 export default async function PaginaInicio() {
   /*
@@ -172,9 +165,23 @@ export default async function PaginaInicio() {
         <ListaDeHoras
           seccion="preboda"
           ancho="medio"
-          etiqueta={t("preboda.etiqueta")}
+          /*
+            LA VERSALITA ES LA FECHA DE LA VÍSPERA —«Viernes 25 de junio»—, no un
+            rótulo fijo: es lo que la entrega escribe y lo que de verdad quiere
+            saber quien llega de fuera. Sale de la fecha de la ceremonia, un día
+            antes, contado en la zona de la boda.
+          */
+          etiqueta={fechaConDia(vispera(configuracion.fechaCeremonia))}
           titulo={t("preboda.titulo")}
-          entradilla={t("preboda.entradilla")}
+          entradilla={t(
+            configuracion.ciudadCeremonia
+              ? "preboda.entradilla"
+              : "preboda.entradillaSinCiudad",
+            {
+              dia: nombreDelDia(vispera(configuracion.fechaCeremonia)),
+              ciudad: configuracion.ciudadCeremonia ?? "",
+            },
+          )}
           cierre={t("preboda.cierre")}
           realzada
           hundida
@@ -187,8 +194,10 @@ export default async function PaginaInicio() {
         <ListaDeHoras
           seccion="programa"
           ancho="medio"
-          etiqueta={formatoFecha.format(configuracion.fechaCeremonia)}
+          // «Sábado 26 de junio», como la escribe la entrega: sin coma ni año.
+          etiqueta={fechaConDia(configuracion.fechaCeremonia)}
           titulo={t("programa.titulo")}
+          avisos={configuracion.avisosPrograma}
           /*
             LA NOTA DEL AUTOBÚS SALE DE `rutas_llegada`, NO DE UN LITERAL.
 
@@ -302,12 +311,21 @@ export default async function PaginaInicio() {
         nombreNovia={configuracion.nombreNovia}
         nombreNovio={configuracion.nombreNovio}
         fechaCeremonia={configuracion.fechaCeremonia}
-        lugar={configuracion.lugarCeremonia ?? configuracion.lugarBanquete}
+        lugar={lugarConCiudad(configuracion)}
         correoContacto={configuracion.correoContacto}
         hashtag={configuracion.hashtag}
       />
     </>
   );
+}
+
+/** «Finca La Sierra, León»: el lugar y, si está escrita, la ciudad detrás. */
+function lugarConCiudad(configuracion: ConfiguracionBoda): string | null {
+  const lugar = configuracion.lugarCeremonia ?? configuracion.lugarBanquete;
+  if (!lugar) return null;
+  return configuracion.ciudadCeremonia
+    ? t("pie.lugarYCiudad", { lugar, ciudad: configuracion.ciudadCeremonia })
+    : lugar;
 }
 
 /**
@@ -408,7 +426,14 @@ function Portada({
   urlBase: string | undefined;
 }) {
   const lugar = configuracion.lugarCeremonia ?? configuracion.lugarBanquete;
-  const procedencia = configuracion.direccionCeremonia;
+  /*
+    «Nos casamos en León», como la entrega. La dirección postal tiene su sitio
+    en «cómo llegar»; aquí sólo aparece si nadie ha escrito la ciudad, que es
+    mejor que dejar la portada sin su versalita.
+  */
+  const procedencia = configuracion.ciudadCeremonia
+    ? t("portada.etiqueta", { ciudad: configuracion.ciudadCeremonia })
+    : configuracion.direccionCeremonia;
 
   return (
     <section id={anclaDe("portada")} className="rejilla-partida min-h-dvh items-stretch">
@@ -696,6 +721,7 @@ function ListaDeHoras({
   hundida = false,
   menor = false,
   ancho = "contenido",
+  avisos = [],
   hitos,
 }: {
   seccion: Seccion;
@@ -713,6 +739,8 @@ function ListaDeHoras({
    * un escalón por debajo para que el programa siga siendo lo primero.
    */
   menor?: boolean;
+  /** Las etiquetas al pie de la lista: «Césped y grava: cuidado con los tacones». */
+  avisos?: string[];
   hitos: { id: string; hora: string; titulo: string; descripcion: string | null }[];
 }) {
   return (
@@ -773,6 +801,24 @@ function ListaDeHoras({
         ))}
       </ol>
 
+      {/*
+        LOS AVISOS DE LA ENTREGA: una fila de etiquetas redondeadas bajo una
+        línea, con lo que conviene saber antes de vestirse. Son contenido de
+        la boda —se editan en Ajustes— y sin ninguno no se pinta ni la línea.
+      */}
+      {avisos.length > 0 ? (
+        <ul className="mt-elemento flex flex-wrap items-center gap-fila-hueco border-t border-borde pt-hueco-fluido">
+          {avisos.map((aviso) => (
+            <li
+              key={aviso}
+              className="rounded-etiqueta bg-superficie-tenue px-pila py-chip-y text-pequeno tracking-aviso text-tinta-marca"
+            >
+              {aviso}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       {cierre ? (
         <Cuerpo className="mt-elemento max-w-texto text-pequeno text-tinta-suave">
           {cierre}
@@ -798,6 +844,23 @@ function Alojamiento({
   nombres: string;
   urlBase: string | undefined;
 }) {
+  /*
+    «tres hoteles de León»: la cantidad sale de la lista y la ciudad de la
+    configuración, porque la entrega los escribe y escritos se quedarían
+    viejos el día que se apunte un cuarto hotel. En letra, que es como se
+    escribe una cantidad pequeña dentro de una frase.
+  */
+  const cuantos = numeroEnLetra(sitios.length);
+  const ciudad = configuracion.ciudadCeremonia;
+  const hoteles =
+    sitios.length === 1
+      ? ciudad
+        ? t("alojamiento.hotelDeCiudad", { ciudad })
+        : t("alojamiento.hotel")
+      : ciudad
+        ? t("alojamiento.hotelesDeCiudad", { cuantos, ciudad })
+        : t("alojamiento.hoteles", { cuantos });
+
   return (
     <Bloque
       seccion="alojamiento"
@@ -812,10 +875,11 @@ function Alojamiento({
         */
         configuracion.fechaLimiteRsvp
           ? t("alojamiento.entradilla", {
+              hoteles,
               nombres,
-              fecha: formatoFecha.format(configuracion.fechaLimiteRsvp),
+              fecha: fechaLarga(configuracion.fechaLimiteRsvp),
             })
-          : t("alojamiento.entradillaSinPlazo", { nombres })
+          : t("alojamiento.entradillaSinPlazo", { hoteles, nombres })
       }
       composicion="apilada"
       hundida
@@ -1176,9 +1240,7 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
           idTitulo={idTitulo}
           etiqueta={
             configuracion.fechaLimiteRsvp
-              ? t("rsvp.antesDel", {
-                  fecha: formatoFecha.format(configuracion.fechaLimiteRsvp),
-                })
+              ? t("rsvp.antesDel", { fecha: fechaLarga(configuracion.fechaLimiteRsvp) })
               : null
           }
           titulo={t("rsvp.titulo")}

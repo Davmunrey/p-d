@@ -100,6 +100,14 @@ export const RUTA_CALENDARIO = "/reserva-la-fecha/evento.ics";
 export const RUTA_COCINA = "/cocina";
 
 /**
+ * Los avisos al pie del programa («Etiqueta elegante · ceremonia al aire
+ * libre»). Son etiquetas, no párrafos: pocas y cortas, o dejan de leerse como
+ * avisos. La base impone lo mismo con un `check`.
+ */
+export const TOPE_AVISOS_PROGRAMA = 6;
+export const LONGITUD_MAXIMA_AVISO_PROGRAMA = 120;
+
+/**
  * Cuánto se ve alrededor de la finca en el mapa incrustado, en grados.
  *
  * Unos 0,01° son algo más de un kilómetro: lo justo para situar el sitio
