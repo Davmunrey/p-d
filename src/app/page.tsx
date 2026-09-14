@@ -196,6 +196,7 @@ export default async function PaginaInicio() {
           cierre={t("preboda.cierre")}
           realzada
           hundida
+          menor
           hitos={preboda}
         />
       ) : undefined,
@@ -427,7 +428,7 @@ function Portada({
         }`}
       >
         {procedencia ? (
-          <p className="animacion-aparecer text-etiqueta uppercase tracking-marcado text-acento">
+          <p className="animacion-aparecer text-boton uppercase tracking-marcado text-acento">
             {procedencia}
           </p>
         ) : null}
@@ -459,7 +460,7 @@ function Portada({
             <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
               {t("portada.etiquetaFecha")}
             </dt>
-            <dd className="mt-linea font-titulo text-titulo-2 text-tinta-marca tabular-nums">
+            <dd className="mt-linea font-titulo peso-titulo-menor text-dato leading-titulo-corto text-tinta-marca tabular-nums">
               <time dateTime={configuracion.fechaCeremonia.toISOString()}>
                 {fechaEnPuntos(configuracion.fechaCeremonia)}
               </time>
@@ -470,7 +471,9 @@ function Portada({
               <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
                 {t("portada.etiquetaLugar")}
               </dt>
-              <dd className="mt-linea font-titulo text-titulo-2 text-tinta-marca">{lugar}</dd>
+              <dd className="mt-linea font-titulo peso-titulo-menor text-dato leading-titulo-corto text-tinta-marca">
+                {lugar}
+              </dd>
             </div>
           ) : null}
         </dl>
@@ -492,7 +495,7 @@ function Portada({
         */}
         <p
           aria-hidden
-          className="animacion-aparecer mt-elemento flex items-center gap-interno-compacto text-diminuto uppercase tracking-marcado text-tinta-suave"
+          className="animacion-aparecer mt-elemento flex items-center gap-interno-compacto text-diminuto uppercase tracking-pista text-tinta-suave"
         >
           {t("portada.bajad")}
           <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
@@ -592,7 +595,7 @@ function Paisaje({
           </h2>
         </header>
 
-        <p className="flex flex-col items-center gap-pila text-etiqueta uppercase tracking-marcado text-sobre-foto-tenue">
+        <p className="flex flex-col items-center gap-pila text-etiqueta uppercase tracking-pista text-sobre-foto-tenue">
           {t("paisaje.seguidBajando")}
           <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-sobre-foto-tenue to-transparent" />
         </p>
@@ -627,7 +630,9 @@ function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBod
       />
 
       <div className="animacion-cortina-al-ver relative mx-auto max-w-estrecho">
-        <Etiqueta id={idTitulo}>{t("cuentaAtras.titulo")}</Etiqueta>
+        <Etiqueta id={idTitulo} espaciado="seccion">
+          {t("cuentaAtras.titulo")}
+        </Etiqueta>
         <div className="mt-elemento">
           <CuentaAtras fechaIso={configuracion.fechaCeremonia.toISOString()} />
         </div>
@@ -707,6 +712,7 @@ function ListaDeHoras({
   cierre = null,
   realzada = false,
   hundida = false,
+  menor = false,
   hitos,
 }: {
   seccion: Seccion;
@@ -717,6 +723,12 @@ function ListaDeHoras({
   cierre?: string | null;
   realzada?: boolean;
   hundida?: boolean;
+  /**
+   * La víspera se lee un punto más pequeña que el día: hora de 24–32 e hito
+   * de 21–27, frente a 26–36 y 23–30. Es un extra, y la entrega lo dibuja
+   * un escalón por debajo para que el programa siga siendo lo primero.
+   */
+  menor?: boolean;
   hitos: { id: string; hora: string; titulo: string; descripcion: string | null }[];
 }) {
   return (
@@ -734,11 +746,22 @@ function ListaDeHoras({
             key={hito.id}
             className="animacion-subir-al-ver rejilla-dato gap-elemento border-b border-borde py-elemento"
           >
-            <span className="font-titulo text-titulo-3 text-acento tabular-nums">
+            {/*
+              Interlínea 1 y no la del cuerpo: es una cifra sola, y con 1.65
+              flotaba a media altura de su fila en vez de alinearse con el
+              titular de al lado.
+            */}
+            <span
+              className={`font-titulo peso-titulo-menor ${
+                menor ? "text-hora-menor" : "text-hora"
+              } leading-compacto text-acento tabular-nums`}
+            >
               {hito.hora}
             </span>
             <div>
-              <Titulo3 como="h3">{hito.titulo}</Titulo3>
+              <Titulo3 como="h3" tamano={menor ? "hito-menor" : "hito"}>
+                {hito.titulo}
+              </Titulo3>
               {hito.descripcion ? (
                 <Cuerpo className="mt-linea max-w-texto">{hito.descripcion}</Cuerpo>
               ) : null}
@@ -808,7 +831,9 @@ function Alojamiento({
             ) : null}
             <div className="mt-elemento flex items-baseline justify-between gap-interno border-t border-borde-tenue pt-interno">
               {sitio.precioTexto ? (
-                <span className="font-titulo text-titulo-3">{sitio.precioTexto}</span>
+                <span className="font-titulo peso-titulo-menor text-cifra-dato text-tinta-marca">
+                  {sitio.precioTexto}
+                </span>
               ) : (
                 <span />
               )}
@@ -817,7 +842,7 @@ function Alojamiento({
                   href={sitio.urlReserva}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-control-compacto items-center text-etiqueta uppercase tracking-etiqueta text-marca transicion-color hover:text-tinta"
+                  className="inline-flex min-h-control-compacto items-center text-etiqueta uppercase tracking-boton text-marca transicion-color hover:text-tinta"
                 >
                   {t("alojamiento.reservar")}
                 </a>
@@ -865,11 +890,18 @@ function Transporte({
               key={ruta.id}
               className="rejilla-dato gap-elemento border-b border-borde py-pila"
             >
-              <span className="font-titulo text-titulo-3 text-marca">{ruta.duracion}</span>
+              <span className="font-titulo peso-titulo-menor text-cifra-dato-menor text-marca">
+                {ruta.duracion}
+              </span>
               <div>
-                <h3 className="text-etiqueta uppercase tracking-etiqueta text-tinta">
+                {/*
+                  Es un `h3` y es una versalita: `Etiqueta` lleva la familia
+                  y el peso del cuerpo escritos para que la regla base de los
+                  titulares no la convierta en serif. Pasó.
+                */}
+                <Etiqueta como="h3" tamano="boton" espaciado="boton" tono="tinta">
                   {ruta.modo}
-                </h3>
+                </Etiqueta>
                 {ruta.detalle ? <Cuerpo className="mt-linea">{ruta.detalle}</Cuerpo> : null}
               </div>
             </li>
@@ -1067,8 +1099,12 @@ function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
             key={consejo.id}
             className="animacion-subir-al-ver rounded-tarjeta border border-borde bg-superficie p-elemento"
           >
-            <Titulo3 como="h3">{consejo.titulo}</Titulo3>
-            <Cuerpo className="mt-pila">{consejo.texto}</Cuerpo>
+            {/* Versalita en marca, no titular serif: así rotula la entrega
+                «Ellas», «Ellos» y «Solo dos peticiones». */}
+            <Etiqueta como="h3" tono="marca" className="mb-interno">
+              {consejo.titulo}
+            </Etiqueta>
+            <Cuerpo>{consejo.texto}</Cuerpo>
           </li>
         ))}
       </ul>

@@ -365,9 +365,24 @@ export const CONSTELACIONES: readonly Constelacion[] = [
   },
 ] as const;
 
+/**
+ * La clave, como la entiende el catálogo: minúsculas, sin acentos y sólo
+ * letras. Es lo que hace el componente de la entrega antes de buscar, y por
+ * lo mismo: «Osa Mayor», «osa-mayor» y «osamayor» son la misma constelación,
+ * y una mesa que guarde el nombre con su acento no puede quedarse sin dibujo.
+ */
+export function normalizarClave(clave: string): string {
+  return clave
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+}
+
 /** Búsqueda por clave. La usan el componente y, más adelante, el plano de mesas. */
 export function constelacionPorClave(clave: string): Constelacion | undefined {
-  return CONSTELACIONES.find((constelacion) => constelacion.clave === clave);
+  const buscada = normalizarClave(clave);
+  return CONSTELACIONES.find((constelacion) => constelacion.clave === buscada);
 }
 
 /**
@@ -376,6 +391,13 @@ export function constelacionPorClave(clave: string): Constelacion | undefined {
  * como una cadena suelta en dos sitios distintos.
  */
 export const CONSTELACION_NOVIOS = "lira";
+
+/**
+ * Cuánto crecen las estrellas dentro de la tarjeta del Save the Date. La
+ * entrega pide `escala-estrella="1.2"` sólo ahí: en un lienzo pequeño el
+ * brillo de 1× se pierde, y en el catálogo o en un cartel sobra.
+ */
+export const ESCALA_ESTRELLA_TARJETA = 1.2;
 
 /**
  * Grosor de la línea, en unidades del lienzo de 100. Va aquí y no como número

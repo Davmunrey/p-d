@@ -177,7 +177,10 @@
    * a qué velocidad crece cada uno.
    */
   --font-size-display: clamp(3.625rem, 9.2vw, 7.75rem);
-  --font-size-titulo-1: clamp(2.375rem, 5vw, 4.25rem);
+
+  /* 5.4vw y no 5vw: es la pendiente de la Landing aplicada. Con 5vw el
+     titular de sección medía 64 px a 1280 en vez de los 68 de la entrega. */
+  --font-size-titulo-1: clamp(2.375rem, 5.4vw, 4.25rem);
   --font-size-titulo-2: clamp(2rem, 3.4vw, 2.375rem);
   --font-size-titulo-3: 1.6875rem;
   --font-size-conector: clamp(2.75rem, 8vw, 6.5rem);
@@ -194,6 +197,23 @@
   --font-size-etiqueta: 0.6875rem;
   --font-size-pequeno: 0.8125rem;
   --font-size-diminuto: 0.65rem;
+
+  /* Los escalones que la Landing aplicada usa además de la escala del
+     catálogo. Cada uno existe porque un elemento concreto lo pide: el botón y
+     el menú (12 px), el monograma de la barra (23 px con el «&» al 72 %), los
+     hitos del programa y la víspera (fluidos), las horas (fluidas, con
+     interlínea 1), los datos de la portada y las cifras de dato de una
+     tarjeta (precio, tiempo de ruta). */
+  --font-size-boton: 0.75rem;
+  --font-size-monograma: 1.4375rem;
+  --font-size-ampersand: 0.72em;
+  --font-size-hito: clamp(1.4375rem, 2.6vw, 1.875rem);
+  --font-size-hito-menor: clamp(1.3125rem, 2.4vw, 1.6875rem);
+  --font-size-hora: clamp(1.625rem, 3.2vw, 2.25rem);
+  --font-size-hora-menor: clamp(1.5rem, 3vw, 2rem);
+  --font-size-dato: clamp(1.5rem, 3vw, 2.125rem);
+  --font-size-cifra-dato: 1.4375rem;
+  --font-size-cifra-dato-menor: 1.25rem;
   --font-weight-light: 300;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -209,6 +229,12 @@
   --line-height-cita: 1.5;
   --line-height-cuerpo: 1.65;
   --line-height-holgado: 1.6;
+
+  /* Los h3 de hito y de tarjeta van a 1.15 en toda la Landing aplicada, entre
+     el 1.1 del título 2 y el 1.2 que el catálogo da al título 3. Y las horas y
+     el monograma van a 1: son una cifra o dos letras, no un párrafo. */
+  --line-height-hito: 1.15;
+  --line-height-compacto: 1;
   --letter-spacing-display: -0.015em;
   --letter-spacing-titulo: -0.015em;
   --letter-spacing-normal: 0;
@@ -224,6 +250,15 @@
    * para no competir con él.
    */
   --letter-spacing-seccion: 0.4em;
+
+  /* La píldora «Confirmar» de la barra va dos centésimas más apretada que un
+     botón; el monograma se abre un punto; la pista «Bajad» va a .34em, más
+     cerrada que la versalita de la portada que la precede; y los enlaces del
+     pie son Jost en caja normal con un espaciado corto. */
+  --letter-spacing-pildora: 0.18em;
+  --letter-spacing-monograma: 0.04em;
+  --letter-spacing-pista: 0.34em;
+  --letter-spacing-enlace-pie: 0.1em;
 
   /* ---------------------------------------------------------------------
    * Espaciado — la escala del sistema de marca, no una progresión genérica

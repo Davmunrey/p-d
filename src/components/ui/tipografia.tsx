@@ -31,7 +31,7 @@ export function Display({
   return (
     <Etiqueta
       id={id}
-      className={`font-titulo text-display leading-display tracking-display ${className}`}
+      className={`font-titulo peso-titulo text-display leading-display tracking-display ${className}`}
     >
       {children}
     </Etiqueta>
@@ -47,7 +47,7 @@ export function Titulo1({
   return (
     <Etiqueta
       id={id}
-      className={`font-titulo text-titulo-1 leading-titulo tracking-titulo ${className}`}
+      className={`font-titulo peso-titulo text-titulo-1 leading-titulo tracking-titulo ${className}`}
     >
       {children}
     </Etiqueta>
@@ -61,20 +61,43 @@ export function Titulo2({
   className = "",
 }: PropiedadesTitulo) {
   return (
-    <Etiqueta id={id} className={`font-titulo text-titulo-2 leading-titulo-corto ${className}`}>
+    <Etiqueta
+      id={id}
+      className={`font-titulo peso-titulo-menor text-titulo-2 leading-titulo-corto ${className}`}
+    >
       {children}
     </Etiqueta>
   );
 }
 
+/**
+ * Tres tamaños, y no es capricho: el `h3` de la entrega mide 27 px fijos en
+ * una tarjeta (hotel, consejo), pero es fluido en las listas de horas, y
+ * distinto en cada una —23–30 en el programa del día, 21–27 en la víspera—
+ * porque la víspera es un extra y se lee un punto más pequeña.
+ *
+ * El peso es el «menor» (400): en la entrega sólo el display y los titulares
+ * de sección van en 300. Y va en el componente, no en la etiqueta HTML, para
+ * que un `Titulo3 como="p"` pese lo mismo que un `h3`.
+ */
 export function Titulo3({
   id,
   children,
   como: Etiqueta = "h3",
+  tamano = "fijo",
   className = "",
-}: PropiedadesTitulo) {
+}: PropiedadesTitulo & { tamano?: "fijo" | "hito" | "hito-menor" }) {
+  const escalon = {
+    fijo: "text-titulo-3",
+    hito: "text-hito",
+    "hito-menor": "text-hito-menor",
+  }[tamano];
+
   return (
-    <Etiqueta id={id} className={`font-titulo text-titulo-3 leading-titulo-corto ${className}`}>
+    <Etiqueta
+      id={id}
+      className={`font-titulo peso-titulo-menor ${escalon} leading-hito ${className}`}
+    >
       {children}
     </Etiqueta>
   );
@@ -142,23 +165,57 @@ export function EtiquetaSeccion({
   );
 }
 
-/** Versalita espaciada: el rótulo que precede a cada sección. */
+/**
+ * Versalita espaciada: el rótulo que precede a cada sección, el de un dato, el
+ * título de una tarjeta.
+ *
+ * LLEVA LA FAMILIA Y EL PESO DEL CUERPO ESCRITOS, aunque parezca redundante.
+ * Cuando una versalita se pinta como `h3` —el modo de una ruta en «Cómo
+ * llegar», los títulos de las tarjetas del dress code—, la regla base de
+ * `globals.css` le impone la serif y el peso 300 de los titulares, y la
+ * versalita salía en Cormorant sin que nadie lo hubiera pedido. En la entrega
+ * toda versalita es Jost; aquí se garantiza.
+ *
+ * Los tres ajustes son los tres que la entrega usa y ninguno más: el escalón
+ * de 12 px para el modo de ruta y la versalita de la portada; el espaciado de
+ * sección (.4em) para «Cuenta atrás»; y el tono de marca para los títulos de
+ * tarjeta del dress code.
+ */
 export function Etiqueta({
   id,
   children,
+  como: Componente = "span",
+  tamano = "etiqueta",
+  espaciado = "etiqueta",
+  tono = "suave",
   className = "",
 }: {
   id?: string;
   children: ReactNode;
+  /** Etiqueta HTML. Un `h3` sigue siendo un `h3` para el lector de pantalla. */
+  como?: ElementType;
+  tamano?: "etiqueta" | "boton";
+  espaciado?: "etiqueta" | "seccion" | "boton" | "marcado";
+  tono?: "suave" | "tinta" | "marca";
   className?: string;
 }) {
+  const clases = [
+    "block font-cuerpo peso-cuerpo uppercase",
+    tamano === "boton" ? "text-boton" : "text-etiqueta",
+    {
+      etiqueta: "tracking-etiqueta",
+      seccion: "tracking-seccion",
+      boton: "tracking-boton",
+      marcado: "tracking-marcado",
+    }[espaciado],
+    { suave: "text-tinta-suave", tinta: "text-tinta", marca: "text-marca" }[tono],
+    className,
+  ].join(" ");
+
   return (
-    <span
-      id={id}
-      className={`block text-etiqueta uppercase tracking-etiqueta text-tinta-suave ${className}`}
-    >
+    <Componente id={id} className={clases}>
       {children}
-    </span>
+    </Componente>
   );
 }
 

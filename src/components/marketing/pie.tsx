@@ -48,7 +48,12 @@ export function Pie({
                   <li key={enlace.seccion}>
                     <a
                       href={`#${enlace.ancla}`}
-                      className="flex min-h-control-compacto items-center text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta"
+                      /*
+                        Jost de 13 px en caja normal y con un espaciado corto,
+                        como la entrega: en el pie los enlaces se leen como
+                        texto, no como rótulos de sección.
+                      */
+                      className="flex min-h-control-compacto items-center text-enlace-pie tracking-enlace-pie text-tinta-suave transicion-color hover:text-tinta"
                     >
                       {enlace.rotulo}
                     </a>
@@ -72,7 +77,7 @@ export function Pie({
 
           <a
             href="#portada"
-            className="mt-bloque inline-flex min-h-control-compacto items-center text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta"
+            className="mt-bloque inline-flex min-h-control-compacto items-center text-enlace-pie tracking-enlace-pie text-tinta-suave transicion-color hover:text-tinta"
           >
             {t("pie.volverArriba")}
           </a>

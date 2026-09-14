@@ -58,8 +58,41 @@ describe("escala tipográfica", () => {
     ["font-size-cuerpo", 16],
     ["font-size-etiqueta", 11],
     ["font-size-pequeno", 13],
+    // BODA-108: el escalón de los botones y el menú, y el del monograma.
+    ["font-size-boton", 12],
+    ["font-size-monograma", 23],
+    ["font-size-cifra-dato", 23],
   ])("--%s mide %s px", (token, px) => {
     expect(Math.round(Number(valor(token)!.replace("rem", "")) * 16)).toBe(px);
+  });
+
+  /**
+   * BODA-108 · LA PENDIENTE DEL TITULAR ES LA DE LA LANDING APLICADA.
+   *
+   * Con los dos extremos bien (38 y 68) y la pendiente del catálogo (5vw), el
+   * titular medía 64 px a 1280: el `clamp` no llegaba a su máximo hasta los
+   * 1360 px de ventana. Los extremos no bastan; la pendiente también es dato.
+   */
+  it("--font-size-titulo-1 crece a 5.4vw, como en la Landing", () => {
+    expect(valor("font-size-titulo-1")).toContain("5.4vw");
+  });
+
+  it.each([
+    ["font-size-hito", 23, 30],
+    ["font-size-hito-menor", 21, 27],
+    ["font-size-hora", 26, 36],
+    ["font-size-hora-menor", 24, 32],
+    ["font-size-dato", 24, 34],
+  ])("--%s es fluido entre %s y %s px (BODA-109)", (token, minimo, maximo) => {
+    const remes = [...valor(token)!.matchAll(/([\d.]+)rem/g)].map((m) => Number(m[1]) * 16);
+    expect(remes.length).toBe(2);
+    expect(Math.round(remes[0])).toBe(minimo);
+    expect(Math.round(remes[1])).toBe(maximo);
+  });
+
+  it("las horas y el monograma van a interlínea 1; los hitos a 1.15", () => {
+    expect(valor("line-height-compacto")).toBe("1");
+    expect(valor("line-height-hito")).toBe("1.15");
   });
 
   it.each([

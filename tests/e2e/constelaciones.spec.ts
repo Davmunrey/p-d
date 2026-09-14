@@ -150,3 +150,25 @@ test.describe("La constelación del Save the Date", () => {
     expect(medidas.alto).toBeLessThanOrEqual(medidas.ventana + 1);
   });
 });
+
+/**
+ * BODA-122 · El svg no recorta.
+ *
+ * Con `escala` una estrella pegada al borde crece hacia fuera del lienzo de
+ * 100 × 100. El componente de la entrega lleva `overflow: visible` por eso;
+ * el del repo computaba `hidden` y el día que entrase la escala la cortaría.
+ */
+test.describe("El lienzo de una constelación", () => {
+  test("desborda a la vista, como el de la entrega", async ({ page }) => {
+    await page.goto("/cocina");
+
+    const desbordes = await page.evaluate(() =>
+      [...document.querySelectorAll("svg[role='img']")].map(
+        (svg) => getComputedStyle(svg).overflow,
+      ),
+    );
+
+    expect(desbordes.length).toBeGreaterThan(0);
+    expect(new Set(desbordes)).toEqual(new Set(["visible"]));
+  });
+});
