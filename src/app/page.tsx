@@ -36,6 +36,7 @@ import {
   obtenerRutas,
   obtenerMedios,
   obtenerSecciones,
+  type Alojamiento as Hotel,
   type ConfiguracionBoda,
   type RutaLlegada,
   type ConsejoVestimenta,
@@ -43,6 +44,7 @@ import {
   type Medio,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
+import { fechaEnPuntos } from "@/lib/fechas";
 import { enlaceMapaEmbebido, enlaceMapaExterno } from "@/lib/mapa";
 import { invitacionRecordada } from "@/lib/invitacion-recordada";
 
@@ -93,27 +95,6 @@ const formatoFecha = new Intl.DateTimeFormat(IDIOMA, {
   year: "numeric",
   timeZone: ZONA_HORARIA,
 });
-
-const formatoFechaCorta = new Intl.DateTimeFormat(IDIOMA, {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  timeZone: ZONA_HORARIA,
-});
-
-/**
- * `26 · 06 · 2027`, como en la entrega.
- *
- * Se compone a partir de las partes que da `Intl`, no cortando la cadena
- * formateada: el orden de día y mes depende del idioma, y trocear texto
- * formateado es la forma clásica de acabar publicando el mes como día.
- */
-function fechaEnPuntos(fecha: Date): string {
-  const partes = Object.fromEntries(
-    formatoFechaCorta.formatToParts(fecha).map((parte) => [parte.type, parte.value]),
-  );
-  return [partes.day, partes.month, partes.year].join(" · ");
-}
 
 export default async function PaginaInicio() {
   /*
@@ -190,6 +171,7 @@ export default async function PaginaInicio() {
       preboda.length > 0 ? (
         <ListaDeHoras
           seccion="preboda"
+          ancho="medio"
           etiqueta={t("preboda.etiqueta")}
           titulo={t("preboda.titulo")}
           entradilla={t("preboda.entradilla")}
@@ -204,6 +186,7 @@ export default async function PaginaInicio() {
       programa.length > 0 ? (
         <ListaDeHoras
           seccion="programa"
+          ancho="medio"
           etiqueta={formatoFecha.format(configuracion.fechaCeremonia)}
           titulo={t("programa.titulo")}
           /*
@@ -222,7 +205,12 @@ export default async function PaginaInicio() {
       ) : undefined,
     alojamiento:
       alojamientos.length > 0 ? (
-        <Alojamiento sitios={alojamientos} configuracion={configuracion} nombres={nombres} />
+        <Alojamiento
+          sitios={alojamientos}
+          configuracion={configuracion}
+          nombres={nombres}
+          urlBase={urlBase}
+        />
       ) : undefined,
     /*
       SIN COORDENADAS NO HAY SECCIÓN, aunque haya rutas escritas.
@@ -311,10 +299,12 @@ export default async function PaginaInicio() {
       </main>
 
       <Pie
-        nombres={nombres}
+        nombreNovia={configuracion.nombreNovia}
+        nombreNovio={configuracion.nombreNovio}
+        fechaCeremonia={configuracion.fechaCeremonia}
+        lugar={configuracion.lugarCeremonia ?? configuracion.lugarBanquete}
         correoContacto={configuracion.correoContacto}
         hashtag={configuracion.hashtag}
-        enlaces={enlaces}
       />
     </>
   );
@@ -422,8 +412,13 @@ function Portada({
 
   return (
     <section id={anclaDe("portada")} className="rejilla-partida min-h-dvh items-stretch">
+      {/*
+        El relleno es el de la entrega, fluido y asimétrico: más aire arriba
+        —cuenta la barra— que abajo, y los lados crecen con la pantalla. Cada
+        hueco de dentro tiene su token porque cada uno mide distinto.
+      */}
       <div
-        className={`flex w-full flex-col justify-center px-interno py-seccion-compacta sm:px-bloque ${
+        className={`flex w-full flex-col justify-center px-portada-lado pt-portada-arriba pb-portada-abajo ${
           foto ? "" : "mx-auto max-w-contenido"
         }`}
       >
@@ -433,34 +428,26 @@ function Portada({
           </p>
         ) : null}
 
-        <Display className="animacion-subir mt-pila">{configuracion.nombreNovia}</Display>
-        <div className="animacion-subir flex flex-wrap items-baseline gap-elemento">
+        <Display className="animacion-subir mt-nombres">{configuracion.nombreNovia}</Display>
+        <div className="animacion-subir flex flex-wrap items-baseline gap-conector">
           <Conector>{t("portada.conjuncion")}</Conector>
           <Display como="p">{configuracion.nombreNovio}</Display>
         </div>
 
         {/*
-          LA MISMA LÓGICA QUE EL HUECO DE ABAJO: en escritorio esta raya separa
-          dos bloques que respiran; en móvil, 56 px por arriba y otros 56 por
-          abajo son 112 px de pantalla para una línea de un píxel, en el único
-          sitio donde la pantalla se acaba.
+          La raya y los datos respiran con el ancho (28–44 y 20–54 px): en un
+          móvil una línea de un píxel no puede costar 112 px de pantalla, y en
+          escritorio los dos datos van separados como pide la entrega. Un solo
+          token fluido hace las dos cosas sin un `sm:` de por medio.
         */}
-        <hr className="animacion-trazar my-elemento border-t border-borde-fuerte sm:my-bloque" />
+        <hr className="animacion-trazar my-raya border-t border-borde-fuerte" />
 
-        {/*
-          EL HUECO ENTRE COLUMNAS NO SIRVE CUANDO NO HAY COLUMNAS.
-
-          En escritorio, fecha y lugar van uno al lado del otro y `bloque` es la
-          separación que pide la entrega. En móvil se apilan, y ese mismo hueco
-          deja 56 px de aire entre dos líneas que se leen seguidas — la portada
-          pasaba de una pantalla a dos. Se separa lo que corresponde a cada caso.
-        */}
-        <dl className="animacion-subir flex flex-wrap gap-pila sm:gap-bloque">
+        <dl className="animacion-subir flex flex-wrap gap-datos">
           <div>
             <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
               {t("portada.etiquetaFecha")}
             </dt>
-            <dd className="mt-linea font-titulo peso-titulo-menor text-dato leading-titulo-corto text-tinta-marca tabular-nums">
+            <dd className="mt-interno-compacto font-titulo peso-titulo-menor text-dato leading-titulo-corto text-tinta-marca tabular-nums">
               <time dateTime={configuracion.fechaCeremonia.toISOString()}>
                 {fechaEnPuntos(configuracion.fechaCeremonia)}
               </time>
@@ -471,7 +458,7 @@ function Portada({
               <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
                 {t("portada.etiquetaLugar")}
               </dt>
-              <dd className="mt-linea font-titulo peso-titulo-menor text-dato leading-titulo-corto text-tinta-marca">
+              <dd className="mt-interno-compacto font-titulo peso-titulo-menor text-dato leading-titulo-corto text-tinta-marca">
                 {lugar}
               </dd>
             </div>
@@ -495,24 +482,19 @@ function Portada({
         */}
         <p
           aria-hidden
-          className="animacion-aparecer mt-elemento flex items-center gap-interno-compacto text-diminuto uppercase tracking-pista text-tinta-suave"
+          className="animacion-aparecer mt-hueco-fluido flex items-center gap-hueco-corto text-diminuto uppercase tracking-pista text-tinta-suave"
         >
           {t("portada.bajad")}
-          <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
+          <span className="animacion-flotar block h-raya-pista w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
         </p>
 
         {/*
-          PEGADOS AL «BAJAD», Y NO POR AHORRAR ESPACIO.
-
-          Con 56 px por encima, el «bajad» se quedaba flotando solo en mitad de
-          un hueco: demasiado lejos del lugar para ser su pie y demasiado lejos
-          de los botones para ser su entradilla. Acercándolo, la versalita y su
-          raya vuelven a leerse como lo que son —el gesto que enlaza con lo que
-          viene— y de paso «Confirmar asistencia» entra ENTERO en la pantalla de
-          un móvil, que antes se cortaba por la mitad. Es la única acción que se
-          le pide a un invitado: no puede pedir que le busquen.
+          PEGADOS AL «BAJAD» (20–28 px), como en la entrega y no por ahorrar
+          espacio: la versalita y su raya son el gesto que enlaza con lo que
+          viene, y de paso «Confirmar asistencia» entra ENTERO en la pantalla
+          de un móvil. Es la única acción que se le pide a un invitado.
         */}
-        <div className="animacion-subir mt-elemento flex flex-wrap gap-interno sm:mt-bloque">
+        <div className="animacion-subir mt-acciones flex flex-wrap gap-interno">
           <BotonEnlace href={`#${anclaDe("rsvp")}`}>
             {t("portada.confirmarAsistencia")}
           </BotonEnlace>
@@ -621,7 +603,7 @@ function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBod
     <section
       id={anclaDe("cuenta_atras")}
       data-seccion="inversa"
-      className="relative overflow-hidden px-interno py-seccion-compacta text-center"
+      className="relative overflow-hidden px-margen py-seccion-compacta-fluida text-center"
       aria-labelledby={idTitulo}
     >
       <div
@@ -629,14 +611,14 @@ function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBod
         className="animacion-cielo cielo-estrellado pointer-events-none absolute -inset-bloque"
       />
 
-      <div className="animacion-cortina-al-ver relative mx-auto max-w-estrecho">
+      <div className="animacion-cortina-al-ver relative mx-auto max-w-cuenta">
         <Etiqueta id={idTitulo} espaciado="seccion">
           {t("cuentaAtras.titulo")}
         </Etiqueta>
-        <div className="mt-elemento">
+        <div className="mt-contador">
           <CuentaAtras fechaIso={configuracion.fechaCeremonia.toISOString()} />
         </div>
-        <Cita className="mx-auto mt-bloque max-w-texto text-tinta-suave">
+        <Cita className="mx-auto mt-cita max-w-cita text-tinta-suave">
           {t("cuentaAtras.cierre")}
         </Cita>
       </div>
@@ -713,12 +695,14 @@ function ListaDeHoras({
   realzada = false,
   hundida = false,
   menor = false,
+  ancho = "contenido",
   hitos,
 }: {
   seccion: Seccion;
   etiqueta: string;
   titulo: string;
   entradilla?: string | null;
+  ancho?: AnchoDeBloque;
   /** Una línea al pie del bloque, como el «no hace falta confirmarlo» de la preboda. */
   cierre?: string | null;
   realzada?: boolean;
@@ -739,12 +723,24 @@ function ListaDeHoras({
       entradilla={entradilla}
       realzada={realzada}
       hundida={hundida}
+      ancho={ancho}
     >
-      <ol className="border-t border-borde">
+      {/*
+        LA FILA DE LA ENTREGA: hora, un filete vertical de un píxel y el texto.
+        En el programa cada fila cierra por arriba, se redondea y se ilumina al
+        pasar el ratón; la víspera cierra por abajo y no se ilumina — va sobre
+        el fondo hundido, donde la iluminación no se vería. Los rellenos son
+        fluidos y distintos en cada una porque la entrega los da así.
+      */}
+      <ol>
         {hitos.map((hito) => (
           <li
             key={hito.id}
-            className="animacion-subir-al-ver rejilla-dato gap-elemento border-b border-borde py-elemento"
+            className={`animacion-subir-al-ver rejilla-dato-filete gap-fila-hueco ${
+              menor
+                ? "border-b border-borde-filete py-fila"
+                : "rounded-fila border-t border-borde px-fila-lado py-fila-programa transicion-color hover:bg-superficie-hundida"
+            }`}
           >
             {/*
               Interlínea 1 y no la del cuerpo: es una cifra sola, y con 1.65
@@ -752,12 +748,19 @@ function ListaDeHoras({
               titular de al lado.
             */}
             <span
-              className={`font-titulo peso-titulo-menor ${
+              className={`animacion-izquierda-al-ver font-titulo peso-titulo-menor ${
                 menor ? "text-hora-menor" : "text-hora"
               } leading-compacto text-acento tabular-nums`}
             >
               {hito.hora}
             </span>
+            {/* El filete es color, no contenido: se dibuja de arriba abajo al entrar. */}
+            <span
+              aria-hidden="true"
+              className={`animacion-trazar-vertical-al-ver self-stretch ${
+                menor ? "bg-borde-filete" : "bg-borde"
+              }`}
+            />
             <div>
               <Titulo3 como="h3" tamano={menor ? "hito-menor" : "hito"}>
                 {hito.titulo}
@@ -779,21 +782,21 @@ function ListaDeHoras({
   );
 }
 
+/**
+ * LAS TARJETAS DE HOTEL, con la foto arriba como las dibuja la entrega. La
+ * foto es opcional —los hoteles se apuntan antes de tener una foto de cada
+ * uno— y sin ella la tarjeta empieza por la versalita, sin hueco.
+ */
 function Alojamiento({
   sitios,
   configuracion,
   nombres,
+  urlBase,
 }: {
-  sitios: {
-    id: string;
-    nombre: string;
-    distintivo: string | null;
-    descripcion: string | null;
-    precioTexto: string | null;
-    urlReserva: string | null;
-  }[];
+  sitios: Hotel[];
   configuracion: ConfiguracionBoda;
   nombres: string;
+  urlBase: string | undefined;
 }) {
   return (
     <Bloque
@@ -814,39 +817,57 @@ function Alojamiento({
             })
           : t("alojamiento.entradillaSinPlazo", { nombres })
       }
+      composicion="apilada"
       hundida
     >
-      <ul className="grid gap-elemento sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="rejilla-tarjetas gap-rejilla-fluida">
         {sitios.map((sitio) => (
           <li
             key={sitio.id}
-            className="animacion-subir-al-ver flex flex-col rounded-tarjeta border border-borde bg-superficie p-elemento"
+            className="animacion-subir-al-ver flex flex-col overflow-hidden rounded-tarjeta border border-borde bg-superficie"
           >
-            {sitio.distintivo ? <Etiqueta>{sitio.distintivo}</Etiqueta> : null}
-            <Titulo3 como="h3" className="mt-pila">
-              {sitio.nombre}
-            </Titulo3>
-            {sitio.descripcion ? (
-              <Cuerpo className="mt-linea flex-1">{sitio.descripcion}</Cuerpo>
+            {sitio.foto && urlBase ? (
+              <div className="relative aspect-foto-tarjeta bg-superficie-hundida">
+                <Image
+                  src={`${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${sitio.foto.ruta}`}
+                  alt={sitio.foto.textoAlternativo}
+                  fill
+                  // Tres columnas en escritorio, una en móvil: sin esto el
+                  // navegador se descarga la versión de pantalla completa.
+                  sizes="(min-width: 40rem) 33vw, 100vw"
+                  className="object-cover"
+                  placeholder={sitio.foto.marcadorBorroso ? "blur" : "empty"}
+                  blurDataURL={sitio.foto.marcadorBorroso ?? undefined}
+                />
+              </div>
             ) : null}
-            <div className="mt-elemento flex items-baseline justify-between gap-interno border-t border-borde-tenue pt-interno">
-              {sitio.precioTexto ? (
-                <span className="font-titulo peso-titulo-menor text-cifra-dato text-tinta-marca">
-                  {sitio.precioTexto}
-                </span>
-              ) : (
-                <span />
-              )}
-              {sitio.urlReserva ? (
-                <a
-                  href={sitio.urlReserva}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-control-compacto items-center text-etiqueta uppercase tracking-boton text-marca transicion-color hover:text-tinta"
-                >
-                  {t("alojamiento.reservar")}
-                </a>
+            <div className="flex flex-1 flex-col p-tarjeta">
+              {sitio.distintivo ? <Etiqueta>{sitio.distintivo}</Etiqueta> : null}
+              <Titulo3 como="h3" className="mt-hueco-corto">
+                {sitio.nombre}
+              </Titulo3>
+              {sitio.descripcion ? (
+                <Cuerpo className="mt-hueco-corto flex-1">{sitio.descripcion}</Cuerpo>
               ) : null}
+              <div className="mt-pila flex items-baseline justify-between gap-interno border-t border-borde-tenue pt-interno">
+                {sitio.precioTexto ? (
+                  <span className="font-titulo peso-titulo-menor text-cifra-dato text-tinta-marca">
+                    {sitio.precioTexto}
+                  </span>
+                ) : (
+                  <span />
+                )}
+                {sitio.urlReserva ? (
+                  <a
+                    href={sitio.urlReserva}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-control-compacto items-center text-etiqueta uppercase tracking-boton text-marca transicion-color hover:text-tinta"
+                  >
+                    {t("alojamiento.reservar")}
+                  </a>
+                ) : null}
+              </div>
             </div>
           </li>
         ))}
@@ -870,48 +891,60 @@ function Transporte({
   configuracion: ConfiguracionBoda;
   coordenadas: { latitud: number; longitud: number };
 }) {
+  const idTitulo = `titulo-${anclaDe("transporte")}`;
+
   return (
-    <Bloque
-      seccion="transporte"
-      /*
-        LA ENTREGA PONE AQUÍ EL NOMBRE DE LA FINCA, no un rótulo genérico: es
-        la primera vez que aparece con todas sus letras y es lo que se busca
-        cuando alguien llega a esta sección. Sin lugar configurado se cae al
-        rótulo de siempre en vez de dejar un hueco.
-      */
-      etiqueta={configuracion.lugarCeremonia ?? t("comoLlegar.etiqueta")}
-      titulo={t("comoLlegar.titulo")}
-      entradilla={configuracion.direccionCeremonia ?? undefined}
-    >
-      <div className="grid gap-bloque lg:grid-cols-2">
-        <ul className="border-t border-borde">
-          {rutas.map((ruta) => (
-            <li
-              key={ruta.id}
-              className="rejilla-dato gap-elemento border-b border-borde py-pila"
-            >
-              <span className="font-titulo peso-titulo-menor text-cifra-dato-menor text-marca">
-                {ruta.duracion}
-              </span>
-              <div>
-                {/*
-                  Es un `h3` y es una versalita: `Etiqueta` lleva la familia
-                  y el peso del cuerpo escritos para que la regla base de los
-                  titulares no la convierta en serif. Pasó.
-                */}
-                <Etiqueta como="h3" tamano="boton" espaciado="boton" tono="tinta">
-                  {ruta.modo}
-                </Etiqueta>
-                {ruta.detalle ? <Cuerpo className="mt-linea">{ruta.detalle}</Cuerpo> : null}
-              </div>
-            </li>
-          ))}
-        </ul>
+    /*
+      DOS COLUMNAS CENTRADAS, como la entrega: a la izquierda la cabecera, las
+      rutas y el botón; a la derecha el mapa, casi cuadrado. La cabecera va
+      DENTRO de la columna y no encima de las dos —es lo que hace que el mapa
+      suba a la altura del titular en vez de quedar bajo una franja vacía—,
+      así que el bloque no la pinta él: la pinta la columna.
+    */
+    <Bloque seccion="transporte" etiqueta={null} titulo={null} conTitularDentro>
+      <div className="rejilla-llegar items-center gap-columnas-fluido">
+        <div>
+          <CabeceraSeccion
+            idTitulo={idTitulo}
+            /*
+              LA ENTREGA PONE AQUÍ EL NOMBRE DE LA FINCA, no un rótulo genérico:
+              es la primera vez que aparece con todas sus letras y es lo que se
+              busca cuando alguien llega a esta sección. Sin lugar configurado
+              se cae al rótulo de siempre en vez de dejar un hueco.
+            */
+            etiqueta={configuracion.lugarCeremonia ?? t("comoLlegar.etiqueta")}
+            titulo={t("comoLlegar.titulo")}
+            entradilla={configuracion.direccionCeremonia ?? undefined}
+            composicion="apilada"
+            anchoEntradilla="llegar"
+            className="mb-antes-rutas"
+          />
 
-        <div className="self-start">
-          <MapaDelLugar latitud={coordenadas.latitud} longitud={coordenadas.longitud} />
+          <ul className="border-t border-borde">
+            {rutas.map((ruta) => (
+              <li
+                key={ruta.id}
+                className="animacion-izquierda-al-ver rejilla-dato gap-elemento border-b border-borde py-pila"
+              >
+                <span className="font-titulo peso-titulo-menor text-cifra-dato-menor text-marca">
+                  {ruta.duracion}
+                </span>
+                <div>
+                  {/*
+                    Es un `h3` y es una versalita: `Etiqueta` lleva la familia
+                    y el peso del cuerpo escritos para que la regla base de los
+                    titulares no la convierta en serif. Pasó.
+                  */}
+                  <Etiqueta como="h3" tamano="boton" espaciado="boton" tono="tinta">
+                    {ruta.modo}
+                  </Etiqueta>
+                  {ruta.detalle ? <Cuerpo className="mt-linea">{ruta.detalle}</Cuerpo> : null}
+                </div>
+              </li>
+            ))}
+          </ul>
 
-          <div className="mt-elemento">
+          <div className="mt-antes-rutas">
             <BotonEnlace
               href={enlaceMapaExterno(coordenadas.latitud, coordenadas.longitud)}
               target="_blank"
@@ -920,6 +953,10 @@ function Transporte({
               {t("comoLlegar.abrirMapa")}
             </BotonEnlace>
           </div>
+        </div>
+
+        <div className="animacion-derecha-al-ver">
+          <MapaDelLugar latitud={coordenadas.latitud} longitud={coordenadas.longitud} />
         </div>
       </div>
     </Bloque>
@@ -948,7 +985,13 @@ function MapaDelLugar({ latitud, longitud }: { latitud: number; longitud: number
       loading="lazy"
       width={600}
       height={400}
-      className="aspect-mapa w-full rounded-tarjeta border border-borde"
+      /*
+        `h-auto` manda sobre el atributo `height`: sin él, el marco ignoraba la
+        proporción y medía 400 px fijos. Los atributos se quedan para reservar
+        el hueco antes de que cargue nada. Sin radio y casi cuadrado, como en
+        la entrega.
+      */
+      className="aspect-mapa h-auto w-full border border-borde"
     />
   );
 }
@@ -1009,7 +1052,8 @@ function Playlist({
       titulo={t("playlist.titulo")}
       entradilla={t("playlist.descripcion")}
       realzada
-      centrada
+      composicion="centrada"
+      ancho="playlist"
     >
       {puedeApuntar ? (
         <FormularioPlaylist />
@@ -1020,11 +1064,11 @@ function Playlist({
       )}
 
       {canciones.length > 0 ? (
-        <ul className="mt-elemento flex flex-wrap justify-center gap-interno-compacto">
+        <ul className="mt-chips-arriba flex flex-wrap justify-center gap-hueco-corto">
           {canciones.map((cancion) => (
             <li
               key={cancion.id}
-              className="rounded-etiqueta bg-superficie-tenue px-interno py-linea text-pequeno text-tinta-marca"
+              className="rounded-etiqueta bg-superficie-tenue px-chip-x py-chip-y text-chip text-tinta-marca"
             >
               {cancion.texto}
             </li>
@@ -1059,8 +1103,12 @@ function Regalos() {
       titulo={t("regalos.titulo")}
       entradilla={t("regalos.descripcion")}
       realzada
+      composicion="centrada"
+      ancho="estrecho"
     >
-      <div className="mx-auto max-w-estrecho rounded-tarjeta border border-borde bg-superficie-tenue p-elemento">
+      {/* Centrada entera, a 820 px, como la entrega: no hay nada que leer en
+          columna, hay una sola cosa que ofrecer. */}
+      <div className="mt-hueco-fluido rounded-tarjeta border border-borde bg-superficie-tenue p-tarjeta-fluida text-center">
         {/*
           EL NÚMERO NO ESTÁ AQUÍ, y es el ticket entero. Este componente pinta
           un botón; el IBAN se pide a `/regalos/cuenta` cuando alguien lo
@@ -1069,7 +1117,7 @@ function Regalos() {
         */}
         <CuentaRegalos />
 
-        <Cuerpo className="mt-elemento text-pequeno">{t("regalos.buzon")}</Cuerpo>
+        <Cuerpo className="mt-pila text-pequeno">{t("regalos.buzon")}</Cuerpo>
       </div>
     </Bloque>
   );
@@ -1090,14 +1138,16 @@ function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
       etiqueta={t("dresscode.etiqueta")}
       titulo={t("dresscode.titulo")}
       entradilla={t("dresscode.descripcion")}
+      realzada
+      composicion="apilada"
+      ancho="medio"
       hundida
     >
-      {/* Misma rejilla que el alojamiento: son tarjetas del mismo peso. */}
-      <ul className="grid gap-elemento sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="rejilla-consejos gap-rejilla-fluida">
         {consejos.map((consejo) => (
           <li
             key={consejo.id}
-            className="animacion-subir-al-ver rounded-tarjeta border border-borde bg-superficie p-elemento"
+            className="animacion-subir-al-ver rounded-tarjeta border border-borde bg-superficie p-tarjeta"
           >
             {/* Versalita en marca, no titular serif: así rotula la entrega
                 «Ellas», «Ellos» y «Solo dos peticiones». */}
@@ -1118,7 +1168,7 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
     <section
       id={anclaDe("rsvp")}
       data-seccion="inversa"
-      className="px-interno py-seccion-fluida text-center"
+      className="px-margen py-seccion-fluida text-center"
       aria-labelledby={idTitulo}
     >
       <div className="mx-auto max-w-estrecho">
@@ -1133,7 +1183,7 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
           }
           titulo={t("rsvp.titulo")}
           entradilla={t("rsvp.comoSeConfirma")}
-          centrada
+          composicion="centrada"
         />
 
         {/*
@@ -1166,13 +1216,14 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
  * El patrón que la entrega repite en todas: versalita arriba, titular grande
  * debajo y —cuando hace falta— una entradilla corta que lo acompaña.
  *
- * Tiene dos composiciones, y la entrega usa las dos. En la **alineada**, que es
- * la de las secciones con contenido debajo, la entradilla va a la derecha del
- * titular y pegada a su línea base; el titular abre la sección por la
- * izquierda, donde empieza a leerse todo lo demás. En la **centrada**, la de
- * las secciones que son una invitación a hacer algo —la playlist, el RSVP—, la
- * entradilla cae bajo el titular y todo se alinea al eje: no hay una lista que
- * seguir, hay una sola cosa que pedir.
+ * Tiene TRES composiciones, y la entrega usa las tres. En la **alineada**, la
+ * de las listas (la víspera, el programa, la galería), la entradilla va a la
+ * derecha del titular y pegada a su línea base. En la **apilada**, la de las
+ * secciones que abren con un párrafo (alojamiento, cómo llegar, dress code),
+ * la entradilla cae bajo el titular en una columna de 620 px que deja aire a
+ * la derecha. En la **centrada**, la de las secciones que son una invitación
+ * a hacer algo —la playlist, los regalos, el RSVP—, todo se alinea al eje:
+ * no hay una lista que seguir, hay una sola cosa que pedir.
  *
  * El titular es un `h2` con el tamaño de `Titulo1`, no de `Titulo2`, y por eso
  * va con la propiedad `como`. Es lo que dice la entrega y se nota: con el
@@ -1180,16 +1231,21 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
  * La jerarquía del documento la sigue marcando la etiqueta, que es lo que oye
  * un lector de pantalla.
  *
- * Vive suelta y no dentro de `Bloque` porque la usan dos marcos distintos: las
- * secciones de contenido y el RSVP, que tiene su propio fondo.
+ * Vive suelta y no dentro de `Bloque` porque la usan tres marcos distintos:
+ * las secciones de contenido, el RSVP con su propio fondo, y la columna de
+ * texto de «cómo llegar».
  */
+type ComposicionDeCabecera = "alineada" | "apilada" | "centrada";
+
 function CabeceraSeccion({
   idTitulo,
   etiqueta,
   titulo,
   entradilla = null,
   realzada = false,
-  centrada = false,
+  composicion = "alineada",
+  anchoEntradilla = "texto",
+  className = "mb-bloque-fluido",
 }: {
   idTitulo: string;
   etiqueta: string | null;
@@ -1198,32 +1254,48 @@ function CabeceraSeccion({
   entradilla?: string | null;
   /** Bronce y rombo. Sólo las secciones que son un extra; ver `EtiquetaSeccion`. */
   realzada?: boolean;
-  centrada?: boolean;
+  composicion?: ComposicionDeCabecera;
+  /** «Cómo llegar» estrecha su entradilla a 460 px; el resto, al ancho de texto. */
+  anchoEntradilla?: "texto" | "llegar";
+  /** El aire por debajo. Cada marco lo pone; por defecto, el de una sección. */
+  className?: string;
 }) {
   if (!etiqueta && !titulo) return null;
 
+  const entradillaDebajo = composicion !== "alineada" && entradilla;
+  const anchoDeEntradilla =
+    composicion === "centrada"
+      ? "mx-auto max-w-entradilla-centrada"
+      : anchoEntradilla === "llegar"
+        ? "max-w-entradilla-llegar"
+        : "max-w-texto";
+
   const rotulo = (
-    <div>
+    <div className={composicion === "apilada" ? "max-w-cabecera" : undefined}>
       {etiqueta ? <EtiquetaSeccion realzada={realzada}>{etiqueta}</EtiquetaSeccion> : null}
       {titulo ? (
         <Titulo1 como="h2" id={idTitulo} className="mt-pila">
           {titulo}
         </Titulo1>
       ) : null}
-      {centrada && entradilla ? (
-        <Cuerpo className="mx-auto mt-pila max-w-texto">{entradilla}</Cuerpo>
+      {entradillaDebajo ? (
+        <Cuerpo className={`mt-pila ${anchoDeEntradilla}`}>{entradilla}</Cuerpo>
       ) : null}
     </div>
   );
 
   return (
     <header
-      className={`animacion-subir-al-ver mb-bloque-fluido ${
-        centrada ? "text-center" : "flex flex-wrap items-end justify-between gap-elemento"
+      className={`animacion-subir-al-ver ${className} ${
+        composicion === "centrada"
+          ? "text-center"
+          : composicion === "alineada"
+            ? "flex flex-wrap items-end justify-between gap-elemento"
+            : ""
       }`}
     >
       {rotulo}
-      {!centrada && entradilla ? (
+      {composicion === "alineada" && entradilla ? (
         <Cuerpo className="ancho-entradilla">{entradilla}</Cuerpo>
       ) : null}
     </header>
@@ -1235,16 +1307,33 @@ function CabeceraSeccion({
  *
  * Mantiene el ritmo vertical sin repetirlo por página. El aire es fluido: 132
  * px fijos dejan una sección casi vacía en un móvil, y por eso la entrega lo
- * escribe con `clamp` en todas.
+ * escribe con `clamp` en todas. El margen lateral es el de la entrega, 26 px.
+ *
+ * EL ANCHO NO ES UNO: la entrega da a cada sección el suyo —1180 a las que
+ * llevan tarjetas o un mapa, 1080 a las listas y al dress code, 900 a la
+ * playlist, 820 a lo que se centra— y ese número es parte de la composición,
+ * no un detalle. Se elige por nombre, nunca por píxeles.
  */
+type AnchoDeBloque = "contenido" | "medio" | "playlist" | "estrecho" | "amplio";
+
+const ANCHOS: Record<AnchoDeBloque, string> = {
+  contenido: "max-w-contenido",
+  medio: "max-w-medio",
+  playlist: "max-w-playlist",
+  estrecho: "max-w-estrecho",
+  amplio: "max-w-amplio",
+};
+
 function Bloque({
   seccion,
   etiqueta,
   titulo,
   entradilla = null,
   realzada = false,
-  centrada = false,
+  composicion = "alineada",
   hundida = false,
+  ancho = "contenido",
+  conTitularDentro = false,
   children,
 }: {
   seccion: Seccion;
@@ -1252,8 +1341,14 @@ function Bloque({
   titulo: string | null;
   entradilla?: string | null;
   realzada?: boolean;
-  centrada?: boolean;
+  composicion?: ComposicionDeCabecera;
   hundida?: boolean;
+  ancho?: AnchoDeBloque;
+  /**
+   * La sección pinta su propio `CabeceraSeccion` entre los hijos —cómo llegar
+   * lo mete en una columna— y aun así el `h2` tiene que rotular la sección.
+   */
+  conTitularDentro?: boolean;
   children: ReactNode;
 }) {
   const ancla = anclaDe(seccion);
@@ -1261,17 +1356,17 @@ function Bloque({
   return (
     <section
       id={ancla}
-      className={`px-interno py-seccion-fluida ${hundida ? "bg-superficie-hundida" : ""}`}
-      aria-labelledby={titulo ? idTitulo : undefined}
+      className={`px-margen py-seccion-fluida ${hundida ? "bg-superficie-hundida" : ""}`}
+      aria-labelledby={titulo || conTitularDentro ? idTitulo : undefined}
     >
-      <div className="mx-auto max-w-contenido">
+      <div className={`mx-auto ${ANCHOS[ancho]}`}>
         <CabeceraSeccion
           idTitulo={idTitulo}
           etiqueta={etiqueta}
           titulo={titulo}
           entradilla={entradilla}
           realzada={realzada}
-          centrada={centrada}
+          composicion={composicion}
         />
         {children}
       </div>

@@ -87,7 +87,7 @@ export function HuecoFoto({
       */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-0 w-bloque bg-gradient-to-r from-fondo to-transparent"
+        className="pointer-events-none absolute inset-y-0 left-0 w-fundido-foto bg-gradient-to-r from-fondo to-transparent"
       />
     </div>
   );

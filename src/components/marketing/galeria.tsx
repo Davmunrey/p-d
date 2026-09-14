@@ -70,7 +70,7 @@ export function Galeria({
   }));
 
   return (
-    <section id={ancla} className="px-interno py-seccion-fluida" aria-labelledby={idTitulo}>
+    <section id={ancla} className="px-margen py-seccion-fluida" aria-labelledby={idTitulo}>
       <div className="mx-auto max-w-contenido">
         {/*
           La cabecera de siempre: versalita, titular y una entradilla a su

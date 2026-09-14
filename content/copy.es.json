@@ -228,7 +228,9 @@
     "escribidnos": "Escribidnos",
     "etiquetaNavegacion": "Enlaces del pie",
     "contacto": "Cualquier duda, escribidnos",
-    "volverArriba": "Volver arriba"
+    "volverArriba": "Volver arriba",
+    "fechaLugar": "{fecha} — {lugar}",
+    "sistemaDeMarca": "Sistema de marca"
   },
   "cocina": {
     "titulo": "Sistema de diseño",

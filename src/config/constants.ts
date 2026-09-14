@@ -96,6 +96,9 @@ export const HORAS_DURACION_EVENTO = 6;
 /** Descarga del evento para el calendario. La escriben la página y su test. */
 export const RUTA_CALENDARIO = "/reserva-la-fecha/evento.ics";
 
+/** El sistema de marca vivo. El pie de la landing enlaza a él, como la entrega. */
+export const RUTA_COCINA = "/cocina";
+
 /**
  * Cuánto se ve alrededor de la finca en el mapa incrustado, en grados.
  *

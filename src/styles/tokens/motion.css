@@ -60,6 +60,35 @@
   }
 }
 
+/**
+ * Entrar deslizando desde un lado. La hora de cada fila del programa llega
+ * desde la izquierda y el mapa de «cómo llegar» desde la derecha: es lo que
+ * separa una lista que «aparece» de una que se lee en orden.
+ */
+@keyframes entrar-izquierda {
+  from {
+    opacity: 0%;
+    transform: translateX(calc(var(--space-reveal-lateral) * -1));
+  }
+
+  to {
+    opacity: 100%;
+    transform: translateX(0);
+  }
+}
+
+@keyframes entrar-derecha {
+  from {
+    opacity: 0%;
+    transform: translateX(var(--space-reveal-lateral));
+  }
+
+  to {
+    opacity: 100%;
+    transform: translateX(0);
+  }
+}
+
 @keyframes bajar {
   from {
     opacity: 0%;
@@ -257,7 +286,10 @@
   .animacion-subir-al-ver,
   .animacion-aparecer-al-ver,
   .animacion-cortina-al-ver,
-  .animacion-escala-al-ver {
+  .animacion-escala-al-ver,
+  .animacion-izquierda-al-ver,
+  .animacion-derecha-al-ver,
+  .animacion-trazar-vertical-al-ver {
     animation-fill-mode: both;
     animation-range: entry 0% cover 30%;
     animation-timeline: view();
@@ -292,6 +324,23 @@
     animation-duration: var(--duration-slow);
     animation-name: escala;
   }
+
+  .animacion-izquierda-al-ver {
+    animation-duration: var(--duration-slow);
+    animation-name: entrar-izquierda;
+  }
+
+  .animacion-derecha-al-ver {
+    animation-duration: var(--duration-slow);
+    animation-name: entrar-derecha;
+  }
+
+  /* El filete entre la hora y el texto se dibuja de arriba abajo al entrar. */
+  .animacion-trazar-vertical-al-ver {
+    animation-duration: var(--duration-slow);
+    animation-name: trazar-vertical;
+    transform-origin: top;
+  }
 }
 
 /* Escalonado de listas: cada hijo entra un poco después que el anterior. */
@@ -316,7 +365,10 @@
   .animacion-subir-al-ver,
   .animacion-aparecer-al-ver,
   .animacion-cortina-al-ver,
-  .animacion-escala-al-ver {
+  .animacion-escala-al-ver,
+  .animacion-izquierda-al-ver,
+  .animacion-derecha-al-ver,
+  .animacion-trazar-vertical-al-ver {
     animation: aparecer var(--duration-instant) var(--ease-salida) both;
     animation-timeline: auto;
   }

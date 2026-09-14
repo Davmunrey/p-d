@@ -31,16 +31,34 @@ const BASE =
   "inline-flex items-center justify-center gap-interno-compacto text-boton uppercase tracking-boton transicion-color disabled:pointer-events-none disabled:opacity-50";
 
 const JERARQUIAS: Record<JerarquiaBoton, string> = {
-  primario:
-    "min-h-control rounded-boton bg-accion px-elemento text-tinta-sobre-accion hover:bg-accion-hover",
+  primario: "rounded-boton bg-accion px-elemento text-tinta-sobre-accion hover:bg-accion-hover",
   secundario:
-    "min-h-control rounded-boton border border-borde-fuerte px-elemento text-tinta-marca hover:border-marca hover:bg-superficie-hundida",
+    "rounded-boton border border-borde-fuerte px-elemento text-tinta-marca hover:border-marca hover:bg-superficie-hundida",
   terciario:
-    "min-h-control-compacto border-b border-borde-fuerte px-interno-compacto text-marca hover:border-marca hover:text-tinta",
+    "border-b border-borde-fuerte px-interno-compacto text-marca hover:border-marca hover:text-tinta",
 };
+
+/**
+ * La altura va aparte de la jerarquía porque no siempre van juntas: el
+ * terciario es siempre compacto (44, el mínimo táctil), y el primario y el
+ * secundario miden 52 salvo en la playlist, donde la entrega los sube a 54
+ * para que hagan fila con el campo.
+ */
+export type TamanoBoton = "normal" | "grande";
+
+const ALTURAS = {
+  normal: "min-h-control",
+  grande: "min-h-control-grande",
+  compacto: "min-h-control-compacto",
+} as const;
+
+function alturaDe(jerarquia: JerarquiaBoton, tamano: TamanoBoton) {
+  return ALTURAS[jerarquia === "terciario" ? "compacto" : tamano];
+}
 
 interface PropiedadesComunes {
   jerarquia?: JerarquiaBoton;
+  tamano?: TamanoBoton;
   children: ReactNode;
   className?: string;
 }
@@ -53,13 +71,18 @@ type PropiedadesEnlace = PropiedadesComunes &
 
 export function Boton({
   jerarquia = "primario",
+  tamano = "normal",
   className = "",
   children,
   type = "button",
   ...resto
 }: PropiedadesBoton) {
   return (
-    <button type={type} className={`${BASE} ${JERARQUIAS[jerarquia]} ${className}`} {...resto}>
+    <button
+      type={type}
+      className={`${BASE} ${alturaDe(jerarquia, tamano)} ${JERARQUIAS[jerarquia]} ${className}`}
+      {...resto}
+    >
       {children}
     </button>
   );
@@ -68,12 +91,16 @@ export function Boton({
 /** Mismo aspecto que `Boton`, pero navega. Un enlace nunca debe ser un botón. */
 export function BotonEnlace({
   jerarquia = "primario",
+  tamano = "normal",
   className = "",
   children,
   ...resto
 }: PropiedadesEnlace) {
   return (
-    <Link className={`${BASE} ${JERARQUIAS[jerarquia]} ${className}`} {...resto}>
+    <Link
+      className={`${BASE} ${alturaDe(jerarquia, tamano)} ${JERARQUIAS[jerarquia]} ${className}`}
+      {...resto}
+    >
       {children}
     </Link>
   );

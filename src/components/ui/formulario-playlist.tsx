@@ -31,8 +31,19 @@ export function FormularioPlaylist() {
   const [estado, enviar, enviando] = useActionState(anadirCancion, ESTADO_INICIAL);
 
   return (
-    <form action={enviar} className="mx-auto mt-elemento grid max-w-texto gap-interno">
+    /*
+      UNA FILA DE DOS PÍLDORAS, como en la entrega: el campo estira y el botón
+      va a su derecha, los dos a 54 px. Se apilan solos cuando no caben. El
+      rótulo del campo se queda —la entrega usa un placeholder, que
+      desaparece al escribir y no lo anuncia ningún lector de pantalla—.
+    */
+    <form
+      action={enviar}
+      className="mx-auto mt-hueco-fluido flex max-w-texto flex-wrap items-end justify-center gap-interno"
+    >
       <CampoTexto
+        forma="pildora"
+        className="min-w-0 flex-1"
         /*
           La `key` cambia en cada envío para que el campo se monte de nuevo y
           coja el `defaultValue` de este estado: vacío si la canción entró, lo
@@ -52,17 +63,15 @@ export function FormularioPlaylist() {
         enterKeyHint="done"
       />
 
-      <div className="flex flex-wrap items-center justify-center gap-interno">
-        <Boton type="submit" jerarquia="secundario" disabled={enviando}>
-          {enviando ? t("playlist.anadiendo") : t("playlist.anadir")}
-        </Boton>
+      <Boton type="submit" tamano="grande" disabled={enviando}>
+        {enviando ? t("playlist.anadiendo") : t("playlist.anadir")}
+      </Boton>
 
-        {estado.fase === "apuntada" ? (
-          <p role="status" className="text-pequeno text-tinta-suave">
-            {t("playlist.anadida")}
-          </p>
-        ) : null}
-      </div>
+      {estado.fase === "apuntada" ? (
+        <p role="status" className="basis-full text-center text-pequeno text-tinta-suave">
+          {t("playlist.anadida")}
+        </p>
+      ) : null}
     </form>
   );
 }
