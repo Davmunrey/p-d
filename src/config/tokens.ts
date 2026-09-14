@@ -70,6 +70,10 @@ export const TOKENS_TIPOGRAFIA: readonly string[] = [
   "texto-cuerpo",
   "texto-etiqueta",
   "texto-pequeno",
+  "texto-boton",
+  "texto-hito",
+  "texto-hora",
+  "texto-dato",
 ] as const;
 
 export const TOKENS_ESPACIADO: readonly string[] = [

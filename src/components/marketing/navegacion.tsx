@@ -100,7 +100,12 @@ export function Navegacion({
         <a
           href={`#${anclaDe("portada")}`}
           aria-label={marca}
-          className="flex h-cabecera shrink-0 items-center font-titulo text-titulo-3 leading-titulo-corto tracking-titulo text-tinta transicion-color hover:text-tinta-marca"
+          /*
+            A 23 px con el espaciado abierto (+.04em) y el «&» al 72 % del
+            cuerpo, que es como la entrega dibuja el monograma en la barra: no
+            es un titular pequeño, es una marca, y tiene sus propios tokens.
+          */
+          className="flex h-cabecera shrink-0 items-center font-titulo peso-titulo-menor text-monograma leading-compacto tracking-monograma text-tinta-marca transicion-color hover:text-tinta"
         >
           {inicial(nombreNovia)}
           {/*
@@ -109,7 +114,7 @@ export function Navegacion({
             dos decisiones tipográficas distintas que alguien puede querer
             cambiar sin tocar código.
           */}
-          <span aria-hidden="true" className="mx-linea text-acento italic">
+          <span aria-hidden="true" className="mx-linea text-ampersand text-marca italic">
             {t("navegacion.monogramaConector")}
           </span>
           {inicial(nombreNovio)}
@@ -163,7 +168,7 @@ export function Navegacion({
                         cambia nada de lo que se ve: cambia lo que se puede
                         pulsar, que es lo que estaba mal.
                       */
-                      "flex items-center whitespace-nowrap text-etiqueta uppercase tracking-etiqueta transicion-color",
+                      "flex items-center whitespace-nowrap text-menu uppercase tracking-menu transicion-color",
                       /*
                         LA PÍLDORA NO SE ESTIRA CON LA BARRA —la centra un
                         `my-auto`, porque un botón relleno del alto entero de la
@@ -173,7 +178,7 @@ export function Navegacion({
                         se le pide al invitado. El mínimo se pone explícito.
                       */
                       esConfirmar
-                        ? "my-auto min-h-control-compacto rounded-boton bg-accion px-elemento py-interno-compacto text-tinta-sobre-accion hover:bg-accion-hover"
+                        ? "my-auto min-h-control-compacto rounded-boton bg-accion px-elemento py-interno-compacto tracking-pildora text-tinta-sobre-accion hover:bg-accion-hover"
                         : activo
                           ? "marca-activa border-borde-marca text-tinta-marca"
                           : "marca-activa border-transparent text-tinta-suave hover:text-tinta",

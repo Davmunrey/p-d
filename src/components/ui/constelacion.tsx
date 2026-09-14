@@ -1,4 +1,9 @@
-import { constelacionPorClave, GROSOR_TRAZO, type Constelacion } from "@/config/constelaciones";
+import {
+  CONSTELACION_NOVIOS,
+  constelacionPorClave,
+  GROSOR_TRAZO,
+  type Constelacion,
+} from "@/config/constelaciones";
 
 /**
  * UNA CONSTELACIÓN
@@ -22,6 +27,17 @@ import { constelacionPorClave, GROSOR_TRAZO, type Constelacion } from "@/config/
  * constelación **es** la información —el catálogo del sistema de marca, o el
  * día que una mesa se identifique por su dibujo— se le pasa `rotulada` y
  * entonces se anuncia con su nombre.
+ *
+ * UNA CLAVE QUE NO EXISTE PINTA LA LIRA, como hace el componente de la
+ * entrega. Antes se callaba, y es peor: la página que la pide —un Save the
+ * Date, un marcasitios— se queda sin su adorno por una letra de más, y nadie
+ * lo ve porque no da error. Que las claves del catálogo existan lo garantiza
+ * el test unitario; el respaldo es para lo que llega de fuera.
+ *
+ * `escala` multiplica el radio de las estrellas, no el dibujo entero: la
+ * tarjeta del Save the Date lo pide a 1.2 porque en un lienzo pequeño el
+ * brillo de 1× se pierde. Por eso el svg desborda a la vista: una estrella
+ * pegada al borde crece hacia fuera y no puede quedar cortada.
  */
 
 /** Lado del lienzo. Las coordenadas del mapa son porcentajes de este número. */
@@ -30,17 +46,20 @@ const LIENZO = 100;
 export function Constelacion({
   clave,
   rotulada = false,
+  escala = 1,
   className = "",
 }: {
   clave: string;
   /** Si es información y no adorno: se anuncia con su nombre. */
   rotulada?: boolean;
+  /** Factor del radio de las estrellas. 1 es el catálogo. */
+  escala?: number;
   className?: string;
 }) {
-  const constelacion: Constelacion | undefined = constelacionPorClave(clave);
+  const constelacion: Constelacion | undefined =
+    constelacionPorClave(clave) ?? constelacionPorClave(CONSTELACION_NOVIOS);
 
-  // Una clave que no existe no puede tumbar la página que la pinta: se calla.
-  // Que la clave exista lo garantiza el test unitario, no un error en runtime.
+  // La Lira existe por construcción; esto sólo cubre un catálogo vacío.
   if (!constelacion) return null;
 
   const { estrellas, lineas, nombre } = constelacion;
@@ -49,7 +68,7 @@ export function Constelacion({
   return (
     <svg
       viewBox={`0 0 ${LIENZO} ${LIENZO}`}
-      className={`block h-full w-full ${className}`}
+      className={`block h-full w-full overflow-visible ${className}`}
       fill="none"
       preserveAspectRatio="xMidYMid meet"
       role={rotulada ? "img" : undefined}
@@ -80,7 +99,7 @@ export function Constelacion({
           key={`${x}-${y}`}
           cx={x}
           cy={y}
-          r={radio}
+          r={radio * escala}
           className="fill-constelacion-estrella"
         />
       ))}

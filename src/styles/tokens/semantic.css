@@ -194,6 +194,18 @@
   --texto-etiqueta: var(--font-size-etiqueta);
   --texto-pequeno: var(--font-size-pequeno);
   --texto-diminuto: var(--font-size-diminuto);
+  --texto-boton: var(--font-size-boton);
+  --texto-menu: var(--font-size-boton);
+  --texto-monograma: var(--font-size-monograma);
+  --texto-ampersand: var(--font-size-ampersand);
+  --texto-hito: var(--font-size-hito);
+  --texto-hito-menor: var(--font-size-hito-menor);
+  --texto-hora: var(--font-size-hora);
+  --texto-hora-menor: var(--font-size-hora-menor);
+  --texto-dato: var(--font-size-dato);
+  --texto-cifra-dato: var(--font-size-cifra-dato);
+  --texto-cifra-dato-menor: var(--font-size-cifra-dato-menor);
+  --texto-enlace-pie: var(--font-size-pequeno);
   --peso-titulo: var(--font-weight-light);
   --peso-titulo-menor: var(--font-weight-regular);
   --peso-cuerpo: var(--font-weight-regular);
@@ -205,6 +217,8 @@
   --interlineado-conector: var(--line-height-conector);
   --interlineado-cita: var(--line-height-cita);
   --interlineado-cuerpo: var(--line-height-cuerpo);
+  --interlineado-hito: var(--line-height-hito);
+  --interlineado-compacto: var(--line-height-compacto);
   --espaciado-display: var(--letter-spacing-display);
   --espaciado-titulo: var(--letter-spacing-titulo);
   --espaciado-normal: var(--letter-spacing-normal);
@@ -212,6 +226,11 @@
   --espaciado-boton: var(--letter-spacing-boton);
   --espaciado-marcado: var(--letter-spacing-marcado);
   --espaciado-seccion: var(--letter-spacing-seccion);
+  --espaciado-menu: var(--letter-spacing-boton);
+  --espaciado-pildora: var(--letter-spacing-pildora);
+  --espaciado-monograma: var(--letter-spacing-monograma);
+  --espaciado-pista: var(--letter-spacing-pista);
+  --espaciado-enlace-pie: var(--letter-spacing-enlace-pie);
 
   /* --- Espaciado semántico ------------------------------------------- */
   --espacio-cero: var(--space-0);

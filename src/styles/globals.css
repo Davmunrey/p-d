@@ -146,6 +146,18 @@
   --text-etiqueta: var(--texto-etiqueta);
   --text-pequeno: var(--texto-pequeno);
   --text-diminuto: var(--texto-diminuto);
+  --text-boton: var(--texto-boton);
+  --text-menu: var(--texto-menu);
+  --text-monograma: var(--texto-monograma);
+  --text-ampersand: var(--texto-ampersand);
+  --text-hito: var(--texto-hito);
+  --text-hito-menor: var(--texto-hito-menor);
+  --text-hora: var(--texto-hora);
+  --text-hora-menor: var(--texto-hora-menor);
+  --text-dato: var(--texto-dato);
+  --text-cifra-dato: var(--texto-cifra-dato);
+  --text-cifra-dato-menor: var(--texto-cifra-dato-menor);
+  --text-enlace-pie: var(--texto-enlace-pie);
   --font-weight-titulo: var(--peso-titulo);
   --font-weight-titulo-menor: var(--peso-titulo-menor);
   --font-weight-cuerpo: var(--peso-cuerpo);
@@ -157,6 +169,8 @@
   --leading-conector: var(--interlineado-conector);
   --leading-cita: var(--interlineado-cita);
   --leading-cuerpo: var(--interlineado-cuerpo);
+  --leading-hito: var(--interlineado-hito);
+  --leading-compacto: var(--interlineado-compacto);
   --tracking-display: var(--espaciado-display);
   --tracking-titulo: var(--espaciado-titulo);
   --tracking-normal: var(--espaciado-normal);
@@ -164,6 +178,11 @@
   --tracking-boton: var(--espaciado-boton);
   --tracking-marcado: var(--espaciado-marcado);
   --tracking-seccion: var(--espaciado-seccion);
+  --tracking-menu: var(--espaciado-menu);
+  --tracking-pildora: var(--espaciado-pildora);
+  --tracking-monograma: var(--espaciado-monograma);
+  --tracking-pista: var(--espaciado-pista);
+  --tracking-enlace-pie: var(--espaciado-enlace-pie);
 
   /* Espaciado */
   --spacing-linea: var(--espacio-linea);
@@ -258,6 +277,32 @@
  * y otra con el texto. Se repite en el programa del día y en cómo llegar, así
  * que vive aquí en lugar de como valor arbitrario en cada sitio.
  */
+
+/**
+ * EL PESO VIAJA CON EL COMPONENTE, NO CON LA ETIQUETA.
+ *
+ * La regla base de abajo da `--peso-titulo` a `h1`–`h4`, y sólo a ellos. Un
+ * `Display` pintado como `<p>` —el segundo nombre de la portada— se quedaba
+ * en 400 mientras el `h1` de al lado iba en 300: dos nombres del mismo tamaño
+ * y de distinto peso, y nadie lo veía porque en una captura casi no se nota.
+ * `tipografia.tsx` promete que la etiqueta y el estilo van separados; estas
+ * utilidades son lo que cumple esa promesa.
+ *
+ * No se escriben `font-light` ni `font-normal`: esas traen los números de la
+ * escala de Tailwind, no los tokens de la marca.
+ */
+@utility peso-titulo {
+  font-weight: var(--peso-titulo);
+}
+
+@utility peso-titulo-menor {
+  font-weight: var(--peso-titulo-menor);
+}
+
+@utility peso-cuerpo {
+  font-weight: var(--peso-cuerpo);
+}
+
 @utility rejilla-dato {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

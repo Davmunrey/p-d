@@ -17,20 +17,26 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
  *
  * Altura mínima de 52 px: el objetivo táctil cómodo en móvil, que es donde la
  * mayoría de invitados va a abrir esto desde WhatsApp.
+ *
+ * El rótulo va a `--texto-boton` (12 px) y no a la versalita de 11: es el
+ * escalón que la entrega da a los cuatro botones de la Landing y al catálogo,
+ * un punto por encima de los rótulos de sección para que un botón se lea como
+ * lo que es. Y al pasar el ratón el borde del secundario y del terciario se
+ * oscurece hasta la marca, no se aclara: la entrega hace lo primero.
  */
 
 export type JerarquiaBoton = "primario" | "secundario" | "terciario";
 
 const BASE =
-  "inline-flex items-center justify-center gap-interno-compacto text-etiqueta uppercase tracking-boton transicion-color disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex items-center justify-center gap-interno-compacto text-boton uppercase tracking-boton transicion-color disabled:pointer-events-none disabled:opacity-50";
 
 const JERARQUIAS: Record<JerarquiaBoton, string> = {
   primario:
     "min-h-control rounded-boton bg-accion px-elemento text-tinta-sobre-accion hover:bg-accion-hover",
   secundario:
-    "min-h-control rounded-boton border border-borde-fuerte px-elemento text-tinta-marca hover:border-borde-marca hover:bg-superficie-hundida",
+    "min-h-control rounded-boton border border-borde-fuerte px-elemento text-tinta-marca hover:border-marca hover:bg-superficie-hundida",
   terciario:
-    "min-h-control-compacto border-b border-borde-fuerte px-interno-compacto text-marca hover:border-borde-marca hover:text-tinta",
+    "min-h-control-compacto border-b border-borde-fuerte px-interno-compacto text-marca hover:border-marca hover:text-tinta",
 };
 
 interface PropiedadesComunes {

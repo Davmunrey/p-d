@@ -510,3 +510,133 @@ test.describe("La víspera y el día", () => {
     expect(menu.indexOf("#preboda")).toBeLessThan(menu.indexOf("#programa"));
   });
 });
+
+/**
+ * BODA-108 y BODA-109 · La tipografía es la de la entrega, elemento a elemento.
+ *
+ * Salió de una auditoría con `getComputedStyle` contra la Landing aplicada del
+ * estudio: el segundo nombre de la portada pesaba 400 y el primero 300, los
+ * botones iban a 11 px en vez de a 12, y una versalita marcada como `h3` salía
+ * en Cormorant porque la regla base de los titulares le imponía la serif. Nada
+ * de eso se ve en una captura y todo se mide aquí.
+ */
+test.describe("La tipografía es la de la entrega", () => {
+  /** Familia, peso y tamaño de un elemento, tal como los pinta el navegador. */
+  async function medir(page: import("@playwright/test").Page, selector: string) {
+    return page
+      .locator(selector)
+      .first()
+      .evaluate((nodo) => {
+        const estilo = getComputedStyle(nodo);
+        return {
+          familia: estilo.fontFamily,
+          peso: Number(estilo.fontWeight),
+          tamano: parseFloat(estilo.fontSize),
+          interlinea: parseFloat(estilo.lineHeight) / parseFloat(estilo.fontSize),
+        };
+      });
+  }
+
+  for (const [nombre, ancho] of [
+    ["móvil", 390],
+    ["escritorio", 1280],
+  ] as const) {
+    test(`en ${nombre} los dos nombres de la portada pesan y miden lo mismo`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: ancho, height: 900 });
+      await page.goto("/");
+
+      const primero = await medir(page, "#portada h1");
+      const segundo = await medir(page, "#portada p.text-display");
+
+      // El segundo nombre es un `<p>` a propósito (un solo h1 por página), y
+      // aun así tiene que pesar 300 como el h1: el peso viaja con el componente.
+      expect(segundo.peso, "el segundo nombre no pesa como el primero").toBe(primero.peso);
+      expect(segundo.tamano).toBe(primero.tamano);
+      expect(primero.peso).toBe(300);
+    });
+  }
+
+  test("los botones y el menú van al escalón de 12 px", async ({ page }) => {
+    await page.goto("/");
+
+    const boton = await medir(page, `#portada a[href="#rsvp"]`);
+    const enlaceMenu = await medir(page, "header nav a");
+
+    expect(boton.tamano).toBe(12);
+    expect(enlaceMenu.tamano).toBe(12);
+    expect(boton.familia).toMatch(/Jost/);
+  });
+
+  test("el titular de sección llega a los 68 px de la entrega en escritorio", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/");
+
+    const titular = await medir(page, "main section header h2");
+    // 5.4vw a 1280 son 69,12: el clamp topa en 68. Con 5vw se quedaba en 64.
+    expect(titular.tamano).toBe(68);
+    expect(titular.peso).toBe(300);
+  });
+
+  test("las horas del programa van a interlínea 1 y tamaño fluido", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/");
+
+    const hora = await medir(page, "#programa li > span");
+    expect(hora.familia).toMatch(/Cormorant/);
+    expect(hora.interlinea).toBeCloseTo(1, 2);
+    // clamp(26px, 3.2vw, 36px) a 1280 → 36.
+    expect(hora.tamano).toBe(36);
+
+    // Y la víspera, un escalón por debajo: clamp(24px, 3vw, 32px) → 32.
+    const horaVispera = await medir(page, "#preboda li > span");
+    expect(horaVispera.tamano).toBe(32);
+  });
+
+  test("los datos de la portada van en Cormorant a interlínea 1.1", async ({ page }) => {
+    await page.goto("/");
+    const fecha = await medir(page, "#portada dd");
+    expect(fecha.familia).toMatch(/Cormorant/);
+    expect(fecha.interlinea).toBeCloseTo(1.1, 1);
+  });
+
+  /**
+   * CASO DE ERROR. Es el fallo que se cazó: una versalita pintada como `h3`
+   * heredaba la serif y el peso 300 de la regla base `h1–h4`. Aquí se recorre
+   * TODA la página en busca de cualquier versalita —mayúsculas con espaciado—
+   * que no sea Jost, sea cual sea su etiqueta. Si mañana alguien escribe otro
+   * `<h3>` con clases de versalita, esto lo dice por su selector.
+   */
+  test("ninguna versalita de la landing sale en serif", async ({ page }) => {
+    await page.goto("/");
+
+    const enSerif = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>("main *, header *, footer *")]
+        .filter((nodo) => nodo.childElementCount === 0 && nodo.textContent?.trim())
+        .map((nodo) => ({ nodo, estilo: getComputedStyle(nodo) }))
+        .filter(
+          ({ estilo }) =>
+            estilo.textTransform === "uppercase" && parseFloat(estilo.letterSpacing) > 1,
+        )
+        .filter(({ estilo }) => /Cormorant|serif/i.test(estilo.fontFamily.split(",")[0]))
+        .map(({ nodo }) => `${nodo.tagName.toLowerCase()} «${nodo.textContent?.trim()}»`),
+    );
+
+    expect(enSerif, "una versalita ha heredado la serif de los titulares").toEqual([]);
+  });
+
+  test("ningún h3 pesa como un titular de sección", async ({ page }) => {
+    await page.goto("/");
+
+    const ligeros = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>("main h3")]
+        .filter((nodo) => Number(getComputedStyle(nodo).fontWeight) < 400)
+        .map((nodo) => nodo.textContent?.trim()),
+    );
+
+    expect(ligeros, "los h3 de la entrega pesan 400, no 300").toEqual([]);
+  });
+});
