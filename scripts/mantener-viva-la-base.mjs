@@ -26,12 +26,44 @@
 
 import postgres from "postgres";
 
-const cadena = process.env.DATABASE_URL;
+/**
+ * LA CADENA, O LO QUE HAGA FALTA PARA ARMARLA.
+ *
+ * `DATABASE_URL` es lo preferente, pero puede no estar — y no está por
+ * casualidad: en este repositorio faltaba, y este mismo guion llevaba desde el
+ * 1 de septiembre fallando en todas sus ejecuciones programadas por eso. El
+ * toque no se daba, y Supabase acabó suspendiendo el proyecto por inactividad.
+ *
+ * El fallo era ruidoso, como se pretendía. Lo que no había era nadie mirando un
+ * trabajo programado en rojo. Así que ahora, antes de rendirse, se arma la
+ * cadena con los dos secretos que el flujo de migraciones ya necesita de todas
+ * formas: el identificador del proyecto y la contraseña.
+ *
+ * `db.<ref>.supabase.co` es la conexión directa, la que no pasa por el
+ * agrupador y por tanto no necesita saber la región — el dato que no se puede
+ * deducir del identificador. En proyectos recientes resuelve sólo por IPv6 y un
+ * runner de GitHub no llega; por eso es un intento, y si falla se dice qué
+ * poner y dónde.
+ */
+function cadenaDeConexion() {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+
+  const proyecto = process.env.SUPABASE_PROJECT_REF;
+  const clave = process.env.SUPABASE_DB_PASSWORD;
+  if (!proyecto || !clave) return null;
+
+  // La contraseña puede llevar `@`, `:`, `/`, `#` o `?`, y cualquiera de ellos
+  // sin escapar parte la URL por la mitad.
+  return `postgresql://postgres:${encodeURIComponent(clave)}@db.${proyecto}.supabase.co:5432/postgres`;
+}
+
+const cadena = cadenaDeConexion();
 
 if (!cadena) {
   console.error(
-    "Falta DATABASE_URL. Sin ella no hay base a la que dar el toque: " +
-      "configúrala como secreto del repositorio.",
+    "Falta DATABASE_URL, y tampoco están SUPABASE_PROJECT_REF y " +
+      "SUPABASE_DB_PASSWORD para armarla. Sin cadena no hay base a la que dar " +
+      "el toque: configúrala como secreto del repositorio.",
   );
   process.exit(1);
 }

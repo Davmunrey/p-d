@@ -149,10 +149,16 @@ jobs:
       - name: Aplicar sin el CLI, porque el enlace falló
         if: steps.credenciales.outputs.hay == 'si' && steps.enlace.outcome == 'failure'
         env:
+          # Los tres, por orden de preferencia: la cadena entera si existe, y si
+          # no los dos secretos con los que el script la arma. En este
+          # repositorio no había `DATABASE_URL` y el camino de repuesto se quedó
+          # sin camino; los otros dos sí estaban, porque el CLI ya los pide.
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
-          if [ -z "$DATABASE_URL" ]; then
-            echo "::error::'supabase link' falló (¿token caducado?) y tampoco hay DATABASE_URL para el camino de repuesto. No se ha aplicado nada. Ver docs/ENTORNO.md."
+          if [ -z "$DATABASE_URL" ] && { [ -z "$SUPABASE_PROJECT_REF" ] || [ -z "$SUPABASE_DB_PASSWORD" ]; }; then
+            echo "::error::'supabase link' falló (¿token caducado?) y no hay ni DATABASE_URL ni con qué armarla. No se ha aplicado nada. Ver docs/ENTORNO.md."
             exit 1
           fi
           echo "::warning::'supabase link' falló: es casi seguro que SUPABASE_ACCESS_TOKEN ha caducado. Se aplican las migraciones por Postgres. Renueva el token en Supabase → Account → Access Tokens."

@@ -96,6 +96,53 @@ describe("el flujo de migraciones tiene camino de repuesto", () => {
     ).toBe(3);
   });
 
+  /**
+   * FALTABA `DATABASE_URL`, Y ESO PAUSÓ EL PROYECTO.
+   *
+   * El secreto no existía en el repositorio. El camino de repuesto se quedó sin
+   * camino, y —peor— el toque de `mantener-viva.yml`, que usa el mismo secreto,
+   * llevaba desde el 1 de septiembre fallando en todas sus ejecuciones: la base
+   * no recibía señal de vida y Supabase la suspendió por inactividad.
+   *
+   * Los dos guiones arman ahora la cadena con `SUPABASE_PROJECT_REF` y
+   * `SUPABASE_DB_PASSWORD`, que sí estaban porque el CLI ya los pide. Estos
+   * tests impiden que alguien deshaga esa red por «simplificar».
+   */
+  it("los dos guiones saben armar la cadena si falta DATABASE_URL", () => {
+    for (const ruta of [
+      "scripts/aplicar-migraciones.sh",
+      "scripts/mantener-viva-la-base.mjs",
+    ]) {
+      const guion = readFileSync(join(RAIZ, ruta), "utf8");
+
+      expect(guion, `${ruta} no mira SUPABASE_PROJECT_REF`).toContain("SUPABASE_PROJECT_REF");
+      expect(guion, `${ruta} no mira SUPABASE_DB_PASSWORD`).toContain("SUPABASE_DB_PASSWORD");
+      expect(guion, `${ruta} arma la cadena sin el host directo de Supabase`).toContain(
+        "supabase.co",
+      );
+      expect(
+        guion,
+        `${ruta} no escapa la contraseña, y una con @ o : parte la URL en dos`,
+      ).toMatch(/encodeURIComponent|urllib\.parse\.quote/);
+    }
+  });
+
+  it("los dos flujos les pasan esos secretos a sus guiones", () => {
+    for (const ruta of [
+      ".github/workflows/migraciones.yml",
+      ".github/workflows/mantener-viva.yml",
+    ]) {
+      const flujo = readFileSync(join(RAIZ, ruta), "utf8");
+
+      expect(flujo, `${ruta} no pasa SUPABASE_DB_PASSWORD al guion`).toContain(
+        "SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}",
+      );
+      expect(flujo, `${ruta} no pasa el identificador del proyecto`).toMatch(
+        /SUPABASE_PROJECT_REF: \$\{\{ vars\.SUPABASE_PROJECT_REF \|\| secrets\.SUPABASE_PROJECT_REF \}\}/,
+      );
+    }
+  });
+
   it("el aplicador de repuesto existe y se planta si hay demasiadas pendientes", () => {
     const guion = readFileSync(join(RAIZ, "scripts/aplicar-migraciones.sh"), "utf8");
 
