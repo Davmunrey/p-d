@@ -272,15 +272,17 @@ test.describe("El vocabulario de espaciado está cerrado", () => {
    * con un escalón que sólo se ve bajando despacio — y bajando despacio no
    * revisa nadie una web que se abre desde WhatsApp.
    *
-   * Aquí se mide lo pintado y se compara contra los DOS ritmos del sistema,
+   * Aquí se mide lo pintado y se compara contra los TRES ritmos del sistema,
    * leídos de las propias variables:
    *
    *   · `--espacio-seccion-fluida` — las secciones de contenido, que respiran
-   *     con el ancho de la pantalla;
-   *   · `--espacio-seccion-compacta` — los bloques que no son contenido: la
-   *     portada, la cuenta atrás y el pie.
+   *     con el ancho de la pantalla (76–132 px);
+   *   · `--espacio-seccion-compacta-fluida` — la cuenta atrás, que en la
+   *     Landing aplicada respira menos (64–104 px) pero también con el ancho;
+   *   · `--espacio-seccion-compacta` — el paso fijo del catálogo (80), para
+   *     los bloques que no son contenido.
    *
-   * Cualquier tercer valor es, por definición, un espaciado que no está en el
+   * Cualquier cuarto valor es, por definición, un espaciado que no está en el
    * sistema. No se enumera qué sección va en qué grupo a propósito: el día que
    * se añada una nueva, entra sola en la comprobación.
    *
@@ -289,7 +291,7 @@ test.describe("El vocabulario de espaciado está cerrado", () => {
    * reconocen por su nombre sino por lo que hacen: llenar la pantalla. Así una
    * sección normal que se quedara sin relleno no puede colarse por esa puerta.
    */
-  test("cada sección respira uno de los dos ritmos del sistema", async ({ page }) => {
+  test("cada sección respira uno de los tres ritmos del sistema", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
@@ -307,6 +309,7 @@ test.describe("El vocabulario de espaciado está cerrado", () => {
 
       const permitidos = [
         raiz.getPropertyValue("--espacio-seccion-fluida"),
+        raiz.getPropertyValue("--espacio-seccion-compacta-fluida"),
         raiz.getPropertyValue("--espacio-seccion-compacta"),
       ].map((valor) => enPixeles(valor.trim()));
 
@@ -363,8 +366,9 @@ test.describe("El vocabulario de espaciado está cerrado", () => {
    *
    * Es lo que el ojo sigue al bajar: si una sección arranca cuatro píxeles más
    * adentro que la anterior, la página se lee «torcida» sin que nadie sepa
-   * decir por qué. El margen lateral es un token —`px-interno`— y aquí se
-   * comprueba que todas lo respetan de verdad, en los tres tamaños.
+   * decir por qué. El margen lateral es un token —`px-margen`, los 26 px de
+   * la Landing aplicada— y aquí se comprueba que todas lo respetan de verdad,
+   * en los tres tamaños.
    *
    * Las secciones a pantalla completa quedan fuera por lo mismo que en el
    * ritmo: van de borde a borde a propósito, y su margen lo pone el bloque de

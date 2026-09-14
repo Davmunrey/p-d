@@ -234,13 +234,13 @@ test.describe("Se toca con el pulgar", () => {
   });
 
   /**
-   * Y los de confirmar por su nombre, aparte del barrido.
+   * Y el de confirmar por su nombre, aparte del barrido.
    *
    * Es lo ÚNICO que se le pide al invitado, así que merece un test que lo
    * nombre: si algún día el barrido se relaja o se le añade una excepción,
-   * éste sigue diciendo que confirmar no puede encoger. Son dos —el de la barra
-   * y el del pie— y se comprueban los dos: el del pie es el que se toca cuando
-   * alguien ha bajado la invitación entera y se decide al final.
+   * éste sigue diciendo que confirmar no puede encoger. Es el de la barra: el
+   * pie ya no repite el menú (BODA-113, como la entrega), y quien ha bajado la
+   * invitación entera se encuentra la sección de confirmar justo encima.
    */
   test("los enlaces de confirmar no encogen", async ({ page }) => {
     await page.goto("/");
@@ -249,7 +249,7 @@ test.describe("Se toca con el pulgar", () => {
       name: copy.navegacion.secciones.rsvp,
       exact: true,
     });
-    await expect(confirmar, "la barra y el pie").toHaveCount(2);
+    await expect(confirmar, "el de la barra").toHaveCount(1);
 
     for (const enlace of await confirmar.all()) {
       const caja = await enlace.boundingBox();
@@ -638,5 +638,226 @@ test.describe("La tipografía es la de la entrega", () => {
     );
 
     expect(ligeros, "los h3 de la entrega pesan 400, no 300").toEqual([]);
+  });
+});
+
+/**
+ * BODA-110 a BODA-113 · El ritmo y la composición son los de la entrega.
+ *
+ * Medido con `getBoundingClientRect` contra la Landing aplicada. Lo que se
+ * comprueba no es que haya tokens —eso ya lo vigila stylelint— sino que el
+ * resultado en el navegador es el número de la entrega: 26 px de margen, una
+ * cuenta atrás que respira con el ancho, un pie centrado con su monograma.
+ */
+test.describe("El ritmo y la composición son los de la entrega", () => {
+  const ESCRITORIO = { width: 1280, height: 900 };
+
+  test("el margen lateral de las secciones es el de la entrega (26 px)", async ({ page }) => {
+    await page.goto("/");
+    const margen = await page
+      .locator("#programa")
+      .evaluate((seccion) => parseFloat(getComputedStyle(seccion).paddingLeft));
+    expect(margen).toBe(26);
+  });
+
+  test("la cuenta atrás respira con el ancho: 64 px en móvil, 102 en escritorio", async ({
+    page,
+  }) => {
+    const relleno = async (ancho: number) => {
+      await page.setViewportSize({ width: ancho, height: 900 });
+      await page.goto("/");
+      return page
+        .locator("#cuenta-atras")
+        .evaluate((seccion) => parseFloat(getComputedStyle(seccion).paddingTop));
+    };
+    // clamp(64px, 8vw, 104px): 64 a 390 y 102,4 a 1280.
+    expect(await relleno(390)).toBe(64);
+    expect(await relleno(1280)).toBeCloseTo(102.4, 0);
+  });
+
+  test("la barra mide 64 px", async ({ page }) => {
+    await page.goto("/");
+    const alto = await page
+      .locator("header")
+      .first()
+      .evaluate((barra) => barra.getBoundingClientRect().height);
+    // 64 más el filete de un píxel.
+    expect(Math.round(alto)).toBe(65);
+  });
+
+  test("cada sección usa el ancho que le da la entrega", async ({ page }) => {
+    await page.setViewportSize(ESCRITORIO);
+    await page.goto("/");
+
+    const anchos = await page.evaluate(() =>
+      Object.fromEntries(
+        ["programa", "alojamiento", "playlist", "regalos"].map((id) => [
+          id,
+          Math.round(document.querySelector(`#${id} > div`)!.getBoundingClientRect().width),
+        ]),
+      ),
+    );
+
+    // 1080, 1180, 900 y 816 (51rem): cuatro anchos, no uno.
+    expect(anchos.programa).toBe(1080);
+    expect(anchos.alojamiento).toBe(1180);
+    expect(anchos.playlist).toBe(900);
+    expect(anchos.regalos).toBe(816);
+  });
+
+  test("regalos se centra entero: cabecera y tarjeta comparten eje", async ({ page }) => {
+    await page.setViewportSize(ESCRITORIO);
+    await page.goto("/");
+
+    const centros = await page.evaluate(() => {
+      const centro = (nodo: Element) => {
+        const caja = nodo.getBoundingClientRect();
+        return Math.round(caja.left + caja.width / 2);
+      };
+      const seccion = document.querySelector("#regalos")!;
+      return {
+        cabecera: centro(seccion.querySelector("header h2")!),
+        tarjeta: centro(seccion.querySelector("header + div")!),
+        alineacion: getComputedStyle(seccion.querySelector("header")!).textAlign,
+      };
+    });
+
+    expect(centros.alineacion).toBe("center");
+    expect(Math.abs(centros.cabecera - centros.tarjeta)).toBeLessThanOrEqual(1);
+  });
+
+  test("en alojamiento y dress code la entradilla cae bajo el titular", async ({ page }) => {
+    await page.setViewportSize(ESCRITORIO);
+    await page.goto("/");
+
+    for (const id of ["alojamiento", "dresscode"]) {
+      const posicion = await page.evaluate((id) => {
+        const cabecera = document.querySelector(`#${id} header`)!;
+        const titulo = cabecera.querySelector("h2")!.getBoundingClientRect();
+        const entradilla = cabecera.querySelector("p")!.getBoundingClientRect();
+        return {
+          debajo: entradilla.top >= titulo.bottom,
+          mismoBorde: entradilla.left === titulo.left,
+        };
+      }, id);
+
+      expect(posicion.debajo, `${id}: la entradilla no está bajo el titular`).toBe(true);
+      expect(posicion.mismoBorde, `${id}: la entradilla no arranca donde el titular`).toBe(
+        true,
+      );
+    }
+  });
+
+  test("cómo llegar es dos columnas: el botón con el texto y el mapa casi cuadrado", async ({
+    page,
+  }) => {
+    await page.setViewportSize(ESCRITORIO);
+    await page.goto("/");
+
+    const medidas = await page.evaluate(() => {
+      const seccion = document.querySelector("#transporte")!;
+      const boton = seccion.querySelector("a[target='_blank']")!.getBoundingClientRect();
+      const mapa = seccion.querySelector("iframe")!.getBoundingClientRect();
+      const rutas = seccion.querySelector("ul")!.getBoundingClientRect();
+      return {
+        botonALaIzquierdaDelMapa: boton.right <= mapa.left,
+        rutasALaIzquierdaDelMapa: rutas.right <= mapa.left,
+        proporcion: mapa.height / mapa.width,
+        radio: getComputedStyle(seccion.querySelector("iframe")!).borderRadius,
+      };
+    });
+
+    expect(medidas.botonALaIzquierdaDelMapa).toBe(true);
+    expect(medidas.rutasALaIzquierdaDelMapa).toBe(true);
+    expect(medidas.proporcion).toBeCloseTo(1.06, 2);
+    expect(medidas.radio).toBe("0px");
+  });
+
+  test("las filas del programa llevan el filete vertical y cierran por arriba", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    const fila = await page
+      .locator("#programa ol > li")
+      .first()
+      .evaluate((li) => {
+        const estilo = getComputedStyle(li);
+        return {
+          columnas: estilo.gridTemplateColumns.split(" ").length,
+          filete: parseFloat(estilo.gridTemplateColumns.split(" ")[1]),
+          arriba: parseFloat(estilo.borderTopWidth),
+          abajo: parseFloat(estilo.borderBottomWidth),
+        };
+      });
+
+    expect(fila.columnas).toBe(3);
+    expect(fila.filete).toBe(1);
+    expect(fila.arriba).toBe(1);
+    expect(fila.abajo).toBe(0);
+
+    // Y la víspera, al revés: cierra por abajo, como en la entrega.
+    const vispera = await page
+      .locator("#preboda ol > li")
+      .first()
+      .evaluate((li) => ({
+        arriba: parseFloat(getComputedStyle(li).borderTopWidth),
+        abajo: parseFloat(getComputedStyle(li).borderBottomWidth),
+      }));
+    expect(vispera).toEqual({ arriba: 0, abajo: 1 });
+  });
+
+  test("el pie es el de la entrega: centrado, con monograma, fecha y lugar", async ({
+    page,
+  }) => {
+    await page.setViewportSize(ESCRITORIO);
+    await page.goto("/");
+
+    const pie = page.getByRole("contentinfo");
+    const medidas = await pie.evaluate((nodo) => {
+      const estilo = getComputedStyle(nodo);
+      return {
+        alineacion: estilo.textAlign,
+        arriba: Math.round(parseFloat(estilo.paddingTop)),
+        abajo: Math.round(parseFloat(estilo.paddingBottom)),
+      };
+    });
+    // clamp(56px, 7vw, 88px) arriba → 88 a 1280; 40 fijos abajo.
+    expect(medidas).toEqual({ alineacion: "center", arriba: 88, abajo: 40 });
+
+    // El monograma: dos iniciales de la base y el «&» entre ellas. Lo visible
+    // va en un span aria-hidden; lo que se anuncia son los nombres completos.
+    await expect(pie.locator("p [aria-hidden]").first()).toHaveText(/^\S\s*&\s*\S$/);
+    await expect(pie.locator("p .sr-only").first()).toContainText("(DES)");
+    // La línea de fecha y lugar: «26 · 06 · 2027 — (DES) Finca…».
+    await expect(pie.getByText(/^\d{2} · \d{2} · \d{4} — \(DES\)/)).toBeVisible();
+
+    // Los enlaces van en Jost de 13 px y en caja normal, no en versalita.
+    const enlace = await pie
+      .getByRole("link")
+      .first()
+      .evaluate((a) => ({
+        tamano: parseFloat(getComputedStyle(a).fontSize),
+        caja: getComputedStyle(a).textTransform,
+      }));
+    expect(enlace).toEqual({ tamano: 13, caja: "none" });
+  });
+
+  /**
+   * CASO DE ERROR. La foto de un hotel sigue la misma regla que la de un hito:
+   * si no está publicada, la tarjeta se pinta sin ella y la imagen no aparece
+   * por ninguna parte. El seed no enlaza fotos a los hoteles, así que lo que
+   * se comprueba es la mitad que sí se puede: ninguna tarjeta trae un hueco de
+   * imagen vacío, y una tarjeta sin foto empieza directamente por el texto.
+   */
+  test("una tarjeta de hotel sin foto no deja un hueco vacío", async ({ page }) => {
+    await page.goto("/");
+    const tarjetas = page.locator("#alojamiento ul > li");
+    expect(await tarjetas.count()).toBeGreaterThan(0);
+
+    for (const tarjeta of await tarjetas.all()) {
+      const huecosVacios = await tarjeta.locator(".aspect-foto-tarjeta:not(:has(img))").count();
+      expect(huecosVacios).toBe(0);
+    }
   });
 });

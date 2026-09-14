@@ -158,6 +158,8 @@
   --text-cifra-dato: var(--texto-cifra-dato);
   --text-cifra-dato-menor: var(--texto-cifra-dato-menor);
   --text-enlace-pie: var(--texto-enlace-pie);
+  --text-chip: var(--texto-chip);
+  --text-monograma-pie: var(--texto-monograma-pie);
   --font-weight-titulo: var(--peso-titulo);
   --font-weight-titulo-menor: var(--peso-titulo-menor);
   --font-weight-cuerpo: var(--peso-cuerpo);
@@ -183,6 +185,7 @@
   --tracking-monograma: var(--espaciado-monograma);
   --tracking-pista: var(--espaciado-pista);
   --tracking-enlace-pie: var(--espaciado-enlace-pie);
+  --tracking-pie: var(--espaciado-pie);
 
   /* Espaciado */
   --spacing-linea: var(--espacio-linea);
@@ -195,6 +198,40 @@
   --spacing-seccion: var(--espacio-seccion);
   --spacing-seccion-fluida: var(--espacio-seccion-fluida);
   --spacing-bloque-fluido: var(--espacio-bloque-fluido);
+  --spacing-margen: var(--margen-lateral);
+  --spacing-margen-cabecera: var(--margen-cabecera);
+  --spacing-seccion-compacta-fluida: var(--espacio-seccion-compacta-fluida);
+  --spacing-hueco-fluido: var(--espacio-hueco-fluido);
+  --spacing-hueco-corto: var(--espacio-hueco-corto);
+  --spacing-portada-arriba: var(--espacio-portada-arriba);
+  --spacing-portada-lado: var(--espacio-portada-lado);
+  --spacing-portada-abajo: var(--espacio-portada-abajo);
+  --spacing-nombres: var(--espacio-nombres);
+  --spacing-conector: var(--espacio-conector);
+  --spacing-raya: var(--espacio-raya);
+  --spacing-datos: var(--espacio-datos);
+  --spacing-acciones: var(--espacio-acciones);
+  --spacing-cifras: var(--espacio-cifras);
+  --spacing-contador: var(--espacio-contador);
+  --spacing-cita: var(--espacio-cita);
+  --spacing-tarjeta: var(--espacio-tarjeta);
+  --spacing-tarjeta-fluida: var(--espacio-tarjeta-fluida);
+  --spacing-rejilla-fluida: var(--espacio-rejilla-fluida);
+  --spacing-columnas-fluido: var(--espacio-columnas-fluido);
+  --spacing-tira-nav: var(--espacio-tira-nav);
+  --spacing-fila: var(--espacio-fila);
+  --spacing-fila-programa: var(--espacio-fila-programa);
+  --spacing-fila-lado: var(--espacio-fila-lado);
+  --spacing-fila-hueco: var(--espacio-fila-hueco);
+  --spacing-antes-rutas: var(--espacio-antes-rutas);
+  --spacing-pie-arriba: var(--espacio-pie-arriba);
+  --spacing-pie-abajo: var(--espacio-pie-abajo);
+  --spacing-chip-y: var(--espacio-chip-y);
+  --spacing-chip-x: var(--espacio-chip-x);
+  --spacing-chips-arriba: var(--espacio-chips-arriba);
+  --spacing-control-grande: var(--alto-control-grande);
+  --spacing-fundido-foto: var(--ancho-fundido-foto);
+  --spacing-raya-pista: var(--alto-raya-pista);
   --spacing-control: var(--alto-control);
   --spacing-control-compacto: var(--alto-control-compacto);
   --spacing-campo: var(--alto-campo);
@@ -224,7 +261,9 @@
   --radius-imagen: var(--radio-imagen);
   --radius-modal: var(--radio-modal);
   --radius-etiqueta: var(--radio-etiqueta);
+  --radius-fila: var(--radio-fila);
   --aspect-mapa: var(--proporcion-mapa);
+  --aspect-foto-tarjeta: var(--proporcion-foto-tarjeta);
   --aspect-hito: var(--proporcion-hito);
   --shadow-sutil: var(--sombra-sutil);
   --shadow-tarjeta: var(--sombra-tarjeta);
@@ -236,6 +275,13 @@
   --container-estrecho: var(--ancho-estrecho);
   --container-contenido: var(--ancho-contenido);
   --container-amplio: var(--ancho-amplio);
+  --container-medio: var(--ancho-medio);
+  --container-cuenta: var(--ancho-cuenta);
+  --container-playlist: var(--ancho-playlist);
+  --container-cabecera: var(--ancho-cabecera);
+  --container-entradilla-centrada: var(--ancho-entradilla-centrada);
+  --container-entradilla-llegar: var(--ancho-entradilla-llegar);
+  --container-cita: var(--ancho-cita);
 }
 
 /**
@@ -306,6 +352,37 @@
 @utility rejilla-dato {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
+}
+
+/**
+ * La misma rejilla con el filete vertical de la entrega entre la hora y el
+ * texto: tres columnas, la del medio de un píxel. El grosor sale del token,
+ * no de un `1px` suelto; el color lo pone el `<span>` que ocupa la columna.
+ */
+@utility rejilla-dato-filete {
+  display: grid;
+  grid-template-columns: auto var(--grosor-filete) minmax(0, 1fr);
+}
+
+/**
+ * Las rejillas de tarjetas que se parten solas, como la de la portada: una
+ * columna por cada ancho mínimo que quepa. Tres en escritorio, una en móvil,
+ * y entre medias lo que dé el ancho — sin `breakpoint` escrito.
+ */
+@utility rejilla-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-tarjeta-minima)), 1fr));
+}
+
+@utility rejilla-consejos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-consejo-minimo)), 1fr));
+}
+
+/** «Cómo llegar»: texto a un lado y mapa al otro, centrados verticalmente. */
+@utility rejilla-llegar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-columna-llegar)), 1fr));
 }
 
 /**

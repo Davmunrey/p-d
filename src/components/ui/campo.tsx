@@ -27,12 +27,24 @@ interface Envoltura {
     "aria-invalid": boolean;
     "aria-describedby": string | undefined;
   }) => ReactNode;
+  /** Para colocar el campo en una fila: el ancho lo decide quien lo usa. */
+  className?: string;
 }
 
 const CLASES_CONTROL =
-  "min-h-campo w-full rounded-campo border bg-superficie px-interno text-cuerpo text-tinta transicion-color placeholder:text-tinta-tenue focus:outline-none focus-visible:border-borde-marca";
+  "w-full border bg-superficie text-cuerpo text-tinta transicion-color placeholder:text-tinta-tenue focus:outline-none focus-visible:border-borde-marca";
 
-function EnvolturaCampo({ etiqueta, ayuda, error, children }: Envoltura) {
+/**
+ * Dos formas, y sólo dos: la caja de siempre y la píldora que la entrega usa
+ * en la playlist —54 px de alto, redonda, con más aire a los lados— para que
+ * el campo y el botón formen una fila de dos píldoras iguales.
+ */
+const FORMAS = {
+  caja: "min-h-campo rounded-campo px-interno",
+  pildora: "min-h-control-grande rounded-boton px-pila",
+} as const;
+
+function EnvolturaCampo({ etiqueta, ayuda, error, className = "", children }: Envoltura) {
   const id = useId();
   const idError = `${id}-error`;
   const idAyuda = `${id}-ayuda`;
@@ -41,7 +53,7 @@ function EnvolturaCampo({ etiqueta, ayuda, error, children }: Envoltura) {
     .join(" ");
 
   return (
-    <div className="grid gap-interno-compacto">
+    <div className={`grid gap-interno-compacto ${className}`}>
       <label
         htmlFor={id}
         className={`text-etiqueta uppercase tracking-etiqueta ${
@@ -73,16 +85,25 @@ function EnvolturaCampo({ etiqueta, ayuda, error, children }: Envoltura) {
 }
 
 type PropiedadesTexto = Omit<ComponentPropsWithoutRef<"input">, "id" | "className"> &
-  Pick<Envoltura, "etiqueta" | "ayuda" | "error">;
+  Pick<Envoltura, "etiqueta" | "ayuda" | "error" | "className"> & {
+    forma?: keyof typeof FORMAS;
+  };
 
-export function CampoTexto({ etiqueta, ayuda, error, ...resto }: PropiedadesTexto) {
+export function CampoTexto({
+  etiqueta,
+  ayuda,
+  error,
+  className,
+  forma = "caja",
+  ...resto
+}: PropiedadesTexto) {
   return (
-    <EnvolturaCampo etiqueta={etiqueta} ayuda={ayuda} error={error}>
+    <EnvolturaCampo etiqueta={etiqueta} ayuda={ayuda} error={error} className={className}>
       {(propiedades) => (
         <input
           {...propiedades}
           {...resto}
-          className={`${CLASES_CONTROL} ${error ? "border-error" : "border-borde"}`}
+          className={`${CLASES_CONTROL} ${FORMAS[forma]} ${error ? "border-error" : "border-borde"}`}
         />
       )}
     </EnvolturaCampo>
@@ -99,7 +120,7 @@ export function CampoTextoLargo({ etiqueta, ayuda, error, ...resto }: Propiedade
         <textarea
           {...propiedades}
           {...resto}
-          className={`${CLASES_CONTROL} resize-y py-interno leading-cuerpo ${
+          className={`${CLASES_CONTROL} ${FORMAS.caja} resize-y py-interno leading-cuerpo ${
             error ? "border-error" : "border-borde"
           }`}
         />
@@ -124,7 +145,7 @@ export function CampoSeleccion({
         <select
           {...propiedades}
           {...resto}
-          className={`${CLASES_CONTROL} ${error ? "border-error" : "border-borde"}`}
+          className={`${CLASES_CONTROL} ${FORMAS.caja} ${error ? "border-error" : "border-borde"}`}
         >
           {children}
         </select>

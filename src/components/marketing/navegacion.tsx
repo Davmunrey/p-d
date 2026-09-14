@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { anclaDe } from "@/config/secciones";
 import { t } from "@/lib/copy";
+import { inicial } from "@/lib/nombres";
 
 /**
  * NAVEGACIÓN DE LA LANDING
@@ -26,21 +27,6 @@ export interface EnlaceSeccion {
   /** `id` del elemento al que salta y que se observa para marcarlo. */
   ancla: string;
   rotulo: string;
-}
-
-/**
- * La primera LETRA de un nombre, para el monograma.
- *
- * Y letra de verdad, no el primer carácter: un nombre entre comillas o con un
- * paréntesis delante daría un monograma de puntuación —«( & (»— que es
- * exactamente lo que salía con los nombres del seed. Es raro en una boda, pero
- * cuesta una expresión regular y evita un logo roto.
- *
- * `\p{L}` con el indicador `u` para que valgan los acentos y la ñ: «Álvaro» da
- * «Á», no la letra siguiente.
- */
-function inicial(nombre: string): string {
-  return nombre.match(/\p{L}/u)?.[0].toUpperCase() ?? "";
 }
 
 export function Navegacion({
@@ -84,7 +70,7 @@ export function Navegacion({
       ref={cabecera}
       className="velada capa-cabecera fixed inset-x-0 top-0 border-b border-borde-tenue"
     >
-      <div className="mx-auto flex h-cabecera max-w-amplio items-center gap-interno px-interno">
+      <div className="mx-auto flex h-cabecera max-w-contenido items-center gap-interno px-margen-cabecera">
         {/*
           EL MONOGRAMA, COMO LA ENTREGA, y no los nombres completos.
 
@@ -136,7 +122,7 @@ export function Navegacion({
         <nav aria-label={etiqueta} className="desvanecer-final ml-auto min-w-0">
           <ul
             ref={tira}
-            className="flex h-cabecera items-stretch justify-start gap-interno overflow-x-auto"
+            className="flex h-cabecera items-stretch justify-start gap-tira-nav overflow-x-auto"
           >
             {enlaces.map((enlace) => {
               const activo = enlace.ancla === anclaActiva;
@@ -178,7 +164,7 @@ export function Navegacion({
                         se le pide al invitado. El mínimo se pone explícito.
                       */
                       esConfirmar
-                        ? "my-auto min-h-control-compacto rounded-boton bg-accion px-elemento py-interno-compacto tracking-pildora text-tinta-sobre-accion hover:bg-accion-hover"
+                        ? "my-auto min-h-control-compacto rounded-boton bg-accion px-pila py-interno-compacto tracking-pildora text-tinta-sobre-accion hover:bg-accion-hover"
                         : activo
                           ? "marca-activa border-borde-marca text-tinta-marca"
                           : "marca-activa border-transparent text-tinta-suave hover:text-tinta",

@@ -214,6 +214,10 @@
   --font-size-dato: clamp(1.5rem, 3vw, 2.125rem);
   --font-size-cifra-dato: 1.4375rem;
   --font-size-cifra-dato-menor: 1.25rem;
+
+  /* La ficha de canción de la playlist (14,5 px) y el monograma del pie (44). */
+  --font-size-chip: 0.9063rem;
+  --font-size-monograma-pie: 2.75rem;
   --font-weight-light: 300;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -260,6 +264,9 @@
   --letter-spacing-pista: 0.34em;
   --letter-spacing-enlace-pie: 0.1em;
 
+  /* La línea de fecha y lugar del pie: la versalita más abierta de la pieza. */
+  --letter-spacing-pie: 0.36em;
+
   /* ---------------------------------------------------------------------
    * Espaciado — la escala del sistema de marca, no una progresión genérica
    * ------------------------------------------------------------------- */
@@ -288,10 +295,69 @@
    */
   --space-bloque-fluido: clamp(2.5rem, 5vw, 4rem);
 
+  /**
+   * EL RITMO DE LA LANDING APLICADA, medido en la entrega y no deducido.
+   *
+   * La escala de arriba es la del catálogo del Sistema de marca: pasos fijos.
+   * La Landing aplicada no la usa tal cual: casi todo lo que separa dos cosas
+   * es un `clamp` que respira con el ancho, y el margen lateral de las
+   * secciones es 26 px, un valor que no está en la escala. Cada token de
+   * aquí abajo existe porque un sitio concreto de la Landing lo pide con ese
+   * número; el nombre dice cuál.
+   */
+  --space-margen: 1.625rem;
+  --space-margen-cabecera: clamp(1.125rem, 3vw, 1.625rem);
+  --space-seccion-compacta-fluida: clamp(4rem, 8vw, 6.5rem);
+  --space-hueco-fluido: clamp(1.875rem, 4vw, 2.75rem);
+  --space-hueco-corto: 0.625rem;
+  --space-portada-arriba: clamp(5.25rem, 9vw, 7.5rem);
+  --space-portada-lado: clamp(1.625rem, 6vw, 5.5rem);
+  --space-portada-abajo: clamp(3rem, 6vw, 5rem);
+  --space-nombres: clamp(1.125rem, 2.6vw, 1.875rem);
+  --space-conector: clamp(0.875rem, 2vw, 1.625rem);
+  --space-raya: clamp(1.75rem, 4vw, 2.75rem);
+  --space-datos: clamp(1.25rem, 4vw, 3.375rem);
+  --space-acciones: clamp(1.25rem, 2.6vw, 1.75rem);
+  --space-cifras: clamp(1rem, 5vw, 4.25rem);
+  --space-contador: clamp(1.625rem, 4vw, 2.75rem);
+  --space-cita: clamp(1.875rem, 4vw, 2.875rem);
+  --space-tarjeta: 1.625rem;
+  --space-tarjeta-fluida: clamp(1.625rem, 4vw, 2.625rem);
+  --space-rejilla-fluida: clamp(1.125rem, 2.4vw, 1.875rem);
+  --space-columnas-fluido: clamp(1.875rem, 5vw, 4.5rem);
+  --space-tira-nav: clamp(0.875rem, 2.2vw, 1.75rem);
+  --space-fila: clamp(1.25rem, 2.6vw, 1.875rem);
+  --space-fila-programa: clamp(1.375rem, 3vw, 2.125rem);
+  --space-fila-lado: clamp(0.375rem, 1.4vw, 1rem);
+  --space-fila-hueco: clamp(1.125rem, 3vw, 2.5rem);
+  --space-antes-rutas: 1.875rem;
+  --space-pie-arriba: clamp(3.5rem, 7vw, 5.5rem);
+  --space-pie-abajo: 2.5rem;
+  --space-chip-y: 0.6875rem;
+  --space-chip-x: 1.125rem;
+  --space-chips-arriba: 1.875rem;
+
+  /* Cuánto viaja un elemento que entra deslizando desde un lado. */
+  --space-reveal-lateral: 1.625rem;
+
   /* Altura de los controles: el objetivo táctil cómodo en móvil. */
   --size-control: 3.25rem;
   --size-control-compacto: 2.75rem;
   --size-campo: 3.125rem;
+
+  /* El campo y el botón de la playlist: una fila de píldoras de 54 px. */
+  --size-control-grande: 3.375rem;
+
+  /* El degradado que funde la foto de portada con la página (120 px), y la
+     raya que respira bajo el «bajad» (26 px). */
+  --size-fundido-foto: 7.5rem;
+  --size-raya-pista: 1.625rem;
+
+  /* Anchos mínimos de columna de las rejillas que se parten solas: tarjeta de
+     hotel (280), tarjeta de consejo (240) y columna de «cómo llegar» (340). */
+  --size-tarjeta-minima: 17.5rem;
+  --size-consejo-minimo: 15rem;
+  --size-columna-llegar: 21.25rem;
 
   /* Ancho mínimo de una cifra grande, para que la cuenta atrás no baile. */
   --size-cifra: 5.5rem;
@@ -360,7 +426,7 @@
    * `scroll-margin-top` de las secciones, para que un salto no deje el título
    * escondido detrás.
    */
-  --size-cabecera: 4.25rem;
+  --size-cabecera: 4rem;
 
   /**
    * Ancho del lateral del panel. Cabe el rótulo más largo («Presupuesto») sin
@@ -381,13 +447,17 @@
 
   --radius-0: 0;
   --radius-sutil: 0.125rem;
+  --radius-suave: 0.25rem;
   --radius-caja: 0.375rem;
   --radius-amplio: 0.625rem;
   --radius-redondo: 999px;
   --border-width-1: 1px;
   --border-width-2: 2px;
   --shadow-1: 0 1px 2px rgb(20 20 15 / 7%);
-  --shadow-2: 0 18px 44px -24px rgb(20 20 15 / 32%);
+
+  /* La sombra que levanta una tarjeta al pasar el ratón en la Landing aplicada
+     (0 22px 44px -32px al 50 %). La 3 es la «tarjeta» del catálogo. */
+  --shadow-2: 0 22px 44px -32px rgb(20 20 15 / 50%);
   --shadow-3: 0 24px 60px -34px rgb(20 20 15 / 45%);
   --shadow-4: 0 40px 90px -30px rgb(20 20 15 / 55%);
   --blur-1: 6px;
@@ -397,6 +467,7 @@
    * semántica. */
   --ratio-cuadrado: 1 / 1;
   --ratio-paisaje: 4 / 3;
+  --ratio-mapa: 1 / 1.06;
   --ratio-panoramico: 16 / 9;
 
   /* ---------------------------------------------------------------------
@@ -429,6 +500,17 @@
   --width-narrow: 51rem;
   --width-content: 73.75rem;
   --width-wide: 87.5rem;
+
+  /* Los anchos por sección de la Landing aplicada: 1080 (preboda, programa,
+     dress code), 1000 (cuenta atrás), 900 (playlist), 620 (cabecera apilada),
+     480 (entradilla centrada), 460 (entradilla de cómo llegar), 520 (cita). */
+  --width-medio: 67.5rem;
+  --width-cuenta: 62.5rem;
+  --width-playlist: 56.25rem;
+  --width-cabecera: 38.75rem;
+  --width-entradilla-centrada: 30rem;
+  --width-entradilla-llegar: 28.75rem;
+  --width-cita: 32.5rem;
 
   /* Los puntos de ruptura viven en el bloque `@theme` de globals.css:
      las media queries se resuelven en compilación y no aceptan var(). */

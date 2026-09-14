@@ -52,6 +52,13 @@ export interface Alojamiento {
   descripcion: string | null;
   precioTexto: string | null;
   urlReserva: string | null;
+  /**
+   * La foto que corona la tarjeta, o `null`. La entrega la dibuja siempre;
+   * aquí es opcional por lo mismo que en la historia: los hoteles se apuntan
+   * antes de tener una foto de cada uno, y una tarjeta sin foto se publica
+   * igual.
+   */
+  foto: FotoDeHito | null;
 }
 
 export interface RutaLlegada {
@@ -217,6 +224,12 @@ export async function obtenerPrograma(
   }));
 }
 
+/**
+ * La foto del hotel viene con la fila, y con la misma regla que en la historia:
+ * `publicado` va en la condición del `join`, no en el `where`. Un `where` sobre
+ * la foto dejaría fuera al hotel entero por tener una imagen a medio subir; en
+ * el `join`, el hotel sale y la foto no, que es lo que se quiere.
+ */
 export async function obtenerAlojamientos(): Promise<Alojamiento[]> {
   const filas = await leerComoAnonimo(
     (tx) => tx<
@@ -227,11 +240,20 @@ export async function obtenerAlojamientos(): Promise<Alojamiento[]> {
         descripcion: string | null;
         precio_texto: string | null;
         url_reserva: string | null;
+        ruta_almacenamiento: string | null;
+        texto_alternativo: Record<string, string> | null;
+        ancho: number | null;
+        alto: number | null;
+        marcador_borroso: string | null;
       }[]
     >`
-      select id, nombre, distintivo, descripcion, precio_texto, url_reserva
-      from public.alojamientos
-      order by orden, nombre
+      select a.id, a.nombre, a.distintivo, a.descripcion, a.precio_texto, a.url_reserva,
+             m.ruta_almacenamiento, m.texto_alternativo,
+             m.ancho, m.alto, m.marcador_borroso
+      from public.alojamientos as a
+      left join public.medios as m
+        on m.id = a.medio_id and m.publicado and m.tipo = 'imagen'
+      order by a.orden, a.nombre
     `,
   );
   return filas.map((f) => ({
@@ -241,6 +263,16 @@ export async function obtenerAlojamientos(): Promise<Alojamiento[]> {
     descripcion: f.descripcion,
     precioTexto: f.precio_texto,
     urlReserva: f.url_reserva,
+    foto: f.ruta_almacenamiento
+      ? {
+          ruta: f.ruta_almacenamiento,
+          textoAlternativo:
+            f.texto_alternativo?.es ?? Object.values(f.texto_alternativo ?? {})[0] ?? "",
+          ancho: f.ancho,
+          alto: f.alto,
+          marcadorBorroso: f.marcador_borroso,
+        }
+      : null,
   }));
 }
 
