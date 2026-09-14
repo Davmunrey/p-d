@@ -320,6 +320,21 @@ test.describe("Las gráficas del presupuesto", () => {
       copy.panel.presupuesto.graficas.comparativaTitulo,
     ]) {
       const ambito = seccion(page, titulo);
+
+      /*
+        SE ESPERA A LA SECCIÓN ANTES DE CONTAR, y no es celo de más: `count()`
+        es la única lectura de Playwright que NO reintenta. Si la pantalla
+        todavía no está pintada devuelve cero en silencio, las dos afirmaciones
+        de dentro del bucle se saltan enteras y el test acaba muriendo abajo con
+        «tiene que haber alguna gráfica que comprobar» — que es mentira: las
+        gráficas estaban, lo que pasó es que se leyó antes de tiempo.
+
+        `toBeVisible()` sí espera, así que la cuenta se hace ya sobre la
+        pantalla que el test afirma. No se afloja nada: si de verdad no hubiera
+        sección, ahora falla diciendo que falta la sección.
+      */
+      await expect(ambito, `falta la sección «${titulo}»`).toBeVisible();
+
       const svgs = ambito.locator("svg");
       const cuantas = await svgs.count();
 
