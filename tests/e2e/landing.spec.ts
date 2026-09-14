@@ -934,3 +934,177 @@ test.describe("Los copys y el orden de la entrega", () => {
     ).toBeVisible();
   });
 });
+
+/**
+ * BODA-118 a BODA-120 · El movimiento de la entrega, medido con getAnimations.
+ *
+ * Una animación no se ve en una captura y su ausencia tampoco: por eso cada
+ * gesto de la entrega se comprueba leyendo lo que el navegador tiene puesto
+ * —nombre, retardo, duración, curva— y no lo que dice una clase.
+ */
+test.describe("El movimiento es el de la entrega", () => {
+  test("la portada entra escalonada, de la versalita a la pista", async ({ page }) => {
+    await page.goto("/");
+
+    const retardos = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>("#portada [class*='retardo-']")].map((nodo) =>
+        parseFloat(getComputedStyle(nodo).animationDelay),
+      ),
+    );
+
+    // Siete elementos con siete retardos distintos, de 0,2 s a 1,6 s. No van en
+    // orden de documento a propósito: «bajad» está antes que los botones en el
+    // DOM y entra el último, como en la entrega.
+    expect(retardos).toHaveLength(7);
+    expect([...retardos].sort((a, b) => a - b)).toEqual([0.2, 0.35, 0.5, 0.8, 0.95, 1.1, 1.6]);
+    expect(retardos[0], "la versalita abre").toBeCloseTo(0.2, 2);
+  });
+
+  test("la foto de portada aparece en fundido y hace el zoom lento", async ({ page }) => {
+    await page.goto("/");
+
+    const foto = await page
+      .locator("#portada img")
+      .first()
+      .evaluate((img) => ({
+        nombre: getComputedStyle(img).animationName,
+        duracion: getComputedStyle(img).animationDuration,
+        fundido: getComputedStyle(img.closest(".animacion-aparecer-lento")!).animationName,
+      }));
+
+    expect(foto.nombre).toBe("acercar");
+    expect(foto.duracion).toBe("2.4s");
+    expect(foto.fundido).toBe("aparecer");
+  });
+
+  test("la pista «bajad» cae y se apaga en 2,6 s", async ({ page }) => {
+    await page.goto("/");
+    const raya = await page.locator("#portada .animacion-flotar").evaluate((nodo) => ({
+      nombre: getComputedStyle(nodo).animationName,
+      periodo: getComputedStyle(nodo).animationDuration,
+    }));
+    expect(raya).toEqual({ nombre: "flotar", periodo: "2.6s" });
+  });
+
+  test("las tarjetas se levantan al pasar el ratón", async ({ page }) => {
+    await page.goto("/");
+    const tarjeta = page.locator("#alojamiento ul > li").first();
+    // Arriba del todo de la pantalla, pasado el tramo del reveal: mientras el
+    // reveal está activo es él quien manda en el `transform`, no el hover.
+    await tarjeta.evaluate((nodo) => nodo.scrollIntoView({ block: "start" }));
+    await tarjeta.hover();
+
+    // El `transform` es una matriz: la última cifra es el desplazamiento
+    // vertical, y tiene que ser negativo (sube) una vez acabe la transición.
+    await expect
+      .poll(async () =>
+        tarjeta.evaluate((nodo) => {
+          const matriz = getComputedStyle(nodo).transform.match(/[-\d.]+/g);
+          return matriz ? Number(matriz.at(-1)) : 0;
+        }),
+      )
+      .toBeLessThan(0);
+  });
+
+  test("las fichas de la playlist entran con el pop elástico", async ({ page }) => {
+    await page.goto("/");
+    const ficha = await page
+      .locator("#playlist ul > li")
+      .first()
+      .evaluate((nodo) => ({
+        nombre: getComputedStyle(nodo).animationName,
+        curva: getComputedStyle(nodo).animationTimingFunction,
+      }));
+    expect(ficha.nombre).toBe("pop");
+    // La curva con muelle: cubic-bezier(.2, 1.3, .4, 1), que sobrepasa el 1.
+    expect(ficha.curva).toBe("cubic-bezier(0.2, 1.3, 0.4, 1)");
+  });
+
+  test("el cielo de la cuenta atrás deriva en 44 s exactos", async ({ page }) => {
+    await page.goto("/");
+    const cielo = await page
+      .locator("#cuenta-atras .cielo-estrellado")
+      .evaluate((nodo) => getComputedStyle(nodo).animationDuration);
+    expect(cielo).toBe("44s, 7s");
+  });
+
+  test("la barra de lectura mide lo leído y la cabecera se compacta al bajar", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    const soportado = await page.evaluate(() => CSS.supports("animation-timeline: scroll()"));
+    test.skip(!soportado, "Este navegador no anima con el scroll: la barra no se pinta.");
+
+    const barra = page.locator(".barra-lectura");
+    await expect(barra).toHaveCSS("height", "2px");
+    await expect(barra).toHaveCSS("position", "fixed");
+
+    const alfaDe = (color: string) => {
+      const partes = color.match(/[\d.]+/g) ?? [];
+      return partes.length === 4 ? Number(partes[3]) : 1;
+    };
+    const fondoArriba = await page
+      .locator("header")
+      .first()
+      .evaluate((h) => getComputedStyle(h).backgroundColor);
+    expect(alfaDe(fondoArriba), "arriba del todo la cabecera es transparente").toBe(0);
+
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+    await expect
+      .poll(async () =>
+        barra.evaluate((nodo) => {
+          const matriz = getComputedStyle(nodo).transform.match(/[-\d.]+/g);
+          return matriz ? Number(matriz[0]) : 0;
+        }),
+      )
+      .toBeGreaterThan(0.3);
+    const fondoAbajo = await page
+      .locator("header")
+      .first()
+      .evaluate((h) => getComputedStyle(h).backgroundColor);
+    expect(alfaDe(fondoAbajo), "al bajar la cabecera se vela").toBeGreaterThan(0);
+  });
+
+  /**
+   * CASO DE ERROR. Con «movimiento reducido», los retardos de la portada se
+   * anulan: si no, «bajad» tardaría 1,6 s en aparecer aunque su fundido durase
+   * 100 ms, y las fichas y las fotos tienen que estar a la vista sin más.
+   */
+  test("con movimiento reducido nada espera ni se queda oculto", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+
+    const activo = await page.evaluate(
+      () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    );
+    test.skip(!activo, "Este navegador no aplica la emulación de prefers-reduced-motion");
+
+    const estado = await page.evaluate(() => {
+      const retardos = [
+        ...document.querySelectorAll<HTMLElement>("#portada [class*='retardo-']"),
+      ];
+      return {
+        retardos: retardos.map((n) => getComputedStyle(n).animationDelay),
+        ficha: getComputedStyle(document.querySelector("#playlist ul > li")!).animationName,
+        pista: getComputedStyle(document.querySelector("#portada .animacion-flotar")!)
+          .animationName,
+      };
+    });
+
+    expect(new Set(estado.retardos)).toEqual(new Set(["0s"]));
+    expect(estado.ficha).toBe("aparecer");
+    expect(estado.pista).toBe("none");
+
+    // El fundido dura 100 ms: se espera a que acabe, no se mira a mitad.
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          [...document.querySelectorAll<HTMLElement>("#portada [class*='retardo-']")].map(
+            (n) => getComputedStyle(n).opacity,
+          ),
+        ),
+      )
+      .toEqual(Array(7).fill("1"));
+  });
+});

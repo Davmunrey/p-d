@@ -293,6 +293,13 @@ export default async function PaginaInicio() {
         {t("navegacion.irAlContenido")}
       </a>
 
+      {/*
+        La barra de lectura de la entrega: dos píxeles de bronce fijos arriba
+        que crecen con lo leído. Sin JavaScript —va ligada al scroll con CSS—
+        y sin anunciarse: para quien escucha la página no mide nada.
+      */}
+      <div aria-hidden="true" className="barra-lectura" />
+
       <Navegacion
         enlaces={enlaces}
         etiqueta={t("navegacion.etiquetaPrincipal")}
@@ -448,13 +455,20 @@ function Portada({
         }`}
       >
         {procedencia ? (
-          <p className="animacion-aparecer text-boton uppercase tracking-marcado text-acento">
+          <p className="animacion-aparecer-lento retardo-1 text-boton uppercase tracking-marcado text-acento">
             {procedencia}
           </p>
         ) : null}
 
-        <Display className="animacion-subir mt-nombres">{configuracion.nombreNovia}</Display>
-        <div className="animacion-subir flex flex-wrap items-baseline gap-conector">
+        {/*
+          LA PORTADA ENTRA ESCALONADA, de la versalita (0,2 s) a la pista
+          (1,6 s), como en la entrega: siete elementos que llegan en orden de
+          lectura en vez de todos de golpe.
+        */}
+        <Display className="animacion-subir retardo-2 mt-nombres">
+          {configuracion.nombreNovia}
+        </Display>
+        <div className="animacion-subir retardo-3 flex flex-wrap items-baseline gap-conector">
           <Conector>{t("portada.conjuncion")}</Conector>
           <Display como="p">{configuracion.nombreNovio}</Display>
         </div>
@@ -465,9 +479,9 @@ function Portada({
           escritorio los dos datos van separados como pide la entrega. Un solo
           token fluido hace las dos cosas sin un `sm:` de por medio.
         */}
-        <hr className="animacion-trazar my-raya border-t border-borde-fuerte" />
+        <hr className="animacion-trazar retardo-4 my-raya border-t border-borde-fuerte" />
 
-        <dl className="animacion-subir flex flex-wrap gap-datos">
+        <dl className="animacion-subir retardo-5 flex flex-wrap gap-datos">
           <div>
             <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
               {t("portada.etiquetaFecha")}
@@ -507,7 +521,7 @@ function Portada({
         */}
         <p
           aria-hidden
-          className="animacion-aparecer mt-hueco-fluido flex items-center gap-hueco-corto text-diminuto uppercase tracking-pista text-tinta-suave"
+          className="animacion-aparecer-lento retardo-7 mt-hueco-fluido flex items-center gap-hueco-corto text-diminuto uppercase tracking-pista text-tinta-suave"
         >
           {t("portada.bajad")}
           <span className="animacion-flotar block h-raya-pista w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
@@ -519,7 +533,7 @@ function Portada({
           viene, y de paso «Confirmar asistencia» entra ENTERO en la pantalla
           de un móvil. Es la única acción que se le pide a un invitado.
         */}
-        <div className="animacion-subir mt-acciones flex flex-wrap gap-interno">
+        <div className="animacion-subir retardo-6 mt-acciones flex flex-wrap gap-interno">
           <BotonEnlace href={`#${anclaDe("rsvp")}`}>
             {t("portada.confirmarAsistencia")}
           </BotonEnlace>
@@ -888,7 +902,7 @@ function Alojamiento({
         {sitios.map((sitio) => (
           <li
             key={sitio.id}
-            className="animacion-subir-al-ver flex flex-col overflow-hidden rounded-tarjeta border border-borde bg-superficie"
+            className="animacion-subir-al-ver elevar-al-pasar flex flex-col overflow-hidden rounded-tarjeta border border-borde bg-superficie"
           >
             {sitio.foto && urlBase ? (
               <div className="relative aspect-foto-tarjeta bg-superficie-hundida">
@@ -1132,7 +1146,7 @@ function Playlist({
           {canciones.map((cancion) => (
             <li
               key={cancion.id}
-              className="rounded-etiqueta bg-superficie-tenue px-chip-x py-chip-y text-chip text-tinta-marca"
+              className="animacion-pop levantar-al-pasar rounded-etiqueta bg-superficie-tenue px-chip-x py-chip-y text-chip text-tinta-marca"
             >
               {cancion.texto}
             </li>
@@ -1167,12 +1181,13 @@ function Regalos() {
       titulo={t("regalos.titulo")}
       entradilla={t("regalos.descripcion")}
       realzada
+      barrido
       composicion="centrada"
       ancho="estrecho"
     >
       {/* Centrada entera, a 820 px, como la entrega: no hay nada que leer en
-          columna, hay una sola cosa que ofrecer. */}
-      <div className="mt-hueco-fluido rounded-tarjeta border border-borde bg-superficie-tenue p-tarjeta-fluida text-center">
+          columna, hay una sola cosa que ofrecer. La tarjeta entra escalando. */}
+      <div className="animacion-escala-al-ver mt-hueco-fluido rounded-tarjeta border border-borde bg-superficie-tenue p-tarjeta-fluida text-center">
         {/*
           EL NÚMERO NO ESTÁ AQUÍ, y es el ticket entero. Este componente pinta
           un botón; el IBAN se pide a `/regalos/cuenta` cuando alguien lo
@@ -1211,7 +1226,7 @@ function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
         {consejos.map((consejo) => (
           <li
             key={consejo.id}
-            className="animacion-subir-al-ver rounded-tarjeta border border-borde bg-superficie p-tarjeta"
+            className="animacion-subir-al-ver elevar-al-pasar rounded-tarjeta border border-borde bg-superficie p-tarjeta"
           >
             {/* Versalita en marca, no titular serif: así rotula la entrega
                 «Ellas», «Ellos» y «Solo dos peticiones». */}
@@ -1305,6 +1320,7 @@ function CabeceraSeccion({
   titulo,
   entradilla = null,
   realzada = false,
+  barrido = false,
   composicion = "alineada",
   anchoEntradilla = "texto",
   className = "mb-bloque-fluido",
@@ -1316,6 +1332,8 @@ function CabeceraSeccion({
   entradilla?: string | null;
   /** Bronce y rombo. Sólo las secciones que son un extra; ver `EtiquetaSeccion`. */
   realzada?: boolean;
+  /** La versalita se descubre con un barrido. La entrega se lo da sólo a regalos. */
+  barrido?: boolean;
   composicion?: ComposicionDeCabecera;
   /** «Cómo llegar» estrecha su entradilla a 460 px; el resto, al ancho de texto. */
   anchoEntradilla?: "texto" | "llegar";
@@ -1334,7 +1352,14 @@ function CabeceraSeccion({
 
   const rotulo = (
     <div className={composicion === "apilada" ? "max-w-cabecera" : undefined}>
-      {etiqueta ? <EtiquetaSeccion realzada={realzada}>{etiqueta}</EtiquetaSeccion> : null}
+      {etiqueta ? (
+        <EtiquetaSeccion
+          realzada={realzada}
+          className={barrido ? "animacion-barrido-al-ver" : ""}
+        >
+          {etiqueta}
+        </EtiquetaSeccion>
+      ) : null}
       {titulo ? (
         <Titulo1 como="h2" id={idTitulo} className="mt-pila">
           {titulo}
@@ -1392,6 +1417,7 @@ function Bloque({
   titulo,
   entradilla = null,
   realzada = false,
+  barrido = false,
   composicion = "alineada",
   hundida = false,
   ancho = "contenido",
@@ -1403,6 +1429,7 @@ function Bloque({
   titulo: string | null;
   entradilla?: string | null;
   realzada?: boolean;
+  barrido?: boolean;
   composicion?: ComposicionDeCabecera;
   hundida?: boolean;
   ancho?: AnchoDeBloque;
@@ -1428,6 +1455,7 @@ function Bloque({
           titulo={titulo}
           entradilla={entradilla}
           realzada={realzada}
+          barrido={barrido}
           composicion={composicion}
         />
         {children}

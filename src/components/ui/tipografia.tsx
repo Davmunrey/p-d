@@ -147,15 +147,18 @@ export function Conector({ children }: { children: ReactNode }) {
 export function EtiquetaSeccion({
   children,
   realzada = false,
+  className = "",
 }: {
   children: ReactNode;
   realzada?: boolean;
+  /** Para el reveal que la entrega da a una versalita concreta (regalos). */
+  className?: string;
 }) {
   return (
     <span
       className={`inline-flex items-center gap-interno-compacto text-etiqueta uppercase tracking-seccion ${
         realzada ? "text-acento" : "text-tinta-suave"
-      }`}
+      } ${className}`}
     >
       {realzada ? (
         <span aria-hidden className="size-linea rotate-45 bg-current opacity-80" />

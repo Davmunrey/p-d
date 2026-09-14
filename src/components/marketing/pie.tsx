@@ -58,7 +58,7 @@ export function Pie({
           en la barra. Para quien escucha la página son los dos nombres: las
           letras sueltas no significan nada leídas de una en una.
         */}
-        <p className="font-titulo peso-titulo-menor text-monograma-pie leading-compacto text-tinta">
+        <p className="animacion-pop-al-ver font-titulo peso-titulo-menor text-monograma-pie leading-compacto text-tinta">
           <span className="sr-only">{nombres}</span>
           <span aria-hidden="true">
             {inicial(nombreNovia)}

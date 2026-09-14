@@ -92,6 +92,29 @@ async function violacionesGraves(pagina: Page): Promise<string[]> {
 }
 
 /**
+ * ESPERA A QUE LA PORTADA HAYA ENTRADO. Sus siete elementos llegan escalonados
+ * hasta 2,8 s después de cargar (BODA-118), y axe mide el contraste con la
+ * opacidad que ve en ese instante: a mitad de un fundido, un texto bronce
+ * sobre blanco no cumple AA aunque cumpla de sobra una vez quieto. Se auditan
+ * páginas, no fotogramas. Sólo se esperan las animaciones de tiempo y finitas:
+ * el cielo de la cuenta atrás no acaba nunca y los reveals van con el scroll.
+ */
+async function esperarEntradas(pagina: Page) {
+  await pagina.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter(
+          (animacion) =>
+            animacion.timeline instanceof DocumentTimeline &&
+            animacion.effect?.getTiming().iterations !== Infinity,
+        )
+        .map((animacion) => animacion.finished.catch(() => undefined)),
+    ),
+  );
+}
+
+/**
  * Pasa axe y falla con un informe legible si hay algo crítico o serio.
  *
  * El informe enumera regla, impacto y nodos: el fallo de CI tiene que decir
@@ -138,6 +161,7 @@ test.describe("Accesibilidad de la parte pública", () => {
   test("la landing pasa axe sin violaciones graves", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
+    await esperarEntradas(page);
     await auditar(page, "la landing");
   });
 

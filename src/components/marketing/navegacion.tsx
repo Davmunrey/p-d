@@ -65,10 +65,15 @@ export function Navegacion({
     });
   }, [anclaActiva]);
 
+  /*
+    TRANSPARENTE ARRIBA, VELADA AL BAJAR. `cabecera-compacta` la funde de
+    transparente a velada en los primeros 90 px de scroll, sin JavaScript;
+    donde el navegador no sepa de `scroll()`, se queda `velada` de siempre.
+  */
   return (
     <header
       ref={cabecera}
-      className="velada capa-cabecera fixed inset-x-0 top-0 border-b border-borde-tenue"
+      className="velada cabecera-compacta capa-cabecera fixed inset-x-0 top-0 border-b border-borde-tenue"
     >
       <div className="mx-auto flex h-cabecera max-w-contenido items-center gap-interno px-margen-cabecera">
         {/*
