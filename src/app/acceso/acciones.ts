@@ -23,10 +23,15 @@ import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
  * funcionan sin JavaScript. No es purismo: conviene que la puerta de entrada
  * dependa de lo menos posible.
  *
- * UN SOLO MENSAJE DE ERROR. Correo que no existe y contraseña incorrecta
- * responden lo mismo. Distinguirlos convertiría esta página en un comprobador
- * de qué correos tienen acceso al panel, que es justo la lista que no interesa
- * repartir.
+ * QUIEN FALLA LA CONTRASEÑA LEE SIEMPRE LO MISMO. Correo que no existe y
+ * contraseña incorrecta responden igual: distinguirlos convertiría esta página
+ * en un comprobador de qué correos tienen acceso al panel, que es justo la
+ * lista que no interesa repartir.
+ *
+ * Quien la ACIERTA y aun así no tiene acceso sí recibe un mensaje propio
+ * (BODA-127). Ya sabe que su cuenta existe, así que no se le cuenta nada nuevo;
+ * y callárselo hacía que los novios leyeran «la contraseña no es correcta»
+ * teniéndola bien, con su cuenta todavía sin dar de alta.
  */
 
 /** El destino al que vuelven los enlaces del correo de recuperación. */
@@ -107,8 +112,17 @@ export async function entrar(datos: FormData) {
     // se quedaría con una sesión que no sirve para nada y rebotando en la
     // puerta sin entender por qué.
     //
-    // El mensaje es el MISMO que el de contraseña incorrecta. Uno propio
-    // permitiría averiguar qué correos existen probando.
+    // ESTE MENSAJE SÍ ES PROPIO, Y NO ABRE NADA (BODA-127). Durante un tiempo
+    // fue el mismo que el de contraseña incorrecta, para que nadie pudiera
+    // averiguar qué correos tienen acceso probando; el efecto fue que a los
+    // propios novios, con su cuenta recién creada y todavía sin dar de alta, la
+    // web les dijo que su contraseña estaba mal. Probaron otra vez, leyeron lo
+    // mismo, y concluyeron que el botón no hacía nada.
+    //
+    // Para llegar hasta aquí hay que ACERTAR LA CONTRASEÑA. Quien la acierta ya
+    // sabe que la cuenta existe: no se le está contando nada. Y quien falla
+    // sigue leyendo exactamente el mismo texto exista el correo o no, que es la
+    // propiedad que de verdad protege la lista — y la que comprueba el test.
     //
     // El identificador sale del propio `signInWithPassword`, no de un
     // `getUser()` a continuación: es el mismo dato sin una segunda llamada de
@@ -125,7 +139,7 @@ export async function entrar(datos: FormData) {
 
     if (!perfil?.activo) {
       await supabase.auth.signOut();
-      aLaPuerta("credenciales", destino);
+      aLaPuerta("sin-acceso", destino);
     }
   } catch (error) {
     // `redirect` funciona lanzando: si no se deja pasar, el fallo de arriba se

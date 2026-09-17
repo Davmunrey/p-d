@@ -113,15 +113,32 @@ test.describe("Acceso de verdad", () => {
     await expect(page).toHaveURL(new RegExp(RUTA_ACCESO));
   });
 
-  test("y el mensaje es el mismo que con la contraseña mal", async ({ page }) => {
-    // Si el desactivado recibiera un mensaje propio, cualquiera podría
-    // averiguar qué correos existen probando.
+  test("y se le dice que es la cuenta, no la contraseña", async ({ page }) => {
+    // BODA-127. Durante un tiempo este caso respondía «el correo o la
+    // contraseña no son correctos», y eso fue exactamente lo que dejó a los
+    // novios fuera de su propio panel: cuenta recién creada, todavía sin dar de
+    // alta, contraseña perfecta y un mensaje que mandaba a mirar al sitio
+    // equivocado. Parecía que el botón no hacía nada.
     await identificarse(page, CORREO_SIN_ACCESO!);
-    const sinPerfil = await page.getByRole("main").getByRole("alert").textContent();
 
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+      copy.acceso.errorSinAcceso,
+    );
+  });
+
+  test("una contraseña mal no delata si el correo existe", async ({ page }) => {
+    // LA PROPIEDAD QUE DE VERDAD PROTEGE LA LISTA, y la que hay que sostener al
+    // darle mensaje propio al caso de arriba: quien NO acierta la contraseña
+    // lee lo mismo exista el correo o no. Así la puerta no se puede usar para
+    // averiguar quién tiene acceso, que es para lo que serviría si el correo
+    // inventado respondiera distinto.
     await identificarse(page, CORREO_CON_ACCESO!, "esta-no-es-la-contrasena");
-    const malaContrasena = await page.getByRole("main").getByRole("alert").textContent();
+    const existente = await page.getByRole("main").getByRole("alert").textContent();
 
-    expect(sinPerfil).toBe(malaContrasena);
+    await identificarse(page, "este-correo-no-existe-en-ninguna-parte@ejemplo.test");
+    const inventado = await page.getByRole("main").getByRole("alert").textContent();
+
+    expect(existente).toBe(inventado);
+    expect(existente).toBe(copy.acceso.errorCredenciales);
   });
 });

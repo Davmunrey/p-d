@@ -17,10 +17,17 @@
 # en Vercel ni en el repositorio: salta RLS entera, y aquí sólo se usa un
 # momento desde tu máquina.
 #
-# EL PRIMERO SE CONVIERTE EN PROPIETARIO Y EL SEGUNDO TAMBIÉN.
-# `designar_primer_propietario()` sólo funciona mientras no haya ninguno —es el
-# arranque en frío—, así que al segundo lo asciende el primero, que para
-# entonces ya tiene permiso.
+# LOS DOS ENTRAN POR LA LISTA (BODA-127). Antes el primero se nombraba con
+# `designar_primer_propietario()` —que sólo sirve mientras no haya ninguno— y al
+# segundo se le intentaba ascender con un `insert … on conflict do update`. Eso
+# no funcionaba: el perfil ya existía (lo crea el trigger del alta), así que
+# caía en el `update` y ahí `proteger_privilegios_perfil()` exige un propietario
+# en `auth.uid()`, que en una sesión de `psql` es null. PRF01, y el segundo se
+# quedaba fuera.
+#
+# Ahora los dos se escriben en `invitaciones_panel` y es la lista la que pone
+# los perfiles al día, existan ya las cuentas o no. Un solo camino, y el mismo
+# que usa `scripts/dar-acceso-al-panel.sh` para dar de alta a cualquier otro.
 
 set -euo pipefail
 
@@ -45,27 +52,21 @@ crear() {
     python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))'
 }
 
+# La lista va PRIMERO, y ya no por obligación sino por comodidad: así las
+# cuentas nacen activas y no hace falta ni mirar sus identificadores. Si alguna
+# de las dos ya existía, la lista la alcanza igual.
+"$(dirname "$0")/dar-acceso-al-panel.sh" "$1" propietario
+"$(dirname "$0")/dar-acceso-al-panel.sh" "$2" propietario
+
 echo "Creando $1…" >&2
-PRIMERO="$(crear "$1")"
+crear "$1" >/dev/null
 echo "Creando $2…" >&2
-SEGUNDO="$(crear "$2")"
+crear "$2" >/dev/null
 
-if [ -z "$PRIMERO" ] || [ -z "$SEGUNDO" ]; then
-  echo "Alguna cuenta no se creó. Si ya existían, coge sus id en" >&2
-  echo "Supabase → Authentication → Users y sáltate este paso." >&2
-  exit 1
-fi
-
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<SQL
-select public.designar_primer_propietario('$PRIMERO', 'David Muñoz');
-
--- El segundo entra ya con el primero dentro, así que se le asciende a mano.
--- El trigger que protege los privilegios lo permite porque quien escribe es
--- un propietario: es exactamente el camino que seguiría desde el panel.
-insert into public.perfiles (usuario_id, nombre_completo, rol, activo)
-values ('$SEGUNDO', 'Paloma Gamboa', 'propietario', true)
-on conflict (usuario_id) do update set rol = 'propietario', activo = true;
-SQL
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "
+select p.correo_electronico, p.rol, p.activo
+  from public.perfiles as p
+ where p.correo_electronico in (lower('$1'), lower('$2'));"
 
 echo >&2
 echo "Listos. Ahora entrad en /acceso y usad «¿Habéis olvidado la contraseña?»" >&2

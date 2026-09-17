@@ -26,9 +26,14 @@ export const metadata: Metadata = {
 };
 
 const MENSAJES: Record<string, string> = {
-  // Los tres primeros dicen lo mismo a propósito: correo que no existe,
-  // contraseña incorrecta y perfil desactivado no se pueden distinguir desde
-  // fuera sin convertir esta página en un comprobador de quién tiene acceso.
+  // `credenciales` lo dicen por igual el correo que no existe y la contraseña
+  // equivocada: distinguirlos convertiría esta página en un comprobador de qué
+  // correos tienen acceso.
+  //
+  // `sin-acceso` es otra cosa y por eso tiene su propio texto (BODA-127): ahí
+  // la contraseña era correcta, así que quien lo lee ya sabía que su cuenta
+  // existe. Decírselo no le cuenta nada nuevo; callárselo le hacía creer que la
+  // puerta estaba rota.
   credenciales: t("acceso.errorCredenciales"),
   "sin-acceso": t("acceso.errorSinAcceso"),
   error: t("acceso.errorGenerico"),
