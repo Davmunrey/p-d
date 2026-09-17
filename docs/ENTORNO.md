@@ -149,6 +149,33 @@ El tercero va en _Variables_ y no en _Secrets_ porque no lo es: aparece en la
 URL del panel de Supabase. Guardarlo como secreto solo conseguiría que los
 registros lo taparan con asteriscos justo cuando hace falta leerlo.
 
+### Y un cuarto para los flujos programados: `DATABASE_URL`
+
+Lo usan el toque que mantiene viva la base, la copia de seguridad y el camino
+de repuesto de las migraciones. Va en _Secrets_.
+
+**Tiene que ser la del agrupador, no la directa, y aquí no vale la misma que
+Vercel.** Son tres cadenas distintas para tres sitios distintos:
+
+| Para               | Pestaña              | Host                   | Puerto |
+| ------------------ | -------------------- | ---------------------- | ------ |
+| Vercel (la web)    | _Transaction pooler_ | `…pooler.supabase.com` | `6543` |
+| **GitHub Actions** | _Session pooler_     | `…pooler.supabase.com` | `5432` |
+| Nadie, desde fuera | _Direct connection_  | `db.<ref>.supabase.co` | `5432` |
+
+**La directa no funciona desde GitHub y el síntoma engaña.** Se sirve sólo por
+IPv6 y un runner sólo tiene IPv4, así que el flujo falla con esto:
+
+```
+connect ENETUNREACH 2a05:d014:1577:8802::4354:5432
+```
+
+Pasó tal cual: el secreto estaba puesto y era correcto, el proyecto estaba
+despierto, y el toque llevaba dos semanas en rojo. Por eso
+`scripts/diagnostico-conexion.mjs` distingue ahora ese código y nombra el
+agrupador en el propio registro, en vez de repetir que el proyecto «puede estar
+pausado» — que es donde se pierde el tiempo.
+
 ### El token caduca, y eso ya tumbó producción una vez
 
 `SUPABASE_ACCESS_TOKEN` es un token **personal** y tiene fecha de caducidad.

@@ -26,6 +26,8 @@
 
 import postgres from "postgres";
 
+import { diagnosticoDeConexion } from "./diagnostico-conexion.mjs";
+
 const cadena = process.env.DATABASE_URL;
 
 if (!cadena) {
@@ -58,11 +60,9 @@ try {
 
   console.log("La base está despierta.");
 } catch (error) {
-  console.error(
-    "No se ha podido leer de la base. Si el proyecto es del plan gratuito, " +
-      "lo más probable es que Supabase lo haya pausado y haya que reactivarlo " +
-      "a mano desde su panel.",
-  );
+  // El porqué vive en `diagnostico-conexion.mjs`: no todo fallo de conexión es
+  // un proyecto pausado, y decirlo mal manda a revisar el sitio equivocado.
+  console.error(diagnosticoDeConexion(error));
   console.error(error instanceof Error ? error.message : error);
   process.exit(1);
 } finally {
