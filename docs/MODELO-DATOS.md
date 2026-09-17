@@ -464,21 +464,28 @@ por tanto, no puede entrar por la API: es un acto deliberado, fuera de banda, y
 está bien que lo sea.
 
 Se hace una sola vez, desde el editor SQL de Supabase o con la clave
-`service_role` (ambos con `bypassrls`), **antes** de que los novios se
-registren:
+`service_role` (ambos con `bypassrls`). Lo hace por ti
+`scripts/dar-acceso-al-panel.sh`, que sin `DATABASE_URL` imprime el SQL listo
+para pegar:
 
 ```sql
 insert into public.invitaciones_panel (correo_electronico, rol)
 values ('novia@sudominio.es', 'propietario'),
-       ('novio@sudominio.es', 'propietario');
+       ('novio@sudominio.es', 'propietario')
+on conflict (correo_electronico) do update set rol = excluded.rol;
 ```
 
-A partir de ahí el flujo es automático: al registrarse con ese correo, el
-trigger `auth_users_sincronizar_perfil` crea el perfil ya **activo y con rol
-`propietario`**, porque el rol y el alta se resuelven en el propio INSERT del
-perfil. No hace falta ningún UPDATE, y por eso el trigger
-`proteger_privilegios_perfil` —que sólo vigila UPDATE— no se interpone ni crea
-un candado sobre sí mismo.
+**El orden ya no importa (BODA-127).** Si la cuenta todavía no existe, el
+trigger `auth_users_sincronizar_perfil` la creará **activa y con su rol** en el
+propio INSERT del perfil. Si ya existía, el trigger `invitaciones_panel_aplicar`
+pone ese perfil al día en el acto.
+
+Hasta ese ticket sólo funcionaba el primer caso, y el segundo dejaba a la
+persona **inactiva para siempre**: el `on conflict` del trigger de alta se niega
+—con razón— a reevaluar privilegios, y el único arreglo posible, un UPDATE sobre
+`perfiles`, lo cortaba `proteger_privilegios_perfil`. Le pasó a los novios en
+producción, y desde fuera se veía como «el botón de acceso no funciona»: la
+puerta respondía «el correo o la contraseña no son correctos».
 
 Deliberadamente **no se siembra ningún propietario en las migraciones**: un
 correo de los novios incrustado en un fichero versionado sería un dato real de
@@ -493,6 +500,15 @@ operación. Hay dos defensas independientes:
 1. Un trigger (`PRF01`) que rechaza cualquier cambio de `rol`, `activo` o
    `usuario_id` que no venga de un propietario activo.
 2. El `with check` de la política de autoedición, que congela ambas columnas.
+
+El trigger admite dos excepciones, las dos acotadas y ninguna alcanzable con una
+sesión: el testigo del arranque en frío (`designar_primer_propietario`) y el
+cambio que se limita a poner el perfil **de acuerdo con su fila de
+`invitaciones_panel`** — misma cuenta, `activo` a cierto y el rol exacto que
+concede la lista. La segunda no la puede usar un `authenticated` ni para sí
+mismo, porque la defensa 2 le congela las dos columnas antes de llegar al
+trigger; la suite de seguridad lo comprueba retirándole el acceso a alguien que
+sigue invitado y viendo que no puede reactivarse.
 
 Las funciones que la política consulta son `SECURITY DEFINER` a propósito: una
 política sobre `perfiles` que leyera `perfiles` provocaría recursión infinita.

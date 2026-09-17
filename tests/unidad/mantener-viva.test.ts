@@ -4,6 +4,9 @@ import { promisify } from "node:util";
 
 import { describe, expect, it } from "vitest";
 
+// El guion está en JavaScript y no trae tipos: TypeScript lo infiere solo.
+import { diagnosticoDeConexion } from "../../scripts/diagnostico-conexion.mjs";
+
 /**
  * BODA-95 · El toque a la base tiene que fallar cuando la base no está
  *
@@ -55,6 +58,34 @@ describe("El toque que mantiene viva la base", () => {
     expect(resultado.codigo).not.toBe(0);
     expect(resultado.salida).toContain("DATABASE_URL");
   }, 40_000);
+
+  /**
+   * EL AVISO TIENE QUE SEÑALAR AL SITIO BUENO. Durante dos semanas el flujo
+   * falló diciendo «lo más probable es que Supabase lo haya pausado» encima de
+   * un `ENETUNREACH 2a05:d014:…`: el proyecto estaba despierto y lo que fallaba
+   * era que `DATABASE_URL` apuntaba a la conexión directa, que es IPv6, desde
+   * un runner que sólo tiene IPv4. Un aviso que manda a mirar donde no es
+   * cuesta más que no tener aviso.
+   *
+   * Se prueba la función y no el guion entero a propósito: si esto dependiera
+   * de intentar una conexión IPv6 de verdad, el resultado cambiaría según la
+   * máquina que corriera los tests.
+   */
+  it("un fallo de red no se confunde con un proyecto pausado", () => {
+    const deRed = Object.assign(new Error("connect ENETUNREACH 2a05:d014::1:5432"), {
+      code: "ENETUNREACH",
+    });
+
+    expect(diagnosticoDeConexion(deRed)).toContain("Session pooler");
+    expect(diagnosticoDeConexion(deRed)).not.toContain("pausado");
+  });
+
+  it("y cualquier otro fallo sigue apuntando a la pausa, que es lo habitual", () => {
+    const otro = new Error("terminating connection due to administrator command");
+
+    expect(diagnosticoDeConexion(otro)).toContain("pausado");
+    expect(diagnosticoDeConexion(otro)).not.toContain("Session pooler");
+  });
 
   it.skipIf(!process.env.DATABASE_URL)(
     "contra la base real, dice que está despierta",

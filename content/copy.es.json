@@ -336,7 +336,7 @@
     "entrar": "Entrar",
     "entrando": "Entrando…",
     "errorCredenciales": "El correo o la contraseña no son correctos.",
-    "errorSinAcceso": "El correo o la contraseña no son correctos.",
+    "errorSinAcceso": "Esta cuenta existe, pero todavía no tiene acceso al panel.",
     "errorGenerico": "No hemos podido entrar. Inténtalo de nuevo en un momento.",
     "sinConfigurar": "El acceso todavía no está configurado.",
     "volverALaWeb": "Volver a la web",

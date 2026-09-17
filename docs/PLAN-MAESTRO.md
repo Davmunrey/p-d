@@ -388,7 +388,7 @@ El plazo lo aplica un trigger contra `now()`, nunca contra una fecha enviada por
 
 ### Arranque en frío
 
-La base nace sin nadie dentro: no hay un usuario administrador de fábrica. La primera persona que entra se convierte en propietaria llamando a **`designar_primer_propietario()`**, que sólo funciona mientras no haya ninguno. Sin ese paso, un despliegue nuevo tiene el panel cerrado para todo el mundo — incluido quien lo desplegó.
+La base nace sin nadie dentro: no hay un usuario administrador de fábrica. El alta se da escribiendo el correo en **`invitaciones_panel`**, fuera de banda —editor SQL de Supabase o `scripts/dar-acceso-al-panel.sh`—, y desde BODA-127 da igual que la cuenta exista ya o se cree después: la lista manda en los dos casos. Sin ese paso, un despliegue nuevo tiene el panel cerrado para todo el mundo — incluido quien lo desplegó, que además leerá «el correo o la contraseña no son correctos» hasta BODA-127, donde ese caso pasó a tener su propio mensaje. Queda además **`designar_primer_propietario()`**, el arranque en frío de BODA-10, que sólo funciona mientras no haya ningún propietario.
 
 ---
 

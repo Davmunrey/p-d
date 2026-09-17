@@ -151,6 +151,131 @@ end $$;
 
 \echo ''
 \echo '========================================'
+\echo '  BODA-127 · la invitación alcanza a la cuenta'
+\echo '========================================'
+
+-- Lo que este bloque defiende: que invitar a alguien valga TAMBIÉN cuando su
+-- cuenta ya existe, sin que eso abra una vía para ascenderse a uno mismo.
+--
+-- Antes, `sincronizar_perfil_desde_auth()` miraba la lista sólo en el instante
+-- del alta: registrarse un minuto antes de ser invitado dejaba el perfil
+-- inactivo para siempre, y la puerta contestaba «el correo o la contraseña no
+-- son correctos». Es lo que dejó fuera a los novios de su propio panel.
+
+do $$
+declare
+  v_tarde  uuid := '0d1e2f30-0000-4000-8000-00000000d127';
+  v_pronto uuid := '0d1e2f31-0000-4000-8000-00000000d127';
+  v_suelto uuid := '0d1e2f32-0000-4000-8000-00000000d127';
+  v_ok     boolean;
+begin
+  -- SIN SESIÓN, QUE ES COMO SE INSTALA. El guion que lanza esta suite deja
+  -- puesto el testigo de un propietario para el resto de los bloques; con él
+  -- puesto, el guardián deja pasar cualquier cosa y estas comprobaciones
+  -- pasarían sin demostrar nada. Aquí se quita —acotado a esta transacción—
+  -- para reproducir el editor SQL de Supabase, donde `auth.uid()` es null.
+  perform set_config('request.jwt.claim.sub', '', true);
+
+  delete from public.perfiles where usuario_id in (v_tarde, v_pronto, v_suelto);
+  delete from auth.users where id in (v_tarde, v_pronto, v_suelto);
+  delete from public.invitaciones_panel where correo_electronico like '%@boda127.test';
+
+  -- 1. La cuenta primero, la invitación después: el caso que estaba roto.
+  insert into auth.users (id, email) values (v_tarde, 'Tarde@Boda127.Test');
+
+  perform pg_temp.comprobar(
+    'sin invitación, el perfil nace inactivo',
+    exists (select 1 from public.perfiles
+             where usuario_id = v_tarde and not activo and rol = 'lector'));
+
+  insert into public.invitaciones_panel (correo_electronico, rol)
+  values ('tarde@boda127.test', 'propietario');
+
+  perform pg_temp.comprobar(
+    'invitar a quien YA tiene cuenta la activa con su rol',
+    exists (select 1 from public.perfiles
+             where usuario_id = v_tarde and activo and rol = 'propietario'));
+
+  update public.invitaciones_panel set rol = 'editor'
+   where correo_electronico = 'tarde@boda127.test';
+
+  perform pg_temp.comprobar(
+    'cambiar el rol en la lista alcanza al perfil ya creado',
+    exists (select 1 from public.perfiles
+             where usuario_id = v_tarde and activo and rol = 'editor'));
+
+  -- 2. El orden de siempre sigue funcionando igual.
+  insert into public.invitaciones_panel (correo_electronico, rol)
+  values ('pronto@boda127.test', 'editor');
+  insert into auth.users (id, email) values (v_pronto, 'pronto@boda127.test');
+
+  perform pg_temp.comprobar(
+    'invitar antes de crear la cuenta sigue funcionando',
+    exists (select 1 from public.perfiles
+             where usuario_id = v_pronto and activo and rol = 'editor'));
+
+  -- 3. Y la puerta nueva no es una puerta: sólo deja pasar el cambio que pone
+  --    el perfil de acuerdo con su invitación, y nada más.
+  insert into auth.users (id, email) values (v_suelto, 'suelto@boda127.test');
+
+  begin
+    update public.perfiles set rol = 'propietario', activo = true
+     where usuario_id = v_suelto;
+    v_ok := false;
+  exception when insufficient_privilege then v_ok := true;
+  end;
+  perform pg_temp.comprobar('un ascenso sin invitación sigue lanzando PRF01', v_ok);
+
+  begin
+    update public.perfiles set rol = 'propietario'
+     where usuario_id = v_pronto;
+    v_ok := false;
+  exception when insufficient_privilege then v_ok := true;
+  end;
+  perform pg_temp.comprobar('un rol distinto al invitado sigue lanzando PRF01', v_ok);
+end $$;
+
+-- 4. LO QUE DE VERDAD IMPORTA: que un usuario con sesión no pueda usar su
+--    propia invitación para reactivarse después de que le hayan quitado el
+--    acceso. La política `perfiles_propio_actualizar` clava `rol` y `activo` en
+--    su WITH CHECK, así que ni siquiera llega al trigger.
+do $$
+declare
+  v_pronto uuid := '0d1e2f31-0000-4000-8000-00000000d127';
+  v_ok     boolean;
+  v_filas  integer;
+begin
+  perform set_config('request.jwt.claim.sub', '', true);
+
+  -- Se le retira el acceso. Hace falta el testigo del arranque en frío porque
+  -- desactivar desde una sesión de `psql` lo corta el propio guardián —
+  -- `auth.uid()` es null ahí—, que es correcto y no es lo que mide este test:
+  -- esto es la preparación del escenario, no lo que se comprueba.
+  perform set_config('boda.arranque_en_curso', 'si', true);
+  update public.perfiles set activo = false where usuario_id = v_pronto;
+  perform set_config('boda.arranque_en_curso', 'no', true);
+
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', v_pronto::text, true);
+
+  begin
+    update public.perfiles set activo = true where usuario_id = v_pronto;
+    get diagnostics v_filas = row_count;
+    v_ok := v_filas = 0;
+  exception when others then
+    v_ok := true;
+  end;
+
+  reset role;
+
+  perform pg_temp.comprobar(
+    'un usuario con sesión no se reactiva usando su invitación',
+    v_ok and not exists (select 1 from public.perfiles
+                          where usuario_id = v_pronto and activo));
+end $$;
+
+\echo ''
+\echo '========================================'
 \echo '  Registro público: un intruso no ve nada'
 \echo '========================================'
 
