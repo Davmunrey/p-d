@@ -283,6 +283,20 @@ export interface ListaDeContenido {
    * un invitado y nadie se enteraría hasta que una ficha «no se mueve».
    */
   ordenacion: readonly string[];
+  /**
+   * La columna que NOMBRA una ficha en prosa.
+   *
+   * No es la misma que la que la encabeza, y el programa es el porqué: su
+   * primer campo es la HORA, que es por lo que se busca en una lista del día
+   * —se mira «las nueve» y se lee qué hay—, así que encabeza bien. Pero
+   * preguntar «¿Borramos «21:00»?» no es preguntar nada, y peor aún si hay dos
+   * cosas a esa hora.
+   *
+   * Así que la tarjeta se encabeza con el primer campo y se NOMBRA con este.
+   * En tres de las cuatro listas son el mismo, y eso está bien: la excepción
+   * tiene que poder escribirse, no desaparecer.
+   */
+  columnaNombre: string;
 }
 
 /**
@@ -346,6 +360,7 @@ export const LISTAS_DE_CONTENIDO: Record<ClaveLista, ListaDeContenido> = {
       ],
     },
     ordenacion: ["orden", "hora"],
+    columnaNombre: "titulo",
   },
 
   transporte: {
@@ -381,6 +396,7 @@ export const LISTAS_DE_CONTENIDO: Record<ClaveLista, ListaDeContenido> = {
     ],
     destino: { clase: "una", seccion: "transporte" },
     ordenacion: ["orden", "modo"],
+    columnaNombre: "modo",
   },
 
   dresscode: {
@@ -407,6 +423,7 @@ export const LISTAS_DE_CONTENIDO: Record<ClaveLista, ListaDeContenido> = {
     ],
     destino: { clase: "una", seccion: "dresscode" },
     ordenacion: ["orden"],
+    columnaNombre: "titulo",
   },
 
   preguntas: {
@@ -432,6 +449,7 @@ export const LISTAS_DE_CONTENIDO: Record<ClaveLista, ListaDeContenido> = {
     ],
     destino: { clase: "una", seccion: "preguntas_frecuentes" },
     ordenacion: ["orden"],
+    columnaNombre: "pregunta",
   },
 };
 

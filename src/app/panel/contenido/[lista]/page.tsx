@@ -440,6 +440,14 @@ function Ficha({
   const primerCampo = lista.campos[0];
   const titulo = fila.valores[primerCampo.columna] ?? "";
 
+  /*
+    Y CÓMO SE LLAMA NO ES LO MISMO QUE CÓMO SE ENCABEZA. En el programa la
+    tarjeta lleva la hora arriba —que es por lo que se busca— y se llama por su
+    título: «¿Borramos «21:00»?» no pregunta nada, y con dos cosas a esa hora
+    tampoco distingue. En las otras tres coinciden, y ahí no se nota.
+  */
+  const nombre = fila.valores[lista.columnaNombre] || titulo;
+
   const confirmando = senalada && estado === "confirmar-borrado";
   const conFallo = senalada && (estado === "falta" || estado === "largo");
 
@@ -486,7 +494,7 @@ function Ficha({
           <details open={conFallo} className="border-t border-borde pt-interno">
             <summary className="inline-flex min-h-control-compacto cursor-pointer items-center text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta">
               {t("panel.contenido.listas.comun.editarFicha")}
-              <DeQueFicha titulo={titulo} />
+              <DeQueFicha nombre={nombre} />
             </summary>
 
             <form action={guardarFicha} className="mt-elemento grid gap-elemento">
@@ -501,19 +509,19 @@ function Ficha({
               ))}
               <Boton type="submit" className="justify-self-start">
                 {t("panel.contenido.listas.comun.guardar")}
-                <DeQueFicha titulo={titulo} />
+                <DeQueFicha nombre={nombre} />
               </Boton>
             </form>
           </details>
 
           {confirmando ? (
-            <Confirmacion clave={clave} variante={variante} fila={fila} titulo={titulo} />
+            <Confirmacion clave={clave} variante={variante} fila={fila} nombre={nombre} />
           ) : (
             <Botones
               clave={clave}
               variante={variante}
               fila={fila}
-              titulo={titulo}
+              nombre={nombre}
               esLaPrimera={esLaPrimera}
               esLaUltima={esLaUltima}
               ocultos={ocultos}
@@ -541,15 +549,15 @@ function Ficha({
  * justo lo que pide la regla del nombre en la etiqueta (WCAG 2.5.3). Es la
  * misma pieza que `DeQueSeccion` en el interruptor de secciones.
  */
-function DeQueFicha({ titulo }: { titulo: string }) {
-  return <span className="sr-only"> {titulo}</span>;
+function DeQueFicha({ nombre }: { nombre: string }) {
+  return <span className="sr-only"> {nombre}</span>;
 }
 
 function Botones({
   clave,
   variante,
   fila,
-  titulo,
+  nombre,
   esLaPrimera,
   esLaUltima,
   ocultos,
@@ -557,7 +565,7 @@ function Botones({
   clave: ClaveLista;
   variante: string | undefined;
   fila: FilaDeContenido;
-  titulo: string;
+  nombre: string;
   esLaPrimera: boolean;
   esLaUltima: boolean;
   ocultos: React.ReactNode;
@@ -571,7 +579,7 @@ function Botones({
           {fila.publicado
             ? t("panel.contenido.listas.comun.retirar")
             : t("panel.contenido.listas.comun.publicar")}
-          <DeQueFicha titulo={titulo} />
+          <DeQueFicha nombre={nombre} />
         </Boton>
       </form>
 
@@ -579,7 +587,7 @@ function Botones({
         {ocultos}
         <Boton type="submit" jerarquia="terciario">
           {t("panel.contenido.listas.comun.borrar")}
-          <DeQueFicha titulo={titulo} />
+          <DeQueFicha nombre={nombre} />
         </Boton>
       </form>
 
@@ -590,7 +598,7 @@ function Botones({
           clave={clave}
           variante={variante}
           fila={fila}
-          titulo={titulo}
+          nombre={nombre}
           direccion="subir"
         />
       ) : null}
@@ -599,7 +607,7 @@ function Botones({
           clave={clave}
           variante={variante}
           fila={fila}
-          titulo={titulo}
+          nombre={nombre}
           direccion="bajar"
         />
       ) : null}
@@ -611,13 +619,13 @@ function Mover({
   clave,
   variante,
   fila,
-  titulo,
+  nombre,
   direccion,
 }: {
   clave: ClaveLista;
   variante: string | undefined;
   fila: FilaDeContenido;
-  titulo: string;
+  nombre: string;
   direccion: "subir" | "bajar";
 }) {
   return (
@@ -628,7 +636,7 @@ function Mover({
       <input type="hidden" name="direccion" value={direccion} />
       <Boton type="submit" jerarquia="terciario">
         {t(direccion === "subir" ? "panel.contenido.subirOrden" : "panel.contenido.bajarOrden")}
-        <DeQueFicha titulo={titulo} />
+        <DeQueFicha nombre={nombre} />
       </Boton>
     </form>
   );
@@ -646,12 +654,12 @@ function Confirmacion({
   clave,
   variante,
   fila,
-  titulo,
+  nombre,
 }: {
   clave: ClaveLista;
   variante: string | undefined;
   fila: FilaDeContenido;
-  titulo: string;
+  nombre: string;
 }) {
   const ocultos = (
     <>
@@ -664,7 +672,7 @@ function Confirmacion({
   return (
     <div className="grid gap-interno rounded-campo bg-error-fondo p-interno">
       <p role="alert" className="text-pequeno text-error-tinta">
-        {t("panel.contenido.listas.comun.borrarPregunta", { ficha: titulo })}
+        {t("panel.contenido.listas.comun.borrarPregunta", { ficha: nombre })}
       </p>
 
       <div className="flex flex-wrap gap-interno-compacto">

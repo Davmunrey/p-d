@@ -368,6 +368,13 @@ test.describe("Las listas de contenido de la web", () => {
   test("el conmutador del programa escribe en el día que toca", async ({ page }) => {
     const deLaVispera = `${MARCA} Cena en el pueblo`;
 
+    /*
+      LA TARJETA DEL PROGRAMA SE ENCABEZA CON LA HORA, no con el evento: es por
+      lo que se busca en la lista de un día. Una hora que el seed no use, para
+      que la ficha sea de este test y de nadie más.
+    */
+    const hora = "23:45";
+
     await entrar(page);
     await page.goto(RUTA_PROGRAMA);
 
@@ -382,7 +389,7 @@ test.describe("Las listas de contenido de la web", () => {
     await expect(page).toHaveURL(/variante=preboda/);
 
     const alta = formularioDeAlta(page);
-    await alta.getByLabel(PROGRAMA.hora).fill("21:00");
+    await alta.getByLabel(PROGRAMA.hora).fill(hora);
     await alta.getByLabel(PROGRAMA.titulo_).fill(deLaVispera);
     await alta.getByRole("button", { name: comun.anadir, exact: true }).click();
 
@@ -392,14 +399,25 @@ test.describe("Las listas de contenido de la web", () => {
     expect(hito, "el hito tiene que existir").toBeTruthy();
     expect(hito.momento, "escrito en la víspera, guardado en la víspera").toBe("preboda");
 
-    // Se ve en su pestaña...
+    // Se ve en su pestaña, encabezada por la hora y con el evento debajo...
     await page.goto(`${RUTA_PROGRAMA}?variante=preboda`);
-    await expect(fichaDe(page, PROGRAMA.titulo, deLaVispera)).toBeVisible();
+    await expect(fichaDe(page, PROGRAMA.titulo, hora)).toBeVisible();
+    await expect(fichaDe(page, PROGRAMA.titulo, hora)).toContainText(deLaVispera);
+
+    /*
+      Y SE LLAMA POR EL EVENTO, NO POR LA HORA. «¿Borramos «23:45»?» no pregunta
+      nada, así que el nombre accesible de sus botones lleva el título. Se
+      comprueba aquí porque es la única lista donde encabezar y nombrar no
+      coinciden — en las otras tres pasaría desapercibido si se rompiera.
+    */
+    await expect(
+      botonDe(fichaDe(page, PROGRAMA.titulo, hora), comun.borrar, deLaVispera),
+    ).toBeVisible();
 
     // ...y no en la otra, que es lo que hace que el conmutador sirva de algo.
     await page.goto(`${RUTA_PROGRAMA}?variante=boda`);
     await expect(laLista(page, PROGRAMA.titulo).getByRole("listitem").first()).toBeVisible();
-    await expect(fichaDe(page, PROGRAMA.titulo, deLaVispera)).toHaveCount(0);
+    await expect(fichaDe(page, PROGRAMA.titulo, hora)).toHaveCount(0);
   });
 
   test("un obligatorio en blanco no guarda nada, y se dice cuál falta", async ({ page }) => {

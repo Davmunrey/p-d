@@ -207,6 +207,23 @@ describe("el descriptor de las listas de contenido", () => {
     },
   );
 
+  it.each(LISTAS)("«%s» se nombra por un campo que se rellena", (_clave, lista) => {
+    /*
+      LA COLUMNA QUE NOMBRA UNA FICHA NO ES SIEMPRE LA QUE LA ENCABEZA —en el
+      programa encabeza la hora y nombra el título—, pero sí tiene que ser un
+      campo del formulario y una columna de la tabla. Si no, la pregunta de
+      borrar saldría vacía: «¿Borramos «»?».
+    */
+    const columnas = lista.campos.map((campo) => campo.columna);
+
+    expect(columnas, `${lista.tabla}.${lista.columnaNombre}`).toContain(lista.columnaNombre);
+    expect(nombresDe(lista.tabla)).toContain(lista.columnaNombre);
+
+    // Y obligatorio, o habría fichas sin nombre con que preguntar.
+    const campo = lista.campos.find((uno) => uno.columna === lista.columnaNombre);
+    expect(campo?.obligatorio, `${lista.tabla}.${lista.columnaNombre}`).toBe(true);
+  });
+
   it("el tope de orden es el del tipo de la columna", () => {
     // `orden` es `smallint` en las cuatro: pasarse de 32767 no se trunca, revienta.
     for (const [, lista] of LISTAS) {
