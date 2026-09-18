@@ -245,19 +245,25 @@ test.describe("Las listas de contenido de la web", () => {
     "Necesita el Supabase local: sólo corre en el trabajo de CI que lo levanta.",
   );
 
-  let visibilidadOriginal: { seccion: string; visible: boolean }[] = [];
-
   test.beforeAll(async () => {
-    visibilidadOriginal = await verVisibilidad();
     // Se parte de las secciones encendidas para que «no sale en la web» sólo
     // pueda significar una cosa. Apagarlas es lo que prueba un test concreto.
     for (const seccion of SECCIONES_TOCADAS) await encenderSeccion(seccion, true);
     await borrarLoDePrueba();
   });
 
+  /*
+    SE RESTAURA A «ENCENDIDA», NO A LO QUE HUBIERA. Y no es pereza de no guardar
+    el estado previo: las tres nacen visibles en las migraciones, y guardarlo
+    sería peor. En CI esto se reintenta hasta dos veces, así que una primera
+    pasada que fallara dejando el dress code apagado haría que el reintento
+    guardase «apagado» como original y lo dejase así al terminar — y entonces
+    quien falla es `regalos-dresscode.spec.ts`, que ni toca esta pantalla. Un
+    fallo tiene que salir en el fichero que lo causa.
+  */
   test.afterAll(async () => {
     await borrarLoDePrueba();
-    for (const fila of visibilidadOriginal) await encenderSeccion(fila.seccion, fila.visible);
+    for (const seccion of SECCIONES_TOCADAS) await encenderSeccion(seccion, true);
   });
 
   test("una ficha nueva sale en la web, retirarla la esconde y borrarla la quita", async ({
