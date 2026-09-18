@@ -187,6 +187,20 @@ function fichaDe(pagina: Page, titulo: string, ficha: string): Locator {
 }
 
 /**
+ * UN BOTÓN DE UNA FICHA, POR SU NOMBRE ACCESIBLE ENTERO.
+ *
+ * En una lista de dieciocho hay dieciocho «Borrar», así que cada botón lleva
+ * dentro el título de su ficha en texto oculto. Se busca por el nombre completo
+ * —«Borrar» más el título— y con `exact`, que de paso comprueba lo que exige la
+ * regla del nombre en la etiqueta (WCAG 2.5.3): el rótulo VISIBLE va entero y
+ * al principio del nombre accesible. Con un `aria-label` esto no se cumpliría,
+ * y quien maneja el ordenador por voz dice lo que lee.
+ */
+function botonDe(ficha: Locator, rotulo: string, titulo: string): Locator {
+  return ficha.getByRole("button", { name: `${rotulo} ${titulo}`, exact: true });
+}
+
+/**
  * EL CONMUTADOR DE LOS DOS DÍAS, Y NO EL MENÚ DEL PANEL.
  *
  * «Día de la boda» es además el nombre de un módulo del panel —el guion de la
@@ -283,9 +297,7 @@ test.describe("Las listas de contenido de la web", () => {
     await page.goto(RUTA_DRESSCODE);
     await expect(fichaDe(page, DRESSCODE.titulo, titulo)).toContainText(comun.enLaWeb);
 
-    await fichaDe(page, DRESSCODE.titulo, titulo)
-      .getByRole("button", { name: comun.retirar })
-      .click();
+    await botonDe(fichaDe(page, DRESSCODE.titulo, titulo), comun.retirar, titulo).click();
 
     await esperarEstado(page, "retirada", RUTA_DRESSCODE);
 
@@ -300,9 +312,7 @@ test.describe("Las listas de contenido de la web", () => {
     await page.goto(RUTA_DRESSCODE);
     await expect(fichaDe(page, DRESSCODE.titulo, titulo)).toContainText(comun.retirada);
 
-    await fichaDe(page, DRESSCODE.titulo, titulo)
-      .getByRole("button", { name: comun.borrar, exact: true })
-      .click();
+    await botonDe(fichaDe(page, DRESSCODE.titulo, titulo), comun.borrar, titulo).click();
 
     await esperarEstado(page, "confirmar-borrado", RUTA_DRESSCODE);
     await expect(
@@ -338,9 +348,7 @@ test.describe("Las listas de contenido de la web", () => {
     await alta.getByRole("button", { name: comun.anadir, exact: true }).click();
     await esperarEstado(page, "creada", RUTA_DRESSCODE);
 
-    await fichaDe(page, DRESSCODE.titulo, titulo)
-      .getByRole("button", { name: comun.borrar, exact: true })
-      .click();
+    await botonDe(fichaDe(page, DRESSCODE.titulo, titulo), comun.borrar, titulo).click();
     await esperarEstado(page, "confirmar-borrado", RUTA_DRESSCODE);
 
     await page.getByRole("button", { name: comun.borrarMejorRetirar }).click();
@@ -479,9 +487,11 @@ test.describe("Las listas de contenido de la web", () => {
       "una ficha nueva nace la última, que es donde la pone quien la escribe",
     ).toEqual([primera, segunda]);
 
-    await fichaDe(page, DRESSCODE.titulo, primera)
-      .getByRole("button", { name: copy.panel.contenido.bajarOrden })
-      .click();
+    await botonDe(
+      fichaDe(page, DRESSCODE.titulo, primera),
+      copy.panel.contenido.bajarOrden,
+      primera,
+    ).click();
 
     await esperarEstado(page, "movida", RUTA_DRESSCODE);
 
@@ -491,9 +501,11 @@ test.describe("Las listas de contenido de la web", () => {
     // pinta: apagado se leería como «esto está roto».
     await expect(fichaDe(page, DRESSCODE.titulo, primera)).toBeVisible();
     await expect(
-      fichaDe(page, DRESSCODE.titulo, primera).getByRole("button", {
-        name: copy.panel.contenido.bajarOrden,
-      }),
+      botonDe(
+        fichaDe(page, DRESSCODE.titulo, primera),
+        copy.panel.contenido.bajarOrden,
+        primera,
+      ),
     ).toHaveCount(0);
   });
 });

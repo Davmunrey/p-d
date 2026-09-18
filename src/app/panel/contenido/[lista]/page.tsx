@@ -484,8 +484,9 @@ function Ficha({
             haya que acordarse de cuál de las dieciocho se estaba editando.
           */}
           <details open={conFallo} className="border-t border-borde pt-interno">
-            <summary className="cursor-pointer text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
+            <summary className="inline-flex min-h-control-compacto cursor-pointer items-center text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta">
               {t("panel.contenido.listas.comun.editarFicha")}
+              <DeQueFicha titulo={titulo} />
             </summary>
 
             <form action={guardarFicha} className="mt-elemento grid gap-elemento">
@@ -500,6 +501,7 @@ function Ficha({
               ))}
               <Boton type="submit" className="justify-self-start">
                 {t("panel.contenido.listas.comun.guardar")}
+                <DeQueFicha titulo={titulo} />
               </Boton>
             </form>
           </details>
@@ -511,6 +513,7 @@ function Ficha({
               clave={clave}
               variante={variante}
               fila={fila}
+              titulo={titulo}
               esLaPrimera={esLaPrimera}
               esLaUltima={esLaUltima}
               ocultos={ocultos}
@@ -522,10 +525,31 @@ function Ficha({
   );
 }
 
+/**
+ * DE QUÉ FICHA ES ESTE BOTÓN.
+ *
+ * En una lista de dieciocho hay dieciocho «Borrar», dieciocho «Editar» y
+ * dieciocho «Bajar en el orden». Quien recorre la pantalla con un lector los oye
+ * todos iguales y tiene que ir contando, y quien la maneja por voz no tiene
+ * forma de decir cuál.
+ *
+ * VA COMO TEXTO OCULTO DENTRO DEL BOTÓN Y NO COMO `aria-label`, y la diferencia
+ * no es de estilo. Un `aria-label` SUSTITUYE al rótulo visible, así que el
+ * nombre accesible pasaría a ser «Borrar 14:00» mientras en la pantalla pone
+ * «Borrar» — y quien manda por voz dice lo que LEE. Añadiéndolo dentro, el
+ * rótulo visible sigue entero y en orden dentro del nombre accesible, que es
+ * justo lo que pide la regla del nombre en la etiqueta (WCAG 2.5.3). Es la
+ * misma pieza que `DeQueSeccion` en el interruptor de secciones.
+ */
+function DeQueFicha({ titulo }: { titulo: string }) {
+  return <span className="sr-only"> {titulo}</span>;
+}
+
 function Botones({
   clave,
   variante,
   fila,
+  titulo,
   esLaPrimera,
   esLaUltima,
   ocultos,
@@ -533,6 +557,7 @@ function Botones({
   clave: ClaveLista;
   variante: string | undefined;
   fila: FilaDeContenido;
+  titulo: string;
   esLaPrimera: boolean;
   esLaUltima: boolean;
   ocultos: React.ReactNode;
@@ -546,6 +571,7 @@ function Botones({
           {fila.publicado
             ? t("panel.contenido.listas.comun.retirar")
             : t("panel.contenido.listas.comun.publicar")}
+          <DeQueFicha titulo={titulo} />
         </Boton>
       </form>
 
@@ -553,16 +579,29 @@ function Botones({
         {ocultos}
         <Boton type="submit" jerarquia="terciario">
           {t("panel.contenido.listas.comun.borrar")}
+          <DeQueFicha titulo={titulo} />
         </Boton>
       </form>
 
       {/* El botón que no lleva a ningún sitio no se pinta, en vez de pintarse
           desactivado: apagado se lee como «esto está roto». */}
       {!esLaPrimera ? (
-        <Mover clave={clave} variante={variante} fila={fila} direccion="subir" />
+        <Mover
+          clave={clave}
+          variante={variante}
+          fila={fila}
+          titulo={titulo}
+          direccion="subir"
+        />
       ) : null}
       {!esLaUltima ? (
-        <Mover clave={clave} variante={variante} fila={fila} direccion="bajar" />
+        <Mover
+          clave={clave}
+          variante={variante}
+          fila={fila}
+          titulo={titulo}
+          direccion="bajar"
+        />
       ) : null}
     </div>
   );
@@ -572,11 +611,13 @@ function Mover({
   clave,
   variante,
   fila,
+  titulo,
   direccion,
 }: {
   clave: ClaveLista;
   variante: string | undefined;
   fila: FilaDeContenido;
+  titulo: string;
   direccion: "subir" | "bajar";
 }) {
   return (
@@ -587,6 +628,7 @@ function Mover({
       <input type="hidden" name="direccion" value={direccion} />
       <Boton type="submit" jerarquia="terciario">
         {t(direccion === "subir" ? "panel.contenido.subirOrden" : "panel.contenido.bajarOrden")}
+        <DeQueFicha titulo={titulo} />
       </Boton>
     </form>
   );
