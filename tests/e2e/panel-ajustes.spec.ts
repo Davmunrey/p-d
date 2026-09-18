@@ -217,6 +217,81 @@ test.describe("Ajustes de la boda", () => {
   });
 
   /**
+   * BODA-129 · LA CUENTA PARA LOS REGALOS.
+   *
+   * Era lo último de la landing que sólo se tocaba por SQL, y la única cosa de
+   * esta pantalla que un editor **no** puede cambiar: su política es
+   * `configuracion_privada_propietario_actualizar`, no `puede_editar()`. Por eso
+   * va en su propio formulario y con su propio botón — con uno solo, o se le
+   * niega a un editor todo lo demás o se le cuela el número de cuenta.
+   *
+   * Se restaura al acabar: la fila es única, el seed trae un IBAN y
+   * `regalos.spec.ts` y el menú de la landing cuentan con él.
+   */
+  test("el IBAN se escribe aquí, se normaliza y sale en la web", async ({ page }) => {
+    const iban = page.getByLabel(copy.panel.ajustes.iban, { exact: true });
+    const titular = page.getByLabel(copy.panel.ajustes.titularCuenta);
+
+    const ibanOriginal = await iban.inputValue();
+    const titularOriginal = await titular.inputValue();
+
+    const titularNuevo = `${MARCA} Paloma y David`;
+
+    // EN MINÚSCULAS Y CON ESPACIOS, que es como se copia de la app del banco.
+    // La restricción de la tabla no lo acepta así, y quien lo pega no tiene por
+    // qué saberlo: lo arregla la acción, no la persona.
+    await iban.fill("es76 2100 0418 4502 0005 1332");
+    await titular.fill(titularNuevo);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardarRegalos }).click();
+
+    await expect(page.locator("main").getByRole("status")).toContainText(
+      copy.panel.ajustes.regalosGuardado,
+    );
+
+    await page.reload();
+    await expect(
+      page.getByLabel(copy.panel.ajustes.iban, { exact: true }),
+      "se guarda como lo pide el banco, no como se tecleó",
+    ).toHaveValue("ES7621000418450200051332");
+
+    // Y en la web, detrás de su botón: el número no viaja en el HTML (BODA-28).
+    await page.goto("/");
+    const seccion = page.locator("#regalos");
+    await seccion.getByRole("button", { name: copy.regalos.revelar }).click();
+    await expect(seccion.getByLabel(copy.regalos.etiquetaCuenta)).toHaveValue(
+      "ES76 2100 0418 4502 0005 1332",
+    );
+    await expect(seccion.getByText(titularNuevo)).toBeVisible();
+
+    // Como estaba.
+    await page.goto(RUTA_AJUSTES);
+    await page.getByLabel(copy.panel.ajustes.iban, { exact: true }).fill(ibanOriginal);
+    await page.getByLabel(copy.panel.ajustes.titularCuenta).fill(titularOriginal);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardarRegalos }).click();
+    await expect(page.locator("main").getByRole("status")).toContainText(
+      copy.panel.ajustes.regalosGuardado,
+    );
+  });
+
+  /**
+   * CASO DE ERROR. Un IBAN con mala pinta se rechaza con una frase, y no con el
+   * nombre de la restricción de Postgres, que es lo que se ve si esto llega a
+   * la base.
+   */
+  test("un IBAN con mala pinta se rechaza y no se guarda", async ({ page }) => {
+    const iban = page.getByLabel(copy.panel.ajustes.iban, { exact: true });
+    const antes = await iban.inputValue();
+
+    await iban.fill("mi cuenta de toda la vida");
+    await page.getByRole("button", { name: copy.panel.ajustes.guardarRegalos }).click();
+
+    await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorIban);
+
+    await page.goto(RUTA_AJUSTES);
+    await expect(page.getByLabel(copy.panel.ajustes.iban, { exact: true })).toHaveValue(antes);
+  });
+
+  /**
    * CASO DE ERROR. Siete avisos no caben en una fila de etiquetas: se rechazan
    * antes de llegar a la base, con un mensaje en castellano, y no se guarda
    * nada de lo demás.
