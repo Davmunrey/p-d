@@ -476,7 +476,18 @@
       "ciudadAyuda": "La que nombra la portada («Nos casamos en León») y las frases que la citan. Vacía, la portada enseña la dirección.",
       "avisosPrograma": "Avisos al pie del programa",
       "avisosProgramaAyuda": "Uno por línea, hasta seis. Salen como etiquetas bajo el programa del día: «Etiqueta elegante · ceremonia al aire libre». Vacío, no se pinta nada.",
-      "errorAvisos": "Los avisos del programa son como mucho seis, y ninguno pasa de 120 caracteres."
+      "errorAvisos": "Los avisos del programa son como mucho seis, y ninguno pasa de 120 caracteres.",
+      "grupoRegalos": "Cuenta para los regalos",
+      "regalosAyuda": "Sin cuenta escrita, la sección de Regalos no aparece en la web. Vaciarla es la forma de quitarla.",
+      "iban": "IBAN",
+      "ibanAyuda": "Con espacios o sin ellos, da igual: se guarda como lo pide el banco.",
+      "titularCuenta": "A nombre de",
+      "titularCuentaAyuda": "Opcional. Tal y como lo tiene el banco.",
+      "guardarRegalos": "Guardar la cuenta",
+      "regalosGuardado": "Cuenta guardada.",
+      "errorIban": "Ese IBAN no tiene buena pinta. Empieza por dos letras y dos cifras, como «ES91…».",
+      "errorSoloPropietario": "La cuenta bancaria sólo la puede cambiar un propietario.",
+      "regalosSoloPropietario": "La cuenta bancaria sólo la cambia un propietario. Podéis verla, no tocarla."
     },
     "invitados": {
       "titulo": "Invitados",
@@ -1205,6 +1216,7 @@
       "seLlenaEn": "Se llena en {donde}",
       "dondeAjustes": "Ajustes",
       "dondeMedios": "Fotos y vídeos",
+      "dondeContenido": "Contenido",
       "dondeSql": "Se llena todavía por SQL",
       "dondeInvitados": "La escriben los invitados desde su enlace",
       "dondeNada": "No hay nada que escribir",
@@ -1216,7 +1228,79 @@
       "errorGuardar": "No hemos podido guardarlo. Probad de nuevo en un momento.",
       "soloLectura": "Estáis como lectores: podéis mirar, pero no cambiar nada.",
       "sinSaber": "No se puede saber sin permiso de edición",
-      "listaTitulo": "Secciones de la web, en su orden"
+      "listaTitulo": "Secciones de la web, en su orden",
+      "listas": {
+        "comun": {
+          "volver": "Volver al contenido",
+          "vacia": "Todavía no hay nada aquí.",
+          "enLaWeb": "En la web",
+          "retirada": "Retirada",
+          "cuantas": "{cuantas} en la web de {total}",
+          "anadirTitulo": "Añadir",
+          "anadir": "Añadir",
+          "guardar": "Guardar",
+          "editarFicha": "Editar",
+          "retirar": "Retirar de la web",
+          "publicar": "Volver a poner en la web",
+          "borrar": "Borrar",
+          "diferencia": "Retirar la quita de la web y la deja guardada aquí. Borrar la elimina para siempre.",
+          "borrarPregunta": "Esto no se puede deshacer. ¿Borramos «{ficha}»?",
+          "borrarConfirmar": "Sí, borrar para siempre",
+          "borrarMejorRetirar": "Mejor sólo retirarla de la web",
+          "seccionApagada": "La sección «{seccion}» está oculta, así que nada de esto se ve en la web todavía.",
+          "encenderSeccion": "Mostrar «{seccion}» en la web",
+          "seccionVacia": "No queda nada publicado, así que la sección «{seccion}» ha dejado de aparecer.",
+          "avisoCreada": "Añadida y ya en la web.",
+          "avisoGuardada": "Guardado.",
+          "avisoRetirada": "Retirada de la web. Sigue guardada aquí.",
+          "avisoPublicada": "Ya se ve en la web.",
+          "avisoBorrada": "Borrada.",
+          "avisoMovida": "Orden cambiado.",
+          "errorFalta": "Falta rellenar «{campo}».",
+          "errorLargo": "«{campo}» no puede pasar de {largo} caracteres.",
+          "errorNoEncontrada": "Eso ya no existe. Puede que lo haya borrado alguien mientras mirabas.",
+          "errorSinPermiso": "Un lector no puede cambiar la web. Pedid que os cambien el rol.",
+          "errorGuardar": "No hemos podido guardarlo. Probad de nuevo en un momento."
+        },
+        "programa": {
+          "titulo": "El programa",
+          "descripcion": "La hora a hora de los dos días. Se enseña en la web en el orden de aquí, no por la hora escrita.",
+          "unaFicha": "el hito",
+          "boda": "Día de la boda",
+          "preboda": "Víspera",
+          "hora": "Hora",
+          "horaAyuda": "Como se lea mejor: «14:00», «sobre las 19:30», «de madrugada».",
+          "titulo_": "Qué pasa",
+          "descripcion_": "Detalle",
+          "descripcionAyuda": "Opcional. Una o dos frases debajo del título."
+        },
+        "transporte": {
+          "titulo": "Cómo llegar",
+          "descripcion": "Las formas de llegar a la finca. Van bajo el mapa, y la nota del autobús sale de aquí también.",
+          "unaFicha": "la ruta",
+          "modo": "Medio",
+          "modoAyuda": "«En autobús», «En coche», «Desde el aeropuerto».",
+          "duracion": "Cuánto se tarda",
+          "duracionAyuda": "Opcional. «25 minutos», «media hora larga».",
+          "detalle": "Detalle",
+          "detalleAyuda": "Opcional. Horarios, dónde se sale, dónde se aparca."
+        },
+        "dresscode": {
+          "titulo": "Dress code",
+          "descripcion": "Lo que se espera de la ropa, en bloques cortos.",
+          "unaFicha": "el consejo",
+          "tituloConsejo": "Para quién",
+          "tituloConsejoAyuda": "«Ellas», «Ellos», «Sólo dos peticiones».",
+          "texto": "Qué se dice"
+        },
+        "preguntas": {
+          "titulo": "Preguntas frecuentes",
+          "descripcion": "Lo que os van a preguntar por WhatsApp, contestado una sola vez.",
+          "unaFicha": "la pregunta",
+          "pregunta": "Pregunta",
+          "respuesta": "Respuesta"
+        }
+      }
     },
     "tareas": {
       "titulo": "Tareas",

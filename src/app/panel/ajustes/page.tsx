@@ -9,7 +9,7 @@ import { clienteServidor } from "@/lib/supabase/servidor";
 import { t } from "@/lib/copy";
 import { localDesdeInstante } from "@/lib/zona-horaria";
 
-import { guardarAjustes } from "./acciones";
+import { guardarAjustes, guardarRegalos } from "./acciones";
 
 /**
  * BODA-44 · AJUSTES DE LA BODA
@@ -31,6 +31,9 @@ export const dynamic = "force-dynamic";
 
 const AVISOS: Record<string, { texto: string; error: boolean }> = {
   guardado: { texto: t("panel.ajustes.guardado"), error: false },
+  "regalos-guardado": { texto: t("panel.ajustes.regalosGuardado"), error: false },
+  iban: { texto: t("panel.ajustes.errorIban"), error: true },
+  "solo-propietario": { texto: t("panel.ajustes.errorSoloPropietario"), error: true },
   nombres: { texto: t("panel.ajustes.errorNombres"), error: true },
   ceremonia: { texto: t("panel.ajustes.errorCeremonia"), error: true },
   "limite-tarde": { texto: t("panel.ajustes.errorLimiteTarde"), error: true },
@@ -65,6 +68,11 @@ interface Configuracion {
   direccion_banquete: string | null;
   latitud_banquete: number | null;
   longitud_banquete: number | null;
+}
+
+interface CuentaRegalos {
+  iban_regalos: string | null;
+  titular_cuenta: string | null;
 }
 
 /** Una coordenada vacía se enseña vacía, no como «null» ni como «0». */
@@ -105,6 +113,19 @@ export default async function PaginaAjustes({
         "ciudad_ceremonia, avisos_programa",
     )
     .maybeSingle<Configuracion>();
+
+  /*
+    La cuenta se lee aparte porque vive en otra tabla y con otro permiso: leer
+    `configuracion_privada` ya exige `puede_editar()`, así que a un lector le
+    llegan cero filas y el bloque sale vacío. Es correcto — no tiene por qué ver
+    un número de cuenta.
+  */
+  const { data: privada } = await supabase
+    .from("configuracion_privada")
+    .select("iban_regalos, titular_cuenta")
+    .maybeSingle<CuentaRegalos>();
+
+  const cuenta = privada ?? null;
 
   const soloLectura = acceso.rol === "lector";
   const zona = data?.zona_horaria ?? "";
@@ -338,10 +359,80 @@ export default async function PaginaAjustes({
         )}
       </form>
 
+      {/*
+        LA CUENTA VA EN SU PROPIO FORMULARIO, y no es maquetación: escribe en
+        OTRA tabla —`configuracion_privada`, la que `anon` no ve— y la escribe
+        otra gente, porque `configuracion_privada_propietario_actualizar` pide
+        `es_propietario()` y no `puede_editar()`. Un editor cambia la hora de la
+        ceremonia y no cambia la cuenta corriente; con un solo botón de guardar,
+        o se le niega todo o se le cuela el IBAN.
+      */}
+      <Regalos cuenta={cuenta} soloPropietario={acceso.rol !== "propietario"} />
+
       <div>
         <Etiqueta>{t("panel.ajustes.zonaHoraria")}</Etiqueta>
         <Cuerpo className="mt-linea">{zona}</Cuerpo>
       </div>
     </div>
+  );
+}
+
+/**
+ * LA CUENTA PARA LOS REGALOS.
+ *
+ * Es lo único que le falta a la sección de Regalos para poder encenderse:
+ * `datos_para_regalos()` devuelve cero filas sin IBAN, y la landing oculta lo
+ * vacío. Se dice en la ayuda, porque «he encendido Regalos y no sale» es
+ * exactamente la clase de desconcierto que este módulo viene a quitar.
+ *
+ * Vaciar el campo es una forma legítima de apagar la sección, y por eso el IBAN
+ * no es obligatorio.
+ */
+function Regalos({
+  cuenta,
+  soloPropietario,
+}: {
+  cuenta: CuentaRegalos | null;
+  soloPropietario: boolean;
+}) {
+  return (
+    <form action={guardarRegalos} className="grid gap-bloque">
+      <Grupo titulo={t("panel.ajustes.grupoRegalos")}>
+        <Cuerpo className="text-pequeno text-tinta-suave">
+          {t("panel.ajustes.regalosAyuda")}
+        </Cuerpo>
+
+        {soloPropietario ? (
+          <p role="status" className="text-pequeno text-tinta-suave">
+            {t("panel.ajustes.regalosSoloPropietario")}
+          </p>
+        ) : null}
+
+        <CampoTexto
+          name="iban_regalos"
+          etiqueta={t("panel.ajustes.iban")}
+          ayuda={t("panel.ajustes.ibanAyuda")}
+          defaultValue={cuenta?.iban_regalos ?? ""}
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          disabled={soloPropietario}
+        />
+
+        <CampoTexto
+          name="titular_cuenta"
+          etiqueta={t("panel.ajustes.titularCuenta")}
+          ayuda={t("panel.ajustes.titularCuentaAyuda")}
+          defaultValue={cuenta?.titular_cuenta ?? ""}
+          disabled={soloPropietario}
+        />
+
+        {soloPropietario ? null : (
+          <div>
+            <Boton type="submit">{t("panel.ajustes.guardarRegalos")}</Boton>
+          </div>
+        )}
+      </Grupo>
+    </form>
   );
 }

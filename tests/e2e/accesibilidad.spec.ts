@@ -4,6 +4,7 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_PANEL, RUTA_RSVP } from "../../src/config/constants";
+import { CLAVES_LISTA, rutaDeLista } from "../../src/config/contenido-landing";
 import { MODULOS_ENTREGADOS } from "../../src/config/modulos";
 import { seguirLaPista } from "./utiles/rastro";
 
@@ -21,7 +22,10 @@ import { seguirLaPista } from "./utiles/rastro";
  *      resto de la auditoría da igual.
  *   3. axe sobre TODOS los módulos entregados del panel — la lista sale de
  *      `MODULOS_ENTREGADOS`, así que un módulo nuevo entra en la auditoría
- *      solo, sin que nadie tenga que acordarse.
+ *      solo, sin que nadie tenga que acordarse. Y con ellos las pantallas de
+ *      dentro que tienen entidad propia: las cuatro listas de contenido, que
+ *      son formularios largos y repetidos y donde más fácil es colar una
+ *      etiqueta a medias.
  *
  * El listón: CERO violaciones críticas o serias. Las menores se enseñan en el
  * registro pero no bloquean — el día que estén a cero, se sube el listón.
@@ -251,7 +255,9 @@ test.describe("Accesibilidad del panel", () => {
     await expect(pagina).toHaveURL(new RegExp(RUTA_PANEL));
   }
 
-  test("todos los módulos entregados pasan axe", async ({ page }) => {
+  test("todos los módulos entregados, y las listas de contenido, pasan axe", async ({
+    page,
+  }) => {
     await entrar(page);
 
     /*
@@ -259,13 +265,28 @@ test.describe("Accesibilidad del panel", () => {
       cada ejecución de CI destapa un solo fallo y arreglarlos todos cuesta
       una tarde de tandas. Recogiéndolos, un run enseña la lista entera.
     */
+    /*
+      LAS LISTAS DE CONTENIDO VAN ADEMÁS DE SU MÓDULO, y no es duplicar: la
+      pantalla de Contenido es una tabla de interruptores, y las de dentro son
+      donde se escribe —un formulario de alta, y luego diecisiete fichas con seis
+      controles cada una—. Lo que puede fallar no está en la misma página, y la
+      lista sale de `CLAVES_LISTA`, así que una quinta entra sola.
+    */
+    const pantallas = [
+      ...MODULOS_ENTREGADOS.map((modulo) => ({ clave: modulo.clave, ruta: modulo.ruta })),
+      ...CLAVES_LISTA.map((clave) => ({
+        clave: `contenido · ${clave}`,
+        ruta: rutaDeLista(clave),
+      })),
+    ];
+
     const informes: string[] = [];
-    for (const modulo of MODULOS_ENTREGADOS) {
-      await page.goto(modulo.ruta);
+    for (const pantalla of pantallas) {
+      await page.goto(pantalla.ruta);
       await page.waitForLoadState("networkidle");
       const graves = await violacionesGraves(page);
       if (graves.length > 0) {
-        informes.push(`— «${modulo.clave}» (${modulo.ruta}):\n${graves.join("\n\n")}`);
+        informes.push(`— «${pantalla.clave}» (${pantalla.ruta}):\n${graves.join("\n\n")}`);
       }
     }
 

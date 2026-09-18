@@ -36,6 +36,9 @@ import { instanteDesdeLocal } from "@/lib/zona-horaria";
 /** Los estados con los que vuelve la pantalla. Cada uno tiene su copy. */
 type Estado =
   | "guardado"
+  | "regalos-guardado"
+  | "iban"
+  | "solo-propietario"
   | "nombres"
   | "ceremonia"
   | "limite-tarde"
@@ -218,4 +221,103 @@ export async function guardarAjustes(datos: FormData) {
   // anterior en la tarjeta de WhatsApp.
   revalidatePath("/", "layout");
   volver("guardado");
+}
+
+/**
+ * BODA-129 · LA CUENTA PARA LOS REGALOS
+ *
+ * VA EN SU PROPIA ACCIÓN Y NO DENTRO DE `guardarAjustes`, y hay dos motivos.
+ * El primero es la tabla: el IBAN vive en `configuracion_privada`, que es la
+ * que `anon` no puede tocar ni de lejos, y mezclarla con la configuración
+ * pública en un mismo `update` sería una sola pantalla escribiendo en dos
+ * tablas con dos niveles de secreto.
+ *
+ * El segundo es quién puede. `configuracion_privada_propietario_actualizar`
+ * exige `es_propietario()`, no `puede_editar()`: un editor que cambia la hora
+ * de la ceremonia NO cambia la cuenta corriente. Si estuvieran en la misma
+ * acción, o se le negaría todo o se le colaría el IBAN.
+ *
+ * SIN IBAN NO HAY SECCIÓN DE REGALOS. `datos_para_regalos()` devuelve cero
+ * filas cuando está vacío, y la landing lo oculta. Por eso vaciarlo es una
+ * forma legítima de apagar la sección, y aquí se admite.
+ */
+
+/**
+ * El IBAN, normalizado como lo guarda la base.
+ *
+ * Se quitan los espacios y se pasa a mayúsculas antes de comprobar nada: «ES91
+ * 2100 0418 4502 0005 1332» es como lo imprime el banco y como lo copia
+ * cualquiera, y rechazarlo por los espacios sería rechazar un dato correcto por
+ * cómo está escrito.
+ *
+ * El patrón es EL MISMO que el `CHECK` de la tabla
+ * (`configuracion_privada_iban_valido`). Aquí se comprueba antes para poder
+ * decirlo en castellano; la base se queda detrás como red.
+ *
+ * `undefined` significa «no es un IBAN» —error— y `null`, «no hay dato», que es
+ * lo que apaga la sección.
+ */
+function ibanNormalizado(datos: FormData): string | null | undefined {
+  const bruto = texto(datos, "iban_regalos").replace(/\s+/g, "").toUpperCase();
+  if (!bruto) return null;
+  return /^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(bruto) ? bruto : undefined;
+}
+
+export async function guardarRegalos(datos: FormData) {
+  if (!hayAutenticacion) redirect(RUTA_ACCESO);
+
+  const iban = ibanNormalizado(datos);
+  if (iban === undefined) volver("iban");
+
+  const titular = textoONulo(datos, "titular_cuenta");
+
+  try {
+    const supabase = await clienteServidor();
+
+    const { data: sesion } = await supabase.auth.getUser();
+    if (!sesion.user) redirect(RUTA_ACCESO);
+
+    const { data: actual, error: errorLectura } = await supabase
+      .from("configuracion_privada")
+      .select("id")
+      .maybeSingle();
+
+    if (errorLectura || !actual) {
+      /*
+        Cero filas aquí es RLS: leer `configuracion_privada` ya pide
+        `puede_editar()`. A un lector no se le enseña ni el formulario, así que
+        llegar aquí significa que alguien lo ha mandado a mano.
+      */
+      if (errorLectura) console.error("No se pudo leer la cuenta:", errorLectura.message);
+      volver("solo-propietario");
+    }
+
+    const { error, count } = await supabase
+      .from("configuracion_privada")
+      .update({ iban_regalos: iban, titular_cuenta: titular }, { count: "exact" })
+      .eq("id", actual.id);
+
+    if (error) {
+      // El `CHECK` del IBAN, si algo se escapó de la comprobación de arriba.
+      if (error.message?.includes("iban")) volver("iban");
+      console.error("No se pudo guardar la cuenta:", error.message);
+      volver("error");
+    }
+
+    /*
+      RLS NO DA ERROR CUANDO PROHÍBE: devuelve cero filas tocadas. Aquí eso
+      significa «no eres propietario», que es un mensaje distinto del de
+      siempre — un editor puede tocar todo lo demás de esta pantalla.
+    */
+    if (count === 0) volver("solo-propietario");
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "digest" in error) throw error;
+    console.error("Fallo al guardar la cuenta:", error);
+    volver("error");
+  }
+
+  // La sección de regalos aparece o desaparece según haya cuenta, así que el
+  // menú de la landing cambia con esto.
+  revalidatePath("/", "layout");
+  volver("regalos-guardado");
 }
