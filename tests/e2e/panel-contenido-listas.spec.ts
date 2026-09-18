@@ -386,7 +386,19 @@ test.describe("Las listas de contenido de la web", () => {
     ).toHaveAttribute("aria-current", "page");
 
     await conmutador.getByRole("link", { name: PROGRAMA.preboda }).click();
-    await expect(page).toHaveURL(/variante=preboda/);
+
+    /*
+      QUINCE SEGUNDOS Y NO LOS CINCO DE SERIE, y no es tapar nada: en CI esto
+      salió inestable —una vez falló y al reintentarlo pasó—, con la barra de
+      direcciones sin moverse. El conmutador es un enlace con `prefetch={false}`,
+      así que si se pulsa antes de que hidrate la navegación es del navegador
+      entera: el servidor tiene que pintar la pantalla, y ésta hace dos consultas
+      antes de responder. En un runner cargado eso pasa de cinco segundos.
+
+      Lo que se sigue exigiendo es idéntico —que el enlace lleve a la víspera—;
+      lo único que cambia es cuánto se espera a que llegue.
+    */
+    await expect(page).toHaveURL(/variante=preboda/, { timeout: 15_000 });
 
     const alta = formularioDeAlta(page);
     await alta.getByLabel(PROGRAMA.hora).fill(hora);
@@ -428,6 +440,8 @@ test.describe("Las listas de contenido de la web", () => {
       formulario mandado a mano—. Un espacio pasa el `required` y no es un
       título.
     */
+    const antes = await leerConsejos();
+
     await entrar(page);
     await page.goto(RUTA_DRESSCODE);
 
@@ -443,7 +457,14 @@ test.describe("Las listas de contenido de la web", () => {
       "el error va pegado al campo que falla, no sólo arriba",
     ).toBeVisible();
 
-    expect(await leerConsejos(), "no se guarda nada a medias").toHaveLength(0);
+    /*
+      SE COMPARA CONTRA LO QUE HABÍA, NO CONTRA CERO. Aquí ponía `toHaveLength(0)`
+      y CI tenía razón en tumbarlo: el test de la salida suave deja a propósito
+      una ficha retirada —esa es toda su gracia—, así que la tabla no está vacía
+      cuando se llega. Lo que este test afirma no es «no hay nada», es «este
+      envío no escribió nada», y eso es una diferencia, no un número.
+    */
+    expect(await leerConsejos(), "no se guarda nada a medias").toHaveLength(antes.length);
   });
 
   test("si la sección está apagada se avisa, y se puede encender desde aquí", async ({
@@ -495,6 +516,18 @@ test.describe("Las listas de contenido de la web", () => {
     const primera = `${MARCA} Primera`;
     const segunda = `${MARCA} Segunda`;
 
+    /*
+      SÓLO LAS DOS DE ESTE TEST, y no todas las de la marca: el test de la salida
+      suave deja a propósito una ficha retirada, y el seed trae las suyas. Lo que
+      se afirma es el orden RELATIVO de estas dos, que es lo que el botón mueve;
+      `leerConsejos()` ya viene ordenado por `orden`, así que filtrar no lo
+      altera.
+    */
+    const enOrden = async () =>
+      (await leerConsejos())
+        .filter((fila) => fila.titulo === primera || fila.titulo === segunda)
+        .map((fila) => fila.titulo);
+
     await entrar(page);
 
     for (const titulo of [primera, segunda]) {
@@ -507,7 +540,7 @@ test.describe("Las listas de contenido de la web", () => {
     }
 
     expect(
-      (await leerConsejos()).map((fila) => fila.titulo),
+      await enOrden(),
       "una ficha nueva nace la última, que es donde la pone quien la escribe",
     ).toEqual([primera, segunda]);
 
@@ -519,7 +552,7 @@ test.describe("Las listas de contenido de la web", () => {
 
     await esperarEstado(page, "movida", RUTA_DRESSCODE);
 
-    expect((await leerConsejos()).map((fila) => fila.titulo)).toEqual([segunda, primera]);
+    expect(await enOrden()).toEqual([segunda, primera]);
 
     // La última de la lista no tiene a dónde bajar, así que ese botón no se
     // pinta: apagado se leería como «esto está roto».
