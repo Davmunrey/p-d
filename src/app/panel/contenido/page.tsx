@@ -8,7 +8,7 @@ import { RUTA_ACCESO } from "@/config/constants";
 import { ORIGEN_DE_LA_SECCION, type Donde } from "@/config/contenido-landing";
 import { type Seccion } from "@/config/secciones";
 import { obtenerEstadoDeLasSecciones, type EstadoDeSeccion } from "@/lib/bbdd/contenido";
-import { t } from "@/lib/copy";
+import { t, type ClaveCopy } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 
 import { alternarVisible, moverSeccion } from "./acciones";
@@ -296,11 +296,18 @@ function DondeSeLlena({ seccion }: { seccion: Seccion }) {
     return <Etiqueta className="block">{t("panel.contenido.dondeInvitados")}</Etiqueta>;
   }
 
-  const rotulo = t(
-    donde.pantalla === "ajustes"
-      ? "panel.contenido.dondeAjustes"
-      : "panel.contenido.dondeMedios",
-  );
+  /*
+    El rótulo sale de una tabla y no de un encadenado de ternarios: con tres
+    pantallas ya se lee peor, y el `Record` obliga a poner la clave el día que
+    aparezca una cuarta — que es cuando se olvida.
+  */
+  const ROTULOS: Record<typeof donde.pantalla, ClaveCopy> = {
+    ajustes: "panel.contenido.dondeAjustes",
+    medios: "panel.contenido.dondeMedios",
+    contenido: "panel.contenido.dondeContenido",
+  };
+
+  const rotulo = t(ROTULOS[donde.pantalla]);
 
   return (
     <Link

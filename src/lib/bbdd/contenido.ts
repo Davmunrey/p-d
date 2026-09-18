@@ -1,6 +1,10 @@
 import "server-only";
 
-import { ORIGEN_DE_LA_SECCION } from "@/config/contenido-landing";
+import {
+  LISTAS_DE_CONTENIDO,
+  ORIGEN_DE_LA_SECCION,
+  type ClaveLista,
+} from "@/config/contenido-landing";
 import { SECCIONES, esSeccionConocida, type Seccion } from "@/config/secciones";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
@@ -173,4 +177,107 @@ async function medirLaSeccion(
   const fila = data as unknown as Record<string, unknown>;
   const valor = fila[origen.campo];
   return { elementos: null, llena: valor !== null && valor !== undefined && valor !== "" };
+}
+
+/* ==========================================================================
+ * BODA-129 · LAS FILAS DE UNA LISTA DE CONTENIDO
+ * ========================================================================== */
+
+/**
+ * Una ficha, con sus campos sin interpretar.
+ *
+ * `valores` va indexado por nombre de columna porque la pantalla es la misma
+ * para las cuatro listas y lo que cambia son los campos: tiparlo fila a fila
+ * obligaría a cuatro interfaces y cuatro consultas idénticas salvo por el
+ * `select`. Lo que sí está tipado es el descriptor, que es quien dice qué
+ * columnas existen.
+ */
+export interface FilaDeContenido {
+  id: string;
+  orden: number;
+  publicado: boolean;
+  valores: Record<string, string | null>;
+}
+
+/**
+ * Las fichas de una lista, en el mismo orden en que las lee la web.
+ *
+ * UN LECTOR VE MENOS, y conviene saberlo. Las políticas de estas tablas son dos
+ * —`<tabla>_lectura_publica` con `using (publicado)` y `<tabla>_gestion` con
+ * `puede_editar()`—, así que un editor ve todo y un lector sólo lo publicado.
+ * No se disimula: la pantalla ya le dice que está de sólo lectura, y enseñarle
+ * borradores que no puede tocar tampoco le serviría de nada.
+ *
+ * NO LANZA. Un fallo devuelve lista vacía y queda en el registro; la pantalla
+ * distingue «no hay nada» de «no se pudo leer» por el aviso, no por el silencio.
+ */
+export async function obtenerFilasDeLista(
+  clave: ClaveLista,
+  variante?: string,
+): Promise<FilaDeContenido[]> {
+  const lista = LISTAS_DE_CONTENIDO[clave];
+  const columnas = lista.campos.map((campo) => campo.columna);
+
+  const supabase = await clienteServidor();
+
+  let consulta = supabase
+    .from(lista.tabla)
+    .select(["id", "orden", "publicado", ...columnas].join(", "));
+
+  if (lista.destino.clase === "partida" && variante) {
+    consulta = consulta.eq(lista.destino.columna, variante);
+  }
+
+  // El mismo orden que el `order by` de la landing, campo a campo. Que los dos
+  // coincidan lo vigila `tests/unidad/listas-contenido.test.ts`.
+  for (const columna of lista.ordenacion) consulta = consulta.order(columna);
+
+  const { data, error } = await consulta;
+
+  if (error) {
+    console.error(`No se pudo leer la lista «${clave}»:`, error.message);
+    return [];
+  }
+
+  return (data ?? []).map((cruda) => {
+    const fila = cruda as unknown as Record<string, unknown>;
+    const valores: Record<string, string | null> = {};
+    for (const columna of columnas) {
+      const valor = fila[columna];
+      valores[columna] = typeof valor === "string" ? valor : null;
+    }
+    return {
+      id: String(fila.id),
+      orden: Number(fila.orden),
+      publicado: Boolean(fila.publicado),
+      valores,
+    };
+  });
+}
+
+/**
+ * ¿Está encendida esa sección?
+ *
+ * Lo pregunta cada lista para poder avisar de que lo que se está escribiendo no
+ * se ve. Escribir tres hoteles y no ver ninguno porque el interruptor está en
+ * «Oculta» es el desconcierto de #163 otra vez, en pequeño.
+ *
+ * `null` cuando no se ha podido averiguar, que la pantalla traduce a no decir
+ * nada: un aviso equivocado es peor que ninguno.
+ */
+export async function obtenerVisibilidadDeSeccion(seccion: Seccion): Promise<boolean | null> {
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("secciones_landing")
+    .select("visible")
+    .eq("seccion", seccion)
+    .maybeSingle();
+
+  if (error || !data) {
+    if (error) console.error(`No se pudo leer la visibilidad de «${seccion}»:`, error.message);
+    return null;
+  }
+
+  return Boolean((data as { visible: boolean }).visible);
 }

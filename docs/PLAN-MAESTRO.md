@@ -278,6 +278,10 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 
 **`canciones_sugeridas`** — la playlist. `aprobada` la retira de la web sin borrarla, y es la propia política de lectura pública la que filtra por ese booleano.
 
+**Estas seis tablas las escribe el panel, en el módulo «Contenido».** `hitos_programa` —con su conmutador de víspera y día de la boda—, `rutas_llegada`, `consejos_vestimenta` y `preguntas_frecuentes` tienen pantalla desde BODA-129; `alojamientos` e `hitos_historia` llevan foto y esperan a su selector de medios. Hasta entonces se escribían por SQL, que es de donde salió #163: secciones encendidas que no aparecían porque no había por dónde llenarlas.
+
+**Aquí se renumera, y en `secciones_landing` y `medios` se permuta, y la diferencia no es de estilo.** El `orden` de estas tablas **no** es único, así que dos filas pueden compartir número y un intercambio de los dos valores no movería nada; se renumera la lista entera por posición y se escriben sólo las filas que cambian. Donde la unicidad es diferida —`secciones_landing`, `medios`— eso no vale: hacen falta las dos escrituras en el mismo commit, y por eso allí hay una función de base de datos.
+
 **`consejos_vestimenta`** — los bloques del dress code («Ellas», «Ellos», «Solo dos peticiones»), con `orden` y `publicado`. Es una tabla y no copy fijo porque los consejos dependen de la finca y de la fecha —el del tacón sale de conocer el suelo— y se retocan sin desplegar.
 
 **`medios`** — fotos y vídeos de la landing: `ruta_almacenamiento`, `texto_alternativo`, `seccion`, `orden`, `ancho`, `alto`, `marcador_borroso`, `tipo`, `poster_ruta` y `publicado`. Vista pública: **`v_medios_publicados`**. Ninguna imagen va en `/public`.
@@ -478,7 +482,8 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 | **Documentos**     | Los papeles del expediente civil, con su titular y su caducidad comparada contra la fecha de la boda. Sin lista de partida: la pantalla vacía explica por qué                                                  |
 | **Día de la boda** | Guion de la jornada que se marca desde el móvil y **aguanta sin cobertura**, teléfonos de los contratados con enlace de llamada, buscador de invitados sin acentos, recuento del catering y hoja para imprimir |
 | **Gráficas**       | En qué se va el dinero, lo que llevamos gastado mes a mes y previsto contra real. Cada gráfica con su tabla equivalente                                                                                        |
-| **Ajustes**        | Contenido de la landing, orden y visibilidad de secciones, textos i18n, datos de la boda, usuarios                                                                                                             |
+| **Contenido**      | Qué secciones se enseñan y en qué orden, qué le falta a cada una para verse y dónde se escribe; y la escritura de las listas de sólo texto: programa y víspera, cómo llegar, dress code y preguntas frecuentes |
+| **Ajustes**        | Datos de la boda, textos i18n, la cuenta de regalos —sólo los novios— y usuarios del panel                                                                                                                     |
 
 ---
 

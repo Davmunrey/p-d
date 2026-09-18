@@ -758,3 +758,254 @@ begin
 end $$;
 
 \echo ''
+\echo '========================================'
+\echo '  BODA-129 · las listas de contenido de la web'
+\echo '========================================'
+
+-- Lo que este bloque defiende: que las cuatro listas que el panel ya sabe
+-- escribir —programa, cómo llegar, dress code y preguntas— sólo las escriba
+-- quien puede editar, y que el IBAN siga siendo cosa de los novios.
+--
+-- IMPORTA MÁS DE LO QUE PARECE PORQUE RLS NO DA ERROR AL PROHIBIR UN `UPDATE`:
+-- devuelve cero filas. La pantalla lo comprueba y traduce ese silencio a «un
+-- lector no puede cambiar la web», pero si la política se aflojara un día, la
+-- pantalla seguiría diciendo exactamente lo mismo y nadie se enteraría. Aquí se
+-- mira la base.
+
+do $$
+declare
+  v_lector uuid := '0d1e2f41-0000-4000-8000-00000000d129';
+  t        text;
+  v_ok     boolean;
+  v_filas  bigint;
+  v_id     uuid;
+  tablas   text[] := array[
+    'hitos_programa', 'rutas_llegada', 'consejos_vestimenta', 'preguntas_frecuentes'
+  ];
+begin
+  perform set_config('request.jwt.claim.sub', '', true);
+
+  delete from public.perfiles where usuario_id = v_lector;
+  delete from auth.users where id = v_lector;
+  delete from public.invitaciones_panel where correo_electronico = 'lector@boda129.test';
+
+  -- UN LECTOR DE VERDAD: invitado, activo y con su rol. Un perfil inactivo
+  -- también fallaría al escribir, pero por otro motivo, y entonces esto no
+  -- estaría probando la política sino el interruptor de la cuenta.
+  insert into public.invitaciones_panel (correo_electronico, rol) values ('lector@boda129.test', 'lector');
+  insert into auth.users (id, email) values (v_lector, 'lector@boda129.test');
+
+  perform pg_temp.comprobar(
+    'el lector de prueba está activo y es lector',
+    exists (select 1 from public.perfiles where usuario_id = v_lector and activo and rol = 'lector'));
+
+  foreach t in array tablas loop
+    -- Una fila retirada, escrita desde fuera de la sesión del lector, para
+    -- comprobar de paso que ni siquiera la ve.
+    execute format(
+      'insert into public.%I (orden, publicado, %s) values (900, false, %s) returning id',
+      t,
+      case t
+        when 'hitos_programa'       then 'hora, titulo'
+        when 'rutas_llegada'        then 'modo'
+        when 'consejos_vestimenta'  then 'titulo, texto'
+        else 'pregunta, respuesta'
+      end,
+      case t
+        when 'hitos_programa'       then '''23:59'', ''Borrador de BODA-129'''
+        when 'rutas_llegada'        then '''Borrador de BODA-129'''
+        when 'consejos_vestimenta'  then '''Borrador de BODA-129'', ''Texto'''
+        else '''Borrador de BODA-129'', ''Respuesta'''
+      end
+    ) into v_id;
+
+    set local role authenticated;
+    perform set_config('request.jwt.claim.sub', v_lector::text, true);
+
+    -- 1. Escribir de cero: la política `with check` sí lanza.
+    begin
+      execute format(
+        'insert into public.%I (%s) values (%s)',
+        t,
+        case t
+          when 'hitos_programa'       then 'hora, titulo'
+          when 'rutas_llegada'        then 'modo'
+          when 'consejos_vestimenta'  then 'titulo, texto'
+          else 'pregunta, respuesta'
+        end,
+        case t
+          when 'hitos_programa'       then '''00:00'', ''Colado por un lector'''
+          when 'rutas_llegada'        then '''Colado por un lector'''
+          when 'consejos_vestimenta'  then '''Colado por un lector'', ''Texto'''
+          else '''Colado por un lector'', ''Respuesta'''
+        end
+      );
+      v_ok := false;
+    exception when others then
+      v_ok := true;
+    end;
+    perform pg_temp.comprobar(format('un lector no puede añadir en %s', t), v_ok);
+
+    -- 2. Y cambiar lo que ya hay: esto NO lanza, calla. Se cuentan las filas.
+    execute format('update public.%I set orden = 1 where id = %L', t, v_id);
+    get diagnostics v_filas = row_count;
+    perform pg_temp.comprobar(format('un lector no puede cambiar nada en %s', t), v_filas = 0);
+
+    execute format('update public.%I set publicado = true where id = %L', t, v_id);
+    get diagnostics v_filas = row_count;
+    perform pg_temp.comprobar(format('un lector no puede publicar en %s', t), v_filas = 0);
+
+    -- 3. Ni borrar, que es lo único que no se deshace.
+    execute format('delete from public.%I where id = %L', t, v_id);
+    get diagnostics v_filas = row_count;
+    perform pg_temp.comprobar(format('un lector no puede borrar de %s', t), v_filas = 0);
+
+    -- 4. Un borrador no es suyo: la lectura pública es `using (publicado)`.
+    execute format('select count(*) from public.%I where id = %L', t, v_id) into v_filas;
+    perform pg_temp.comprobar(format('un lector no ve los borradores de %s', t), v_filas = 0);
+
+    reset role;
+    perform set_config('request.jwt.claim.sub', '', true);
+
+    -- Y la fila sigue ahí, retirada y con su orden: no se cambió nada de nada.
+    execute format(
+      'select count(*) from public.%I where id = %L and orden = 900 and not publicado', t, v_id
+    ) into v_filas;
+    perform pg_temp.comprobar(format('la fila de %s está intacta', t), v_filas = 1);
+
+    execute format('delete from public.%I where id = %L', t, v_id);
+  end loop;
+
+  perform set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
+end $$;
+
+-- ANON TAMPOCO ESCRIBE, que es el caso que de verdad está expuesto: la clave
+-- anónima viaja en el bundle de la landing, así que cualquiera puede intentarlo
+-- desde la consola del navegador.
+do $$
+declare
+  t      text;
+  v_ok   boolean;
+  tablas text[] := array[
+    'hitos_programa', 'rutas_llegada', 'consejos_vestimenta', 'preguntas_frecuentes'
+  ];
+begin
+  foreach t in array tablas loop
+    set local role anon;
+    begin
+      execute format(
+        'insert into public.%I (%s) values (%s)',
+        t,
+        case t
+          when 'hitos_programa'       then 'hora, titulo'
+          when 'rutas_llegada'        then 'modo'
+          when 'consejos_vestimenta'  then 'titulo, texto'
+          else 'pregunta, respuesta'
+        end,
+        case t
+          when 'hitos_programa'       then '''00:00'', ''Pintada de anon'''
+          when 'rutas_llegada'        then '''Pintada de anon'''
+          when 'consejos_vestimenta'  then '''Pintada de anon'', ''Texto'''
+          else '''Pintada de anon'', ''Respuesta'''
+        end
+      );
+      v_ok := false;
+    exception when others then
+      v_ok := true;
+    end;
+    reset role;
+    perform pg_temp.comprobar(format('anon no puede escribir en %s', t), v_ok);
+  end loop;
+end $$;
+
+\echo ''
+\echo '========================================'
+\echo '  BODA-129 · el IBAN es cosa de los novios'
+\echo '========================================'
+
+-- El número de cuenta al que la gente manda dinero. Un editor gestiona toda la
+-- boda —invitados, proveedores, presupuesto— y aun así no toca esto: cambiarlo
+-- es redirigir los regalos de todo el mundo a otra cuenta.
+--
+-- La política es `configuracion_privada_propietario_actualizar`, y su `using`
+-- hace que a un editor el `update` le devuelva CERO FILAS SIN ERROR. Por eso la
+-- acción del panel cuenta las filas tocadas y dice «sólo un propietario»: aquí
+-- se comprueba que esa cuenta de filas es cero de verdad.
+
+do $$
+declare
+  v_editor      uuid := '0d1e2f42-0000-4000-8000-00000000d129';
+  v_propietario uuid := '0d1e2f43-0000-4000-8000-00000000d129';
+  v_lector      uuid := '0d1e2f41-0000-4000-8000-00000000d129';
+  v_original    text;
+  v_filas       bigint;
+begin
+  perform set_config('request.jwt.claim.sub', '', true);
+
+  -- Se guarda para devolverlo al final: esta suite se lanza varias veces contra
+  -- la misma base y el IBAN es un dato de la boda, no un resto de un test.
+  select iban_regalos into v_original from public.configuracion_privada;
+
+  delete from public.perfiles where usuario_id in (v_editor, v_propietario);
+  delete from auth.users where id in (v_editor, v_propietario);
+  delete from public.invitaciones_panel
+   where correo_electronico in ('editor@boda129.test', 'novia@boda129.test');
+
+  insert into public.invitaciones_panel (correo_electronico, rol)
+  values ('editor@boda129.test', 'editor'), ('novia@boda129.test', 'propietario');
+  insert into auth.users (id, email)
+  values (v_editor, 'editor@boda129.test'), (v_propietario, 'novia@boda129.test');
+
+  -- --- Un editor: lo lee, pero no lo cambia -------------------------------
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', v_editor::text, true);
+
+  select count(*) into v_filas from public.configuracion_privada;
+  perform pg_temp.comprobar('un editor sí puede leer la configuración privada', v_filas = 1);
+
+  update public.configuracion_privada set iban_regalos = 'ES9900000000000000000001';
+  get diagnostics v_filas = row_count;
+  perform pg_temp.comprobar('un editor no puede cambiar el IBAN', v_filas = 0);
+
+  reset role;
+
+  -- --- Un lector: ni siquiera lo ve ---------------------------------------
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', v_lector::text, true);
+
+  select count(*) into v_filas from public.configuracion_privada;
+  perform pg_temp.comprobar('un lector no ve la configuración privada', v_filas = 0);
+
+  reset role;
+
+  -- --- Y un propietario: sí -----------------------------------------------
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', v_propietario::text, true);
+
+  update public.configuracion_privada
+     set iban_regalos = 'ES9121000418450200051332', titular_cuenta = 'Paula y David';
+  get diagnostics v_filas = row_count;
+  perform pg_temp.comprobar('un propietario sí puede escribir el IBAN', v_filas = 1);
+
+  reset role;
+
+  perform pg_temp.comprobar(
+    'y lo escrito es lo que queda',
+    (select iban_regalos from public.configuracion_privada) = 'ES9121000418450200051332');
+
+  -- El formato lo vigila la base, no sólo el formulario: quien mande el `update`
+  -- desde fuera del panel se encuentra con el mismo `CHECK`.
+  begin
+    update public.configuracion_privada set iban_regalos = 'no es un iban';
+    v_filas := 0;
+  exception when check_violation then
+    v_filas := 1;
+  end;
+  perform pg_temp.comprobar('un IBAN con mala pinta no entra ni por SQL', v_filas = 1);
+
+  update public.configuracion_privada set iban_regalos = v_original;
+
+  perform set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
+end $$;
+
+\echo ''

@@ -197,6 +197,34 @@ export const RUTA_MEDIOS = "/panel/medios";
 export const RUTA_PROVEEDORES = "/panel/proveedores";
 
 /**
+ * LOS LARGOS DE LOS CAMPOS DE CONTENIDO
+ *
+ * Las seis tablas de contenido no traen límite de longitud: sus `CHECK` sólo
+ * exigen que el campo no esté vacío, porque la base no tiene por qué saber
+ * cuánto cabe en una tarjeta. Quien lo sabe es el diseño, así que el tope vive
+ * aquí y el descriptor de cada lista elige cuál le toca a cada campo.
+ *
+ * SON TRES Y NO UNO POR CAMPO, a propósito. Un número por campo serían
+ * dieciocho cifras inventadas y sin criterio; tres tamaños —un dato suelto, una
+ * línea, un párrafo— se corresponden con las tres formas que de verdad tiene un
+ * campo en estas pantallas, y se pueden defender.
+ */
+export const LARGO_MAXIMO_DATO = 40;
+export const LARGO_MAXIMO_LINEA = 120;
+export const LARGO_MAXIMO_PARRAFO = 600;
+
+/**
+ * EL TECHO DE `orden`, que es un `smallint`.
+ *
+ * Una ficha nueva nace con el orden siguiente al último. Sumando sin techo, a
+ * las 32 768 la base rechaza el alta con un desbordamiento — un error de
+ * Postgres donde debería haber una frase. Nunca va a pasar con los hoteles de
+ * una boda, y el día que un `orden` se descuadre por otro motivo conviene que
+ * el límite tenga nombre en vez de ser una sorpresa.
+ */
+export const TOPE_ORDEN_CONTENIDO = 32767;
+
+/**
  * EL CONTENIDO DE LA LANDING, desde el panel.
  *
  * Va al lado de Fotos y vídeos porque son las dos mitades de lo mismo: aquí se
