@@ -281,3 +281,76 @@ export async function obtenerVisibilidadDeSeccion(seccion: Seccion): Promise<boo
 
   return Boolean((data as { visible: boolean }).visible);
 }
+
+/* ==========================================================================
+ * BODA-130 · LAS FOTOS ENTRE LAS QUE SE ELIGE
+ * ========================================================================== */
+
+/** Una foto ya subida, con lo justo para reconocerla y pintarla. */
+export interface FotoElegible {
+  id: string;
+  ruta: string;
+  textoAlternativo: string;
+  ancho: number | null;
+  alto: number | null;
+}
+
+/**
+ * Las fotos publicadas de una sección, para el selector de las listas con foto.
+ *
+ * SÓLO LO PUBLICADO, Y ESTO NO SE PUEDE AFLOJAR. Las dos consultas de la landing
+ * piden `m.publicado and m.tipo = 'imagen'` **en la condición del `join`**, no
+ * en el `where`: un hito que apunte a una foto en borrador sale sin foto, y no
+ * al revés. Si aquí se ofrecieran los borradores, el panel enseñaría una imagen
+ * elegida que la web no pinta — que es exactamente la clase de mentira que #163
+ * viene a quitar.
+ *
+ * Y SÓLO IMÁGENES. Un vídeo en la tarjeta de un hotel no lo pinta nadie: el
+ * `join` lo descartaría igual, pero ofrecerlo sería dejar elegir algo que no va
+ * a aparecer.
+ *
+ * NO LANZA. Sin fotos que ofrecer, la pantalla dice dónde se suben; un fallo de
+ * lectura queda en el registro y se comporta igual, que es lo honesto: no se
+ * puede distinguir «no hay» de «no se pudo leer» inventándose una lista.
+ */
+export async function obtenerFotosDeSeccion(seccion: Seccion): Promise<FotoElegible[]> {
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("medios")
+    .select("id, ruta_almacenamiento, texto_alternativo, ancho, alto")
+    .eq("seccion", seccion)
+    .eq("tipo", "imagen")
+    .eq("publicado", true)
+    .order("orden", { nullsFirst: false })
+    .order("creado_en");
+
+  if (error) {
+    console.error(`No se pudieron leer las fotos de «${seccion}»:`, error.message);
+    return [];
+  }
+
+  return (data ?? []).map((cruda) => {
+    const fila = cruda as unknown as {
+      id: string;
+      ruta_almacenamiento: string;
+      texto_alternativo: Record<string, string> | null;
+      ancho: number | null;
+      alto: number | null;
+    };
+    return {
+      id: fila.id,
+      ruta: fila.ruta_almacenamiento,
+      /*
+        El texto alternativo es `jsonb` por idioma. La boda es sólo en
+        castellano, así que se saca `es` y se cae al primero que haya: una
+        alternativa en otro idioma sigue siendo mejor que ninguna. Es lo mismo
+        que hace `obtenerMediosDelPanel`.
+      */
+      textoAlternativo:
+        fila.texto_alternativo?.es ?? Object.values(fila.texto_alternativo ?? {})[0] ?? "",
+      ancho: fila.ancho,
+      alto: fila.alto,
+    };
+  });
+}

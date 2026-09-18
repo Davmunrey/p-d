@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -5,7 +6,7 @@ import { Boton } from "@/components/ui/boton";
 import { CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO, RUTA_CONTENIDO } from "@/config/constants";
+import { BUCKET_MEDIOS, RUTA_ACCESO, RUTA_CONTENIDO, RUTA_MEDIOS } from "@/config/constants";
 import {
   LISTAS_DE_CONTENIDO,
   esClaveLista,
@@ -17,8 +18,10 @@ import {
 } from "@/config/contenido-landing";
 import {
   obtenerFilasDeLista,
+  obtenerFotosDeSeccion,
   obtenerVisibilidadDeSeccion,
   type FilaDeContenido,
+  type FotoElegible,
 } from "@/lib/bbdd/contenido";
 import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
@@ -69,6 +72,7 @@ const AVISOS: Record<EstadoLista, string> = {
   "confirmar-borrado": "",
   falta: "",
   largo: "",
+  enlace: "",
   "no-encontrada": t("panel.contenido.listas.comun.errorNoEncontrada"),
   "sin-permiso": t("panel.contenido.listas.comun.errorSinPermiso"),
   error: t("panel.contenido.listas.comun.errorGuardar"),
@@ -104,10 +108,24 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
   const variante = varianteElegida(lista, soloTexto(consulta.variante));
   const seccion = seccionDeLista(clave, variante);
 
-  const [filas, visible] = await Promise.all([
+  /*
+    LAS FOTOS SE LEEN UNA VEZ PARA TODA LA PANTALLA, no una por ficha. Con
+    dieciocho fichas y su formulario cada una serían dieciocho consultas
+    idénticas; el montón entre el que se elige es el mismo para todas.
+  */
+  const conFoto = lista.campos.filter((campo) => campo.clase === "foto");
+
+  const [filas, visible, fotosPorCampo] = await Promise.all([
     obtenerFilasDeLista(clave, variante),
     obtenerVisibilidadDeSeccion(seccion),
+    Promise.all(conFoto.map((campo) => obtenerFotosDeSeccion(campo.seccion))).then((listas) =>
+      Object.fromEntries(conFoto.map((campo, indice) => [campo.columna, listas[indice]])),
+    ),
   ]);
+
+  // La base de las imágenes del almacén. Sin ella no hay miniaturas, y el
+  // selector sigue funcionando: se elige por el texto alternativo.
+  const urlBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   const puedeEditar = acceso.rol !== "lector";
   const nombreSeccion = t(`navegacion.secciones.${seccion}`);
@@ -182,6 +200,8 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
           variante={variante}
           campoConFallo={fichaSenalada ? "" : campoConFallo}
           estado={estado}
+          fotosPorCampo={fotosPorCampo}
+          urlBase={urlBase}
         />
       ) : null}
 
@@ -218,6 +238,8 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
                   estado={estado}
                   campoConFallo={campoConFallo}
                   senalada={fichaSenalada === fila.id}
+                  fotosPorCampo={fotosPorCampo}
+                  urlBase={urlBase}
                 />
               ))}
             </ol>
@@ -227,6 +249,9 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
     </div>
   );
 }
+
+/** Las fotos elegibles de cada campo de foto, indexadas por su columna. */
+type FotosPorCampo = Record<string, FotoElegible[]>;
 
 /** El identificador que une la lista con su título. Sólo vive en el documento. */
 const ID_LISTA = "fichas-de-la-lista";
@@ -323,12 +348,16 @@ function Alta({
   variante,
   campoConFallo,
   estado,
+  fotosPorCampo,
+  urlBase,
 }: {
   clave: ClaveLista;
   lista: ListaDeContenido;
   variante: string | undefined;
   campoConFallo: string;
   estado: EstadoLista | null;
+  fotosPorCampo: FotosPorCampo;
+  urlBase: string | undefined;
 }) {
   return (
     <section className="rounded-tarjeta border border-borde p-interno">
@@ -344,6 +373,8 @@ function Alta({
             campo={campo}
             valor=""
             error={mensajeDeFallo(campo, campoConFallo, estado)}
+            fotos={fotosPorCampo[campo.columna] ?? []}
+            urlBase={urlBase}
           />
         ))}
 
@@ -374,11 +405,18 @@ function mensajeDeFallo(
   if (estado === "falta") {
     return t("panel.contenido.listas.comun.errorFalta", { campo: etiqueta });
   }
+  // Una foto no tiene largo ni es obligatoria, así que no hay nada suyo que
+  // contar aquí: si algo falla con ella, falla al escribir y sale arriba.
+  if (campo.clase === "foto") return undefined;
+
   if (estado === "largo") {
     return t("panel.contenido.listas.comun.errorLargo", {
       campo: etiqueta,
       largo: campo.largo,
     });
+  }
+  if (estado === "enlace") {
+    return t("panel.contenido.listas.comun.errorEnlace", { campo: etiqueta });
   }
   return undefined;
 }
@@ -387,11 +425,19 @@ function Campo({
   campo,
   valor,
   error,
+  fotos,
+  urlBase,
 }: {
   campo: CampoDeLista;
   valor: string;
   error: string | undefined;
+  fotos: FotoElegible[];
+  urlBase: string | undefined;
 }) {
+  if (campo.clase === "foto") {
+    return <ElegirFoto campo={campo} valor={valor} fotos={fotos} urlBase={urlBase} />;
+  }
+
   const comunes = {
     name: campo.columna,
     defaultValue: valor,
@@ -402,10 +448,148 @@ function Campo({
     maxLength: campo.largo,
   };
 
-  return campo.clase === "parrafo" ? (
-    <CampoTextoLargo {...comunes} rows={3} />
-  ) : (
-    <CampoTexto {...comunes} type="text" />
+  if (campo.clase === "parrafo") return <CampoTextoLargo {...comunes} rows={3} />;
+
+  /*
+    `type="url"` y no `text`: el teclado del móvil cambia —sale la barra, el
+    punto y el «.com»— y el navegador valida antes de mandar. Lo que manda sigue
+    siendo el servidor, que repite la comprobación con la misma expresión que el
+    `CHECK` de la tabla.
+  */
+  return <CampoTexto {...comunes} type={campo.clase === "enlace" ? "url" : "text"} />;
+}
+
+/**
+ * ELEGIR UNA FOTO DE LAS QUE YA ESTÁN SUBIDAS.
+ *
+ * SON RADIOS Y NO UN `select`, porque lo que se elige es una imagen: en una
+ * lista desplegable sólo se lee el texto alternativo, y entonces hay que
+ * acordarse de cuál era «pareja en el puente». Con las miniaturas a la vista se
+ * elige mirando, que es como se elige una foto.
+ *
+ * Y SIN UNA LÍNEA DE JAVASCRIPT: un grupo de radios nativo, con su `fieldset` y
+ * su `legend`, que funciona con el teclado, con lector de pantalla y con el
+ * bundle a medio cargar, igual que el resto de la pantalla.
+ *
+ * AQUÍ NO SE SUBE NADA. Subir vive en Fotos y vídeos, con su texto alternativo
+ * obligatorio y su borrado del fichero; duplicarlo sería tener dos sitios donde
+ * arreglar el mismo tratamiento de imágenes y dos criterios sobre accesibilidad.
+ */
+function ElegirFoto({
+  campo,
+  valor,
+  fotos,
+  urlBase,
+}: {
+  campo: Extract<CampoDeLista, { clase: "foto" }>;
+  valor: string;
+  fotos: FotoElegible[];
+  urlBase: string | undefined;
+}) {
+  /*
+    LA FOTO QUE YA TIENE LA FICHA, AUNQUE YA NO SE OFREZCA. Pasa de verdad: se
+    retira esa imagen desde Fotos y vídeos y deja de estar entre las elegibles.
+    Sin esta opción, la ficha llegaría aquí con su foto y guardar la borraría sin
+    avisar — un dato perdido por abrir una pantalla.
+  */
+  const yaNoSeOfrece = valor !== "" && !fotos.some((foto) => foto.id === valor);
+
+  return (
+    <fieldset className="grid gap-pila">
+      <legend className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
+        {t(campo.etiqueta)}
+      </legend>
+
+      {campo.ayuda ? (
+        <span className="text-pequeno text-tinta-suave">{t(campo.ayuda)}</span>
+      ) : null}
+
+      {fotos.length === 0 && !yaNoSeOfrece ? (
+        <p className="text-pequeno text-tinta-suave">
+          {t("panel.contenido.listas.comun.sinFotosQueElegir")}{" "}
+          <Link href={RUTA_MEDIOS} prefetch={false} className="underline underline-offset-4">
+            {t("panel.contenido.listas.comun.irAMedios")}
+          </Link>
+        </p>
+      ) : (
+        <div className="flex flex-wrap gap-interno">
+          <OpcionDeFoto
+            campo={campo}
+            id=""
+            rotulo={t("panel.contenido.listas.comun.sinFoto")}
+            elegida={valor === ""}
+          />
+
+          {yaNoSeOfrece ? (
+            <OpcionDeFoto
+              campo={campo}
+              id={valor}
+              rotulo={t("panel.contenido.listas.comun.fotoActual")}
+              elegida
+            />
+          ) : null}
+
+          {fotos.map((foto) => (
+            <OpcionDeFoto
+              key={foto.id}
+              campo={campo}
+              id={foto.id}
+              rotulo={foto.textoAlternativo}
+              elegida={valor === foto.id}
+              fuente={
+                urlBase
+                  ? `${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${foto.ruta}`
+                  : undefined
+              }
+            />
+          ))}
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+function OpcionDeFoto({
+  campo,
+  id,
+  rotulo,
+  elegida,
+  fuente,
+}: {
+  campo: Extract<CampoDeLista, { clase: "foto" }>;
+  id: string;
+  rotulo: string;
+  elegida: boolean;
+  fuente?: string;
+}) {
+  return (
+    <label className="flex min-h-control-compacto cursor-pointer items-center gap-interno-compacto rounded-campo border border-borde p-interno-compacto transicion-color hover:bg-superficie-hundida has-checked:border-borde-marca has-checked:bg-marca-tenue">
+      <input
+        type="radio"
+        name={campo.columna}
+        value={id}
+        defaultChecked={elegida}
+        className="size-casilla accent-marca"
+      />
+
+      {fuente ? (
+        <span className="relative size-miniatura overflow-hidden rounded-campo bg-superficie-hundida">
+          <Image
+            src={fuente}
+            alt=""
+            fill
+            sizes="120px"
+            className="object-cover"
+            // Sin optimizar: son miniaturas de gestión, no páginas públicas.
+            unoptimized
+          />
+        </span>
+      ) : null}
+
+      {/* El texto alternativo ES el rótulo: es lo que distingue una foto de
+          otra para quien no la ve, y por eso la imagen va con `alt` vacío. */}
+      <span className="text-pequeno text-tinta">{rotulo}</span>
+    </label>
   );
 }
 
@@ -420,6 +604,8 @@ function Ficha({
   estado,
   campoConFallo,
   senalada,
+  fotosPorCampo,
+  urlBase,
 }: {
   clave: ClaveLista;
   lista: ListaDeContenido;
@@ -431,6 +617,8 @@ function Ficha({
   estado: EstadoLista | null;
   campoConFallo: string;
   senalada: boolean;
+  fotosPorCampo: FotosPorCampo;
+  urlBase: string | undefined;
 }) {
   /*
     El primer campo hace de título de la ficha. No es una convención caprichosa:
@@ -505,6 +693,8 @@ function Ficha({
                   campo={campo}
                   valor={fila.valores[campo.columna] ?? ""}
                   error={senalada ? mensajeDeFallo(campo, campoConFallo, estado) : undefined}
+                  fotos={fotosPorCampo[campo.columna] ?? []}
+                  urlBase={urlBase}
                 />
               ))}
               <Boton type="submit" className="justify-self-start">

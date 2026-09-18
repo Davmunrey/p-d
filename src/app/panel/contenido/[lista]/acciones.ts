@@ -90,8 +90,18 @@ async function cortarSiEsLector(clave: ClaveLista, variante?: string): Promise<v
 /** Traduce el fallo de la base a uno de nuestros estados. */
 function motivo(error: { code?: string; message?: string }): EstadoLista {
   if (error.code === "42501") return "sin-permiso";
-  // Un CHECK de «no vacío» que se escapa de la validación de arriba.
-  if (error.code === "23514") return "falta";
+  // Un CHECK que se escapa de la validación de arriba. El de la dirección tiene
+  // su propia frase: decir «falta rellenar algo» de una URL mal escrita manda a
+  // buscar un campo vacío que está lleno.
+  if (error.code === "23514") {
+    return error.message?.includes("url_valida") ? "enlace" : "falta";
+  }
+  /*
+    Y la clave ajena de `medio_id`: la foto elegida ya no existe —se borró desde
+    Fotos y vídeos mientras esta pantalla estaba abierta—. No es un fallo de
+    quien guarda, así que se dice lo que pasó.
+  */
+  if (error.code === "23503") return "no-encontrada";
   return "error";
 }
 
@@ -119,6 +129,24 @@ function camposValidados(
   for (const campo of lista.campos) {
     const escrito = String(datos.get(campo.columna) ?? "").trim();
 
+    /*
+      UNA FOTO NO SE VALIDA COMO UN TEXTO, y por eso la unión está discriminada:
+      no tiene largo que comprobar ni es obligatoria nunca. Lo que llega es el
+      identificador de un medio o nada, y «nada» es una respuesta legítima —los
+      dos `left join` de la landing existen justamente para eso—.
+
+      LO QUE SÍ SE MIRA ES LA FORMA. El valor viaja en un campo del formulario,
+      así que viene de fuera; una cadena cualquiera acabaría en la base como
+      `uuid` inválido y contestaría con un error de Postgres.
+    */
+    if (campo.clase === "foto") {
+      if (escrito && !esIdentificador(escrito)) {
+        volver(clave, "error", { variante, campo: campo.columna });
+      }
+      valores[campo.columna] = escrito || null;
+      continue;
+    }
+
     if (campo.obligatorio && !escrito) {
       volver(clave, "falta", { variante, campo: campo.columna });
     }
@@ -126,10 +154,24 @@ function camposValidados(
       volver(clave, "largo", { variante, campo: campo.columna });
     }
 
+    /*
+      La misma expresión que el `CHECK` de la tabla, y a propósito: lo que se
+      quiere evitar no es guardar una dirección rara, es que la base conteste
+      con «alojamientos_url_valida» donde hacía falta una frase.
+    */
+    if (campo.clase === "enlace" && escrito && !/^https?:\/\//i.test(escrito)) {
+      volver(clave, "enlace", { variante, campo: campo.columna });
+    }
+
     valores[campo.columna] = escrito || null;
   }
 
   return valores;
+}
+
+/** La forma de un `uuid`, que es lo que la base espera en `medio_id`. */
+function esIdentificador(valor: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor);
 }
 
 /**

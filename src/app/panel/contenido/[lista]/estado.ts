@@ -24,6 +24,7 @@ export type EstadoLista =
   | "confirmar-borrado"
   | "falta"
   | "largo"
+  | "enlace"
   | "no-encontrada"
   | "sin-permiso"
   | "error";
@@ -32,6 +33,7 @@ export type EstadoLista =
 export const ESTADOS_DE_ERROR: readonly EstadoLista[] = [
   "falta",
   "largo",
+  "enlace",
   "no-encontrada",
   "sin-permiso",
   "error",
