@@ -283,9 +283,16 @@ test.describe("Las listas de contenido con foto", () => {
 
   test("un enlace de reserva mal escrito se rechaza y no guarda nada", async ({ page }) => {
     /*
-      La tabla tiene su `CHECK` (`url_reserva ~* '^https?://'`). Sin la
-      comprobación de la acción, esto llegaría a la base y contestaría con el
-      nombre de la restricción, que no es un mensaje para nadie.
+      `ftp://` Y NO «www.ejemplo.test», y la diferencia es todo el test. El
+      `type="url"` del navegador ya para lo que no es una dirección: escribiendo
+      «www…» el formulario no llega a enviarse, así que la comprobación del
+      SERVIDOR no se ejecuta y el test pasaría sin probar nada. Comprobado en un
+      Chromium de verdad: `www.ejemplo.test` lo bloquea y `ftp://…` lo acepta.
+
+      Una dirección `ftp` es además un caso real —se pega lo que hay en el
+      portapapeles— y es justo lo que la tabla rechaza con su `CHECK`
+      (`url_reserva ~* '^https?://'`). Sin la comprobación de la acción esto
+      llegaría a la base, que contestaría con el nombre de la restricción.
     */
     const antes = await leerHoteles();
 
@@ -294,7 +301,7 @@ test.describe("Las listas de contenido con foto", () => {
 
     const alta = formularioDeAlta(page);
     await alta.getByLabel(HOTELES.nombre, { exact: true }).fill(`${MARCA} Hotel sin enlace`);
-    await alta.getByLabel(HOTELES.reserva).fill("www.ejemplo.test");
+    await alta.getByLabel(HOTELES.reserva).fill("ftp://ejemplo.test/reservar");
     await alta.getByRole("button", { name: comun.anadir, exact: true }).click();
 
     await esperarEstado(page, "enlace", RUTA_HOTELES);
