@@ -195,6 +195,17 @@ export const RUTA_INVITADOS = "/panel/invitados";
 export const RUTA_MENSAJES = "/panel/mensajes";
 export const RUTA_MEDIOS = "/panel/medios";
 export const RUTA_PROVEEDORES = "/panel/proveedores";
+
+/**
+ * EL CONTENIDO DE LA LANDING, desde el panel.
+ *
+ * Va al lado de Fotos y vídeos porque son las dos mitades de lo mismo: aquí se
+ * escribe lo que dice la web, allí lo que se ve. Hasta BODA-128 esta mitad sólo
+ * existía en el editor SQL de Supabase, y por eso en producción había secciones
+ * encendidas y vacías — que la landing oculta, así que parecía que faltaba web
+ * cuando lo que faltaba era por dónde llenarla.
+ */
+export const RUTA_CONTENIDO = "/panel/contenido";
 export const RUTA_PRESUPUESTO = "/panel/presupuesto";
 
 /**
