@@ -232,6 +232,14 @@ borrar**.
 `presupuesto_objetivo`, `aforo_maximo`, `telefono_contacto`, `iban_regalos`,
 `notas_privadas`. Lectura para editor y propietario; escritura sólo propietario.
 
+**La única salida es `datos_para_regalos()`**, que publica el IBAN y su titular
+—y nada más— cuando la sección `regalos` está visible. Desde BODA-129 los dos se
+escriben en Ajustes, en su propio formulario: un editor cambia la hora de la
+ceremonia y **no** la cuenta corriente, y con un solo botón de guardar o se le
+niega todo lo demás o se le cuela el número de cuenta. Ese «no» es el silencio
+de RLS —cero filas y ningún error—, así que la acción cuenta las filas tocadas
+para poder decirlo.
+
 #### `secciones_landing`
 
 Qué secciones se enseñan y en qué orden (`seccion` PK, `visible`, `orden`).

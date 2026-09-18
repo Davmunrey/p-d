@@ -187,6 +187,30 @@ function fichaDe(pagina: Page, titulo: string, ficha: string): Locator {
 }
 
 /**
+ * EL CONMUTADOR DE LOS DOS DÍAS, Y NO EL MENÚ DEL PANEL.
+ *
+ * «Día de la boda» es además el nombre de un módulo del panel —el guion de la
+ * jornada—, así que buscar ese enlace a secas encuentra dos y Playwright se
+ * planta. El conmutador es un `nav` con el título de la lista por nombre
+ * accesible; el menú del panel tiene el suyo.
+ */
+function conmutadorDe(pagina: Page, titulo: string): Locator {
+  return pagina.getByRole("navigation", { name: titulo });
+}
+
+/**
+ * EL AVISO DE ESTA PANTALLA, Y NO EL DE NEXT.
+ *
+ * El anunciador de rutas de Next también es `role="alert"`, así que buscarlo a
+ * secas encuentra dos y Playwright se planta. Los avisos del panel viven dentro
+ * de su `<main>`; el de Next, fuera. Es la misma trampa que ya documenta
+ * `panel-ajustes.spec.ts`.
+ */
+function avisoDe(pagina: Page): Locator {
+  return pagina.locator("main").getByRole("alert");
+}
+
+/**
  * El formulario de alta, que es el único que no lleva ficha: los de edición
  * mandan el identificador de la suya en un campo oculto.
  */
@@ -282,7 +306,7 @@ test.describe("Las listas de contenido de la web", () => {
 
     await esperarEstado(page, "confirmar-borrado", RUTA_DRESSCODE);
     await expect(
-      page.getByRole("alert"),
+      avisoDe(page),
       "borrar no puede pasar de un solo clic: una ficha borrada no vuelve",
     ).toHaveText(comun.borrarPregunta.replace("{ficha}", titulo));
 
@@ -334,12 +358,13 @@ test.describe("Las listas de contenido de la web", () => {
     await page.goto(RUTA_PROGRAMA);
 
     // De partida se está en el día de la boda, que es la primera pestaña.
+    const conmutador = conmutadorDe(page, PROGRAMA.titulo);
     await expect(
-      page.getByRole("link", { name: PROGRAMA.boda }),
+      conmutador.getByRole("link", { name: PROGRAMA.boda }),
       "la pestaña del día de la boda es la que se ve al llegar",
     ).toHaveAttribute("aria-current", "page");
 
-    await page.getByRole("link", { name: PROGRAMA.preboda }).click();
+    await conmutador.getByRole("link", { name: PROGRAMA.preboda }).click();
     await expect(page).toHaveURL(/variante=preboda/);
 
     const alta = formularioDeAlta(page);
