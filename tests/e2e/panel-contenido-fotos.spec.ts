@@ -41,8 +41,14 @@ const HOTELES = copy.panel.contenido.listas.alojamientos;
 const RUTA_HISTORIA = `${RUTA_CONTENIDO}/historia`;
 const RUTA_HOTELES = `${RUTA_CONTENIDO}/alojamientos`;
 
-/** Una ruta del almacén que el seed ya trae, para que la miniatura resuelva. */
-const RUTA_IMAGEN = "desarrollo/portada.jpg";
+/**
+ * La ruta de una foto en el almacén es ÚNICA (`medios_ruta_unica_idx`), así que
+ * cada una de las de prueba lleva la suya. Reusar la de la portada del seed
+ * parecía cómodo —la miniatura resolvería— y lo que hacía era chocar con esa
+ * unicidad. Que la imagen no exista no importa aquí: lo que se prueba es a qué
+ * foto apunta la ficha, no que el almacén la sirva.
+ */
+const rutaDePrueba = (sufijo: string) => `desarrollo/${MARCA.toLowerCase()}-${sufijo}.jpg`;
 
 const PUBLICADA = `${MARCA} Foto publicada`;
 const BORRADOR = `${MARCA} Foto en borrador`;
@@ -58,15 +64,33 @@ async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T
   }
 }
 
-/** Deja una foto de prueba en una sección y devuelve su identificador. */
-function crearFoto(seccion: string, alternativo: string, publicada: boolean): Promise<string> {
+/**
+ * Deja una foto de prueba en una sección y devuelve su identificador.
+ *
+ * EL TEXTO ALTERNATIVO SE COMPONE EN SQL, con `jsonb_build_object`, y no
+ * pasando un JSON ya hecho. Es lo que costó una vuelta de CI: `${JSON.stringify(
+ * …)}::jsonb` en postgres.js llega DOBLE CODIFICADO —un texto JSON, no un
+ * objeto—, así que `validar_texto_alternativo_medio()` no encuentra la clave del
+ * idioma y salta con MED01. Compuesto en la propia consulta no hay forma de que
+ * el tipo se pierda por el camino.
+ *
+ * Y EL ORDEN NO SE PASA: lo pone `medios_asignar_orden` con el siguiente libre
+ * de esa sección. Escribirlo a mano chocaba con `medios_orden_unico_por_seccion`
+ * en cuanto había dos fotos de prueba, que es lo que pasa aquí.
+ */
+function crearFoto(
+  seccion: string,
+  sufijo: string,
+  alternativo: string,
+  publicada: boolean,
+): Promise<string> {
   return conBase(async (sql) => {
     const [fila] = await sql<{ id: string }[]>`
       insert into public.medios
-        (ruta_almacenamiento, texto_alternativo, seccion, tipo, publicado, orden)
+        (ruta_almacenamiento, texto_alternativo, seccion, tipo, publicado)
       values (
-        ${RUTA_IMAGEN}, ${JSON.stringify({ es: alternativo })}::jsonb,
-        ${seccion}::public.seccion_landing, 'imagen'::public.tipo_medio, ${publicada}, 900
+        ${rutaDePrueba(sufijo)}, jsonb_build_object('es', ${alternativo}::text),
+        ${seccion}::public.seccion_landing, 'imagen'::public.tipo_medio, ${publicada}
       )
       returning id
     `;
@@ -104,7 +128,7 @@ function limpiar(): Promise<void> {
     await sql`delete from public.hitos_historia where titulo like ${`${MARCA}%`}`;
     // Las fotos las últimas: `medio_id` es `on delete set null`, pero borrarlas
     // antes dejaría las fichas sin foto y el test siguiente miraría otra cosa.
-    await sql`delete from public.medios where texto_alternativo->>'es' like ${`${MARCA}%`}`;
+    await sql`delete from public.medios where ruta_almacenamiento like ${`desarrollo/${MARCA.toLowerCase()}-%`}`;
   });
 }
 
@@ -170,8 +194,8 @@ test.describe("Las listas de contenido con foto", () => {
   test.beforeAll(async () => {
     for (const seccion of SECCIONES_TOCADAS) await encenderSeccion(seccion, true);
     await limpiar();
-    publicada = await crearFoto("alojamiento", PUBLICADA, true);
-    await crearFoto("alojamiento", BORRADOR, false);
+    publicada = await crearFoto("alojamiento", "publicada", PUBLICADA, true);
+    await crearFoto("alojamiento", "borrador", BORRADOR, false);
   });
 
   test.afterAll(async () => {
