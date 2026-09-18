@@ -159,8 +159,17 @@ export async function crearFicha(datos: FormData): Promise<void> {
       `default` de la tabla ya es `publicado = true`: quien añade un hotel
       quiere que se vea, y para lo otro está el botón de retirar.
     */
+    /*
+      EL SIGUIENTE ES EL MAYOR MÁS UNO, NO CUÁNTAS HAY. Aquí ponía
+      `existentes.length` y nacía en medio: el seed espacia los órdenes de diez
+      en diez —0, 10, 20, para poder colar algo entre medias sin renumerar— así
+      que con tres fichas la cuarta nacía con orden 3 y se colocaba **la
+      segunda**. Lo destapó el E2E de mover, que encontró un botón de «bajar»
+      donde no debía haberlo.
+    */
     const existentes = await obtenerFilasDeLista(clave, variante);
-    const siguiente = Math.min(existentes.length, TOPE_ORDEN_CONTENIDO);
+    const ultimo = existentes.reduce((mayor, fila) => Math.max(mayor, fila.orden), -1);
+    const siguiente = Math.min(ultimo + 1, TOPE_ORDEN_CONTENIDO);
 
     const fila: Record<string, unknown> = { ...valores, orden: siguiente };
     if (lista.destino.clase === "partida" && variante) {

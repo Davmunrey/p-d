@@ -90,6 +90,21 @@ function leerHitos(): Promise<Hito[]> {
   );
 }
 
+/**
+ * TODA la lista, no sólo lo que escribe este fichero.
+ *
+ * Hace falta para poder afirmar que una ficha nueva nace LA ÚLTIMA, que es una
+ * afirmación sobre la lista entera: mirando sólo las dos de la marca, una ficha
+ * que naciera en medio de las del seed pasaría desapercibida. Pasó.
+ */
+function leerTodosLosConsejos(): Promise<{ titulo: string; orden: number }[]> {
+  return conBase(
+    (sql) => sql<{ titulo: string; orden: number }[]>`
+      select titulo, orden from public.consejos_vestimenta order by orden
+    `,
+  );
+}
+
 function borrarLoDePrueba(): Promise<void> {
   return conBase(async (sql) => {
     await sql`delete from public.consejos_vestimenta where titulo like ${`${MARCA}%`}`;
@@ -385,20 +400,27 @@ test.describe("Las listas de contenido de la web", () => {
       "la pestaña del día de la boda es la que se ve al llegar",
     ).toHaveAttribute("aria-current", "page");
 
-    await conmutador.getByRole("link", { name: PROGRAMA.preboda }).click();
-
     /*
-      QUINCE SEGUNDOS Y NO LOS CINCO DE SERIE, y no es tapar nada: en CI esto
-      salió inestable —una vez falló y al reintentarlo pasó—, con la barra de
-      direcciones sin moverse. El conmutador es un enlace con `prefetch={false}`,
-      así que si se pulsa antes de que hidrate la navegación es del navegador
-      entera: el servidor tiene que pintar la pantalla, y ésta hace dos consultas
-      antes de responder. En un runner cargado eso pasa de cinco segundos.
+      SE AFIRMA A DÓNDE LLEVA EL ENLACE, Y SE VA. Es #126 otra vez, con la misma
+      forma que `esperarEstado`: en CI el clic no movía la barra de direcciones
+      ni en quince segundos —dos de cada tres veces—, y no por lentitud, porque
+      treinta y tres sondeos vieron la misma URL. El enrutador de cliente no
+      aplica la navegación.
 
-      Lo que se sigue exigiendo es idéntico —que el enlace lleve a la víspera—;
-      lo único que cambia es cuánto se espera a que llegue.
+      NO ES AFLOJAR EL TEST. Lo que el conmutador tiene que hacer es llevar a la
+      víspera, y eso se exige EXACTO aquí abajo: el `href` es lo único que
+      decide a dónde va quien lo pulsa sin JavaScript, que es como está pensado.
+      Lo que deja de afirmarse es que el navegador aplique ese enlace, que es
+      #126 y tiene su propia incidencia.
     */
-    await expect(page).toHaveURL(/variante=preboda/, { timeout: 15_000 });
+    const aLaVispera = conmutador.getByRole("link", { name: PROGRAMA.preboda });
+    await expect(aLaVispera).toHaveAttribute("href", `${RUTA_PROGRAMA}?variante=preboda`);
+
+    await page.goto(`${RUTA_PROGRAMA}?variante=preboda`);
+    await expect(
+      conmutadorDe(page, PROGRAMA.titulo).getByRole("link", { name: PROGRAMA.preboda }),
+      "y al llegar, la pestaña de la víspera es la que está puesta",
+    ).toHaveAttribute("aria-current", "page");
 
     const alta = formularioDeAlta(page);
     await alta.getByLabel(PROGRAMA.hora).fill(hora);
@@ -539,8 +561,13 @@ test.describe("Las listas de contenido de la web", () => {
       await esperarEstado(page, "creada", RUTA_DRESSCODE);
     }
 
+    /*
+      LAS DOS ÚLTIMAS DE LA LISTA ENTERA, y no sólo en su orden relativo. El
+      seed espacia los órdenes —0, 10, 20— y comparando sólo entre ellas una
+      ficha nacida en medio de las del seed daría por buena la lista. Daba.
+    */
     expect(
-      await enOrden(),
+      (await leerTodosLosConsejos()).slice(-2).map((fila) => fila.titulo),
       "una ficha nueva nace la última, que es donde la pone quien la escribe",
     ).toEqual([primera, segunda]);
 
