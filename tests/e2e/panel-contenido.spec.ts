@@ -4,6 +4,7 @@ import postgres from "postgres";
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_CONTENIDO, RUTA_PANEL } from "../../src/config/constants";
 import { SECCIONES } from "../../src/config/secciones";
+import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles/rastro";
 
 /**
  * BODA-128 · El interruptor de las secciones de la landing
@@ -14,10 +15,10 @@ import { SECCIONES } from "../../src/config/secciones";
  * pantalla detrás; un test que mirase sólo el panel daría por bueno justo el
  * fallo que este ticket viene a cerrar.
  *
- * Por eso cada paso se comprueba en tres sitios: la pantalla, la base de datos
- * y la landing. Con RLS de por medio esto no es celo: una escritura prohibida
- * no da error, devuelve cero filas, y sin mirar la base un «ya se ve en la web»
- * puede ser mentira.
+ * Por eso cada paso se comprueba en tres sitios: la decisión del servidor, la
+ * base de datos y la landing. Con RLS de por medio esto no es celo: una
+ * escritura prohibida no da error, devuelve cero filas, y sin mirar la base un
+ * «ya se ve en la web» puede ser mentira.
  *
  * EL ORDEN SE RESTAURA PASE LO QUE PASE. Sin ese `afterAll`, un fallo aquí deja
  * la landing en un orden distinto y los specs que corren después fallan por un
@@ -35,6 +36,9 @@ const cadena = process.env.DATABASE_URL;
 
 /** La que se enciende y se apaga. No la mira ningún otro spec. */
 const SECCION = "preguntas_frecuentes";
+
+/** Lo que se afirma cuando la acción no dejó ningún destino: falla y se lee. */
+const SIN_DESTINO = "(la acción no redirigió)";
 
 test.describe.configure({ mode: "serial" });
 
@@ -62,11 +66,59 @@ function leerSecciones(): Promise<FilaSeccion[]> {
 }
 
 async function entrar(pagina: Page) {
+  // Se engancha ANTES de la primera navegación: lo que hace falta saber es a
+  // dónde dijo la acción que fuera, y eso sólo se ve escuchando desde el
+  // principio.
+  seguirLaPista(pagina);
   await pagina.goto(RUTA_ACCESO);
   await pagina.getByLabel(copy.acceso.correo, { exact: true }).fill(CORREO_CON_ACCESO!);
   await pagina.getByLabel(copy.acceso.contrasena, { exact: true }).fill(CONTRASENA!);
   await pagina.getByRole("button", { name: copy.acceso.entrar }).click();
   await expect(pagina).toHaveURL(new RegExp(RUTA_PANEL));
+}
+
+/**
+ * ESPERA A QUE LA ACCIÓN HAYA DECIDIDO, Y DEJA LA PANTALLA EN SU DESTINO.
+ *
+ * Es la misma pieza que ya usan `panel-medios` y `panel-proveedores`, y por el
+ * mismo motivo: #126. El servidor responde con su `x-action-redirect`
+ * —`/panel/contenido?estado=ocultada`— y el enrutador de cliente no siempre lo
+ * aplica, así que afirmar sobre `role="status"` directamente después del clic
+ * falla con «element(s) not found» aunque la acción haya ido perfecta. Pasó en
+ * la primera ejecución de este spec en CI.
+ *
+ * NO ES AFLOJAR EL TEST, Y LA DIFERENCIA IMPORTA:
+ *
+ *   · se sigue exigiendo el estado EXACTO —`ocultada` y no `sin-permiso`—, que
+ *     es el diagnóstico entero cuando algo falla;
+ *   · se sigue exigiendo todo lo de después: el aviso en pantalla, lo que dice
+ *     la base y lo que la landing pinta;
+ *   · lo único que deja de afirmarse es que el navegador aplique SOLO la
+ *     redirección. Eso es #126, tiene su incidencia y su rastro, y no es lo que
+ *     BODA-128 viene a probar.
+ */
+async function esperarEstado(pagina: Page, esperado: string) {
+  const destinoEsperado = `estado=${esperado}`;
+
+  try {
+    await expect
+      .poll(() => ultimoDestino(pagina) ?? SIN_DESTINO, { timeout: 15_000 })
+      .toContain(destinoEsperado);
+  } catch (fallo) {
+    throw new Error(
+      `${(fallo as Error).message}\n\nLo que hizo la pestaña:\n${laPista(pagina)}`,
+    );
+  }
+
+  const destino = ultimoDestino(pagina);
+  // Consumido: el destino de esta acción no puede valer por el de la siguiente.
+  olvidarDestinos(pagina);
+
+  // Y se va al destino SIEMPRE, aunque la barra ya lo lleve puesto: un rescate
+  // anterior deja esa misma dirección, y «ya estoy ahí» acabaría mirando la
+  // pantalla de hace dos pasos, sin lo que se acaba de escribir.
+  await pagina.goto(destino ?? `${RUTA_CONTENIDO}?${destinoEsperado}`);
+  await pagina.waitForLoadState("networkidle");
 }
 
 /** La ficha de una sección, localizada por su nombre y no por su posición. */
@@ -75,6 +127,9 @@ function fichaDe(pagina: Page, nombre: string) {
     .getByRole("listitem")
     .filter({ has: pagina.getByRole("heading", { name: nombre }) });
 }
+
+const nombreDe = (seccion: string) =>
+  copy.navegacion.secciones[seccion as keyof typeof copy.navegacion.secciones];
 
 test.describe("El contenido de la web", () => {
   test.skip(
@@ -107,9 +162,8 @@ test.describe("El contenido de la web", () => {
     await entrar(page);
     await page.goto(RUTA_CONTENIDO);
 
-    const nombre = copy.navegacion.secciones[SECCION];
-    const ficha = fichaDe(page, nombre);
-    await expect(ficha).toBeVisible();
+    const nombre = nombreDe(SECCION);
+    await expect(fichaDe(page, nombre)).toBeVisible();
 
     // De partida está encendida y con contenido, así que la web la enseña.
     await page.goto("/");
@@ -119,8 +173,11 @@ test.describe("El contenido de la web", () => {
 
     // --- apagar -------------------------------------------------------------
     await page.goto(RUTA_CONTENIDO);
-    await ficha.getByRole("button", { name: copy.panel.contenido.ocultar }).click();
+    await fichaDe(page, nombre)
+      .getByRole("button", { name: copy.panel.contenido.ocultar })
+      .click();
 
+    await esperarEstado(page, "ocultada");
     await expect(page.getByRole("status")).toHaveText(copy.panel.contenido.avisoOcultada);
 
     const apagada = (await leerSecciones()).find((fila) => fila.seccion === SECCION);
@@ -133,8 +190,11 @@ test.describe("El contenido de la web", () => {
 
     // --- y volver a encender ------------------------------------------------
     await page.goto(RUTA_CONTENIDO);
-    await ficha.getByRole("button", { name: copy.panel.contenido.mostrar }).click();
+    await fichaDe(page, nombre)
+      .getByRole("button", { name: copy.panel.contenido.mostrar })
+      .click();
 
+    await esperarEstado(page, "mostrada");
     await expect(page.getByRole("status")).toHaveText(copy.panel.contenido.avisoMostrada);
 
     const encendida = (await leerSecciones()).find((fila) => fila.seccion === SECCION);
@@ -155,14 +215,13 @@ test.describe("El contenido de la web", () => {
     const antes = await leerSecciones();
     const primera = antes[0];
     const segunda = antes[1];
-
-    const nombrePrimera =
-      copy.navegacion.secciones[primera.seccion as keyof typeof copy.navegacion.secciones];
+    const nombrePrimera = nombreDe(primera.seccion);
 
     await fichaDe(page, nombrePrimera)
       .getByRole("button", { name: copy.panel.contenido.bajarOrden })
       .click();
 
+    await esperarEstado(page, "movida");
     await expect(page.getByRole("status")).toHaveText(copy.panel.contenido.avisoMovida);
 
     const despues = await leerSecciones();
@@ -176,10 +235,11 @@ test.describe("El contenido de la web", () => {
     expect(despues.map((fila) => fila.orden)).toEqual(antes.map((fila) => fila.orden));
 
     // --- y de vuelta --------------------------------------------------------
-    await page.goto(RUTA_CONTENIDO);
     await fichaDe(page, nombrePrimera)
       .getByRole("button", { name: copy.panel.contenido.subirOrden })
       .click();
+
+    await esperarEstado(page, "movida");
 
     const restaurado = await leerSecciones();
     expect(restaurado.map((fila) => fila.seccion)).toEqual(antes.map((fila) => fila.seccion));
@@ -190,11 +250,8 @@ test.describe("El contenido de la web", () => {
     await page.goto(RUTA_CONTENIDO);
 
     const filas = await leerSecciones();
-    const nombre = (seccion: string) =>
-      copy.navegacion.secciones[seccion as keyof typeof copy.navegacion.secciones];
-
-    const primera = fichaDe(page, nombre(filas[0].seccion));
-    const ultima = fichaDe(page, nombre(filas[filas.length - 1].seccion));
+    const primera = fichaDe(page, nombreDe(filas[0].seccion));
+    const ultima = fichaDe(page, nombreDe(filas[filas.length - 1].seccion));
 
     // `toBeVisible()` antes de contar: `toHaveCount` reintenta, pero sobre un
     // ámbito que todavía no existe contaría cero y pasaría por el motivo malo.
@@ -235,7 +292,8 @@ test.describe("El contenido de la web", () => {
       en algo más que un interruptor — sin decirlo, alguien la enciende, no pasa
       nada, y no hay forma de saber por qué.
     */
-    const sinHacer = fichaDe(page, copy.navegacion.secciones.ubicaciones);
-    await expect(sinHacer).toContainText(copy.panel.contenido.sinHacer);
+    await expect(fichaDe(page, copy.navegacion.secciones.ubicaciones)).toContainText(
+      copy.panel.contenido.sinHacer,
+    );
   });
 });
