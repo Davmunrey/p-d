@@ -276,6 +276,120 @@ end $$;
 
 \echo ''
 \echo '========================================'
+\echo '  BODA-128 · reordenar secciones de la landing'
+\echo '========================================'
+
+-- Lo que este bloque defiende: que el panel pueda permutar dos secciones sin
+-- chocar con la unicidad diferida de `orden`, y que sólo pueda hacerlo quien
+-- tiene permiso para editar.
+--
+-- La función es SECURITY INVOKER a propósito: no eleva nada, decide
+-- `secciones_landing_editor_actualizar`. Y comprueba las filas tocadas, porque
+-- RLS no da error al prohibir una escritura — devuelve cero filas, y sin
+-- mirarlo un lector pulsaba «subir» y la pantalla le decía «movida».
+
+do $$
+declare
+  v_primera   public.seccion_landing;
+  v_segunda   public.seccion_landing;
+  v_orden_1   smallint;
+  v_orden_2   smallint;
+  v_ok        boolean;
+begin
+  select s.seccion, s.orden into v_primera, v_orden_1
+    from public.secciones_landing as s order by s.orden asc limit 1;
+  select s.seccion, s.orden into v_segunda, v_orden_2
+    from public.secciones_landing as s order by s.orden asc offset 1 limit 1;
+
+  perform public.reordenar_seccion_landing(v_primera, false);
+
+  perform pg_temp.comprobar(
+    'bajar la primera la permuta con la segunda',
+    (select s.orden from public.secciones_landing as s where s.seccion = v_primera) = v_orden_2
+    and (select s.orden from public.secciones_landing as s where s.seccion = v_segunda) = v_orden_1);
+
+  -- Y de vuelta, que además prueba el sentido contrario.
+  perform public.reordenar_seccion_landing(v_primera, true);
+
+  perform pg_temp.comprobar(
+    'subirla otra vez la devuelve a su sitio',
+    (select s.orden from public.secciones_landing as s where s.seccion = v_primera) = v_orden_1);
+
+  -- Subir la primera no es un error: es que no hay a dónde. La pantalla ya no
+  -- pinta ese botón, pero el formulario se puede mandar a mano.
+  begin
+    perform public.reordenar_seccion_landing(v_primera, true);
+    v_ok := true;
+  exception when others then
+    v_ok := false;
+  end;
+  perform pg_temp.comprobar('subir la primera no revienta, simplemente no hace nada', v_ok);
+
+  perform pg_temp.comprobar(
+    'y no ha cambiado nada al intentarlo',
+    (select s.orden from public.secciones_landing as s where s.seccion = v_primera) = v_orden_1);
+end $$;
+
+-- UN LECTOR NO REORDENA. Se le da sesión de verdad —rol `authenticated` y su
+-- identificador en el testigo— porque es la única forma de que RLS se aplique
+-- como se aplica en producción.
+do $$
+declare
+  v_lector  uuid := '0d1e2f40-0000-4000-8000-00000000d128';
+  v_primera public.seccion_landing;
+  v_orden   smallint;
+  v_ok      boolean;
+begin
+  delete from public.perfiles where usuario_id = v_lector;
+  delete from auth.users where id = v_lector;
+  insert into auth.users (id, email) values (v_lector, 'lector@boda128.test');
+
+  select s.seccion, s.orden into v_primera, v_orden
+    from public.secciones_landing as s order by s.orden asc limit 1;
+
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', v_lector::text, true);
+
+  begin
+    perform public.reordenar_seccion_landing(v_primera, false);
+    v_ok := false;
+  exception when others then
+    v_ok := true;
+  end;
+
+  reset role;
+
+  perform pg_temp.comprobar('un lector no puede reordenar las secciones', v_ok);
+  perform pg_temp.comprobar(
+    'y el orden sigue exactamente igual',
+    (select s.orden from public.secciones_landing as s where s.seccion = v_primera) = v_orden);
+end $$;
+
+-- Y `anon` no la puede ni llamar: esto es del panel.
+do $$
+declare
+  v_primera public.seccion_landing;
+  v_ok      boolean;
+begin
+  select s.seccion into v_primera
+    from public.secciones_landing as s order by s.orden asc limit 1;
+
+  set local role anon;
+  begin
+    perform public.reordenar_seccion_landing(v_primera, false);
+    v_ok := false;
+  exception when insufficient_privilege then
+    v_ok := true;
+  when others then
+    v_ok := true;
+  end;
+  reset role;
+
+  perform pg_temp.comprobar('anon no puede ejecutar reordenar_seccion_landing', v_ok);
+end $$;
+
+\echo ''
+\echo '========================================'
 \echo '  Registro público: un intruso no ve nada'
 \echo '========================================'
 

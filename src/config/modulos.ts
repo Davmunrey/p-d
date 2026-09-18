@@ -1,5 +1,6 @@
 import {
   RUTA_AJUSTES,
+  RUTA_CONTENIDO,
   RUTA_CUENTA,
   RUTA_DIA,
   RUTA_DOCUMENTOS,
@@ -48,6 +49,9 @@ export const MODULOS = [
   { clave: "resumen", ruta: RUTA_PANEL, entregado: true },
   { clave: "invitados", ruta: RUTA_INVITADOS, entregado: true },
   { clave: "mensajes", ruta: RUTA_MENSAJES, entregado: true },
+  // Las dos mitades de la web pública, juntas y en este orden: primero lo que
+  // dice, después lo que se ve.
+  { clave: "contenido", ruta: RUTA_CONTENIDO, entregado: true },
   { clave: "medios", ruta: RUTA_MEDIOS, entregado: true },
   { clave: "mesas", ruta: RUTA_MESAS, entregado: true },
   { clave: "menus", ruta: `${RUTA_PANEL}/menus`, entregado: false },
