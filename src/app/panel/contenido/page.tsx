@@ -288,10 +288,6 @@ function DondeSeLlena({ seccion }: { seccion: Seccion }) {
   const donde: Donde = origen.donde;
   if (donde.pantalla === "nada") return null;
 
-  if (donde.pantalla === "sql") {
-    return <Etiqueta className="block">{t("panel.contenido.dondeSql")}</Etiqueta>;
-  }
-
   if (donde.pantalla === "invitados") {
     return <Etiqueta className="block">{t("panel.contenido.dondeInvitados")}</Etiqueta>;
   }

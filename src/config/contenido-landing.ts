@@ -38,8 +38,6 @@ import type { Seccion } from "./secciones";
 export type Donde =
   /** Una pantalla del panel, con su ruta. */
   | { pantalla: "ajustes" | "medios" | "contenido"; ruta: string }
-  /** Todavía sólo por SQL. Es la deuda que este módulo viene a saldar. */
-  | { pantalla: "sql" }
   /** No la escribimos nosotros: la escriben los invitados. */
   | { pantalla: "invitados" }
   /** No hay nada que escribir: la sección se pinta sola con lo que ya hay. */
@@ -61,9 +59,6 @@ export type Origen =
 
 const EN_AJUSTES: Donde = { pantalla: "ajustes", ruta: RUTA_AJUSTES };
 const EN_MEDIOS: Donde = { pantalla: "medios", ruta: RUTA_MEDIOS };
-
-/** Lo que todavía no tiene pantalla. Quedan las dos listas con foto (3/3). */
-const SOLO_SQL: Donde = { pantalla: "sql" };
 
 /**
  * Una lista del propio módulo de Contenido (BODA-129).
@@ -104,7 +99,7 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
 
   cuenta_atras: { clase: "sola", donde: EN_AJUSTES },
 
-  historia: { clase: "lista", tabla: "hitos_historia", donde: SOLO_SQL },
+  historia: { clase: "lista", tabla: "hitos_historia", donde: enContenido("historia") },
 
   galeria: {
     clase: "lista",
@@ -154,7 +149,7 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
     donde: EN_AJUSTES,
   },
 
-  alojamiento: { clase: "lista", tabla: "alojamientos", donde: SOLO_SQL },
+  alojamiento: { clase: "lista", tabla: "alojamientos", donde: enContenido("alojamientos") },
 
   /*
     El IBAN vive en `configuracion_privada` —la tabla que `anon` no puede tocar—
@@ -212,7 +207,14 @@ export function esLista(seccion: Seccion): boolean {
  */
 
 /** Las listas que hay. La clave es también el último trozo de su ruta. */
-export const CLAVES_LISTA = ["programa", "transporte", "dresscode", "preguntas"] as const;
+export const CLAVES_LISTA = [
+  "programa",
+  "transporte",
+  "dresscode",
+  "preguntas",
+  "historia",
+  "alojamientos",
+] as const;
 
 export type ClaveLista = (typeof CLAVES_LISTA)[number];
 
@@ -247,6 +249,45 @@ export type CampoDeLista =
       ayuda?: ClaveCopy;
       obligatorio: boolean;
       largo: number;
+    }
+  /**
+   * Una dirección de internet: un `input type="url"`.
+   *
+   * Va aparte de `linea` porque la base lo vigila —`alojamientos_url_valida`
+   * exige `^https?://`— y un `CHECK` que salta contesta con el nombre de la
+   * restricción, que no es un mensaje para nadie. Con su clase, se comprueba
+   * antes y se puede decir en castellano qué pasa.
+   */
+  | {
+      clase: "enlace";
+      columna: string;
+      etiqueta: ClaveCopy;
+      ayuda?: ClaveCopy;
+      obligatorio: boolean;
+      largo: number;
+    }
+  /**
+   * Una foto de las ya subidas.
+   *
+   * NO TIENE `largo` NI `obligatorio`, y ahí está el porqué de que esto sea una
+   * unión discriminada y no una interfaz plana con un `tipo` dentro: un campo
+   * de foto con `largo: 0` sería un cero con significado, que es una trampa que
+   * alguien acaba leyendo como «no caben caracteres».
+   *
+   * Y NUNCA ES OBLIGATORIA. Los dos `left join` de la landing son deliberados:
+   * la historia se escribe meses antes de escanear las fotos, así que un hito
+   * sin foto es lo normal al principio y tiene que salir igual.
+   *
+   * `seccion` dice de qué montón se elige. Aquí no se sube nada —eso vive en
+   * Fotos y vídeos, con su texto alternativo obligatorio y su borrado del
+   * fichero—: se escoge entre lo que ya está subido y publicado.
+   */
+  | {
+      clase: "foto";
+      columna: string;
+      etiqueta: ClaveCopy;
+      ayuda?: ClaveCopy;
+      seccion: Seccion;
     };
 
 /**
@@ -450,6 +491,114 @@ export const LISTAS_DE_CONTENIDO: Record<ClaveLista, ListaDeContenido> = {
     destino: { clase: "una", seccion: "preguntas_frecuentes" },
     ordenacion: ["orden"],
     columnaNombre: "pregunta",
+  },
+
+  /*
+    LAS DOS CON FOTO. Lo único que las separa de las cuatro de arriba es que
+    llevan `medio_id`, y elegir una foto no es un `input`. No se sube nada desde
+    aquí: se escoge entre lo que ya está en Fotos y vídeos, que es donde vive el
+    tratamiento de ficheros y el texto alternativo obligatorio. Duplicar la
+    subida sería tener dos sitios donde arreglar lo mismo y dos criterios sobre
+    la accesibilidad de las imágenes.
+  */
+  historia: {
+    tabla: "hitos_historia",
+    titulo: "panel.contenido.listas.historia.titulo",
+    descripcion: "panel.contenido.listas.historia.descripcion",
+    unaFicha: "panel.contenido.listas.historia.unaFicha",
+    campos: [
+      {
+        clase: "linea",
+        columna: "titulo",
+        etiqueta: "panel.contenido.listas.historia.tituloHito",
+        ayuda: "panel.contenido.listas.historia.tituloHitoAyuda",
+        obligatorio: true,
+        largo: LARGO_MAXIMO_LINEA,
+      },
+      {
+        clase: "linea",
+        columna: "fecha_texto",
+        etiqueta: "panel.contenido.listas.historia.fecha",
+        ayuda: "panel.contenido.listas.historia.fechaAyuda",
+        obligatorio: false,
+        largo: LARGO_MAXIMO_DATO,
+      },
+      {
+        clase: "parrafo",
+        columna: "descripcion",
+        etiqueta: "panel.contenido.listas.historia.descripcion_",
+        obligatorio: false,
+        largo: LARGO_MAXIMO_PARRAFO,
+      },
+      {
+        clase: "foto",
+        columna: "medio_id",
+        etiqueta: "panel.contenido.listas.historia.foto",
+        ayuda: "panel.contenido.listas.historia.fotoAyuda",
+        seccion: "historia",
+      },
+    ],
+    destino: { clase: "una", seccion: "historia" },
+    ordenacion: ["orden"],
+    columnaNombre: "titulo",
+  },
+
+  alojamientos: {
+    tabla: "alojamientos",
+    titulo: "panel.contenido.listas.alojamientos.titulo",
+    descripcion: "panel.contenido.listas.alojamientos.descripcion",
+    unaFicha: "panel.contenido.listas.alojamientos.unaFicha",
+    campos: [
+      {
+        clase: "linea",
+        columna: "nombre",
+        etiqueta: "panel.contenido.listas.alojamientos.nombre",
+        obligatorio: true,
+        largo: LARGO_MAXIMO_LINEA,
+      },
+      {
+        clase: "linea",
+        columna: "distintivo",
+        etiqueta: "panel.contenido.listas.alojamientos.distintivo",
+        ayuda: "panel.contenido.listas.alojamientos.distintivoAyuda",
+        obligatorio: false,
+        largo: LARGO_MAXIMO_DATO,
+      },
+      {
+        clase: "parrafo",
+        columna: "descripcion",
+        etiqueta: "panel.contenido.listas.alojamientos.descripcion_",
+        obligatorio: false,
+        largo: LARGO_MAXIMO_PARRAFO,
+      },
+      {
+        clase: "linea",
+        columna: "precio_texto",
+        etiqueta: "panel.contenido.listas.alojamientos.precio",
+        ayuda: "panel.contenido.listas.alojamientos.precioAyuda",
+        obligatorio: false,
+        largo: LARGO_MAXIMO_DATO,
+      },
+      {
+        clase: "enlace",
+        columna: "url_reserva",
+        etiqueta: "panel.contenido.listas.alojamientos.reserva",
+        ayuda: "panel.contenido.listas.alojamientos.reservaAyuda",
+        obligatorio: false,
+        largo: LARGO_MAXIMO_LINEA,
+      },
+      {
+        clase: "foto",
+        columna: "medio_id",
+        etiqueta: "panel.contenido.listas.alojamientos.foto",
+        ayuda: "panel.contenido.listas.alojamientos.fotoAyuda",
+        seccion: "alojamiento",
+      },
+    ],
+    destino: { clase: "una", seccion: "alojamiento" },
+    /* La web desempata por nombre cuando dos hoteles comparten orden. */
+    ordenacion: ["orden", "nombre"],
+    columnaNombre: "nombre",
   },
 };
 

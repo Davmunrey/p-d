@@ -1217,7 +1217,6 @@
       "dondeAjustes": "Ajustes",
       "dondeMedios": "Fotos y vídeos",
       "dondeContenido": "Contenido",
-      "dondeSql": "Se llena todavía por SQL",
       "dondeInvitados": "La escriben los invitados desde su enlace",
       "dondeNada": "No hay nada que escribir",
       "avisoMostrada": "Ya se ve en la web.",
@@ -1260,7 +1259,12 @@
           "errorLargo": "«{campo}» no puede pasar de {largo} caracteres.",
           "errorNoEncontrada": "Eso ya no existe. Puede que lo haya borrado alguien mientras mirabas.",
           "errorSinPermiso": "Un lector no puede cambiar la web. Pedid que os cambien el rol.",
-          "errorGuardar": "No hemos podido guardarlo. Probad de nuevo en un momento."
+          "errorGuardar": "No hemos podido guardarlo. Probad de nuevo en un momento.",
+          "sinFoto": "Sin foto",
+          "fotoActual": "Foto elegida",
+          "sinFotosQueElegir": "Todavía no hay fotos publicadas para esta sección. Se suben en Fotos y vídeos.",
+          "irAMedios": "Ir a Fotos y vídeos",
+          "errorEnlace": "«{campo}» tiene que ser una dirección web que empiece por http:// o https://."
         },
         "programa": {
           "titulo": "El programa",
@@ -1299,6 +1303,33 @@
           "unaFicha": "la pregunta",
           "pregunta": "Pregunta",
           "respuesta": "Respuesta"
+        },
+        "historia": {
+          "titulo": "Nuestra historia",
+          "descripcion": "Los hitos de la pareja, en orden. Cada uno puede llevar su foto, y funciona igual sin ella.",
+          "unaFicha": "el hito",
+          "tituloHito": "Qué pasó",
+          "tituloHitoAyuda": "«Nos conocimos», «El viaje a Oporto», «La pedida».",
+          "fecha": "Cuándo",
+          "fechaAyuda": "Opcional. Como se cuente: «Mayo de 2019», «Un martes de invierno».",
+          "descripcion_": "Cómo fue",
+          "foto": "Foto",
+          "fotoAyuda": "Opcional. Se elige entre las que ya estén subidas y publicadas en la sección «Nuestra historia»."
+        },
+        "alojamientos": {
+          "titulo": "Dónde dormir",
+          "descripcion": "Los hoteles que recomendáis, con su precio y su enlace de reserva.",
+          "unaFicha": "el alojamiento",
+          "nombre": "Nombre",
+          "distintivo": "Distintivo",
+          "distintivoAyuda": "Opcional. «El más cercano», «Con encanto», «Para familias».",
+          "descripcion_": "Descripción",
+          "precio": "Precio",
+          "precioAyuda": "Opcional. Tal y como lo digáis: «Desde 90 € la noche».",
+          "reserva": "Enlace de reserva",
+          "reservaAyuda": "Opcional. La dirección de su web, empezando por https://",
+          "foto": "Foto",
+          "fotoAyuda": "Opcional. Se elige entre las que ya estén subidas y publicadas en la sección «Dónde dormir»."
         }
       }
     },

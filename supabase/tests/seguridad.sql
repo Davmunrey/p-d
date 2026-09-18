@@ -759,7 +759,7 @@ end $$;
 
 \echo ''
 \echo '========================================'
-\echo '  BODA-129 · las listas de contenido de la web'
+\echo '  BODA-129/130 · las listas de contenido de la web'
 \echo '========================================'
 
 -- Lo que este bloque defiende: que las cuatro listas que el panel ya sabe
@@ -780,7 +780,9 @@ declare
   v_filas  bigint;
   v_id     uuid;
   tablas   text[] := array[
-    'hitos_programa', 'rutas_llegada', 'consejos_vestimenta', 'preguntas_frecuentes'
+    'hitos_programa', 'rutas_llegada', 'consejos_vestimenta', 'preguntas_frecuentes',
+    -- BODA-130: las dos con foto entran por la misma puerta que las otras cuatro.
+    'hitos_historia', 'alojamientos'
   ];
 begin
   perform set_config('request.jwt.claim.sub', '', true);
@@ -809,12 +811,16 @@ begin
         when 'hitos_programa'       then 'hora, titulo'
         when 'rutas_llegada'        then 'modo'
         when 'consejos_vestimenta'  then 'titulo, texto'
+        when 'hitos_historia'       then 'titulo'
+        when 'alojamientos'         then 'nombre'
         else 'pregunta, respuesta'
       end,
       case t
         when 'hitos_programa'       then '''23:59'', ''Borrador de BODA-129'''
         when 'rutas_llegada'        then '''Borrador de BODA-129'''
         when 'consejos_vestimenta'  then '''Borrador de BODA-129'', ''Texto'''
+        when 'hitos_historia'       then '''Borrador de BODA-130'''
+        when 'alojamientos'         then '''Borrador de BODA-130'''
         else '''Borrador de BODA-129'', ''Respuesta'''
       end
     ) into v_id;
@@ -831,12 +837,16 @@ begin
           when 'hitos_programa'       then 'hora, titulo'
           when 'rutas_llegada'        then 'modo'
           when 'consejos_vestimenta'  then 'titulo, texto'
+          when 'hitos_historia'       then 'titulo'
+          when 'alojamientos'         then 'nombre'
           else 'pregunta, respuesta'
         end,
         case t
           when 'hitos_programa'       then '''00:00'', ''Colado por un lector'''
           when 'rutas_llegada'        then '''Colado por un lector'''
           when 'consejos_vestimenta'  then '''Colado por un lector'', ''Texto'''
+          when 'hitos_historia'       then '''Colado por un lector'''
+          when 'alojamientos'         then '''Colado por un lector'''
           else '''Colado por un lector'', ''Respuesta'''
         end
       );
@@ -887,7 +897,8 @@ declare
   t      text;
   v_ok   boolean;
   tablas text[] := array[
-    'hitos_programa', 'rutas_llegada', 'consejos_vestimenta', 'preguntas_frecuentes'
+    'hitos_programa', 'rutas_llegada', 'consejos_vestimenta', 'preguntas_frecuentes',
+    'hitos_historia', 'alojamientos'
   ];
 begin
   foreach t in array tablas loop
@@ -900,12 +911,16 @@ begin
           when 'hitos_programa'       then 'hora, titulo'
           when 'rutas_llegada'        then 'modo'
           when 'consejos_vestimenta'  then 'titulo, texto'
+          when 'hitos_historia'       then 'titulo'
+          when 'alojamientos'         then 'nombre'
           else 'pregunta, respuesta'
         end,
         case t
           when 'hitos_programa'       then '''00:00'', ''Pintada de anon'''
           when 'rutas_llegada'        then '''Pintada de anon'''
           when 'consejos_vestimenta'  then '''Pintada de anon'', ''Texto'''
+          when 'hitos_historia'       then '''Pintada de anon'''
+          when 'alojamientos'         then '''Pintada de anon'''
           else '''Pintada de anon'', ''Respuesta'''
         end
       );
@@ -916,6 +931,86 @@ begin
     reset role;
     perform pg_temp.comprobar(format('anon no puede escribir en %s', t), v_ok);
   end loop;
+end $$;
+
+-- BODA-130 · BORRAR UNA FOTO NO BORRA LA FICHA QUE LA TENÍA PUESTA.
+--
+-- `medio_id` es `on delete set null` en las dos tablas con foto, y de eso
+-- depende una promesa de la pantalla: que retirar una imagen deje el hotel en
+-- pie, sin imagen. Con un `cascade` —que es el otro valor plausible y el que
+-- alguien pondría sin pensarlo— borrar una foto se llevaría por delante el
+-- hotel entero, su descripción y su enlace de reserva.
+
+do $$
+declare
+  v_medio  uuid;
+  v_hito   uuid;
+  v_hotel  uuid;
+  v_filas  bigint;
+begin
+  insert into public.medios (ruta_almacenamiento, texto_alternativo, seccion, tipo, publicado)
+  values ('desarrollo/boda130.jpg', '{"es": "Foto de prueba de BODA-130"}'::jsonb,
+          'historia'::public.seccion_landing, 'imagen'::public.tipo_medio, true)
+  returning id into v_medio;
+
+  insert into public.hitos_historia (titulo, medio_id) values ('Hito de BODA-130', v_medio)
+  returning id into v_hito;
+
+  insert into public.alojamientos (nombre, medio_id) values ('Hotel de BODA-130', v_medio)
+  returning id into v_hotel;
+
+  delete from public.medios where id = v_medio;
+
+  select count(*) into v_filas from public.hitos_historia where id = v_hito;
+  perform pg_temp.comprobar('borrar la foto deja el hito de la historia en pie', v_filas = 1);
+
+  select count(*) into v_filas
+    from public.hitos_historia where id = v_hito and medio_id is null;
+  perform pg_temp.comprobar('y el hito se queda sin foto, no con una que no existe', v_filas = 1);
+
+  select count(*) into v_filas from public.alojamientos where id = v_hotel;
+  perform pg_temp.comprobar('borrar la foto deja el alojamiento en pie', v_filas = 1);
+
+  select count(*) into v_filas
+    from public.alojamientos where id = v_hotel and medio_id is null;
+  perform pg_temp.comprobar('y el alojamiento se queda sin foto', v_filas = 1);
+
+  delete from public.hitos_historia where id = v_hito;
+  delete from public.alojamientos where id = v_hotel;
+end $$;
+
+-- Y LA FOTO EN BORRADOR NO SALE A LA WEB POR LA PUERTA DE ATRÁS. `anon` no ve
+-- un medio sin publicar cuando pregunta por `medios`; lo que este bloque
+-- defiende es que tampoco lo vea preguntando por el hito que lo enlaza, que es
+-- por donde se colaría.
+
+do $$
+declare
+  v_medio uuid;
+  v_hito  uuid;
+  v_ruta  text;
+begin
+  insert into public.medios (ruta_almacenamiento, texto_alternativo, seccion, tipo, publicado)
+  values ('desarrollo/boda130-borrador.jpg', '{"es": "Borrador de BODA-130"}'::jsonb,
+          'historia'::public.seccion_landing, 'imagen'::public.tipo_medio, false)
+  returning id into v_medio;
+
+  insert into public.hitos_historia (titulo, medio_id, publicado)
+  values ('Hito con foto en borrador', v_medio, true)
+  returning id into v_hito;
+
+  set local role anon;
+  select m.ruta_almacenamiento into v_ruta
+    from public.hitos_historia as h
+    left join public.medios as m on m.id = h.medio_id and m.publicado and m.tipo = 'imagen'
+   where h.id = v_hito;
+  reset role;
+
+  perform pg_temp.comprobar(
+    'un hito publicado con foto en borrador sale SIN la foto', v_ruta is null);
+
+  delete from public.hitos_historia where id = v_hito;
+  delete from public.medios where id = v_medio;
 end $$;
 
 \echo ''

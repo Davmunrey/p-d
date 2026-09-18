@@ -12,6 +12,7 @@ import {
   type ClaveLista,
 } from "../../src/config/contenido-landing";
 import { TOPE_ORDEN_CONTENIDO } from "../../src/config/constants";
+import { SECCIONES } from "../../src/config/secciones";
 
 /**
  * BODA-129 · El descriptor de las cuatro listas, contra la realidad
@@ -200,6 +201,10 @@ describe("el descriptor de las listas de contenido", () => {
       const columnas = columnasDe(lista.tabla);
 
       for (const campo of lista.campos) {
+        // Una foto no tiene obligatoriedad que comparar: nunca lo es, y eso se
+        // comprueba abajo contra la propia columna, que ha de ser opcional.
+        if (campo.clase === "foto") continue;
+
         const enLaBase = columnas.find((columna) => columna.nombre === campo.columna);
         const exigida = /\bnot null\b/.test(enLaBase?.resto ?? "");
         expect(campo.obligatorio, `${lista.tabla}.${campo.columna}`).toBe(exigida);
@@ -219,9 +224,61 @@ describe("el descriptor de las listas de contenido", () => {
     expect(columnas, `${lista.tabla}.${lista.columnaNombre}`).toContain(lista.columnaNombre);
     expect(nombresDe(lista.tabla)).toContain(lista.columnaNombre);
 
-    // Y obligatorio, o habría fichas sin nombre con que preguntar.
+    // Y obligatorio, o habría fichas sin nombre con que preguntar. Una foto no
+    // puede nombrar nada, así que además tiene que ser un campo de texto.
     const campo = lista.campos.find((uno) => uno.columna === lista.columnaNombre);
-    expect(campo?.obligatorio, `${lista.tabla}.${lista.columnaNombre}`).toBe(true);
+    expect(campo?.clase, `${lista.tabla}.${lista.columnaNombre}`).not.toBe("foto");
+    if (!campo || campo.clase === "foto") return;
+    expect(campo.obligatorio, `${lista.tabla}.${lista.columnaNombre}`).toBe(true);
+  });
+
+  it.each(LISTAS)("las fotos de «%s» apuntan de verdad a un medio", (_clave, lista) => {
+    /*
+      BODA-130 · UN CAMPO DE FOTO NO GUARDA UNA FOTO, guarda el identificador de
+      una fila de `medios`. Se comprueban las tres cosas que lo hacen funcionar:
+      que la columna sea la clave ajena, que la base deje borrar el medio sin
+      llevarse la ficha por delante, y que nunca sea obligatoria —los `left
+      join` de la landing existen porque una ficha sin foto es lo normal—.
+    */
+    for (const campo of lista.campos) {
+      if (campo.clase !== "foto") continue;
+
+      const enLaBase = columnasDe(lista.tabla).find(
+        (columna) => columna.nombre === campo.columna,
+      );
+
+      expect(enLaBase?.resto, `${lista.tabla}.${campo.columna}`).toContain(
+        "references public.medios",
+      );
+      expect(
+        enLaBase?.resto,
+        "borrar una foto no puede borrar el hotel que la tenía puesta",
+      ).toContain("on delete set null");
+      expect(enLaBase?.resto, "una ficha sin foto tiene que poder existir").not.toMatch(
+        /\bnot null\b/,
+      );
+
+      expect(SECCIONES, `${campo.columna} → ${campo.seccion}`).toContain(campo.seccion);
+    }
+  });
+
+  it.each(LISTAS)("los enlaces de «%s» los vigila también la base", (_clave, lista) => {
+    /*
+      La clase `enlace` existe porque la tabla tiene su `CHECK`. Si alguien
+      marcara como enlace una columna que la base no vigila, la validación de la
+      pantalla sería la única red — y se la salta cualquiera que mande el
+      formulario a mano.
+    */
+    for (const campo of lista.campos) {
+      if (campo.clase !== "enlace") continue;
+
+      const definicion = definicionDe(lista.tabla);
+      const vigilada = new RegExp(`check \\(${campo.columna}[\\s\\S]*?https\\?`).test(
+        definicion,
+      );
+
+      expect(vigilada, `${lista.tabla}.${campo.columna} sin CHECK de dirección`).toBe(true);
+    }
   });
 
   it("el tope de orden es el del tipo de la columna", () => {
