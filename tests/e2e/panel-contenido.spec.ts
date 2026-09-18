@@ -121,9 +121,21 @@ async function esperarEstado(pagina: Page, esperado: string) {
   await pagina.waitForLoadState("networkidle");
 }
 
+/**
+ * LA LISTA DE SECCIONES, Y NO CUALQUIER LISTA DE LA PÁGINA.
+ *
+ * En esta pantalla hay otra: el menú del panel, que también son `li`. Contando
+ * `getByRole("listitem")` a secas salían veintinueve —dieciséis secciones más
+ * las trece entradas del menú de escritorio— y el test fallaba por mirar donde
+ * no era. Se acota por el nombre accesible que la propia lista lleva.
+ */
+function laLista(pagina: Page) {
+  return pagina.getByRole("list", { name: copy.panel.contenido.listaTitulo });
+}
+
 /** La ficha de una sección, localizada por su nombre y no por su posición. */
 function fichaDe(pagina: Page, nombre: string) {
-  return pagina
+  return laLista(pagina)
     .getByRole("listitem")
     .filter({ has: pagina.getByRole("heading", { name: nombre }) });
 }
@@ -280,9 +292,9 @@ test.describe("El contenido de la web", () => {
     await entrar(page);
     await page.goto(RUTA_CONTENIDO);
 
-    await expect(page.getByRole("listitem").first()).toBeVisible();
+    await expect(laLista(page).getByRole("listitem").first()).toBeVisible();
     await expect(
-      page.getByRole("listitem"),
+      laLista(page).getByRole("listitem"),
       "una sección que no salga aquí es una sección que nadie puede encender",
     ).toHaveCount(SECCIONES.length);
 

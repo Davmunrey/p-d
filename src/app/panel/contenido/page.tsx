@@ -37,6 +37,9 @@ import { ESTADOS_DE_ERROR, esEstadoContenido, type EstadoContenido } from "./est
  */
 export const dynamic = "force-dynamic";
 
+/** El identificador que une la lista con su título. Sólo vive en el documento. */
+const ID_LISTA = "secciones-de-la-web";
+
 const AVISOS: Record<EstadoContenido, string> = {
   mostrada: t("panel.contenido.avisoMostrada"),
   ocultada: t("panel.contenido.avisoOcultada"),
@@ -90,9 +93,18 @@ export default async function PaginaContenido({ searchParams }: Parametros) {
           `ol` y no `ul`: el orden ES el dato. Quien navega con lector de
           pantalla oye «lista ordenada de dieciséis elementos» y sabe que
           moverse arriba y abajo cambia lo que se ve primero en la web.
+
+          Y LA LISTA LLEVA NOMBRE, con el título que está justo encima. No es
+          adorno: en esta pantalla hay otra lista —el menú del panel, que
+          también son `li`—, así que sin nombre, «lista» a secas obliga a
+          entrar en ella para saber cuál es. Con nombre se distinguen de oídas,
+          y de paso el test puede afirmar sobre ÉSTA y no sobre todos los `li`
+          de la página, que es cómo se le coló contando veintinueve.
         */}
-        <h2 className="sr-only">{t("panel.contenido.listaTitulo")}</h2>
-        <ol className="grid gap-interno">
+        <h2 id={ID_LISTA} className="sr-only">
+          {t("panel.contenido.listaTitulo")}
+        </h2>
+        <ol aria-labelledby={ID_LISTA} className="grid gap-interno">
           {secciones.map((fila, indice) => (
             <Fila
               key={fila.seccion}
