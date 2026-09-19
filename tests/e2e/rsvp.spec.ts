@@ -301,6 +301,64 @@ test.describe("El recorrido del invitado", () => {
     await contexto.close();
   });
 
+  /**
+   * CASO DE ERROR · SIN BORRADOR, EL ENVÍO NO PUEDE DAR A NADIE DE BAJA.
+   *
+   * `leerBorrador()` devuelve uno VACÍO —a propósito— cuando la cookie falta,
+   * está rota o es de otro enlace. Y pasa de verdad: caduca, Safari la
+   * descarta, alguien comparte el enlace con `?paso=mensaje` puesto, o se abre
+   * en otro móvil. Hasta este arreglo, ese envío escribía `rechazado` para toda
+   * la familia, en silencio, porque «sin contestar» y «no viene» acababan
+   * siendo lo mismo. La pareja se encontraba a los dos dados de baja sin que
+   * nadie hubiera dicho que no, y `confirmaciones` es un histórico: eso no se
+   * deshace.
+   *
+   * Se reproduce el caso exacto: se entra directamente al último paso sin
+   * cookie de borrador y se pulsa enviar.
+   */
+  test("sin borrador, enviar el último paso no da de baja a nadie", async ({ browser }) => {
+    const token = await crearGrupo("e2e-sin-borrador", ["(DES) Hugo", "(DES) Iria"]);
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    // Directo al paso del mensaje, que es donde vive el botón de enviar, y sin
+    // haber pasado por asistencia: el contexto es nuevo, así que no hay cookie.
+    await pagina.goto(`${RUTA_RSVP}/${token}?paso=mensaje`);
+    await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
+
+    // Vuelve a preguntar, en vez de decidir por ellos.
+    await expect(pagina.getByText(copy.rsvp.pasoAsistenciaTitulo)).toBeVisible();
+
+    /*
+      Y LO QUE DE VERDAD IMPORTA: nadie ha quedado dado de baja. Se mira el
+      estado VIGENTE y no el número de filas, porque toda persona nace con una
+      confirmación «pendiente» que le pone `crear_confirmacion_inicial()`:
+      contar filas daría dos con el fallo y dos sin él, es decir, no mediría
+      nada. Lo que distingue el fallo del arreglo es el estado.
+    */
+    const estados = await conBase(
+      (sql) => sql<{ nombre: string; estado: string }[]>`
+        select i.nombre, c.estado::text as estado
+          from public.confirmaciones as c
+          join public.invitados as i on i.id = c.invitado_id
+          join public.grupos_invitacion as g on g.id = i.grupo_id
+         where g.huella_token = public.huella_token(${token}) and c.es_vigente
+         order by i.nombre
+      `,
+    );
+
+    expect(
+      estados.map((fila) => fila.estado),
+      "un borrador perdido no puede dar de baja a nadie",
+    ).toEqual(["pendiente", "pendiente"]);
+
+    await contexto.close();
+  });
+
   test("si no viene nadie, no se pregunta por el menú", async ({ browser }) => {
     const token = await crearGrupo("e2e-nadie", ["(DES) Fran"]);
     const contexto = await browser.newContext({

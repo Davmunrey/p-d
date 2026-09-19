@@ -112,6 +112,29 @@ export async function avanzar(datos: FormData): Promise<void> {
 
   if (pasoActual === "detalles") redirect(`${base}?paso=mensaje`);
 
+  /*
+    ANTES DE ESCRIBIR, SE VUELVE A MIRAR QUIÉN HA CONTESTADO. Parece repetir la
+    comprobación del paso de asistencia y no lo es: aquella protege el camino
+    hacia adelante, y esta protege la ESCRITURA, que es lo que no se deshace.
+
+    Entre una y otra el borrador puede haberse vaciado, porque `leerBorrador()`
+    devuelve uno vacío —a propósito— cuando la cookie falta, está rota o es de
+    otro enlace. Y pasa: la cookie caduca, Safari la descarta, alguien comparte
+    el enlace con `?paso=mensaje` puesto, o se abre en otro móvil. Sin esta
+    guarda, ese envío escribía `rechazado` para TODA la familia, en silencio,
+    porque «sin contestar» y «no viene» se convertían en lo mismo tres líneas
+    más abajo. La pareja se encontraba a los cuatro dados de baja sin que nadie
+    hubiera dicho que no.
+
+    Se devuelve al paso de asistencia señalando a quién falta, que es lo mismo
+    que hace el camino normal: contestar otra vez cuesta un minuto; deshacer una
+    baja que nadie pidió no se puede, porque `confirmaciones` es un histórico.
+  */
+  const faltaPorContestar = invitacion.personas.find((p) => !borrador.asistencia[p.id]);
+  if (faltaPorContestar) {
+    redirect(`${base}?paso=asistencia&falta=${encodeURIComponent(faltaPorContestar.id)}`);
+  }
+
   // Último paso: se envía.
   const respuestas: RespuestaInvitado[] = invitacion.personas.map((persona, indice) => {
     const viene = borrador.asistencia[persona.id] === "confirmado";
