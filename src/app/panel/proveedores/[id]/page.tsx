@@ -135,10 +135,16 @@ export default async function PaginaProveedor({ params, searchParams }: Parametr
     consulta más, y en la visita normal —que es el noventa y nueve por ciento—
     no hace ninguna falta.
   */
+  /*
+    Aquí un `null` —la lectura falló— se pinta como lista vacía, y está bien:
+    esta pantalla sólo ENSEÑA a quién ya hay contratado para que se decida con
+    el dato delante. Quien no puede dar el permiso a ciegas es la acción, y esa
+    ya se niega a escribir sin haber podido mirar.
+  */
   const contratados =
-    estado === "confirmar-contratado"
+    (estado === "confirmar-contratado"
       ? await obtenerContratadosDeCategoria(proveedor.categoriaId, proveedor.id)
-      : [];
+      : []) ?? [];
 
   return (
     <>

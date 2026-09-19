@@ -419,7 +419,7 @@ export async function obtenerCategoriasSinCerrar(): Promise<CategoriaSinCerrar[]
 export async function obtenerContratadosDeCategoria(
   categoriaId: string,
   exceptoId: string,
-): Promise<{ id: string; nombre: string }[]> {
+): Promise<{ id: string; nombre: string }[] | null> {
   const supabase = await clienteServidor();
 
   const { data, error } = await supabase
@@ -429,9 +429,17 @@ export async function obtenerContratadosDeCategoria(
     .eq("estado", "contratado")
     .neq("id", exceptoId);
 
+  /*
+    NULL Y NO LISTA VACÍA, que es la diferencia entera. Quien llama usa esto para
+    decidir si PREGUNTA antes de contratar, y una lista vacía significa «no hay
+    nadie más contratado»: o sea, adelante sin preguntar. Devolviendo `[]` ante
+    un error, una lectura que falla concede justo el permiso que este dato
+    existe para condicionar. Con `null` quien llama tiene que decidir, y lo que
+    decide es no escribir. Mismo contrato que `contarSentados`.
+  */
   if (error) {
     console.error("No se pudieron leer los contratados de la categoría:", error);
-    return [];
+    return null;
   }
 
   return (data as { id: string; nombre: string }[] | null) ?? [];

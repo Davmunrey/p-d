@@ -345,7 +345,9 @@ export async function cambiarEstado(datos: FormData): Promise<void> {
 
     const categoriaId = (ficha as { categoria_id: string } | null)?.categoria_id;
     if (categoriaId) {
+      // Y la segunda lectura, igual: `null` es «no se pudo mirar», no «no hay nadie».
       const otros = await obtenerContratadosDeCategoria(categoriaId, id);
+      if (otros === null) volver("error", id);
       if (otros.length > 0) volver("confirmar-contratado", id);
     }
   }
@@ -407,12 +409,25 @@ export async function borrarProveedor(datos: FormData): Promise<void> {
   const supabase = await cliente();
 
   if (texto(datos, "confirmar") !== "si") {
-    const { count } = await supabase
+    /*
+      SIN SABER CUÁNTOS GASTOS CUELGAN, NO SE BORRA. El error se descartaba, y
+      un `count` a `null` —que es lo que deja una lectura fallida— pasaba por
+      `(null ?? 0) > 0` como si fueran cero: se borraba sin preguntar. Y borrar
+      un proveedor deja sus gastos con `proveedor_id` a `null` por el `on delete
+      set null`, así que dentro de tres meses nadie sabe de quién era esa
+      factura. Es literalmente el caso que este paso existe para impedir.
+    */
+    const { count, error: errorRecuento } = await supabase
       .from("partidas_presupuesto")
       .select("id", { count: "exact", head: true })
       .eq("proveedor_id", id);
 
-    if ((count ?? 0) > 0) volver("confirmar-borrado", id);
+    if (errorRecuento || count === null) {
+      console.error("No se pudo contar los gastos del proveedor:", errorRecuento);
+      volver("error", id);
+    }
+
+    if (count > 0) volver("confirmar-borrado", id);
   }
 
   const { data, error } = await supabase.from("proveedores").delete().eq("id", id).select("id");

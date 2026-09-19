@@ -63,6 +63,9 @@ export async function elegirProveedor(datos: FormData): Promise<void> {
     enseña a quién y pide confirmación. Ver la cabecera del fichero.
   */
   const otros = await obtenerContratadosDeCategoria(categoriaId, id);
+  // `null` es «no se pudo mirar». Aquí esa lectura es la ÚNICA puerta antes de
+  // escribir, así que tratarla como «no hay nadie» sería contratar a ciegas.
+  if (otros === null) volver("error", categoriaId);
   if (otros.length > 0) {
     redirect(`${RUTA_PROVEEDORES}/${id}?estado=confirmar-contratado`);
   }
