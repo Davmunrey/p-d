@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { PASOS_RSVP, RUTA_RSVP, type PasoRsvp } from "@/config/constants";
+import { LARGOS_DE_CAMPO, PASOS_RSVP, RUTA_RSVP, type PasoRsvp } from "@/config/constants";
 import { obtenerConfiguracion } from "@/lib/bbdd/landing";
 import {
   destinatariosDeConfirmacion,
@@ -13,7 +13,12 @@ import {
 } from "@/lib/bbdd/rsvp";
 import { enviarCorreo } from "@/lib/correo";
 import { componerConfirmacion } from "@/lib/correo-confirmacion";
-import { borrarBorrador, guardarBorrador, leerBorrador } from "@/lib/rsvp-borrador";
+import {
+  borrarBorrador,
+  guardarBorrador,
+  leerBorrador,
+  type Borrador,
+} from "@/lib/rsvp-borrador";
 import { urlDelSitio } from "@/lib/url-sitio";
 
 /**
@@ -43,6 +48,39 @@ function idsDe(datos: FormData, prefijo: string): string[] {
   return [...datos.keys()]
     .filter((clave) => clave.startsWith(`${prefijo}-`))
     .map((clave) => clave.slice(prefijo.length + 1));
+}
+
+/**
+ * Qué campo de este paso se pasa del tope que aguanta la base, si alguno.
+ *
+ * Devuelve el NOMBRE del campo —`mensaje`, `cancion`, `alergias`— y no un
+ * booleano, porque la pantalla tiene que poder señalar cuál: «algo es
+ * demasiado largo» en un formulario de cinco campos obliga a contarlos a mano.
+ *
+ * Los topes salen de `LARGOS_DE_CAMPO`, que cita la columna por su nombre y que
+ * `tests/unidad/largos-de-campo.test.ts` contrasta una por una contra las
+ * migraciones: si mañana la base sube el tope y esto no, se pone rojo.
+ */
+function loQuePasaDeLargo(
+  paso: PasoRsvp,
+  borrador: Borrador,
+  personas: string[],
+): "mensaje" | "cancion" | "alergias" | null {
+  if (paso === "detalles") {
+    const pasada = personas.some(
+      (id) => (borrador.alergias[id]?.length ?? 0) > LARGOS_DE_CAMPO["invitados.alergias"],
+    );
+    return pasada ? "alergias" : null;
+  }
+
+  if (paso === "mensaje") {
+    if (borrador.mensaje.length > LARGOS_DE_CAMPO["confirmaciones.mensaje"]) return "mensaje";
+    if (borrador.cancion.length > LARGOS_DE_CAMPO["confirmaciones.cancion_solicitada"]) {
+      return "cancion";
+    }
+  }
+
+  return null;
 }
 
 const texto = (datos: FormData, clave: string) =>
@@ -89,6 +127,30 @@ export async function avanzar(datos: FormData): Promise<void> {
   }
 
   await guardarBorrador(borrador);
+
+  /*
+    LO LARGO SE MIDE AQUÍ, ANTES DE TOCAR LA BASE.
+
+    Estos tres campos son los únicos que escribe un invitado, y los tres tienen
+    su tope en un CHECK de la base. Sin esta comprobación, pasarse no daba un
+    aviso: `registrar_confirmacion` saltaba con 23514, un código que `motivoDe`
+    no reconoce, y la confirmación entera volvía como «avería» — el mensaje de
+    «esto es culpa nuestra, escribidnos», con su alerta de Sentry incluida.
+
+    Lo que le pasaba a quien escribía una carta de dos mil y pico caracteres: no
+    podía confirmar, por mucho que reintentara, y nada le decía por qué. Encima
+    ese borrador tan largo no cabe en la cookie, así que el texto tampoco volvía
+    al campo. Se perdía la carta y la confirmación.
+
+    El `maxLength` de la pantalla corta antes en un navegador normal; esto es
+    para todo lo demás, que en un extremo público es lo que hay que suponer. Se
+    vuelve al mismo paso con el campo señalado y SIN ESCRIBIR NADA: el borrador
+    ya está guardado unas líneas más arriba, así que el texto no se pierde.
+  */
+  const largo = loQuePasaDeLargo(pasoActual, borrador, personas);
+  if (largo) {
+    redirect(`${RUTA_RSVP}/${encodeURIComponent(token)}?paso=${pasoActual}&largo=${largo}`);
+  }
 
   const base = `${RUTA_RSVP}/${encodeURIComponent(token)}`;
   const alguienViene = personas.some((id) => borrador.asistencia[id] === "confirmado");

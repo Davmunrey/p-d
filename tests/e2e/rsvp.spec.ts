@@ -302,6 +302,65 @@ test.describe("El recorrido del invitado", () => {
   });
 
   /**
+   * CASO DE ERROR · UN MENSAJE MÁS LARGO DE LO QUE CABE LO DICE LA PANTALLA.
+   *
+   * Los tres campos que escribe un invitado —mensaje, canción y alergias—
+   * tienen su tope en un CHECK de la base y no lo tenían en la pantalla.
+   * Pasarse no daba un aviso: `registrar_confirmacion` saltaba con 23514, un
+   * código que `motivoDe` no reconoce, y la confirmación entera volvía como
+   * «avería» — el mensaje de «esto es culpa nuestra, escribidnos», con su
+   * alerta de Sentry incluida. Quien escribía una carta larga no podía
+   * confirmar por mucho que reintentara, y nada le decía por qué.
+   *
+   * SE PRUEBA SIN JAVASCRIPT Y ESCRIBIENDO EN EL DOM, a propósito: el
+   * `maxLength` del campo corta antes en un navegador normal, así que un test
+   * que teclee el texto nunca llegaría al servidor y estaría probando el
+   * navegador en lugar del arreglo. Lo que hay que sostener es que el extremo
+   * público aguanta lo que le manden, que es lo que hay que suponer de un
+   * extremo público.
+   */
+  test("un mensaje que no cabe se avisa, y no se escribe nada", async ({ browser }) => {
+    const token = await crearGrupo("e2e-largo", ["(DES) Lucía"]);
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.locator('input[type="radio"]').first().check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    // Se salta el `maxLength` escribiendo el valor directamente, que es lo que
+    // haría cualquiera que no mande el formulario desde el navegador.
+    await pagina.locator('textarea[name="mensaje"]').evaluate((campo) => {
+      (campo as HTMLTextAreaElement).removeAttribute("maxlength");
+      (campo as HTMLTextAreaElement).value = "a".repeat(2001);
+    });
+    await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
+
+    // Lo dice, y sigue en el mismo paso con el texto delante.
+    await expect(pagina.getByRole("alert")).toContainText(copy.rsvp.demasiadoLargo);
+    await expect(pagina.getByRole("button", { name: copy.rsvp.enviar })).toBeVisible();
+
+    // Y NO HA ESCRITO NADA: la confirmación sigue pendiente, no «averiada».
+    const estados = await conBase(
+      (sql) => sql<{ estado: string }[]>`
+        select c.estado
+          from public.confirmaciones as c
+          join public.invitados as i on i.id = c.invitado_id
+          join public.grupos_invitacion as g on g.id = i.grupo_id
+         where g.huella_token = public.huella_token(${token}) and c.es_vigente
+      `,
+    );
+    expect(estados.map((fila) => fila.estado)).toEqual(["pendiente"]);
+
+    await contexto.close();
+  });
+
+  /**
    * CASO DE ERROR · SIN BORRADOR, EL ENVÍO NO PUEDE DAR A NADIE DE BAJA.
    *
    * `leerBorrador()` devuelve uno VACÍO —a propósito— cuando la cookie falta,

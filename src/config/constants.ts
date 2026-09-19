@@ -586,6 +586,15 @@ export const LARGOS_DE_CAMPO = {
   "configuracion_boda.paisaje_cierre": 80,
   "configuracion_boda.paisaje_intro": 60,
   "configuracion_boda.paisaje_titulo": 200,
+  /*
+    LOS TRES DEL RSVP SON LOS ÚNICOS QUE ESCRIBE UN INVITADO, y son justo los
+    que no tenían tope en la pantalla. Un mensaje de 2001 caracteres no daba un
+    aviso: hacía saltar el CHECK de la base, y su código no lo reconoce nadie,
+    así que la confirmación entera volvía como «avería». Quien lo sufría no
+    podía confirmar por mucho que reintentara y nadie le decía por qué.
+  */
+  "confirmaciones.cancion_solicitada": 200,
+  "confirmaciones.mensaje": 2000,
   "contactos_proveedor.nombre": 120,
   "contactos_proveedor.notas": 1000,
   "contactos_proveedor.papel": 80,
@@ -593,6 +602,7 @@ export const LARGOS_DE_CAMPO = {
   "documentos_boda.notas": 2000,
   "documentos_boda.titulo": 160,
   "documentos_proveedor.nombre": 200,
+  "invitados.alergias": 500,
   "medios.texto_alternativo": 300,
   "mesas.nombre": 60,
   "mesas.notas": 1000,

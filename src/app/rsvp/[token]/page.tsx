@@ -6,7 +6,13 @@ import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/cam
 import { Constelacion } from "@/components/ui/constelacion";
 import { Cuerpo, Etiqueta, Titulo1, Titulo3 } from "@/components/ui/tipografia";
 import { CONSTELACION_NOVIOS } from "@/config/constelaciones";
-import { IDIOMA, PASOS_RSVP, ZONA_HORARIA, type PasoRsvp } from "@/config/constants";
+import {
+  IDIOMA,
+  LARGOS_DE_CAMPO,
+  PASOS_RSVP,
+  ZONA_HORARIA,
+  type PasoRsvp,
+} from "@/config/constants";
 import { obtenerConfiguracion } from "@/lib/bbdd/landing";
 import { obtenerInvitacion, type PersonaInvitada } from "@/lib/bbdd/rsvp";
 import { t } from "@/lib/copy";
@@ -166,6 +172,21 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
           motivo={soloTexto(consulta.fallo)}
           correo={configuracion?.correoContacto ?? null}
         />
+      ) : null}
+
+      {/*
+        LO DEMASIADO LARGO SE DICE ARRIBA Y EN `alert`, como el resto de lo que
+        impide seguir. Va aquí y no dentro del campo porque el paso de detalles
+        tiene una casilla de alergias por persona y el aviso es el mismo para
+        todas: repetirlo cinco veces no ayuda a nadie.
+      */}
+      {soloTexto(consulta.largo) ? (
+        <p
+          role="alert"
+          className="mt-elemento rounded-campo bg-error-fondo p-interno text-pequeno text-error-tinta"
+        >
+          {t("rsvp.demasiadoLargo")}
+        </p>
       ) : null}
 
       <form action={avanzar} className="mt-bloque grid gap-elemento">
@@ -432,6 +453,7 @@ function PasoDetalles({
             etiqueta={t("rsvp.alergias")}
             ayuda={t("rsvp.alergiasAyuda")}
             name={`alergias-${persona.id}`}
+            maxLength={LARGOS_DE_CAMPO["invitados.alergias"]}
             defaultValue={borrador.alergias[persona.id] ?? persona.alergias ?? ""}
           />
 
@@ -463,6 +485,7 @@ function PasoMensaje({ borrador }: { borrador: Borrador }) {
         etiqueta={t("rsvp.cancion")}
         ayuda={t("rsvp.cancionAyuda")}
         name="cancion"
+        maxLength={LARGOS_DE_CAMPO["confirmaciones.cancion_solicitada"]}
         defaultValue={borrador.cancion}
       />
       <CampoTextoLargo
@@ -470,6 +493,7 @@ function PasoMensaje({ borrador }: { borrador: Borrador }) {
         ayuda={t("rsvp.mensajeAyuda")}
         name="mensaje"
         rows={4}
+        maxLength={LARGOS_DE_CAMPO["confirmaciones.mensaje"]}
         defaultValue={borrador.mensaje}
       />
     </div>
