@@ -15,15 +15,6 @@
  */
 export const ID_CONTENIDO = "contenido";
 
-/** Filas por página en las tablas del panel. */
-export const FILAS_POR_PAGINA = 25;
-
-/** Milisegundos de espera antes de lanzar una búsqueda mientras se escribe. */
-export const RETARDO_BUSQUEDA_MS = 300;
-
-/** Longitud del token de invitación. Suficiente para que no se adivine. */
-export const LONGITUD_TOKEN_INVITACION = 24;
-
 /** Peso máximo por imagen subida al gestor de fotos. */
 export const PESO_MAXIMO_IMAGEN_MB = 10;
 
