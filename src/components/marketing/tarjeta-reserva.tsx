@@ -30,6 +30,7 @@ export function TarjetaReserva({
   nombreNovia,
   nombreNovio,
   fechaIso,
+  ahoraIso,
   fechaTexto,
   anio,
   lugar,
@@ -37,6 +38,8 @@ export function TarjetaReserva({
   nombreNovia: string;
   nombreNovio: string;
   fechaIso: string;
+  /** El instante del servidor, que la cuenta atrás necesita para hidratar. */
+  ahoraIso: string;
   /** «Sábado 26 de junio», ya formateada en el servidor. */
   fechaTexto: string;
   /** «2027», en su propia línea. */
@@ -95,7 +98,7 @@ export function TarjetaReserva({
         {/* Lo que sobre de alto se lo queda este hueco: la cuenta atrás va al pie. */}
         <div className="min-h-naipe-hueco-cifras flex-1" />
 
-        <CuentaAtras fechaIso={fechaIso} compacta />
+        <CuentaAtras fechaIso={fechaIso} ahoraIso={ahoraIso} compacta />
       </div>
     </div>
   );

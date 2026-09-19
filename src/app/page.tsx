@@ -726,7 +726,10 @@ function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBod
           {t("cuentaAtras.titulo")}
         </Etiqueta>
         <div className="mt-contador">
-          <CuentaAtras fechaIso={configuracion.fechaCeremonia.toISOString()} />
+          <CuentaAtras
+            fechaIso={configuracion.fechaCeremonia.toISOString()}
+            ahoraIso={new Date().toISOString()}
+          />
         </div>
         <Cita className="mx-auto mt-cita-arriba max-w-cita text-tinta-suave">
           {t("cuentaAtras.cierre")}

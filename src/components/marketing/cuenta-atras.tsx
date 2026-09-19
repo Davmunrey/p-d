@@ -12,6 +12,20 @@ import { t } from "@/lib/copy";
  * antes de que cargue ningún JavaScript; a partir de ahí el cliente los
  * refresca cada segundo.
  *
+ * EL INSTANTE DE PARTIDA LO PONE EL SERVIDOR, `ahoraIso`, y no `Date.now()`.
+ * Parece un rodeo y es justo lo que hace que lo de arriba sea verdad: con
+ * `Date.now()` el servidor pintaba unos segundos y el cliente, al hidratar,
+ * calculaba otros. Como la cuenta llega al SEGUNDO, casi nunca coincidían, así
+ * que React encontraba un HTML distinto del que esperaba, tiraba el árbol
+ * entero y lo volvía a pintar en el cliente (el error #418). O sea: se perdía
+ * exactamente el beneficio que este componente dice tener, y de paso se
+ * desenganchaban los nodos que ya estaban en la página —de ahí el
+ * «Element is not attached to the DOM» que salía en `navegacion.spec.ts`—.
+ *
+ * Con el instante del servidor, las dos pasadas calculan lo mismo y la
+ * hidratación es silenciosa. El primer pintado del cliente puede ir unos
+ * milisegundos atrasado; el intervalo lo corrige al segundo siguiente.
+ *
  * La fecha llega desde la base de datos, nunca desde una constante: si cambia
  * la hora de la ceremonia, cambia aquí sola.
  *
@@ -52,14 +66,19 @@ const dosDigitos = (n: number) => String(n).padStart(2, "0");
 
 export function CuentaAtras({
   fechaIso,
+  ahoraIso,
   compacta = false,
 }: {
   fechaIso: string;
+  /** El instante en que el servidor pintó, para que hidratar no cambie nada. */
+  ahoraIso: string;
   /** La forma de la tarjeta del Save the Date. */
   compacta?: boolean;
 }) {
   const objetivo = new Date(fechaIso).getTime();
-  const [restante, setRestante] = useState(() => calcular(objetivo, Date.now()));
+  const [restante, setRestante] = useState(() =>
+    calcular(objetivo, new Date(ahoraIso).getTime()),
+  );
 
   useEffect(() => {
     const id = setInterval(() => setRestante(calcular(objetivo, Date.now())), 1000);
