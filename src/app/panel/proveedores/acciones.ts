@@ -322,11 +322,26 @@ export async function cambiarEstado(datos: FormData): Promise<void> {
     miente en la dirección tranquilizadora.
   */
   if (nuevo === "contratado" && texto(datos, "confirmar") !== "si") {
-    const { data: ficha } = await supabase
+    /*
+      SI NO SE PUEDE LEER LA CATEGORÍA, NO SE CONTRATA. El error se tiraba, y sin
+      error que mirar una lectura fallida deja la ficha a `null`: el guardia se
+      saltaba entero y el proveedor quedaba contratado sin preguntar nada. O sea
+      que el fallo de lectura no impedía el caso que este guardia vigila — lo
+      dejaba pasar, y justo en la dirección tranquilizadora.
+
+      Se vuelve con «error» y no se toca nada. Es lo mismo que hace `quitarPersona`
+      con su comprobación: una lectura que no se puede hacer no es un permiso.
+    */
+    const { data: ficha, error: errorLectura } = await supabase
       .from("proveedores")
       .select("categoria_id")
       .eq("id", id)
       .maybeSingle();
+
+    if (errorLectura) {
+      console.error("No se pudo leer la categoría del proveedor:", errorLectura);
+      volver("error", id);
+    }
 
     const categoriaId = (ficha as { categoria_id: string } | null)?.categoria_id;
     if (categoriaId) {
