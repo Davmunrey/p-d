@@ -241,7 +241,7 @@ export default async function PaginaCocina() {
 
           <Ficha titulo={t("cocina.grupoCampos")} prueba="campos">
             <div className="grid gap-pila">
-              <CampoTexto etiqueta={t("rsvp.nombre")} placeholder="Paloma Fernández" />
+              <CampoTexto etiqueta={t("rsvp.nombre")} placeholder={t("cocina.ejemploNombre")} />
               <CampoTexto
                 etiqueta={t("rsvp.contacto")}
                 ayuda={t("rsvp.contactoAyuda")}
@@ -309,7 +309,7 @@ export default async function PaginaCocina() {
             <EtiquetaEstado variante="exito">{t("cocina.etiquetaConfirmado")}</EtiquetaEstado>
           </div>
           <div className="mt-pila grid gap-pila sm:grid-cols-2">
-            <CampoTexto etiqueta={t("rsvp.nombre")} placeholder="Paloma Fernández" />
+            <CampoTexto etiqueta={t("rsvp.nombre")} placeholder={t("cocina.ejemploNombre")} />
             <Aviso titulo={t("cocina.avisoRotulo")}>{t("cocina.avisoTexto")}</Aviso>
           </div>
           <Cita className="mt-pila">{t("cocina.muestraTipografica")}</Cita>

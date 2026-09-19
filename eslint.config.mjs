@@ -22,6 +22,12 @@ const VALOR_ARBITRARIO = String.raw`(^|\s)(?!(${VARIANTES})-)[a-z-]+-\[[^\]]+\]`
 /** Colores literales escritos a mano en cualquier sitio que no sea un token. */
 const COLOR_LITERAL = String.raw`#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(`;
 
+/**
+ * Los atributos que llevan prosa a la pantalla. No es la lista de todos los
+ * atributos con texto: es la de los que se han colado alguna vez.
+ */
+const PROPIEDADES_CON_TEXTO = "/^(placeholder|title|alt|etiqueta|ayuda|label|summary)$/";
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -69,6 +75,28 @@ const eslintConfig = defineConfig([
           selector: `TemplateElement[value.raw=/${COLOR_LITERAL}/]`,
           message:
             "Color literal. Los colores viven en src/styles/tokens/primitives.css y se consumen por su token semántico.",
+        },
+        /*
+          VA EN ESTE MISMO ARRAY Y NO EN UN BLOQUE APARTE, y eso no es manía de
+          orden: `no-restricted-syntax` no se suma entre bloques, se sustituye.
+          Un segundo bloque con esta regla apuntando a los `.tsx` apagaba las
+          cuatro de arriba justo en los ficheros donde más falta hacen, y sin
+          decir nada: se probó, y un `bg-[#ff0000]` pasaba sin una queja.
+
+          Lo que mira: `react/jsx-no-literals` lleva `ignoreProps: true` —si no,
+          `className`, `type="button"` y cada `href` saltarían— y eso deja un
+          agujero del tamaño de un atributo, porque el texto que se ve no
+          siempre va entre etiquetas. Un `placeholder`, un `title` o el rótulo
+          de un campo son prosa y se leen igual.
+
+          La condición es que el valor lleve un espacio: eso es una frase. Lo
+          que no lo lleva —`alt=""` de una imagen decorativa, un `title` de una
+          palabra técnica— no es prosa y no se toca.
+        */
+        {
+          selector: `JSXAttribute[name.name=${PROPIEDADES_CON_TEXTO}] > Literal[value=/\\s/]`,
+          message:
+            'Texto visible en un atributo. Sácalo a content/copy.es.json y pásalo con t("…").',
         },
       ],
     },
