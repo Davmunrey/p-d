@@ -139,6 +139,41 @@ describe("Decidir qué se da de alta y qué no", () => {
     expect(lectura.errores[0].motivo).toContain("primos");
   });
 
+  it("«constructor» en la columna del lado no cuela por la cadena de prototipos", () => {
+    /*
+      `"constructor" in LADOS` es cierto para cualquier objeto —lo hereda de
+      `Object.prototype`— y `LADOS["constructor"]` es una función. Con `in`, esa
+      fila pasaba por válida y guardaba una función como lado; la vista previa
+      intentaba pintar `t("panel.invitados.lados.function Object() …")`, `t()`
+      lanza si la clave no existe, y la página de importación se caía entera.
+      Ahora es un error de fila, como cualquier otro lado inventado.
+    */
+    for (const colado of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+      const lectura = leerImportacion(`${CABECERA}\nFamilia;Ana;;${colado};`);
+      expect(lectura.filas, colado).toEqual([]);
+      expect(lectura.errores[0].motivo, colado).toContain(colado);
+    }
+  });
+
+  it("una celda más larga de lo que admite la base señala la fila, no tumba el fichero", () => {
+    /*
+      Sin esto, la vista previa daba por buena una fila con 90 caracteres en
+      «nombre», y era la base la que la rechazaba al confirmar: 150 filas fuera
+      de golpe con «no se ha podido importar», sin número de línea. Quien
+      importa tenía que adivinar cuál era.
+    */
+    const largo = "a".repeat(81);
+    const lectura = leerImportacion(
+      `${CABECERA}\nFamilia;Ana;;novia;\nFamilia;${largo};;novia;`,
+    );
+
+    expect(lectura.filas.map((fila) => fila.nombre)).toEqual(["Ana"]);
+    expect(lectura.errores).toHaveLength(1);
+    expect(lectura.errores[0].linea).toBe(3);
+    expect(lectura.errores[0].motivo).toContain("80");
+    expect(lectura.errores[0].motivo).toContain(copy.panel.importar.columna.nombre);
+  });
+
   it("sin lado se asume «ambos», que es el valor por defecto de la base", () => {
     const lectura = leerImportacion("Grupo;Nombre\nFamilia;Ana");
     expect(lectura.filas[0].lado).toBe("ambos");

@@ -165,7 +165,13 @@ export async function guardarAjustes(datos: FormData) {
 
     // Pedir confirmación después de la boda no tiene sentido, y es un error
     // fácil de cometer copiando la fecha de arriba.
-    if (limite.getTime() > ceremonia.getTime()) volver("limite-tarde");
+    //
+    // `>=` Y NO `>`, PORQUE EL CHECK DE LA BASE ES ESTRICTO: exige
+    // `fecha_limite_rsvp < fecha_hora_ceremonia`. Con `>` aquí, copiar la fecha
+    // de la ceremonia tal cual pasaba esta comprobación y la rechazaba la base
+    // con 23514, que acababa en «no hemos podido guardar los ajustes» sin decir
+    // qué campo. Justo el caso que este aviso existe para explicar.
+    if (limite.getTime() >= ceremonia.getTime()) volver("limite-tarde");
 
     const avisos = avisosDelPrograma(datos);
     if (avisos === undefined) volver("avisos");

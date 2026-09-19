@@ -713,6 +713,7 @@
       "errorSinGrupo": "Falta el grupo: hay que decir de qué invitación es esta persona.",
       "errorSinNombre": "Falta el nombre.",
       "errorLado": "«{valor}» no es un lado. Escribid novia, novio o ambos.",
+      "errorLargo": "{campo} es demasiado largo: como mucho {tope} caracteres.",
       "errorDuplicado": "{persona} ya está en «{grupo}».",
       "errorSinFichero": "No habéis elegido ningún fichero.",
       "errorNadaQueImportar": "No hay ninguna fila que dar de alta.",

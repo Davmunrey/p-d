@@ -1,4 +1,8 @@
-import { LONGITUD_MINIMA_NOMBRE, MAXIMO_FILAS_IMPORTACION } from "@/config/constants";
+import {
+  LARGOS_DE_CAMPO,
+  LONGITUD_MINIMA_NOMBRE,
+  MAXIMO_FILAS_IMPORTACION,
+} from "@/config/constants";
 import { analizarCsv } from "@/lib/csv";
 import { t, type ClaveCopy } from "@/lib/copy";
 
@@ -187,8 +191,42 @@ export function leerImportacion(
       return;
     }
 
+    /*
+      LOS TRES LARGOS QUE LA BASE EXIGE, COMPROBADOS FILA A FILA. Sin esto una
+      celda de 90 caracteres en «nombre» pasaba la vista previa entera y hacía
+      saltar el CHECK al confirmar: 150 filas rechazadas de golpe con «no se ha
+      podido importar», sin línea ni motivo, y a quien importa le tocaba
+      adivinar cuál de las 150 era. Los topes citan su columna y
+      `largos-de-campo.test.ts` los contrasta contra las migraciones.
+    */
+    const largos: [string, string | null, number][] = [
+      [t("panel.importar.columna.grupo"), grupo, LARGOS_DE_CAMPO["grupos_invitacion.nombre"]],
+      [t("panel.importar.columna.nombre"), nombre, LARGOS_DE_CAMPO["invitados.nombre"]],
+      [
+        t("panel.importar.columna.apellidos"),
+        apellidos,
+        LARGOS_DE_CAMPO["invitados.apellidos"],
+      ],
+    ];
+    const pasado = largos.find(([, valor, tope]) => (valor?.length ?? 0) > tope);
+    if (pasado) {
+      errores.push({
+        linea,
+        motivo: t("panel.importar.errorLargo", { campo: pasado[0], tope: pasado[2] }),
+      });
+      return;
+    }
+
+    /*
+      `Object.hasOwn` Y NO `in`: `in` recorre la cadena de prototipos, así que
+      «constructor», «toString» o «__proto__» escritos en la columna «lado» daban
+      por válido el valor y guardaban una FUNCIÓN como lado. La vista previa
+      intentaba pintar `t("panel.invitados.lados.function Object() …")`, `t()`
+      lanza cuando no encuentra la clave, y la pantalla de importación se caía
+      entera en vez de decir «eso no es un lado».
+    */
     const ladoBruto = normalizar(celda(fila, "lado"));
-    if (ladoBruto !== "" && !(ladoBruto in LADOS)) {
+    if (ladoBruto !== "" && !Object.hasOwn(LADOS, ladoBruto)) {
       errores.push({
         linea,
         motivo: t("panel.importar.errorLado", { valor: celda(fila, "lado") }),

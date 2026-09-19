@@ -136,6 +136,33 @@ test.describe("Ajustes de la boda", () => {
     await expect(page.getByLabel(copy.panel.ajustes.limiteRsvp)).toHaveValue(antes);
   });
 
+  /**
+   * CASO DE ERROR · LA MISMA FECHA QUE LA CEREMONIA TAMBIÉN ES TARDE.
+   *
+   * El CHECK de la base es estricto (`fecha_limite_rsvp < fecha_hora_ceremonia`)
+   * y la comprobación de la acción era `>`: copiar la fecha de la ceremonia tal
+   * cual —que es lo que hace uno con prisa— pasaba el aviso propio y la
+   * rechazaba la base con el genérico «no hemos podido guardar», sin decir qué
+   * campo. Es exactamente el caso que ese aviso existe para explicar.
+   */
+  test("una fecha límite IGUAL a la de la ceremonia se rechaza con su propio aviso", async ({
+    page,
+  }) => {
+    const ceremonia = await page.getByLabel(copy.panel.ajustes.fechaCeremonia).inputValue();
+    const limite = page.getByLabel(copy.panel.ajustes.limiteRsvp);
+    const antes = await limite.inputValue();
+
+    await limite.fill(ceremonia);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+
+    await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorLimiteTarde);
+    // Y no el genérico, que es lo que salía antes.
+    await expect(avisoDe(page)).not.toContainText(copy.panel.ajustes.errorGuardar);
+
+    await page.reload();
+    await expect(page.getByLabel(copy.panel.ajustes.limiteRsvp)).toHaveValue(antes);
+  });
+
   test("unas coordenadas a medias se rechazan", async ({ page }) => {
     // La base exige las dos o ninguna: media coordenada no señala ningún sitio.
     await page.getByLabel(copy.panel.ajustes.latitud).first().fill("42,5987");
