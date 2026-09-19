@@ -4,7 +4,13 @@ import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO, RUTA_GASTOS, RUTA_GRAFICAS, RUTA_PAGOS } from "@/config/constants";
+import {
+  LARGOS_DE_CAMPO,
+  RUTA_ACCESO,
+  RUTA_GASTOS,
+  RUTA_GRAFICAS,
+  RUTA_PAGOS,
+} from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   loQueVaCostando,
@@ -299,7 +305,7 @@ function Edicion({ categorias }: { categorias: CategoriaPresupuesto[] }) {
                 name="nombre"
                 type="text"
                 required
-                maxLength={80}
+                maxLength={LARGOS_DE_CAMPO["categorias_presupuesto.nombre"]}
                 defaultValue={categoria.nombre}
               />
               <CampoTexto
@@ -349,7 +355,7 @@ function Alta() {
           name="nombre"
           type="text"
           required
-          maxLength={80}
+          maxLength={LARGOS_DE_CAMPO["categorias_presupuesto.nombre"]}
         />
         <CampoTexto
           etiqueta={t("panel.presupuesto.campoPrevisto")}

@@ -5,6 +5,7 @@ import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
+  LARGOS_DE_CAMPO,
   IDIOMA,
   RUTA_ACCESO,
   RUTA_GASTOS,
@@ -428,7 +429,7 @@ function CamposDePagador({ pago }: { pago?: Pago }) {
         ayuda={t("panel.presupuesto.pagos.campoPagaDetalleAyuda")}
         name="paga_detalle"
         type="text"
-        maxLength={120}
+        maxLength={LARGOS_DE_CAMPO["pagos.paga_detalle"]}
         defaultValue={pago?.pagaDetalle ?? ""}
       />
     </>
@@ -481,7 +482,7 @@ function Edicion({ pago, gastos }: { pago: Pago; gastos: GastoParaPagar[] }) {
           etiqueta={t("panel.presupuesto.pagos.campoNotas")}
           name="notas"
           rows={2}
-          maxLength={2000}
+          maxLength={LARGOS_DE_CAMPO["pagos.notas"]}
           defaultValue={pago.notas ?? ""}
         />
 
@@ -553,7 +554,7 @@ function Alta({ gastos }: { gastos: GastoParaPagar[] }) {
           etiqueta={t("panel.presupuesto.pagos.campoNotas")}
           name="notas"
           rows={2}
-          maxLength={2000}
+          maxLength={LARGOS_DE_CAMPO["pagos.notas"]}
         />
 
         <div className="sm:col-span-2">

@@ -5,7 +5,12 @@ import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO, RUTA_GASTOS, RUTA_PRESUPUESTO } from "@/config/constants";
+import {
+  LARGOS_DE_CAMPO,
+  RUTA_ACCESO,
+  RUTA_GASTOS,
+  RUTA_PRESUPUESTO,
+} from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   loQueVaCostando,
@@ -356,7 +361,7 @@ function Edicion({
           name="concepto"
           type="text"
           required
-          maxLength={160}
+          maxLength={LARGOS_DE_CAMPO["partidas_presupuesto.concepto"]}
           defaultValue={gasto.concepto}
         />
         <CampoSeleccion
@@ -415,7 +420,7 @@ function Edicion({
           etiqueta={t("panel.presupuesto.gastos.campoDescripcion")}
           name="descripcion"
           rows={2}
-          maxLength={2000}
+          maxLength={LARGOS_DE_CAMPO["partidas_presupuesto.descripcion"]}
           defaultValue={gasto.descripcion ?? ""}
         />
 
@@ -466,7 +471,7 @@ function Alta({
           name="concepto"
           type="text"
           required
-          maxLength={160}
+          maxLength={LARGOS_DE_CAMPO["partidas_presupuesto.concepto"]}
         />
         <CampoSeleccion
           etiqueta={t("panel.presupuesto.gastos.campoCategoria")}
@@ -511,7 +516,7 @@ function Alta({
           etiqueta={t("panel.presupuesto.gastos.campoDescripcion")}
           name="descripcion"
           rows={2}
-          maxLength={2000}
+          maxLength={LARGOS_DE_CAMPO["partidas_presupuesto.descripcion"]}
         />
 
         <div className="sm:col-span-2">

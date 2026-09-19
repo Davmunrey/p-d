@@ -6,6 +6,7 @@ import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
+  LARGOS_DE_CAMPO,
   IDIOMA,
   PESO_MAXIMO_DOCUMENTO_MB,
   RUTA_ACCESO,
@@ -335,14 +336,14 @@ function Contactos({
             name="nombre"
             type="text"
             required
-            maxLength={120}
+            maxLength={LARGOS_DE_CAMPO["contactos_proveedor.nombre"]}
           />
           <CampoTexto
             etiqueta={t("panel.proveedores.campoPapel")}
             ayuda={t("panel.proveedores.campoPapelAyuda")}
             name="papel"
             type="text"
-            maxLength={80}
+            maxLength={LARGOS_DE_CAMPO["contactos_proveedor.papel"]}
           />
           <CampoTexto
             etiqueta={t("panel.proveedores.campoCorreo")}
@@ -457,7 +458,7 @@ function Edicion({
           name="nombre"
           type="text"
           required
-          maxLength={160}
+          maxLength={LARGOS_DE_CAMPO["proveedores.nombre"]}
           defaultValue={proveedor.nombre}
         />
         <CampoSeleccion
@@ -488,7 +489,7 @@ function Edicion({
           etiqueta={t("panel.proveedores.campoPersona")}
           name="persona_contacto"
           type="text"
-          maxLength={120}
+          maxLength={LARGOS_DE_CAMPO["proveedores.persona_contacto"]}
           defaultValue={proveedor.personaContacto ?? ""}
         />
         <CampoTexto
@@ -556,7 +557,7 @@ function Edicion({
             etiqueta={t("panel.proveedores.campoNotas")}
             name="notas"
             rows={4}
-            maxLength={4000}
+            maxLength={LARGOS_DE_CAMPO["proveedores.notas"]}
             defaultValue={proveedor.notas ?? ""}
           />
         </div>
@@ -678,7 +679,7 @@ function Fase({ proveedor }: { proveedor: FichaProveedor }) {
           ayuda={t("panel.proveedores.campoMotivoDescarteAyuda")}
           name="motivo_descarte"
           type="text"
-          maxLength={1000}
+          maxLength={LARGOS_DE_CAMPO["proveedores.motivo_descarte"]}
           defaultValue={proveedor.motivoDescarte ?? ""}
         />
 
@@ -827,7 +828,7 @@ function CamposServicio({ servicio }: { servicio?: ServicioProveedor }) {
         name="nombre"
         type="text"
         required
-        maxLength={160}
+        maxLength={LARGOS_DE_CAMPO["servicios.nombre"]}
         defaultValue={servicio?.nombre ?? ""}
       />
       <CampoTexto
@@ -1088,7 +1089,7 @@ function Documentos({
             ayuda={t("panel.proveedores.campoNombreDocumentoAyuda")}
             name="nombre"
             type="text"
-            maxLength={200}
+            maxLength={LARGOS_DE_CAMPO["documentos_proveedor.nombre"]}
           />
 
           <div className="sm:col-span-2">

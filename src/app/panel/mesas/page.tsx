@@ -7,6 +7,7 @@ import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/cam
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
+  LARGOS_DE_CAMPO,
   CAPACIDAD_MAXIMA_MESA,
   CAPACIDAD_MINIMA_MESA,
   LADO_PLANO_MESAS,
@@ -775,7 +776,7 @@ function FormularioMesa({
           name="nombre"
           type="text"
           required
-          maxLength={60}
+          maxLength={LARGOS_DE_CAMPO["mesas.nombre"]}
           defaultValue={mesa.nombre}
         />
         <CampoTexto
@@ -835,7 +836,7 @@ function FormularioMesa({
             ayuda={t("panel.mesas.campoNotasAyuda")}
             name="notas"
             rows={2}
-            maxLength={1000}
+            maxLength={LARGOS_DE_CAMPO["mesas.notas"]}
             defaultValue={mesa.notas ?? ""}
           />
         </div>
@@ -938,7 +939,7 @@ function FormularioNuevaMesa() {
           name="nombre"
           type="text"
           required
-          maxLength={60}
+          maxLength={LARGOS_DE_CAMPO["mesas.nombre"]}
         />
         <CampoTexto
           etiqueta={t("panel.mesas.campoCapacidad")}
@@ -971,7 +972,7 @@ function FormularioNuevaMesa() {
             ayuda={t("panel.mesas.campoNotasAyuda")}
             name="notas"
             rows={2}
-            maxLength={1000}
+            maxLength={LARGOS_DE_CAMPO["mesas.notas"]}
           />
         </div>
 

@@ -6,6 +6,7 @@ import { CampoTexto } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
+  LARGOS_DE_CAMPO,
   BUCKET_MEDIOS,
   PESO_MAXIMO_IMAGEN_MB,
   PESO_MAXIMO_VIDEO_MB,
@@ -264,7 +265,7 @@ function Ficha({
                 name="texto_alternativo"
                 defaultValue={medio.textoAlternativo}
                 minLength={3}
-                maxLength={300}
+                maxLength={LARGOS_DE_CAMPO["medios.texto_alternativo"]}
                 required
               />
               <Boton type="submit" jerarquia="secundario">
@@ -372,7 +373,7 @@ function FormularioSubida({ seccion }: { seccion: Seccion }) {
           ayuda={t("panel.medios.alternativoAyuda")}
           name="texto_alternativo"
           minLength={3}
-          maxLength={300}
+          maxLength={LARGOS_DE_CAMPO["medios.texto_alternativo"]}
           required
         />
 

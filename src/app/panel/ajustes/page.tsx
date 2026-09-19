@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { Boton } from "@/components/ui/boton";
 import { CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO, TOPE_AVISOS_PROGRAMA } from "@/config/constants";
+import {
+  LARGOS_DE_CAMPO,
+  LONGITUD_MINIMA_NOMBRE,
+  RUTA_ACCESO,
+  TOPE_AVISOS_PROGRAMA,
+} from "@/config/constants";
 import { accesoActual } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import { t } from "@/lib/copy";
@@ -221,7 +226,7 @@ export default async function PaginaAjustes({
             etiqueta={t("panel.ajustes.ciudad")}
             ayuda={t("panel.ajustes.ciudadAyuda")}
             defaultValue={data?.ciudad_ceremonia ?? ""}
-            maxLength={80}
+            maxLength={LARGOS_DE_CAMPO["configuracion_boda.ciudad_ceremonia"]}
             disabled={soloLectura}
           />
           {/*
@@ -253,7 +258,7 @@ export default async function PaginaAjustes({
             etiqueta={t("panel.ajustes.paisajeIntro")}
             ayuda={t("panel.ajustes.paisajeIntroAyuda")}
             defaultValue={data?.paisaje_intro ?? ""}
-            maxLength={60}
+            maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_intro"]}
             disabled={soloLectura}
           />
           <CampoTexto
@@ -261,7 +266,7 @@ export default async function PaginaAjustes({
             etiqueta={t("panel.ajustes.paisajeTitulo")}
             ayuda={t("panel.ajustes.paisajeTituloAyuda")}
             defaultValue={data?.paisaje_titulo ?? ""}
-            maxLength={200}
+            maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_titulo"]}
             disabled={soloLectura}
           />
           <CampoTexto
@@ -269,7 +274,7 @@ export default async function PaginaAjustes({
             etiqueta={t("panel.ajustes.paisajeCierre")}
             ayuda={t("panel.ajustes.paisajeCierreAyuda")}
             defaultValue={data?.paisaje_cierre ?? ""}
-            maxLength={80}
+            maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_cierre"]}
             disabled={soloLectura}
           />
           <div className="grid gap-elemento sm:grid-cols-2">

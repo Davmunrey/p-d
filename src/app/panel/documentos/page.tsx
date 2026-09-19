@@ -4,7 +4,13 @@ import { Boton, BotonEnlace } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { IDIOMA, RUTA_ACCESO, RUTA_DOCUMENTOS, ZONA_HORARIA } from "@/config/constants";
+import {
+  IDIOMA,
+  LARGOS_DE_CAMPO,
+  RUTA_ACCESO,
+  RUTA_DOCUMENTOS,
+  ZONA_HORARIA,
+} from "@/config/constants";
 import { obtenerDiasDeLaBoda } from "@/lib/bbdd/ajustes";
 import {
   caducanAntesDeLaBoda,
@@ -444,7 +450,7 @@ function Edicion({ documento }: { documento: DocumentoBoda }) {
         name="titulo"
         type="text"
         required
-        maxLength={160}
+        maxLength={LARGOS_DE_CAMPO["documentos_boda.titulo"]}
         defaultValue={documento.titulo}
       />
       <CampoSeleccion
@@ -463,7 +469,7 @@ function Edicion({ documento }: { documento: DocumentoBoda }) {
         ayuda={t("panel.documentos.campoDondeAyuda")}
         name="donde_se_pide"
         type="text"
-        maxLength={200}
+        maxLength={LARGOS_DE_CAMPO["documentos_boda.donde_se_pide"]}
         defaultValue={documento.dondeSePide ?? ""}
       />
       <CampoSeleccion
@@ -497,7 +503,7 @@ function Edicion({ documento }: { documento: DocumentoBoda }) {
           etiqueta={t("panel.documentos.campoNotas")}
           name="notas"
           rows={3}
-          maxLength={2000}
+          maxLength={LARGOS_DE_CAMPO["documentos_boda.notas"]}
           defaultValue={documento.notas ?? ""}
         />
       </div>
@@ -527,7 +533,7 @@ function FormularioAlta() {
           name="titulo"
           type="text"
           required
-          maxLength={160}
+          maxLength={LARGOS_DE_CAMPO["documentos_boda.titulo"]}
         />
         <CampoSeleccion etiqueta={t("panel.documentos.campoDeQuien")} name="de_quien">
           {TITULARES_DOCUMENTO.map((titular) => (
@@ -541,7 +547,7 @@ function FormularioAlta() {
           ayuda={t("panel.documentos.campoDondeAyuda")}
           name="donde_se_pide"
           type="text"
-          maxLength={200}
+          maxLength={LARGOS_DE_CAMPO["documentos_boda.donde_se_pide"]}
         />
         {/*
           EL ESTADO SÍ SE ELIGE AL APUNTAR, al revés que en proveedores. Un papel
@@ -575,7 +581,7 @@ function FormularioAlta() {
             etiqueta={t("panel.documentos.campoNotas")}
             name="notas"
             rows={3}
-            maxLength={2000}
+            maxLength={LARGOS_DE_CAMPO["documentos_boda.notas"]}
           />
         </div>
 

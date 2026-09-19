@@ -5,7 +5,12 @@ import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO, RUTA_COMPARADOR, RUTA_PROVEEDORES } from "@/config/constants";
+import {
+  LARGOS_DE_CAMPO,
+  RUTA_ACCESO,
+  RUTA_COMPARADOR,
+  RUTA_PROVEEDORES,
+} from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   contarPorCategoria,
@@ -313,7 +318,7 @@ function FormularioProveedor({ categorias }: { categorias: CategoriaProveedor[] 
           name="nombre"
           type="text"
           required
-          maxLength={160}
+          maxLength={LARGOS_DE_CAMPO["proveedores.nombre"]}
         />
         <CampoSeleccion
           etiqueta={t("panel.proveedores.campoCategoria")}
@@ -330,7 +335,7 @@ function FormularioProveedor({ categorias }: { categorias: CategoriaProveedor[] 
           etiqueta={t("panel.proveedores.campoPersona")}
           name="persona_contacto"
           type="text"
-          maxLength={120}
+          maxLength={LARGOS_DE_CAMPO["proveedores.persona_contacto"]}
         />
         <CampoTexto
           etiqueta={t("panel.proveedores.campoCorreo")}
@@ -361,7 +366,7 @@ function FormularioProveedor({ categorias }: { categorias: CategoriaProveedor[] 
             etiqueta={t("panel.proveedores.campoNotas")}
             name="notas"
             rows={3}
-            maxLength={4000}
+            maxLength={LARGOS_DE_CAMPO["proveedores.notas"]}
           />
         </div>
 
@@ -387,13 +392,13 @@ function FormularioCategoria() {
           name="nombre"
           type="text"
           required
-          maxLength={80}
+          maxLength={LARGOS_DE_CAMPO["categorias_proveedor.nombre"]}
         />
         <CampoTexto
           etiqueta={t("panel.proveedores.campoDescripcionCategoria")}
           name="descripcion"
           type="text"
-          maxLength={500}
+          maxLength={LARGOS_DE_CAMPO["categorias_proveedor.descripcion"]}
         />
         <Boton type="submit" jerarquia="secundario">
           {t("panel.proveedores.crearCategoria")}

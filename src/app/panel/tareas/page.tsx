@@ -7,7 +7,7 @@ import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO, RUTA_TAREAS } from "@/config/constants";
+import { LARGOS_DE_CAMPO, RUTA_ACCESO, RUTA_TAREAS } from "@/config/constants";
 import { obtenerProveedores, type Proveedor } from "@/lib/bbdd/proveedores";
 import {
   deLaColumna,
@@ -527,7 +527,7 @@ function CamposTarea({
           name="titulo"
           type="text"
           required
-          maxLength={160}
+          maxLength={LARGOS_DE_CAMPO["tareas.titulo"]}
           defaultValue={tarea?.titulo ?? ""}
         />
       </div>
@@ -557,7 +557,7 @@ function CamposTarea({
         ayuda={t("panel.tareas.campoCategoriaAyuda")}
         name="categoria"
         type="text"
-        maxLength={60}
+        maxLength={LARGOS_DE_CAMPO["tareas.categoria"]}
         defaultValue={tarea?.categoria ?? ""}
       />
 
@@ -594,7 +594,7 @@ function CamposTarea({
           ayuda={t("panel.tareas.campoDescripcionAyuda")}
           name="descripcion"
           rows={3}
-          maxLength={4000}
+          maxLength={LARGOS_DE_CAMPO["tareas.descripcion"]}
           defaultValue={tarea?.descripcion ?? ""}
         />
       </div>

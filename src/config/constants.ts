@@ -571,3 +571,50 @@ export const MUESTREO_TRAZAS = 0.1;
  * el aviso en silencio, que es la peor forma de perderlo.
  */
 export const AVISO_CONFIRMACION_FALLIDA = "confirmacion-fallida";
+
+/**
+ * LO LARGO QUE PUEDE SER CADA CAMPO DE TEXTO, SEGÚN LA BASE
+ *
+ * Todos estos números ya existían: los escribe la base en un `check` de la
+ * columna, y los formularios los repetían como literales sueltos en cuarenta y
+ * un `maxLength={160}`. Dos afirmaciones de la misma verdad en dos sitios que
+ * nadie compara — y la que se queda corta no da error, sólo deja escribir de
+ * más para que lo rechace el servidor al enviar, con el texto ya escrito.
+ *
+ * LA CLAVE ES `tabla.columna` A PROPÓSITO. Un nombre bonito —`LARGO_TITULO`— no
+ * dice cuál de los cinco títulos de la base es, y el día que dos se separen
+ * habría que adivinarlo. Así, cada uso dice exactamente a qué columna está
+ * mirando, y `tests/unidad/largos-de-campo.test.ts` lee las migraciones y
+ * comprueba una por una que digan lo mismo. La base manda; esto la cita.
+ */
+export const LARGOS_DE_CAMPO = {
+  "categorias_presupuesto.nombre": 80,
+  "categorias_proveedor.descripcion": 500,
+  "categorias_proveedor.nombre": 80,
+  "configuracion_boda.ciudad_ceremonia": 80,
+  "configuracion_boda.paisaje_cierre": 80,
+  "configuracion_boda.paisaje_intro": 60,
+  "configuracion_boda.paisaje_titulo": 200,
+  "contactos_proveedor.nombre": 120,
+  "contactos_proveedor.notas": 1000,
+  "contactos_proveedor.papel": 80,
+  "documentos_boda.donde_se_pide": 200,
+  "documentos_boda.notas": 2000,
+  "documentos_boda.titulo": 160,
+  "documentos_proveedor.nombre": 200,
+  "medios.texto_alternativo": 300,
+  "mesas.nombre": 60,
+  "mesas.notas": 1000,
+  "pagos.notas": 2000,
+  "pagos.paga_detalle": 120,
+  "partidas_presupuesto.concepto": 160,
+  "partidas_presupuesto.descripcion": 2000,
+  "proveedores.motivo_descarte": 1000,
+  "proveedores.nombre": 160,
+  "proveedores.notas": 4000,
+  "proveedores.persona_contacto": 120,
+  "servicios.nombre": 160,
+  "tareas.categoria": 60,
+  "tareas.descripcion": 4000,
+  "tareas.titulo": 160,
+} as const;
