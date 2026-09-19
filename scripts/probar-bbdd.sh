@@ -185,16 +185,47 @@ SUITE=$(mktemp /tmp/boda-suite-XXXX.sql)
 } > "$SUITE"
 chmod a+r "$SUITE"
 
-SALIDA=$(psqlp "-d $BASE -f $SUITE" 2>&1 || true)
+# EL CÓDIGO DE SALIDA DE psql SE MIRA, y antes no. Con `|| true` se tragaba
+# cualquier muerte del intérprete —una conexión caída, un error de sintaxis a
+# mitad de fichero— y como no llegaba a imprimir ningún «FALLA», este script
+# contestaba «✓ 0 comprobaciones de seguridad en verde» y salía con cero. Un
+# paso de CI bloqueante que se ponía verde sin haber demostrado nada.
+SALIDA=$(psqlp "-d $BASE -f $SUITE" 2>&1) && CODIGO=0 || CODIGO=$?
 rm -f "$SUITE"
 
-echo "$SALIDA" | { grep -E '(OK|FALLA) ' || true; } | sed -E 's/^.*(NOTICE|WARNING):  /  /'
+echo "$SALIDA" | { grep -E '(OK|FALLA|SIN DATOS) ' || true; } | sed -E 's/^.*(NOTICE|WARNING):  /  /'
 echo ""
+
+if [ "$CODIGO" -ne 0 ]; then
+  echo "✗ La suite de seguridad no llegó a terminar (psql salió con $CODIGO)."
+  echo "$SALIDA" | tail -20
+  exit 1
+fi
 
 if echo "$SALIDA" | grep -q 'FALLA'; then
   echo "✗ Hay comprobaciones de seguridad en rojo."
   exit 1
 fi
 
+# Y EL SELLO DEL FINAL. `ON_ERROR_STOP` está en `off` dentro de la suite —a
+# propósito, para que un bloque roto no se lleve por delante los demás—, así que
+# psql puede terminar con cero habiendo saltado media suite. La última línea del
+# fichero es la única prueba de que se ejecutó entera.
+if ! echo "$SALIDA" | grep -q 'SUITE-COMPLETA'; then
+  echo "✗ La suite se cortó antes del final: falta el sello SUITE-COMPLETA."
+  echo "$SALIDA" | tail -20
+  exit 1
+fi
+
 CORRECTAS=$(echo "$SALIDA" | { grep -c 'OK  ' || true; })
+
+# Un suelo, para que «se ejecutó entera pero casi todo se saltó» tampoco cuele.
+# Se sube cuando se añaden comprobaciones; bajarlo es una decisión, no un
+# descuido.
+MINIMO=110
+if [ "$CORRECTAS" -lt "$MINIMO" ]; then
+  echo "✗ Sólo $CORRECTAS comprobaciones en verde, y se esperaban al menos $MINIMO."
+  exit 1
+fi
+
 echo "✓ $CORRECTAS comprobaciones de seguridad en verde."

@@ -26,17 +26,43 @@ end $$;
 
 -- Intenta leer una tabla como el rol indicado. Devuelve true si el acceso fue
 -- denegado (que es lo que queremos para las tablas privadas).
+--
+-- CERO FILAS NO DEMUESTRA NADA, y aquí ponía que sí. La versión anterior daba
+-- por denegada cualquier lectura que devolviera cero, así que una tabla VACÍA
+-- salía OK aunque `anon` tuviera el `SELECT` y la política abierta de par en
+-- par. Hoy ocho de las tablas privadas están vacías cuando esto corre: el test
+-- bloqueante más importante de la suite era, para ellas, una comprobación que
+-- no podía fallar.
+--
+-- Ahora se distinguen los dos motivos:
+--   · sin privilegio  → denegado, y punto: no hace falta ninguna fila.
+--   · con privilegio  → sólo lo puede estar parando RLS, y eso SÓLO se puede
+--                       demostrar con datos delante. Sin filas se devuelve
+--                       falso a propósito, para que salga rojo y quien conceda
+--                       ese `SELECT` tenga que sembrar una fila con la que
+--                       probarlo.
 create or replace function pg_temp.lectura_denegada(p_rol text, p_tabla text)
 returns boolean language plpgsql as $$
 declare
-  v_filas bigint;
+  v_visibles bigint;
+  v_reales   bigint;
 begin
+  if not has_table_privilege(p_rol, format('public.%I', p_tabla), 'SELECT') then
+    return true;
+  end if;
+
+  -- Como superusuario: cuántas hay de verdad.
+  execute format('select count(*) from public.%I', p_tabla) into v_reales;
+  if v_reales = 0 then
+    raise warning 'SIN DATOS: % tiene SELECT para % y está vacía, así que su denegación no se puede demostrar', p_tabla, p_rol;
+    return false;
+  end if;
+
   execute format('set local role %I', p_rol);
-  execute format('select count(*) from public.%I', p_tabla) into v_filas;
+  execute format('select count(*) from public.%I', p_tabla) into v_visibles;
   execute 'reset role';
-  -- Sin privilegio la ejecución habría lanzado. Llegar aquí con filas visibles
-  -- es un fallo; cero filas también vale como denegación efectiva.
-  return v_filas = 0;
+
+  return v_visibles = 0;
 exception
   when insufficient_privilege then
     execute 'reset role';
@@ -1104,3 +1130,5 @@ begin
 end $$;
 
 \echo ''
+\echo ''
+\echo 'SUITE-COMPLETA'
