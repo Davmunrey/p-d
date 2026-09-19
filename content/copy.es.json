@@ -18,7 +18,9 @@
     "sinPermiso": "No tenéis acceso a esta sección.",
     "campoObligatorio": "Este campo es obligatorio.",
     "emailInvalido": "Revisad el correo, parece incompleto.",
-    "sinConexion": "Parece que no hay conexión."
+    "sinConexion": "Parece que no hay conexión.",
+    "noEncontradoTexto": "Puede que el enlace esté incompleto o que esa parte de la web ya no esté. Desde la portada se llega a todo.",
+    "volverAlInicio": "Ir a la portada"
   },
   "meta": {
     "titulo": "Paloma y David",

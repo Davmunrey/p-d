@@ -265,3 +265,30 @@ test.describe("Pie", () => {
     await expect(page.locator("#portada")).toBeInViewport();
   });
 });
+
+/**
+ * UN ENLACE QUE NO LLEVA A NINGÚN SITIO
+ *
+ * Los enlaces de esta boda se comparten por WhatsApp y se copian a mano, así
+ * que alguien va a teclear uno mal. Hasta ahora esa persona recibía la 404 de
+ * serie de Next —fondo blanco, tipografía del sistema y «This page could not be
+ * found»—: en inglés, en una web que es toda en castellano, y justo en la
+ * pantalla donde ya está desconcertada. El copy existía desde el principio; lo
+ * que faltaba era el fichero que lo pintara.
+ */
+test.describe("Una dirección que no existe", () => {
+  test("contesta 404 en castellano y con la puerta de vuelta", async ({ page }) => {
+    const respuesta = await page.goto("/esta-pagina-no-existe");
+
+    // El código importa tanto como el texto: una 404 que contesta 200 la
+    // indexan los buscadores como si fuera una página de verdad.
+    expect(respuesta?.status()).toBe(404);
+
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.errores.noEncontrado);
+    await expect(page.locator("html")).toHaveAttribute("lang", /^es/);
+
+    // Y se puede salir de ahí, que es lo único que quien llega quiere hacer.
+    await page.getByRole("link", { name: copy.errores.volverAlInicio }).click();
+    await expect(page.locator("#portada")).toBeVisible();
+  });
+});
