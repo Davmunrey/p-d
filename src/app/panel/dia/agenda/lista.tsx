@@ -130,20 +130,35 @@ function FichaDeProveedor({ proveedor }: { proveedor: ProveedorEnLaAgenda }) {
                 */
                 <a
                   href={paraLlamar(contacto.telefono)}
-                  aria-label={t("panel.dia.agenda.llamarA", { nombre: contacto.nombre })}
                   className="inline-flex min-h-control-compacto items-center text-cuerpo tabular-nums text-tinta-marca underline"
                 >
                   {contacto.telefono}
+                  {/*
+                    EL CONTEXTO VA DENTRO Y NO EN UN `aria-label`, que es lo que
+                    había. Un `aria-label` SUSTITUYE al rótulo visible: el enlace
+                    ponía el número y se llamaba «Llamar a Marta», así que quien
+                    maneja el móvil por voz leía una cosa y tenía que decir otra
+                    —y eso es justo lo que prohíbe la regla del nombre en la
+                    etiqueta (WCAG 2.5.3)—. Dentro, el número sigue siendo el
+                    principio del nombre accesible y el «a quién» se añade.
+                  */}
+                  <span className="sr-only">
+                    {" "}
+                    {t("panel.dia.agenda.llamarA", { nombre: contacto.nombre })}
+                  </span>
                 </a>
               ) : null}
 
               {contacto.correo ? (
                 <a
                   href={`mailto:${contacto.correo}`}
-                  aria-label={t("panel.dia.agenda.escribirA", { nombre: contacto.nombre })}
                   className="inline-flex min-h-control-compacto items-center text-pequeno text-tinta-suave underline"
                 >
                   {contacto.correo}
+                  <span className="sr-only">
+                    {" "}
+                    {t("panel.dia.agenda.escribirA", { nombre: contacto.nombre })}
+                  </span>
                 </a>
               ) : null}
             </li>

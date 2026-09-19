@@ -266,7 +266,7 @@ export const LONGITUD_MINIMA_CONTRASENA = 12;
 export const LONGITUD_MINIMA_NOMBRE = 2;
 
 /**
- * Cuánto se queda el «Copiado» en el botón del IBAN, en milisegundos.
+ * Cuánto se queda el «Copiado» en un botón de copiar, en milisegundos.
  *
  * Suficiente para leerlo sin prisa y poco para que no se quede fijo: un aviso
  * permanente deja de significar nada en cuanto se pulsa una segunda vez y ya

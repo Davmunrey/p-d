@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { DURACION_AVISO_COPIADO } from "@/config/constants";
 import { t } from "@/lib/copy";
 
 /**
@@ -29,7 +30,7 @@ export function CopiarRecuento({ texto }: { texto: string }) {
       setCopiado(true);
       // Vuelve a su sitio solo: un botón que se queda diciendo «copiado» para
       // siempre deja de contestar si el segundo intento funcionó.
-      window.setTimeout(() => setCopiado(false), 2000);
+      window.setTimeout(() => setCopiado(false), DURACION_AVISO_COPIADO);
     } catch {
       const area = document.getElementById("recuento-pegable");
       if (area instanceof HTMLTextAreaElement) {
@@ -59,7 +60,7 @@ export function CopiarRecuento({ texto }: { texto: string }) {
         readOnly
         rows={texto.split("\n").length}
         value={texto}
-        aria-label={t("panel.dia.recuento.copiar")}
+        aria-label={t("panel.dia.recuento.pegable")}
         className="mt-elemento w-full resize-y rounded-campo border border-borde bg-superficie-hundida p-interno text-pequeno text-tinta"
       />
     </div>
