@@ -75,6 +75,57 @@ test.describe("El sitemap", () => {
    * sección está apagada. Un sitemap escrito a mano la citaría igual y mandaría
    * a los buscadores contra una página que no existe.
    */
+  /**
+   * CASO DE ERROR · EL PIE TAMPOCO ENLAZA A UNA PÁGINA APAGADA.
+   *
+   * El sitemap ya lo respetaba y el pie no: su lista de enlaces era fija, así
+   * que con `reserva_la_fecha` apagada —como está en producción— cada visitante
+   * tenía en el pie un enlace a un 404. Se mira el HTML entregado, como en el
+   * sitemap: es lo que ve un rastreador y lo que ve quien llega sin JavaScript.
+   */
+  test("con la reserva de fecha apagada, el pie no la enlaza; encendida, sí", async ({
+    request,
+  }) => {
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    const [previo] = await sql<{ visible: boolean }[]>`
+      select visible from public.secciones_landing where seccion = 'reserva_la_fecha'
+    `;
+
+    try {
+      await sql`
+        update public.secciones_landing set visible = false where seccion = 'reserva_la_fecha'
+      `;
+      const apagada = await (await request.get("/")).text();
+      expect(apagada).not.toContain('href="/reserva-la-fecha"');
+
+      await sql`
+        update public.secciones_landing set visible = true where seccion = 'reserva_la_fecha'
+      `;
+      const encendida = await (await request.get("/")).text();
+      expect(encendida).toContain('href="/reserva-la-fecha"');
+    } finally {
+      await sql`
+        update public.secciones_landing
+           set visible = ${previo?.visible ?? true}
+         where seccion = 'reserva_la_fecha'
+      `;
+      await sql.end();
+    }
+  });
+
+  /**
+   * CASO DE ERROR · EL SITEMAP NO MIENTE SOBRE CUÁNDO CAMBIÓ LA PÁGINA.
+   *
+   * Ponía `lastmod` a la hora de la petición, o sea «ha cambiado ahora mismo»
+   * en cada lectura. Es la señal que los buscadores descartan por falsa. Mejor
+   * sin ella que inventada.
+   */
+  test("el sitemap no lleva un lastmod que sea la hora de la petición", async ({ request }) => {
+    const xml = await (await request.get("/sitemap.xml")).text();
+    expect(xml).toContain("<loc>");
+    expect(xml).not.toContain("<lastmod>");
+  });
+
   test("una página apagada no aparece", async ({ request }) => {
     const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
     const [previo] = await sql<{ visible: boolean }[]>`

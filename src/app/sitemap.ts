@@ -25,6 +25,15 @@ import { urlDelSitio } from "@/lib/url-sitio";
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * SIN `lastModified`, A PROPÓSITO. Ponía `new Date()` en cada petición, así
+ * que cada lectura del sitemap decía «esta página ha cambiado ahora mismo».
+ * Es exactamente la señal que Google documenta que descarta cuando no se
+ * sostiene, y con razón: la web cambia cuando los novios tocan algo en el
+ * panel, no cuando un rastreador pide el fichero. El campo es opcional; una
+ * fecha falsa es peor que ninguna. El día que se quiera de verdad, sale de
+ * `actualizado_en` de lo que la landing pinta.
+ */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sitio = urlDelSitio();
 
@@ -32,9 +41,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // no vale para nada. Mejor vacío que mal.
   if (!sitio) return [];
 
-  const ahora = new Date();
   const entradas: MetadataRoute.Sitemap = [
-    { url: sitio.origin, lastModified: ahora, changeFrequency: "weekly", priority: 1 },
+    { url: sitio.origin, changeFrequency: "weekly", priority: 1 },
   ];
 
   let secciones;
@@ -52,7 +60,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (esAncla(seccion)) continue;
     entradas.push({
       url: new URL(rutaDe(seccion as SeccionConRuta), sitio).toString(),
-      lastModified: ahora,
       changeFrequency: "monthly",
       priority: 0.8,
     });

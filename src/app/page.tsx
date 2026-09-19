@@ -326,6 +326,7 @@ export default async function PaginaInicio() {
         lugar={lugarConCiudad(configuracion)}
         correoContacto={configuracion.correoContacto}
         hashtag={configuracion.hashtag}
+        secciones={secciones}
       />
     </>
   );

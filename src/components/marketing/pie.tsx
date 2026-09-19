@@ -1,5 +1,5 @@
 import { RUTA_COCINA } from "@/config/constants";
-import { rutaDe } from "@/config/secciones";
+import { rutaDe, type Seccion } from "@/config/secciones";
 import { Monograma } from "@/components/ui/monograma";
 import { t } from "@/lib/copy";
 import { fechaEnPuntos } from "@/lib/fechas";
@@ -29,6 +29,7 @@ export function Pie({
   lugar,
   correoContacto,
   hashtag,
+  secciones,
 }: {
   nombreNovia: string;
   nombreNovio: string;
@@ -36,11 +37,23 @@ export function Pie({
   lugar: string | null;
   correoContacto: string | null;
   hashtag: string | null;
+  /** Las secciones visibles, tal como las da `obtenerSecciones`. */
+  secciones: readonly Seccion[];
 }) {
   const fecha = fechaEnPuntos(fechaCeremonia);
 
+  /*
+    EL ENLACE A LA RESERVA DE FECHA SÓLO SI LA PÁGINA EXISTE. Esa página
+    devuelve 404 cuando su sección está apagada —a propósito, y el sitemap ya
+    lo respeta—, pero esta lista era fija y el pie seguía enlazándola. En
+    producción la sección está apagada, así que cada visitante tenía en el pie
+    un enlace a un 404. Mismo criterio que la propia página: si `reserva_la_fecha`
+    no viene en las visibles, aquí no hay enlace.
+  */
   const enlaces = [
-    { href: rutaDe("reserva_la_fecha"), rotulo: t("navegacion.secciones.reserva_la_fecha") },
+    secciones.includes("reserva_la_fecha")
+      ? { href: rutaDe("reserva_la_fecha"), rotulo: t("navegacion.secciones.reserva_la_fecha") }
+      : null,
     { href: RUTA_COCINA, rotulo: t("pie.sistemaDeMarca") },
     correoContacto ? { href: `mailto:${correoContacto}`, rotulo: correoContacto } : null,
     { href: "#portada", rotulo: t("pie.volverArriba") },
