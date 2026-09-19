@@ -114,6 +114,46 @@ test.describe("El sitemap", () => {
   });
 
   /**
+   * CASO DE ERROR · LA IMAGEN OG TAMPOCO SOBREVIVE A LA SECCIÓN APAGADA.
+   *
+   * La página contestaba 404, el sitemap dejaba de anunciarla, el pie dejaba
+   * de enlazarla… y `/reserva-la-fecha/opengraph-image` seguía sirviendo una
+   * imagen con los nombres, la fecha y el lugar. Una página retirada con una
+   * puerta trasera de cuarenta kilobytes. El `.ics` ya se apagaba con ella;
+   * ahora la imagen también, y los dos se comprueban juntos aquí.
+   */
+  test("con la reserva de fecha apagada, ni la imagen OG ni el .ics existen", async ({
+    request,
+  }) => {
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    const [previo] = await sql<{ visible: boolean }[]>`
+      select visible from public.secciones_landing where seccion = 'reserva_la_fecha'
+    `;
+
+    try {
+      await sql`
+        update public.secciones_landing set visible = false where seccion = 'reserva_la_fecha'
+      `;
+      expect((await request.get("/reserva-la-fecha/opengraph-image")).status()).toBe(404);
+      expect((await request.get("/reserva-la-fecha/evento.ics")).status()).toBe(404);
+
+      await sql`
+        update public.secciones_landing set visible = true where seccion = 'reserva_la_fecha'
+      `;
+      const imagen = await request.get("/reserva-la-fecha/opengraph-image");
+      expect(imagen.status()).toBe(200);
+      expect(imagen.headers()["content-type"]).toContain("image/");
+    } finally {
+      await sql`
+        update public.secciones_landing
+           set visible = ${previo?.visible ?? true}
+         where seccion = 'reserva_la_fecha'
+      `;
+      await sql.end();
+    }
+  });
+
+  /**
    * CASO DE ERROR · EL SITEMAP NO MIENTE SOBRE CUÁNDO CAMBIÓ LA PÁGINA.
    *
    * Ponía `lastmod` a la hora de la petición, o sea «ha cambiado ahora mismo»
