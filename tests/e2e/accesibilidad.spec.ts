@@ -1,3 +1,6 @@
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
@@ -5,7 +8,6 @@ import postgres from "postgres";
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_PANEL, RUTA_RSVP } from "../../src/config/constants";
 import { CLAVES_LISTA, rutaDeLista } from "../../src/config/contenido-landing";
-import { MODULOS_ENTREGADOS } from "../../src/config/modulos";
 import { seguirLaPista } from "./utiles/rastro";
 
 /**
@@ -20,12 +22,12 @@ import { seguirLaPista } from "./utiles/rastro";
  *   2. El flujo de confirmación COMPLETO usando solo el teclado, que es la
  *      prueba que no puede fallar: si un invitado no puede confirmar, el
  *      resto de la auditoría da igual.
- *   3. axe sobre TODOS los módulos entregados del panel — la lista sale de
- *      `MODULOS_ENTREGADOS`, así que un módulo nuevo entra en la auditoría
- *      solo, sin que nadie tenga que acordarse. Y con ellos las pantallas de
- *      dentro que tienen entidad propia: las cuatro listas de contenido, que
- *      son formularios largos y repetidos y donde más fácil es colar una
- *      etiqueta a medias.
+ *   3. axe sobre TODAS las pantallas del panel — la lista la da el propio
+ *      directorio `src/app/panel`, así que una pantalla nueva entra en la
+ *      auditoría por existir, sin que nadie tenga que acordarse, y las de
+ *      dentro cuentan igual que las de primer nivel: son las densas —tablas,
+ *      formularios largos, listas repetidas— y es donde más fácil es colar
+ *      una etiqueta a medias.
  *
  * El listón: CERO violaciones críticas o serias. Las menores se enseñan en el
  * registro pero no bloquean — el día que estén a cero, se sube el listón.
@@ -67,6 +69,53 @@ async function crearGrupo(sufijo: string, personas: string[]): Promise<string> {
     }
   });
   return token;
+}
+
+/**
+ * TODAS LAS PANTALLAS DEL PANEL, SACADAS DEL SISTEMA DE FICHEROS.
+ *
+ * Antes la lista salía de `MODULOS_ENTREGADOS`, que son las rutas de PRIMER
+ * NIVEL, y el comentario prometía que «un módulo nuevo entra en la auditoría
+ * solo». Era verdad a medias: entraba el módulo, no sus pantallas de dentro.
+ * Habían quedado fuera doce —la agenda del día, el buscador, el recuento, la
+ * hoja para imprimir, importar invitados, los pendientes, gastos, pagos,
+ * gráficas, el comparador— y precisamente las de dentro son las densas: tablas,
+ * formularios largos y listas repetidas, que es donde de verdad se cuela una
+ * etiqueta a medias.
+ *
+ * Leyendo el directorio no hay lista que mantener: una pantalla nueva entra en
+ * la auditoría por existir, que es lo que el comentario decía y ahora hace.
+ */
+function rutasDelPanel(): string[] {
+  const raiz = join(__dirname, "..", "..", "src", "app");
+
+  const recorrer = (directorio: string): string[] =>
+    readdirSync(directorio, { withFileTypes: true }).flatMap((entrada) => {
+      const camino = join(directorio, entrada.name);
+      if (entrada.isDirectory()) return recorrer(camino);
+      if (entrada.name !== "page.tsx") return [];
+      return [camino.slice(raiz.length).replace(/\/page\.tsx$/, "") || "/"];
+    });
+
+  const todas = recorrer(join(raiz, "panel")).sort();
+
+  /*
+    LAS RUTAS CON PARÁMETRO SE RESUELVEN, NO SE SALTAN. `[lista]` sale de su
+    propio config; las fichas de invitado y de proveedor necesitarían sembrar
+    una fila y su identificador, así que se quedan fuera CON NOMBRE: si mañana
+    aparece otra ruta dinámica, este test se pone rojo y obliga a decidir qué
+    hacer con ella, en vez de dejarla sin auditar en silencio.
+  */
+  const conParametro = todas.filter((ruta) => ruta.includes("["));
+  expect(
+    conParametro.sort(),
+    "hay una ruta con parámetro nueva: decidid si se audita y cómo",
+  ).toEqual(["/panel/contenido/[lista]", "/panel/invitados/[id]", "/panel/proveedores/[id]"]);
+
+  return [
+    ...todas.filter((ruta) => !ruta.includes("[")),
+    ...CLAVES_LISTA.map((clave) => rutaDeLista(clave)),
+  ];
 }
 
 test.afterAll(async () => {
@@ -265,20 +314,7 @@ test.describe("Accesibilidad del panel", () => {
       cada ejecución de CI destapa un solo fallo y arreglarlos todos cuesta
       una tarde de tandas. Recogiéndolos, un run enseña la lista entera.
     */
-    /*
-      LAS LISTAS DE CONTENIDO VAN ADEMÁS DE SU MÓDULO, y no es duplicar: la
-      pantalla de Contenido es una tabla de interruptores, y las de dentro son
-      donde se escribe —un formulario de alta, y luego diecisiete fichas con seis
-      controles cada una—. Lo que puede fallar no está en la misma página, y la
-      lista sale de `CLAVES_LISTA`, así que una quinta entra sola.
-    */
-    const pantallas = [
-      ...MODULOS_ENTREGADOS.map((modulo) => ({ clave: modulo.clave, ruta: modulo.ruta })),
-      ...CLAVES_LISTA.map((clave) => ({
-        clave: `contenido · ${clave}`,
-        ruta: rutaDeLista(clave),
-      })),
-    ];
+    const pantallas = rutasDelPanel().map((ruta) => ({ clave: ruta, ruta }));
 
     const informes: string[] = [];
     for (const pantalla of pantallas) {
