@@ -25,6 +25,7 @@ import { admitirDocumento, componerRutaDocumento, identificadorDeRuta } from "@/
 import { leerImporte } from "@/lib/importe";
 import { accesoActual } from "@/lib/sesion";
 import { clienteDeServicio, haySubidaDeMedios } from "@/lib/supabase/servicio";
+import { esTelefonoValido } from "@/lib/telefono";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 import { type EstadoProveedores } from "./estado";
@@ -208,6 +209,12 @@ function camposProveedor(datos: FormData):
   const nombre = texto(datos, "nombre");
   if (nombre.length < LONGITUD_MINIMA_NOMBRE) return { ok: false, estado: "nombre" };
 
+  // El teléfono se mira aquí y no sólo en el CHECK: «600 11 22 33 / 91 555 12
+  // 12» es lo más normal del mundo en una tarjeta, la base lo rechaza, y sin
+  // esto el aviso era «no se ha podido guardar» sin decir qué campo.
+  const telefono = opcional(datos, "telefono");
+  if (telefono && !esTelefonoValido(telefono)) return { ok: false, estado: "telefono" };
+
   const categoriaId = texto(datos, "categoria_id");
   if (!categoriaId) return { ok: false, estado: "categoria" };
 
@@ -254,7 +261,7 @@ function camposProveedor(datos: FormData):
       nombre,
       persona_contacto: opcional(datos, "persona_contacto"),
       correo_electronico: opcional(datos, "correo_electronico"),
-      telefono: opcional(datos, "telefono"),
+      telefono,
       sitio_web: sitioWeb,
       valoracion,
       importe_presupuestado: presupuestado,
@@ -470,6 +477,7 @@ export async function anadirContacto(datos: FormData): Promise<void> {
   // La base lo exige también; aquí se dice antes y mejor. Un contacto al que
   // no se puede llamar no sirve para lo único que sirve esta tabla.
   if (!correo && !telefono) volver("contacto-sin-via", proveedorId);
+  if (telefono && !esTelefonoValido(telefono)) volver("telefono", proveedorId);
 
   const supabase = await cliente();
   const { data, error } = await supabase

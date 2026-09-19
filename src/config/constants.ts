@@ -564,6 +564,22 @@ export const MUESTREO_TRAZAS = 0.1;
 export const AVISO_CONFIRMACION_FALLIDA = "confirmacion-fallida";
 
 /**
+ * LA FORMA DE UN TELÉFONO, SEGÚN LA BASE.
+ *
+ * Es la misma expresión que el CHECK `proveedores_telefono_formato` —y el de
+ * `contactos_proveedor` y el de `invitados`—, y `tests/unidad/telefono.test.ts`
+ * comprueba que siga siendo la misma letra por letra. Un «+» opcional y entre
+ * seis y veinticinco caracteres de cifras, espacios, puntos, paréntesis y
+ * guiones: lo que escribe una persona copiando un número de una tarjeta.
+ *
+ * NO admite dos números en el mismo campo («600 11 22 33 / 91 555 12 12»),
+ * ni «ext. 4», ni letras. Antes de comprobarlo aquí, eso llegaba a la base,
+ * saltaba el CHECK, y la pantalla decía «no se ha podido guardar» sin señalar
+ * el campo. Para dos números hay dos contactos; para eso existe la tabla.
+ */
+export const FORMA_TELEFONO = /^\+?[0-9 ().-]{6,25}$/;
+
+/**
  * LO LARGO QUE PUEDE SER CADA CAMPO DE TEXTO, SEGÚN LA BASE
  *
  * Todos estos números ya existían: los escribe la base en un `check` de la

@@ -18,6 +18,7 @@ export type EstadoProveedores =
   | "categoria-creada"
   | "categoria-borrada"
   | "nombre"
+  | "telefono"
   | "categoria"
   | "importe"
   | "valoracion"

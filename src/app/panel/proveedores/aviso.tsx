@@ -23,6 +23,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   importe: { clave: "panel.proveedores.errorImporte", error: true },
   valoracion: { clave: "panel.proveedores.errorValoracion", error: true },
   "contacto-sin-via": { clave: "panel.proveedores.errorContactoSinVia", error: true },
+  telefono: { clave: "panel.proveedores.errorTelefono", error: true },
   estado: { clave: "panel.proveedores.errorEstado", error: true },
   "descarte-sin-motivo": { clave: "panel.proveedores.errorDescarteSinMotivo", error: true },
   "confirmar-contratado": { clave: "panel.proveedores.avisoConfirmarContratado", error: true },

@@ -1,3 +1,5 @@
+import { FORMA_TELEFONO } from "@/config/constants";
+
 /**
  * UN TELÉFONO, LISTO PARA LLAMAR
  *
@@ -18,4 +20,12 @@
  */
 export function paraLlamar(telefono: string): string {
   return `tel:${telefono.replace(/[^\d+]/g, "")}`;
+}
+
+/**
+ * ¿Aceptaría la base este teléfono? La misma pregunta que hace el CHECK, hecha
+ * antes de enviar para poder decir QUÉ campo está mal en vez de un genérico.
+ */
+export function esTelefonoValido(telefono: string): boolean {
+  return FORMA_TELEFONO.test(telefono);
 }

@@ -936,7 +936,8 @@
       "errorServicioCantidad": "La cantidad tiene que ser un número entero de 1 en adelante.",
       "errorServicioMinimo": "Ese mínimo no se entiende. Escribid sólo números, con coma o punto para los decimales.",
       "errorServicioMinimoSuelto": "El mínimo garantizado sólo tiene sentido si el precio es por invitado. Marcad la casilla o dejadlo en blanco.",
-      "errorReferenciaRota": "Algo de lo elegido —la categoría o el proveedor— ya no existe: alguien lo ha borrado mientras tanto. Recargad y volved a elegirlo."
+      "errorReferenciaRota": "Algo de lo elegido —la categoría o el proveedor— ya no existe: alguien lo ha borrado mientras tanto. Recargad y volved a elegirlo.",
+      "errorTelefono": "Ese teléfono no tiene buena pinta: sólo cifras, espacios, puntos, paréntesis y guiones, y un solo número por contacto. Para dos números, dos contactos."
     },
     "presupuesto": {
       "titulo": "Presupuesto",
