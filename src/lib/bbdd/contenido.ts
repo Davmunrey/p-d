@@ -133,7 +133,12 @@ async function medirLaSeccion(
       .select("*", { count: "exact", head: true })
       .eq("publicado", true);
 
-    if (origen.filtro) consulta = consulta.eq(origen.filtro.columna, origen.filtro.valor);
+    for (const condicion of origen.filtro ?? []) {
+      consulta =
+        "igual" in condicion
+          ? consulta.eq(condicion.columna, condicion.igual)
+          : consulta.not(condicion.columna, "is", null);
+    }
 
     const { count, error } = await consulta;
 

@@ -11,6 +11,7 @@ import {
   type Mesa,
 } from "@/lib/bbdd/mesas";
 import { t } from "@/lib/copy";
+import { celda } from "@/lib/csv";
 import { accesoActual } from "@/lib/sesion";
 
 /**
@@ -41,18 +42,6 @@ const formatoFechaFichero = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
   timeZone: ZONA_HORARIA,
 });
-
-/**
- * Una celda de CSV.
- *
- * Se entrecomilla SIEMPRE, no sólo cuando hay comas. Un campo de alergias lleva
- * comas, saltos de línea y comillas con total naturalidad —«Celíaca, y alérgica
- * a los frutos secos»— y decidir campo a campo es justo donde se cuela el
- * fichero que Excel abre partido por la mitad.
- */
-function celda(valor: string | number | null | undefined): string {
-  return `"${String(valor ?? "").replaceAll('"', '""')}"`;
-}
 
 function respuestaDe(persona: Comensal): string {
   if (persona.estado === ESTADO_CONFIRMADO) return t("rsvp.vieneSi");

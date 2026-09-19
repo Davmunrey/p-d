@@ -137,8 +137,8 @@ describe("el mapa de qué llena cada sección", () => {
       const columnas =
         origen.clase === "campo"
           ? [origen.campo]
-          : origen.clase === "lista" && origen.filtro
-            ? [origen.filtro.columna]
+          : origen.clase === "lista"
+            ? (origen.filtro ?? []).map((condicion) => condicion.columna)
             : [];
 
       for (const columna of columnas) {
@@ -175,5 +175,42 @@ describe("el mapa de qué llena cada sección", () => {
     });
 
     expect(sinPublicado).toEqual([]);
+  });
+
+  it("la galería se cuenta con los mismos predicados con los que la landing la pinta", () => {
+    /*
+      `obtenerGaleria()` exige más que `publicado`: sólo imágenes, y con
+      medidas. Un vídeo o un AVIF sin medir se guardan publicados y no salen.
+      Contarlos aquí decía «la galería se ve» mientras la web la escondía.
+
+      Se lee el `where` de la landing y se compara EN LOS DOS SENTIDOS: cada
+      condición de aquí está allí, y cada predicado de allí está aquí. El día
+      que la landing añada uno, esto se cae y hay que copiarlo.
+    */
+    const landing = readFileSync(join(RAIZ, "src/lib/bbdd/landing.ts"), "utf8");
+    const consulta = landing
+      .split("export async function obtenerGaleria(")[1]
+      ?.split("order by")[0];
+    expect(consulta, "obtenerGaleria sigue existiendo y ordena").toBeDefined();
+
+    const galeria = ORIGEN_DE_LA_SECCION.galeria;
+    expect(galeria.clase).toBe("lista");
+    if (galeria.clase !== "lista") return;
+
+    const aqui = (galeria.filtro ?? []).map((condicion) =>
+      "igual" in condicion
+        ? condicion.columna === "seccion"
+          ? "seccion = ${seccion}"
+          : `${condicion.columna} = '${condicion.igual}'`
+        : `${condicion.columna} is not null`,
+    );
+
+    const alli = [
+      ...consulta!.matchAll(/\band (\w+ (?:= (?:'\w+'|\$\{seccion\})|is not null))/g),
+    ].map((m) => m[1]);
+
+    expect(aqui.sort()).toEqual(alli.sort());
+    // Y no es un espejo de la nada: la landing exige algo más que la sección.
+    expect(alli.length).toBeGreaterThan(1);
   });
 });

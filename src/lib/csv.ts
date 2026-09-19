@@ -1,5 +1,5 @@
 /**
- * LEER UN CSV QUE VIENE DE EXCEL
+ * LEER UN CSV QUE VIENE DE EXCEL, Y ESCRIBIR UNO QUE EXCEL ABRA BIEN
  *
  * No se usa una librería porque el problema no es analizar CSV —eso son treinta
  * líneas— sino las dos cosas que hace Excel y que ninguna librería adivina por
@@ -8,7 +8,8 @@
  *
  * Este módulo no sabe nada de invitados: entra texto o bytes y salen filas de
  * cadenas. Quién es «nombre» y quién «apellidos» lo decide
- * `lib/importacion-invitados.ts`.
+ * `lib/importacion-invitados.ts`. En la otra dirección, `celda()` es la que
+ * usan las tres rutas que sirven un CSV: lo que sale se puede volver a meter.
  */
 
 /** Los separadores que se prueban, en orden de probabilidad en España. */
@@ -170,4 +171,30 @@ export function analizarCsv(texto: string, separador = detectarSeparador(texto))
   if (actual !== "" || celdas.length > 0) cerrarFila();
 
   return filas;
+}
+
+/**
+ * UNA CELDA DE CSV, LA MISMA EN TODOS LOS FICHEROS QUE SALEN DEL PANEL
+ *
+ * Se entrecomilla SIEMPRE, no sólo cuando hay comas. Un campo de alergias
+ * lleva comas, saltos de línea y comillas con total naturalidad —«Celíaca, y
+ * alérgica a los frutos secos»— y decidir campo a campo es justo donde se
+ * cuela el fichero que Excel abre partido por la mitad.
+ *
+ * Y NO PUEDE EMPEZAR POR LO QUE EXCEL LEE COMO FÓRMULA. Las comillas no lo
+ * impiden: al abrir un CSV, Excel las quita y DESPUÉS interpreta el contenido,
+ * así que una celda que empiece por `=`, `+`, `-`, `@`, tabulador o retorno de
+ * carro se evalúa. Es un texto que escribe un invitado desde una URL pública
+ * —las alergias del RSVP— y que abre un tercero: el catering. Con
+ * `=HYPERLINK("https://…";"Ver alergias")` la celda no enseña el texto, enseña
+ * un enlace a donde quiera quien lo escribió; con `=1+1` enseña `2`. Se
+ * antepone un apóstrofo, que es la mitigación que recomienda OWASP: Excel lo
+ * toma como marca de texto y el resto se ve tal cual.
+ */
+const EMPIEZA_COMO_FORMULA = /^[=+\-@\t\r]/;
+
+export function celda(valor: string | number | null | undefined): string {
+  const texto = String(valor ?? "");
+  const inofensivo = EMPIEZA_COMO_FORMULA.test(texto) ? `'${texto}` : texto;
+  return `"${inofensivo.replaceAll('"', '""')}"`;
 }

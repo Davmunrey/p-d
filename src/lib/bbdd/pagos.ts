@@ -127,10 +127,17 @@ function aPago(fila: FilaPago): Pago {
 export async function obtenerPagos(): Promise<Pago[]> {
   const supabase = await clienteServidor();
 
+  // Con desempate. Varios pagos vencen el mismo día —la semana antes de la
+  // boda, todos—, y sin un segundo criterio Postgres devuelve los empates en
+  // el orden físico que toque: marcar uno como pagado y deshacerlo los
+  // intercambiaba en el calendario al recargar. Una lista que se baraja sola
+  // parece rota.
   const { data, error } = await supabase
     .from("v_pagos")
     .select(CAMPOS)
-    .order("fecha_vencimiento");
+    .order("fecha_vencimiento")
+    .order("concepto")
+    .order("id");
 
   if (error) {
     console.error("No se pudieron leer los pagos:", error);

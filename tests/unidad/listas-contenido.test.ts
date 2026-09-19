@@ -310,10 +310,12 @@ describe("a qué sección de la web va cada lista", () => {
 
       expect(origen.tabla).toBe(lista.tabla);
       if (variante && origen.filtro) {
-        expect(origen.filtro.columna).toBe(
+        // La partida es la primera condición; `igual`, porque es un `= valor`.
+        const [partida] = origen.filtro;
+        expect(partida && "igual" in partida ? partida.columna : "").toBe(
           lista.destino.clase === "partida" ? lista.destino.columna : "",
         );
-        expect(origen.filtro.valor).toBe(variante);
+        expect(partida && "igual" in partida ? partida.igual : "").toBe(variante);
       }
     }
   });

@@ -51,8 +51,14 @@ export type Donde =
  * `sola`   — se pinta siempre que esté encendida.
  * `sin-hacer` — todavía no existe el componente: encenderla no hace nada.
  */
+/**
+ * Una condición más, además de `publicado`, para contar sólo lo que la landing
+ * pinta de verdad. `igual` es un `= 'valor'`; `noNula` es un `is not null`.
+ */
+export type Condicion = { columna: string; igual: string } | { columna: string; noNula: true };
+
 export type Origen =
-  | { clase: "lista"; tabla: string; filtro?: { columna: string; valor: string }; donde: Donde }
+  | { clase: "lista"; tabla: string; filtro?: readonly Condicion[]; donde: Donde }
   | { clase: "campo"; tabla: string; campo: string; donde: Donde }
   | { clase: "sola"; donde: Donde }
   | { clase: "sin-hacer" };
@@ -101,10 +107,23 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
 
   historia: { clase: "lista", tabla: "hitos_historia", donde: enContenido("historia") },
 
+  /*
+    CON LOS MISMOS PREDICADOS QUE `obtenerGaleria()`, no sólo `publicado`. La
+    landing pinta únicamente imágenes con medidas: un vídeo con póster o un
+    AVIF —formato admitido que `medirImagen` no sabe medir— se guardan
+    publicados y no salen. Contarlos aquí decía «la galería se ve» mientras la
+    web la escondía, que es justo la mentira que esta pantalla existe para
+    quitar. El test unitario compara esta lista con el `where` de la landing.
+  */
   galeria: {
     clase: "lista",
     tabla: "medios",
-    filtro: { columna: "seccion", valor: "galeria" },
+    filtro: [
+      { columna: "seccion", igual: "galeria" },
+      { columna: "tipo", igual: "imagen" },
+      { columna: "ancho", noNula: true },
+      { columna: "alto", noNula: true },
+    ],
     donde: EN_MEDIOS,
   },
 
@@ -116,14 +135,14 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
   preboda: {
     clase: "lista",
     tabla: "hitos_programa",
-    filtro: { columna: "momento", valor: "preboda" },
+    filtro: [{ columna: "momento", igual: "preboda" }],
     // La misma pantalla que el programa, en su otra pestaña.
     donde: enContenido("programa"),
   },
   programa: {
     clase: "lista",
     tabla: "hitos_programa",
-    filtro: { columna: "momento", valor: "boda" },
+    filtro: [{ columna: "momento", igual: "boda" }],
     donde: enContenido("programa"),
   },
 

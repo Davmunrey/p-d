@@ -368,6 +368,30 @@ test.describe("El plano de mesas y el reparto", () => {
   });
 
   /**
+   * CASO DE ERROR · Con la base fallando, la exportación NO entrega un fichero.
+   *
+   * Antes `obtenerMesas()` devolvía `[]` ante error y la ruta contestaba 200
+   * con sólo la cabecera: un CSV verosímil que le decía a la finca que no había
+   * ninguna mesa que montar. Se simula la caída quitándole a `authenticated`
+   * el permiso de lectura sobre `mesas`, y se devuelve al acabar.
+   */
+  test("si la base falla, no se descarga un reparto vacío que parezca de verdad", async ({
+    page,
+  }) => {
+    test.skip(!cadena, "Hace falta DATABASE_URL para simular la caída.");
+
+    try {
+      await conBase((sql) => sql`revoke select on public.mesas from authenticated`);
+
+      const fichero = await page.request.get(RUTA_MESAS_EXPORTAR);
+      expect(fichero.status()).not.toBe(200);
+      expect(fichero.headers()["content-disposition"] ?? "").not.toContain("attachment");
+    } finally {
+      await conBase((sql) => sql`grant select on public.mesas to authenticated`);
+    }
+  });
+
+  /**
    * CAMINO FELIZ · BODA-84 · Sentar al grupo entero lo saca de pendientes y
    * suma en el recuento de la mesa.
    */

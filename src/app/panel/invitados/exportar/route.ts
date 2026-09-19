@@ -4,6 +4,7 @@ import { RUTA_ACCESO, ZONA_HORARIA } from "@/config/constants";
 import { obtenerGruposConGente } from "@/lib/bbdd/invitados";
 import { esEstadoFiltro, filtrarGrupos, type EstadoFiltro } from "@/lib/filtro-invitados";
 import { t } from "@/lib/copy";
+import { celda } from "@/lib/csv";
 import { accesoActual } from "@/lib/sesion";
 
 /**
@@ -47,18 +48,6 @@ const formatoFechaFichero = new Intl.DateTimeFormat("en-CA", {
   timeZone: ZONA_HORARIA,
 });
 
-/**
- * Una celda de CSV.
- *
- * Se entrecomilla SIEMPRE, no sólo cuando hay comas. Un campo de alergias
- * lleva comas, saltos de línea y comillas con total naturalidad —«Celíaca, y
- * alérgica a los frutos secos»— y decidir campo a campo es justo donde se
- * cuela el fichero que Excel abre partido por la mitad.
- */
-function celda(valor: string | null | undefined): string {
-  return `"${String(valor ?? "").replaceAll('"', '""')}"`;
-}
-
 export async function GET(peticion: NextRequest) {
   const acceso = await accesoActual();
   // Un fichero con los datos de ciento veinte personas no se sirve a quien
@@ -72,7 +61,12 @@ export async function GET(peticion: NextRequest) {
   const estado: EstadoFiltro = esEstadoFiltro(estadoBruto) ? estadoBruto : "todos";
 
   // Sin selección se llevan todas: quien no elige, quiere el listado completo.
-  const pedidas = parametros.getAll("columna").filter((c): c is Columna => c in COLUMNAS);
+  // `Object.hasOwn` y no `in`: `in` mira también la cadena de prototipos, así
+  // que `?columna=constructor` pasaba el filtro y reventaba al traducir el
+  // rótulo. La guarda existe para lo que no viene del formulario.
+  const pedidas = parametros
+    .getAll("columna")
+    .filter((c): c is Columna => Object.hasOwn(COLUMNAS, c));
   const columnas = pedidas.length > 0 ? pedidas : TODAS;
 
   const grupos = await obtenerGruposConGente();

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { esIdentificador } from "@/lib/identificador";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -80,21 +81,6 @@ export const BASE_SERVICIO_NEUTRA: BaseServicio = "todos";
 
 export function esBaseServicio(valor: string): valor is BaseServicio {
   return (BASES_SERVICIO as readonly string[]).includes(valor);
-}
-
-/**
- * Un identificador de la base, antes de mandárselo a PostgREST.
- *
- * `?categoria=inexistente` es una URL que alguien va a escribir —o que va a
- * quedar en un marcador cuando se borre una categoría—, y comparar eso con una
- * columna `uuid` no devuelve «no hay nada»: devuelve un `22P02` de PostgreSQL.
- * Un error de sintaxis de SQL no es lo que hay que enseñarle a nadie, así que
- * lo que no tiene forma de identificador ni llega a salir de aquí.
- */
-const ES_IDENTIFICADOR = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-export function esIdentificador(valor: string): boolean {
-  return ES_IDENTIFICADOR.test(valor);
 }
 
 export interface CategoriaProveedor {

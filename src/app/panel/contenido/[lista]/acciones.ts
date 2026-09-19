@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { RedirectType, redirect } from "next/navigation";
 
 import { RUTA_ACCESO, RUTA_CONTENIDO, TOPE_ORDEN_CONTENIDO } from "@/config/constants";
+import { esIdentificador } from "@/lib/identificador";
 import {
   LISTAS_DE_CONTENIDO,
   esClaveLista,
@@ -167,11 +168,6 @@ function camposValidados(
   }
 
   return valores;
-}
-
-/** La forma de un `uuid`, que es lo que la base espera en `medio_id`. */
-function esIdentificador(valor: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor);
 }
 
 /**

@@ -143,10 +143,11 @@ export async function obtenerMesas(): Promise<Mesa[]> {
     .select("id, nombre, capacidad, forma, posicion_x, posicion_y, notas")
     .order("nombre");
 
-  if (error) {
-    console.error("No se pudieron leer las mesas:", error);
-    return [];
-  }
+  // Se lanza, como `obtenerGruposConGente`. Devolver `[]` aquí disfrazaba la
+  // avería de «no hay mesas»: la exportación entregaba a la finca un CSV con
+  // sólo la cabecera, verosímil y descargable, que decía que no había ninguna
+  // mesa que montar. Una lista vacía tiene que seguir significando eso.
+  if (error) throw new Error(`No se pudieron leer las mesas: ${error.message}`);
 
   return ((data ?? []) as unknown as FilaMesa[]).map((fila) => ({
     id: fila.id,
@@ -218,8 +219,7 @@ export async function obtenerComensales(): Promise<Comensal[]> {
     .order("nombre_completo");
 
   if (error) {
-    console.error("No se pudieron leer los invitados de las mesas:", error);
-    return [];
+    throw new Error(`No se pudieron leer los invitados de las mesas: ${error.message}`);
   }
 
   return ((data ?? []) as unknown as FilaComensal[]).map((fila) => ({

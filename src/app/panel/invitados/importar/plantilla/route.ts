@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { RUTA_ACCESO } from "@/config/constants";
 import { t } from "@/lib/copy";
+import { celda } from "@/lib/csv";
 import { accesoActual } from "@/lib/sesion";
 
 /**
@@ -45,7 +46,6 @@ export async function GET(peticion: NextRequest) {
     t("panel.invitados.no"),
   ];
 
-  const celda = (valor: string) => `"${valor.replaceAll('"', '""')}"`;
   const csv = [columnas, muestra].map((fila) => fila.map(celda).join(";")).join("\r\n");
 
   // El BOM y el `;`, por lo mismo que en la exportación: es lo que espera Excel

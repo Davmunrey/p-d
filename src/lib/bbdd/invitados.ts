@@ -1,5 +1,6 @@
 import "server-only";
 
+import { esIdentificador } from "@/lib/identificador";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -140,6 +141,11 @@ export interface DetalleGrupo extends GrupoInvitacion {
 
 /** Un grupo con su gente. `null` si no existe o si RLS no lo deja ver. */
 export async function obtenerGrupo(id: string): Promise<DetalleGrupo | null> {
+  // `/panel/invitados/familia-perez` es una URL que alguien va a escribir, y
+  // compararla con una columna `uuid` no da «no existe»: da un `22P02` que
+  // acababa en la pantalla de avería. Ver `esIdentificador`.
+  if (!esIdentificador(id)) return null;
+
   const supabase = await clienteServidor();
 
   const { data, error } = await supabase

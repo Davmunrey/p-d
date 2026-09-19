@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_INVITADOS, RUTA_PANEL, RUTA_RSVP } from "../../src/config/constants";
@@ -21,6 +22,16 @@ const CONTRASENA = process.env.CONTRASENA_PRUEBAS;
 
 /** Marca de agua, para no confundir lo que escribe el test con el seed. */
 const MARCA = "(DES) E2E Invitación";
+const cadena = process.env.DATABASE_URL;
+
+async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T> {
+  const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+  try {
+    return await trabajo(sql);
+  } finally {
+    await sql.end();
+  }
+}
 
 /** La ficha de una invitación. Se espera a llegar aquí antes de seguir. */
 const FICHA = new RegExp(`${RUTA_INVITADOS}/[0-9a-f-]{36}`);
@@ -383,6 +394,75 @@ test.describe("Exportar invitados", () => {
    * códigos local y «Zubeldía» se convierte en «ZubeldÃ­a». Quien lo recibe es
    * el catering, y va a abrirlo con Excel.
    */
+  /**
+   * CASO DE ERROR · `?columna=constructor` pasaba el filtro de columnas.
+   *
+   * `in` mira también la cadena de prototipos, así que `constructor`,
+   * `toString` o `__proto__` contaban como columnas y la ruta reventaba con un
+   * 500 al traducir el rótulo. Lo que no es una columna se ignora, y sin
+   * ninguna válida se llevan todas: es lo que hace el formulario.
+   */
+  test("una columna inventada en la URL se ignora en vez de romper la descarga", async ({
+    page,
+  }) => {
+    const completo = await page.request.get(`${RUTA_INVITADOS}/exportar`);
+    const cabecera = (await completo.text()).split("\r\n")[0];
+
+    const trucado = await page.request.get(
+      `${RUTA_INVITADOS}/exportar?columna=constructor&columna=__proto__&columna=toString`,
+    );
+    expect(trucado.status()).toBe(200);
+    expect((await trucado.text()).split("\r\n")[0]).toBe(cabecera);
+
+    // Y una válida entre inventadas sigue filtrando: sólo esa columna.
+    const soloNombre = await page.request.get(
+      `${RUTA_INVITADOS}/exportar?columna=constructor&columna=nombre`,
+    );
+    expect((await soloNombre.text()).split("\r\n")[0]).toBe(
+      `\ufeff"${copy.panel.invitados.columnaNombre}"`,
+    );
+  });
+
+  /**
+   * CASO DE ERROR · Las alergias las escribe un invitado desde una URL pública
+   * y las abre el catering con Excel: una celda que empiece por `=` se
+   * evaluaría como fórmula. Va neutralizada con un apóstrofo delante.
+   */
+  test("una alergia que parece una fórmula llega a Excel como texto", async ({ page }) => {
+    test.skip(!cadena, "Hace falta DATABASE_URL para escribir la alergia.");
+
+    const marca = `${MARCA} fórmula ${Date.now()}`;
+    await page.goto(RUTA_INVITADOS);
+    await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(marca);
+    await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
+    await expect(page).toHaveURL(FICHA);
+    await page
+      .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
+      .fill("(DES) Fórmula");
+    await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
+    await expect(page.getByText("(DES) Fórmula")).toBeVisible();
+
+    // Lo que escribiría un invitado malintencionado en el RSVP.
+    const formula = '=HYPERLINK("https://phish.example";"Ver alergias")';
+    await conBase(
+      (sql) => sql`
+        update public.invitados as i
+           set alergias = ${formula}
+          from public.grupos_invitacion as g
+         where g.id = i.grupo_id and g.nombre = ${marca}
+      `,
+    );
+
+    const fichero = await page.request.get(
+      `${RUTA_INVITADOS}/exportar?buscar=${encodeURIComponent(marca)}`,
+    );
+    const [, fila] = (await fichero.text()).split("\r\n");
+
+    // El apóstrofo delante, dentro de las comillas: Excel lo lee como texto.
+    expect(fila).toContain(`"'=HYPERLINK(`);
+    expect(fila).not.toContain(`;"=HYPERLINK(`);
+  });
+
   test("los acentos y la ñ sobreviven a Excel", async ({ page }) => {
     await entrar(page);
 
