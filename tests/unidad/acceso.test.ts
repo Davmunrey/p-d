@@ -56,6 +56,22 @@ function motivosEmitidos(): Set<string> {
     for (const [, motivo] of texto.matchAll(/aAcceso\(\s*"([a-z-]+)"\s*\)/g)) {
       motivos.add(motivo);
     }
+
+    /*
+      `return "sin-acceso"` — la función que DECIDE el motivo, en
+      `acceso/estado.ts`. Vive aparte porque `acciones.ts` es `"use server"` y
+      no puede exportar nada que no sea una función asíncrona, y porque así la
+      regla se puede probar sin levantar un Supabase.
+
+      El patrón se limita a ESE fichero a propósito: un `return "algo"` es
+      demasiado común para barrerlo por todo `src/`, y si contara en cualquier
+      sitio, un motivo muerto encontraría dónde esconderse.
+    */
+    if (ruta.endsWith(join("app", "acceso", "estado.ts"))) {
+      for (const [, motivo] of texto.matchAll(/return\s+"([a-z-]+)"\s*;/g)) {
+        motivos.add(motivo);
+      }
+    }
   }
 
   return motivos;

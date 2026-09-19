@@ -13,6 +13,8 @@ import {
 } from "@/config/constants";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
+import { motivoDeLaPuerta } from "./estado";
+
 /**
  * ENTRAR AL PANEL
  *
@@ -135,11 +137,30 @@ export async function entrar(datos: FormData) {
       .eq("usuario_id", identificado.user.id)
       .maybeSingle();
 
+    /*
+      NO PODER MIRAR NO ES NO TENER ACCESO, y aquí se decían igual. El error de
+      la lectura se anotaba en el registro y se seguía de largo; abajo, un
+      `perfil` nulo —que es lo que deja una lectura fallida— entra por la misma
+      puerta que un perfil desactivado, así que la web contestaba «esta cuenta
+      existe, pero todavía no tiene acceso al panel».
+
+      Es una afirmación sobre los permisos de alguien, hecha sin haberlos
+      podido leer, en la única pantalla donde quien la lee no puede comprobar
+      nada por su cuenta. Y manda a la persona equivocada al sitio equivocado:
+      a dar de alta una cuenta que a lo mejor ya estaba dada, mientras lo que
+      falla es la base. Un corte de red de diez segundos se lee como una cuenta
+      sin permisos.
+
+      Cuando no se ha podido comprobar se dice lo que de verdad se sabe:
+      inténtalo otra vez. La sesión se cierra igual en los dos casos — una
+      sesión que no se sabe si sirve no se le deja a nadie.
+    */
     if (fallo) console.error("No se pudo leer el perfil:", fallo.message);
 
-    if (!perfil?.activo) {
+    const motivo = motivoDeLaPuerta({ fallo: Boolean(fallo), activo: perfil?.activo });
+    if (motivo) {
       await supabase.auth.signOut();
-      aLaPuerta("sin-acceso", destino);
+      aLaPuerta(motivo, destino);
     }
   } catch (error) {
     // `redirect` funciona lanzando: si no se deja pasar, el fallo de arriba se
