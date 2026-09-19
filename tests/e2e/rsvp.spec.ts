@@ -95,9 +95,17 @@ async function crearGrupo(sufijo: string, personas: string[]): Promise<string> {
  */
 test.afterAll(async () => {
   if (!cadena) return;
-  await conBase(
-    (sql) => sql`delete from public.grupos_invitacion where nombre like '(DES) Grupo e2e-%'`,
-  );
+  await conBase(async (sql) => {
+    // Las canciones ANTES que el grupo: la clave ajena es `on delete set null`
+    // y borrar el grupo primero las dejaría huérfanas en la playlist de verdad.
+    await sql`
+      delete from public.canciones_sugeridas
+       where grupo_id in (
+         select id from public.grupos_invitacion where nombre like '(DES) Grupo e2e-%'
+       )
+    `;
+    await sql`delete from public.grupos_invitacion where nombre like '(DES) Grupo e2e-%'`;
+  });
 });
 
 test.describe("El recorrido del invitado", () => {
@@ -549,7 +557,7 @@ test.describe("Un enlace que no vale", () => {
   test("un token falso y uno revocado dan exactamente la misma respuesta", async ({
     request,
   }) => {
-    const revocado = await crearGrupo(`revocado-${Date.now()}`, ["(DES) Revocada"]);
+    const revocado = await crearGrupo(`e2e-revocado-${Date.now()}`, ["(DES) Revocada"]);
 
     // Mientras vale, vale: si esto no pasara, el resto del test compararía dos
     // páginas de error sin haber demostrado nada.
@@ -618,7 +626,7 @@ test.describe("Cambiar una respuesta ya dada", () => {
   test("se puede editar mientras haya plazo, y la anterior queda en el historial", async ({
     browser,
   }) => {
-    const token = await crearGrupo(`editar-${Date.now()}`, ["(DES) Editable"]);
+    const token = await crearGrupo(`e2e-editar-${Date.now()}`, ["(DES) Editable"]);
 
     const contexto = await browser.newContext({
       javaScriptEnabled: false,
@@ -627,22 +635,39 @@ test.describe("Cambiar una respuesta ya dada", () => {
     });
     const pagina = await contexto.newPage();
 
-    // Primero, que sí.
+    // Primero, que sí, y con canción.
     await pagina.goto(`${RUTA_RSVP}/${token}`);
     await pagina.locator('input[value="confirmado"]').first().check();
     await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
     await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.locator('input[name="cancion"]').fill("(DES) La misma de siempre");
     await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
     await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
 
-    // Y ahora, que no: el mismo enlace reabre la respuesta.
+    // Y ahora, que no: el mismo enlace reabre la respuesta. La canción llega
+    // sembrada de la respuesta anterior y se manda otra vez sin tocarla.
     await pagina.getByRole("button", { name: copy.rsvp.editarRespuesta }).click();
     await pagina.locator('input[value="rechazado"]').first().check();
     await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await expect(pagina.locator('input[name="cancion"]')).toHaveValue(
+      "(DES) La misma de siempre",
+    );
     await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
     await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasNo);
 
     await contexto.close();
+
+    // Reeditar no apunta la canción dos veces: la playlist la tiene UNA vez.
+    // Antes, cada «Cambiar la respuesta» la reinsertaba y gastaba una plaza.
+    const enLaPlaylist = await conBase(
+      (sql) => sql<{ cuantas: number }[]>`
+        select count(*)::int as cuantas
+          from public.canciones_sugeridas as c
+          join public.grupos_invitacion as g on g.id = c.grupo_id
+         where g.huella_token = public.huella_token(${token})
+      `,
+    );
+    expect(enLaPlaylist[0].cuantas).toBe(1);
 
     // La base es la que manda: la vigente es la nueva y la vieja sigue ahí.
     const filas = await conBase(
@@ -679,7 +704,7 @@ test.describe("Cambiar una respuesta ya dada", () => {
   test("con el plazo cerrado no se puede cambiar, y se dice a quién escribir", async ({
     browser,
   }) => {
-    const token = await crearGrupo(`plazo-${Date.now()}`, ["(DES) Tarde"]);
+    const token = await crearGrupo(`e2e-plazo-${Date.now()}`, ["(DES) Tarde"]);
 
     const contexto = await browser.newContext({
       javaScriptEnabled: false,

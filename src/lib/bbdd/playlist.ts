@@ -42,10 +42,23 @@ export type ResultadoCancion = { ok: true } | { ok: false; motivo: MotivoCancion
 
 export async function sugerirCancion(token: string, texto: string): Promise<ResultadoCancion> {
   try {
-    await llamarComoAnonimo(
-      (tx) => tx`select public.sugerir_cancion(${token}, ${texto})`,
+    const filas = await llamarComoAnonimo(
+      (tx) => tx<{ sugerir_cancion: string | null }[]>`
+        select public.sugerir_cancion(${token}, ${texto})
+      `,
       await huellaDePeticion(),
     );
+
+    /*
+      NULL ES EL CONTRATO DE LA BASE PARA «ESTE ENLACE NO VALE», como en las
+      tres funciones del RSVP. No lanza a propósito: una excepción aborta la
+      transacción y se lleva por delante el registro del intento fallido, y
+      entonces el cortafuegos no cuenta —se reprodujo: dos llamadas con un
+      token inventado dejaban cero intentos—. Quien manda un token que no
+      existe recibe lo mismo que antes, sólo que ahora además cuenta.
+    */
+    if ((filas[0]?.sugerir_cancion ?? null) === null) return { ok: false, motivo: "enlace" };
+
     return { ok: true };
   } catch (error) {
     return { ok: false, motivo: motivoDe(error) };
@@ -64,6 +77,8 @@ function motivoDe(error: unknown): MotivoCancion {
   const texto = error instanceof Error ? error.message : String(error);
 
   if (texto.includes(MOTIVOS_CANCION.textoInvalido)) return "texto";
+  // La base ya no lanza CAN02 —devuelve NULL, ver `sugerirCancion`—, pero un
+  // despliegue puede salir antes de que la migración se aplique: se entiende.
   if (texto.includes(MOTIVOS_CANCION.enlaceInvalido)) return "enlace";
   if (texto.includes(MOTIVOS_CANCION.topeDelGrupo)) return "tope";
   if (texto.includes(MOTIVOS_CANCION.demasiadosIntentos)) return "intentos";

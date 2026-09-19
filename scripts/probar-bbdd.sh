@@ -222,7 +222,7 @@ CORRECTAS=$(echo "$SALIDA" | { grep -c 'OK  ' || true; })
 # Un suelo, para que «se ejecutó entera pero casi todo se saltó» tampoco cuele.
 # Se sube cuando se añaden comprobaciones; bajarlo es una decisión, no un
 # descuido.
-MINIMO=110
+MINIMO=130
 if [ "$CORRECTAS" -lt "$MINIMO" ]; then
   echo "✗ Sólo $CORRECTAS comprobaciones en verde, y se esperaban al menos $MINIMO."
   exit 1

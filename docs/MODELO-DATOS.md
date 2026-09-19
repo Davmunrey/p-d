@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**49**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**50**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -357,7 +357,9 @@ Una fila por respuesta. La anterior deja de ser vigente; nunca se edita.
   `grupo_id` va con `on delete set null` y no en cascada: es rastro por si hay
   que retirar algo, y la canción sobrevive al grupo que la propuso. `anon` sólo
   tiene SELECT sobre la tabla; se escribe por `sugerir_cancion()`, que exige
-  token de invitación válido y corta a diez canciones por grupo.
+  token de invitación válido, corta a diez canciones por grupo y devuelve la que
+  ya estaba si el grupo repite la misma (índice único parcial sobre
+  `(grupo_id, lower(btrim(texto)))`): reeditar la respuesta no la apunta dos veces.
 
 - `mensajes_leidos` — qué mensajes de invitados se han leído y quién, en tabla
   aparte porque **`confirmaciones` es inmutable por diseño**: el trigger
@@ -560,13 +562,13 @@ TRUNCATE no entre por la puerta de atrás).
 
 ### 5.2 Qué ve cada quién
 
-| Rol                     | Lectura                                                                                             | Escritura                                                        |
-| ----------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **`anon`** (la landing) | `configuracion_boda`, `secciones_landing` visibles, `medios` publicados, y las tres vistas públicas | **nada**                                                         |
-| **`anon`** (con token)  | Su invitación, vía `obtener_invitacion()`                                                           | Su RSVP, vía `registrar_confirmacion()` y `anadir_acompanante()` |
-| **`lector`**            | Todo el dominio: invitados, confirmaciones, economía, tareas, mesas, medios                         | nada                                                             |
-| **`editor`**            | Lo anterior + notas privadas + `configuracion_privada`                                              | Todo el dominio; en `confirmaciones` sólo INSERT                 |
-| **`propietario`**       | Todo, incluida la bitácora de auditoría y la lista blanca                                           | Todo, incluidos usuarios y configuración privada                 |
+| Rol                     | Lectura                                                                                                | Escritura                                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| **`anon`** (la landing) | `configuracion_boda`, `secciones_landing` visibles, `medios` publicados, y las tres vistas públicas    | **nada**                                                                                               |
+| **`anon`** (con token)  | Su invitación, vía `obtener_invitacion()`; los correos de su grupo, vía `destinatarios_confirmacion()` | Su RSVP, vía `registrar_confirmacion()` y `anadir_acompanante()`; la playlist, vía `sugerir_cancion()` |
+| **`lector`**            | Todo el dominio: invitados, confirmaciones, economía, tareas, mesas, medios                            | nada                                                                                                   |
+| **`editor`**            | Lo anterior + notas privadas + `configuracion_privada`                                                 | Todo el dominio; en `confirmaciones` sólo INSERT                                                       |
+| **`propietario`**       | Todo, incluida la bitácora de auditoría y la lista blanca                                              | Todo, incluidos usuarios y configuración privada                                                       |
 
 Nadie —ningún rol, en ninguna circunstancia— tiene UPDATE ni DELETE sobre
 `confirmaciones` ni sobre `registro_auditoria`. Un histórico que se puede editar
@@ -713,29 +715,51 @@ cero filas registradas. PostgreSQL no tiene transacciones autónomas, así que l
 
 Contrato resultante, que el frontend debe respetar:
 
-| Función                  | Enlace no válido |
-| ------------------------ | ---------------- |
-| `obtener_invitacion`     | cero filas       |
-| `registrar_confirmacion` | devuelve `0`     |
-| `anadir_acompanante`     | devuelve `NULL`  |
+| Función                      | Enlace no válido |
+| ---------------------------- | ---------------- |
+| `obtener_invitacion`         | cero filas       |
+| `registrar_confirmacion`     | devuelve `0`     |
+| `anadir_acompanante`         | devuelve `NULL`  |
+| `sugerir_cancion`            | devuelve `NULL`  |
+| `destinatarios_confirmacion` | cero filas       |
 
-### 5.8 Sólo tres funciones son públicas
+Las cinco pasan por `exigir_cupo_rsvp()` y anotan el intento con
+`registrar_intento_rsvp()`. `sugerir_cancion` lanzaba `CAN02` hasta la migración
+`20260919200000`, y la excepción se llevaba el registro con ella: se reprodujo
+—dos llamadas con un token inventado, cero intentos— y se corrigió. Y
+`anadir_acompanante` aplica el plazo (`RSV03`) igual que el trigger de
+`confirmaciones`: la fila inicial del acompañante nace con `origen = 'sistema'`,
+que es justo lo que ese trigger deja pasar, así que la función lo mira antes de
+escribir.
 
-`obtener_invitacion`, `registrar_confirmacion` y `anadir_acompanante`. Ninguna
-más.
+### 5.8 Sólo seis funciones son públicas
 
-Conseguirlo exige un cuidado que no es evidente: **`revoke execute ... from
-public` no basta, pero revocar las default privileges tampoco.** Se comprobó
-sobre una base limpia que toda función nueva sigue naciendo con EXECUTE para el
-pseudo-rol PUBLIC, del que `anon` hereda — de modo que una función creada sin su
-`revoke` explícito queda publicada como RPC aunque su autor crea lo contrario, y
-sin ningún error que lo delate.
+`obtener_invitacion`, `registrar_confirmacion`, `anadir_acompanante`,
+`sugerir_cancion`, `destinatarios_confirmacion` y `datos_para_regalos`. Ninguna
+más, y la lista es cerrada en los dos sentidos: `supabase/tests/seguridad.sql`
+falla si `anon` puede ejecutar una que no esté aquí **y** si alguna de estas
+seis deja de existir o de poder ejecutarla.
 
-Por eso hay dos capas: un `revoke` explícito junto a cada función, y un **barrido
-final** en la última migración que revoca EXECUTE a PUBLIC y a `anon` sobre todas
-las funciones de `public` y devuelve el permiso sólo a las tres puertas del RSVP.
-La segunda capa existe porque la primera es justo lo que alguien olvidará el día
-que añada la función número treinta.
+Conseguirlo exigió entender un detalle de PostgreSQL que durante meses se
+atribuyó a Supabase: **`alter default privileges in schema public revoke execute
+on functions from public` es un no-op.** Los privilegios por defecto «in schema»
+se guardan como un delta sobre el default global, y revocar sobre un delta vacío
+deja un delta vacío: no se almacena nada (`pg_default_acl` tenía cero filas) y
+no retira el EXECUTE cableado para PUBLIC, del que `anon` hereda. Toda función
+nueva seguía naciendo ejecutable por RPC, sin ningún error que lo delatara, y
+así se escapó `avisos_programa_validos()`.
+
+La forma **global**, sin `in schema`, sí se guarda y sí funciona: desde la
+migración `20260919200000` una función creada sin ningún `grant` nace sin
+EXECUTE para nadie salvo su dueño, y la suite lo comprueba creando una. Los
+privilegios por defecto sólo afectan a lo que se crea después, así que todo lo
+anterior conserva los grants que ya tenía.
+
+Aun así siguen las dos capas de siempre —el `revoke` explícito junto a cada
+función y el barrido de `vistas.sql`—, porque una función que se conceda a
+`authenticated` por un CHECK (como `es_correo_valido` o
+`avisos_programa_validos`) tiene que decirlo donde se crea, y porque el día que
+alguien toque los default privileges sin querer, el barrido sigue ahí.
 
 ### 5.9 Códigos de error
 
@@ -783,12 +807,14 @@ select c.relname, c.relkind
               from pg_options_to_table(c.reloptions)
              where option_name = 'security_invoker'), 'false') not in ('true','on')));
 
--- c) Ninguna función ejecutable por anon salvo las tres RPC del RSVP
+-- c) Ninguna función ejecutable por anon salvo las seis puertas públicas
+--    (vive en supabase/tests/seguridad.sql, en los dos sentidos)
 select p.proname
   from pg_proc p
  where p.pronamespace = 'public'::regnamespace
    and has_function_privilege('anon', p.oid, 'execute')
-   and p.proname not in ('obtener_invitacion','registrar_confirmacion','anadir_acompanante');
+   and p.proname not in ('obtener_invitacion','registrar_confirmacion','anadir_acompanante',
+                         'sugerir_cancion','destinatarios_confirmacion','datos_para_regalos');
 ```
 
 Además, la suite E2E con la clave anónima debe comprobar, como mínimo:

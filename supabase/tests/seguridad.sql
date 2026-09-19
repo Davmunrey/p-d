@@ -24,6 +24,12 @@ begin
   end if;
 end $$;
 
+-- Desde 20260919200000 una función nueva nace SIN execute para nadie —también
+-- las temporales de esta suite—, y varios bloques la llaman siendo `anon` o
+-- `authenticated`. Se concede a mano, que es justo la disciplina que esa
+-- migración impone.
+grant execute on function pg_temp.comprobar(text, boolean) to public;
+
 -- Intenta leer una tabla como el rol indicado. Devuelve true si el acceso fue
 -- denegado (que es lo que queremos para las tablas privadas).
 --
@@ -71,6 +77,8 @@ exception
     execute 'reset role';
     return true;
 end $$;
+
+grant execute on function pg_temp.lectura_denegada(text, text) to public;
 
 \echo ''
 \echo '========================================'
@@ -691,22 +699,33 @@ begin
   set local role anon;
 
   -- Sin token válido no se escribe: si no, la playlist de una web abierta a
-  -- internet se llena de spam en cuestión de horas.
+  -- internet se llena de spam en cuestión de horas. Y NO LANZA: devuelve NULL,
+  -- como las tres funciones del RSVP, para que el intento fallido sobreviva.
+  -- Que sobrevive de verdad lo comprueba el bloque «todas las puertas».
   begin
-    perform public.sugerir_cancion('token-que-no-existe-0000000000000', 'Spam — Bot');
-    v_ok := false;
+    v_ok := public.sugerir_cancion('token-que-no-existe-0000000000000', 'Spam — Bot') is null;
   exception when others then
-    v_ok := true;
+    v_ok := false;
   end;
-  perform pg_temp.comprobar('sin token válido no se puede sugerir canción', v_ok);
+  perform pg_temp.comprobar('sin token válido no se apunta canción: NULL, sin excepción', v_ok);
 
   begin
-    perform public.sugerir_cancion(v_token, 'La Flaca — Jarabe de Palo');
-    v_ok := true;
+    v_ok := public.sugerir_cancion(v_token, 'La Flaca — Jarabe de Palo') is not null;
   exception when others then
     v_ok := false;
   end;
   perform pg_temp.comprobar('un invitado con su token sí puede sugerir', v_ok);
+
+  -- La misma canción del mismo grupo es la que ya estaba: mismo id, una fila.
+  -- Es lo que pasa cada vez que alguien pulsa «Cambiar la respuesta» sin tocar
+  -- la canción, y antes se apuntaba otra vez.
+  begin
+    v_ok := public.sugerir_cancion(v_token, '  la flaca — JARABE de palo ')
+          = public.sugerir_cancion(v_token, 'La Flaca — Jarabe de Palo');
+  exception when others then
+    v_ok := false;
+  end;
+  perform pg_temp.comprobar('repetir la canción del grupo devuelve la que ya estaba', v_ok);
 
   -- Tope por grupo.
   begin
@@ -720,6 +739,11 @@ begin
   perform pg_temp.comprobar('hay tope de canciones por grupo', v_ok);
 
   reset role;
+
+  perform pg_temp.comprobar(
+    'y en la tabla la canción repetida está una sola vez',
+    (select count(*) from public.canciones_sugeridas as c
+      where lower(btrim(c.texto)) = 'la flaca — jarabe de palo') = 1);
 end $$;
 
 \echo ''
@@ -1212,6 +1236,191 @@ begin
           'parametros_seguridad', 'intentos_rsvp',
           'grupos_invitacion', 'invitados', 'confirmaciones'
         )) = 10);
+end $$;
+
+\echo ''
+\echo '========================================'
+\echo '  El cortafuegos cubre todas las puertas'
+\echo '========================================'
+
+-- Lo que se reprodujo antes de arreglarlo: `sugerir_cancion` anotaba el intento
+-- y lanzaba, y la excepción se llevaba el registro; `destinatarios_confirmacion`
+-- ni lo intentaba. Sondear tokens por cualquiera de las dos no contaba. Aquí se
+-- cuenta la bitácora ANTES y DESPUÉS de cada llamada con un token inventado,
+-- como superusuario, que es el único que puede leerla.
+do $$
+declare
+  v_token   text;
+  v_grupo   uuid;
+  v_antes   bigint;
+  v_despues bigint;
+  v_filas   bigint;
+  v_ok      boolean;
+  v_limite  timestamptz;
+  v_id      uuid;
+begin
+  select token, grupo_id into v_token, v_grupo
+    from public.crear_grupo_invitacion(
+      'Grupo puertas', 2::smallint, 'ambos'::public.lado_invitacion,
+      array['fiesta']::public.evento_boda[]
+    );
+  insert into public.invitados (grupo_id, nombre, correo_electronico)
+  values (v_grupo, 'Puerta', 'puerta@boda.test');
+
+  -- --- sugerir_cancion --------------------------------------------------------
+  select count(*) into v_antes from public.intentos_rsvp where not exito;
+  begin
+    set local role anon;
+    perform public.sugerir_cancion('token-inventado-para-sondear-00001', 'Spam');
+  exception when others then
+    null;
+  end;
+  reset role;
+  select count(*) into v_despues from public.intentos_rsvp where not exito;
+  perform pg_temp.comprobar(
+    'un token inventado en sugerir_cancion deja rastro en el cortafuegos',
+    v_despues = v_antes + 1);
+
+  -- --- destinatarios_confirmacion --------------------------------------------
+  select count(*) into v_antes from public.intentos_rsvp where not exito;
+  begin
+    set local role anon;
+    select count(*) into v_filas
+      from public.destinatarios_confirmacion('token-inventado-para-sondear-00002');
+  exception when others then
+    v_filas := -1;
+  end;
+  reset role;
+  select count(*) into v_despues from public.intentos_rsvp where not exito;
+  perform pg_temp.comprobar(
+    'un token inventado en destinatarios_confirmacion da cero filas',
+    v_filas = 0);
+  perform pg_temp.comprobar(
+    'y deja rastro en el cortafuegos',
+    v_despues = v_antes + 1);
+
+  begin
+    set local role anon;
+    select count(*) into v_filas from public.destinatarios_confirmacion(v_token);
+  exception when others then
+    v_filas := -1;
+  end;
+  reset role;
+  perform pg_temp.comprobar(
+    'con el token bueno, destinatarios_confirmacion sigue dando el correo del grupo',
+    v_filas = 1);
+
+  -- --- anadir_acompanante y el plazo ------------------------------------------
+  select c.fecha_limite_rsvp into v_limite from public.configuracion_boda as c;
+  update public.configuracion_boda set fecha_limite_rsvp = now() - interval '1 day';
+  begin
+    set local role anon;
+    v_id := public.anadir_acompanante(v_token, 'Colado', 'Tarde');
+    v_ok := false;
+  exception when others then
+    v_ok := sqlerrm like '%RSV03%';
+  end;
+  reset role;
+  update public.configuracion_boda set fecha_limite_rsvp = v_limite;
+  perform pg_temp.comprobar(
+    'con el plazo vencido, anadir_acompanante lanza RSV03 y no da de alta a nadie',
+    v_ok and not exists (select 1 from public.invitados where grupo_id = v_grupo and nombre = 'Colado'));
+
+  begin
+    set local role anon;
+    v_id := public.anadir_acompanante(v_token, 'A tiempo', 'Bien');
+    v_ok := v_id is not null;
+  exception when others then
+    v_ok := false;
+  end;
+  reset role;
+  perform pg_temp.comprobar('y con el plazo abierto sigue dando de alta', v_ok);
+
+  delete from public.grupos_invitacion where id = v_grupo;
+end $$;
+
+-- Ninguna función ejecutable por `anon` salvo las puertas públicas, y la lista
+-- es cerrada en los dos sentidos: ni una de más ni una de menos. Era el guardia
+-- (c) de la cabecera de `rls.sql`, escrito como comentario; como comentario no
+-- cazó a `avisos_programa_validos()`.
+do $$
+declare
+  v_de_mas  text;
+  v_de_menos text;
+  v_puertas text[] := array[
+    'obtener_invitacion', 'registrar_confirmacion', 'anadir_acompanante',
+    'sugerir_cancion', 'destinatarios_confirmacion', 'datos_para_regalos'
+  ];
+  v_anon_puede boolean;
+begin
+  select string_agg(p.proname, ', ' order by p.proname) into v_de_mas
+    from pg_proc as p
+   where p.pronamespace = 'public'::regnamespace
+     and has_function_privilege('anon', p.oid, 'execute')
+     and p.proname <> all (v_puertas);
+  perform pg_temp.comprobar(
+    format('anon sólo ejecuta las seis puertas públicas (de más: %s)', coalesce(v_de_mas, 'ninguna')),
+    v_de_mas is null);
+
+  select string_agg(puerta, ', ' order by puerta) into v_de_menos
+    from unnest(v_puertas) as puerta
+   where not exists (
+     select 1 from pg_proc as p
+      where p.pronamespace = 'public'::regnamespace
+        and p.proname = puerta
+        and has_function_privilege('anon', p.oid, 'execute'));
+  perform pg_temp.comprobar(
+    format('y las seis existen y las puede ejecutar (de menos: %s)', coalesce(v_de_menos, 'ninguna')),
+    v_de_menos is null);
+
+  -- Los default privileges existen de verdad: una función creada AHORA, sin
+  -- ningún grant, no la puede ejecutar anon. Antes de la migración
+  -- 20260919200000 nacía ejecutable, y `pg_default_acl` estaba vacía.
+  execute 'create function public.prueba_default_privileges() returns integer language sql immutable as ''select 1''';
+  select has_function_privilege('anon', 'public.prueba_default_privileges()', 'execute') into v_anon_puede;
+  execute 'drop function public.prueba_default_privileges()';
+  perform pg_temp.comprobar('una función nueva nace SIN execute para anon', not v_anon_puede);
+end $$;
+
+-- `avisos_programa_validos` se cerró, pero vive en un CHECK de
+-- `configuracion_boda`: si el editor no pudiera ejecutarla, no podría guardar
+-- Ajustes. Se comprueba escribiendo de verdad como propietario.
+do $$
+declare
+  v_editor uuid;
+  v_ok     boolean;
+  v_antes  text[];
+begin
+  select p.usuario_id into v_editor
+    from public.perfiles as p
+   where p.activo and p.rol in ('propietario', 'editor')
+   limit 1;
+
+  if v_editor is null then
+    raise warning 'SIN DATOS: no hay ningún perfil editor con el que probar el CHECK de avisos';
+    return;
+  end if;
+
+  select c.avisos_programa into v_antes from public.configuracion_boda as c;
+
+  begin
+    set local role authenticated;
+    perform set_config('request.jwt.claim.sub', v_editor::text, true);
+    update public.configuracion_boda
+       set avisos_programa = array['Césped y grava: cuidado con los tacones finos'];
+    v_ok := true;
+  exception when others then
+    v_ok := false;
+    raise warning 'al guardar los avisos: %', sqlerrm;
+  end;
+  reset role;
+  perform set_config('request.jwt.claim.sub', '', true);
+
+  update public.configuracion_boda set avisos_programa = v_antes;
+
+  perform pg_temp.comprobar(
+    'un editor sigue pudiendo guardar los avisos del programa (el CHECK ejecuta avisos_programa_validos)',
+    v_ok);
 end $$;
 
 \echo ''

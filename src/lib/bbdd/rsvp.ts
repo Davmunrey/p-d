@@ -256,10 +256,13 @@ export { ErrorDeLectura };
  */
 export async function destinatariosDeConfirmacion(token: string): Promise<string[]> {
   try {
+    // Con la huella, como las demás puertas: desde 20260919200000 esta función
+    // también pasa por el cortafuegos y anota el intento por origen.
     const filas = await llamarComoAnonimo(
       (tx) => tx<{ destinatarios_confirmacion: string }[]>`
         select public.destinatarios_confirmacion(${token})
       `,
+      await huellaDePeticion(),
     );
     return filas.map((fila) => fila.destinatarios_confirmacion).filter(Boolean);
   } catch (error) {
