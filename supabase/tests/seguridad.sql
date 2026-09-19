@@ -230,6 +230,28 @@ begin
     exists (select 1 from public.perfiles
              where usuario_id = v_tarde and activo and rol = 'editor'));
 
+  -- 1 bis. LA CUENTA SIN PERFIL, que es el hueco que quedaba. El trigger del
+  --         alta se traga sus errores a propósito —un fallo suyo no puede
+  --         tumbar el registro de Supabase Auth— así que una cuenta sin fila en
+  --         `perfiles` es posible, y contra ella el UPDATE de la invitación no
+  --         hacía nada: ni error, ni cambio, ni rastro. Se borra el perfil para
+  --         reproducirlo, que es el estado en que queda esa cuenta.
+  delete from public.perfiles where usuario_id = v_tarde;
+
+  perform pg_temp.comprobar(
+    'el caso se reproduce: hay cuenta y no hay perfil',
+    exists (select 1 from auth.users where id = v_tarde)
+      and not exists (select 1 from public.perfiles where usuario_id = v_tarde));
+
+  -- Volver a escribir la misma fila: es lo que hace quien intenta arreglarlo.
+  update public.invitaciones_panel set rol = 'propietario'
+   where correo_electronico = 'tarde@boda127.test';
+
+  perform pg_temp.comprobar(
+    'invitar a una cuenta SIN perfil se lo crea, activo y con su rol',
+    exists (select 1 from public.perfiles
+             where usuario_id = v_tarde and activo and rol = 'propietario'));
+
   -- 2. El orden de siempre sigue funcionando igual.
   insert into public.invitaciones_panel (correo_electronico, rol)
   values ('pronto@boda127.test', 'editor');
