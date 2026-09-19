@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { instanteDesdeLocal, localDesdeInstante } from "@/lib/zona-horaria";
+import { diaDelCalendario, instanteDesdeLocal, localDesdeInstante } from "@/lib/zona-horaria";
 
 /**
  * BODA-44 · Las horas de la boda
@@ -74,5 +74,47 @@ describe("localDesdeInstante", () => {
 
   it("con una fecha inválida devuelve cadena vacía y no «Invalid Date»", () => {
     expect(localDesdeInstante(new Date("no es una fecha"), MADRID)).toBe("");
+  });
+});
+
+describe("diaDelCalendario", () => {
+  /*
+    ESTE BLOQUE ES EL FALLO DE «MARCAR PAGADO», ESCRITO COMO PRUEBA. La acción
+    apuntaba el día con `new Date().toISOString().slice(0, 10)`, que es el día
+    en UTC. Las tres primeras pruebas son justo las horas en las que ese día no
+    coincide con el de Madrid, que son las horas a las que se sientan a repasar
+    las cuentas.
+  */
+  it("a las 00:30 de una noche de verano el día ya es el nuevo, no el de UTC", () => {
+    // 00:30 del 27 de junio en Madrid son las 22:30 del 26 en UTC.
+    const instante = new Date("2027-06-26T22:30:00.000Z");
+    expect(instante.toISOString().slice(0, 10)).toBe("2027-06-26");
+    expect(diaDelCalendario(instante, MADRID)).toBe("2027-06-27");
+  });
+
+  it("a las 00:30 de una noche de invierno pasa lo mismo, con una hora de margen", () => {
+    // 00:30 del 16 de enero en Madrid son las 23:30 del 15 en UTC.
+    const instante = new Date("2027-01-15T23:30:00.000Z");
+    expect(instante.toISOString().slice(0, 10)).toBe("2027-01-15");
+    expect(diaDelCalendario(instante, MADRID)).toBe("2027-01-16");
+  });
+
+  it("a media tarde los dos coinciden: el fallo sólo asoma de madrugada", () => {
+    const instante = new Date("2027-06-26T16:00:00.000Z");
+    expect(diaDelCalendario(instante, MADRID)).toBe("2027-06-26");
+  });
+
+  it("respeta la zona que se le pasa: Canarias va una hora por detrás", () => {
+    // 00:30 en Madrid son las 23:30 del día anterior en Canarias.
+    const instante = new Date("2027-06-26T22:30:00.000Z");
+    expect(diaDelCalendario(instante, MADRID)).toBe("2027-06-27");
+    expect(diaDelCalendario(instante, "Atlantic/Canary")).toBe("2027-06-26");
+  });
+
+  it("escribe el formato que entiende un campo de fecha, con ceros delante", () => {
+    expect(diaDelCalendario(new Date("2027-01-05T12:00:00.000Z"), MADRID)).toBe("2027-01-05");
+    expect(diaDelCalendario(new Date("2027-01-05T12:00:00.000Z"), MADRID)).toMatch(
+      /^\d{4}-\d{2}-\d{2}$/,
+    );
   });
 });

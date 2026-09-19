@@ -3,10 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { RUTA_ACCESO, RUTA_GASTOS, RUTA_PAGOS, RUTA_PRESUPUESTO } from "@/config/constants";
+import {
+  RUTA_ACCESO,
+  RUTA_GASTOS,
+  RUTA_PAGOS,
+  RUTA_PRESUPUESTO,
+  ZONA_HORARIA,
+} from "@/config/constants";
+import { obtenerDiasDeLaBoda } from "@/lib/bbdd/ajustes";
 import { esMetodoPago, esPagador, obtenerGastosParaPagar } from "@/lib/bbdd/pagos";
 import { leerImporte } from "@/lib/importe";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
+import { diaDelCalendario } from "@/lib/zona-horaria";
 
 import { type EstadoPagos } from "./estado";
 
@@ -279,13 +287,23 @@ export async function marcarPagado(datos: FormData): Promise<void> {
 
   const hecho = datos.get("deshacer") === null;
 
+  /*
+    EL DÍA SE LEE EN LA ZONA DE LA BODA, NO EN LA DEL SERVIDOR. La fecha la
+    pone el servidor y no el navegador —un reloj mal puesto escribiría un pago
+    hecho «mañana»—, pero el servidor de Vercel corre en UTC y España va por
+    delante: hasta las dos de la madrugada en verano, el día en UTC todavía es
+    el de ayer. Marcar un pago después de cenar, ya de madrugada, lo apuntaba
+    la víspera. Si no se puede leer la configuración se usa la zona de la
+    landing, que es la de esta boda: peor que eso es no dejar marcar el pago.
+  */
+  const dias = await obtenerDiasDeLaBoda();
+  const hoy = dias?.hoy ?? diaDelCalendario(new Date(), ZONA_HORARIA);
+
   const supabase = await cliente();
   const { data, error } = await supabase
     .from("pagos")
     .update({
-      // La fecha la pone el servidor y no el navegador: un reloj mal puesto
-      // escribiría un pago hecho «mañana».
-      pagado_en: hecho ? new Date().toISOString().slice(0, 10) : null,
+      pagado_en: hecho ? hoy : null,
       // Un justificante sin pago no puede existir —lo impide
       // `pagos_justificante_solo_si_pagado`—, así que al deshacer se va con él.
       ...(hecho ? {} : { justificante_ruta: null }),

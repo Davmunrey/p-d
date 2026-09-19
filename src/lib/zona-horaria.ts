@@ -97,3 +97,25 @@ export function localDesdeInstante(instante: Date, zona: string): string {
   // campo, sin componerlo a mano trozo a trozo.
   return formato.format(instante).replace(" ", "T");
 }
+
+/**
+ * Un instante → el día que es en `zona`, como `2027-06-26`.
+ *
+ * ES LA FORMA CORRECTA DE ESCRIBIR «HOY». `new Date().toISOString().slice(0,10)`
+ * da el día en UTC, y España va por delante: desde medianoche hasta las dos de
+ * la madrugada en verano —hasta la una en invierno— el día en UTC todavía es el
+ * de ayer. Un pago marcado a las 00:30 quedaría apuntado la víspera, con fecha
+ * válida y equivocada, que es el peor tipo de fallo porque no da error.
+ *
+ * El sueco escribe las fechas en el orden ISO, así que `sv-SE` da el formato
+ * del `<input type="date">` sin componerlo trozo a trozo — que es como se
+ * cuelan los meses sin cero delante.
+ */
+export function diaDelCalendario(instante: Date, zona: string): string {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: zona,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(instante);
+}

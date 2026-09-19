@@ -1,6 +1,7 @@
 import "server-only";
 
 import { clienteServidor } from "@/lib/supabase/servidor";
+import { diaDelCalendario } from "@/lib/zona-horaria";
 
 /**
  * La moneda de la boda, para escribir los importes.
@@ -73,24 +74,8 @@ export async function obtenerDiasDeLaBoda(): Promise<DiasDeLaBoda | null> {
   if (Number.isNaN(ceremonia.getTime())) return null;
 
   return {
-    fechaBoda: diaEn(ceremonia, fila.zona_horaria),
-    hoy: diaEn(new Date(), fila.zona_horaria),
+    fechaBoda: diaDelCalendario(ceremonia, fila.zona_horaria),
+    hoy: diaDelCalendario(new Date(), fila.zona_horaria),
     zonaHoraria: fila.zona_horaria,
   };
-}
-
-/**
- * Un instante → el día que es en esa zona, como `2027-06-26`.
- *
- * El sueco escribe las fechas en el orden ISO, así que `sv-SE` da el formato
- * del `<input type="date">` sin componerlo trozo a trozo — que es como se
- * cuelan los meses sin cero delante.
- */
-function diaEn(instante: Date, zona: string): string {
-  return new Intl.DateTimeFormat("sv-SE", {
-    timeZone: zona,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(instante);
 }
