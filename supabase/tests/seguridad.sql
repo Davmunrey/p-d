@@ -1129,6 +1129,69 @@ begin
   perform set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
 end $$;
 
+-- ----------------------------------------------------------------------------
+-- `force row level security`: la regla que estaba escrita y nadie comprobaba
+--
+-- `enable` no se aplica al propietario de la tabla, y en Supabase el propietario
+-- es quien ejecuta toda función `security definer`. Sin `force`, dentro de
+-- cualquier definer la RLS de esa tabla está apagada.
+--
+-- La regla lleva escrita desde 20260803090400_rls.sql, con sus diez excepciones
+-- justificadas una a una — y no había nada que la vigilara. Una tabla nacida
+-- después se quedó sin `force` sin que nada lo dijera. Esto lo dice.
+--
+-- La lista de excepciones va aquí ENTERA y a mano, a propósito: añadir una es
+-- una decisión de seguridad y tiene que costar escribirla, no heredarse de lo
+-- que la base tenga puesto hoy.
+-- ----------------------------------------------------------------------------
+
+do $$
+declare
+  v_sin_forzar text;
+begin
+  select string_agg(c.relname, ', ' order by c.relname)
+    into v_sin_forzar
+    from pg_class as c
+    join pg_namespace as n on n.oid = c.relnamespace
+   where n.nspname = 'public'
+     and c.relkind = 'r'
+     and not c.relforcerowsecurity
+     and c.relname not in (
+       -- Las leen las funciones de rol y el trigger de alta, antes de que haya sesión.
+       'perfiles', 'invitaciones_panel',
+       -- Las usa el trigger de auditoría.
+       'registro_auditoria', 'campos_auditoria_redactados',
+       -- Es pública entera; la leen los triggers de plazo y de accesibilidad.
+       'configuracion_boda',
+       -- Las usa el cortafuegos del RSVP.
+       'parametros_seguridad', 'intentos_rsvp',
+       -- Las recorren las funciones públicas del RSVP.
+       'grupos_invitacion', 'invitados', 'confirmaciones'
+     );
+
+  perform pg_temp.comprobar(
+    format('toda tabla fuerza la RLS salvo las diez excepciones (sin forzar: %s)',
+           coalesce(v_sin_forzar, 'ninguna')),
+    v_sin_forzar is null);
+
+  -- Y al revés: que la lista de excepciones no se quede con nombres de tablas
+  -- que ya no existen, porque entonces dejaría pasar a la siguiente que se
+  -- llamara igual sin que nadie lo hubiera decidido.
+  perform pg_temp.comprobar(
+    'las diez excepciones siguen existiendo como tablas',
+    (select count(*)
+       from pg_class as c
+       join pg_namespace as n on n.oid = c.relnamespace
+      where n.nspname = 'public'
+        and c.relkind = 'r'
+        and c.relname in (
+          'perfiles', 'invitaciones_panel', 'registro_auditoria',
+          'campos_auditoria_redactados', 'configuracion_boda',
+          'parametros_seguridad', 'intentos_rsvp',
+          'grupos_invitacion', 'invitados', 'confirmaciones'
+        )) = 10);
+end $$;
+
 \echo ''
 \echo ''
 \echo 'SUITE-COMPLETA'

@@ -229,3 +229,53 @@ if [ "$CORRECTAS" -lt "$MINIMO" ]; then
 fi
 
 echo "✓ $CORRECTAS comprobaciones de seguridad en verde."
+
+# --- Y que el documento del esquema diga la verdad -------------------------
+#
+# `docs/MODELO-DATOS.md` abre con una línea de cifras: «En números: **N tablas,
+# N vistas, …**». Es lo primero que lee quien llega al proyecto, y era el único
+# sitio del repositorio donde un número se escribía a mano contra algo que
+# cambia solo. Se quedó en «24 tablas» mientras el esquema llegaba a 37, sin que
+# nada lo dijera — porque no había nada que pudiera decirlo.
+#
+# Aquí sí: la base está recién migrada y delante, así que se cuenta y se compara.
+
+DOC="$RAIZ/docs/MODELO-DATOS.md"
+LINEA=$(grep -m1 '^En números:' "$DOC" || true)
+
+if [ -z "$LINEA" ]; then
+  echo "✗ docs/MODELO-DATOS.md ya no tiene su línea «En números:»."
+  exit 1
+fi
+
+# La consulta va por fichero y no en un `-c`: `psqlp` mete el comando dentro de
+# un `su postgres -c "..."`, así que un SELECT con comillas por medio pasaría por
+# dos intérpretes antes de llegar a psql. Es el mismo camino que usa el resto del
+# script para todo lo que no cabe en una línea.
+TMP_CIFRAS=$(mktemp /tmp/boda-cifras-XXXX.sql)
+cat > "$TMP_CIFRAS" <<'SQL'
+select 'En números: **'
+    || (select count(*) from pg_tables  where schemaname = 'public') || ' tablas, '
+    || (select count(*) from pg_views   where schemaname = 'public') || ' vistas, '
+    || (select count(*) from pg_type as t
+          join pg_namespace as n on n.oid = t.typnamespace
+         where n.nspname = 'public' and t.typtype = 'e')             || ' enumerados, '
+    || (select count(*) from pg_proc as p
+          join pg_namespace as n on n.oid = p.pronamespace
+         where n.nspname = 'public')                                 || ' funciones, '
+    || (select count(*) from pg_policies where schemaname = 'public')
+    || ' políticas RLS.**';
+SQL
+chmod a+r "$TMP_CIFRAS"
+REAL=$(psqlp "-d $BASE -tA -f $TMP_CIFRAS" | tr -d '\r' | sed '/^$/d')
+rm -f "$TMP_CIFRAS"
+
+if [ "$LINEA" != "$REAL" ]; then
+  echo "✗ Las cifras de docs/MODELO-DATOS.md no son las de la base:"
+  echo "    documento: $LINEA"
+  echo "    base:      $REAL"
+  echo "  Cámbialas en la misma PR que cambia el esquema."
+  exit 1
+fi
+
+echo "✓ Las cifras de docs/MODELO-DATOS.md cuadran con el esquema."

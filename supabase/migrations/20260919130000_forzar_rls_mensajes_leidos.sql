@@ -1,0 +1,41 @@
+-- ============================================================================
+-- 20260919130000_forzar_rls_mensajes_leidos.sql
+-- Motor:  PostgreSQL 17 (Supabase)
+--
+-- Qué hace este fichero: fuerza la RLS en `mensajes_leidos`, que era la única
+-- tabla del esquema con `enable` y sin `force`, y no por ninguna razón.
+--
+--
+-- POR QUÉ IMPORTA LA DIFERENCIA ENTRE `ENABLE` Y `FORCE`.
+--
+-- `enable row level security` no se aplica al PROPIETARIO de la tabla. En
+-- Supabase el propietario es `postgres`, que es además quien ejecuta toda
+-- función `security definer`. Así que dentro de cualquier definer —de las que
+-- hay, y de las que se escriban mañana— la RLS de una tabla sin `force` está
+-- sencillamente apagada, y lo único que separa los datos de quien no debe
+-- verlos es que el `WHERE` de esa función esté bien escrito.
+--
+-- 20260803090400_rls.sql forzó las catorce tablas que existían entonces y dejó
+-- diez excepciones, cada una justificada por escrito: las que la maquinaria
+-- interna —las funciones de rol, el trigger de auditoría, el cortafuegos del
+-- RSVP— tiene que tocar como propietario.
+--
+-- `mensajes_leidos` llegó después, en 20260810140000, y no es ninguna de ésas:
+-- sus dos políticas son las normales del panel, `colaborador_leer` y
+-- `editor_escribir`, y ninguna función definer la menciona. Simplemente se
+-- quedó fuera. Hoy no hay definer que la lea, así que no hay nada expuesto; lo
+-- que había es la puerta abierta para el día que la haya, que es exactamente
+-- contra lo que existe la regla.
+--
+--
+-- LO QUE DE VERDAD ARREGLA ESTO NO ES LA TABLA, ES QUE NADIE LO VIGILABA. La
+-- regla estaba escrita en la migración y en docs/MODELO-DATOS.md, y la suite de
+-- seguridad —que ataca la base como un intruso y es bloqueante— no la
+-- comprobaba. Por eso esta migración va con su prueba: `supabase/tests/`
+-- recorre ahora `pg_class` y exige `force` en toda tabla que no esté en la
+-- lista de excepciones, así que la próxima que nazca sin él sale en rojo.
+--
+-- Rollback: supabase/migrations/rollback/20260919130000_forzar_rls_mensajes_leidos.sql
+-- ============================================================================
+
+alter table public.mensajes_leidos force row level security;

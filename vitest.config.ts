@@ -15,7 +15,16 @@ export default defineConfig({
     globals: true,
     include: ["src/**/*.test.{ts,tsx}", "tests/unidad/**/*.test.{ts,tsx}"],
     exclude: ["tests/e2e/**", "node_modules/**"],
-    passWithNoTests: true,
+
+    /*
+      SIN TESTS, EL RUN FALLA. Estaba en `true`, que es el valor cómodo de
+      cuando un proyecto empieza vacío y hace ya mucho que no es el caso.
+      Mientras siga puesto, el día que un `include` deje de casar —una carpeta
+      renombrada, un glob tocado— `npm test` sale con cero, en verde, sin haber
+      probado nada. Y un CI verde que no prueba nada es peor que uno rojo:
+      afirma lo que no sabe.
+    */
+    passWithNoTests: false,
   },
   resolve: {
     alias: {

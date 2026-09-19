@@ -5,7 +5,12 @@
 > que lo introduce**, junto a su migración y su SQL de rollback.
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
-aplican en orden alfabético, que es el orden cronológico de su prefijo:
+aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
+**48**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+entender la base las lee en orden y ya sabe cómo funciona. Las demás son
+incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
+cabecera el ticket que la trajo y por qué está escrita así, que es donde de
+verdad se explica cada decisión.
 
 | Fichero                                 | Ticket            | Contenido                                                                          |
 | --------------------------------------- | ----------------- | ---------------------------------------------------------------------------------- |
@@ -22,12 +27,19 @@ Cada una tiene su reverso exacto en
 [`supabase/migrations/rollback/`](../supabase/migrations/rollback/), con el mismo
 nombre. Se ejecutan en orden **inverso**.
 
-En números: **24 tablas, 8 vistas, 14 enumerados, 42 funciones, 46 políticas RLS.**
+En números: **37 tablas, 15 vistas, 20 enumerados, 54 funciones, 72 políticas RLS.**
+
+Esos cinco números no se escriben a mano: los cuenta la suite de seguridad contra
+el catálogo de la base recién migrada, y si el documento dice otra cosa, el CI se
+pone rojo. Se quedaron en «24 tablas» durante trece tablas, que es lo que pasa
+con un número copiado a mano en un documento que se lee más de lo que se edita.
 
 Todo esto no se da por bueno leyéndolo: `./scripts/probar-bbdd.sh` levanta un
 PostgreSQL desechable, aplica las migraciones desde cero y ejecuta
-[la suite de seguridad](../supabase/tests/seguridad.sql) — **31 comprobaciones**
-que atacan la base como un intruso. Corre en CI y es bloqueante.
+[la suite de seguridad](../supabase/tests/seguridad.sql) — **más de 110
+comprobaciones** que atacan la base como un intruso. Corre en CI y es bloqueante,
+y el script exige tanto el sello del final como ese suelo: una suite que se corta
+a la mitad sale con cero y en verde si nadie lo mira.
 
 ### El arranque en frío
 
@@ -64,7 +76,7 @@ error, no un caso especial.
   `creado_en` y `actualizado_en`.
 - **`actualizado_en`** lo sella siempre el mismo trigger,
   `public.fijar_actualizado_en()`, y siempre con la misma condición
-  `when (old.* is distinct from new.*)`. Significa lo mismo en las 24 tablas:
+  `when (old.* is distinct from new.*)`. Significa lo mismo en todas las tablas:
   «cuándo cambió algo de verdad». Un UPDATE que no cambia nada no la mueve.
 - **RLS se activa en la sentencia inmediatamente posterior al `CREATE TABLE`**,
   antes de índices, comentarios y triggers. Nunca existe una tabla, ni un
@@ -339,6 +351,24 @@ Una fila por respuesta. La anterior deja de ser vigente; nunca se edita.
 - `respondido_en` lo sella el servidor en el origen público, y nunca puede estar
   en el futuro.
 
+- `canciones_sugeridas` — `aprobada` por defecto `true` y es la propia política
+  de lectura pública la que filtra por ese booleano: **la moderación es a
+  posteriori**, y desmarcarla retira la sugerencia de la web sin borrarla.
+  `grupo_id` va con `on delete set null` y no en cascada: es rastro por si hay
+  que retirar algo, y la canción sobrevive al grupo que la propuso. `anon` sólo
+  tiene SELECT sobre la tabla; se escribe por `sugerir_cancion()`, que exige
+  token de invitación válido y corta a diez canciones por grupo.
+
+- `mensajes_leidos` — qué mensajes de invitados se han leído y quién, en tabla
+  aparte porque **`confirmaciones` es inmutable por diseño**: el trigger
+  `confirmaciones_inmutables` compara la fila entera menos `es_vigente` y
+  `actualizado_en`, así que una columna nueva allí caería bajo esa protección y
+  marcar como leído fallaría con `CNF01`. La clave primaria es sólo
+  `confirmacion_id` —un mensaje se lee o no se lee— y `leido_por` es dato: que
+  lo abra uno de los novios no lo deja sin leer para el otro. Las dos claves
+  foráneas borran en cascada y `anon` no tiene ningún privilegio: la bandeja es
+  del panel.
+
 ### 3.3 Economía
 
 `categorias_proveedor` → `proveedores` → `servicios` / `documentos_proveedor`;
@@ -359,6 +389,15 @@ Una fila por respuesta. La anterior deja de ser vigente; nunca se edita.
   rechazarla dejaba ficheros huérfanos en el bucket con un error que el usuario
   no podía corregir.
 
+- `contactos_proveedor` — el comercial que firma el contrato casi nunca es quien
+  está el día de la boda, así que un proveedor admite varios contactos y las tres
+  columnas de contacto de `proveedores` se quedan como el principal: esta tabla es
+  **«además de», no «en vez de»**. Borra en cascada con el proveedor, al revés que
+  el resto de esta parte del esquema: un contacto no es contabilidad, y con
+  `restrict` habría que vaciarlos a mano antes de poder borrar a nadie.
+  `contactos_proveedor_alguna_via` exige correo o teléfono, porque un nombre al que
+  no se puede llamar no ordena la agenda del día.
+
 ### 3.4 Organización
 
 - `tareas` — `completada_en` lo mantiene un trigger a partir de `estado`, con un
@@ -372,7 +411,92 @@ Una fila por respuesta. La anterior deja de ser vigente; nunca se edita.
   la restricción de accesibilidad tiene que seguir protegiendo el idioma que
   realmente se sirve.
 
-### 3.5 Seguridad del RSVP
+- `guion_dia` — el guion interno de la jornada, en tabla aparte de
+  `hitos_programa` porque aquello es contenido público de la landing y esto lleva
+  quién responde de cada cosa. `hora` es texto y no `time`: en una boda se escribe
+  «13:15» pero también «al acabar el cóctel», así que **el orden lo manda `orden`
+  y no la hora**. `responsable` es texto libre y no una clave a `perfiles` —la
+  coordinadora de la finca no tendrá cuenta nunca—, y `hecho_en` es marca de
+  tiempo y no booleano, porque «hecho a las 13:22» reconstruye el día y «hecho» a
+  secas no.
+
+- `correcciones_recuento` — el primo que avisa a las diez de que no llega no ha
+  rechazado nada: su confirmación es historia y `confirmaciones` es inmutable, así
+  que el ajuste vive en su propia tabla y **no reescribe el RSVP**. `ajuste` es un
+  entero con signo acotado a -500..500 —puede ser negativo, que es justo el caso
+  que justifica la tabla— y `tipo_menu` es único: dos filas del mismo menú serían
+  dos verdades que alguien tendría que sumar la víspera. El total se lo da al
+  catering `v_recuento_catering`, con `full join` sobre `v_menus_confirmados` para
+  que no se caiga ni una corrección sin confirmados ni un menú sin corrección.
+
+- `plantilla_tareas` — guarda la **antelación en días** y no una fecha:
+  `generar_tareas_desde_plantilla` la calcula contra `configuracion_boda`, así que
+  la misma plantilla vale para cualquier boda. Lo que hace idempotente esa
+  generación es `tareas.plantilla_id`, con índice único parcial —una fila de
+  plantilla produce como mucho una tarea— y `on delete set null`, que borra el
+  rastro sin llevarse la tarea ya creada. `grupo` es texto y no enumerado porque
+  añadir un juego de tareas debe ser una fila, no una migración.
+
+- `documentos_boda` — el expediente civil caduca, así que `estado` y `obtenido_en`
+  van atados por un CHECK bicondicional: `conseguido` exige fecha de obtención y
+  cualquier otro estado la prohíbe, para que deshacer un «conseguido» puesto por
+  error no deje colgando un «se recogió el martes». `caduca_en` admite `NULL` como
+  «no caduca» —el libro de familia no caduca y el empadronamiento sí—, y **la
+  comparación con el día de la boda la hace la base**: `v_documentos_boda` lee
+  `configuracion_boda` y lleva la hora de la ceremonia a su zona horaria antes de
+  quedarse con la fecha, nunca el reloj del navegador. El orden de
+  `estado_documento_boda` no es alfabético a propósito: define el `<` del tipo y
+  con él el de los listados, de modo que lo pendiente sale primero.
+
+### 3.5 Contenido de la landing
+
+Seis tablas con la misma forma —`orden`, `publicado`, `creado_en`— y el mismo
+modelo: **`anon` lee lo publicado y nadie más toca nada**. Es la única excepción
+consciente al «anon no lee ninguna tabla», y está acotada por la propia política:
+el filtro es `publicado`, así que un borrador subido y sin revisar no sale por
+pedir la tabla entera con la clave pública. Escribir sigue exigiendo
+`puede_editar()`.
+
+Son tablas y no textos en `copy.es.json` porque esto es contenido DE ESTA BODA y
+lo escriben los novios desde el panel, sin desplegar.
+
+- `hitos_programa` — la hora es `text` y no `time` a propósito: en una boda se escribe
+  «14:00», «sobre las 19:30» o «de madrugada», y un tipo horario obligaría a inventar
+  convenciones para lo aproximado. La preboda no trajo tabla nueva sino la columna
+  `momento` (`preboda`/`boda`), con `boda` por defecto para que las filas que ya
+  existían no cambiaran de significado: **dos tablas idénticas se acaban separando en
+  cuanto una gana una columna que la otra no**.
+
+- `hitos_historia` — `fecha_texto` es texto y opcional: la historia de una pareja se
+  cuenta con «verano de 2016» o «el segundo viaje», no con fechas de calendario.
+  Comparte con `alojamientos` la foto opcional en `medio_id`, con `ON DELETE SET NULL`
+  por el mismo motivo.
+
+- `preguntas_frecuentes` — pregunta y respuesta son obligatorias y ninguna puede quedar
+  en blanco: una fila a medias se publica igual que una entera, y lo que se ve es la
+  pregunta sin responder. `publicado` nace en `true` en las seis tablas de esta sección
+  —al revés que en `medios`—: aquí el borrador es la fila que todavía no se ha escrito.
+
+- `consejos_vestimenta` — el dress code es contenido de esta boda y no copy fijo —el
+  consejo sobre los tacones sale de conocer el suelo de la finca— y tiene la misma forma
+  que `preguntas_frecuentes`, así que es otra tabla y no un texto en `copy.es.json`. La
+  siembra de la migración se protege con `where not exists` sobre la tabla entera, no
+  con `on conflict`: no hay clave natural, y así se puede reaplicar sin duplicar los
+  consejos ni pisar lo que hayan editado los novios.
+
+- `alojamientos` — `precio_texto` es texto libre y no `numeric`: un hotel comunica
+  «135 € / noche» o «desde 90 €», y un número obligaría a decidir impuestos y régimen.
+  La foto es opcional y se desengancha sola —`medio_id` con `ON DELETE SET NULL`—,
+  porque borrar una imagen de la galería no puede llevarse por delante el hotel.
+  `url_reserva` admite NULL, pero si viene tiene que empezar por `http://` o `https://`.
+
+- `rutas_llegada` — la tabla más sosa de la sección, y está bien que lo sea: sólo `modo`
+  es obligatorio, y `duracion` y `detalle` son texto opcional porque «unos 25 minutos
+  desde León» no es un intervalo que nadie vaya a calcular. Aquí y en sus cinco hermanas
+  está **la excepción consciente al «anon no lee nada»**: `anon` tiene SELECT filtrado
+  por `publicado`, y escribir sigue pasando por `puede_editar()`.
+
+### 3.6 Seguridad del RSVP
 
 - `parametros_seguridad` — fila única con los límites del cortafuegos
   (intentos, ventana, retención). Son configuración: se ajustan sin migración.
@@ -528,7 +652,7 @@ Supabase es también el propietario de las funciones `SECURITY DEFINER`. Sin
 `force`, dentro de cualquier función definer —presente o futura— la RLS está
 sencillamente desactivada.
 
-Se fuerza en **14 de 24 tablas**. Las 10 excepciones no son olvidos; cada una
+Se fuerza en **27 de 37 tablas**. Las 10 excepciones no son olvidos; cada una
 existe porque la maquinaria interna necesita tocarla como propietario:
 
 | Tabla                                               | Por qué no se fuerza                                                                    |

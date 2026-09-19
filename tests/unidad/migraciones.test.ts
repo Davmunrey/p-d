@@ -42,6 +42,21 @@ describe("las migraciones", () => {
     expect(migraciones.length).toBeGreaterThan(0);
   });
 
+  /*
+    Y el documento del esquema dice cuántas son. Es un número escrito a mano en
+    prosa, y esos se quedan quietos: la tabla de migraciones de
+    `docs/MODELO-DATOS.md` llevaba ocho entradas cuando ya había cuarenta y
+    siete ficheros, y el documento seguía presentándose como la lista completa.
+    Aquí cuesta un segundo comprobarlo.
+  */
+  it("el documento del esquema dice cuántas son, y acierta", () => {
+    const doc = readFileSync(join(__dirname, "..", "..", "docs", "MODELO-DATOS.md"), "utf8");
+    const cuantas = doc.match(/Son\n\*\*(\d+)\*\*, y las ocho primeras/);
+
+    expect(cuantas, "docs/MODELO-DATOS.md ya no dice cuántas migraciones hay").not.toBeNull();
+    expect(Number(cuantas![1])).toBe(migraciones.length);
+  });
+
   it("no repiten versión", () => {
     const porVersion = new Map<string, string[]>();
     for (const fichero of migraciones) {
