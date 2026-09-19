@@ -291,6 +291,19 @@ test.describe("El día de la boda", () => {
       )
       .not.toBeNull();
 
+    /*
+      Y SIGUE MARCADO DESPUÉS DE QUE EL SERVIDOR DIGA QUE SÍ, sin recargar.
+      Justo aquí se desmarcaba sola: al confirmarse, la marca salía de la cola y
+      la pantalla caía de vuelta a las propiedades con las que se pintó, que son
+      de antes de marcar. El test que había pasaba por encima del hueco —miraba
+      antes de mandar y después de recargar—, así que el fallo vivía entre sus
+      dos aserciones.
+    */
+    await expect(
+      punto,
+      "la marca no puede borrarse al confirmarla el servidor",
+    ).toHaveAttribute("data-hecho", "si");
+
     // Y tras recargar sigue marcado, que es el criterio literal del ticket.
     await page.reload();
     await expect(page.locator("li").filter({ hasText: sembrado.primerPunto })).toHaveAttribute(

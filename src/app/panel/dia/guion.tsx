@@ -10,6 +10,7 @@ import {
   apuntar,
   instantanea,
   instantaneaDelServidor,
+  marcaVigente,
   soltar,
   suscribirse,
   type ColaDeMarcas,
@@ -55,6 +56,27 @@ export function Guion({
   const [sinPermiso, setSinPermiso] = useState(false);
 
   /**
+   * LO QUE EL SERVIDOR YA HA ACEPTADO EN ESTA SESIÓN.
+   *
+   * Hace falta una tercera capa porque las otras dos no cubren el hueco de en
+   * medio. La cola guarda lo que está SIN MANDAR y las propiedades traen lo que
+   * había EN LA BASE cuando se pintó la pantalla; entre una cosa y otra está lo
+   * que se acaba de mandar con éxito, que ya no es pendiente y todavía no
+   * aparece en unas propiedades que nadie ha vuelto a pedir.
+   *
+   * Sin esta capa la marca se BORRABA SOLA justo al confirmarla el servidor:
+   * salía de la cola y la pantalla caía de vuelta al valor viejo. Marcabas
+   * «Ceremonia», se marcaba, y medio segundo después se desmarcaba. El día de
+   * la boda, con el móvil en una mano.
+   *
+   * No se arregla revalidando la ruta en la acción, que sería lo obvio: esta
+   * pantalla está hecha para funcionar con la red yendo y viniendo, y pedirle
+   * al servidor que repinte en cada marca es justo lo que no puede depender de
+   * que haya cobertura.
+   */
+  const [confirmadas, setConfirmadas] = useState<ColaDeMarcas>({});
+
+  /**
    * Manda lo que se le dé y saca de la cola lo que se haya podido mandar.
    *
    * «NO PUEDES» NO SE REINTENTA. Un lector nunca va a poder marcar, así que
@@ -70,6 +92,9 @@ export function Guion({
       try {
         const resultado = await marcarPuntoDelGuion(id, marca !== null);
         if (resultado.ok) {
+          // Se recuerda lo aceptado ANTES de soltarlo de la cola, para que la
+          // pantalla no se quede un instante sin ninguna de las dos capas.
+          setConfirmadas((previas) => ({ ...previas, [id]: marca }));
           resueltos.push(id);
         } else if (resultado.motivo === "sin-permiso") {
           denegado = true;
@@ -113,9 +138,15 @@ export function Guion({
     await mandar({ [punto.id]: estabaHecho ? null : new Date().toISOString() });
   };
 
+  /*
+    TRES CAPAS, Y EL ORDEN IMPORTA: lo que está sin mandar gana a lo que el
+    servidor ya aceptó, y eso gana a lo que había cuando se pintó la pantalla.
+    Un «sin permiso» no entra en ninguna de las dos primeras, así que vuelve al
+    valor de la base — que es lo correcto: a un lector no se le marcó nada.
+  */
   const conSusMarcas = puntos.map((punto) => ({
     ...punto,
-    hechoEn: punto.id in cola ? cola[punto.id] : punto.hechoEn,
+    hechoEn: marcaVigente(punto.id, punto.hechoEn, cola, confirmadas),
     sinMandar: punto.id in cola,
   }));
 

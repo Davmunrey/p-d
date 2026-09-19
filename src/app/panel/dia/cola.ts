@@ -105,3 +105,35 @@ export function soltar(ids: string[]): void {
   }
   fijar(quedan);
 }
+
+/**
+ * QUÉ MARCA SE PINTA, ENTRE LAS TRES QUE PUEDE HABER.
+ *
+ * Es una función pura y vive aquí, fuera del componente, por lo mismo que la
+ * permuta de las listas de contenido: es la regla que decide lo que se ve, el
+ * fallo no da error y sólo se nota mirando la pantalla en el momento justo.
+ * Probarla aquí cuesta milisegundos; probarla en el navegador exige un Supabase
+ * levantado y acertar con el instante.
+ *
+ * EL ORDEN ES EL QUE ES, y cada capa está por un motivo:
+ *
+ *   1 · `cola` — lo marcado y todavía SIN MANDAR. Manda sobre todo lo demás:
+ *       es lo que se acaba de tocar y lo que sobrevive a recargar.
+ *   2 · `confirmadas` — lo que el servidor YA ACEPTÓ en esta sesión. Sin esta
+ *       capa la marca se borraba sola justo al confirmarse: salía de la cola y
+ *       la pantalla caía de vuelta al valor con el que se pintó, que es de
+ *       antes. Marcabas «Ceremonia» y medio segundo después se desmarcaba.
+ *   3 · `delServidor` — lo que había en la base al pintar. Es a donde vuelve una
+ *       marca que el servidor RECHAZÓ, que es lo correcto: a un lector no se le
+ *       marcó nada y la pantalla no puede decirle que sí.
+ */
+export function marcaVigente(
+  id: string,
+  delServidor: string | null,
+  cola: ColaDeMarcas,
+  confirmadas: ColaDeMarcas,
+): string | null {
+  if (id in cola) return cola[id];
+  if (id in confirmadas) return confirmadas[id];
+  return delServidor;
+}
