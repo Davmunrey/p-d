@@ -405,8 +405,23 @@ test.describe("El día de la boda", () => {
       "href",
       `tel:${sembrado.telefonoDelDia.replace(/[^\d+]/g, "")}`,
     );
-    // Y se lee el número tal cual, para poder dictarlo.
-    await expect(llamar).toHaveText(sembrado.telefonoDelDia);
+    /*
+      EL NÚMERO VA DELANTE, Y SE ANCLA AL PRINCIPIO A PROPÓSITO. Lo que se ve
+      sigue siendo el número y nada más —que es lo que hay que poder dictar—,
+      pero el enlace lleva detrás un texto que sólo oye un lector de pantalla:
+      «Llamar a Rocío». Va DENTRO y no en un `aria-label` porque un `aria-label`
+      sustituye al rótulo visible, y entonces quien maneja el móvil por voz lee
+      un número y tiene que decir un nombre (WCAG 2.5.3). Comparar la cadena
+      entera obligaría a elegir entre las dos cosas; anclarla al principio
+      afirma las dos: el número primero, el contexto después.
+    */
+    const cifras = sembrado.telefonoDelDia.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    await expect(llamar).toHaveText(new RegExp(`^${cifras}\\b`));
+    await expect(llamar).toHaveAccessibleName(
+      new RegExp(
+        `^${cifras}\\s+${copy.panel.dia.agenda.llamarA.replace("{nombre}", "Rocío")}$`,
+      ),
+    );
 
     // El contacto del día va marcado: es a quien hay que llamar.
     await expect(page.getByText(copy.panel.dia.agenda.contactoDelDia)).toBeVisible();
