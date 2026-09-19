@@ -116,7 +116,9 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
   const conFoto = lista.campos.filter((campo) => campo.clase === "foto");
 
   const [filas, visible, fotosPorCampo] = await Promise.all([
-    obtenerFilasDeLista(clave, variante),
+    // Aquí `null` se pinta como vacío: la pantalla enseña, no decide. Quien no
+    // puede dar nada por hecho a ciegas son las acciones, y ésas ya se niegan.
+    obtenerFilasDeLista(clave, variante).then((lista) => lista ?? []),
     obtenerVisibilidadDeSeccion(seccion),
     Promise.all(conFoto.map((campo) => obtenerFotosDeSeccion(campo.seccion))).then((listas) =>
       Object.fromEntries(conFoto.map((campo, indice) => [campo.columna, listas[indice]])),

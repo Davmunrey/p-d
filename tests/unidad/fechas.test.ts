@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   anio,
+  esDiaDeCalendario,
   fechaConDia,
   fechaEnPuntos,
   fechaLarga,
@@ -61,5 +62,35 @@ describe("las fechas de la marca", () => {
     const madrugada = new Date("2027-06-25T22:30:00Z");
     expect(fechaConDia(madrugada)).toBe("Sábado 26 de junio");
     expect(fechaConDia(vispera(madrugada))).toBe("Viernes 25 de junio");
+  });
+});
+
+describe("esDiaDeCalendario", () => {
+  /*
+    V8 «ARREGLA» LOS DÍAS IMPOSIBLES EN VEZ DE RECHAZARLOS. `Date.parse` de
+    «2027-02-31» no da NaN: da el 3 de marzo. Así que una comprobación basada
+    en `Number.isNaN(Date.parse(fecha))` dejaba pasar el 31 de febrero, y era
+    Postgres quien lo paraba, con un 22008 que acababa en el «error» genérico.
+    Las tres primeras pruebas son fechas que V8 acepta y el calendario no.
+  */
+  it("rechaza el 31 de febrero, que V8 convierte en marzo sin quejarse", () => {
+    expect(Number.isNaN(Date.parse("2027-02-31"))).toBe(false);
+    expect(esDiaDeCalendario("2027-02-31")).toBe(false);
+  });
+
+  it("rechaza el 31 de abril y el 29 de febrero de un año que no es bisiesto", () => {
+    expect(esDiaDeCalendario("2027-04-31")).toBe(false);
+    expect(esDiaDeCalendario("2027-02-29")).toBe(false);
+  });
+
+  it("acepta el 29 de febrero cuando el año sí es bisiesto", () => {
+    expect(esDiaDeCalendario("2028-02-29")).toBe(true);
+  });
+
+  it("acepta un día normal y rechaza lo que no tiene forma de fecha", () => {
+    expect(esDiaDeCalendario("2027-06-26")).toBe(true);
+    expect(esDiaDeCalendario("26/06/2027")).toBe(false);
+    expect(esDiaDeCalendario("2027-6-26")).toBe(false);
+    expect(esDiaDeCalendario("")).toBe(false);
   });
 });

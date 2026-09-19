@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import {
   BUCKET_DOCUMENTOS,
+  LARGOS_DE_CAMPO,
   LONGITUD_MINIMA_NOMBRE,
   RUTA_ACCESO,
   RUTA_PROVEEDORES,
@@ -115,6 +116,21 @@ async function cliente() {
  */
 function motivo(error: { code?: string; message?: string }): EstadoProveedores {
   if (error.code === "42501" || error.message?.includes("RSV06")) return "sin-permiso";
+  /*
+    UN 23503 NO SIGNIFICA LO MISMO EN LAS DOS DIRECCIONES. Al BORRAR, la clave
+    ajena que salta es la de quien cuelga de esta fila: «tiene cosas colgando».
+    Al INSERTAR o EDITAR es la contraria: la fila a la que se apunta —la
+    categoría, el proveedor— ya no existe, porque la otra persona la borró con
+    este formulario abierto. Con un solo mensaje para los dos, quien creaba un
+    gasto leía «este gasto tiene pagos, borrad antes los pagos» sobre un gasto
+    que no había llegado a existir.
+
+    Postgres los distingue en el texto: «insert or update on table …» frente a
+    «update or delete on table …». Comprobado contra la base.
+  */
+  if (error.code === "23503" && error.message?.startsWith("insert or update")) {
+    return "referencia-rota";
+  }
   if (error.code === "23503") return "en-uso";
   console.error("Fallo escribiendo en proveedores:", error);
   return "error";
@@ -536,7 +552,6 @@ function fichero(datos: FormData, campo: string): File | null {
 }
 
 /** Lo más largo que admite `documentos_proveedor_nombre_longitud`. */
-const LONGITUD_MAXIMA_NOMBRE_DOCUMENTO = 200;
 
 export async function subirDocumento(datos: FormData): Promise<void> {
   const proveedorId = texto(datos, "proveedor_id");
@@ -562,7 +577,7 @@ export async function subirDocumento(datos: FormData): Promise<void> {
     que lo teclee otra es la clase de campo obligatorio que se rellena con «a».
   */
   const nombre = (texto(datos, "nombre") || original.name).trim();
-  if (!nombre || nombre.length > LONGITUD_MAXIMA_NOMBRE_DOCUMENTO) {
+  if (!nombre || nombre.length > LARGOS_DE_CAMPO["documentos_proveedor.nombre"]) {
     volver("documento-nombre", proveedorId);
   }
 

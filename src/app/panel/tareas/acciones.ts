@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 
-import { RUTA_ACCESO, RUTA_TAREAS } from "@/config/constants";
+import { LARGOS_DE_CAMPO, RUTA_ACCESO, RUTA_TAREAS } from "@/config/constants";
+import { esDiaDeCalendario } from "@/lib/fechas";
 import {
   deLaColumna,
   esEstadoTarea,
@@ -91,13 +92,25 @@ async function cliente() {
  */
 function motivo(error: { code?: string; message?: string }): EstadoTareas {
   if (error.code === "42501" || error.message?.includes("RSV06")) return "sin-permiso";
+  /*
+    UN 23503 NO SIGNIFICA LO MISMO EN LAS DOS DIRECCIONES. Al BORRAR, la clave
+    ajena que salta es la de quien cuelga de esta fila: «tiene cosas colgando».
+    Al INSERTAR o EDITAR es la contraria: la fila a la que se apunta —la
+    categoría, el proveedor— ya no existe, porque la otra persona la borró con
+    este formulario abierto. Con un solo mensaje para los dos, quien creaba un
+    gasto leía «este gasto tiene pagos, borrad antes los pagos» sobre un gasto
+    que no había llegado a existir.
+
+    Postgres los distingue en el texto: «insert or update on table …» frente a
+    «update or delete on table …». Comprobado contra la base.
+  */
+  if (error.code === "23503" && error.message?.startsWith("insert or update")) {
+    return "referencia-rota";
+  }
   if (error.code === "23503") return "en-uso";
   console.error("Fallo escribiendo en tareas:", error);
   return "error";
 }
-
-/** Lo más largo que admite `tareas_titulo_longitud`. */
-const LARGO_TITULO = 160;
 
 /**
  * Los campos que comparten el alta y la edición, ya validados.
@@ -122,18 +135,18 @@ function camposTarea(datos: FormData):
       };
     } {
   const titulo = texto(datos, "titulo");
-  if (!titulo || titulo.length > LARGO_TITULO) return { ok: false, estado: "titulo" };
+  if (!titulo || titulo.length > LARGOS_DE_CAMPO["tareas.titulo"]) {
+    return { ok: false, estado: "titulo" };
+  }
 
   const prioridad = texto(datos, "prioridad") || PRIORIDAD_INICIAL_TAREA;
   if (!esPrioridadTarea(prioridad)) return { ok: false, estado: "prioridad" };
 
+  // `esDiaDeCalendario` y no `Date.parse`: V8 convierte «2027-02-31» en el 3 de
+  // marzo sin quejarse, así que el 31 de febrero pasaba por aquí y lo paraba
+  // Postgres con un 22008 que acababa en el «error» genérico.
   const fecha = opcional(datos, "fecha_limite");
-  if (
-    fecha !== null &&
-    (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || Number.isNaN(Date.parse(fecha)))
-  ) {
-    return { ok: false, estado: "fecha" };
-  }
+  if (fecha !== null && !esDiaDeCalendario(fecha)) return { ok: false, estado: "fecha" };
 
   return {
     ok: true,

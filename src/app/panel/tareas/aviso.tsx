@@ -31,6 +31,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   "confirmar-borrado": { clave: "panel.tareas.avisoConfirmarBorrado", error: true },
   "no-existe": { clave: "panel.tareas.errorNoExiste", error: true },
   "en-uso": { clave: "panel.tareas.errorEnUso", error: true },
+  "referencia-rota": { clave: "panel.tareas.errorReferenciaRota", error: true },
   "sin-permiso": { clave: "panel.tareas.errorSinPermiso", error: true },
   error: { clave: "panel.tareas.errorGuardar", error: true },
 };

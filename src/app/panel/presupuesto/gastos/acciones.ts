@@ -76,6 +76,21 @@ function motivo(error: { code?: string; message?: string }): EstadoGastos {
   // 23503 al borrar es la clave ajena de `pagos.partida_id`, que es
   // `on delete restrict`: el gasto tiene pagos apuntados. No es un fallo, es
   // una respuesta, y merece su propia frase.
+  /*
+    UN 23503 NO SIGNIFICA LO MISMO EN LAS DOS DIRECCIONES. Al BORRAR, la clave
+    ajena que salta es la de quien cuelga de esta fila: «tiene cosas colgando».
+    Al INSERTAR o EDITAR es la contraria: la fila a la que se apunta —la
+    categoría, el proveedor— ya no existe, porque la otra persona la borró con
+    este formulario abierto. Con un solo mensaje para los dos, quien creaba un
+    gasto leía «este gasto tiene pagos, borrad antes los pagos» sobre un gasto
+    que no había llegado a existir.
+
+    Postgres los distingue en el texto: «insert or update on table …» frente a
+    «update or delete on table …». Comprobado contra la base.
+  */
+  if (error.code === "23503" && error.message?.startsWith("insert or update")) {
+    return "referencia-rota";
+  }
   if (error.code === "23503") return "tiene-pagos";
 
   console.error("Fallo escribiendo un gasto:", error);

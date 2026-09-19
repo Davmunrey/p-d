@@ -148,24 +148,37 @@ async function loQueNoCabe(
     El importe anterior no se pide otra vez a la base: `obtenerGastosParaPagar`
     ya sumó todos los pagos del gasto, así que basta con no contar éste.
   */
-  const queda = pagoId ? gasto.queda + (await importeDe(pagoId)) : gasto.queda;
+  /*
+    Y SÓLO SI EL PAGO YA ESTABA EN ESTE GASTO. En «editar» se puede cambiar el
+    gasto del pago, y entonces el importe anterior no ocupaba nada aquí: sumarlo
+    igual le regalaba al gasto nuevo una holgura que nunca tuvo, la comprobación
+    decía «cabe», y el trigger PAG01 lo paraba después sin la cifra. El dato
+    quedaba bien —por el trigger— pero esta función existe precisamente para
+    poder decir CUÁNTO queda, y decía que cabía.
+  */
+  const anterior = pagoId ? await importeDe(pagoId) : null;
+  const yaOcupaba = anterior && anterior.partidaId === gastoId ? anterior.importe : 0;
+  const queda = gasto.queda + yaOcupaba;
   const holgura = Math.round(queda * 100) / 100;
 
   return importe > holgura ? holgura : null;
 }
 
-/** Lo que ocupa hoy un pago concreto. Cero si no se puede leer. */
-async function importeDe(pagoId: string): Promise<number> {
+/** Lo que ocupa hoy un pago concreto y en qué gasto. `null` si no se puede leer. */
+async function importeDe(
+  pagoId: string,
+): Promise<{ importe: number; partidaId: string } | null> {
   const supabase = await cliente();
   const { data } = await supabase
     .from("pagos")
-    .select("importe")
+    .select("importe, partida_id")
     .eq("id", pagoId)
     .maybeSingle();
 
-  const bruto = (data as { importe: string | number } | null)?.importe ?? 0;
-  const numero = typeof bruto === "number" ? bruto : Number(bruto);
-  return Number.isFinite(numero) ? numero : 0;
+  const fila = data as { importe: string | number; partida_id: string } | null;
+  if (!fila) return null;
+  const numero = typeof fila.importe === "number" ? fila.importe : Number(fila.importe);
+  return { importe: Number.isFinite(numero) ? numero : 0, partidaId: fila.partida_id };
 }
 
 /** Lo común de crear y editar: leer y validar. */

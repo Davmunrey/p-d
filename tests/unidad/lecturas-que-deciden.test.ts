@@ -46,6 +46,11 @@ const DECIDEN_UNA_ESCRITURA = [
     funcion: "contarSentados",
     decide: "si cabe alguien más en la mesa",
   },
+  {
+    fichero: "src/lib/bbdd/contenido.ts",
+    funcion: "obtenerFilasDeLista",
+    decide: "en qué orden nace una ficha nueva y con quién se permuta al moverla",
+  },
 ];
 
 describe("las lecturas que deciden una escritura", () => {

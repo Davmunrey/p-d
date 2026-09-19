@@ -14,6 +14,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   importe: { clave: "panel.presupuesto.gastos.errorImporte", error: true },
   "sin-categorias": { clave: "panel.presupuesto.gastos.sinCategorias", error: true },
   "tiene-pagos": { clave: "panel.presupuesto.gastos.errorTienePagos", error: true },
+  "referencia-rota": { clave: "panel.presupuesto.gastos.errorReferenciaRota", error: true },
   "no-existe": { clave: "panel.presupuesto.gastos.errorNoExiste", error: true },
   "sin-permiso": { clave: "panel.presupuesto.gastos.errorSinPermiso", error: true },
   error: { clave: "panel.presupuesto.gastos.errorGuardar", error: true },

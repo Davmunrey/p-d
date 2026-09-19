@@ -48,5 +48,6 @@ export type EstadoProveedores =
   | "elegido"
   | "no-existe"
   | "en-uso"
+  | "referencia-rota"
   | "sin-permiso"
   | "error";

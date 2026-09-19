@@ -935,7 +935,8 @@
       "errorServicioPrecio": "Ese precio no se entiende. Escribid sólo números, con coma o punto para los decimales.",
       "errorServicioCantidad": "La cantidad tiene que ser un número entero de 1 en adelante.",
       "errorServicioMinimo": "Ese mínimo no se entiende. Escribid sólo números, con coma o punto para los decimales.",
-      "errorServicioMinimoSuelto": "El mínimo garantizado sólo tiene sentido si el precio es por invitado. Marcad la casilla o dejadlo en blanco."
+      "errorServicioMinimoSuelto": "El mínimo garantizado sólo tiene sentido si el precio es por invitado. Marcad la casilla o dejadlo en blanco.",
+      "errorReferenciaRota": "Algo de lo elegido —la categoría o el proveedor— ya no existe: alguien lo ha borrado mientras tanto. Recargad y volved a elegirlo."
     },
     "presupuesto": {
       "titulo": "Presupuesto",
@@ -1085,7 +1086,8 @@
         "errorTienePagos": "Este gasto tiene pagos apuntados. Borrad antes los pagos: lo que ya se pagó tiene que seguir contando.",
         "errorNoExiste": "Ese gasto ya no está.",
         "errorSinPermiso": "Vuestro perfil no puede hacer cambios aquí.",
-        "errorGuardar": "No se ha podido guardar. Probad otra vez."
+        "errorGuardar": "No se ha podido guardar. Probad otra vez.",
+        "errorReferenciaRota": "Algo de lo elegido —la categoría o el proveedor— ya no existe: alguien lo ha borrado mientras tanto. Recargad y volved a elegirlo."
       },
       "graficas": {
         "titulo": "Cómo va el dinero",
@@ -1377,7 +1379,8 @@
       "errorNoExiste": "Esa tarea ya no está.",
       "errorEnUso": "No se puede borrar: hay algo colgando de esta tarea.",
       "errorSinPermiso": "Vuestro perfil no puede hacer cambios aquí.",
-      "errorGuardar": "No se ha podido guardar. Probad otra vez."
+      "errorGuardar": "No se ha podido guardar. Probad otra vez.",
+      "errorReferenciaRota": "Algo de lo elegido —la categoría o el proveedor— ya no existe: alguien lo ha borrado mientras tanto. Recargad y volved a elegirlo."
     },
     "documentos": {
       "titulo": "Documentos de la boda",

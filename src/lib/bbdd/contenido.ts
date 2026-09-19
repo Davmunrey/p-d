@@ -214,7 +214,7 @@ export interface FilaDeContenido {
 export async function obtenerFilasDeLista(
   clave: ClaveLista,
   variante?: string,
-): Promise<FilaDeContenido[]> {
+): Promise<FilaDeContenido[] | null> {
   const lista = LISTAS_DE_CONTENIDO[clave];
   const columnas = lista.campos.map((campo) => campo.columna);
 
@@ -234,9 +234,17 @@ export async function obtenerFilasDeLista(
 
   const { data, error } = await consulta;
 
+  /*
+    NULL Y NO LISTA VACÍA. Dos acciones deciden con esto: `crearFicha` calcula el
+    orden de la nueva como «el mayor más uno», y con `[]` el mayor es −1 y la
+    ficha nace la PRIMERA cuando el comentario de al lado dice que nace la
+    última; `moverFicha` permuta con el vecino, y con `[]` no hay vecino, así que
+    contestaba «movida» sin haber movido nada. Con `null` las dos se niegan a
+    escribir. La página lo pinta como vacío, que para enseñar vale.
+  */
   if (error) {
     console.error(`No se pudo leer la lista «${clave}»:`, error.message);
-    return [];
+    return null;
   }
 
   return (data ?? []).map((cruda) => {

@@ -29,5 +29,6 @@ export type EstadoTareas =
   | "confirmar-borrado"
   | "no-existe"
   | "en-uso"
+  | "referencia-rota"
   | "sin-permiso"
   | "error";

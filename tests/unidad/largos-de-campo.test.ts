@@ -30,9 +30,18 @@ import { LARGOS_DE_CAMPO, LIMITE_TEXTO_CANCION } from "@/config/constants";
 
 const RAIZ = join(__dirname, "..", "..");
 
-/** El fuente sin comentarios, para que un ejemplo escrito en uno no cuente. */
+/**
+ * El fuente sin comentarios, para que un ejemplo escrito en uno no cuente.
+ *
+ * Un bloque de comentario se cambia por sus MISMOS saltos de línea y no por
+ * nada: si desaparecieran, los números de línea que enseña el fallo apuntarían
+ * a otro sitio — la primera vez que este guardián cazó algo dijo «línea 380» y
+ * la constante estaba en la 554. Un aviso que señala mal obliga a buscar.
+ */
 function sinComentarios(fuente: string): string {
-  return fuente.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+  return fuente
+    .replace(/\/\*[\s\S]*?\*\//g, (bloque) => bloque.replace(/[^\n]/g, ""))
+    .replace(/\/\/[^\n]*/g, "");
 }
 
 function ficheros(directorio: string): string[] {
@@ -109,6 +118,32 @@ describe("LARGOS_DE_CAMPO cita a la base", () => {
 
   it("el tope de la playlist también sale de su tabla", () => {
     expect(topes.get("canciones_sugeridas.texto")).toBe(LIMITE_TEXTO_CANCION);
+  });
+});
+
+describe("ningún tope se declara como constante suelta", () => {
+  /*
+    EL AGUJERO QUE QUEDABA: `maxLength={160}` ya no cuela, pero `const
+    LARGO_TITULO = 160` seguido de `titulo.length > LARGO_TITULO` sí colaba —
+    es exactamente lo que había en `tareas/acciones.ts`, con su comentario
+    «lo más largo que admite tareas_titulo_longitud» y todo. Con nombre, pero
+    sin que nadie lo comparara con la migración. Un tope de texto se escribe
+    una vez, en `LARGOS_DE_CAMPO`, citando su columna.
+  */
+  it("no hay ningún «const LARGO_ALGO = número» fuera de constants.ts", () => {
+    const sueltos = ficheros(join(RAIZ, "src"))
+      .filter((fichero) => /\.tsx?$/.test(fichero) && !fichero.endsWith("config/constants.ts"))
+      .flatMap((fichero) =>
+        sinComentarios(readFileSync(fichero, "utf8"))
+          .split("\n")
+          .flatMap((linea, indice) =>
+            /\bconst (LARGO|LONGITUD|TOPE)_[A-Z_]+ = \d+;/.test(linea)
+              ? [`${fichero.slice(RAIZ.length + 1)}:${indice + 1}`]
+              : [],
+          ),
+      );
+
+    expect(sueltos, "el tope va en LARGOS_DE_CAMPO, citando su columna").toEqual([]);
   });
 });
 

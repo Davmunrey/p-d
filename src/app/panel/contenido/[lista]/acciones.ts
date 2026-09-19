@@ -210,6 +210,8 @@ export async function crearFicha(datos: FormData): Promise<void> {
       donde no debía haberlo.
     */
     const existentes = await obtenerFilasDeLista(clave, variante);
+    // `null` es «no se pudo leer»: sin saber qué hay, no se sabe dónde va la nueva.
+    if (existentes === null) volver(clave, "error", { variante });
     const ultimo = existentes.reduce((mayor, fila) => Math.max(mayor, fila.orden), -1);
     const siguiente = Math.min(ultimo + 1, TOPE_ORDEN_CONTENIDO);
 
@@ -388,6 +390,8 @@ export async function moverFicha(datos: FormData): Promise<void> {
 
   try {
     const filas = await obtenerFilasDeLista(clave, variante);
+    // Sin lista no hay vecino con quien permutar, y «movida» sería mentir.
+    if (filas === null) volver(clave, "error", { variante });
     const cambios = permutarConElVecino(filas, id, direccion);
 
     // Ya estaba arriba del todo, o abajo del todo. No es un error: es que no

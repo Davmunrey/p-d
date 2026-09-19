@@ -101,3 +101,22 @@ export function vispera(fecha: Date): Date {
 export function anio(fecha: Date): string {
   return formatoAnio.format(fecha);
 }
+
+/**
+ * ¿Es `texto` un día que existe en el calendario, como `2027-02-28`?
+ *
+ * NO BASTA CON `Date.parse`: V8 «arregla» los días imposibles en vez de
+ * rechazarlos. `2027-02-31` se convierte en el 3 de marzo y `2027-04-31` en el
+ * 1 de mayo, los dos sin `NaN`. Así que una fecha inventada pasaba la
+ * comprobación de la acción, llegaba a Postgres, y Postgres —que sí sabe
+ * cuántos días tiene febrero— contestaba con un 22008 que nadie traducía.
+ *
+ * La prueba es de ida y vuelta: se lee, se vuelve a escribir, y tiene que dar
+ * exactamente lo mismo. Un día que no existe sale cambiado.
+ */
+export function esDiaDeCalendario(texto: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) return false;
+  const instante = Date.parse(`${texto}T00:00:00Z`);
+  if (Number.isNaN(instante)) return false;
+  return new Date(instante).toISOString().slice(0, 10) === texto;
+}

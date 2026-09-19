@@ -58,6 +58,16 @@ export async function marcarLeido(datos: FormData): Promise<void> {
 
   const acceso = await accesoActual();
   if (!acceso) redirect(RUTA_ACCESO);
+  /*
+    EL LECTOR SE CORTA AQUÍ Y NO POR EL RECUENTO. Abajo, «cero filas» servía
+    para decir «sin permiso», y para el `upsert` es verdad: RLS lo para. Pero
+    el `delete` también deja cero filas cuando la marca YA NO ESTABA —los dos
+    novios con la bandeja abierta, uno desmarca, el otro pulsa lo mismo un
+    minuto después— y eso no es falta de permiso: es que el estado que quería
+    ya se cumple. Preguntando el rol antes, el cero del `delete` puede
+    significar lo único que le queda por significar.
+  */
+  if (acceso.rol === "lector") volver("sin-permiso");
 
   const supabase = await cliente();
 
@@ -78,7 +88,9 @@ export async function marcarLeido(datos: FormData): Promise<void> {
     console.error("No se pudo marcar el mensaje:", error);
     volver("error");
   }
-  if (count === 0) volver("sin-permiso");
+  // Marcar como leído con cero filas sigue siendo «no te dejó»; desmarcar con
+  // cero filas es que ya estaba desmarcado, que es exactamente lo que se pedía.
+  if (count === 0 && !leidoAhora) volver("sin-permiso");
 
   volver("marcado");
 }
