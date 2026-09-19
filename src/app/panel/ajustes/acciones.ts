@@ -41,7 +41,9 @@ type Estado =
   | "solo-propietario"
   | "nombres"
   | "ceremonia"
+  | "limite"
   | "limite-tarde"
+  | "banquete"
   | "banquete-antes"
   | "coordenadas"
   | "hashtag"
@@ -152,8 +154,14 @@ export async function guardarAjustes(datos: FormData) {
     const ceremonia = instanteDesdeLocal(texto(datos, "fecha_hora_ceremonia"), zona);
     if (!ceremonia) volver("ceremonia");
 
+    /*
+      FALTAR NO ES LLEGAR TARDE. Un campo vacío o a medio escribir también hace
+      `null` aquí, y contestaba «la fecha límite no puede ser posterior a la
+      ceremonia» — una frase sobre dos fechas cuando sólo hay una, que manda a
+      mirar la que sí está puesta. Cada motivo tiene el suyo.
+    */
     const limite = instanteDesdeLocal(texto(datos, "fecha_limite_rsvp"), zona);
-    if (!limite) volver("limite-tarde");
+    if (!limite) volver("limite");
 
     // Pedir confirmación después de la boda no tiene sentido, y es un error
     // fácil de cometer copiando la fecha de arriba.
@@ -164,7 +172,7 @@ export async function guardarAjustes(datos: FormData) {
 
     const banqueteTexto = texto(datos, "fecha_hora_banquete");
     const banquete = banqueteTexto ? instanteDesdeLocal(banqueteTexto, zona) : null;
-    if (banqueteTexto && !banquete) volver("banquete-antes");
+    if (banqueteTexto && !banquete) volver("banquete");
     if (banquete && banquete.getTime() < ceremonia.getTime()) volver("banquete-antes");
 
     const { error, count } = await supabase
