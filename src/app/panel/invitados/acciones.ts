@@ -183,12 +183,25 @@ export async function quitarPersona(datos: FormData): Promise<void> {
 
   const supabase = await cliente();
 
-  const { data: confirmacion } = await supabase
+  /*
+    SI NO SE PUEDE LEER LA RESPUESTA, NO SE BORRA. El error se ignoraba y la
+    lectura fallida deja `confirmacion` a `null`, que aquí significa «no ha
+    contestado nadie» — o sea, exactamente el permiso para borrar. Un fallo de
+    lectura se convertía así en el borrado en cascada que este guardia existe
+    para impedir, y encima en silencio. Ante la duda no se quita a nadie: quien
+    lo intenta lo vuelve a intentar, y lo borrado no vuelve.
+  */
+  const { data: confirmacion, error: errorLectura } = await supabase
     .from("confirmaciones")
     .select("estado")
     .eq("invitado_id", personaId)
     .eq("es_vigente", true)
     .maybeSingle();
+
+  if (errorLectura) {
+    console.error("No se pudo comprobar si la persona había contestado:", errorLectura);
+    volver("error", grupoId);
+  }
 
   if (confirmacion && confirmacion.estado !== "pendiente") {
     volver("quitar-con-respuesta", grupoId);
