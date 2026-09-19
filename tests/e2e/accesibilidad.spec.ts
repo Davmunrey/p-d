@@ -316,6 +316,17 @@ test.describe("Accesibilidad del panel", () => {
     */
     const pantallas = rutasDelPanel().map((ruta) => ({ clave: ruta, ruta }));
 
+    /*
+      CUÁNTAS SON, DICHO EN VOZ ALTA. La lista sale del sistema de ficheros, así
+      que un fallo del recorrido no daría error: daría menos pantallas. Y menos
+      pantallas es un test que pasa. La aserción de las rutas con parámetro ya
+      lo sujeta por un lado —las tres viven en subcarpetas, un recorrido a medias
+      no las encontraría— pero el número lo dice sin rodeos.
+    */
+    expect(pantallas.length, "el recorrido de src/app/panel devolvió de menos").toBeGreaterThan(
+      25,
+    );
+
     const informes: string[] = [];
     for (const pantalla of pantallas) {
       await page.goto(pantalla.ruta);
