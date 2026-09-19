@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { sugerirCancion, type MotivoCancion } from "@/lib/bbdd/playlist";
 import { t } from "@/lib/copy";
-import { invitacionRecordada } from "@/lib/invitacion-recordada";
+import { invitacionRecordada, olvidarInvitacion } from "@/lib/invitacion-recordada";
 
 import { type EstadoPlaylist } from "./estado-playlist";
 
@@ -40,6 +40,14 @@ export async function anadirCancion(
   const resultado = await sugerirCancion(token, texto);
 
   if (!resultado.ok) {
+    /*
+      SI EL ENLACE NO VALE, LA COOKIE TAMPOCO. Es el único momento en que se
+      sabe: el middleware la escribió sin poder comprobarla, y la base acaba
+      de decir que ese token no existe. Sin esto, el formulario seguía saliendo
+      un año y cada envío fallaba igual. Con esto, la siguiente visita ve la
+      explicación de «sin invitación», que es lo que le pasa.
+    */
+    if (resultado.motivo === "enlace") await olvidarInvitacion();
     return { fase: "fallo", aviso: AVISOS[resultado.motivo](), texto, sello };
   }
 

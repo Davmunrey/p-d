@@ -144,6 +144,60 @@ test.describe("La playlist colaborativa", () => {
   });
 
   /**
+   * CASO DE ERROR · UN ENLACE QUE NO VALE SE OLVIDA AL PRIMER ENVÍO.
+   *
+   * El middleware recuerda el token de cualquier `/rsvp/<lo-que-sea>` sin
+   * poder comprobarlo —y está bien que no pueda: comprobarlo gastaría cupo
+   * del cortafuegos—, así que un enlace mal tecleado dejaba en la cookie un
+   * token que no existe, con un año de vida. La portada pintaba el campo de la
+   * playlist, y cada envío volvía con «ese enlace no vale». Un año así.
+   *
+   * Ahora la acción, en cuanto la base dice que el token no vale, borra la
+   * cookie: la siguiente visita ve la explicación de «sin invitación», que es
+   * lo que de verdad le pasa a esa persona.
+   */
+  test("un enlace que no existe deja de recordarse en cuanto falla", async ({ browser }) => {
+    const contexto = await conInvitacionAbierta(browser, "no-existe-000000", false);
+    const pagina = await contexto.newPage();
+
+    // La cookie está, y por tanto el campo: es el estado atascado de antes.
+    const antes = await (await pagina.request.get("/")).text();
+    expect(antes).toContain(copy.playlist.campoCancion);
+
+    await pagina.goto("/#playlist");
+    await pagina
+      .locator("#playlist")
+      .getByLabel(copy.playlist.campoCancion)
+      .fill("(DES) Sonda");
+    await pagina
+      .locator("#playlist")
+      .getByRole("button", { name: copy.playlist.anadir })
+      .click();
+    /*
+      SIN JAVASCRIPT, LA MISMA RESPUESTA YA DICE LA VERDAD. La acción borra la
+      cookie y, como la portada se repinta entera en esa respuesta, la sección
+      sale sin formulario y con la explicación: no hay error de enlace que
+      enseñar porque ya no hay enlace que recordar. Con JavaScript el
+      formulario recibe el aviso de «enlace» y es la siguiente visita la que
+      ve esto mismo.
+    */
+    await expect(pagina.locator("#playlist")).toContainText(copy.playlist.sinInvitacion);
+    await expect(
+      pagina.locator("#playlist").getByLabel(copy.playlist.campoCancion),
+    ).toHaveCount(0);
+
+    // Y ya no hay cookie: la siguiente portada dice la verdad.
+    expect(
+      (await contexto.cookies()).find((c) => c.name === "boda:invitacion"),
+    ).toBeUndefined();
+    const despues = await (await pagina.request.get("/")).text();
+    expect(despues).toContain(copy.playlist.sinInvitacion);
+    expect(despues).not.toContain(copy.playlist.campoCancion);
+
+    await contexto.close();
+  });
+
+  /**
    * CAMINO FELIZ · Con la invitación abierta, y sin JavaScript.
    */
   test("con la invitación abierta se apunta una canción, sin JavaScript", async ({
