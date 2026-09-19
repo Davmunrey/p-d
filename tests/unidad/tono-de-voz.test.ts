@@ -42,24 +42,33 @@ const copia = JSON.parse(readFileSync(join(RAIZ, "content/copy.es.json"), "utf8"
  */
 const DE_INVITADO = [
   "alojamiento",
-  "correos",
+  "comoLlegar",
+  "comun",
+  "correoConfirmacion",
   "cuentaAtras",
   "dresscode",
   "errores",
   "galeria",
   "historia",
-  "landing",
+  "meta",
   "navegacion",
+  "paisaje",
   "pie",
   "playlist",
   "portada",
+  "preboda",
   "preguntas",
   "programa",
   "regalos",
   "rsvp",
   "saveTheDate",
-  "transporte",
 ];
+
+/**
+ * Los bloques que NO lee un invitado. Se nombran uno a uno, igual que los otros,
+ * para que entre los dos cubran el fichero entero.
+ */
+const DE_LOS_NOVIOS = ["acceso", "cocina", "panel"];
 
 /** Cada cadena del fichero, con la ruta de claves que lleva hasta ella. */
 function* cadenas(nodo: unknown, camino = ""): Generator<[string, string]> {
@@ -96,6 +105,42 @@ describe("el tono de voz de la entrega", () => {
   it("hay copys de invitado que comprobar", () => {
     // Si el barrido dejara de encontrarlos, todo lo de abajo pasaría en vacío.
     expect(copysDeInvitado().length).toBeGreaterThan(50);
+  });
+
+  /*
+    ESTAS DOS COMPROBACIONES SON EL MOTIVO DE QUE ESTE TEST VUELVA A SERVIR.
+
+    La lista nombraba `correos`, `landing` y `transporte`, tres bloques que ya no
+    existen: se renombraron a `correoConfirmacion` y `comoLlegar`, y el tercero
+    se repartió. Un nombre que no casa con nada no da error, sólo filtra a cero,
+    así que el barrido seguía en verde comprobando tres bloques menos de los que
+    decía. Y al revés: `comoLlegar`, `preboda` y `paisaje` —que los lee un
+    invitado— nunca habían pasado por aquí.
+
+    Un guardián que se queda mirando a un sitio vacío es peor que no tenerlo,
+    porque encima tranquiliza. Así que ahora la lista tiene que casar con el
+    fichero, y entre las dos listas tienen que cubrirlo entero: un bloque nuevo
+    obliga a decidir de quién es antes de poder mergearlo.
+  */
+  it("todos los bloques que nombra la lista existen de verdad", () => {
+    const inventados = [...DE_INVITADO, ...DE_LOS_NOVIOS].filter(
+      (bloque) => !(bloque in copia),
+    );
+
+    expect(
+      inventados,
+      "un bloque renombrado deja su nombre viejo filtrando a cero, en silencio",
+    ).toEqual([]);
+  });
+
+  it("no queda ningún bloque sin clasificar", () => {
+    const clasificados = new Set([...DE_INVITADO, ...DE_LOS_NOVIOS]);
+    const sueltos = Object.keys(copia).filter((bloque) => !clasificados.has(bloque));
+
+    expect(
+      sueltos,
+      "decide si lo lee un invitado (DE_INVITADO) o los novios (DE_LOS_NOVIOS)",
+    ).toEqual([]);
   });
 
   it("ningún copy de invitado lleva exclamaciones de más", () => {
