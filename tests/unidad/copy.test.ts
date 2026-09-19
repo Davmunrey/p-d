@@ -33,7 +33,7 @@ describe("grupo()", () => {
   it("devuelve el subárbol completo", () => {
     const errores = grupo("errores");
 
-    expect(errores.campoObligatorio).toBe("Este campo es obligatorio.");
+    expect(errores.emailInvalido).toBe("Revisad el correo, parece incompleto.");
     expect(Object.keys(errores).length).toBeGreaterThan(0);
   });
 });

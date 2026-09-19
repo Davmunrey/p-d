@@ -1,24 +1,14 @@
 {
   "comun": {
-    "cargando": "Cargando…",
     "guardar": "Guardar",
     "cancelar": "Cancelar",
-    "eliminar": "Eliminar",
-    "editar": "Editar",
-    "volver": "Volver",
-    "continuar": "Continuar",
-    "cerrar": "Cerrar",
-    "buscar": "Buscar",
     "si": "Sí",
     "no": "No"
   },
   "errores": {
     "generico": "Algo no ha ido bien. Intentadlo de nuevo en un momento.",
     "noEncontrado": "No hemos encontrado esta página.",
-    "sinPermiso": "No tenéis acceso a esta sección.",
-    "campoObligatorio": "Este campo es obligatorio.",
     "emailInvalido": "Revisad el correo, parece incompleto.",
-    "sinConexion": "Parece que no hay conexión.",
     "noEncontradoTexto": "Puede que el enlace esté incompleto o que esa parte de la web ya no esté. Desde la portada se llega a todo.",
     "volverAlInicio": "Ir a la portada"
   },
@@ -29,9 +19,6 @@
   "navegacion": {
     "etiquetaPrincipal": "Navegación principal",
     "irAlContenido": "Ir al contenido",
-    "abrirMenu": "Abrir menú",
-    "cerrarMenu": "Cerrar menú",
-    "menu": "Menú",
     "monogramaConector": "&",
     "secciones": {
       "portada": "Inicio",
@@ -57,7 +44,6 @@
     "etiquetaLugar": "El lugar",
     "confirmarAsistencia": "Confirmar asistencia",
     "verElDia": "Ver el día",
-    "altHero": "Paloma y David",
     "conjuncion": "y",
     "enPreparacion": "Estamos preparando la web",
     "enPreparacionTexto": "Vuelve en un rato y aquí estará todo.",
@@ -83,9 +69,7 @@
     "titulo": "Nuestra historia"
   },
   "galeria": {
-    "etiqueta": "Un vistazo",
     "titulo": "Nuestras fotos",
-    "entradilla": "Unas cuantas de las nuestras. Pulsad en cualquiera para verla entera.",
     "visorEtiqueta": "Galería a pantalla completa",
     "contador": "Foto {actual} de {total}",
     "anterior": "Anterior",
@@ -93,14 +77,12 @@
     "cerrar": "Cerrar"
   },
   "preboda": {
-    "etiqueta": "La víspera",
     "titulo": "Si llegáis antes de tiempo",
     "entradilla": "Muchos vendréis de fuera y el {dia} da para mucho. Nosotros estaremos por {ciudad}: venid a saludar.",
     "cierre": "Nada de esto es obligatorio ni hace falta confirmarlo: pasaos por donde os apetezca.",
     "entradillaSinCiudad": "Muchos vendréis de fuera y el {dia} da para mucho. Venid a saludar."
   },
   "programa": {
-    "etiqueta": "El día, hora a hora",
     "titulo": "El día, hora a hora"
   },
   "alojamiento": {
@@ -118,8 +100,7 @@
     "etiqueta": "El lugar",
     "titulo": "Cómo llegar",
     "abrirMapa": "Abrir en el mapa",
-    "mapaTitulo": "Mapa con el sitio de la boda",
-    "direccion": "{direccion}"
+    "mapaTitulo": "Mapa con el sitio de la boda"
   },
   "preguntas": {
     "etiqueta": "Por si os queda alguna duda",
@@ -167,18 +148,9 @@
     "nombre": "Nombre y apellidos",
     "contacto": "Email o teléfono",
     "contactoAyuda": "para avisaros de cambios",
-    "pregunta": "¿Vendréis?",
-    "sinAsistencia": "No podré ir",
-    "conAsistencia": "Sí, allí estaremos",
-    "personas": "Nº de personas",
-    "autobus": "Autobús",
-    "menu": "Alergias o menú especial",
-    "menuAyuda": "Celíaco, vegetariano, sin lactosa…",
     "mensaje": "Un mensaje para nosotros",
     "mensajeAyuda": "Opcional",
     "enviar": "Enviar confirmación",
-    "enviando": "Enviando…",
-    "indicadAsistencia": "Indicadnos si podréis venir.",
     "graciasSi": "¡Qué alegría!",
     "graciasSiTexto": "Apuntado. Os escribiremos unas semanas antes con los últimos detalles.",
     "graciasNo": "Os echaremos de menos",
@@ -216,7 +188,6 @@
     "cancionAyuda": "Canción y artista. La añadiremos a la lista que sonará esa noche.",
     "atras": "Atrás",
     "siguiente": "Siguiente",
-    "nadieViene": "Nadie del grupo puede venir",
     "resumenVienen": "Vienen",
     "resumenNoVienen": "No pueden venir",
     "respuestaGuardada": "Respuesta enviada el {fecha}",
@@ -242,9 +213,7 @@
     "icsDescripcion": "Nos casamos. Guardad el día."
   },
   "pie": {
-    "escribidnos": "Escribidnos",
     "etiquetaNavegacion": "Enlaces del pie",
-    "contacto": "Cualquier duda, escribidnos",
     "volverArriba": "Volver arriba",
     "fechaLugar": "{fecha} — {lugar}",
     "sistemaDeMarca": "Sistema de marca",
@@ -337,7 +306,6 @@
     "correo": "Correo electrónico",
     "contrasena": "Contraseña",
     "entrar": "Entrar",
-    "entrando": "Entrando…",
     "errorCredenciales": "El correo o la contraseña no son correctos.",
     "errorSinAcceso": "Esta cuenta existe, pero todavía no tiene acceso al panel.",
     "errorGenerico": "No hemos podido entrar. Inténtalo de nuevo en un momento.",
@@ -387,7 +355,6 @@
     "resumen": {
       "titulo": "Resumen",
       "descripcion": "Cómo va la boda, de un vistazo. Los números salen de las respuestas de los invitados y se actualizan solos.",
-      "enConstruccion": "Los módulos aparecen en el menú según se van terminando.",
       "faltan": "Faltan {dias} días",
       "esHoy": "Es hoy",
       "yaFue": "Ya pasó",
@@ -413,7 +380,6 @@
       "conAlergias": "Con alergias: {cuantas}",
       "sinInvitados": "Todavía no hay invitados. En cuanto creéis la primera invitación, aquí aparecerán los números.",
       "irAInvitados": "Ir a invitados",
-      "menus": "Menús",
       "sinMenus": "Nadie ha confirmado todavía, así que no hay menús que contar."
     },
     "cuenta": {
@@ -503,9 +469,6 @@
       "todos": "Todos",
       "sinResultados": "Ningún grupo coincide con la búsqueda.",
       "vacio": "Todavía no hay ninguna invitación. Cread la primera aquí abajo.",
-      "columnaGrupo": "Invitación",
-      "columnaPersonas": "Personas",
-      "columnaEstado": "Respuesta",
       "columnaEnlace": "Enlace",
       "personasCuenta": "{personas} personas",
       "personasUna": "1 persona",
@@ -531,7 +494,6 @@
       "enlaceEmitido": "Enlace nuevo emitido. El anterior ya no vale.",
       "enlaceNunca": "Sin emitir",
       "enlaceEmitidoEn": "Emitido el {fecha}",
-      "verGrupo": "Ver invitación",
       "volver": "← Volver a invitados",
       "personasTitulo": "Quién va en esta invitación",
       "anadirPersona": "Añadir persona",
@@ -562,7 +524,6 @@
       "columnaRespuesta": "Respuesta",
       "columnaMenu": "Menú",
       "columnaAlergias": "Alergias",
-      "columnaAutobus": "Autobús",
       "si": "Sí",
       "no": "No",
       "pendienteRespuesta": "Sin contestar",
@@ -739,7 +700,6 @@
       "previaResumen": "{personas} personas en {grupos} invitaciones.",
       "previaResumenUna": "1 persona en 1 invitación.",
       "grupoNuevo": "invitación nueva",
-      "grupoExistente": "ya existía",
       "confirmar": "Importar",
       "cancelar": "Cancelar",
       "erroresTitulo": "Hay {cuantos} filas con problemas",
@@ -756,7 +716,6 @@
       "errorSinFichero": "No habéis elegido ningún fichero.",
       "errorNadaQueImportar": "No hay ninguna fila que dar de alta.",
       "errorImportando": "No se ha podido importar. No se ha dado de alta a nadie.",
-      "importados": "Importados: {personas} personas en {grupos} invitaciones.",
       "sinJavascript": "Esta pantalla necesita JavaScript para enseñaros qué se va a importar antes de dar de alta a nadie. Si no podéis activarlo, se pueden añadir personas una a una desde la ficha de cada invitación.",
       "muestraGrupo": "Familia Zubeldía",
       "muestraNombre": "Ainhoa",
@@ -774,7 +733,6 @@
       "contactadoEn": "Se le escribió el {fecha}",
       "recordadoEn": "Recordado el {fecha}",
       "recordarBoton": "Recordar por WhatsApp",
-      "mandarBoton": "Mandar la invitación",
       "mensaje": "Mensaje",
       "plantillaRecordatorio": "¡Hola! Que se nos echa encima la boda y nos falta vuestra respuesta. ¿Podéis confirmar en el enlace que os mandamos? Mil gracias.",
       "sinEnlaceAviso": "A esta invitación no se le ha mandado nada todavía. El recordatorio no lleva enlace, así que primero hay que mandarle la invitación desde su ficha.",
@@ -1096,10 +1054,7 @@
         "totalPrevisto": "Previsto",
         "totalReal": "Va costando",
         "subtotal": "En esta categoría",
-        "columnaConcepto": "Concepto",
-        "columnaProveedor": "Proveedor",
         "columnaEstimado": "Estimado",
-        "columnaAcordado": "Acordado",
         "sinCerrar": "Sin cerrar",
         "sinProveedor": "Sin proveedor",
         "pagada": "Pagada",
@@ -1201,10 +1156,6 @@
     "contenido": {
       "titulo": "El contenido de la web",
       "descripcion": "Qué secciones se ven, en qué orden, y qué hace falta para que aparezcan. Una sección encendida pero vacía no sale: la web prefiere ocultar antes que dejar un hueco.",
-      "columnaSeccion": "Sección",
-      "columnaEstado": "En la web",
-      "columnaContenido": "Contenido",
-      "columnaOrden": "Orden",
       "visible": "Se ve",
       "oculta": "Oculta",
       "mostrar": "Mostrar en la web",
@@ -1223,7 +1174,6 @@
       "dondeMedios": "Fotos y vídeos",
       "dondeContenido": "Contenido",
       "dondeInvitados": "La escriben los invitados desde su enlace",
-      "dondeNada": "No hay nada que escribir",
       "avisoMostrada": "Ya se ve en la web.",
       "avisoOcultada": "Retirada de la web. No se ha borrado nada.",
       "avisoMovida": "Orden cambiado.",
@@ -1343,7 +1293,6 @@
       "descripcion": "Los cien recados de organizar una boda, con quién los lleva y para cuándo.",
       "vacio": "Todavía no hay ninguna tarea. Apuntad la primera, o empezad con la lista puesta.",
       "listaTitulo": "Todo lo que hay que hacer",
-      "tableroTitulo": "El tablero",
       "verTablero": "Ver el tablero",
       "verLista": "Ver la lista",
       "cuantas": "{cuantas} tareas",
@@ -1503,7 +1452,6 @@
       "entradilla": "Todo lo que hace falta el mismo día: qué toca ahora, a quién llamar y quién se sienta dónde.",
       "volver": "Volver al día de la boda",
       "atajos": {
-        "guion": "El guion",
         "agenda": "Teléfonos",
         "buscar": "Buscar a alguien",
         "recuento": "Recuento",
@@ -1518,7 +1466,6 @@
         "desmarcar": "Deshacer",
         "marcarEste": "Marcar hecho: {titulo}",
         "desmarcarEste": "Deshacer: {titulo}",
-        "hechoA": "Hecho a las {hora}",
         "responsable": "Responde {nombre}",
         "sinConexion": "Sin conexión. Lo marcado se guarda aquí y se manda solo al volver la cobertura.",
         "pendientes": "{numero} sin mandar",

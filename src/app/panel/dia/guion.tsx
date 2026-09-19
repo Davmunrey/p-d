@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
+import { Titulo3 } from "@/components/ui/tipografia";
 import type { PuntoDelGuion } from "@/lib/bbdd/dia";
 import { t } from "@/lib/copy";
 
@@ -154,7 +155,16 @@ export function Guion({
   const tocaAhora = conSusMarcas.find((punto) => !punto.hechoEn) ?? null;
 
   return (
-    <div className="mt-bloque">
+    <section className="mt-bloque">
+      {/*
+        LA SECCIÓN TIENE TÍTULO, Y NO LO TENÍA. Es una lista de veinte casillas
+        colgando del `h1` de la pantalla, sin nada que diga qué son: con lector
+        de pantalla, saltar de encabezado en encabezado se las pasaba enteras.
+        El copy —«El guion de la jornada»— llevaba escrito desde el principio y
+        nadie lo había pintado, que es un fallo que ninguna prueba cantaba.
+      */}
+      <Titulo3 como="h2">{t("panel.dia.guion.titulo")}</Titulo3>
+
       {/*
         QUÉ TOCA AHORA, ARRIBA Y GRANDE. Es la única pregunta que se hace ese
         día, y tener que buscarla recorriendo la lista con el sol de frente es
@@ -268,6 +278,6 @@ export function Guion({
           </li>
         ))}
       </ul>
-    </div>
+    </section>
   );
 }
