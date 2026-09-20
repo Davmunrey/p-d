@@ -1,4 +1,4 @@
-import { expect, test, type Request } from "@playwright/test";
+import { expect, test, type Request } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import { RUTA_RSVP } from "../../src/config/constants";

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./utiles/origen-propio";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_CUENTA, RUTA_PANEL } from "../../src/config/constants";

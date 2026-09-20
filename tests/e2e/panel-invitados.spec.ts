@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, origenDelTest, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
@@ -100,6 +100,7 @@ test.describe("Invitaciones", () => {
     const comoInvitada = await browser.newContext({
       javaScriptEnabled: false,
       locale: "es-ES",
+      extraHTTPHeaders: origenDelTest(),
     });
     const paginaInvitada = await comoInvitada.newPage();
     await paginaInvitada.goto(rutaRsvp);
@@ -199,7 +200,10 @@ test.describe("Invitaciones", () => {
     const segundo = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
     expect(segundo).not.toBe(primero);
 
-    const contexto = await browser.newContext({ locale: "es-ES" });
+    const contexto = await browser.newContext({
+      locale: "es-ES",
+      extraHTTPHeaders: origenDelTest(),
+    });
     const invitada = await contexto.newPage();
 
     await invitada.goto(new URL(primero).pathname);
@@ -235,7 +239,10 @@ test.describe("Invitaciones", () => {
     // Mientras no ha contestado, sí se puede quitar: el botón está.
     await expect(page.getByRole("button", { name: copy.panel.invitados.quitar })).toBeVisible();
 
-    const contexto = await browser.newContext({ locale: "es-ES" });
+    const contexto = await browser.newContext({
+      locale: "es-ES",
+      extraHTTPHeaders: origenDelTest(),
+    });
     const invitada = await contexto.newPage();
     await invitada.goto(new URL(enlace).pathname);
     await invitada.locator('input[value="rechazado"]').first().check();
@@ -290,7 +297,10 @@ test.describe("Resumen del panel", () => {
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
     await expect(page.getByText("(DES) Nekane")).toBeVisible();
 
-    const contexto = await browser.newContext({ locale: "es-ES" });
+    const contexto = await browser.newContext({
+      locale: "es-ES",
+      extraHTTPHeaders: origenDelTest(),
+    });
     const invitada = await contexto.newPage();
     await invitada.goto(new URL(enlace).pathname);
     await invitada.locator('input[value="confirmado"]').first().check();
@@ -484,7 +494,14 @@ test.describe("Exportar invitados", () => {
     await expect(page).toHaveURL(FICHA);
 
     await expect(page.getByLabel(copy.panel.invitados.copiarEnlace)).toBeVisible();
-    await expect(page.getByRole("status")).toContainText(copy.panel.invitados.avisoSinPersonas);
+    // Filtrado por texto: la ficha recién creada también anuncia «invitación
+    // creada» con `role="status"`. Y exactamente uno: el aviso vivió un tiempo
+    // duplicado, arriba junto al enlace y abajo junto a la lista de personas.
+    const aviso = page
+      .getByRole("status")
+      .filter({ hasText: copy.panel.invitados.avisoSinPersonas });
+    await expect(aviso).toHaveCount(1);
+    await expect(aviso).toBeVisible();
     await expect(
       page.getByRole("button", { name: copy.panel.invitados.repartirBoton }),
     ).toHaveCount(0);

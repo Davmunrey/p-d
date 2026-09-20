@@ -1,6 +1,6 @@
 import { createServer, type Server } from "node:http";
 
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";

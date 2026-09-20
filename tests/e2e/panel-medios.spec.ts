@@ -1,6 +1,6 @@
 import { deflateSync } from "node:zlib";
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./utiles/origen-propio";
 
 import copy from "../../content/copy.es.json";
 import { conSeccionApagada } from "./utiles/secciones";

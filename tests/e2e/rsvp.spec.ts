@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
@@ -119,6 +119,7 @@ test.describe("El recorrido del invitado", () => {
       viewport: { width: 390, height: 844 },
       javaScriptEnabled: false,
       locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
     });
     const pagina = await contexto.newPage();
 
