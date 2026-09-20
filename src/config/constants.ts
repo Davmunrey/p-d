@@ -43,6 +43,18 @@ export const PESO_MAXIMO_VIDEO_MB = 50;
 export const PLAZO_SUBIDA_MS = 30_000;
 
 /**
+ * Lo que se espera a que Resend acepte un correo antes de darlo por perdido.
+ *
+ * Por lo mismo que arriba: un `fetch` sin `signal` espera hasta que undici se
+ * rinde —cinco minutos—, y la función de Vercel se agota antes. El invitado
+ * acababa de guardar su respuesta y veía un 504: creía que no se había
+ * guardado, volvía atrás, y a la segunda salían dos acuses. Ocho segundos son
+ * de sobra para una API que contesta en cientos de milisegundos, y quedan por
+ * debajo del tope de la función.
+ */
+export const PLAZO_CORREO_MS = 8_000;
+
+/**
  * Lo que se deja subir. El mismo array que la migración pone en el bucket, y
  * un test unitario comprueba que no se separan.
  *
@@ -145,9 +157,42 @@ export const RUTA_RSVP = "/rsvp";
  */
 export const MINUTOS_BORRADOR_RSVP = 180;
 
+/**
+ * Cuánto cabe en cada trozo de la cookie del borrador del RSVP.
+ *
+ * Los navegadores tiran una cookie de más de 4096 bytes SIN DECIR NADA, y un
+ * borrador realista —cuatro personas con menú, alergias y autobús, más un
+ * mensaje de dos mil caracteres con tildes— pasaba de ahí una vez codificado.
+ * El borrador se reparte en varias cookies de este tamaño y se vuelve a unir
+ * al leer. Tres mil deja margen para el nombre y los atributos.
+ */
+export const TROZO_COOKIE_BYTES = 3_000;
+
 /** Los tres pasos del RSVP, en orden. Los escriben la página y su test. */
 export const PASOS_RSVP = ["asistencia", "detalles", "mensaje"] as const;
 export type PasoRsvp = (typeof PASOS_RSVP)[number];
+
+/**
+ * Los menús que se ofrecen en el RSVP: el enumerado `tipo_menu` de la base.
+ * Lo que llegue con otro valor no se guarda en el borrador —antes un
+ * `menu-<id>=pizza` a mano acababa en un 22P02 que se contaba como avería—.
+ */
+export const MENUS_RSVP = [
+  "estandar",
+  "vegetariano",
+  "vegano",
+  "infantil",
+  "sin_gluten",
+  "otro",
+] as const;
+export type MenuRsvp = (typeof MENUS_RSVP)[number];
+
+/**
+ * El menú que sólo se ofrece a quien está marcado como niño. La base lo
+ * descarta en silencio para un adulto —deja `estandar`—, así que ofrecerlo
+ * era prometer algo que no se iba a servir.
+ */
+export const MENU_SOLO_NINOS: MenuRsvp = "infantil";
 
 /**
  * Cuánto recuerda el navegador de qué invitación es.

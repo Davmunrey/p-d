@@ -247,6 +247,21 @@ function motivoDe(error: unknown): "plazo" | "intentos" | "respuestas" | "averia
 export { ErrorDeLectura };
 
 /**
+ * Si lo que ha fallado al leer la invitación es el cupo de intentos (RSV02).
+ *
+ * No es una avería: es la respuesta correcta del cortafuegos cuando desde la
+ * misma conexión —la wifi de la familia, o una IP compartida de móvil— se han
+ * probado demasiados enlaces malos. Contárselo al invitado como «estamos
+ * preparando la web» le decía algo falso y no le daba nada que hacer; con esto
+ * la página distingue y le pide que espere unos minutos.
+ */
+export function esCupoAgotado(error: unknown): boolean {
+  const causa = error instanceof ErrorDeLectura ? error.cause : error;
+  const texto = causa instanceof Error ? causa.message : String(causa);
+  return texto.includes(MOTIVOS_RSVP.demasiadosIntentos);
+}
+
+/**
  * A quién mandarle el acuse de recibo de este grupo.
  *
  * Devuelve lista vacía cuando nadie tiene correo en su ficha, que NO es un

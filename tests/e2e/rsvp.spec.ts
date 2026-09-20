@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_RSVP } from "../../src/config/constants";
+import { LARGOS_DE_CAMPO, RUTA_RSVP } from "../../src/config/constants";
 import { conPlazoCerrado } from "./utiles/plazo";
 
 /**
@@ -288,6 +288,204 @@ test.describe("El recorrido del invitado", () => {
    * y «no viene» son cosas distintas, y aquí se sabría a quién le falta pero no
    * qué quiso decir.
    */
+  /**
+   * CASO DE ERROR · Volver a incluir a alguien no le borra la alergia que ya
+   * tenía apuntada.
+   *
+   * Ana sí, Bego no → el paso de detalles sólo pinta a Ana. Antes, la acción
+   * recorría a TODO el grupo y escribía `alergias = ""` también para Bego; al
+   * cambiarla a «sí», su «celíaca» de la base llegaba tapada por ese "" y se
+   * enviaba vacía a la cocina sin que nadie viera un error.
+   */
+  test("volver a incluir a alguien conserva la alergia que ya tenía en la base", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo("e2e-alergia", ["(DES) Ana", "(DES) Bego"]);
+    await conBase(
+      (sql) => sql`
+        update public.invitados as i
+           set alergias = '(DES) Celíaca'
+          from public.grupos_invitacion as g
+         where g.id = i.grupo_id
+           and g.huella_token = public.huella_token(${token})
+           and i.nombre = '(DES) Bego'
+      `,
+    );
+
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    // Ana sí, Bego no. Las personas van por orden alfabético: Ana, Bego.
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.locator('input[value="confirmado"]').nth(0).check();
+    await pagina.locator('input[value="rechazado"]').nth(1).check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    // Sólo Ana en detalles.
+    await expect(pagina.locator('input[name^="alergias-"]')).toHaveCount(1);
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    // Atrás dos veces y cambian de idea con Bego.
+    await pagina.getByRole("button", { name: copy.rsvp.atras }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.atras }).click();
+    await pagina.locator('input[value="confirmado"]').nth(1).check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    // Ahora los dos, y la alergia de Bego viene de la base, no vacía.
+    await expect(pagina.locator('input[name^="alergias-"]')).toHaveCount(2);
+    await expect(pagina.locator('input[name^="alergias-"]').nth(1)).toHaveValue(
+      "(DES) Celíaca",
+    );
+
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
+    await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
+    await contexto.close();
+
+    const [bego] = await conBase(
+      (sql) => sql<{ alergias: string | null }[]>`
+        select i.alergias
+          from public.invitados as i
+          join public.grupos_invitacion as g on g.id = i.grupo_id
+         where g.huella_token = public.huella_token(${token})
+           and i.nombre = '(DES) Bego'
+      `,
+    );
+    expect(bego.alergias).toBe("(DES) Celíaca");
+  });
+
+  /**
+   * El menú infantil sólo se ofrece a quien está marcado como niño: para un
+   * adulto la base lo descarta en silencio y deja «estándar», así que
+   * ofrecerlo era prometer un menú que no se iba a servir.
+   */
+  test("el menú infantil sólo se ofrece a los niños", async ({ browser }) => {
+    const token = await crearGrupo("e2e-infantil", ["(DES) Lucía", "(DES) Padre"]);
+    await conBase(
+      (sql) => sql`
+        update public.invitados as i
+           set es_nino = true
+          from public.grupos_invitacion as g
+         where g.id = i.grupo_id
+           and g.huella_token = public.huella_token(${token})
+           and i.nombre = '(DES) Lucía'
+      `,
+    );
+
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.locator('input[value="confirmado"]').nth(0).check();
+    await pagina.locator('input[value="confirmado"]').nth(1).check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    const menus = pagina.locator('select[name^="menu-"]');
+    await expect(menus).toHaveCount(2);
+    // Lucía primero (orden alfabético): con infantil. Padre: sin él.
+    await expect(menus.nth(0).locator('option[value="infantil"]')).toHaveCount(1);
+    await expect(menus.nth(1).locator('option[value="infantil"]')).toHaveCount(0);
+
+    await contexto.close();
+  });
+
+  /**
+   * CASO DE ERROR · Con el cupo de intentos agotado, un enlace BUENO no dice
+   * «estamos preparando la web». RSV02 no es una avería: es el cortafuegos, y
+   * antes se contaba con el texto de la avería, que es el de «vuelve en un
+   * rato» — el invitado creía que la web no existía todavía.
+   */
+  test("con el cupo agotado, un enlace bueno pide esperar, no dice que la web está en obras", async ({
+    request,
+  }) => {
+    const token = await crearGrupo("e2e-cupo", ["(DES) Paciente"]);
+    const [{ maximo }] = await conBase(
+      (sql) => sql<{ maximo: number }[]>`
+        select maximo_intentos_rsvp::int as maximo from public.parametros_seguridad
+      `,
+    );
+
+    // Un origen propio, y se agota a base de enlaces inventados.
+    const headers = origenPropio();
+    for (let i = 0; i < maximo; i += 1) {
+      await request.get(`${RUTA_RSVP}/token-que-no-existe-${i}`, { headers });
+    }
+
+    const respuesta = await request.get(`${RUTA_RSVP}/${token}`, { headers });
+    const html = await respuesta.text();
+    expect(html).toContain(copy.rsvp.demasiadosIntentos);
+    expect(html).not.toContain(copy.portada.enPreparacion);
+    expect(html).not.toContain(copy.rsvp.tokenInvalido);
+  });
+
+  /**
+   * CASO DE ERROR · Un mensaje largo DE VERDAD sobrevive al «atrás».
+   *
+   * El test de «no cabe» usa dos mil «a» seguidas, que codificadas ocupan dos
+   * mil bytes. Un mensaje real lleva espacios y tildes, que Next escribe en la
+   * cookie como `%20` y `%C3%AD`: con cuatro personas pasaba de los 4096 bytes
+   * y el navegador tiraba la cookie sin decir nada. El texto se perdía.
+   */
+  test("un mensaje largo de verdad, con tildes y espacios, sobrevive al atrás", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo("e2e-mensaje-largo", [
+      "(DES) Uno",
+      "(DES) Dos",
+      "(DES) Tres",
+      "(DES) Cuatro",
+    ]);
+    const frase =
+      "Qué ilusión nos hace ir a vuestra boda, de verdad. Iremos los cuatro y nos quedaremos hasta el final; ";
+    // Sin espacio al final: el borrador guarda el texto recortado por los
+    // bordes, y eso es lo esperable; lo que no puede pasar es perder el resto.
+    const mensaje = frase
+      .repeat(40)
+      .slice(0, LARGOS_DE_CAMPO["confirmaciones.mensaje"])
+      .trimEnd();
+
+    // Sin scroll suave: con cuatro personas el botón queda muy abajo, y el
+    // `scroll-behavior: smooth` de la web hace que Playwright lo vea moverse
+    // en cada reintento de hacer scroll y nunca lo dé por quieto. Es lo que
+    // ve quien pide menos movimiento, y la playlist ya prueba así.
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      reducedMotion: "reduce",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    for (let i = 0; i < 4; i += 1) {
+      await pagina.locator('input[value="confirmado"]').nth(i).check();
+    }
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    for (let i = 0; i < 4; i += 1) {
+      await pagina
+        .locator('input[name^="alergias-"]')
+        .nth(i)
+        .fill("(DES) Celíaca, y frutos secos");
+    }
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    await pagina.locator('textarea[name="mensaje"]').fill(mensaje);
+    await pagina.getByRole("button", { name: copy.rsvp.atras }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    await expect(pagina.locator('textarea[name="mensaje"]')).toHaveValue(mensaje);
+
+    await contexto.close();
+  });
+
   test("no deja avanzar si falta alguien, y dice quién", async ({ browser }) => {
     const token = await crearGrupo("e2e-falta", ["(DES) Dani", "(DES) Eva"]);
     const contexto = await browser.newContext({

@@ -2,7 +2,13 @@
 
 import { redirect } from "next/navigation";
 
-import { LARGOS_DE_CAMPO, PASOS_RSVP, RUTA_RSVP, type PasoRsvp } from "@/config/constants";
+import {
+  LARGOS_DE_CAMPO,
+  MENUS_RSVP,
+  PASOS_RSVP,
+  RUTA_RSVP,
+  type PasoRsvp,
+} from "@/config/constants";
 import { obtenerConfiguracion } from "@/lib/bbdd/landing";
 import {
   destinatariosDeConfirmacion,
@@ -112,9 +118,19 @@ export async function avanzar(datos: FormData): Promise<void> {
   }
 
   if (pasoActual === "detalles") {
-    for (const id of propias(personas)) {
+    /*
+      SÓLO DE QUIEN ESTÁ EN EL FORMULARIO. El paso de detalles pinta a quien
+      viene; recorrer a todo el grupo escribía `alergias = ""` para quien no
+      estaba, y ese "" tapaba la alergia anotada en la base: Bego dice que no,
+      cambian de idea, y su «celíaca» llegaba vacía a la cocina sin que nadie
+      viera un error. El campo de alergias va siempre, aunque esté vacío, así
+      que sus ids son exactamente las personas del formulario.
+    */
+    for (const id of propias(idsDe(datos, "alergias"))) {
       const menu = texto(datos, `menu-${id}`);
-      if (menu) borrador.menu[id] = menu;
+      // Sólo un menú de la carta: `pizza` a mano acababa en un 22P02 contado
+      // como avería, y `infantil` para un adulto la base lo descarta igual.
+      if ((MENUS_RSVP as readonly string[]).includes(menu)) borrador.menu[id] = menu;
       borrador.alergias[id] = texto(datos, `alergias-${id}`);
       // Una casilla que el navegador no manda es «no marcada», no «no lo sé».
       borrador.autobus[id] = datos.get(`autobus-${id}`) !== null;
@@ -327,10 +343,24 @@ async function mandarAcuseDeRecibo(
       .map((respuesta) => nombrePorId.get(respuesta.invitado_id) ?? "")
       .filter(Boolean);
 
+  /*
+    SIN DOMINIO NO HAY ENLACE, y se dice. Antes salía `/rsvp/<token>` a
+    secas, que ningún cliente de correo convierte en algo que se pueda abrir,
+    y es justo el párrafo que existe para evitar el «¿cómo cambio mi
+    respuesta?». Un correo ya enviado no se corrige: mejor sin ese párrafo que
+    con un enlace roto, y con el fallo en el registro para arreglar la variable.
+  */
+  const sitio = urlDelSitio();
+  if (!sitio) {
+    console.error(
+      "Falta NEXT_PUBLIC_SITE_URL: el acuse de recibo sale sin el enlace para cambiar la respuesta.",
+    );
+  }
+
   const carta = componerConfirmacion({
     vienen: nombresCon("confirmado"),
     noVienen: nombresCon("rechazado"),
-    enlace: `${urlDelSitio()?.origin ?? ""}${RUTA_RSVP}/${encodeURIComponent(token)}`,
+    enlace: sitio ? `${sitio.origin}${RUTA_RSVP}/${encodeURIComponent(token)}` : null,
     fechaLimite: configuracion.fechaLimiteRsvp,
     nombreNovia: configuracion.nombreNovia,
     nombreNovio: configuracion.nombreNovio,

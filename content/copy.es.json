@@ -197,7 +197,9 @@
     "errorCaducado": "La respuesta se ha quedado a medias. Empezad de nuevo, es un momento.",
     "comoSeConfirma": "Cada invitación lleva su propio enlace. Buscadlo en el mensaje que os mandamos y desde ahí podréis confirmar por todo el grupo.",
     "enlacePerdido": "¿No encontráis el enlace? Escribidnos y os mandamos uno nuevo.",
-    "errorEnviandoSinCorreo": "No hemos podido guardarlo. Volvedlo a intentar en un momento."
+    "errorEnviandoSinCorreo": "No hemos podido guardarlo. Volvedlo a intentar en un momento.",
+    "demasiadosIntentos": "Demasiados intentos desde esta conexión. Esperad unos minutos y volved a abrir el enlace.",
+    "demasiadosIntentosContacto": "Si sigue pasando, escribidnos y lo miramos."
   },
   "saveTheDate": {
     "etiqueta": "Reservad la fecha",

@@ -2,7 +2,15 @@ import "server-only";
 
 import { cookies, headers } from "next/headers";
 
-import { MINUTOS_BORRADOR_RSVP, RUTA_RSVP } from "@/config/constants";
+import { MINUTOS_BORRADOR_RSVP, RUTA_RSVP, TROZO_COOKIE_BYTES } from "@/config/constants";
+import {
+  codificar,
+  decodificar,
+  nombreDelTrozo,
+  trocear,
+  trozosSobrantes,
+  unirTrozos,
+} from "@/lib/cookie-troceada";
 
 /**
  * EL BORRADOR DEL RSVP
@@ -26,6 +34,13 @@ import { MINUTOS_BORRADOR_RSVP, RUTA_RSVP } from "@/config/constants";
  * mismo móvil —cosa que pasa: una madre abre el suyo y el de su hija— heredaría
  * las respuestas del primero. Al no coincidir el token, el borrador se
  * descarta y se empieza limpio.
+ *
+ * Y VA EN VARIAS COOKIES SI NO CABE EN UNA. Los navegadores tiran una cookie
+ * de más de 4096 bytes sin decir nada, y un borrador realista —cuatro personas
+ * con menú, alergias y autobús más un mensaje de dos mil caracteres con
+ * tildes— pasaba de ahí una vez codificado: pulsar «Atrás» perdía el mensaje
+ * sin un solo error. `cookie-troceada.ts` parte y une; aquí sólo se ponen el
+ * nombre y los atributos. Los trozos siguientes al primero llevan `.1`, `.2`…
  */
 
 export interface Borrador {
@@ -59,21 +74,18 @@ export function borradorVacio(token: string): Borrador {
  * romper la pantalla del RSVP por una cookie mal formada es mucho peor.
  */
 export async function leerBorrador(token: string): Promise<Borrador> {
-  const bruto = (await cookies()).get(NOMBRE_COOKIE)?.value;
+  const tarro = await cookies();
+  const bruto = unirTrozos((nombre) => tarro.get(nombre)?.value, NOMBRE_COOKIE);
   if (!bruto) return borradorVacio(token);
 
-  try {
-    const guardado = JSON.parse(bruto) as Partial<Borrador>;
-    if (guardado.token !== token) return borradorVacio(token);
+  const guardado = decodificar(bruto) as Partial<Borrador> | null;
+  if (!guardado || guardado.token !== token) return borradorVacio(token);
 
-    return {
-      ...borradorVacio(token),
-      ...guardado,
-      token,
-    };
-  } catch {
-    return borradorVacio(token);
-  }
+  return {
+    ...borradorVacio(token),
+    ...guardado,
+    token,
+  };
 }
 
 /**
@@ -97,16 +109,33 @@ async function servidoPorHttps(): Promise<boolean> {
 }
 
 export async function guardarBorrador(borrador: Borrador): Promise<void> {
-  (await cookies()).set(NOMBRE_COOKIE, JSON.stringify(borrador), {
+  const tarro = await cookies();
+  const opciones = {
     httpOnly: true,
     sameSite: "lax",
     secure: await servidoPorHttps(),
     path: RUTA_RSVP,
     maxAge: MINUTOS_BORRADOR_RSVP * 60,
+  } as const;
+
+  const trozos = trocear(codificar(borrador), TROZO_COOKIE_BYTES);
+  trozos.forEach((trozo, indice) => {
+    tarro.set(nombreDelTrozo(NOMBRE_COOKIE, indice), trozo, opciones);
   });
+
+  // Lo que sobre de un borrador anterior más largo se borra: si se quedara,
+  // la próxima lectura lo pegaría al final del nuevo.
+  const nombres = tarro.getAll().map((cookie) => cookie.name);
+  for (const sobrante of trozosSobrantes(nombres, NOMBRE_COOKIE, trozos.length)) {
+    tarro.delete({ name: sobrante, path: RUTA_RSVP });
+  }
 }
 
 /** Se llama al enviar: la respuesta ya está en la base, el borrador sobra. */
 export async function borrarBorrador(): Promise<void> {
-  (await cookies()).delete({ name: NOMBRE_COOKIE, path: RUTA_RSVP });
+  const tarro = await cookies();
+  const nombres = tarro.getAll().map((cookie) => cookie.name);
+  for (const nombre of trozosSobrantes(nombres, NOMBRE_COOKIE, 0)) {
+    tarro.delete({ name: nombre, path: RUTA_RSVP });
+  }
 }

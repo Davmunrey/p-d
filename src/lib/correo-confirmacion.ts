@@ -18,7 +18,12 @@ import { t } from "@/lib/copy";
 export interface DatosConfirmacion {
   vienen: string[];
   noVienen: string[];
-  enlace: string;
+  /**
+   * El enlace absoluto para cambiar la respuesta, o `null` si no se sabe el
+   * dominio: entonces el párrafo no va. Un `<a href="/rsvp/…">` relativo no
+   * abre desde ningún cliente de correo, y un correo ya enviado no se corrige.
+   */
+  enlace: string | null;
   fechaLimite: Date | null;
   nombreNovia: string;
   nombreNovio: string;
@@ -71,16 +76,8 @@ export function componerConfirmacion(datos: DatosConfirmacion): CartaConfirmacio
     lineas.push("", `${t("correoConfirmacion.noVienen")}: ${datos.noVienen.join(", ")}`);
   }
 
-  lineas.push(
-    "",
-    t("correoConfirmacion.cambiar"),
-    datos.enlace,
-    "",
-    plazo,
-    "",
-    t("correoConfirmacion.despedida"),
-    firma,
-  );
+  if (datos.enlace) lineas.push("", t("correoConfirmacion.cambiar"), datos.enlace);
+  lineas.push("", plazo, "", t("correoConfirmacion.despedida"), firma);
 
   const parrafos: string[] = [
     `<p>${seguro(t("correoConfirmacion.saludo"))}</p>`,
@@ -108,9 +105,13 @@ export function componerConfirmacion(datos: DatosConfirmacion): CartaConfirmacio
     entera se puede copiar a mano, que es feo pero funciona — y este enlace es
     justo el que evita el «¿cómo cambio mi respuesta?».
   */
+  if (datos.enlace) {
+    parrafos.push(
+      `<p>${seguro(t("correoConfirmacion.cambiar"))}<br>` +
+        `<a href="${seguro(datos.enlace)}">${seguro(datos.enlace)}</a></p>`,
+    );
+  }
   parrafos.push(
-    `<p>${seguro(t("correoConfirmacion.cambiar"))}<br>` +
-      `<a href="${seguro(datos.enlace)}">${seguro(datos.enlace)}</a></p>`,
     `<p>${seguro(plazo)}</p>`,
     `<p>${seguro(t("correoConfirmacion.despedida"))}<br>${seguro(firma)}</p>`,
   );

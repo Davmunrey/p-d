@@ -21,6 +21,11 @@ import { RUTA_RSVP } from "../../src/config/constants";
 
 const cadena = process.env.DATABASE_URL;
 const PUERTO_BUZON = 54999;
+/** El mismo origen con el que arranca la web (playwright.config.ts). */
+const URL_SITIO =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  process.env.PLAYWRIGHT_BASE_URL ??
+  "http://localhost:3000";
 
 /**
  * CADA CONTEXTO, CON SU PROPIO ORIGEN.
@@ -68,8 +73,24 @@ async function levantarBuzon(): Promise<void> {
   await new Promise<void>((listo) => buzon!.listen(PUERTO_BUZON, "127.0.0.1", listo));
 }
 
+/**
+ * Un buzón que acepta la conexión y NO CONTESTA NUNCA: el incidente de latencia
+ * del proveedor. Es el caso que el plazo del `fetch` existe para cubrir.
+ */
+async function levantarBuzonMudo(): Promise<void> {
+  recibidos.length = 0;
+  buzon = createServer((peticion) => {
+    // Se lee el cuerpo y no se responde: la conexión se queda abierta.
+    peticion.on("data", () => {});
+  });
+
+  await new Promise<void>((listo) => buzon!.listen(PUERTO_BUZON, "127.0.0.1", listo));
+}
+
 async function bajarBuzon(): Promise<void> {
   if (!buzon) return;
+  // Las conexiones que el buzón mudo dejó colgadas, fuera: `close` esperaría.
+  buzon.closeAllConnections();
   await new Promise<void>((listo) => buzon!.close(() => listo()));
   buzon = undefined;
 }
@@ -153,13 +174,16 @@ test.describe("El acuse de recibo", () => {
     expect(enviado.to).toContain(correo);
     expect(enviado.subject).toBe(copy.correoConfirmacion.asuntoSi);
 
-    // Lleva quién viene, el enlace para cambiarlo y la fecha límite.
+    // Lleva quién viene, el enlace para cambiarlo y la fecha límite. El enlace
+    // ABSOLUTO: uno relativo no abre desde ningún cliente de correo, y pasaba
+    // igual la comprobación de «contiene /rsvp/<token>».
+    const enlace = `${URL_SITIO}${RUTA_RSVP}/${token}`;
     expect(enviado.html).toContain("(DES) Persona");
-    expect(enviado.html).toContain(`${RUTA_RSVP}/${token}`);
+    expect(enviado.html).toContain(`href="${enlace}"`);
 
     // Y la misma carta en texto plano, que no es un extra: hay clientes que no
     // pintan HTML, y un correo sin ella tiene más papeletas de acabar en spam.
-    expect(enviado.text).toContain(`${RUTA_RSVP}/${token}`);
+    expect(enviado.text).toContain(enlace);
     expect(enviado.text).toContain(copy.correoConfirmacion.despedida);
     expect(enviado.text).not.toContain("<p>");
   });
@@ -198,6 +222,93 @@ test.describe("El acuse de recibo", () => {
   /**
    * CASO DE ERROR · Sin correo en la ficha no se intenta, y no es un fallo.
    */
+  /**
+   * CASO DE ERROR · CON EL PROVEEDOR COLGADO, EL INVITADO NO SE QUEDA COLGADO.
+   *
+   * Resend acepta la conexión y no contesta. Sin plazo, el `fetch` esperaba
+   * cinco minutos, la función de Vercel se agotaba antes y el invitado recibía
+   * un 504 con su respuesta YA guardada: creía que no, volvía atrás y a la
+   * segunda salían dos acuses. Con `PLAZO_CORREO_MS`, ve «¡Qué alegría!» en
+   * segundos y la confirmación está en la base.
+   */
+  test("con el proveedor colgado, el invitado ve la confirmación en segundos", async ({
+    browser,
+  }) => {
+    await levantarBuzonMudo();
+
+    const token = await crearGrupo(`mudo-${Date.now()}`, `mudo-${Date.now()}@ejemplo.test`);
+
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origen(),
+    });
+    const pagina = await contexto.newPage();
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.locator('input[value="confirmado"]').first().check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    const desde = Date.now();
+    await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
+    await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi, {
+      timeout: 25_000,
+    });
+    // Muy por debajo del tiempo que se agota una función de Vercel.
+    expect(Date.now() - desde).toBeLessThan(25_000);
+    await contexto.close();
+
+    expect(await contarConfirmados(token)).toBe(1);
+  });
+
+  /**
+   * CASO DE ERROR · DOS TOQUES EN «ENVIAR» MANDAN UN SOLO ACUSE.
+   *
+   * Con JavaScript, `<form action>` no bloquea un segundo envío mientras el
+   * primero está en vuelo: dos toques en un móvil con conexión lenta
+   * despachaban la acción dos veces y salían dos correos idénticos. El botón
+   * se apaga mientras la acción corre.
+   */
+  test("dos toques en enviar mandan un solo acuse y guardan una sola respuesta", async ({
+    browser,
+  }) => {
+    await levantarBuzon();
+
+    const correo = `doble-${Date.now()}@ejemplo.test`;
+    const token = await crearGrupo(`doble-${Date.now()}`, correo);
+
+    // CON JavaScript: es donde el doble toque se puede parar.
+    const contexto = await browser.newContext({ locale: "es-ES", extraHTTPHeaders: origen() });
+    const pagina = await contexto.newPage();
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.locator('input[value="confirmado"]').first().check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await expect(pagina.getByText(copy.rsvp.pasoDetallesTitulo)).toBeVisible();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await expect(pagina.getByText(copy.rsvp.pasoMensajeTitulo)).toBeVisible();
+
+    await pagina.getByRole("button", { name: copy.rsvp.enviar }).dblclick();
+    await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
+    await contexto.close();
+
+    await expect(() => expect(recibidos.length).toBeGreaterThan(0)).toPass({ timeout: 10_000 });
+    // Un respiro por si el segundo envío llegara tarde: no tiene que llegar.
+    await new Promise((listo) => setTimeout(listo, 1_500));
+    expect(recibidos, "un solo acuse").toHaveLength(1);
+
+    const [{ cuantas }] = await conBase(
+      (sql) => sql<{ cuantas: number }[]>`
+        select count(*)::int as cuantas
+          from public.confirmaciones as c
+          join public.invitados as i on i.id = c.invitado_id
+          join public.grupos_invitacion as g on g.id = i.grupo_id
+         where g.huella_token = public.huella_token(${token})
+           and c.estado = 'confirmado'
+      `,
+    );
+    expect(cuantas, "una sola respuesta registrada").toBe(1);
+  });
+
   test("sin correo en la ficha no se manda nada, y la respuesta se guarda", async ({
     browser,
   }) => {

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { URL_RESEND } from "@/config/constants";
+import { PLAZO_CORREO_MS, URL_RESEND } from "@/config/constants";
 
 /**
  * MANDAR UN CORREO
@@ -51,6 +51,10 @@ export async function enviarCorreo(correo: Correo): Promise<ResultadoCorreo> {
   try {
     const respuesta = await fetch(`${URL_RESEND}/emails`, {
       method: "POST",
+      // Con plazo. Sin él, un proveedor que acepta la conexión y no contesta
+      // dejaba la acción colgada hasta que Vercel la mataba, y el invitado veía
+      // un 504 con su respuesta ya guardada.
+      signal: AbortSignal.timeout(PLAZO_CORREO_MS),
       headers: {
         authorization: `Bearer ${CLAVE}`,
         "content-type": "application/json",

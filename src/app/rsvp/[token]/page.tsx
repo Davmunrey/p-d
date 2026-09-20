@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
 import { Boton, BotonEnlace } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Constelacion } from "@/components/ui/constelacion";
 import { Cuerpo, Etiqueta, Titulo1, Titulo3 } from "@/components/ui/tipografia";
@@ -9,12 +10,14 @@ import { CONSTELACION_NOVIOS } from "@/config/constelaciones";
 import {
   IDIOMA,
   LARGOS_DE_CAMPO,
+  MENU_SOLO_NINOS,
+  MENUS_RSVP,
   PASOS_RSVP,
   ZONA_HORARIA,
   type PasoRsvp,
 } from "@/config/constants";
 import { obtenerConfiguracion } from "@/lib/bbdd/landing";
-import { obtenerInvitacion, type PersonaInvitada } from "@/lib/bbdd/rsvp";
+import { esCupoAgotado, obtenerInvitacion, type PersonaInvitada } from "@/lib/bbdd/rsvp";
 import { t } from "@/lib/copy";
 import { fechaLarga } from "@/lib/fechas";
 import { leerBorrador, type Borrador } from "@/lib/rsvp-borrador";
@@ -60,8 +63,6 @@ const formatoFechaHora = new Intl.DateTimeFormat(IDIOMA, {
   timeZone: ZONA_HORARIA,
 });
 
-const MENUS = ["estandar", "vegetariano", "vegano", "infantil", "sin_gluten", "otro"] as const;
-
 interface Parametros {
   params: Promise<{ token: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -74,19 +75,30 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
   const { token } = await params;
   const consulta = await searchParams;
 
-  let invitacion;
-  let configuracion;
-  try {
-    [invitacion, configuracion] = await Promise.all([
-      obtenerInvitacion(token),
-      obtenerConfiguracion(),
-    ]);
-  } catch {
-    // La base no responde. Es una avería, no un enlace malo, y decirle a
-    // alguien que su invitación no vale cuando sí vale es la peor manera de
-    // perder una confirmación.
+  const [lecturaInvitacion, lecturaConfiguracion] = await Promise.allSettled([
+    obtenerInvitacion(token),
+    obtenerConfiguracion(),
+  ]);
+
+  // La base no responde. Es una avería, no un enlace malo, y decirle a
+  // alguien que su invitación no vale cuando sí vale es la peor manera de
+  // perder una confirmación.
+  if (lecturaConfiguracion.status === "rejected") return <EnPreparacion />;
+  const configuracion = lecturaConfiguracion.value;
+
+  if (lecturaInvitacion.status === "rejected") {
+    /*
+      SALVO QUE SEA EL CORTAFUEGOS. RSV02 no es una avería: es la respuesta
+      correcta a demasiados enlaces malos desde la misma conexión —la wifi de
+      la familia, o una IP de móvil compartida—. Contárselo como «estamos
+      preparando la web» era mentirle, y no le daba nada que hacer.
+    */
+    if (esCupoAgotado(lecturaInvitacion.reason)) {
+      return <DemasiadosIntentos correo={configuracion?.correoContacto ?? null} />;
+    }
     return <EnPreparacion />;
   }
+  const invitacion = lecturaInvitacion.value;
 
   // Cero filas es el contrato de la base para «este enlace no vale». No se
   // dice nada más: ni si el token existió, ni de quién era.
@@ -215,9 +227,13 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
               {t("rsvp.atras")}
             </Boton>
           )}
-          <Boton type="submit" name="direccion" value="siguiente">
+          {/*
+            Sin doble toque: con JavaScript el botón se apaga mientras la
+            acción corre. Dos toques en «Enviar» mandaban dos acuses.
+          */}
+          <BotonEnvio name="direccion" value="siguiente">
             {paso === "mensaje" ? t("rsvp.enviar") : t("rsvp.siguiente")}
-          </Boton>
+          </BotonEnvio>
         </div>
       </form>
     </Marco>
@@ -248,6 +264,18 @@ function Marco({ children }: { children: React.ReactNode }) {
  * quién era, ni cuántas personas tenía. Sólo dice que no vale y a quién
  * escribir.
  */
+function DemasiadosIntentos({ correo }: { correo: string | null }) {
+  return (
+    <Marco>
+      <Titulo1 className="text-center">{t("rsvp.titulo")}</Titulo1>
+      <Cuerpo className="mx-auto mt-elemento max-w-texto text-center">
+        {t("rsvp.demasiadosIntentos")}
+      </Cuerpo>
+      <LineaContacto correo={correo} texto={t("rsvp.demasiadosIntentosContacto")} />
+    </Marco>
+  );
+}
+
 function EnlaceNoValido({ correo }: { correo: string | null }) {
   return (
     <Marco>
@@ -312,11 +340,13 @@ function Aviso({ motivo, correo }: { motivo: string | undefined; correo: string 
       ? t("rsvp.plazoCerrado")
       : motivo === "enlace"
         ? t("rsvp.tokenInvalido")
-        : motivo === "respuestas"
-          ? t("rsvp.errorCaducado")
-          : correo
-            ? t("rsvp.errorEnviando", { correo })
-            : t("rsvp.errorEnviandoSinCorreo");
+        : motivo === "intentos"
+          ? t("rsvp.demasiadosIntentos")
+          : motivo === "respuestas"
+            ? t("rsvp.errorCaducado")
+            : correo
+              ? t("rsvp.errorEnviando", { correo })
+              : t("rsvp.errorEnviandoSinCorreo");
 
   return (
     <p
@@ -442,11 +472,18 @@ function PasoDetalles({
             name={`menu-${persona.id}`}
             defaultValue={borrador.menu[persona.id] ?? persona.tipoMenu}
           >
-            {MENUS.map((menu) => (
-              <option key={menu} value={menu}>
-                {t(`rsvp.menus.${menu}`)}
-              </option>
-            ))}
+            {/*
+              El infantil sólo a quien está marcado como niño: para un adulto
+              la base lo descarta en silencio y deja `estandar`, así que
+              ofrecerlo era prometer un menú que no se iba a servir.
+            */}
+            {MENUS_RSVP.filter((menu) => menu !== MENU_SOLO_NINOS || persona.esNino).map(
+              (menu) => (
+                <option key={menu} value={menu}>
+                  {t(`rsvp.menus.${menu}`)}
+                </option>
+              ),
+            )}
           </CampoSeleccion>
 
           <CampoTexto
