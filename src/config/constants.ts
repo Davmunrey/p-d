@@ -81,6 +81,14 @@ export const BUCKET_MEDIOS = "medios";
 /** Idioma de la aplicación. La boda es en España: solo castellano. */
 export const IDIOMA = "es-ES";
 
+/**
+ * El mismo idioma como lo escribe Open Graph: `language_TERRITORY`, con guion
+ * bajo. `og:locale` salía como `es-ES` —BCP 47, correcto para `<html lang>` y
+ * para `Intl`— y Facebook lo descarta como no válido y trata la tarjeta como
+ * `en_US`. Son dos formatos para la misma idea, y sólo éste va al Open Graph.
+ */
+export const IDIOMA_OG = IDIOMA.replace("-", "_");
+
 /** Zona horaria de referencia para fechas y cuentas atrás. */
 export const ZONA_HORARIA = "Europe/Madrid";
 
@@ -139,6 +147,13 @@ export const LONGITUD_MAXIMA_AVISO_PROGRAMA = 120;
  * una lista separada por comas.
  */
 export const MAPA_MARGEN_GRADOS = 0.012;
+
+/**
+ * El mapa embebido de OpenStreetMap. Con nombre y en un solo sitio: lo usa el
+ * `<iframe>` de cómo llegar y, desde ahí, la Content-Security-Policy, que sólo
+ * deja enmarcar este origen.
+ */
+export const URL_MAPA_EMBEBIDO = "https://www.openstreetmap.org/export/embed.html";
 
 /**
  * Raíz del RSVP público. El enlace de cada invitación es `${RUTA_RSVP}/token`,

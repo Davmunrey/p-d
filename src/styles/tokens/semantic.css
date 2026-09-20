@@ -709,6 +709,21 @@
   --superficie: var(--color-marino-775);
   --superficie-elevada: var(--color-nieve-50);
   --superficie-tenue: var(--color-marino-800);
+
+  /*
+    LOS FONDOS DE LOS PARES TAMBIÉN, no sólo la tinta. `--tinta-marca` pasa a
+    marino-350 y, si estos dos se quedaban en los claros de `:root`, el botón
+    secundario perdía el rótulo al pasar el ratón (1,95:1) y el texto
+    seleccionado era ilegible (1,86:1). Reasignar la paleta a medias es justo
+    como se cuela un color que nadie ha mirado; `paleta.test.ts` mide ahora
+    estos pares en los tres fondos.
+  */
+  --superficie-hundida: var(--color-marino-800);
+  --marca-tenue: var(--color-marino-600);
+
+  /* El rojo de los errores de campo del RSVP: en 13 px sobre marino-700, el
+     claro se quedaba en 3,1:1. */
+  --error: var(--color-error-sobre-oscuro);
   --tinta: var(--color-nieve-100);
   --tinta-suave: var(--color-marino-200);
   --tinta-tenue: var(--color-marino-350);
@@ -766,6 +781,9 @@
 [data-seccion="pie"] {
   --fondo: var(--color-pizarra-950);
   --superficie: var(--color-pizarra-950);
+  --superficie-hundida: var(--color-marino-900);
+  --marca-tenue: var(--color-marino-800);
+  --error: var(--color-error-sobre-oscuro);
   --tinta: var(--color-nieve-100);
   --tinta-suave: var(--color-marino-450);
   --tinta-tenue: var(--color-marino-450);

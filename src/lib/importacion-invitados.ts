@@ -137,11 +137,16 @@ export function leerImportacion(
       errores: [
         {
           linea: 1,
-          motivo: t("panel.importar.errorFaltaColumna", {
-            columnas: faltan
-              .map((columna) => t(`panel.importar.columna.${columna}` as ClaveCopy))
-              .join(", "),
-          }),
+          motivo: t(
+            faltan.length === 1
+              ? "panel.importar.errorFaltaColumna"
+              : "panel.importar.errorFaltanColumnas",
+            {
+              columnas: faltan
+                .map((columna) => t(`panel.importar.columna.${columna}` as ClaveCopy))
+                .join(", "),
+            },
+          ),
         },
       ],
       columnasIgnoradas: ignoradas,

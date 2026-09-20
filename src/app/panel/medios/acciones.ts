@@ -2,7 +2,7 @@
 
 import { redirect, RedirectType } from "next/navigation";
 
-import { BUCKET_MEDIOS, RUTA_ACCESO, RUTA_MEDIOS } from "@/config/constants";
+import { BUCKET_MEDIOS, LARGOS_DE_CAMPO, RUTA_ACCESO, RUTA_MEDIOS } from "@/config/constants";
 import { SECCIONES, type Seccion } from "@/config/secciones";
 import { medirImagen } from "@/lib/dimensiones";
 import { admitirFichero, componerRuta, identificadorDeRuta } from "@/lib/medios";
@@ -131,7 +131,12 @@ export async function subirMedio(datos: FormData): Promise<void> {
   const seccion: Seccion = seccionBruta;
 
   const alternativo = texto(datos, "texto_alternativo");
-  if (alternativo.length < 3 || alternativo.length > 300) volver("sin-alternativo");
+  if (
+    alternativo.length < 3 ||
+    alternativo.length > LARGOS_DE_CAMPO["medios.texto_alternativo"]
+  ) {
+    volver("sin-alternativo");
+  }
 
   const original = fichero(datos, "fichero");
   if (!original) volver("sin-fichero");
@@ -384,7 +389,12 @@ export async function guardarAlternativo(datos: FormData): Promise<void> {
   const id = texto(datos, "medio_id");
   const alternativo = texto(datos, "texto_alternativo");
   if (!id) volver("error");
-  if (alternativo.length < 3 || alternativo.length > 300) volver("sin-alternativo");
+  if (
+    alternativo.length < 3 ||
+    alternativo.length > LARGOS_DE_CAMPO["medios.texto_alternativo"]
+  ) {
+    volver("sin-alternativo");
+  }
 
   const supabase = await cliente();
   const { data, error } = await supabase

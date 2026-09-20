@@ -57,6 +57,11 @@ export default async function PaginaRecuperar({
                 {t("acceso.sinConfigurar")}
               </p>
             ) : null}
+            {estado === "error" ? (
+              <p role="alert" className="mt-elemento text-pequeno text-error-tinta">
+                {t("acceso.recuperarError")}
+              </p>
+            ) : null}
 
             <form action={pedirRecuperacion} className="mt-elemento grid gap-elemento">
               <CampoTexto

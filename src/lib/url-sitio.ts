@@ -41,6 +41,21 @@ export function leerUrl(valor: string | undefined | null): URL | null {
  * la lea, se usa la que pone Vercel en cada despliegue —que incluye los
  * previews, así que la vista previa se puede comprobar antes de mergear.
  */
+/**
+ * A dónde vuelve el enlace del correo de recuperación de contraseña.
+ *
+ * Por `urlDelSitio()` y no leyendo la variable a pelo: con
+ * `NEXT_PUBLIC_SITE_URL=paloma-david.vercel.app` —sin `https://`, que es
+ * justo como se ha escrito ya en producción— `new URL` lanzaba, el `catch` de
+ * la acción se lo tragaba y la pantalla decía «ya está en camino» sin haber
+ * pedido nada a Supabase. Todo lo demás de la web pasaba por `leerUrl()` y
+ * funcionaba, así que nada delataba la causa.
+ */
+export function urlDeConfirmacionDeAcceso(rutaConfirmar: string): string | null {
+  const sitio = urlDelSitio();
+  return sitio ? new URL(rutaConfirmar, sitio).toString() : null;
+}
+
 export function urlDelSitio(): URL | undefined {
   const propia = process.env.NEXT_PUBLIC_SITE_URL;
   const leida = leerUrl(propia);

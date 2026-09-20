@@ -49,6 +49,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   },
   elegido: { clave: "panel.proveedores.avisoElegido", error: false },
   "no-existe": { clave: "panel.proveedores.errorNoExiste", error: true },
+  "documento-no-existe": { clave: "panel.proveedores.errorDocumentoNoExiste", error: true },
   "en-uso": { clave: "panel.proveedores.errorEnUso", error: true },
   "referencia-rota": { clave: "panel.proveedores.errorReferenciaRota", error: true },
   "sin-permiso": { clave: "panel.proveedores.errorSinPermiso", error: true },

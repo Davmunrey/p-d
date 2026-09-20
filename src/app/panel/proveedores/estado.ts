@@ -48,6 +48,7 @@ export type EstadoProveedores =
   /* BODA-73 · comparador */
   | "elegido"
   | "no-existe"
+  | "documento-no-existe"
   | "en-uso"
   | "referencia-rota"
   | "sin-permiso"

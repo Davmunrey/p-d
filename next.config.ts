@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { PESO_MAXIMO_VIDEO_MB } from "./src/config/constants";
+
 /**
  * Cabeceras de seguridad.
  *
@@ -57,6 +59,17 @@ function origenesDeImagen() {
 
 const nextConfig: NextConfig = {
   images: { remotePatterns: origenesDeImagen() },
+  /*
+    EL TOPE DE LAS ACCIONES DE SERVIDOR, QUE POR DEFECTO ES 1 MB. Las subidas
+    del panel —fotos, vídeos, contratos— viajan por una acción de servidor, y
+    Next corta el cuerpo ANTES de que corra `subirMedio`: una foto de 3 MB
+    acababa en la pantalla de avería sin pasar por ninguna comprobación
+    nuestra, mientras la ayuda del formulario prometía diez megas. Se declara
+    el mayor de los topes que el módulo promete, y un unitario lo ata a la
+    constante. Ojo: Vercel corta los cuerpos de más de 4,5 MB antes de llegar
+    aquí; es un límite de plataforma, no de esta configuración.
+  */
+  experimental: { serverActions: { bodySizeLimit: `${PESO_MAXIMO_VIDEO_MB}mb` } },
 
   async headers() {
     return [

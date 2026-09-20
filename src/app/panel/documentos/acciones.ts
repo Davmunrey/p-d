@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { RUTA_ACCESO, RUTA_DOCUMENTOS } from "@/config/constants";
+import { LARGOS_DE_CAMPO, RUTA_ACCESO, RUTA_DOCUMENTOS } from "@/config/constants";
 import {
   ESTADO_INICIAL_DOCUMENTO,
   esEstadoDocumento,
@@ -116,7 +116,11 @@ function camposDocumento(datos: FormData):
       };
     } {
   const titulo = texto(datos, "titulo");
-  if (titulo.length < 2 || titulo.length > 160) return { ok: false, estado: "titulo" };
+  // El mismo tope que el `maxLength` de la pantalla: si un día la migración
+  // lo sube, la pantalla dejaba escribir 200 y esto seguía rechazando a 160.
+  if (titulo.length < 2 || titulo.length > LARGOS_DE_CAMPO["documentos_boda.titulo"]) {
+    return { ok: false, estado: "titulo" };
+  }
 
   const deQuien = texto(datos, "de_quien");
   if (!esTitularDocumento(deQuien)) return { ok: false, estado: "de-quien" };

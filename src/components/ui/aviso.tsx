@@ -33,7 +33,7 @@ interface Propiedades {
 export function Aviso({ titulo, className = "", children }: Propiedades) {
   return (
     <p
-      className={`rounded-campo bg-nota-fondo px-aviso-x py-aviso-y text-aviso text-nota-tinta text-pretty ${className}`}
+      className={`rounded-campo bg-nota-fondo px-aviso-x py-aviso-y text-nota text-nota-tinta text-pretty ${className}`}
     >
       {titulo ? (
         <strong className="font-destacado text-nota-tinta-fuerte">{titulo}</strong>

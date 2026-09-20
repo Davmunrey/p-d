@@ -42,6 +42,7 @@ const formatoFecha = new Intl.DateTimeFormat(IDIOMA, {
 });
 
 const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
+  marcado: { clave: "panel.mensajes.marcado", error: false },
   "cancion-ocultada": { clave: "panel.mensajes.cancionOcultada", error: false },
   "cancion-mostrada": { clave: "panel.mensajes.cancionMostrada", error: false },
   "sin-permiso": { clave: "panel.mensajes.errorSinPermiso", error: true },

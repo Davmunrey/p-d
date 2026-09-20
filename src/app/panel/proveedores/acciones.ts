@@ -687,9 +687,12 @@ export async function descargarDocumento(datos: FormData): Promise<void> {
   if (!haySubidaDeMedios) volver("sin-configurar", proveedorId);
 
   // Con la sesión de quien pide: si RLS no le deja ver la fila, no hay ruta que
-  // firmar, y «no existe» es exactamente lo que hay que contestar.
+  // firmar, y «no existe» es exactamente lo que hay que contestar. Pero es el
+  // DOCUMENTO el que no existe, no el proveedor que se está viendo; y si la
+  // lectura falló, no se afirma ninguna de las dos cosas.
   const ruta = await obtenerRutaDocumento(id, proveedorId);
-  if (!ruta) volver("no-existe", proveedorId);
+  if (ruta === undefined) volver("error", proveedorId);
+  if (!ruta) volver("documento-no-existe", proveedorId);
 
   const { data, error } = await clienteDeServicio()
     .storage.from(BUCKET_DOCUMENTOS)

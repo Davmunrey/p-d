@@ -1,4 +1,4 @@
-import { MAPA_MARGEN_GRADOS } from "@/config/constants";
+import { MAPA_MARGEN_GRADOS, URL_MAPA_EMBEBIDO } from "@/config/constants";
 
 /**
  * BODA-26 · LOS DOS ENLACES DEL MAPA
@@ -58,5 +58,5 @@ export function enlaceMapaEmbebido(latitud: number, longitud: number): string {
     marker: `${latitud},${longitud}`,
   });
 
-  return `https://www.openstreetmap.org/export/embed.html?${parametros.toString()}`;
+  return `${URL_MAPA_EMBEBIDO}?${parametros.toString()}`;
 }

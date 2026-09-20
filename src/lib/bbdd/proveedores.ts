@@ -521,7 +521,7 @@ export async function obtenerDocumentosProveedor(
 export async function obtenerRutaDocumento(
   documentoId: string,
   proveedorId: string,
-): Promise<string | null> {
+): Promise<string | null | undefined> {
   if (!esIdentificador(documentoId) || !esIdentificador(proveedorId)) return null;
 
   const supabase = await clienteServidor();
@@ -535,9 +535,16 @@ export async function obtenerRutaDocumento(
     .eq("proveedor_id", proveedorId)
     .maybeSingle();
 
+  /*
+    `undefined` ES «NO SE PUDO MIRAR», `null` ES «NO ESTÁ». Los dos iban
+    juntos en un `null` y la acción contestaba «ese proveedor ya no está»
+    —encima del proveedor que se estaba viendo— por un corte de red al leer.
+    Una lectura que no se pudo hacer no es una ausencia, igual que no es un
+    permiso.
+  */
   if (error) {
     console.error("No se pudo leer la ruta del documento:", error);
-    return null;
+    return undefined;
   }
 
   return (data as { ruta_almacenamiento: string } | null)?.ruta_almacenamiento ?? null;

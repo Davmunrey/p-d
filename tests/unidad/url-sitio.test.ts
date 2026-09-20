@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { leerUrl } from "../../src/lib/url-sitio";
+import { leerUrl, urlDeConfirmacionDeAcceso } from "../../src/lib/url-sitio";
 
 /**
  * UNA VARIABLE MAL ESCRITA NO PUEDE TUMBAR EL BUILD
@@ -43,5 +43,38 @@ describe("Leer la dirección del sitio", () => {
     for (const disparate of ["https://", "http://", "://roto", "https://espacio malo", "%%%"]) {
       expect(() => leerUrl(disparate), disparate).not.toThrow();
     }
+  });
+});
+
+/**
+ * La vuelta del correo de recuperación de contraseña.
+ *
+ * Con el dominio sin esquema —como se ha escrito ya en producción— `new URL`
+ * lanzaba dentro de la acción, el `catch` lo tragaba y la pantalla decía «ya
+ * está en camino» sin haber pedido nada. Pasa por `urlDelSitio()`, que
+ * completa el esquema, y devuelve `null` en vez de lanzar cuando no hay nada.
+ */
+describe("La dirección a la que vuelve el correo de recuperación", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("completa el esquema cuando la variable viene sin él", () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "paloma-david.vercel.app");
+    expect(urlDeConfirmacionDeAcceso("/acceso/confirmar")).toBe(
+      "https://paloma-david.vercel.app/acceso/confirmar",
+    );
+  });
+
+  it("respeta el dominio con esquema", () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
+    expect(urlDeConfirmacionDeAcceso("/acceso/confirmar")).toBe(
+      "http://localhost:3000/acceso/confirmar",
+    );
+  });
+
+  it("sin dominio no inventa nada: null, para que la acción no diga «enviado»", () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "");
+    vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "");
+    vi.stubEnv("VERCEL_URL", "");
+    expect(urlDeConfirmacionDeAcceso("/acceso/confirmar")).toBeNull();
   });
 });

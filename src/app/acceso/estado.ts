@@ -16,6 +16,25 @@
  * microsegundos, y lo que hay que sostener es justo esta regla.
  */
 
+import { RUTA_PANEL } from "@/config/constants";
+
+/**
+ * A dónde ir después de entrar.
+ *
+ * El valor viene de la URL, así que viene de fuera. Se acepta **solo** si es
+ * una ruta del panel: sin esta comprobación, un enlace a
+ * `/acceso?volver=https://otro-sitio` convertiría la puerta en un trampolín
+ * hacia cualquier parte, con la credibilidad de nuestro dominio detrás.
+ * `//otro-sitio` también sale: un navegador lo lee como otra dirección.
+ *
+ * Vive aquí, y no en `acciones.ts`, para poder probarse en microsegundos: su
+ * único E2E no llegaba a ejercitarla (con el acceso fallido nunca se redirige).
+ */
+export function destinoSeguro(pedido: string | null): string {
+  if (!pedido) return RUTA_PANEL;
+  return pedido === RUTA_PANEL || pedido.startsWith(`${RUTA_PANEL}/`) ? pedido : RUTA_PANEL;
+}
+
 /** Los motivos con los que se vuelve a la puerta. Cada uno tiene su copy. */
 export type MotivoDeLaPuerta =
   "credenciales" | "sin-configurar" | "sin-acceso" | "error" | "enlace-invalido";

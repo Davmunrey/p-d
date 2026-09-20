@@ -203,6 +203,26 @@ describe("Los anchos y los espaciados no comparten nombre", () => {
       "max-w-<nombre> se resolvería por el espaciado: renombra uno de los dos",
     ).toEqual([]);
   });
+
+  it("ningún --color-* tiene un --text-* homónimo: los dos generan `text-<nombre>`", () => {
+    // `text-aviso` resolvía al COLOR `--color-aviso` y el tamaño `--text-aviso`
+    // no lo aplicaba nadie: el componente Aviso nunca recibió sus 15 px.
+    const colores = new Set([...css.matchAll(/--color-([\w-]+):/g)].map((m) => m[1]));
+    const tamanos = [...css.matchAll(/--text-([\w-]+):/g)].map((m) => m[1]);
+
+    expect(
+      tamanos.filter((nombre) => colores.has(nombre)),
+      "text-<nombre> se resolvería por el color: renombra el tamaño",
+    ).toEqual([]);
+  });
+
+  it("ningún --font-* tiene un --font-weight-* homónimo", () => {
+    const pesos = new Set([...css.matchAll(/--font-weight-([\w-]+):/g)].map((m) => m[1]));
+    const familias = [...css.matchAll(/--font-(?!weight-)([\w-]+):/g)].map((m) => m[1]);
+    // Hoy coinciden `titulo` y `cuerpo` y resuelven a la familia, que es como
+    // se usan; se deja escrito para que no crezca la lista sin decidirlo.
+    expect(familias.filter((nombre) => pesos.has(nombre)).sort()).toEqual(["cuerpo", "titulo"]);
+  });
 });
 
 /**

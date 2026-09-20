@@ -12,8 +12,9 @@ import {
   RUTA_RECUPERAR,
 } from "@/config/constants";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
+import { urlDeConfirmacionDeAcceso } from "@/lib/url-sitio";
 
-import { motivoDeLaPuerta } from "./estado";
+import { motivoDeLaPuerta, destinoSeguro } from "./estado";
 
 /**
  * ENTRAR AL PANEL
@@ -38,37 +39,17 @@ import { motivoDeLaPuerta } from "./estado";
 
 /** El destino al que vuelven los enlaces del correo de recuperación. */
 function urlDeVuelta(): string {
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : null);
+  // Ver `urlDeConfirmacionDeAcceso`: un dominio sin esquema hacía lanzar a
+  // `new URL`, y la pantalla decía «enviado» sin haber enviado nada.
+  const vuelta = urlDeConfirmacionDeAcceso(RUTA_CONFIRMAR_ACCESO);
 
-  if (!base) {
+  if (!vuelta) {
     throw new Error(
       "Falta NEXT_PUBLIC_SITE_URL: sin ella el enlace del correo no sabría a dónde volver.",
     );
   }
 
-  return new URL(RUTA_CONFIRMAR_ACCESO, base).toString();
-}
-
-/**
- * A dónde ir después de entrar.
- *
- * El valor viene de la URL, así que viene de fuera. Se acepta **solo** si es
- * una ruta del panel: sin esta comprobación, un enlace a
- * `/acceso?volver=https://otro-sitio` convertiría nuestra puerta en un
- * trampolín hacia cualquier parte, con la credibilidad de nuestro dominio
- * detrás.
- *
- * Se exige el prefijo exacto y no «que empiece por barra», que es la versión
- * de esta comprobación que se salta con `//otro-sitio`: el navegador lo lee
- * como una URL sin protocolo y se va igual.
- */
-function destinoSeguro(pedido: string | null): string {
-  if (!pedido) return RUTA_PANEL;
-  return pedido === RUTA_PANEL || pedido.startsWith(`${RUTA_PANEL}/`) ? pedido : RUTA_PANEL;
+  return vuelta;
 }
 
 /**
@@ -191,17 +172,27 @@ export async function pedirRecuperacion(datos: FormData) {
     redirect(`${RUTA_RECUPERAR}?estado=sin-configurar`);
   }
 
+  /*
+    «ENVIADO» SÓLO SI SE PIDIÓ. Un fallo NUESTRO —sin dominio al que volver,
+    Supabase que no contesta— acababa igualmente en «ya está en camino», y
+    quien esperaba el correo se quedaba mirando el buzón. Lo que Supabase
+    rechaza a propósito (un correo que no existe) sí sigue diciendo «enviado»:
+    ahí no se puede contar más sin revelar qué correos tienen acceso.
+  */
+  let pedida = false;
   try {
+    const vuelta = urlDeVuelta();
     const supabase = await clienteServidor();
     const { error } = await supabase.auth.resetPasswordForEmail(correo, {
-      redirectTo: urlDeVuelta(),
+      redirectTo: vuelta,
     });
     if (error) console.warn("Recuperación rechazada:", error.message);
+    pedida = true;
   } catch (error) {
     console.error("No se pudo pedir la recuperación:", error);
   }
 
-  redirect(`${RUTA_RECUPERAR}?estado=enviado`);
+  redirect(`${RUTA_RECUPERAR}?estado=${pedida ? "enviado" : "error"}`);
 }
 
 /** Guarda la contraseña nueva. Solo funciona con la sesión del enlace abierta. */

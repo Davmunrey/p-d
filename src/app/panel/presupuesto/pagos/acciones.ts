@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
+  LARGOS_DE_CAMPO,
   RUTA_ACCESO,
   RUTA_GASTOS,
   RUTA_PAGOS,
@@ -120,7 +121,8 @@ function pagador(datos: FormData): { paga: string | null; detalle: string | null
   if (elegido !== "otros") return { paga: elegido, detalle: null };
 
   const detalle = texto(datos, "paga_detalle");
-  if (detalle.length < 2 || detalle.length > 120) return undefined;
+  if (detalle.length < 2 || detalle.length > LARGOS_DE_CAMPO["pagos.paga_detalle"])
+    return undefined;
   return { paga: elegido, detalle };
 }
 

@@ -177,7 +177,11 @@
   --text-enlace-pie: var(--texto-enlace-pie);
   --text-chip: var(--texto-chip);
   --text-etiqueta-estado: var(--texto-etiqueta-estado);
-  --text-aviso: var(--texto-aviso);
+
+  /* `nota` y no `aviso`: `--color-aviso` ya existe y las dos familias
+     comparten la utilidad `text-*`; Tailwind resolvía `text-aviso` al color y
+     el tamaño no lo aplicaba nadie. */
+  --text-nota: var(--texto-aviso);
   --text-meta: var(--texto-meta);
   --text-titulo-tarjeta: var(--texto-titulo-tarjeta);
   --text-monograma-pie: var(--texto-monograma-pie);
@@ -599,6 +603,18 @@
 /** La misma razón, para la navegación fija del panel. */
 @utility capa-lateral {
   z-index: var(--capa-pegajosa);
+}
+
+/*
+  La capa de lo modal, para el enlace de «saltar al contenido» del panel: al
+  recibir el foco sale de `sr-only` y tiene que quedar POR ENCIMA del lateral
+  fijo, que va después en el DOM y pinta encima de todo lo que no diga otra
+  cosa. Se escribía `focus:z-modal`, que no compila —Tailwind v4 no tiene
+  familia de tema para z-index— y el primer Tab enfocaba un enlace que el
+  lateral tapaba entero.
+*/
+@utility capa-modal {
+  z-index: var(--capa-modal);
 }
 
 /**

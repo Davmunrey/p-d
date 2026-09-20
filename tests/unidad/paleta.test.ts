@@ -45,7 +45,9 @@ const CLARO: Record<string, string> = {
   "borde-marca": "#8b97ac",
   exito: "#1f7a4c",
   aviso: "#b8860b",
-  error: "#d14545",
+  // Entregado como #d14545, que daba 4,5:1 sólo sobre blanco y 4,28 sobre el
+  // fondo de la página (nieve-50). Un punto más oscuro: 4,87 y 5,14.
+  error: "#c53c3c",
 };
 
 /*
@@ -169,6 +171,27 @@ describe("contraste de la paleta", () => {
       // 4.5:1 es el umbral AA para texto normal.
       expect(contraste(resolver("tinta", propias), fondo)).toBeGreaterThanOrEqual(4.5);
       expect(contraste(resolver("tinta-suave", propias), fondo)).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it(`en ${nombre} los pares que se reasignan a medias también cumplen`, () => {
+      /*
+        Los fondos de los pares, no sólo la tinta. En el bloque inverso y en el
+        pie `--tinta-marca` cambiaba y `--superficie-hundida` y `--marca-tenue`
+        se quedaban en los claros de la página: el botón secundario perdía el
+        rótulo al pasar el ratón (1,95:1) y el texto seleccionado era
+        ilegible (1,86:1). Y `--error` en 13 px sobre marino se quedaba en
+        3,1:1 en el formulario más importante de la web.
+      */
+      const tintaMarca = resolver("tinta-marca", propias);
+      expect(
+        contraste(tintaMarca, resolver("superficie-hundida", propias)),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(contraste(tintaMarca, resolver("marca-tenue", propias))).toBeGreaterThanOrEqual(
+        4.5,
+      );
+      const error = resolver("error", propias);
+      expect(contraste(error, resolver("fondo", propias))).toBeGreaterThanOrEqual(4.5);
+      expect(contraste(error, resolver("superficie", propias))).toBeGreaterThanOrEqual(4.5);
     });
 
     it(`en ${nombre} el botón primario se ve y se lee`, () => {

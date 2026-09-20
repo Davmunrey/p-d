@@ -65,11 +65,13 @@ export default async function PaginaResumen() {
         <p className="mt-pila font-titulo text-titulo-3 text-tinta-marca">
           {dias === null
             ? t("panel.resumen.sinFecha")
-            : dias > 0
-              ? t("panel.resumen.faltan", { dias: formatoNumero.format(dias) })
-              : dias === 0
-                ? t("panel.resumen.esHoy")
-                : t("panel.resumen.yaFue")}
+            : dias === 1
+              ? t("panel.resumen.faltaUno")
+              : dias > 0
+                ? t("panel.resumen.faltan", { dias: formatoNumero.format(dias) })
+                : dias === 0
+                  ? t("panel.resumen.esHoy")
+                  : t("panel.resumen.yaFue")}
         </p>
       </header>
 

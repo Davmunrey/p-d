@@ -90,12 +90,14 @@ export function AvisoMesas({ estado, detalle }: { estado: string; detalle: Detal
   if (estado === "confirmar-borrado") {
     return (
       <Recuadro error>
-        {detalle.mesa && detalle.cuantos
-          ? t("panel.mesas.avisoConfirmarBorrado", {
-              mesa: detalle.mesa,
-              cuantos: detalle.cuantos,
-            })
-          : t("panel.mesas.avisoConfirmarBorradoSinCifra")}
+        {detalle.mesa && detalle.cuantos === "1"
+          ? t("panel.mesas.avisoConfirmarBorradoUno", { mesa: detalle.mesa })
+          : detalle.mesa && detalle.cuantos
+            ? t("panel.mesas.avisoConfirmarBorrado", {
+                mesa: detalle.mesa,
+                cuantos: detalle.cuantos,
+              })
+            : t("panel.mesas.avisoConfirmarBorradoSinCifra")}
       </Recuadro>
     );
   }

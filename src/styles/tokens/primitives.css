@@ -94,8 +94,15 @@
   --color-exito-fondo-claro: #f0f6f1;
   --color-aviso-claro: #b8860b;
   --color-aviso-oscuro: #d9a425;
-  --color-error-claro: #d14545;
+
+  /* 4,87:1 sobre nieve-50 y 5,1:1 sobre blanco: el anterior (#d14545) daba
+     4,5 sólo sobre blanco y se quedaba en 4,28 sobre el fondo de la página. */
+  --color-error-claro: #c53c3c;
   --color-error-oscuro: #e06a6a;
+
+  /* Texto de error SOBRE marino: `error-oscuro` se queda en 4,33:1 sobre
+     marino-700. Éste da 5,5:1 ahí y más en los fondos más oscuros. */
+  --color-error-sobre-oscuro: #ec8484;
   --color-error-fondo-claro: #fdf2f2;
 
   /* ---------------------------------------------------------------------

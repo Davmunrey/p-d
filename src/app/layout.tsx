@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 
 import { Analitica } from "@/components/analitica";
-import { IDIOMA } from "@/config/constants";
+import { IDIOMA, IDIOMA_OG } from "@/config/constants";
 import { t } from "@/lib/copy";
 import { urlDelSitio } from "@/lib/url-sitio";
 import "@/styles/globals.css";
@@ -77,7 +77,7 @@ export const metadata: Metadata = {
     title: t("meta.titulo"),
     description: t("meta.descripcion"),
     type: "website",
-    locale: IDIOMA,
+    locale: IDIOMA_OG,
     siteName: t("meta.titulo"),
   },
 };
