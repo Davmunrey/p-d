@@ -47,19 +47,33 @@ function unionesDeEstado(): { fichero: string; nombre: string; estados: string[]
 }
 
 /** Un estado está cubierto si alguien de su carpeta lo nombra: `"foo"` o `foo:`. */
-function sinFrase(fichero: string, estados: string[]): string[] {
+/**
+ * SÓLO LAS PANTALLAS (`.tsx`), no los `.ts`. Mirando también el `estado.ts`
+ * que declara la unión, cada estado se encontraba a sí mismo en la línea
+ * `type Estado = "a" | "b"` y el guardián no podía ponerse rojo nunca: así
+ * pasó `mensajes › marcado`, que volvía a la pantalla sin decir nada.
+ */
+function pantallasDe(fichero: string): string {
   const carpeta = dirname(fichero);
-  const vecinos = readdirSync(carpeta)
-    .filter((nombre) => /\.tsx?$/.test(nombre))
+  return readdirSync(carpeta)
+    .filter((nombre) => nombre.endsWith(".tsx"))
     .map((nombre) => readFileSync(join(carpeta, nombre), "utf8"))
     .join("\n");
+}
 
+function sinFraseEn(pantallas: string, estados: string[]): string[] {
   return estados.filter((estado) => {
     const escapado = estado.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const entrecomillado = new RegExp(`"${escapado}"`);
-    const comoClave = new RegExp(`(^|[\\s{,])${escapado}\\s*:`, "m");
-    return !entrecomillado.test(vecinos) && !comoClave.test(vecinos);
+    // Como clave de un mapa de avisos, y no como propiedad suelta: `error:
+    // true` de cualquier entrada casaba con el estado `error`.
+    const comoClave = new RegExp(`(^|[\\s{,])${escapado}\\s*:\\s*(?!true\\b|false\\b)`, "m");
+    return !entrecomillado.test(pantallas) && !comoClave.test(pantallas);
   });
+}
+
+function sinFrase(fichero: string, estados: string[]): string[] {
+  return sinFraseEn(pantallasDe(fichero), estados);
 }
 
 describe("los estados de las acciones del panel", () => {
@@ -82,5 +96,23 @@ describe("los estados de las acciones del panel", () => {
     // estuviera roto y no mirara nada.
     const inventado = "estado-que-no-existe-en-ninguna-pantalla";
     expect(sinFrase(uniones[0].fichero, [inventado])).toEqual([inventado]);
+  });
+
+  it("y un estado REAL al que se le quita la frase de su pantalla", () => {
+    // Con un estado inventado no se ve el agujero de mirar también el fichero
+    // que declara la unión: ahí todos aparecen. Se coge uno de verdad y se
+    // borra de las pantallas: tiene que salir.
+    const union = uniones[0];
+    const estado = union.estados[0];
+    const pantallas = pantallasDe(union.fichero);
+    expect(sinFraseEn(pantallas, [estado]), "el estado real tiene frase de partida").toEqual(
+      [],
+    );
+
+    const escapado = estado.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const sinEl = pantallas
+      .replaceAll(`"${estado}"`, '"__quitado__"')
+      .replace(new RegExp(`(^|[\\s{,])${escapado}(\\s*:)`, "gm"), "$1__quitado__$2");
+    expect(sinFraseEn(sinEl, [estado])).toEqual([estado]);
   });
 });

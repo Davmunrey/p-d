@@ -1,5 +1,5 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -39,6 +39,35 @@ function leer(ruta: string) {
  * recorren todas las páginas que importan de `@/lib/bbdd/`, que es la
  * definición exacta de «lee de la base».
  */
+/**
+ * Si un fichero lee de la base, DIRECTA O INDIRECTAMENTE. Mirar sólo la
+ * importación directa dejaba fuera a toda página que leyera a través de un
+ * componente —seis componentes importan de `@/lib/bbdd/`—, y una página así
+ * sin `force-dynamic` se prerrenderizaría en el despliegue con lo que hubiera
+ * en la base, que es exactamente el fallo que este test existe para cazar.
+ * Se siguen las importaciones (`@/` y relativas) hasta encontrar `lib/bbdd/`.
+ */
+function leeDeLaBase(ruta: string, vistos = new Set<string>()): boolean {
+  if (vistos.has(ruta)) return false;
+  vistos.add(ruta);
+  const fuente = leer(ruta);
+  if (fuente.includes("@/lib/bbdd/")) return true;
+
+  for (const [, especificador] of fuente.matchAll(/from\s+"([^"]+)"/g)) {
+    const destino = especificador.startsWith("@/")
+      ? `src/${especificador.slice(2)}`
+      : especificador.startsWith(".")
+        ? join(dirname(ruta), especificador)
+        : null;
+    if (!destino) continue;
+    const fichero = [".ts", ".tsx", "/index.ts", "/index.tsx"]
+      .map((sufijo) => `${destino}${sufijo}`)
+      .find((candidato) => existsSync(join(RAIZ, candidato)));
+    if (fichero && leeDeLaBase(fichero, vistos)) return true;
+  }
+  return false;
+}
+
 function paginasQueLeenDeLaBase(): string[] {
   const encontradas: string[] = [];
 
@@ -46,9 +75,7 @@ function paginasQueLeenDeLaBase(): string[] {
     for (const entrada of readdirSync(join(RAIZ, carpeta), { withFileTypes: true })) {
       const ruta = `${carpeta}/${entrada.name}`;
       if (entrada.isDirectory()) recorrer(ruta);
-      else if (entrada.name === "page.tsx" && leer(ruta).includes("@/lib/bbdd/")) {
-        encontradas.push(ruta);
-      }
+      else if (entrada.name === "page.tsx" && leeDeLaBase(ruta)) encontradas.push(ruta);
     }
   };
 
@@ -64,6 +91,9 @@ it("se encuentran las páginas que leen de la base", () => {
   expect(PAGINAS_CON_DATOS.length).toBeGreaterThan(20);
   expect(PAGINAS_CON_DATOS).toContain("src/app/page.tsx");
   expect(PAGINAS_CON_DATOS).toContain("src/app/cocina/page.tsx");
+  // Ésta lee sólo a través de su formulario y sus acciones: sin seguir las
+  // importaciones no aparecía.
+  expect(PAGINAS_CON_DATOS).toContain("src/app/panel/invitados/importar/page.tsx");
 });
 
 describe.each(PAGINAS_CON_DATOS)("%s", (ruta) => {

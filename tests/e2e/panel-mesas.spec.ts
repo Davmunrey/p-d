@@ -380,6 +380,11 @@ test.describe("El plano de mesas y el reparto", () => {
   }) => {
     test.skip(!cadena, "Hace falta DATABASE_URL para simular la caída.");
 
+    // Con sesión, o la prueba no prueba nada: sin ella la ruta redirige a la
+    // puerta y el 200 que se lee es el del formulario de entrar, con la base
+    // sana o rota.
+    await entrar(page);
+
     try {
       await conBase((sql) => sql`revoke select on public.mesas from authenticated`);
 

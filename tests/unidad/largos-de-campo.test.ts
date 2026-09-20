@@ -147,6 +147,29 @@ describe("ningún tope se declara como constante suelta", () => {
   });
 });
 
+describe("ninguna acción compara un largo con un número escrito a mano", () => {
+  it("todo `.length > N` del panel sale de LARGOS_DE_CAMPO", () => {
+    /*
+      La tercera forma de escribir un tope, y la que se quedó: `titulo.length >
+      160` en la acción mientras la pantalla ponía `maxLength` desde la
+      constante. El día que la migración subiera el tope, el campo dejaría
+      escribir 200 y el servidor rechazaría a 160, ya escrito.
+    */
+    const sueltos = ficheros(join(RAIZ, "src", "app"))
+      .filter((fichero) => /\.tsx?$/.test(fichero))
+      .flatMap((fichero) =>
+        sinComentarios(readFileSync(fichero, "utf8"))
+          .split("\n")
+          .flatMap((linea, indice) =>
+            /\.length\s*(?:>=?|<=?)\s*\d{2,}/.test(linea)
+              ? [`${fichero.slice(RAIZ.length + 1)}:${indice + 1}`]
+              : [],
+          ),
+      );
+    expect(sueltos, 'compara con LARGOS_DE_CAMPO["tabla.columna"]').toEqual([]);
+  });
+});
+
 describe("ninguna pantalla escribe un maxLength a mano", () => {
   it("todos los maxLength del proyecto salen de una constante", () => {
     const sueltos = ficheros(join(RAIZ, "src"))

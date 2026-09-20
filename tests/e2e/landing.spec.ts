@@ -412,17 +412,6 @@ test.describe("Cabecera de sección", () => {
 });
 
 /**
- * Caso de error: la página no puede quedarse en blanco si la base de datos
- * todavía no tiene configurada la boda. Se comprueba que el texto de respaldo
- * existe en los copys, que es lo que la página pintaría.
- */
-test.describe("Landing sin configurar", () => {
-  test("existe un mensaje para cuando no hay datos", () => {
-    expect(copy.errores.generico.length).toBeGreaterThan(0);
-  });
-});
-
-/**
  * CASO DE ERROR / ACCESIBILIDAD
  *
  * Un fondo en movimiento perpetuo es justo lo que marea a quien activa

@@ -405,6 +405,7 @@ test.describe("Exportar invitados", () => {
   test("una columna inventada en la URL se ignora en vez de romper la descarga", async ({
     page,
   }) => {
+    await entrar(page);
     const completo = await page.request.get(`${RUTA_INVITADOS}/exportar`);
     const cabecera = (await completo.text()).split("\r\n")[0];
 
@@ -429,6 +430,7 @@ test.describe("Exportar invitados", () => {
    * evaluaría como fórmula. Va neutralizada con un apóstrofo delante.
    */
   test("una alergia que parece una fórmula llega a Excel como texto", async ({ page }) => {
+    await entrar(page);
     test.skip(!cadena, "Hace falta DATABASE_URL para escribir la alergia.");
 
     const marca = `${MARCA} fórmula ${Date.now()}`;
@@ -474,6 +476,7 @@ test.describe("Exportar invitados", () => {
   test("una invitación sin personas enseña el enlace con aviso y sin botón de WhatsApp", async ({
     page,
   }) => {
+    await entrar(page);
     const marca = `${MARCA} vacía ${Date.now()}`;
     await page.goto(RUTA_INVITADOS);
     await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(marca);
@@ -540,12 +543,30 @@ test.describe("Repartir la invitación", () => {
     await entrar(page);
   });
 
-  /** Crea una invitación y devuelve su ficha ya abierta, con el enlace puesto. */
+  /**
+   * Crea una invitación con alguien dentro y devuelve su ficha ya abierta, con
+   * el enlace puesto.
+   *
+   * CON ALGUIEN DENTRO, porque sin personas no hay a quién invitar y la ficha
+   * no ofrece el botón de WhatsApp (ese caso tiene su propio test más arriba).
+   * Añadir a la persona recarga la ficha sin `?token=`, así que después se
+   * emite un enlace nuevo: es la única forma de volver a tener el token en
+   * claro en la pantalla.
+   */
   async function crearConEnlace(page: Page, sufijo: string): Promise<string> {
     await page.goto(RUTA_INVITADOS);
     await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(sufijo);
     await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
     await expect(page).toHaveURL(FICHA);
+
+    await page
+      .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
+      .fill("(DES) Reparto");
+    await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
+    await expect(page.getByText("(DES) Reparto")).toBeVisible();
+
+    await page.getByRole("button", { name: copy.panel.invitados.emitirEnlace }).click();
+    await expect(page).toHaveURL(/estado=enlace-emitido/);
     return page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
   }
 

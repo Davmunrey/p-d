@@ -1,20 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import copy from "../../content/copy.es.json";
-import {
-  RUTA_ACCESO,
-  RUTA_AJUSTES,
-  RUTA_CUENTA,
-  RUTA_GASTOS,
-  RUTA_INVITADOS,
-  RUTA_MEDIOS,
-  RUTA_MENSAJES,
-  RUTA_PAGOS,
-  RUTA_PANEL,
-  RUTA_PENDIENTES,
-  RUTA_PRESUPUESTO,
-  RUTA_PROVEEDORES,
-} from "@/config/constants";
+import { RUTA_ACCESO, RUTA_PANEL } from "@/config/constants";
+
+import { descubrirRutasDelPanel } from "./utiles/rutas-del-panel";
 
 /**
  * REPASO DEL PANEL, PANTALLA POR PANTALLA
@@ -45,19 +34,16 @@ const CORREO_CON_ACCESO = process.env.CORREO_CON_ACCESO;
 const CONTRASENA = process.env.CONTRASENA_PRUEBAS;
 
 /** Todas las pantallas del panel, con el nombre que se lee en un fallo. */
-const PANTALLAS = [
-  ["la portada del panel", RUTA_PANEL],
-  ["invitados", RUTA_INVITADOS],
-  ["los que no han contestado", RUTA_PENDIENTES],
-  ["mensajes", RUTA_MENSAJES],
-  ["fotos y vídeos", RUTA_MEDIOS],
-  ["proveedores", RUTA_PROVEEDORES],
-  ["presupuesto", RUTA_PRESUPUESTO],
-  ["gastos", RUTA_GASTOS],
-  ["pagos", RUTA_PAGOS],
-  ["ajustes", RUTA_AJUSTES],
-  ["la cuenta", RUTA_CUENTA],
-] as const;
+/*
+  TODAS LAS PANTALLAS, LEÍDAS DEL DISCO. La lista escrita a mano cubría once
+  de veintiséis rutas mientras la cabecera decía «recorre TODAS»: el guion del
+  día —de pie y con el móvil—, mesas, tareas, documentos, contenido, importar,
+  gráficas y el comparador se quedaban sin la comprobación táctil. Las fichas
+  con parámetro las decide `accesibilidad.spec.ts`; aquí van las demás.
+*/
+const PANTALLAS = descubrirRutasDelPanel().estaticas.map(
+  (ruta) => [ruta === RUTA_PANEL ? "la portada del panel" : ruta, ruta] as const,
+);
 
 /** El mínimo táctil de la WCAG 2.5.8, en píxeles CSS. */
 const MINIMO_TACTIL = 44;

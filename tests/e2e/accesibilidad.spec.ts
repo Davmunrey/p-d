@@ -1,14 +1,14 @@
-import { readdirSync } from "node:fs";
-import { join } from "node:path";
-
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_PANEL, RUTA_RSVP } from "../../src/config/constants";
-import { CLAVES_LISTA, rutaDeLista } from "../../src/config/contenido-landing";
 import { seguirLaPista } from "./utiles/rastro";
+import {
+  RUTAS_CON_PARAMETRO_CONOCIDAS,
+  descubrirRutasDelPanel,
+} from "./utiles/rutas-del-panel";
 
 /**
  * BODA-91 · AUDITORÍA DE ACCESIBILIDAD, BLOQUEANTE
@@ -87,17 +87,7 @@ async function crearGrupo(sufijo: string, personas: string[]): Promise<string> {
  * la auditoría por existir, que es lo que el comentario decía y ahora hace.
  */
 function rutasDelPanel(): string[] {
-  const raiz = join(__dirname, "..", "..", "src", "app");
-
-  const recorrer = (directorio: string): string[] =>
-    readdirSync(directorio, { withFileTypes: true }).flatMap((entrada) => {
-      const camino = join(directorio, entrada.name);
-      if (entrada.isDirectory()) return recorrer(camino);
-      if (entrada.name !== "page.tsx") return [];
-      return [camino.slice(raiz.length).replace(/\/page\.tsx$/, "") || "/"];
-    });
-
-  const todas = recorrer(join(raiz, "panel")).sort();
+  const { estaticas, conParametro } = descubrirRutasDelPanel();
 
   /*
     LAS RUTAS CON PARÁMETRO SE RESUELVEN, NO SE SALTAN. `[lista]` sale de su
@@ -106,16 +96,12 @@ function rutasDelPanel(): string[] {
     aparece otra ruta dinámica, este test se pone rojo y obliga a decidir qué
     hacer con ella, en vez de dejarla sin auditar en silencio.
   */
-  const conParametro = todas.filter((ruta) => ruta.includes("["));
   expect(
     conParametro.sort(),
     "hay una ruta con parámetro nueva: decidid si se audita y cómo",
-  ).toEqual(["/panel/contenido/[lista]", "/panel/invitados/[id]", "/panel/proveedores/[id]"]);
+  ).toEqual(RUTAS_CON_PARAMETRO_CONOCIDAS);
 
-  return [
-    ...todas.filter((ruta) => !ruta.includes("[")),
-    ...CLAVES_LISTA.map((clave) => rutaDeLista(clave)),
-  ];
+  return estaticas;
 }
 
 test.afterAll(async () => {
@@ -238,6 +224,46 @@ test.describe("Accesibilidad de la parte pública", () => {
     const token = await crearGrupo("axe", ["(DES) Blas", "(DES) Sole"]);
     await page.goto(`${RUTA_RSVP}/${token}`);
     await auditar(page, "el paso de asistencia del RSVP");
+
+    /*
+      CADA PASO, COMO DICE EL NOMBRE. Se auditaba sólo el primero recién
+      cargado: los selects del menú, los campos de alergias, el textarea y la
+      pantalla de gracias no pasaban por axe en ninguna parte de la suite. Y
+      también con un error a la vista: el rojo de los errores de campo sobre
+      el fondo marino se quedaba en 3,1:1 y nadie lo medía.
+    */
+    // Cada paso es una navegación (la acción redirige): se espera a que la
+    // URL cambie y la red se calme antes de auditar. A mitad de transición
+    // Next sustituye la cabecera del documento, y axe llegaba a verla sin
+    // `<title>` durante un instante.
+    await page.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await expect(page).toHaveURL(/falta=/);
+    // Filtrado por texto: el anunciador de rutas de Next también es `alert`.
+    await expect(
+      page.getByRole("alert").filter({ hasText: copy.rsvp.errorSinRespuesta.split("{")[0] }),
+    ).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await auditar(page, "el paso de asistencia con un error de campo");
+
+    await page.locator('input[value="confirmado"]').nth(0).check();
+    await page.locator('input[value="confirmado"]').nth(1).check();
+    await page.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await expect(page).toHaveURL(/paso=detalles/);
+    await expect(page.getByText(copy.rsvp.pasoDetallesTitulo)).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await auditar(page, "el paso de detalles del RSVP");
+
+    await page.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await expect(page).toHaveURL(/paso=mensaje/);
+    await expect(page.getByText(copy.rsvp.pasoMensajeTitulo)).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await auditar(page, "el paso de mensaje del RSVP");
+
+    await page.getByRole("button", { name: copy.rsvp.enviar }).click();
+    await expect(page).toHaveURL(/enviado=1/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
+    await page.waitForLoadState("networkidle");
+    await auditar(page, "la pantalla de gracias del RSVP");
   });
 });
 

@@ -786,9 +786,14 @@ test.describe("Un enlace que no vale", () => {
     const htmlInventado = await comoInventado.text();
 
     // El token va en la URL, así que aparece en el HTML de su propia página:
-    // se neutraliza en los dos antes de comparar, que es lo único que puede
-    // diferir legítimamente.
-    const sinToken = (html: string, token: string) => html.replaceAll(token, "TOKEN");
+    // se neutraliza en los dos antes de comparar. Y el nonce de la
+    // Content-Security-Policy, que es distinto en cada petición a propósito:
+    // son las dos únicas cosas que pueden diferir legítimamente.
+    const sinToken = (html: string, token: string) => {
+      const nonce = html.match(/nonce="([^"]+)"/)?.[1];
+      const sinNonce = nonce ? html.replaceAll(nonce, "NONCE") : html;
+      return sinNonce.replaceAll(token, "TOKEN");
+    };
 
     expect(
       sinToken(htmlInventado, inventado),
@@ -939,8 +944,24 @@ test.describe("Cambiar una respuesta ya dada", () => {
         `mailto:${correo}`,
       );
 
-      // Lo que de verdad cierra la puerta: forzar el envío por debajo de la
-      // pantalla, como `anon`, tampoco escribe nada.
+      /*
+        Lo que de verdad cierra la puerta: forzar el envío por debajo de la
+        pantalla, como `anon`, tampoco escribe nada.
+
+        CON UN INVITADO REAL Y ESPERANDO RSV03. Con un id inventado la función
+        rechazaba con RSV04 («no es de este grupo») ANTES de insertar nada, y
+        el trigger del plazo —que corre por fila insertada— nunca se ejecutaba:
+        la aserción pasaba igual con el plazo abierto, así que no probaba el
+        plazo. Se coge la persona del grupo y se exige el código del plazo.
+      */
+      const [persona] = await conBase(
+        (sql) => sql<{ id: string }[]>`
+          select i.id
+            from public.invitados as i
+            join public.grupos_invitacion as g on g.id = i.grupo_id
+           where g.huella_token = public.huella_token(${token})
+        `,
+      );
       const intento = conBase(
         (sql) =>
           sql.begin(async (tx) => {
@@ -948,13 +969,15 @@ test.describe("Cambiar una respuesta ya dada", () => {
             return tx`
               select public.registrar_confirmacion(
                 ${token},
-                ${tx.json([{ invitado_id: "00000000-0000-4000-8000-000000000000", estado: "rechazado" }])}
+                ${tx.json([{ invitado_id: persona.id, estado: "rechazado" }])}
               )
             `;
           }) as Promise<unknown>,
       );
 
-      await expect(intento, "con el plazo cerrado la base tiene que negarse").rejects.toThrow();
+      await expect(intento, "con el plazo cerrado la base tiene que negarse").rejects.toThrow(
+        /RSV03/,
+      );
     });
 
     await contexto.close();

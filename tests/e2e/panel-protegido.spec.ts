@@ -69,9 +69,30 @@ test.describe("Protección del panel", () => {
       await page.getByRole("button", { name: copy.acceso.entrar }).click();
 
       // Con el servidor caído no entra de todos modos, pero lo que importa es
-      // que en ningún momento se sale del sitio.
-      await expect(page).toHaveURL(new RegExp(`^http://[^/]+${RUTA_ACCESO}`));
+      // que en ningún momento se sale del sitio. Se espera al `estado=` porque
+      // es la acción quien lo pone: sin él, la aserción corre antes de que el
+      // formulario haya vuelto y lee la URL de antes de pulsar.
+      await expect(page).toHaveURL(new RegExp(`^http://[^/]+${RUTA_ACCESO}\\?.*estado=`));
+      /*
+        Y LO QUE SÍ DISTINGUE LOS DOS MUNDOS aunque no se entre: la puerta
+        sólo conserva `volver` cuando el destino saneado no es la portada del
+        panel. Una trampa saneada es la portada, así que el parámetro tiene
+        que haber desaparecido. Sin esta línea, la aserción de arriba pasaba
+        igual con la guarda borrada: con la contraseña mal nunca se redirige.
+      */
+      expect(
+        new URL(page.url()).searchParams.get(PARAMETRO_VOLVER),
+        `la trampa ${trampa} tenía que quedarse sin destino`,
+      ).toBeNull();
     }
+
+    // Control: un destino de casa sí se conserva tras equivocarse.
+    await page.goto(`${RUTA_ACCESO}?${PARAMETRO_VOLVER}=${encodeURIComponent(RUTA_INTERNA)}`);
+    await page.getByLabel(copy.acceso.correo).fill("paloma@ejemplo.test");
+    await page.getByLabel(copy.acceso.contrasena).fill("da-igual-lo-que-ponga");
+    await page.getByRole("button", { name: copy.acceso.entrar }).click();
+    await expect(page).toHaveURL(new RegExp(`^http://[^/]+${RUTA_ACCESO}\\?.*estado=`));
+    expect(new URL(page.url()).searchParams.get(PARAMETRO_VOLVER)).toBe(RUTA_INTERNA);
   });
 
   test("la web pública no la toca", async ({ page }) => {

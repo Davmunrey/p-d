@@ -155,7 +155,18 @@ describe("el tono de voz de la entrega", () => {
   });
 
   it("la web habla de vosotros, no de tú", () => {
-    const tuteo = /\b(tú|ti|contigo|tuyo|tuya|tuyos|tuyas|te lo|te la|te los|te las)\b/i;
+    /*
+      SIN `\b` Y CON `u`: `\b` es ASCII, así que «tú» seguido de espacio o
+      punto no casaba nunca —la palabra que da nombre al test estaba muerta—.
+      Se mira que no haya letra pegada por ningún lado, con `\p{L}`.
+    */
+    const tuteo =
+      /(?<!\p{L})(tú|ti|contigo|tuyo|tuya|tuyos|tuyas|te lo|te la|te los|te las)(?!\p{L})/iu;
+    // Y que de verdad muerde en la forma más corriente.
+    expect(tuteo.test("¿Y tú, vienes?")).toBe(true);
+    expect(tuteo.test("tú.")).toBe(true);
+    expect(tuteo.test("Tú y yo")).toBe(true);
+    expect(tuteo.test("tumbados y titulares")).toBe(false);
 
     const infractores = copysDeInvitado()
       .filter(([, texto]) => tuteo.test(sinCitas(texto)))

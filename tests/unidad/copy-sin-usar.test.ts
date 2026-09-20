@@ -47,7 +47,13 @@ function ficheros(directorio: string): string[] {
   });
 }
 
-const FUENTE = ["src", "tests", "scripts"]
+/*
+  SÓLO CUENTA LO QUE PINTA LA WEB: `src/` y los guiones que la generan. Un test
+  que afirma sobre un copy no lo enchufa a ninguna pantalla —`errores.generico`
+  vivió meses así, citado por un E2E y pintado por nadie—, así que lo que
+  aparezca sólo en `tests/` no da por viva ninguna clave.
+*/
+const FUENTE = ["src", "scripts"]
   .map((carpeta) => ficheros(join(RAIZ, carpeta)))
   .flat()
   .map((fichero) => readFileSync(fichero, "utf8"))
@@ -58,13 +64,27 @@ const PREFIJOS_AL_VUELO = [
   ...new Set([...FUENTE.matchAll(/`([a-zA-Z][a-zA-Z.]*\.)\$\{/g)].map((m) => m[1])),
 ];
 
+/**
+ * Un prefijo de PRIMER NIVEL —`cocina.`— no es una familia: es un bloque
+ * entero, y darlo por usado eximía del barrido a sus setenta y nueve claves de
+ * golpe (`cocina.pruebaMovimiento` estaba muerta y en verde). Para esos, la
+ * hoja tiene que aparecer escrita en el código: `"grupoSuperficies"`.
+ */
+function cubiertaPorPrefijo(ruta: string): boolean {
+  return PREFIJOS_AL_VUELO.some((prefijo) => {
+    if (!ruta.startsWith(prefijo)) return false;
+    const niveles = prefijo.split(".").filter(Boolean).length;
+    if (niveles >= 2) return true;
+    const hoja = ruta.slice(prefijo.length);
+    return !hoja.includes(".") && FUENTE.includes(`"${hoja}"`);
+  });
+}
+
 function usada(ruta: string): boolean {
   for (const comilla of ['"', "'", "`"]) {
     if (FUENTE.includes(`${comilla}${ruta}${comilla}`)) return true;
   }
-  // Los tests leen el JSON importado: `copy.panel.dia.titulo`.
-  if (new RegExp(`\\bcopy\\.${ruta.replace(/\./g, "\\.")}\\b`).test(FUENTE)) return true;
-  return PREFIJOS_AL_VUELO.some((prefijo) => ruta.startsWith(prefijo));
+  return cubiertaPorPrefijo(ruta);
 }
 
 describe("las claves de copy", () => {
@@ -91,5 +111,12 @@ describe("las claves de copy", () => {
     const inventada = ["una", "clave", "que", "nadie", "escribe"].join(".");
 
     expect(usada(inventada)).toBe(false);
+  });
+
+  it("y una huérfana debajo de un prefijo de primer nivel", () => {
+    // `cocina.` sale del código como prefijo al vuelo; una clave inventada
+    // debajo tiene que seguir saliendo como huérfana.
+    expect(PREFIJOS_AL_VUELO).toContain("cocina.");
+    expect(usada(["cocina", "claveQueNadieEscribe"].join("."))).toBe(false);
   });
 });
