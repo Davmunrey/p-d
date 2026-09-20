@@ -60,6 +60,64 @@ test.describe("Cabeceras de seguridad", () => {
     expect(cabeceras["referrer-policy"]).toBe("strict-origin-when-cross-origin");
   });
 
+  /**
+   * LA CONTENT-SECURITY-POLICY, con nonce por petición.
+   *
+   * Es la única cabecera que de verdad frena un script inyectado, y no
+   * estaba. Se comprueba que viaja, que Next ha puesto el nonce en cada
+   * script que emite —sin eso la página se bloquearía a sí misma— y que
+   * ninguna pantalla pública la viola al cargar: una directiva de menos se
+   * ve como una foto que no sale o un mapa en blanco, y aquí se ve como rojo.
+   */
+  test("la Content-Security-Policy viaja, lleva nonce y ninguna pantalla pública la viola", async ({
+    page,
+    request,
+  }) => {
+    const respuesta = await request.get("/");
+    const csp = respuesta.headers()["content-security-policy"] ?? "";
+    const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
+    expect(csp).toContain("default-src 'self'");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
+    expect(nonce, "la política lleva un nonce").toBeTruthy();
+
+    // Cada script que Next emite lleva ESE nonce: el JSON-LD no se ejecuta y
+    // no lo necesita, todo lo demás sí.
+    const html = await respuesta.text();
+    const scripts = [...html.matchAll(/<script\b([^>]*)>/g)].map((m) => m[1]);
+    const ejecutables = scripts.filter(
+      (atributos) => !/type="application\/ld\+json"/.test(atributos),
+    );
+    expect(ejecutables.length).toBeGreaterThan(0);
+    expect(
+      ejecutables.filter((atributos) => !atributos.includes(`nonce="${nonce}"`)),
+      "todo script ejecutable lleva el nonce de la petición",
+    ).toEqual([]);
+
+    // Y un nonce nuevo en cada petición, que es lo que lo hace nonce.
+    const otra = await request.get("/");
+    expect(otra.headers()["content-security-policy"]).not.toContain(`'nonce-${nonce}'`);
+
+    // Ninguna violación al cargar las pantallas públicas.
+    const violaciones: string[] = [];
+    await page.addInitScript(() => {
+      document.addEventListener("securitypolicyviolation", (evento) => {
+        const detalle = `${evento.violatedDirective} ← ${evento.blockedURI}`;
+        (window as unknown as { __violacionesCsp: string[] }).__violacionesCsp ??= [];
+        (window as unknown as { __violacionesCsp: string[] }).__violacionesCsp.push(detalle);
+      });
+    });
+    for (const ruta of ["/", "/reserva-la-fecha", "/acceso", "/rsvp/token-que-no-existe-000"]) {
+      await page.goto(ruta);
+      await page.waitForLoadState("networkidle");
+      const enEsta = await page.evaluate(
+        () => (window as unknown as { __violacionesCsp?: string[] }).__violacionesCsp ?? [],
+      );
+      violaciones.push(...enEsta.map((v) => `${ruta}: ${v}`));
+    }
+    expect(violaciones).toEqual([]);
+  });
+
   test("el sistema de diseño no se indexa", async ({ request }) => {
     const respuesta = await request.get("/cocina");
     expect(respuesta.headers()["x-robots-tag"]).toContain("noindex");

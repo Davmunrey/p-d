@@ -87,13 +87,20 @@ if [ "${#pendientes[@]}" -gt "$MAXIMO_PENDIENTES" ] && [ "$FORZAR" != "si" ]; th
   exit 1
 fi
 
+# UNA SOLA TRANSACCIÓN POR MIGRACIÓN, Y EL REGISTRO DENTRO. La cabecera decía
+# que cada fichero traía su begin/commit, y la mitad no lo trae: una que
+# fallara en la sentencia 5 dejaba las cuatro primeras aplicadas, sin registro,
+# y al relanzar chocaba con «already exists». Y el insert de la versión iba en
+# otra conexión: un corte entre las dos dejaba la migración aplicada y sin
+# apuntar. Con `--single-transaction` y el insert en la misma invocación, o
+# entra todo o no entra nada, como por el CLI.
 for fichero in "${pendientes[@]}"; do
   nombre="$(basename "$fichero")"
   version="${nombre%%_*}"
   echo "→ aplicando $(basename "$fichero")"
-  correr -f "$fichero"
-  correr -c "insert into supabase_migrations.schema_migrations (version)
-             values ('$version') on conflict (version) do nothing;"
+  correr --single-transaction -f "$fichero" \
+    -c "insert into supabase_migrations.schema_migrations (version)
+        values ('$version') on conflict (version) do nothing;"
 done
 
 echo "Listo: ${#pendientes[@]} migración(es) aplicada(s)."

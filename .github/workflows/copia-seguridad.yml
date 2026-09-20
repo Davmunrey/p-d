@@ -22,6 +22,12 @@ on:
     - cron: "23 3 * * *"
   workflow_dispatch:
 
+# Lo justo para leer el repo y abrir la incidencia del aviso. El repositorio de
+# copias va con su propio token.
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   copia:
     name: Volcar y guardar
@@ -83,3 +89,24 @@ jobs:
             git commit -m "Copia de $(date -u +%Y-%m-%d)"
             git push
           fi
+
+      # QUE EL FALLO LLEGUE AL BOARD. Cuarenta ejecuciones rojas seguidas en
+      # la pestaña Actions no las miró nadie en cinco semanas: un flujo cuyo
+      # único aviso es un run rojo produce la misma falsa tranquilidad que uno
+      # que se salta en silencio. El board son las incidencias (CLAUDE.md), así
+      # que ahí se abre una —o se comenta la que ya esté abierta—.
+      - name: Avisar en el board si ha fallado
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITULO: "La copia de seguridad ha fallado"
+          ENLACE: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          abierta=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$TITULO\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$abierta" ]; then
+            gh issue comment "$abierta" --repo "$GITHUB_REPOSITORY" --body "Ha vuelto a fallar: $ENLACE"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITULO" --body "La copia nocturna de la base no se ha hecho. Mientras esto siga abierto, no hay copia: ver docs/ENTORNO.md, apartado «Copia de seguridad».
+
+Registro: $ENLACE"
+  fi

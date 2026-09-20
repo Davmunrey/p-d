@@ -39,7 +39,37 @@ describe("flujo de CI", () => {
         `Este comando nombra specs a mano y se quedará atrás:\n  ${invocacion}\n` +
           "Ejecuta la suite entera, o selecciona por proyecto o por etiqueta.",
       ).not.toMatch(/tests\/e2e\/\S+\.spec\.ts/);
+      // Y tampoco por nombre de fichero, que Playwright acepta igual como
+      // filtro (`acceso-real.spec.ts`, o `acceso-real` a secas): tras
+      // `playwright test` sólo pueden ir banderas.
+      expect(
+        invocacion,
+        `Este comando lleva argumentos que no son banderas:\n  ${invocacion}`,
+      ).toMatch(/npx playwright test(?:\s+--[\w-]+(?:[= ]\S+)?)*\s*$/);
     }
+  });
+
+  it("los unitarios que necesitan base corren donde hay base", () => {
+    // `copia-seguridad.test.ts` y `mantener-viva.test.ts` se saltan sin
+    // DATABASE_URL. En `calidad` no la hay, así que tienen que correr en el
+    // trabajo que levanta Postgres, y DESPUÉS de prepararla.
+    const preparar = ci.indexOf("preparar-bbdd.sh");
+    const unitariosConBase = ci.indexOf("npm test -- tests/unidad/copia-seguridad.test.ts");
+    expect(preparar).toBeGreaterThan(-1);
+    expect(unitariosConBase).toBeGreaterThan(preparar);
+    expect(ci).toContain("tests/unidad/mantener-viva.test.ts");
+  });
+
+  it("el código de salida de preparar la base no se traga", () => {
+    // `echo "X=$(script)"` sale con el código de `echo`, no del guion.
+    expect(ci).not.toMatch(/echo "DATABASE_URL=\$\(sudo \.\/scripts\/preparar-bbdd\.sh\)"/);
+    expect(ci).toMatch(
+      /url=\$\(sudo \.\/scripts\/preparar-bbdd\.sh\) && echo "DATABASE_URL=\$url"/,
+    );
+  });
+
+  it("las dependencias de producción se auditan, y bloquean en alto o crítico", () => {
+    expect(ci).toContain("npm audit --omit=dev --audit-level=high");
   });
 
   it("el trabajo con Supabase real sigue existiendo", () => {

@@ -144,11 +144,17 @@ COPIA=$(mktemp -d /tmp/boda-mig-XXXX)
 cp "$RAIZ"/supabase/migrations/*.sql "$COPIA/"
 chmod -R a+rX "$COPIA"
 
+# SE MIRA EL CÓDIGO DE SALIDA, NO LA SALIDA. Antes era `psql … | grep -q ERROR`
+# y, con `pipefail`, el estado de la tubería es el de psql (3 con
+# ON_ERROR_STOP) y no el de grep: el `if` salía falso para TODO fallo real y
+# la migración rota se daba por buena con su ✓. Reproducido: una migración con
+# un error de sintaxis pasaba este bucle en verde. Es la misma clase de fallo
+# que se arregló más abajo con el sello SUITE-COMPLETA.
 for fichero in $(ls "$COPIA"/*.sql | sort); do
   nombre=$(basename "$fichero")
-  if psqlp "-d $BASE -q -v ON_ERROR_STOP=1 -f $fichero" 2>&1 | grep -q 'ERROR'; then
+  if ! salida=$(psqlp "-d $BASE -q -v ON_ERROR_STOP=1 -f $fichero" 2>&1); then
     echo "  ✗ $nombre"
-    psqlp "-d $BASE -v ON_ERROR_STOP=1 -f $fichero" 2>&1 | grep -A3 'ERROR' | head -12
+    echo "$salida" | grep -A3 'ERROR' | head -12
     rm -rf "$COPIA"
     exit 1
   fi

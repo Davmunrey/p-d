@@ -55,6 +55,7 @@ jobs:
           # se avisa; que funcione no depende de acertar a la primera.
           PROYECTO: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
           EN_VARIABLES: ${{ vars.SUPABASE_PROJECT_REF != '' }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         # SALTARSE ESTO EN SILENCIO SÓLO VALE CUANDO NADIE LO HA PEDIDO.
         #
         # Si el flujo salta solo al mergear a `main` y aún no hay credenciales,
@@ -70,6 +71,20 @@ jobs:
           [ -z "$TOKEN" ]    && faltan="$faltan SUPABASE_ACCESS_TOKEN(secreto)"
           [ -z "$CLAVE" ]    && faltan="$faltan SUPABASE_DB_PASSWORD(secreto)"
           [ -z "$PROYECTO" ] && faltan="$faltan SUPABASE_PROJECT_REF(pestaña_Variables)"
+
+          # EL REPUESTO SE COMPRUEBA CUANDO NO HACE FALTA, que es cuando se
+          # puede. `DATABASE_URL` sólo se usa si el CLI falla, y la única vez
+          # que llegó a usarse estaba mal: era la conexión directa
+          # (db.<ref>.supabase.co), que sólo tiene IPv6 y desde GitHub no se
+          # alcanza. Se descubrió el día que hacía falta. Desde GitHub la
+          # cadena tiene que ser la del Session pooler (IPv4).
+          case "$DATABASE_URL" in
+            "")
+              echo "::warning::Falta el secreto DATABASE_URL: si el token del CLI caduca, no habrá camino de repuesto. Ver docs/ENTORNO.md." ;;
+            *pooler.supabase.com*) ;;
+            *)
+              echo "::warning::DATABASE_URL no es la cadena del Session pooler (postgres.<ref>@aws-0-<región>.pooler.supabase.com:5432): desde GitHub no hay IPv6 y el camino de repuesto fallará con «Network is unreachable». Ver docs/ENTORNO.md." ;;
+          esac
 
           if [ -z "$faltan" ]; then
             echo "hay=si" >> "$GITHUB_OUTPUT"
@@ -155,6 +170,12 @@ jobs:
             echo "::error::'supabase link' falló (¿token caducado?) y tampoco hay DATABASE_URL para el camino de repuesto. No se ha aplicado nada. Ver docs/ENTORNO.md."
             exit 1
           fi
+          case "$DATABASE_URL" in
+            *pooler.supabase.com*) ;;
+            *)
+              echo "::error::'supabase link' falló y DATABASE_URL es la conexión directa (sólo IPv6): desde GitHub no se alcanza. Cámbiala por la del Session pooler y relanza. No se ha aplicado nada. Ver docs/ENTORNO.md."
+              exit 1 ;;
+          esac
           echo "::warning::'supabase link' falló: es casi seguro que SUPABASE_ACCESS_TOKEN ha caducado. Se aplican las migraciones por Postgres. Renueva el token en Supabase → Account → Access Tokens."
           # El runner de Ubuntu trae el cliente de Postgres, pero este camino
           # sólo se usa cuando algo ya ha ido mal: no es el momento de

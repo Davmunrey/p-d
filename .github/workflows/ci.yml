@@ -42,6 +42,13 @@ jobs:
       - name: Tests unitarios
         run: npm test
 
+      # Un aviso crítico en el framework fijado a mano (RCE en la optimización
+      # de AVIF, next < 16.3.3) estuvo cuatro semanas sin que nada se pusiera
+      # rojo. Sólo dependencias de producción y sólo alto/crítico: lo demás es
+      # ruido de herramientas de desarrollo.
+      - name: Avisos de seguridad en las dependencias de producción
+        run: npm audit --omit=dev --audit-level=high
+
   base-de-datos:
     name: Migraciones y seguridad de la BBDD
     runs-on: ubuntu-latest
@@ -84,7 +91,20 @@ jobs:
         # Los E2E corren contra una base REAL, no contra mocks: la landing lee
         # de la base de datos, así que probarla con datos falsos no probaría
         # nada de lo que importa.
-        run: echo "DATABASE_URL=$(sudo ./scripts/preparar-bbdd.sh)" >> "$GITHUB_ENV"
+        #
+        # En dos líneas y con `&&`: `echo "$(script)"` se tragaba el código de
+        # salida del guion, así que si fallaba el paso salía verde con la
+        # variable vacía y el rojo aparecía después, en los E2E, con un motivo
+        # que no era el suyo.
+        run: |
+          url=$(sudo ./scripts/preparar-bbdd.sh) && echo "DATABASE_URL=$url" >> "$GITHUB_ENV"
+
+      # Los unitarios que necesitan una base de verdad —la copia de seguridad
+      # se restaura con sus políticas, el toque lee una fila— se saltaban solos
+      # en `calidad`, que no tiene Postgres, y aquí nadie los llamaba. Vitest
+      # los marcaba como omitidos y salía con cero: verdes sin ejecutarse.
+      - name: Tests unitarios que necesitan la base
+        run: npm test -- tests/unidad/copia-seguridad.test.ts tests/unidad/mantener-viva.test.ts
 
       - name: Ejecutar suite E2E
         run: npm run test:e2e

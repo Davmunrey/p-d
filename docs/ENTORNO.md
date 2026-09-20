@@ -198,6 +198,15 @@ registro para que se renueve el token, pero la base queda al día.
 El script se planta si encuentra más de cinco migraciones pendientes: eso casi
 siempre significa que no pudo leer la tabla de control y que en realidad están
 aplicadas, y seguir adelante reharía el esquema entero sobre datos de verdad.
+
+**El repuesto se comprueba cuando no hace falta.** La única vez que llegó a
+ejecutarse, `DATABASE_URL` era la conexión directa —sólo IPv6— y murió con
+«Network is unreachable»: se descubrió roto el día que hacía falta. Ahora el
+flujo mira la forma del secreto en cada push y deja un aviso si no es la del
+_Session pooler_, y el camino de repuesto se niega a intentarlo con la directa
+en vez de fallar con un error que engaña. Cada migración se aplica en **una
+sola transacción** con su registro dentro: o entra entera y apuntada, o no
+entra.
 Para una base nueva de verdad, `FORZAR=si`.
 
 También se puede llamar a mano:
@@ -299,6 +308,14 @@ borrado.
 Si falta cualquiera de las tres, el flujo **falla y lo dice**. No se salta en
 silencio: una copia que no se hace y no avisa es lo mismo que no tener copia,
 sólo que con la tranquilidad de creer que se tiene.
+
+**Y lo dice donde se mira.** Cuarenta ejecuciones rojas seguidas en la pestaña
+_Actions_ no las vio nadie en cinco semanas, así que un run rojo no es un
+aviso. Cuando la copia —o el toque de `mantener-viva.yml`— falla, el propio
+flujo abre una incidencia en este repositorio, o comenta la que ya esté
+abierta, con el enlace al registro. Mientras esa incidencia siga abierta, **no
+hay copia**: hasta que el primer run salga verde, la lista de invitados vive
+sólo en Supabase.
 
 ### Restaurar
 

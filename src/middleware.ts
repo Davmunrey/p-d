@@ -1,7 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { PARAMETRO_VOLVER, RUTA_ACCESO, RUTA_PANEL } from "@/config/constants";
+import {
+  PARAMETRO_VOLVER,
+  POSTHOG_SERVIDOR,
+  RUTA_ACCESO,
+  RUTA_PANEL,
+  SENTRY_DSN,
+  URL_MAPA_EMBEBIDO,
+} from "@/config/constants";
+import { construirCsp } from "@/lib/csp";
 import { recordarInvitacion } from "@/lib/invitacion";
 
 /**
@@ -38,7 +46,30 @@ function esDelPanel(ruta: string): boolean {
   return ruta === RUTA_PANEL || ruta.startsWith(`${RUTA_PANEL}/`);
 }
 
+/**
+ * LA CSP VA EN LA PETICIÓN Y EN LA RESPUESTA. En la petición porque Next lee
+ * de ahí el nonce y lo pone en cada `<script>` que emite —sin eso, la primera
+ * página bloquearía su propio arranque—; en la respuesta porque es donde el
+ * navegador la aplica. El nonce es nuevo en cada petición: es lo que hace que
+ * un script inyectado no pueda adivinarlo.
+ */
+function conCsp(peticion: NextRequest): string {
+  const nonce = btoa(crypto.randomUUID());
+  const csp = construirCsp(nonce, {
+    supabase: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    posthog: POSTHOG_SERVIDOR,
+    sentry: SENTRY_DSN,
+    mapa: URL_MAPA_EMBEBIDO,
+    desarrollo: process.env.NODE_ENV !== "production",
+  });
+  peticion.headers.set("x-nonce", nonce);
+  peticion.headers.set("content-security-policy", csp);
+  return csp;
+}
+
 export async function middleware(peticion: NextRequest) {
+  const csp = conCsp(peticion);
+
   // La respuesta se crea antes de preguntar por el usuario: `setAll` escribe
   // en ella las cookies renovadas mientras `getUser()` está en marcha.
   let respuesta = NextResponse.next({ request: peticion });
@@ -52,7 +83,7 @@ export async function middleware(peticion: NextRequest) {
   if (!url || !clave) {
     return esDelPanel(peticion.nextUrl.pathname)
       ? aLaPuerta(peticion)
-      : recordarInvitacion(peticion, respuesta);
+      : conCabeceraCsp(recordarInvitacion(peticion, respuesta), csp);
   }
 
   const supabase = createServerClient(url, clave, {
@@ -85,8 +116,14 @@ export async function middleware(peticion: NextRequest) {
 
   // Al final y no antes: `setAll` puede haber sustituido la respuesta entera
   // por otra al renovar la sesión, y la cookie tiene que ir en la que se
-  // devuelve. Anotarla en la primera era perderla justo al renovar.
-  return recordarInvitacion(peticion, respuesta);
+  // devuelve. Anotarla en la primera era perderla justo al renovar. La CSP,
+  // por lo mismo, se pone en la respuesta que sale y no en la primera.
+  return conCabeceraCsp(recordarInvitacion(peticion, respuesta), csp);
+}
+
+function conCabeceraCsp(respuesta: NextResponse, csp: string): NextResponse {
+  respuesta.headers.set("Content-Security-Policy", csp);
+  return respuesta;
 }
 
 /**
