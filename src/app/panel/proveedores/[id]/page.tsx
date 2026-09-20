@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
@@ -116,9 +117,7 @@ export default async function PaginaProveedor({ params, searchParams }: Parametr
         <Titulo2 como="h1">{t("panel.proveedores.noExisteTitulo")}</Titulo2>
         <Cuerpo className="mt-pila max-w-texto">{t("panel.proveedores.errorNoExiste")}</Cuerpo>
         <div className="mt-elemento">
-          <Link href={RUTA_PROVEEDORES} className="text-pequeno text-tinta-marca underline">
-            {t("panel.proveedores.volver")}
-          </Link>
+          <EnlaceSuave href={RUTA_PROVEEDORES}>{t("panel.proveedores.volver")}</EnlaceSuave>
         </div>
       </>
     );

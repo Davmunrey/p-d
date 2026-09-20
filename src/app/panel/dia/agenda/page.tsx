@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo2 } from "@/components/ui/tipografia";
 import { RUTA_ACCESO, RUTA_DIA } from "@/config/constants";
 import { obtenerAgendaDelDia } from "@/lib/bbdd/dia";
@@ -35,9 +35,9 @@ export default async function PaginaAgendaDelDia() {
   return (
     <>
       <div className="max-w-texto">
-        <Link href={RUTA_DIA} className="text-pequeno text-tinta-suave underline">
+        <EnlaceSuave href={RUTA_DIA} discreto>
           {t("panel.dia.volver")}
-        </Link>
+        </EnlaceSuave>
         <Titulo2 como="h1" className="mt-pila">
           {t("panel.dia.agenda.titulo")}
         </Titulo2>

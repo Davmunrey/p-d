@@ -696,7 +696,7 @@ function Plantilla({ grupos, vista }: { grupos: GrupoPlantilla[]; vista: string 
             {grupos.map((grupo) => (
               <label
                 key={grupo.grupo}
-                className="flex items-center gap-interno-compacto text-pequeno text-tinta"
+                className="flex min-h-control-compacto items-center gap-interno-compacto text-pequeno text-tinta"
               >
                 <input
                   type="checkbox"

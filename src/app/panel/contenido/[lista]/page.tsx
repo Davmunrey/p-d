@@ -139,7 +139,7 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
         <Link
           href={RUTA_CONTENIDO}
           prefetch={false}
-          className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta"
+          className="inline-flex min-h-control-compacto items-center text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta"
         >
           {t("panel.contenido.listas.comun.volver")}
         </Link>

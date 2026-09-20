@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
@@ -80,9 +81,7 @@ export default async function PaginaComparador({ searchParams }: Parametros) {
           {t("panel.proveedores.comparadorSinCategoria")}
         </Cuerpo>
         <div className="mt-elemento">
-          <Link href={RUTA_PROVEEDORES} className="text-pequeno text-tinta-marca underline">
-            {t("panel.proveedores.volver")}
-          </Link>
+          <EnlaceSuave href={RUTA_PROVEEDORES}>{t("panel.proveedores.volver")}</EnlaceSuave>
         </div>
       </>
     );
@@ -95,9 +94,9 @@ export default async function PaginaComparador({ searchParams }: Parametros) {
   return (
     <>
       <div className="max-w-texto">
-        <Link href={RUTA_PROVEEDORES} className="text-pequeno text-tinta-suave underline">
+        <EnlaceSuave href={RUTA_PROVEEDORES} discreto>
           {t("panel.proveedores.volver")}
-        </Link>
+        </EnlaceSuave>
         <Titulo2 como="h1" className="mt-pila">
           {t("panel.proveedores.comparadorTitulo", { categoria: categoria.nombre })}
         </Titulo2>

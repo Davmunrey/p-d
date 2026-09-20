@@ -217,7 +217,12 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
 
         {/*
           UNA INVITACIÓN VACÍA TIENE UN ENLACE QUE NO FUNCIONA, y conviene
-          decirlo aquí y no dejar que lo descubra el invitado.
+          decirlo antes de que lo descubra el invitado. El aviso vive ARRIBA,
+          junto al enlace y al botón de WhatsApp, que es donde se pulsa; aquí,
+          sin nadie dentro, sólo queda el formulario para añadir a la primera
+          persona. Durante un tiempo estuvo en los dos sitios, y leer el mismo
+          aviso dos veces en una pantalla se parece más a un fallo de la web
+          que a un consejo.
 
           `obtener_invitacion()` devuelve una fila POR PERSONA: sin nadie
           dentro devuelve cero filas, y cero filas es exactamente el contrato
@@ -226,14 +231,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
           leería que su invitación no es válida — y a nadie se le ocurriría
           que lo que falta es meter a la gente.
         */}
-        {grupo.gente.length === 0 ? (
-          <p
-            role="status"
-            className="mt-pila rounded-campo bg-aviso-fondo p-interno text-pequeno text-aviso-tinta"
-          >
-            {t("panel.invitados.avisoSinPersonas")}
-          </p>
-        ) : (
+        {grupo.gente.length > 0 ? (
           <ul className="mt-pila grid gap-interno-compacto">
             {grupo.gente.map((persona) => (
               <li
@@ -253,7 +251,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
 
         {puedeEditar ? (
           <form action={anadirPersona} className="mt-elemento grid max-w-texto gap-interno">

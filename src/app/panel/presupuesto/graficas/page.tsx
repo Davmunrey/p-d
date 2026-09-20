@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   ALTO_BARRA_GRAFICA,
@@ -76,9 +76,9 @@ export default async function PaginaGraficas() {
   return (
     <>
       <div className="max-w-texto">
-        <Link href={RUTA_PRESUPUESTO} className="text-pequeno text-tinta-suave underline">
+        <EnlaceSuave href={RUTA_PRESUPUESTO} discreto>
           {t("panel.presupuesto.graficas.volver")}
-        </Link>
+        </EnlaceSuave>
         <Titulo2 como="h1" className="mt-pila">
           {t("panel.presupuesto.graficas.titulo")}
         </Titulo2>

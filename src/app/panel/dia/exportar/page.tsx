@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   IDIOMA,
@@ -67,9 +67,9 @@ export default async function PaginaExportarDelDia() {
         los botones para llegar a ella.
       */}
       <div className="max-w-texto print:hidden">
-        <Link href={RUTA_DIA} className="text-pequeno text-tinta-suave underline">
+        <EnlaceSuave href={RUTA_DIA} discreto>
           {t("panel.dia.volver")}
-        </Link>
+        </EnlaceSuave>
         <Titulo2 como="h1" className="mt-pila">
           {t("panel.dia.exportar.titulo")}
         </Titulo2>
@@ -106,48 +106,53 @@ export default async function PaginaExportarDelDia() {
         <section key={mesa} className="mt-bloque break-inside-avoid">
           <Titulo3 como="h2">{mesa}</Titulo3>
 
-          <table className="mt-elemento w-full border-collapse text-left">
-            <thead>
-              <tr>
-                {[
-                  t("panel.dia.buscar.campo"),
-                  t("panel.dia.buscar.menu"),
-                  t("panel.dia.buscar.alergias"),
-                ].map((titulo) => (
-                  <th
-                    key={titulo}
-                    scope="col"
-                    className="border-b border-borde-fuerte px-interno py-interno-compacto text-etiqueta uppercase tracking-etiqueta text-tinta-suave"
-                  >
-                    {titulo}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {gente.map((invitado) => (
-                <tr key={invitado.id}>
-                  <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">
-                    {[invitado.nombre, invitado.apellidos].filter(Boolean).join(" ")}
-                    {invitado.esNino ? (
-                      <span className="text-tinta-suave"> · {t("panel.dia.buscar.nino")}</span>
-                    ) : null}
-                    {!invitado.confirmado ? (
-                      <span className="block text-pequeno text-tinta-suave">
-                        {t("panel.dia.buscar.sinConfirmar")}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">
-                    {t(`rsvp.menus.${invitado.tipoMenu}` as "rsvp.menus.estandar")}
-                  </td>
-                  <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">
-                    {invitado.alergias ?? ""}
-                  </td>
+          <div className="mt-elemento overflow-x-auto">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr>
+                  {[
+                    t("panel.dia.buscar.campo"),
+                    t("panel.dia.buscar.menu"),
+                    t("panel.dia.buscar.alergias"),
+                  ].map((titulo) => (
+                    <th
+                      key={titulo}
+                      scope="col"
+                      className="border-b border-borde-fuerte px-interno py-interno-compacto text-etiqueta uppercase tracking-etiqueta text-tinta-suave"
+                    >
+                      {titulo}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {gente.map((invitado) => (
+                  <tr key={invitado.id}>
+                    <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">
+                      {[invitado.nombre, invitado.apellidos].filter(Boolean).join(" ")}
+                      {invitado.esNino ? (
+                        <span className="text-tinta-suave">
+                          {" "}
+                          · {t("panel.dia.buscar.nino")}
+                        </span>
+                      ) : null}
+                      {!invitado.confirmado ? (
+                        <span className="block text-pequeno text-tinta-suave">
+                          {t("panel.dia.buscar.sinConfirmar")}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">
+                      {t(`rsvp.menus.${invitado.tipoMenu}` as "rsvp.menus.estandar")}
+                    </td>
+                    <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">
+                      {invitado.alergias ?? ""}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       ))}
 

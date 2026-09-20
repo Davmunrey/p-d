@@ -309,7 +309,7 @@ function DondeSeLlena({ seccion }: { seccion: Seccion }) {
     <Link
       href={donde.ruta}
       prefetch={false}
-      className="justify-self-start text-etiqueta uppercase tracking-etiqueta text-tinta-suave underline decoration-borde-fuerte underline-offset-4 transicion-color hover:text-tinta"
+      className="inline-flex min-h-control-compacto items-center justify-self-start text-etiqueta uppercase tracking-etiqueta text-tinta-suave underline decoration-borde-fuerte underline-offset-4 transicion-color hover:text-tinta"
     >
       {t("panel.contenido.seLlenaEn", { donde: rotulo })}
     </Link>

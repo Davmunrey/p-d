@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
@@ -82,9 +82,9 @@ export default async function PaginaRecuento({ searchParams }: Parametros) {
   return (
     <>
       <div className="max-w-texto">
-        <Link href={RUTA_DIA} className="text-pequeno text-tinta-suave underline">
+        <EnlaceSuave href={RUTA_DIA} discreto>
           {t("panel.dia.volver")}
-        </Link>
+        </EnlaceSuave>
         <Titulo2 como="h1" className="mt-pila">
           {t("panel.dia.recuento.titulo")}
         </Titulo2>
