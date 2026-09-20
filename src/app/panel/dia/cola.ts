@@ -95,13 +95,25 @@ export function apuntar(id: string, marca: string | null): void {
   fijar({ ...instantanea(), [id]: marca });
 }
 
-/** Saca de la cola lo que ya se ha mandado (o lo que no se va a mandar nunca). */
-export function soltar(ids: string[]): void {
-  if (ids.length === 0) return;
+/**
+ * Saca de la cola lo que ya se ha mandado (o lo que no se va a mandar nunca).
+ *
+ * SÓLO SI SIGUE SIENDO LO QUE SE MANDÓ. Se recibe el par `[id, marca]` y no el
+ * id a secas: entre lanzar la petición y recibir la respuesta, el mismo punto
+ * puede haberse vuelto a tocar —marcar por error y desmarcar en el acto pasa
+ * constantemente, y en la finca las respuestas tardan segundos—. Soltar por id
+ * tiraba la marca NUEVA cuando volvía la respuesta de la VIEJA: la pantalla
+ * saltaba sola a «hecho», el aviso de pendientes desaparecía, y si la segunda
+ * petición fallaba no quedaba nada que reintentar. Lo último que hizo quien
+ * marcaba se perdía sin un solo aviso.
+ */
+export function soltar(mandadas: readonly (readonly [string, string | null])[]): void {
+  if (mandadas.length === 0) return;
 
   const quedan: ColaDeMarcas = {};
   for (const [clave, marca] of Object.entries(instantanea())) {
-    if (!ids.includes(clave)) quedan[clave] = marca;
+    const mandada = mandadas.find(([id]) => id === clave);
+    if (!mandada || mandada[1] !== marca) quedan[clave] = marca;
   }
   fijar(quedan);
 }

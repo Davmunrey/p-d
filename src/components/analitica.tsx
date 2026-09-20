@@ -1,9 +1,10 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import posthog from "posthog-js";
 import { useEffect } from "react";
 
-import { POSTHOG_CLAVE, POSTHOG_SERVIDOR } from "@/config/constants";
+import { POSTHOG_CLAVE, POSTHOG_SERVIDOR, RUTA_RSVP } from "@/config/constants";
 import { noQuiereQueLeSigan } from "@/lib/observabilidad/limpiar";
 import { antesDeMedir } from "@/lib/observabilidad/sentry";
 
@@ -32,8 +33,17 @@ import { antesDeMedir } from "@/lib/observabilidad/sentry";
  *
  * SIN CLAVE NO ARRANCA. En local y en CI no hay ninguna, así que no sale ni una
  * petición y no hace falta desconectar nada para los tests.
+ *
+ * Y MIDE SÓLO LO QUE DICE MEDIR. Vive en el layout raíz porque es el único que
+ * envuelve la landing y el RSVP a la vez, pero el layout raíz envuelve también
+ * el panel y la puerta de acceso. Sin mirar la ruta, cada recarga del panel
+ * —cientos, durante meses de preparación— contaba como «alguien ha abierto la
+ * invitación», y el primer paso del embudo, para una boda de ciento veinte
+ * invitados, medía sobre todo a los dos que la organizan.
  */
 export function Analitica() {
+  const ruta = usePathname();
+
   useEffect(() => {
     if (!POSTHOG_CLAVE || noQuiereQueLeSigan()) return;
 
@@ -48,10 +58,26 @@ export function Analitica() {
       persistence: "memory",
       sanitize_properties: (propiedades) => antesDeMedir(propiedades),
     });
-
-    medir("landing_vista");
   }, []);
 
+  useEffect(() => {
+    const paso = pasoDelEmbudo(ruta);
+    if (paso) medir(paso);
+  }, [ruta]);
+
+  return null;
+}
+
+/**
+ * Qué paso del embudo es esta ruta, o `null` si no es ninguno.
+ *
+ * La portada es «ha abierto la invitación»; la pantalla del RSVP, «ha llegado
+ * al formulario». El panel, la puerta de acceso y todo lo demás no son pasos de
+ * nadie. Es una función pura, y por eso se puede probar sin PostHog.
+ */
+export function pasoDelEmbudo(ruta: string | null): string | null {
+  if (ruta === "/") return "landing_vista";
+  if (ruta?.startsWith(`${RUTA_RSVP}/`)) return "rsvp_vista";
   return null;
 }
 

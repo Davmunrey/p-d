@@ -8,7 +8,7 @@ import { RUTA_INVITADOS } from "@/config/constants";
 import { t } from "@/lib/copy";
 
 import { analizarFichero, importar } from "./acciones";
-import { ESTADO_INICIAL } from "./estado";
+import { ESTADO_INICIAL, estadoVigente } from "./estado";
 
 /**
  * BODA-53 · SUBIR, MIRAR, IMPORTAR
@@ -41,8 +41,9 @@ export function FormularioImportacion() {
   const [analisis, analizar, analizando] = useActionState(analizarFichero, ESTADO_INICIAL);
   const [envio, enviar, enviando] = useActionState(importar, ESTADO_INICIAL);
 
-  // El resultado de importar manda sobre el del análisis: es el más reciente.
-  const estado = envio.fase === "previa" || envio.aviso ? envio : analisis;
+  // El más reciente de los dos, decidido por serie y no por contenido: ver
+  // `estadoVigente`, que es donde está explicado y probado.
+  const estado = estadoVigente(analisis, envio);
   const hayErrores = estado.errores.length > 0;
 
   return (
@@ -186,6 +187,7 @@ export function FormularioImportacion() {
           ) : (
             <form action={enviar} className="mt-elemento flex flex-wrap gap-interno">
               <input type="hidden" name="contenido" value={estado.contenido} />
+              <input type="hidden" name="serie" value={estado.serie} />
               <Boton type="submit" disabled={enviando}>
                 {t("panel.importar.confirmar")}
               </Boton>

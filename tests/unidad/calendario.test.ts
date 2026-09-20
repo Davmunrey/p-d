@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { construirIcs } from "@/lib/calendario";
+import { construirIcs, identificadorDelEvento } from "@/lib/calendario";
 
 /**
  * BODA-31 · Formato iCalendar
@@ -139,5 +139,24 @@ describe("construirIcs", () => {
 
     const uid = (ics: string) => desplegar(ics).match(/UID:(\S+)/)?.[1];
     expect(uid(primero)).toBe(uid(segundo));
+  });
+
+  it("el identificador no lleva la fecha: mover la boda actualiza el evento en vez de duplicarlo", () => {
+    // Llevaba el día dentro, así que cambiar la fecha —el único cambio que de
+    // verdad obliga a redescargar— creaba un segundo evento y dejaba el viejo.
+    expect(identificadorDelEvento("boda.ejemplo.test")).toBe("boda@boda.ejemplo.test");
+    expect(identificadorDelEvento("boda.ejemplo.test")).not.toMatch(/\d{4}-\d{2}-\d{2}/);
+
+    const uid = (ics: string) => desplegar(ics).match(/UID:(\S+)/)?.[1];
+    const junio = construirIcs({
+      ...base(),
+      identificador: identificadorDelEvento("boda.ejemplo.test"),
+    });
+    const julio = construirIcs({
+      ...base(),
+      identificador: identificadorDelEvento("boda.ejemplo.test"),
+      inicio: new Date("2027-07-03T10:00:00.000Z"),
+    });
+    expect(uid(junio)).toBe(uid(julio));
   });
 });

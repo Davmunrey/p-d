@@ -90,6 +90,24 @@ test("la reserva de fecha también aguanta la caída", async ({ page }) => {
   }
 });
 
+test("la imagen OG de la portada devuelve 503, no una tarjeta en blanco, cuando la base calla", async ({
+  request,
+}) => {
+  try {
+    await conPermisoDeLectura(false);
+
+    const respuesta = await request.get("/opengraph-image");
+
+    // Es la imagen que WhatsApp o Twitter guardan DÍAS al pegar el enlace:
+    // antes salía un 200 con los nombres vacíos, y cuarenta invitados que
+    // recibieran el enlace en ese minuto la veían para siempre.
+    expect(respuesta.status()).toBe(503);
+    expect(respuesta.headers()["retry-after"]).toBeDefined();
+  } finally {
+    await conPermisoDeLectura(true);
+  }
+});
+
 test("el calendario devuelve 503, no 404, cuando la base calla", async ({ request }) => {
   try {
     await conPermisoDeLectura(false);

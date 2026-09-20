@@ -123,6 +123,22 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
           />
 
           {/*
+            SIN NADIE DENTRO NO SE MANDA. El aviso de «invitación vacía» estaba
+            más abajo, junto a la lista de personas; aquí arriba seguía el botón
+            de WhatsApp, y es aquí donde se pulsa. Un enlace de un grupo sin
+            personas abre «este enlace no es válido», así que se avisa en el
+            sitio y el botón no aparece hasta que haya a quién invitar.
+          */}
+          {grupo.gente.length === 0 ? (
+            <p
+              role="status"
+              className="mt-pila rounded-campo bg-aviso-fondo p-interno text-pequeno text-aviso-tinta"
+            >
+              {t("panel.invitados.avisoSinPersonas")}
+            </p>
+          ) : null}
+
+          {/*
             BODA-110 · Y desde aquí mismo se manda.
 
             Va DENTRO del bloque del enlace, y no en una sección aparte, porque
@@ -136,7 +152,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
             JavaScript — es un formulario que va a una acción de servidor y de
             ahí a WhatsApp.
           */}
-          {puedeEditar ? (
+          {puedeEditar && grupo.gente.length > 0 ? (
             <form action={repartirPorWhatsApp} className="mt-elemento grid gap-interno">
               <input type="hidden" name="grupo_id" value={grupo.id} />
               {grupo.invitacionEnviadaEn ? (

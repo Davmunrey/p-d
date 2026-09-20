@@ -72,13 +72,16 @@ function gruposPorCrear(filas: FilaImportada[], existentes: string[]): string[] 
  * es el mismo.
  */
 export async function analizarFichero(
-  _previo: EstadoImportacion,
+  previo: EstadoImportacion,
   datos: FormData,
 ): Promise<EstadoImportacion> {
+  // Cada análisis es uno más: es lo que deja distinguir el más reciente del
+  // resultado de una confirmación anterior (ver `estadoVigente`).
+  const serie = previo.serie + 1;
   const fichero = datos.get("fichero");
 
   if (!(fichero instanceof File) || fichero.size === 0) {
-    return { ...ESTADO_INICIAL, aviso: t("panel.importar.errorSinFichero") };
+    return { ...ESTADO_INICIAL, serie, aviso: t("panel.importar.errorSinFichero") };
   }
 
   const contenido = decodificar(await fichero.arrayBuffer());
@@ -103,6 +106,7 @@ export async function analizarFichero(
       grupos.map((grupo) => grupo.nombre),
     ),
     contenido,
+    serie,
   };
 }
 
@@ -119,9 +123,12 @@ export async function importar(
   _previo: EstadoImportacion,
   datos: FormData,
 ): Promise<EstadoImportacion> {
+  // La serie del análisis que se confirma viaja en el formulario: el resultado
+  // de aquí sólo manda sobre ESE análisis, no sobre uno posterior.
+  const serie = Number(datos.get("serie")) || 0;
   const contenido = String(datos.get("contenido") ?? "");
   if (contenido.trim() === "") {
-    return { ...ESTADO_INICIAL, aviso: t("panel.importar.errorSinFichero") };
+    return { ...ESTADO_INICIAL, serie, aviso: t("panel.importar.errorSinFichero") };
   }
 
   const lectura = leerImportacion(contenido, await personasExistentes());
@@ -139,11 +146,12 @@ export async function importar(
         grupos.map((grupo) => grupo.nombre),
       ),
       contenido,
+      serie,
     };
   }
 
   if (lectura.filas.length === 0) {
-    return { ...ESTADO_INICIAL, aviso: t("panel.importar.errorNadaQueImportar") };
+    return { ...ESTADO_INICIAL, serie, aviso: t("panel.importar.errorNadaQueImportar") };
   }
 
   const supabase = await cliente();
@@ -158,6 +166,7 @@ export async function importar(
       columnasIgnoradas: lectura.columnasIgnoradas,
       gruposNuevos: [],
       contenido,
+      serie,
       aviso: error.message.includes("RSV06")
         ? t("panel.invitados.errorSinPermiso")
         : t("panel.importar.errorImportando"),

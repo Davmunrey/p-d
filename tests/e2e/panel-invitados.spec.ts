@@ -463,6 +463,30 @@ test.describe("Exportar invitados", () => {
     expect(fila).not.toContain(`;"=HYPERLINK(`);
   });
 
+  /**
+   * CASO DE ERROR · Una invitación sin nadie dentro no se manda.
+   *
+   * Su enlace abre «este enlace no es válido»: `obtener_invitacion()` devuelve
+   * una fila por persona y cero filas es el contrato de enlace malo. El botón
+   * de WhatsApp no aparece hasta que haya a quién invitar, y se dice por qué
+   * al lado del enlace, que es donde se pulsa.
+   */
+  test("una invitación sin personas enseña el enlace con aviso y sin botón de WhatsApp", async ({
+    page,
+  }) => {
+    const marca = `${MARCA} vacía ${Date.now()}`;
+    await page.goto(RUTA_INVITADOS);
+    await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(marca);
+    await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
+    await expect(page).toHaveURL(FICHA);
+
+    await expect(page.getByLabel(copy.panel.invitados.copiarEnlace)).toBeVisible();
+    await expect(page.getByRole("status")).toContainText(copy.panel.invitados.avisoSinPersonas);
+    await expect(
+      page.getByRole("button", { name: copy.panel.invitados.repartirBoton }),
+    ).toHaveCount(0);
+  });
+
   test("los acentos y la ñ sobreviven a Excel", async ({ page }) => {
     await entrar(page);
 

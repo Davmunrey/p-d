@@ -382,6 +382,77 @@ test.describe("El día de la boda", () => {
    * CAMINO FELIZ · #68 — los teléfonos son enlaces `tel:` con el número de la
    * base. CASO DE ERROR · un proveedor descartado no aparece.
    */
+  /**
+   * CASO DE ERROR · Deshacer con la marca anterior todavía en vuelo.
+   *
+   * Conexión lenta: se marca, y antes de que conteste el servidor se deshace.
+   * Cuando volvía la respuesta de la PRIMERA petición, la cola soltaba el
+   * punto por id y tiraba la marca NUEVA sin haberla mandado: la pantalla
+   * saltaba sola a «hecho», el aviso de pendientes desaparecía, y si la
+   * segunda petición fallaba no quedaba nada que reintentar. La primera
+   * petición se retrasa con `page.route` y la segunda se corta.
+   */
+  test("deshacer con la marca anterior en vuelo no se pierde aunque la red falle", async ({
+    page,
+  }) => {
+    const sembrado = await sembrar(Date.now() + 2);
+    await entrar(page);
+    await page.goto(RUTA_DIA);
+    await page.waitForLoadState("networkidle");
+
+    const punto = page.locator("li").filter({ hasText: sembrado.segundoPunto });
+    const marcar = punto.getByRole("button", {
+      name: copy.panel.dia.guion.marcarEste.replace("{titulo}", sembrado.segundoPunto),
+    });
+    const deshacer = punto.getByRole("button", {
+      name: copy.panel.dia.guion.desmarcarEste.replace("{titulo}", sembrado.segundoPunto),
+    });
+
+    // Las acciones de servidor son POST a la propia ruta: la primera tarda,
+    // la segunda se cae.
+    let peticiones = 0;
+    await page.route(`**${RUTA_DIA}**`, async (ruta) => {
+      if (ruta.request().method() !== "POST") return ruta.continue();
+      peticiones += 1;
+      if (peticiones === 1) {
+        await new Promise((listo) => setTimeout(listo, 1_500));
+        return ruta.continue();
+      }
+      return ruta.abort("failed");
+    });
+
+    await marcar.click();
+    await expect(punto).toHaveAttribute("data-hecho", "si");
+    await deshacer.click();
+    await expect(punto).toHaveAttribute("data-hecho", "no");
+
+    // Llega la respuesta de marcar. Lo último que se pulsó fue deshacer, y
+    // sigue siendo lo que se ve y lo que queda por mandar.
+    await expect.poll(async () => peticiones, { timeout: 10_000 }).toBeGreaterThanOrEqual(2);
+    await page.waitForTimeout(2_000);
+    await expect(punto).toHaveAttribute("data-hecho", "no");
+    await expect(page.locator("[data-sin-mandar]")).toBeVisible();
+
+    // Vuelve la red: se manda lo pendiente y la base acaba como la pantalla.
+    await page.unroute(`**${RUTA_DIA}**`);
+    await page.evaluate(() => window.dispatchEvent(new Event("online")));
+    await expect
+      .poll(
+        async () =>
+          conBase(
+            async (sql) =>
+              (
+                await sql<{ hecho_en: string | null }[]>`
+                  select hecho_en from public.guion_dia where titulo = ${sembrado.segundoPunto}
+                `
+              )[0]?.hecho_en,
+          ),
+        { timeout: 20_000 },
+      )
+      .toBeNull();
+    await expect(page.locator("[data-sin-mandar]")).toBeHidden();
+  });
+
   test("la agenda enseña a los contratados con enlace de llamada y esconde a los descartados", async ({
     page,
   }) => {

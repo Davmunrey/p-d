@@ -22,6 +22,12 @@ export interface EstadoImportacion {
   contenido: string;
   /** Un fallo que no es de ninguna fila en concreto. */
   aviso?: string;
+  /**
+   * De qué análisis viene este estado. Sube uno en cada «Analizar» y el
+   * resultado de «Confirmar» copia el del análisis que confirmaba: así se sabe
+   * cuál de los dos es el más reciente sin adivinarlo por el contenido.
+   */
+  serie: number;
 }
 
 export const ESTADO_INICIAL: EstadoImportacion = {
@@ -31,4 +37,28 @@ export const ESTADO_INICIAL: EstadoImportacion = {
   columnasIgnoradas: [],
   gruposNuevos: [],
   contenido: "",
+  serie: 0,
 };
+
+/**
+ * CUÁL DE LOS DOS ESTADOS SE PINTA.
+ *
+ * Son dos `useActionState` independientes —analizar y confirmar— y ninguno
+ * borra al otro. Antes la regla era «el de confirmar manda si trae algo»: sólo
+ * es verdad hasta que se analiza otra vez. Tras una confirmación fallida —la
+ * otra familia dio de alta a alguien entre la previa y el botón—, cualquier
+ * análisis nuevo se hacía en el servidor y se tiraba en el navegador: la
+ * pantalla seguía enseñando las filas y los errores del intento anterior, sin
+ * botón de confirmar, y no había forma de importar nada sin recargar.
+ *
+ * Se decide por RECENCIA: el de confirmar sólo manda si es del mismo análisis
+ * que se está viendo. Un análisis nuevo tiene otra serie, y gana.
+ */
+export function estadoVigente(
+  analisis: EstadoImportacion,
+  envio: EstadoImportacion,
+): EstadoImportacion {
+  const envioEsDeEsteAnalisis = envio.serie === analisis.serie;
+  const envioTraeAlgo = envio.fase === "previa" || Boolean(envio.aviso);
+  return envioEsDeEsteAnalisis && envioTraeAlgo ? envio : analisis;
+}

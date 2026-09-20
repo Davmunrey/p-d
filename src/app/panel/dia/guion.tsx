@@ -86,7 +86,10 @@ export function Guion({
    * mandar nunca. Se suelta y se dice por qué.
    */
   const mandar = useCallback(async (pendientes: ColaDeMarcas) => {
-    const resueltos: string[] = [];
+    // Pares id + marca, no ids: la cola sólo suelta lo que SIGUE siendo lo que
+    // se mandó. Si el punto se volvió a tocar mientras esto estaba en vuelo,
+    // la marca nueva se queda pendiente y la manda el siguiente intento.
+    const resueltos: [string, string | null][] = [];
     let denegado = false;
 
     for (const [id, marca] of Object.entries(pendientes)) {
@@ -96,10 +99,10 @@ export function Guion({
           // Se recuerda lo aceptado ANTES de soltarlo de la cola, para que la
           // pantalla no se quede un instante sin ninguna de las dos capas.
           setConfirmadas((previas) => ({ ...previas, [id]: marca }));
-          resueltos.push(id);
+          resueltos.push([id, marca]);
         } else if (resultado.motivo === "sin-permiso") {
           denegado = true;
-          resueltos.push(id);
+          resueltos.push([id, marca]);
         }
       } catch {
         // Sin red. Se queda en la cola para el próximo intento.

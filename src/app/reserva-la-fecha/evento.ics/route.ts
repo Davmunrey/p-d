@@ -1,5 +1,5 @@
 import { HORAS_DURACION_EVENTO, NOMBRE_FICHERO_CALENDARIO } from "@/config/constants";
-import { construirIcs } from "@/lib/calendario";
+import { construirIcs, identificadorDelEvento } from "@/lib/calendario";
 import { obtenerConfiguracion, obtenerSecciones } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 
@@ -46,9 +46,9 @@ export async function GET(peticion: Request) {
   const ultimoHito = configuracion.fechaBanquete ?? configuracion.fechaCeremonia;
 
   const ics = construirIcs({
-    // Estable mientras no cambie la fecha: volver a descargarlo actualiza el
-    // evento en vez de duplicarlo.
-    identificador: `boda-${configuracion.fechaCeremonia.toISOString().slice(0, 10)}@${new URL(origen).hostname}`,
+    // Estable aunque cambie la fecha: volver a descargarlo actualiza el evento
+    // en vez de duplicarlo, también cuando lo que cambió fue el día.
+    identificador: identificadorDelEvento(new URL(origen).hostname),
     // «Boda de Paloma y David» y «Nos casamos. Guardad el día.», como el
     // fichero de la entrega: es lo que se lee en la agenda meses después.
     titulo: t("saveTheDate.icsTitulo", { nombres }),

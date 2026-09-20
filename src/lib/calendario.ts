@@ -86,6 +86,20 @@ function comoMarcaUtc(fecha: Date): string {
   return `${fecha.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
 }
 
+/**
+ * EL IDENTIFICADOR DEL EVENTO, SIN LA FECHA DENTRO.
+ *
+ * Volver a descargar el `.ics` tiene que ACTUALIZAR el evento que ya está en
+ * el calendario, no crear otro, y los clientes lo deciden por el UID. Llevaba
+ * el día de la boda —`boda-2027-06-26@dominio`—, así que el único cambio que
+ * de verdad obliga a redescargar, mover la fecha, era justo el que lo rompía:
+ * el invitado acababa con dos bodas en el calendario, y la equivocada seguía
+ * ahí con su aviso. Es una boda por sitio: el dominio basta.
+ */
+export function identificadorDelEvento(anfitrion: string): string {
+  return `boda@${anfitrion}`;
+}
+
 export function construirIcs(evento: EventoCalendario): string {
   const fin =
     evento.fin ?? new Date(evento.inicio.getTime() + HORAS_DURACION_EVENTO * 60 * 60 * 1000);

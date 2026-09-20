@@ -196,6 +196,68 @@ test.describe("Importar invitados", () => {
     expect(await cuantasPersonas(nombre)).toBe(1);
   });
 
+  /**
+   * CASO DE ERROR · Tras una confirmación fallida, analizar otro fichero SIN
+   * recargar tiene que enseñar el fichero nuevo.
+   *
+   * Antes la pantalla se quedaba con las filas y los errores del intento
+   * anterior: el análisis nuevo se hacía en el servidor y se tiraba en el
+   * navegador, no había botón de importar y nada decía que hubiera que
+   * recargar. Se provoca el fallo dando de alta a la persona entre la previa y
+   * el botón, que es el caso real: la otra familia importando su parte.
+   */
+  test("tras un fallo al confirmar, analizar otro fichero sin recargar enseña el nuevo", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const repetida = `(DES) Colada ${sello}`;
+    const nueva = `(DES) Limpia ${sello}`;
+    const csvA = ["Grupo;Nombre;Apellidos", `${MARCA} carrera ${sello};${repetida};Pérez`].join(
+      "\n",
+    );
+    const csvB = ["Grupo;Nombre;Apellidos", `${MARCA} carrera ${sello};${nueva};López`].join(
+      "\n",
+    );
+
+    // La previa de A sale limpia.
+    await subir(page, csvA);
+    await expect(botonImportar(page)).toBeVisible();
+
+    // Entre la previa y el botón, alguien da de alta a esa persona.
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    try {
+      const [grupo] = await sql<{ id: string }[]>`
+        insert into public.grupos_invitacion (nombre, lado, invitado_a, maximo_acompanantes, huella_token)
+        values (${`${MARCA} carrera ${sello}`}, 'ambos',
+                array['ceremonia','banquete','fiesta']::public.evento_boda[], 0,
+                public.huella_token(${`desarrollo-importar-${sello}-000000`}))
+        returning id
+      `;
+      await sql`
+        insert into public.invitados (grupo_id, nombre, apellidos, es_nino)
+        values (${grupo.id}, ${repetida}, 'Pérez', false)
+      `;
+    } finally {
+      await sql.end();
+    }
+
+    // Confirmar falla: la revalidación la detecta y no importa nada.
+    await botonImportar(page).click();
+    await expect(page.getByText(copy.panel.importar.erroresTituloUna)).toBeVisible();
+    await expect(botonImportar(page)).toHaveCount(0);
+
+    // Y AHORA, SIN RECARGAR, otro fichero: tiene que verse ÉSTE.
+    await subir(page, csvB);
+    await expect(page.getByText(nueva)).toBeVisible();
+    await expect(page.getByText(repetida)).toHaveCount(0);
+    await expect(page.getByText(copy.panel.importar.erroresTituloUna)).toHaveCount(0);
+    await expect(botonImportar(page)).toBeVisible();
+
+    await botonImportar(page).click();
+    await expect(page).toHaveURL(/estado=importados/);
+    expect(await cuantasPersonas(nueva)).toBe(1);
+  });
+
   test("la plantilla se descarga con el BOM y los rótulos de la pantalla", async ({ page }) => {
     // `page.request` y no el fixture `request`: el fixture es un contexto de
     // red aparte y llegaría sin sesión, así que descargaría la pantalla de
