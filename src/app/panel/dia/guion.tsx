@@ -134,12 +134,18 @@ export function Guion({
     //
     //     La hora es sólo para pintar: la de verdad la pone el servidor con su
     //     propio reloj, porque el del móvil que marca es el de un invitado.
-    apuntar(punto.id, estabaHecho ? null : new Date().toISOString());
+    //
+    //     LA MISMA MARCA EN LOS DOS SITIOS. La cola sólo suelta pares que
+    //     coincidan con lo que se mandó; con dos `new Date()` distintos, la
+    //     segunda podía caer en el milisegundo siguiente y la entrada se
+    //     quedaba «sin mandar» hasta el siguiente reintento, aceptada ya.
+    const marca = estabaHecho ? null : new Date().toISOString();
+    apuntar(punto.id, marca);
     setSinPermiso(false);
 
     // 2 · Y ahora se manda sólo esto, no la cola entera: mandar aquí lo de
     //     antes duplicaría los intentos con el reintento de `online`.
-    await mandar({ [punto.id]: estabaHecho ? null : new Date().toISOString() });
+    await mandar({ [punto.id]: marca });
   };
 
   /*

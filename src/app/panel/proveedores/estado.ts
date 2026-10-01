@@ -49,6 +49,7 @@ export type EstadoProveedores =
   | "elegido"
   | "no-existe"
   | "documento-no-existe"
+  | "documento-no-leido"
   | "en-uso"
   | "referencia-rota"
   | "sin-permiso"

@@ -691,7 +691,8 @@ export async function descargarDocumento(datos: FormData): Promise<void> {
   // DOCUMENTO el que no existe, no el proveedor que se está viendo; y si la
   // lectura falló, no se afirma ninguna de las dos cosas.
   const ruta = await obtenerRutaDocumento(id, proveedorId);
-  if (ruta === undefined) volver("error", proveedorId);
+  // Una lectura que falló no es «no se ha podido guardar»: aquí no se guarda.
+  if (ruta === undefined) volver("documento-no-leido", proveedorId);
   if (!ruta) volver("documento-no-existe", proveedorId);
 
   const { data, error } = await clienteDeServicio()

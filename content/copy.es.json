@@ -831,6 +831,7 @@
       "errorContactoSinVia": "Un contacto necesita al menos un teléfono o un email.",
       "errorNoExiste": "Ese proveedor ya no está.",
       "errorDocumentoNoExiste": "Ese documento ya no está.",
+      "errorDocumentoNoLeido": "No se ha podido abrir el documento. Probad otra vez.",
       "errorEnUso": "No se puede borrar mientras tenga servicios desglosados o papeles guardados. Quitadlos primero desde su ficha y volved a intentarlo.",
       "errorSinPermiso": "Vuestro perfil no puede hacer cambios aquí.",
       "errorGuardar": "No se ha podido guardar. Probad otra vez.",
