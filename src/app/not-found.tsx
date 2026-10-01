@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 
 import { BotonEnlace } from "@/components/ui/boton";
 import { Cuerpo, Titulo2 } from "@/components/ui/tipografia";
@@ -27,7 +28,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function NoEncontrada() {
+export default async function NoEncontrada() {
+  /*
+    SE LEE LA PETICIÓN A PROPÓSITO, aunque no haga falta nada de ella. Sin
+    esto Next prerenderiza la 404 en el build, y una página hecha antes de
+    que exista ninguna petición sale sin el nonce de la CSP: la cabecera llega
+    con un nonce recién hecho, los once scripts del HTML no llevan ninguno, y
+    con `'strict-dynamic'` el navegador los bloquea todos. Se vio en
+    producción. Una página que lleva nonce tiene que pintarse por petición, y
+    tocar las cabeceras es lo que la hace dinámica.
+  */
+  await headers();
+
   return (
     <main className="mx-auto grid min-h-dvh max-w-texto place-items-center px-interno text-center">
       <div>

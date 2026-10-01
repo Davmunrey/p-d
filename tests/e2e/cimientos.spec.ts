@@ -98,6 +98,29 @@ test.describe("Cabeceras de seguridad", () => {
     const otra = await request.get("/");
     expect(otra.headers()["content-security-policy"]).not.toContain(`'nonce-${nonce}'`);
 
+    /*
+      LA 404 TAMBIÉN. Next la prerenderizaba en el build, y una página hecha
+      antes de que exista ninguna petición no puede llevar el nonce de la
+      petición: la cabecera llegaba con uno recién hecho, los once scripts del
+      HTML sin ninguno, y `'strict-dynamic'` los bloqueaba todos. Se vio en
+      producción con un `curl`, no aquí: esta lista sólo miraba pantallas que
+      existen.
+    */
+    const noExiste = await request.get("/esta-pagina-no-existe");
+    expect(noExiste.status()).toBe(404);
+    const nonce404 = (noExiste.headers()["content-security-policy"] ?? "").match(
+      /'nonce-([^']+)'/,
+    )?.[1];
+    expect(nonce404, "la 404 también lleva nonce en su política").toBeTruthy();
+    const scripts404 = [...(await noExiste.text()).matchAll(/<script\b([^>]*)>/g)]
+      .map((m) => m[1])
+      .filter((atributos) => !/type="application\/ld\+json"/.test(atributos));
+    expect(scripts404.length).toBeGreaterThan(0);
+    expect(
+      scripts404.filter((atributos) => !atributos.includes(`nonce="${nonce404}"`)),
+      "todo script de la 404 lleva el nonce de su petición",
+    ).toEqual([]);
+
     // Ninguna violación al cargar las pantallas públicas.
     const violaciones: string[] = [];
     await page.addInitScript(() => {
@@ -107,7 +130,13 @@ test.describe("Cabeceras de seguridad", () => {
         (window as unknown as { __violacionesCsp: string[] }).__violacionesCsp.push(detalle);
       });
     });
-    for (const ruta of ["/", "/reserva-la-fecha", "/acceso", "/rsvp/token-que-no-existe-000"]) {
+    for (const ruta of [
+      "/",
+      "/reserva-la-fecha",
+      "/acceso",
+      "/rsvp/token-que-no-existe-000",
+      "/esta-pagina-no-existe",
+    ]) {
       await page.goto(ruta);
       await page.waitForLoadState("networkidle");
       const enEsta = await page.evaluate(

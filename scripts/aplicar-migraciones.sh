@@ -92,15 +92,27 @@ fi
 # fallara en la sentencia 5 dejaba las cuatro primeras aplicadas, sin registro,
 # y al relanzar chocaba con «already exists». Y el insert de la versión iba en
 # otra conexión: un corte entre las dos dejaba la migración aplicada y sin
-# apuntar. Con `--single-transaction` y el insert en la misma invocación, o
-# entra todo o no entra nada, como por el CLI.
+# apuntar.
+#
+# LA TRANSACCIÓN LA PONE ESTE SCRIPT, NO `--single-transaction`. Esa opción no
+# sirve cuando el guion trae su propio begin/commit —lo dice la página de
+# psql— y la mitad de las migraciones lo trae: su `commit;` cerraba la
+# transacción y el registro de la versión quedaba fuera, en autocommit, que
+# es justo el hueco que se quería cerrar. Se quitan sólo las líneas que son
+# exactamente `begin;` o `commit;` a nivel de fichero (dentro de una función
+# plpgsql van sin punto y coma, así que no se tocan), se envuelve todo con un
+# begin/commit propio y el insert va dentro. O entra todo, o no entra nada.
 for fichero in "${pendientes[@]}"; do
   nombre="$(basename "$fichero")"
   version="${nombre%%_*}"
   echo "→ aplicando $(basename "$fichero")"
-  correr --single-transaction -f "$fichero" \
-    -c "insert into supabase_migrations.schema_migrations (version)
-        values ('$version') on conflict (version) do nothing;"
+  {
+    echo "begin;"
+    sed -E 's/^[[:space:]]*(begin|commit)[[:space:]]*;[[:space:]]*$//I' "$fichero"
+    echo "insert into supabase_migrations.schema_migrations (version)"
+    echo "  values ('$version') on conflict (version) do nothing;"
+    echo "commit;"
+  } | correr -f -
 done
 
 echo "Listo: ${#pendientes[@]} migración(es) aplicada(s)."
