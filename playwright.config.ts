@@ -16,7 +16,15 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  /*
+    UN SOLO PROCESO, TAMBIÉN EN LOCAL. Todos los tests hablan con la misma base,
+    y una decena cambia estado que el resto lee: apagan secciones de la
+    landing, mueven el plazo del RSVP, borran coordenadas. Con dos procesos, el
+    test de regalos encontraba la sección apagada por el de regalos y dress
+    code y fallaba una vez de cada pocas, sólo en local, porque el CI ya iba
+    con uno. Una suite que falla al azar enseña a ignorarla.
+  */
+  workers: 1,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]],
 
   use: {

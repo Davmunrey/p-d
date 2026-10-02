@@ -52,6 +52,13 @@ export interface Borrador {
   autobus: Record<string, boolean>;
   cancion: string;
   mensaje: string;
+  /**
+   * Si ya se ha mezclado con lo que la base tenía guardado (ver
+   * `rsvp-siembra.ts`). Falta en los borradores de antes de existir, y eso se
+   * lee como «sin sembrar»: la siembra sólo rellena huecos, así que pasar por
+   * ella una vez más no pisa nada de lo escrito.
+   */
+  sembrado?: boolean;
 }
 
 const NOMBRE_COOKIE = "boda:rsvp";

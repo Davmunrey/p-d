@@ -120,3 +120,25 @@ export function esDiaDeCalendario(texto: string): boolean {
   if (Number.isNaN(instante)) return false;
   return new Date(instante).toISOString().slice(0, 10) === texto;
 }
+
+const formatoDiaDeCalendario = new Intl.DateTimeFormat(IDIOMA, {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: ZONA_HORARIA,
+});
+
+/**
+ * El día de calendario de un instante EN LA ZONA DE LA BODA, como `2027-06-26`.
+ *
+ * Para comparar días, no para enseñarlos: dos instantes del mismo día de Madrid
+ * dan la misma cadena aunque en UTC caigan en días distintos, y como va de
+ * mayor a menor (año, mes, día) se puede comparar con `<` y `>`. Se compone con
+ * las partes de `Intl` por la misma razón que `fechaEnPuntos`.
+ */
+export function diaEnLaBoda(instante: Date): string {
+  const partes = Object.fromEntries(
+    formatoDiaDeCalendario.formatToParts(instante).map((parte) => [parte.type, parte.value]),
+  );
+  return `${partes.year}-${partes.month}-${partes.day}`;
+}

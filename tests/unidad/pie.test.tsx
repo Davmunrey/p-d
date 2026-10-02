@@ -25,6 +25,7 @@ const BASE = {
   lugar: null,
   correoContacto: null,
   hashtag: null,
+  inicio: "#portada",
 };
 
 const ENLACE = `href="${rutaDe("reserva_la_fecha")}"`;
@@ -44,5 +45,12 @@ describe("el pie y la reserva de fecha", () => {
     // Que el arreglo no se haya llevado por delante los otros enlaces.
     const html = renderToStaticMarkup(<Pie {...BASE} secciones={[]} />);
     expect(html).toContain('href="#portada"');
+  });
+
+  it("«volver arriba» va a donde le digan, no a una portada que puede no estar", () => {
+    // Sin portada, la página decide volver al principio del contenido.
+    const html = renderToStaticMarkup(<Pie {...BASE} inicio="#contenido" secciones={[]} />);
+    expect(html).toContain('href="#contenido"');
+    expect(html).not.toContain('href="#portada"');
   });
 });

@@ -2,7 +2,7 @@ import { expect, test } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
-import { LARGOS_DE_CAMPO, RUTA_RSVP } from "../../src/config/constants";
+import { LARGOS_DE_CAMPO, LIMITE_TEXTO_CANCION, RUTA_RSVP } from "../../src/config/constants";
 import { conPlazoCerrado } from "./utiles/plazo";
 
 /**
@@ -563,6 +563,247 @@ test.describe("El recorrido del invitado", () => {
       `,
     );
     expect(estados.map((fila) => fila.estado)).toEqual(["pendiente"]);
+
+    await contexto.close();
+  });
+
+  /**
+   * CASO DE ERROR · Una canción que la playlist no admite no pasa por buena.
+   *
+   * El campo dejaba 200 caracteres (el tope de la columna) y la playlist sólo
+   * admite 160: entre medias, la pantalla decía «¡Qué alegría!» y la canción no
+   * llegaba nunca a la lista. Ahora el tope es el de la playlist, en el campo y
+   * en el servidor.
+   */
+  test("una canción más larga de lo que admite la playlist se avisa, y no se escribe nada", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo("e2e-cancion-larga", ["(DES) Íñigo"]);
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      // Sin desplazamiento suave: con él, el botón de enviar «se mueve» mientras
+      // la página baja y Playwright no llega a pulsarlo.
+      reducedMotion: "reduce",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.locator('input[type="radio"]').first().check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    const cancion = pagina.locator('input[name="cancion"]');
+    await expect(cancion).toHaveAttribute("maxlength", String(LIMITE_TEXTO_CANCION));
+    await cancion.evaluate((campo, largo) => {
+      (campo as HTMLInputElement).removeAttribute("maxlength");
+      (campo as HTMLInputElement).value = "a".repeat(largo);
+    }, LIMITE_TEXTO_CANCION + 1);
+    await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
+
+    await expect(pagina.getByRole("alert")).toContainText(copy.rsvp.demasiadoLargo);
+    const estados = await conBase(
+      (sql) => sql<{ estado: string }[]>`
+        select c.estado
+          from public.confirmaciones as c
+          join public.invitados as i on i.id = c.invitado_id
+          join public.grupos_invitacion as g on g.id = i.grupo_id
+         where g.huella_token = public.huella_token(${token}) and c.es_vigente
+      `,
+    );
+    expect(estados.map((fila) => fila.estado)).toEqual(["pendiente"]);
+
+    await contexto.close();
+  });
+
+  /**
+   * CAMINO FELIZ Y CASO DE ERROR · Intro va hacia adelante.
+   *
+   * El primer botón de envío del formulario era «Atrás», y el envío implícito
+   * —Intro en un campo, «Ir» en el teclado del móvil— pulsa el primero. Quien
+   * escribía su alergia y tocaba «Ir» volvía al paso anterior. Se comprueba
+   * sin JavaScript (el formulario nativo) y con él (React manda el botón que
+   * se pulsó).
+   */
+  for (const conJs of [false, true]) {
+    test(`Intro en un campo de texto avanza, no retrocede (${conJs ? "con" : "sin"} JavaScript)`, async ({
+      browser,
+    }) => {
+      const token = await crearGrupo(`e2e-intro-${conJs ? "js" : "sinjs"}`, ["(DES) Elsa"]);
+      const contexto = await browser.newContext({
+        javaScriptEnabled: conJs,
+        locale: "es-ES",
+        // Sin desplazamiento suave: con él, el botón de enviar «se mueve» mientras
+        // la página baja y Playwright no llega a pulsarlo.
+        reducedMotion: "reduce",
+        extraHTTPHeaders: origenPropio(),
+      });
+      const pagina = await contexto.newPage();
+
+      await pagina.goto(`${RUTA_RSVP}/${token}`);
+      await pagina.locator('input[type="radio"]').first().check();
+      await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+      await expect(pagina).toHaveURL(/paso=detalles/);
+
+      await pagina.getByLabel(copy.rsvp.alergias).fill("(DES) Ninguna");
+      await pagina.getByLabel(copy.rsvp.alergias).press("Enter");
+      await expect(pagina).toHaveURL(/paso=mensaje/);
+
+      await pagina.getByLabel(copy.rsvp.cancion).fill("(DES) Una de Elsa");
+      await pagina.getByLabel(copy.rsvp.cancion).press("Enter");
+      await expect(pagina).toHaveURL(/enviado=1/);
+      await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
+
+      await contexto.close();
+    });
+  }
+
+  /**
+   * CASO DE ERROR · Lo que ya habían contestado no se pisa al volver a pasar.
+   *
+   * La familia contesta (Ana viene, con autobús, y dejan una canción y un
+   * mensaje); después los novios añaden a alguien al grupo y la familia vuelve
+   * a abrir el enlace, en otro móvil y sin borrador. El formulario salía en
+   * blanco en el autobús, la canción y el mensaje, y al enviar los escribía en
+   * blanco: Ana perdía la plaza de autobús y el mensaje desaparecía de la
+   * bandeja de los novios. Ahora sale lo que había, y se escribe lo que había.
+   */
+  test("al añadir a alguien a una familia que ya contestó, no se pierden su autobús ni su mensaje", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo("e2e-anadida", ["(DES) Ana", "(DES) Beto"]);
+    const persona = (pagina: import("./utiles/origen-propio").Page, nombre: string) =>
+      pagina.getByRole("group", { name: new RegExp(nombre) });
+
+    // 1 · La familia contesta por primera vez.
+    const primera = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      // Sin desplazamiento suave: con él, el botón de enviar «se mueve» mientras
+      // la página baja y Playwright no llega a pulsarlo.
+      reducedMotion: "reduce",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const antes = await primera.newPage();
+    await antes.goto(`${RUTA_RSVP}/${token}`);
+    await persona(antes, "Ana").getByLabel(copy.rsvp.vieneSi).check();
+    await persona(antes, "Beto").getByLabel(copy.rsvp.vieneNo).check();
+    await antes.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await persona(antes, "Ana").getByLabel(copy.rsvp.autobusPersona).check();
+    await antes.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await antes.getByLabel(copy.rsvp.cancion).fill("(DES) La canción de Ana");
+    await antes.getByLabel(copy.rsvp.mensaje).fill("(DES) Allí estaremos");
+    await antes.getByRole("button", { name: copy.rsvp.enviar }).click();
+    await expect(antes.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
+    await primera.close();
+
+    // 2 · Los novios añaden a alguien.
+    await conBase(
+      (sql) => sql`
+        insert into public.invitados (grupo_id, nombre, apellidos, es_nino)
+        select id, '(DES) Carla', '(DES)', false
+          from public.grupos_invitacion
+         where huella_token = public.huella_token(${token})
+      `,
+    );
+
+    // 3 · La familia vuelve, sin borrador: lo de antes sale como estaba.
+    const segunda = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      // Sin desplazamiento suave: con él, el botón de enviar «se mueve» mientras
+      // la página baja y Playwright no llega a pulsarlo.
+      reducedMotion: "reduce",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const despues = await segunda.newPage();
+    await despues.goto(`${RUTA_RSVP}/${token}`);
+    await expect(persona(despues, "Ana").getByLabel(copy.rsvp.vieneSi)).toBeChecked();
+    await expect(persona(despues, "Beto").getByLabel(copy.rsvp.vieneNo)).toBeChecked();
+    await persona(despues, "Carla").getByLabel(copy.rsvp.vieneSi).check();
+    await despues.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    await expect(persona(despues, "Ana").getByLabel(copy.rsvp.autobusPersona)).toBeChecked();
+    await despues.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    await expect(despues.getByLabel(copy.rsvp.cancion)).toHaveValue("(DES) La canción de Ana");
+    await expect(despues.getByLabel(copy.rsvp.mensaje)).toHaveValue("(DES) Allí estaremos");
+    await despues.getByRole("button", { name: copy.rsvp.enviar }).click();
+    await expect(despues.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
+    await segunda.close();
+
+    // 4 · Y en la base: Ana conserva el autobús y el mensaje sigue vigente.
+    const filas = await conBase(
+      (sql) => sql<
+        { nombre: string; estado: string; autobus: boolean | null; mensaje: string | null }[]
+      >`
+        select i.nombre, c.estado, c.necesita_autobus as autobus, c.mensaje
+          from public.confirmaciones as c
+          join public.invitados as i on i.id = c.invitado_id
+          join public.grupos_invitacion as g on g.id = i.grupo_id
+         where g.huella_token = public.huella_token(${token}) and c.es_vigente
+         order by i.nombre
+      `,
+    );
+    const ana = filas.find((fila) => fila.nombre === "(DES) Ana");
+    expect(ana?.estado).toBe("confirmado");
+    expect(ana?.autobus).toBe(true);
+    expect(filas.find((fila) => fila.nombre === "(DES) Carla")?.estado).toBe("confirmado");
+    expect(filas.map((fila) => fila.mensaje).filter(Boolean)).toEqual(["(DES) Allí estaremos"]);
+  });
+
+  /**
+   * CASO DE ERROR · Si la base deja de contestar a mitad del formulario, el
+   * invitado lo lee en castellano y lo que acaba de marcar no se pierde.
+   *
+   * La acción leía la invitación sin protegerse: ante el cortafuegos (alguien
+   * de la misma wifi probando enlaces malos) o una avería, la excepción subía
+   * hasta la página de error de serie de Next —«Internal Server Error», en
+   * inglés— y lo marcado en ese paso se perdía.
+   */
+  test("si el cortafuegos se cierra a mitad del formulario, se dice en castellano y lo marcado se guarda", async ({
+    browser,
+    request,
+  }) => {
+    const token = await crearGrupo("e2e-corte", ["(DES) Gala"]);
+    const [{ maximo }] = await conBase(
+      (sql) => sql<{ maximo: number }[]>`
+        select maximo_intentos_rsvp::int as maximo from public.parametros_seguridad
+      `,
+    );
+    const headers = origenPropio();
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      // Sin desplazamiento suave: con él, el botón de enviar «se mueve» mientras
+      // la página baja y Playwright no llega a pulsarlo.
+      reducedMotion: "reduce",
+      extraHTTPHeaders: headers,
+    });
+    const pagina = await contexto.newPage();
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.getByLabel(copy.rsvp.vieneSi).check();
+
+    // Mientras tanto, desde la misma conexión, se agota el cupo.
+    for (let i = 0; i < maximo; i += 1) {
+      await request.get(`${RUTA_RSVP}/token-que-no-existe-corte-${i}`, { headers });
+    }
+
+    const [envio] = await Promise.all([
+      pagina.waitForResponse((respuesta) => respuesta.request().method() === "POST"),
+      pagina.getByRole("button", { name: copy.rsvp.siguiente }).click(),
+    ]);
+    expect(envio.status(), "la acción no puede acabar en un 500").toBeLessThan(500);
+    await expect(pagina.locator("body")).toContainText(copy.rsvp.demasiadosIntentos);
+    await expect(pagina.locator("body")).not.toContainText("Internal Server Error");
+
+    const cookie = (await contexto.cookies()).find((galleta) => galleta.name === "boda:rsvp");
+    expect(cookie, "lo marcado tiene que quedar en el borrador").toBeTruthy();
+    const borrador = JSON.parse(Buffer.from(cookie!.value, "base64url").toString("utf8")) as {
+      asistencia: Record<string, string>;
+    };
+    expect(Object.values(borrador.asistencia)).toEqual(["confirmado"]);
 
     await contexto.close();
   });

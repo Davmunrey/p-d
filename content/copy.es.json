@@ -9,7 +9,10 @@
     "noEncontrado": "No hemos encontrado esta página.",
     "emailInvalido": "Revisad el correo, parece incompleto.",
     "noEncontradoTexto": "Puede que el enlace esté incompleto o que esa parte de la web ya no esté. Desde la portada se llega a todo.",
-    "volverAlInicio": "Ir a la portada"
+    "volverAlInicio": "Ir a la portada",
+    "falloTitulo": "Algo no ha ido bien",
+    "falloTexto": "No hemos podido enseñaros esta página. Probad otra vez dentro de un momento; lo que hubierais confirmado antes sigue guardado.",
+    "reintentar": "Probar otra vez"
   },
   "meta": {
     "titulo": "Paloma y David",
@@ -252,9 +255,9 @@
     "etiquetaConfirmado": "Confirmado",
     "avisoRotulo": "Plazo:",
     "avisoTexto": "las confirmaciones se cierran en la fecha que se fije en Ajustes.",
-    "tarjetaMeta": "A 18 min · con bus",
-    "tarjetaTitulo": "Parador de San Marcos",
-    "tarjetaTexto": "Tarifa cerrada para invitados.",
+    "tarjetaMeta": "Muestra · a 18 min",
+    "tarjetaTitulo": "Alojamiento de ejemplo",
+    "tarjetaTexto": "Así se ve una tarjeta: imagen, meta y un texto corto.",
     "tarjetaImagen": "Imagen 4:3",
     "seccionIdentidad": "Identidad",
     "identidadPrincipal": "Monograma principal",

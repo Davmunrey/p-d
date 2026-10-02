@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import {
   LARGOS_DE_CAMPO,
+  LIMITE_TEXTO_CANCION,
   MENUS_RSVP,
   PASOS_RSVP,
   RUTA_RSVP,
@@ -12,6 +13,7 @@ import {
 import { obtenerConfiguracion } from "@/lib/bbdd/landing";
 import {
   destinatariosDeConfirmacion,
+  esCupoAgotado,
   obtenerInvitacion,
   registrarConfirmacion,
   type Invitacion,
@@ -25,6 +27,7 @@ import {
   leerBorrador,
   type Borrador,
 } from "@/lib/rsvp-borrador";
+import { sembrarDesdeLaBase } from "@/lib/rsvp-siembra";
 import { urlDelSitio } from "@/lib/url-sitio";
 
 /**
@@ -81,9 +84,9 @@ function loQuePasaDeLargo(
 
   if (paso === "mensaje") {
     if (borrador.mensaje.length > LARGOS_DE_CAMPO["confirmaciones.mensaje"]) return "mensaje";
-    if (borrador.cancion.length > LARGOS_DE_CAMPO["confirmaciones.cancion_solicitada"]) {
-      return "cancion";
-    }
+    // El de la playlist (160), que es más corto que la columna (200): una
+    // canción que la playlist rechaza no debe pasar por buena aquí.
+    if (borrador.cancion.length > LIMITE_TEXTO_CANCION) return "cancion";
   }
 
   return null;
@@ -92,32 +95,42 @@ function loQuePasaDeLargo(
 const texto = (datos: FormData, clave: string) =>
   typeof datos.get(clave) === "string" ? (datos.get(clave) as string).trim() : "";
 
-export async function avanzar(datos: FormData): Promise<void> {
-  const token = texto(datos, "token");
-  const pasoActual = texto(datos, "paso");
-  const direccion = texto(datos, "direccion");
+/**
+ * LEER LA INVITACIÓN SIN QUE UN FALLO ACABE EN LA PANTALLA DE NEXT.
+ *
+ * `obtenerInvitacion` lanza ante una avería de la base y ante el cortafuegos
+ * (RSV02). La página ya distingue los dos casos y los cuenta en castellano;
+ * la acción no, y sin esto la excepción subía hasta la página de error de serie
+ * de Next —en inglés, sin el correo de contacto— con lo escrito en ese paso
+ * perdido. Ahora se devuelve el motivo y quien llama decide a dónde volver.
+ */
+async function leerInvitacion(
+  token: string,
+): Promise<{ invitacion: Invitacion | null } | { fallo: "intentos" | "averia" }> {
+  try {
+    return { invitacion: await obtenerInvitacion(token) };
+  } catch (error) {
+    if (esCupoAgotado(error)) return { fallo: "intentos" };
+    console.error("No se pudo leer la invitación desde la acción del RSVP:", error);
+    return { fallo: "averia" };
+  }
+}
 
-  if (!token || !esPaso(pasoActual)) redirect(`${RUTA_RSVP}`);
-
-  const invitacion = await obtenerInvitacion(token);
-  if (!invitacion) redirect(`${RUTA_RSVP}/${encodeURIComponent(token)}`);
-
-  const borrador = await leerBorrador(token);
-  const personas = invitacion.personas.map((p) => p.id);
-
-  // Sólo se acepta lo que venga de este grupo. Un `invitado_id` de fuera no
-  // llegaría a escribirse igualmente —la base lo rechaza—, pero tampoco tiene
-  // por qué ensuciar el borrador de nadie.
-  const propias = (ids: string[]) => ids.filter((id) => personas.includes(id));
-
-  if (pasoActual === "asistencia") {
+/** Mete en el borrador lo que traiga el formulario del paso `paso`. */
+function incorporar(
+  borrador: Borrador,
+  datos: FormData,
+  paso: PasoRsvp,
+  propias: (ids: string[]) => string[],
+): void {
+  if (paso === "asistencia") {
     for (const id of propias(idsDe(datos, "viene"))) {
       const valor = texto(datos, `viene-${id}`);
       if (valor === "confirmado" || valor === "rechazado") borrador.asistencia[id] = valor;
     }
   }
 
-  if (pasoActual === "detalles") {
+  if (paso === "detalles") {
     /*
       SÓLO DE QUIEN ESTÁ EN EL FORMULARIO. El paso de detalles pinta a quien
       viene; recorrer a todo el grupo escribía `alergias = ""` para quien no
@@ -137,10 +150,51 @@ export async function avanzar(datos: FormData): Promise<void> {
     }
   }
 
-  if (pasoActual === "mensaje") {
+  if (paso === "mensaje") {
     borrador.cancion = texto(datos, "cancion");
     borrador.mensaje = texto(datos, "mensaje");
   }
+}
+
+export async function avanzar(datos: FormData): Promise<void> {
+  const token = texto(datos, "token");
+  const pasoActual = texto(datos, "paso");
+  const direccion = texto(datos, "direccion");
+
+  if (!token || !esPaso(pasoActual)) redirect(`${RUTA_RSVP}`);
+
+  const lectura = await leerInvitacion(token);
+  if ("fallo" in lectura) {
+    /*
+      Lo escrito en este paso se guarda igualmente, antes de volver: el
+      formulario lo ha pintado esta misma web para este enlace, y el envío
+      final sólo escribe por las personas que la base devuelva para el token,
+      así que un id de más en el borrador no llega a ninguna parte. Al volver,
+      la página cuenta en castellano lo que pasa (demasiados intentos, o que
+      estamos preparando la web) y, en cuanto se recupere, lo escrito sigue ahí.
+    */
+    const pendiente = await leerBorrador(token);
+    incorporar(pendiente, datos, pasoActual, (ids) => ids);
+    await guardarBorrador(pendiente);
+    redirect(
+      `${RUTA_RSVP}/${encodeURIComponent(token)}?paso=${pasoActual}&fallo=${lectura.fallo}`,
+    );
+  }
+  const { invitacion } = lectura;
+  if (!invitacion) redirect(`${RUTA_RSVP}/${encodeURIComponent(token)}`);
+
+  // Lo que la base ya tenía de esta familia rellena los huecos del borrador:
+  // sin eso, un formulario sin cookie escribía en blanco el autobús y el
+  // mensaje que ya habían contestado (ver `rsvp-siembra.ts`).
+  const borrador = sembrarDesdeLaBase(await leerBorrador(token), invitacion.personas);
+  const personas = invitacion.personas.map((p) => p.id);
+
+  // Sólo se acepta lo que venga de este grupo. Un `invitado_id` de fuera no
+  // llegaría a escribirse igualmente —la base lo rechaza—, pero tampoco tiene
+  // por qué ensuciar el borrador de nadie.
+  const propias = (ids: string[]) => ids.filter((id) => personas.includes(id));
+
+  incorporar(borrador, datos, pasoActual, propias);
 
   await guardarBorrador(borrador);
 
@@ -276,10 +330,14 @@ export async function reabrir(datos: FormData): Promise<void> {
   const token = texto(datos, "token");
   if (!token) redirect(RUTA_RSVP);
 
-  const invitacion = await obtenerInvitacion(token);
+  const lectura = await leerInvitacion(token);
+  // Sin poder leer, se vuelve a la página, que cuenta en castellano qué pasa.
+  if ("fallo" in lectura) redirect(`${RUTA_RSVP}/${encodeURIComponent(token)}`);
+  const { invitacion } = lectura;
   if (!invitacion) redirect(`${RUTA_RSVP}/${encodeURIComponent(token)}`);
 
   const borrador = await leerBorrador(token);
+  borrador.sembrado = true;
   for (const persona of invitacion.personas) {
     if (persona.estado === "confirmado" || persona.estado === "rechazado") {
       borrador.asistencia[persona.id] = persona.estado;

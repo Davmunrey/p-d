@@ -58,6 +58,17 @@ que codificarla, o la cadena se parte y el error habla de un host que no existe.
 suelta como `SUPABASE_DB_PASSWORD` en GitHub. Al rotarla hay que cambiar las
 dos; tocar sólo una deja el otro sistema fallando por autenticación.
 
+**Las funciones, en la región de la base: `fra1`.** La base de Supabase está en
+Frankfurt (`eu-central-1`: la IPv6 de `db.<ref>.supabase.co` cae en los rangos
+que AWS publica para esa región). Vercel, sin decirle nada, ejecuta las funciones
+en Washington (`iad1`), y cada ida y vuelta a la base cruzaba el Atlántico, unos
+85 ms. La portada hace una veintena en serie y tardaba de 2 a 3 segundos en
+empezar a responder; el RSVP y el panel, lo mismo en proporción. `vercel.json`
+fija `"regions": ["fra1"]`, que además queda más cerca de los invitados. Si algún
+día la base cambia de región, esa línea cambia con ella: lo vigila
+`tests/unidad/region.test.ts`, que sólo admite una región (el plan Hobby no da
+más).
+
 **`SUPABASE_SERVICE_ROLE_KEY` se salta todas las políticas RLS.** Nunca puede
 llevar el prefijo `NEXT_PUBLIC_`, porque eso la metería en el JavaScript que
 descarga cualquier visitante y le daría acceso completo a la lista de invitados

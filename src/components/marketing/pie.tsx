@@ -30,6 +30,7 @@ export function Pie({
   correoContacto,
   hashtag,
   secciones,
+  inicio,
 }: {
   nombreNovia: string;
   nombreNovio: string;
@@ -39,6 +40,8 @@ export function Pie({
   hashtag: string | null;
   /** Las secciones visibles, tal como las da `obtenerSecciones`. */
   secciones: readonly Seccion[];
+  /** A dónde vuelve «volver arriba»: la portada, o el contenido si no hay portada. */
+  inicio: string;
 }) {
   const fecha = fechaEnPuntos(fechaCeremonia);
 
@@ -56,7 +59,7 @@ export function Pie({
       : null,
     { href: RUTA_COCINA, rotulo: t("pie.sistemaDeMarca") },
     correoContacto ? { href: `mailto:${correoContacto}`, rotulo: correoContacto } : null,
-    { href: "#portada", rotulo: t("pie.volverArriba") },
+    { href: inicio, rotulo: t("pie.volverArriba") },
   ].filter((enlace) => enlace !== null);
 
   return (

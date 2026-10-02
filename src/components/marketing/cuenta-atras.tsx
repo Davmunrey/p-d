@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { ZONA_HORARIA } from "@/config/constants";
 import { t } from "@/lib/copy";
+import { diaEnLaBoda } from "@/lib/fechas";
 
 /**
  * CUENTA ATRÁS
@@ -43,8 +44,17 @@ interface Restante {
   minutos: number;
   segundos: number;
   llegado: boolean;
+  /** Ya no es el día: es después. Ver `calcular`. */
+  pasado: boolean;
 }
 
+/*
+  «HOY ES EL DÍA» SÓLO EL DÍA. Bastaba con que el instante hubiera pasado, así
+  que desde la una de la tarde del 26 de junio —y para siempre— la web seguía
+  anunciando que era hoy. Ahora se compara el día de calendario en la zona de la
+  boda: el mismo día, «hoy es el día»; después, la cuenta atrás no tiene nada
+  que contar y no se pinta.
+*/
 function calcular(objetivo: number, ahora: number): Restante {
   let resto = Math.max(0, objetivo - ahora);
   const dias = Math.floor(resto / 86_400_000);
@@ -59,6 +69,7 @@ function calcular(objetivo: number, ahora: number): Restante {
     minutos,
     segundos: Math.floor(resto / 1000),
     llegado: objetivo - ahora <= 0,
+    pasado: diaEnLaBoda(new Date(ahora)) > diaEnLaBoda(new Date(objetivo)),
   };
 }
 
@@ -84,6 +95,8 @@ export function CuentaAtras({
     const id = setInterval(() => setRestante(calcular(objetivo, Date.now())), 1000);
     return () => clearInterval(id);
   }, [objetivo]);
+
+  if (restante.pasado) return null;
 
   if (restante.llegado) {
     return (

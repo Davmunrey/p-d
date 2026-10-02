@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
 import { SobreReserva } from "@/components/marketing/sobre-reserva";
-import { IDIOMA, PARAMETRO_SOBRE_ABIERTO, ZONA_HORARIA } from "@/config/constants";
+import { IDIOMA, IDIOMA_OG, PARAMETRO_SOBRE_ABIERTO, ZONA_HORARIA } from "@/config/constants";
 import { obtenerConfiguracion, obtenerMedios, obtenerSecciones } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 import { anio, fechaConDia } from "@/lib/fechas";
@@ -37,8 +37,20 @@ const formatoFechaLarga = new Intl.DateTimeFormat(IDIOMA, {
 export async function generateMetadata(): Promise<Metadata> {
   // Si la base no responde, la página ya enseñará su estado de reserva; unas
   // meta tags vacías son mejores que tumbar la petición entera por el título.
-  const configuracion = await obtenerConfiguracion().catch(() => null);
+  const [secciones, configuracion] = await Promise.all([
+    obtenerSecciones().catch(() => null),
+    obtenerConfiguracion().catch(() => null),
+  ]);
   if (!configuracion) return {};
+
+  /*
+    CON LA SECCIÓN APAGADA NO HAY METADATOS DE LA PÁGINA. La página contesta
+    404, pero los metadatos se calculan aparte, y seguían viajando en esa misma
+    respuesta: título, fecha, lugar y la imagen de una página que se quiso
+    retirar. Es la misma puerta trasera que ya se cerró en su imagen OG y en el
+    `.ics`.
+  */
+  if (!secciones?.includes("reserva_la_fecha")) return {};
 
   const nombres = `${configuracion.nombreNovia} ${t("portada.conjuncion")} ${configuracion.nombreNovio}`;
   const fecha = formatoFechaLarga.format(configuracion.fechaCeremonia);
@@ -52,7 +64,16 @@ export async function generateMetadata(): Promise<Metadata> {
     description: descripcion,
     // Se repiten a propósito: sin `openGraph`, WhatsApp cae al título del
     // layout y la tarjeta dice «Paloma y David» en vez de la fecha.
-    openGraph: { title: titulo, description: descripcion, type: "website" },
+    // Y con el idioma y el nombre del sitio: el `openGraph` de una página
+    // SUSTITUYE al del layout, no se suma, y sin estos dos la pieza que más se
+    // comparte por mensajería salía como inglesa y sin nombre.
+    openGraph: {
+      title: titulo,
+      description: descripcion,
+      type: "website",
+      locale: IDIOMA_OG,
+      siteName: nombres,
+    },
   };
 }
 

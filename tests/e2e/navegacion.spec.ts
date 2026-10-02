@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "./utiles/origen-propio";
 
+import postgres from "postgres";
+
 import copy from "../../content/copy.es.json";
 import { conSeccionApagada } from "./utiles/secciones";
 
@@ -14,10 +16,11 @@ import { conSeccionApagada } from "./utiles/secciones";
  * Los dos casos de error son los que de verdad importan y los que fallarían si
  * alguien escribiera el menú a mano:
  *
- *  1. Una sección APAGADA en la base de datos no puede aparecer (`regalos`).
- *  2. Una sección ENCENDIDA pero todavía sin construir tampoco (`galeria` y
- *     `ubicaciones`, que son BODA-25 y BODA-26). Un menú que ofrece un enlace
- *     a una sección que no existe es peor que no tener menú.
+ *  1. Una sección del menú APAGADA en la base de datos no puede aparecer.
+ *  2. Una sección del menú ENCENDIDA pero sin contenido tampoco: un menú que
+ *     ofrece un enlace a una sección que no existe es peor que no tener menú.
+ *  3. Y ningún enlace de la página, del menú o de fuera, puede llevar a un
+ *     ancla que no existe cuando se apaga la sección a la que apuntaba.
  *
  * Y DESDE QUE EL MENÚ NO ES EL ÍNDICE DE LA PÁGINA, una tercera: aparecer en la
  * página no da derecho a aparecer en la barra. La landing mide unas veinte
@@ -29,6 +32,27 @@ import { conSeccionApagada } from "./utiles/secciones";
 
 const menu = (page: Page) =>
   page.getByRole("navigation", { name: copy.navegacion.etiquetaPrincipal });
+
+/** Borra las coordenadas de la ceremonia mientras dura `trabajo`, y las devuelve. */
+async function sinCoordenadas(trabajo: () => Promise<void>): Promise<void> {
+  const cadena = process.env.DATABASE_URL;
+  if (!cadena) throw new Error("Sin DATABASE_URL no se pueden tocar las coordenadas.");
+  const sql = postgres(cadena, { max: 1, prepare: false, onnotice: () => {} });
+  const [antes] = await sql<{ latitud: number | null; longitud: number | null }[]>`
+    select latitud_ceremonia as latitud, longitud_ceremonia as longitud
+      from public.configuracion_boda
+  `;
+  try {
+    await sql`update public.configuracion_boda set latitud_ceremonia = null, longitud_ceremonia = null`;
+    await trabajo();
+  } finally {
+    await sql`
+      update public.configuracion_boda
+         set latitud_ceremonia = ${antes.latitud}, longitud_ceremonia = ${antes.longitud}
+    `;
+    await sql.end();
+  }
+}
 
 test.describe("Navegación", () => {
   test.beforeEach(async ({ page }) => {
@@ -161,42 +185,71 @@ test.describe("Navegación", () => {
 
   // --- Casos de error -----------------------------------------------------
 
-  test("una sección apagada en la base de datos no aparece en el menú", async ({ page }) => {
+  test("una sección del menú apagada en la base de datos desaparece del menú y de la página", async ({
+    page,
+  }) => {
     /*
-      `reserva_la_fecha` no vale para esto —es una página aparte y no sale en
-      el menú aunque esté encendida—, así que el caso se prueba apagando una
-      sección de verdad y devolviéndola después. Antes se usaba `regalos`
-      porque nacía apagada; desde que el seed la enciende, dar por hecho que
-      alguna sección está apagada es atarse a un dato que puede cambiar.
+      Con una sección QUE VA EN EL MENÚ. Antes se probaba con `dresscode`, que
+      no sale en la barra ni encendida, así que «su enlace no está» no podía
+      fallar: el test pasaba igual con el menú escrito a mano. Primero se
+      comprueba que el enlace está, para que su ausencia después signifique algo.
     */
-    await conSeccionApagada("dresscode", async () => {
+    const enlace = () =>
+      menu(page).getByRole("link", {
+        name: copy.navegacion.secciones.alojamiento,
+        exact: true,
+      });
+    await expect(enlace()).toHaveCount(1);
+
+    await conSeccionApagada("alojamiento", async () => {
       await page.goto("/");
-      await expect(
-        menu(page).getByRole("link", { name: copy.navegacion.secciones.dresscode }),
-      ).toHaveCount(0);
-      await expect(page.locator("#dresscode")).toHaveCount(0);
+      await expect(enlace()).toHaveCount(0);
+      await expect(page.locator("#alojamiento")).toHaveCount(0);
     });
   });
 
-  test("una sección encendida pero sin construir tampoco aparece", async ({ page }) => {
-    // `galeria` y `ubicaciones` están visibles en la base de datos desde el
-    // primer día, y su código todavía no existe.
+  test("una sección del menú encendida pero sin contenido tampoco aparece", async ({
+    page,
+  }) => {
     /*
-      `exact` no sobra: `getByRole` casa el nombre por SUBCADENA, así que buscar
-      «Dónde» encuentra también cualquier rótulo que lo contenga. Sin esto, el
-      test no falla porque `ubicaciones` haya aparecido, sino porque alguien
-      añadió una sección con una palabra parecida — y el mensaje no lo dice.
+      «Cómo llegar» necesita las coordenadas de la ceremonia: sin ellas no hay
+      mapa ni ruta, y la sección no se pinta. El menú tiene que seguirla. Se
+      borran un momento en la base y se devuelven como estaban.
     */
-    await expect(
-      menu(page).getByRole("link", { name: copy.navegacion.secciones.galeria, exact: true }),
-    ).toHaveCount(0);
-    await expect(
-      menu(page).getByRole("link", {
-        name: copy.navegacion.secciones.ubicaciones,
-        exact: true,
-      }),
-    ).toHaveCount(0);
+    const enlace = () =>
+      menu(page).getByRole("link", { name: copy.navegacion.secciones.transporte, exact: true });
+    await expect(enlace()).toHaveCount(1);
+
+    await sinCoordenadas(async () => {
+      await page.goto("/");
+      await expect(enlace()).toHaveCount(0);
+      await expect(page.locator("#transporte")).toHaveCount(0);
+    });
   });
+
+  /*
+    NINGÚN ENLACE DE LA PÁGINA LLEVA A UN ANCLA QUE NO EXISTE. «Confirmar
+    asistencia», «Ver el día», «Volver arriba» y el monograma apuntaban siempre
+    a #rsvp, #programa y #portada, y las tres se pueden apagar desde el panel:
+    el botón se pulsaba y no pasaba nada. Se apaga cada una y se comprueba
+    TODO enlace interno de la página, no sólo los que se conocen hoy.
+  */
+  for (const seccion of ["rsvp", "programa", "portada"] as const) {
+    test(`con «${seccion}» apagada, ningún enlace lleva a un ancla que no existe`, async ({
+      page,
+    }) => {
+      await conSeccionApagada(seccion, async () => {
+        await page.goto("/");
+        const rotas = await page.evaluate(() =>
+          [...document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')]
+            .map((enlace) => enlace.getAttribute("href") ?? "")
+            .filter((href) => href.length > 1 && !document.getElementById(href.slice(1))),
+        );
+        expect(rotas).toEqual([]);
+        await expect(page.locator(`a[href="#${seccion}"]`)).toHaveCount(0);
+      });
+    });
+  }
 
   test("la reserva de fecha es una página aparte y no se cuela en el menú", async ({
     page,

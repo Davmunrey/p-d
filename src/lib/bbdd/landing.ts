@@ -1,5 +1,6 @@
 import "server-only";
 
+import { LIMITE_CANCIONES_PORTADA } from "@/config/constants";
 import { esSeccionConocida, type Seccion } from "@/config/secciones";
 
 import { leerComoAnonimo } from "./cliente";
@@ -390,7 +391,7 @@ export async function obtenerHistoria(): Promise<HitoHistoria[]> {
   }));
 }
 
-export async function obtenerCanciones(limite = 30): Promise<Cancion[]> {
+export async function obtenerCanciones(limite = LIMITE_CANCIONES_PORTADA): Promise<Cancion[]> {
   const filas = await leerComoAnonimo(
     (tx) => tx<{ id: string; texto: string }[]>`
       select id, texto

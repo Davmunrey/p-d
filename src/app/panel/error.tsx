@@ -18,13 +18,18 @@ import { t } from "@/lib/copy";
  * consulta, un nombre de tabla o un dato de un invitado. Va al registro, donde
  * se puede investigar, y a la pantalla va lo único que le sirve a quien está
  * mirando: que no ha ido bien y que puede volver a probar.
+ *
+ * «REINTENTAR» ES `retry`, NO `reset`. `reset` sólo vuelve a pintar lo que ya
+ * había llegado —el mismo fallo— sin pedir nada al servidor: ante un corte de
+ * unos segundos el botón no hacía nada y había que recargar a mano. `retry`
+ * vuelve a pedir la pantalla, que es lo que promete el texto.
  */
 export default function ErrorPanel({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     console.error("Fallo en el panel:", error);
@@ -35,7 +40,7 @@ export default function ErrorPanel({
       <Titulo3 como="h1">{t("panel.errorTitulo")}</Titulo3>
       <Cuerpo>{t("panel.errorTexto")}</Cuerpo>
       <div>
-        <Boton type="button" jerarquia="secundario" onClick={reset}>
+        <Boton type="button" jerarquia="secundario" onClick={() => retry()}>
           {t("panel.reintentar")}
         </Boton>
       </div>

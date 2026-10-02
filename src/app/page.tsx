@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { Fragment, type ReactNode } from "react";
 
@@ -24,7 +25,7 @@ import {
   Titulo1,
   Titulo3,
 } from "@/components/ui/tipografia";
-import { BUCKET_MEDIOS, ID_CONTENIDO } from "@/config/constants";
+import { BUCKET_MEDIOS, IDIOMA_OG, ID_CONTENIDO } from "@/config/constants";
 import { anclaDe, esAncla, vaEnElMenu, type Seccion } from "@/config/secciones";
 import {
   obtenerAlojamientos,
@@ -47,7 +48,14 @@ import {
   type Medio,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
-import { fechaConDia, fechaEnPuntos, fechaLarga, nombreDelDia, vispera } from "@/lib/fechas";
+import {
+  diaEnLaBoda,
+  fechaConDia,
+  fechaEnPuntos,
+  fechaLarga,
+  nombreDelDia,
+  vispera,
+} from "@/lib/fechas";
 import { numeroEnLetra } from "@/lib/numeros";
 import { enlaceMapaEmbebido, enlaceMapaExterno } from "@/lib/mapa";
 import { invitacionRecordada } from "@/lib/invitacion-recordada";
@@ -91,6 +99,32 @@ import { invitacionRecordada } from "@/lib/invitacion-recordada";
  * cambio en el panel.
  */
 export const dynamic = "force-dynamic";
+
+/**
+ * EL TÍTULO Y LA TARJETA AL COMPARTIR, CON LOS NOMBRES DE LA BASE.
+ *
+ * Salían del copy, escritos a mano: si los novios corregían cómo se escriben
+ * sus nombres en Ajustes, la portada cambiaba y la pestaña y la vista previa de
+ * WhatsApp seguían con los de antes. Los datos de la boda viven en la base
+ * (regla 1). Si la base no contesta, se queda lo del layout: un título de más
+ * vale menos que tumbar la petición.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const configuracion = await obtenerConfiguracion().catch(() => null);
+  if (!configuracion) return {};
+
+  const nombres = `${configuracion.nombreNovia} ${t("portada.conjuncion")} ${configuracion.nombreNovio}`;
+  return {
+    title: nombres,
+    openGraph: {
+      title: nombres,
+      description: t("meta.descripcion"),
+      type: "website",
+      locale: IDIOMA_OG,
+      siteName: nombres,
+    },
+  };
+}
 
 export default async function PaginaInicio() {
   /*
@@ -155,11 +189,33 @@ export default async function PaginaInicio() {
       ? { latitud: configuracion.latitud, longitud: configuracion.longitud }
       : null;
 
+  /*
+    A DÓNDE PUEDEN LLEVAR LOS BOTONES. «Confirmar asistencia» y «Ver el día»
+    apuntaban siempre a #rsvp y #programa, y esas secciones pueden no estar:
+    apagadas desde el panel, o el programa sin ningún hito todavía. Un botón
+    que lleva a un ancla que no existe se pulsa y no pasa nada. Se usa el mismo
+    criterio que decide qué se pinta (`aPintar`, más abajo): visible y con
+    contenido.
+  */
+  const destinos = {
+    rsvp: secciones.includes("rsvp"),
+    programa: secciones.includes("programa") && programa.length > 0,
+  };
+
   const contenido: Partial<Record<Seccion, ReactNode>> = {
     portada: (
-      <Portada configuracion={configuracion} foto={fotosPortada[0] ?? null} urlBase={urlBase} />
+      <Portada
+        configuracion={configuracion}
+        foto={fotosPortada[0] ?? null}
+        urlBase={urlBase}
+        destinos={destinos}
+      />
     ),
-    cuenta_atras: <CuentaAtrasSeccion configuracion={configuracion} />,
+    // Pasado el día, no queda nada que contar: la sección no se pinta.
+    cuenta_atras:
+      diaEnLaBoda(new Date()) > diaEnLaBoda(configuracion.fechaCeremonia) ? undefined : (
+        <CuentaAtrasSeccion configuracion={configuracion} />
+      ),
     historia: historia.length > 0 ? <Historia hitos={historia} urlBase={urlBase} /> : undefined,
     galeria:
       fotosGaleria.length > 0 ? <Galeria fotos={fotosGaleria} urlBase={urlBase} /> : undefined,
@@ -284,6 +340,10 @@ export default async function PaginaInicio() {
       rotulo: t(`navegacion.secciones.${seccion}`),
     }));
 
+  // «Volver arriba» y el monograma iban siempre a #portada, que también se
+  // puede apagar. Sin portada, el principio del contenido.
+  const inicio = aPintar.includes("portada") ? `#${anclaDe("portada")}` : `#${ID_CONTENIDO}`;
+
   return (
     <>
       {/* Los datos del evento para buscadores y asistentes de voz. */}
@@ -306,6 +366,7 @@ export default async function PaginaInicio() {
       <div aria-hidden="true" className="barra-lectura" />
 
       <Navegacion
+        inicio={inicio}
         enlaces={enlaces}
         etiqueta={t("navegacion.etiquetaPrincipal")}
         marca={nombres}
@@ -320,6 +381,7 @@ export default async function PaginaInicio() {
       </main>
 
       <Pie
+        inicio={inicio}
         nombreNovia={configuracion.nombreNovia}
         nombreNovio={configuracion.nombreNovio}
         fechaCeremonia={configuracion.fechaCeremonia}
@@ -433,10 +495,13 @@ function Portada({
   configuracion,
   foto,
   urlBase,
+  destinos,
 }: {
   configuracion: ConfiguracionBoda;
   foto: Medio | null;
   urlBase: string | undefined;
+  /** Qué secciones existen de verdad en la página, para no enlazar al vacío. */
+  destinos: { rsvp: boolean; programa: boolean };
 }) {
   const lugar = configuracion.lugarCeremonia ?? configuracion.lugarBanquete;
   /*
@@ -539,14 +604,23 @@ function Portada({
           viene, y de paso «Confirmar asistencia» entra ENTERO en la pantalla
           de un móvil. Es la única acción que se le pide a un invitado.
         */}
-        <div className="animacion-subir retardo-6 mt-acciones flex flex-wrap gap-interno">
-          <BotonEnlace href={`#${anclaDe("rsvp")}`}>
-            {t("portada.confirmarAsistencia")}
-          </BotonEnlace>
-          <BotonEnlace href={`#${anclaDe("programa")}`} jerarquia="secundario">
-            {t("portada.verElDia")}
-          </BotonEnlace>
-        </div>
+        {destinos.rsvp || destinos.programa ? (
+          <div className="animacion-subir retardo-6 mt-acciones flex flex-wrap gap-interno">
+            {destinos.rsvp ? (
+              <BotonEnlace href={`#${anclaDe("rsvp")}`}>
+                {t("portada.confirmarAsistencia")}
+              </BotonEnlace>
+            ) : null}
+            {destinos.programa ? (
+              <BotonEnlace
+                href={`#${anclaDe("programa")}`}
+                jerarquia={destinos.rsvp ? "secundario" : "primario"}
+              >
+                {t("portada.verElDia")}
+              </BotonEnlace>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {foto ? (

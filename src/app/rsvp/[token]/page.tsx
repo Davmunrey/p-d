@@ -10,6 +10,7 @@ import { CONSTELACION_NOVIOS } from "@/config/constelaciones";
 import {
   IDIOMA,
   LARGOS_DE_CAMPO,
+  LIMITE_TEXTO_CANCION,
   MENU_SOLO_NINOS,
   MENUS_RSVP,
   PASOS_RSVP,
@@ -21,6 +22,7 @@ import { esCupoAgotado, obtenerInvitacion, type PersonaInvitada } from "@/lib/bb
 import { t } from "@/lib/copy";
 import { fechaLarga } from "@/lib/fechas";
 import { leerBorrador, type Borrador } from "@/lib/rsvp-borrador";
+import { sembrarDesdeLaBase } from "@/lib/rsvp-siembra";
 
 import { avanzar, reabrir } from "./acciones";
 
@@ -140,7 +142,9 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
     );
   }
 
-  const borrador = await leerBorrador(token);
+  // Con lo que la base ya tenía de esta familia en los huecos: sin cookie, el
+  // formulario salía en blanco y el envío escribía ese blanco encima.
+  const borrador = sembrarDesdeLaBase(await leerBorrador(token), invitacion.personas);
   const alguienViene = invitacion.personas.some(
     (persona) => borrador.asistencia[persona.id] === "confirmado",
   );
@@ -204,6 +208,26 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
       <form action={avanzar} className="mt-bloque grid gap-elemento">
         <input type="hidden" name="token" value={token} />
         <input type="hidden" name="paso" value={paso} />
+
+        {/*
+          EL INTRO VA HACIA ADELANTE. Pulsar Intro —o «Ir» en el teclado del
+          móvil— en un campo de texto envía el formulario con su botón por
+          defecto, que es el PRIMER botón de envío del árbol. Ese era «Atrás»:
+          quien escribía «celíaca» y tocaba «Ir» volvía al paso anterior, y el
+          formulario parecía retroceder solo. Este botón va el primero, fuera
+          de la vista y fuera del orden del tabulador, y hace lo mismo que
+          «Siguiente». Los botones visibles siguen en su sitio y en su orden.
+        */}
+        <button
+          type="submit"
+          name="direccion"
+          value="siguiente"
+          tabIndex={-1}
+          aria-hidden="true"
+          className="sr-only"
+        >
+          {paso === "mensaje" ? t("rsvp.enviar") : t("rsvp.siguiente")}
+        </button>
 
         {paso === "asistencia" ? (
           <PasoAsistencia
@@ -522,7 +546,10 @@ function PasoMensaje({ borrador }: { borrador: Borrador }) {
         etiqueta={t("rsvp.cancion")}
         ayuda={t("rsvp.cancionAyuda")}
         name="cancion"
-        maxLength={LARGOS_DE_CAMPO["confirmaciones.cancion_solicitada"]}
+        // El tope de la PLAYLIST, no el de la columna: la canción acaba en
+        // `sugerir_cancion()`, que no admite más de 160, y entre 161 y 200 se
+        // quedaba fuera de la lista sin que nadie se enterase.
+        maxLength={LIMITE_TEXTO_CANCION}
         defaultValue={borrador.cancion}
       />
       <CampoTextoLargo

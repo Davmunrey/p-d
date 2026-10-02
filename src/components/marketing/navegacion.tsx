@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { anclaDe } from "@/config/secciones";
 import { Monograma } from "@/components/ui/monograma";
 
 /**
@@ -29,12 +28,15 @@ export interface EnlaceSeccion {
 }
 
 export function Navegacion({
+  inicio,
   enlaces,
   etiqueta,
   marca,
   nombreNovia,
   nombreNovio,
 }: {
+  /** A dónde lleva el monograma: la portada, o el contenido si no hay portada. */
+  inicio: string;
   enlaces: EnlaceSeccion[];
   etiqueta: string;
   /** Los dos nombres juntos: es el nombre accesible del enlace al inicio. */
@@ -88,7 +90,7 @@ export function Navegacion({
           una boda concreta, y el día que cambien los nombres cambia el logo.
         */}
         <a
-          href={`#${anclaDe("portada")}`}
+          href={inicio}
           aria-label={marca}
           /*
             A 23 px con el espaciado abierto (+.04em) y el «&» al 72 % del

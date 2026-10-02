@@ -234,6 +234,13 @@ export const DIAS_RECUERDO_INVITACION = 365;
  */
 export const LIMITE_TEXTO_CANCION = 160;
 
+/**
+ * Cuántas canciones enseña la playlist de la portada: las últimas apuntadas.
+ * Es un tope de PANTALLA —la lista entera sigue en la base y en el panel—, y
+ * tiene nombre para que subirlo sea cambiar un número y no buscar un `30`.
+ */
+export const LIMITE_CANCIONES_PORTADA = 30;
+
 /** Rutas del panel privado. Se escriben en varios sitios: viven aquí. */
 export const RUTA_ACCESO = "/acceso";
 export const RUTA_CONFIRMAR_ACCESO = "/acceso/confirmar";
