@@ -51,3 +51,6 @@ copias/
 
 # Worktrees de agentes: nunca son parte del proyecto
 .claude/worktrees/
+
+# Caché de Python que deja el buscador de la skill ui-ux-pro-max al ejecutarse
+__pycache__/
