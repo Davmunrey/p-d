@@ -2,6 +2,7 @@ import type { ClaveCopy } from "@/lib/copy";
 
 import {
   LARGO_MAXIMO_DATO,
+  LARGO_MAXIMO_ENLACE,
   LARGO_MAXIMO_LINEA,
   LARGO_MAXIMO_PARRAFO,
   RUTA_AJUSTES,
@@ -604,7 +605,7 @@ export const LISTAS_DE_CONTENIDO: Record<ClaveLista, ListaDeContenido> = {
         etiqueta: "panel.contenido.listas.alojamientos.reserva",
         ayuda: "panel.contenido.listas.alojamientos.reservaAyuda",
         obligatorio: false,
-        largo: LARGO_MAXIMO_LINEA,
+        largo: LARGO_MAXIMO_ENLACE,
       },
       {
         clase: "foto",

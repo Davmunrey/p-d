@@ -354,4 +354,33 @@ test.describe("Las listas de contenido con foto", () => {
     const [despues] = await leerHoteles();
     expect(despues.medio_id, "guardar no puede borrar la foto en silencio").toBe(publicada);
   });
+
+  test("un enlace de reserva largo se guarda entero, sin recortar", async ({ page }) => {
+    /*
+      El campo llevaba el tope de una línea de texto (120), y el navegador
+      recorta EN SILENCIO al pegar algo más largo que `maxlength`: la dirección
+      cortada seguía empezando por `https://` y se guardaba así.
+    */
+    const nombre = `${MARCA} Hotel con código de grupo`;
+    const enlace = `https://reservas.ejemplo.test/hotel?grupo=BODA2027&${"parametro=valor&".repeat(20)}fin=1`;
+    expect(enlace.length, "el enlace de prueba tiene que pasar de una línea").toBeGreaterThan(
+      120,
+    );
+
+    await entrar(page);
+    await page.goto(RUTA_HOTELES);
+
+    const alta = formularioDeAlta(page);
+    await alta.getByLabel(HOTELES.nombre, { exact: true }).fill(nombre);
+    await alta.getByLabel(HOTELES.reserva).fill(enlace);
+    await alta.getByRole("button", { name: comun.anadir, exact: true }).click();
+    await esperarEstado(page, "creada", RUTA_HOTELES);
+
+    const [guardado] = await conBase(
+      (sql) => sql<{ url_reserva: string | null }[]>`
+        select url_reserva from public.alojamientos where nombre = ${nombre}
+      `,
+    );
+    expect(guardado.url_reserva, "el enlace llega entero a la base").toBe(enlace);
+  });
 });

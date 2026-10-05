@@ -280,6 +280,16 @@ export const LARGO_MAXIMO_LINEA = 120;
 export const LARGO_MAXIMO_PARRAFO = 600;
 
 /**
+ * Y UN CUARTO PARA LAS DIRECCIONES, que no son una línea de texto. El enlace
+ * de reserva de un hotel con su código de grupo pasa de 120 caracteres sin
+ * esfuerzo, y el navegador NO avisa al pegar algo más largo que `maxlength`:
+ * lo recorta en silencio. El servidor recibía la dirección cortada, que seguía
+ * empezando por `https://` y se guardaba, y el invitado aterrizaba en una
+ * página de error del hotel. Dos mil es lo que admite cualquier navegador.
+ */
+export const LARGO_MAXIMO_ENLACE = 2000;
+
+/**
  * EL TECHO DE `orden`, que es un `smallint`.
  *
  * Una ficha nueva nace con el orden siguiente al último. Sumando sin techo, a
