@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 
 import { IDIOMA } from "@/config/constants";
+import { VARIABLES_DE_FUENTES } from "@/fuentes/fuentes";
 import { t } from "@/lib/copy";
 
 /**
@@ -32,12 +33,12 @@ export default function ErrorGlobal({
   }, [error]);
 
   return (
-    <html lang={IDIOMA}>
+    <html lang={IDIOMA} className={VARIABLES_DE_FUENTES}>
       <body>
         <title>{t("errores.falloTitulo")}</title>
         <main
           role="alert"
-          className="mx-auto grid min-h-dvh max-w-texto place-items-center px-interno text-center"
+          className="mx-auto grid min-h-dvh max-w-texto place-items-center px-margen text-center"
         >
           <div>
             <h1 className="font-titulo text-titulo-2 text-tinta">{t("errores.falloTitulo")}</h1>

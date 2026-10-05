@@ -3,7 +3,8 @@ import { join } from "node:path";
 
 import { ImageResponse } from "next/og";
 
-import { PALETAS } from "@/config/tokens.generado";
+import { IDIOMA, ZONA_HORARIA } from "@/config/constants";
+import { ESCALA_OG, PALETAS } from "@/config/tokens.generado";
 
 /**
  * IMAGEN PARA COMPARTIR
@@ -28,6 +29,23 @@ export const TAMANO_OG = { width: 1200, height: 630 };
 export const TIPO_OG = "image/png";
 
 const paleta = PALETAS.inversa;
+const escala = ESCALA_OG;
+
+/**
+ * La fecha de las dos tarjetas, con la regla de la marca: «24 de abril de
+ * 2027», sin día de la semana ni coma. La de la reserva escribía «sábado, 24
+ * de abril de 2027» y la de la portada no: dos fechas distintas para el mismo
+ * día según qué enlace se pegara.
+ */
+export const FORMATO_FECHA_OG = new Intl.DateTimeFormat(IDIOMA, {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: ZONA_HORARIA,
+});
+
+/** Los nombres con los que se registran las fuentes en el renderizador. */
+const FAMILIA = { serif: "Cormorant Infant", sans: "Jost", conector: "Italianno" } as const;
 
 /**
  * Las tres familias de la entrega, en crudo: aquí no hay CSS que las resuelva,
@@ -43,9 +61,9 @@ async function fuentes() {
     readFile(join(process.cwd(), "assets/fuentes/italianno-400.ttf")),
   ]);
   return [
-    { name: "Cormorant Infant", data: serif, weight: 300 as const, style: "normal" as const },
-    { name: "Jost", data: sans, weight: 400 as const, style: "normal" as const },
-    { name: "Italianno", data: conector, weight: 400 as const, style: "normal" as const },
+    { name: FAMILIA.serif, data: serif, weight: 300 as const, style: "normal" as const },
+    { name: FAMILIA.sans, data: sans, weight: 400 as const, style: "normal" as const },
+    { name: FAMILIA.conector, data: conector, weight: 400 as const, style: "normal" as const },
   ];
 }
 
@@ -69,16 +87,16 @@ export async function construirImagenOg(contenido: ContenidoOg) {
         justifyContent: "center",
         backgroundColor: paleta.fondo,
         color: paleta.tinta,
-        fontFamily: "Cormorant Infant",
-        padding: "80px 140px",
+        fontFamily: FAMILIA.serif,
+        padding: `${escala.margenVertical}px ${escala.margenLateral}px`,
         textAlign: "center",
       }}
     >
       <div
         style={{
-          fontFamily: "Jost",
-          fontSize: 26,
-          letterSpacing: 8,
+          fontFamily: FAMILIA.sans,
+          fontSize: escala.textoEtiqueta,
+          letterSpacing: escala.espaciadoEtiqueta,
           textTransform: "uppercase",
           color: paleta["tinta-suave"],
         }}
@@ -90,18 +108,33 @@ export async function construirImagenOg(contenido: ContenidoOg) {
         `alignItems` explícito: Satori no propaga el `textAlign` del padre a los
         hijos de un flex, así que sin esto la conjunción se queda pegada a la
         izquierda mientras los nombres van centrados.
+
+        INTERLINEADO 1 Y LA «Y» SOLAPADA, como en la portada: con el
+        interlineado de serie la «y» quedaba colgando del segundo nombre (68 px
+        por arriba y 30 por abajo) y el bloque no cabía en el margen: el
+        contenido se salía por abajo.
       */}
       <div
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          marginTop: 40,
-          fontSize: 104,
+          marginTop: escala.hueco,
+          fontSize: escala.textoNombres,
+          lineHeight: 1,
         }}
       >
         <span>{contenido.nombreNovia}</span>
-        <span style={{ fontFamily: "Italianno", fontSize: 96, color: paleta.acento }}>
+        <span
+          style={{
+            fontFamily: FAMILIA.conector,
+            fontSize: escala.textoConector,
+            lineHeight: 1,
+            marginTop: -escala.solapeConector,
+            marginBottom: -escala.solapeConector,
+            color: paleta.acento,
+          }}
+        >
           {contenido.conjuncion}
         </span>
         <span>{contenido.nombreNovio}</span>
@@ -110,11 +143,11 @@ export async function construirImagenOg(contenido: ContenidoOg) {
       {contenido.pie ? (
         <div
           style={{
-            marginTop: 48,
-            paddingTop: 32,
-            borderTop: `2px solid ${paleta.borde}`,
-            fontFamily: "Jost",
-            fontSize: 30,
+            marginTop: escala.huecoPie,
+            paddingTop: escala.hueco,
+            borderTop: `${escala.filete}px solid ${paleta.borde}`,
+            fontFamily: FAMILIA.sans,
+            fontSize: escala.textoPie,
             color: paleta["tinta-suave"],
           }}
         >

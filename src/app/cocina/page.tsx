@@ -87,9 +87,9 @@ export default async function PaginaCocina() {
         <div className="grid gap-elemento">
           {GRUPOS_COLOR.map((grupo) => (
             <div key={grupo.id}>
-              <h3 className="mb-pila text-pequeno uppercase tracking-etiqueta text-tinta-tenue">
+              <Etiqueta como="h3" className="mb-pila">
                 {t(`cocina.${grupo.claveCopy}`)}
-              </h3>
+              </Etiqueta>
               <ul className="grid grid-cols-2 gap-pila sm:grid-cols-3 lg:grid-cols-6">
                 {grupo.tokens.map((token) => (
                   <li key={token}>
@@ -97,7 +97,7 @@ export default async function PaginaCocina() {
                       className="h-control-compacto w-full rounded-imagen border border-borde"
                       style={{ backgroundColor: `var(--${token})` }}
                     />
-                    <code className="mt-linea block text-diminuto text-tinta-tenue">
+                    <code className="mt-linea block text-diminuto text-tinta-suave">
                       --{token}
                     </code>
                   </li>
@@ -112,7 +112,7 @@ export default async function PaginaCocina() {
         <ul className="grid gap-elemento">
           {TOKENS_TIPOGRAFIA.map((token) => (
             <li key={token} className="border-b border-borde-tenue pb-elemento">
-              <code className="block text-diminuto text-tinta-tenue">--{token}</code>
+              <code className="block text-diminuto text-tinta-suave">--{token}</code>
               <p
                 className="mt-linea font-titulo leading-titulo"
                 style={{ fontSize: `var(--${token})` }}
@@ -127,12 +127,12 @@ export default async function PaginaCocina() {
       <Seccion titulo={t("cocina.seccionEspaciado")}>
         <ul className="grid gap-pila">
           {TOKENS_ESPACIADO.map((token) => (
-            <li key={token} className="flex items-center gap-elemento">
-              <code className="w-columna-token shrink-0 text-diminuto text-tinta-tenue">
+            <li key={token} className="flex flex-wrap items-center gap-x-elemento gap-y-linea">
+              <code className="w-columna-token max-w-full min-w-0 wrap-anywhere text-diminuto text-tinta-suave">
                 --{token}
               </code>
               <div
-                className="h-barra-muestra rounded-etiqueta bg-marca"
+                className="h-barra-muestra max-w-full rounded-etiqueta bg-marca"
                 style={{ width: `var(--${token})` }}
               />
             </li>
@@ -149,7 +149,7 @@ export default async function PaginaCocina() {
                   className="aspect-square w-full border border-borde-fuerte bg-superficie-tenue"
                   style={{ borderRadius: `var(--${token})` }}
                 />
-                <code className="mt-linea block text-diminuto text-tinta-tenue">--{token}</code>
+                <code className="mt-linea block text-diminuto text-tinta-suave">--{token}</code>
               </li>
             ))}
           </ul>
@@ -160,7 +160,7 @@ export default async function PaginaCocina() {
                   className="aspect-video w-full rounded-tarjeta bg-superficie"
                   style={{ boxShadow: `var(--${token})` }}
                 />
-                <code className="mt-linea block text-diminuto text-tinta-tenue">--{token}</code>
+                <code className="mt-linea block text-diminuto text-tinta-suave">--{token}</code>
               </li>
             ))}
           </ul>
@@ -168,7 +168,7 @@ export default async function PaginaCocina() {
       </Seccion>
 
       <Seccion titulo={t("cocina.seccionMovimiento")}>
-        <p className="mb-elemento max-w-texto text-pequeno text-tinta-tenue">
+        <p className="mb-elemento max-w-texto text-pequeno text-tinta-suave">
           {t("cocina.avisoMovimiento")}
         </p>
         <ul className="grid gap-elemento sm:grid-cols-3">
@@ -177,7 +177,7 @@ export default async function PaginaCocina() {
               <div
                 className={`${animacion} grid aspect-video place-items-center rounded-tarjeta bg-superficie-tenue`}
               >
-                <code className="text-diminuto text-tinta-tenue">.{animacion}</code>
+                <code className="text-diminuto text-tinta-suave">.{animacion}</code>
               </div>
             </li>
           ))}
@@ -191,15 +191,13 @@ export default async function PaginaCocina() {
         información, así que cada uno se anuncia con su nombre.
       */}
       <Seccion titulo={t("cocina.seccionConstelaciones")}>
-        <p className="mb-elemento max-w-texto text-pequeno text-tinta-tenue">
+        <p className="mb-elemento max-w-texto text-pequeno text-tinta-suave">
           {t("cocina.constelacionesDescripcion")}
         </p>
         <div className="grid gap-bloque sm:grid-cols-2">
           {HEMISFERIOS.map((hemisferio) => (
             <div key={hemisferio.id}>
-              <h3 className="text-pequeno uppercase tracking-etiqueta text-tinta-tenue">
-                {t(hemisferio.claveTitulo)}
-              </h3>
+              <Etiqueta como="h3">{t(hemisferio.claveTitulo)}</Etiqueta>
               <p className="mt-linea text-pequeno text-tinta-suave">
                 {t(hemisferio.claveNota)}
               </p>
@@ -210,7 +208,7 @@ export default async function PaginaCocina() {
                       <div className="aspect-square rounded-imagen border border-borde bg-superficie p-interno">
                         <Constelacion clave={constelacion.clave} rotulada />
                       </div>
-                      <span className="mt-linea block text-diminuto text-tinta-tenue">
+                      <span className="mt-linea block text-diminuto text-tinta-suave">
                         {constelacion.nombre}
                       </span>
                     </li>
@@ -271,7 +269,7 @@ export default async function PaginaCocina() {
               titulo={t("cocina.tarjetaTitulo")}
               texto={t("cocina.tarjetaTexto")}
               imagen={
-                <span className="grid h-full place-items-center text-meta uppercase tracking-meta text-tinta-tenue">
+                <span className="grid h-full place-items-center text-meta uppercase tracking-meta text-tinta-suave">
                   {t("cocina.tarjetaImagen")}
                 </span>
               }
@@ -344,7 +342,7 @@ export default async function PaginaCocina() {
                     variante={variante}
                   />
                 </div>
-                <span className="mt-linea block text-meta uppercase tracking-meta text-tinta-tenue">
+                <span className="mt-linea block text-meta uppercase tracking-meta text-tinta-suave">
                   {t(clave)}
                 </span>
               </div>

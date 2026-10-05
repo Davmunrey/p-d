@@ -25,8 +25,10 @@ import { inicial } from "@/lib/nombres";
  * `principal` es el de la barra, en una línea; `apilado` pone el nexo en su
  * propia línea, que es como la marca se dibuja cuando tiene aire por arriba y
  * por abajo —el pie—; `sello` es el del lacre, en claro sobre el marino; y
- * `secundaria` es la de una sola tinta, para cuando el monograma cae sobre una
- * foto y no se le puede pedir dos colores.
+ * `secundaria` es la de la entrega: los dos nombres enteros apilados con el
+ * nexo, en versalita de Jost muy espaciada y en la tinta de la marca. Aquí era
+ * otra cosa —las iniciales en blanco, «para fotos»—, y en el catálogo salía
+ * blanco sobre gris claro, a 1,13:1: una caja vacía.
  */
 
 export type VarianteMonograma = "principal" | "apilado" | "sello" | "secundaria";
@@ -52,11 +54,10 @@ const VARIANTES: Record<VarianteMonograma, { caja: string; nexo: string }> = {
     nexo: "",
   },
 
-  /* La de una tinta, para cuando el monograma cae sobre una foto y no se le
-     pueden pedir dos colores. */
+  /* La de la entrega: los nombres enteros, apilados (ver más abajo). */
   secundaria: {
-    caja: "font-titulo peso-titulo-menor text-monograma leading-compacto tracking-monograma text-sobre-foto",
-    nexo: "text-sobre-foto",
+    caja: "block text-center font-cuerpo uppercase text-monograma-secundario leading-monograma-secundario tracking-monograma-secundario text-tinta-marca",
+    nexo: "",
   },
 };
 
@@ -95,6 +96,21 @@ export function Monograma({
         {t("navegacion.monogramaConector")}
       </span>
     );
+
+  if (variante === "secundaria") {
+    return (
+      <span className={`${forma.caja} ${className}`}>
+        {nombreAccesible ? <span className="sr-only">{nombres}</span> : null}
+        <span aria-hidden="true">
+          {nombreNovia}
+          <br />
+          {t("navegacion.monogramaConector")}
+          <br />
+          {nombreNovio}
+        </span>
+      </span>
+    );
+  }
 
   return (
     <span className={`${forma.caja} ${className}`}>

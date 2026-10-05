@@ -144,8 +144,8 @@ export default async function PaginaInicio() {
     datos = await cargarLanding();
   } catch {
     // La avería ya se registró en el log con su motivo. Aquí sólo se decide
-    // qué ve el invitado, y lo que ve es la verdad: todavía no hay nada.
-    return <EnPreparacion />;
+    // qué ve el invitado, y lo que ve es la verdad: ahora mismo no se puede.
+    return <EnPreparacion motivo="averia" />;
   }
 
   const {

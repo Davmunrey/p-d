@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 
+import { PantallaEstado } from "@/components/marketing/pantalla-estado";
 import { BotonEnlace } from "@/components/ui/boton";
-import { Cuerpo, Titulo2 } from "@/components/ui/tipografia";
 import { t } from "@/lib/copy";
 
 /**
@@ -41,15 +41,8 @@ export default async function NoEncontrada() {
   await headers();
 
   return (
-    <main className="mx-auto grid min-h-dvh max-w-texto place-items-center px-interno text-center">
-      <div>
-        <Titulo2 como="h1">{t("errores.noEncontrado")}</Titulo2>
-        <Cuerpo className="mt-pila">{t("errores.noEncontradoTexto")}</Cuerpo>
-
-        <BotonEnlace href="/" className="mt-bloque">
-          {t("errores.volverAlInicio")}
-        </BotonEnlace>
-      </div>
-    </main>
+    <PantallaEstado titulo={t("errores.noEncontrado")} texto={t("errores.noEncontradoTexto")}>
+      <BotonEnlace href="/">{t("errores.volverAlInicio")}</BotonEnlace>
+    </PantallaEstado>
   );
 }

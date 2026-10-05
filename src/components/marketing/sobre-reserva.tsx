@@ -254,34 +254,38 @@ export function SobreReserva({
       </p>
 
       <div className="pie-sobre relative text-center" inert={fase < ABIERTO}>
-        <p className="mx-auto mb-nota-sobre-abajo max-w-nota-sobre font-titulo peso-titulo text-nota-sobre leading-cita text-tinta-suave italic">
-          {t("saveTheDate.nota")}
-        </p>
+        <div className="pie-sobre-dentro">
+          <div className="pie-sobre-contenido">
+            <p className="mx-auto mb-nota-sobre-abajo max-w-nota-sobre font-titulo peso-titulo text-nota-sobre leading-cita text-tinta-suave italic">
+              {t("saveTheDate.nota")}
+            </p>
 
-        <div className="flex flex-wrap justify-center gap-hueco-boton">
-          {/*
+            <div className="flex flex-wrap justify-center gap-hueco-boton">
+              {/*
             Enlace normal y no `next/link`: el destino no es una página, es un
             fichero que se descarga. Con el enrutador de Next por medio, el
             navegador intentaría navegar a él.
           */}
-          <BotonEnlace href={RUTA_CALENDARIO} prefetch={false} download>
-            <IconoCalendario />
-            {t("saveTheDate.anadirCalendario")}
-          </BotonEnlace>
-          <BotonEnlace href="/" jerarquia="secundario">
-            {t("saveTheDate.verLaWeb")}
-          </BotonEnlace>
-        </div>
+              <BotonEnlace href={RUTA_CALENDARIO} prefetch={false} download>
+                <IconoCalendario />
+                {t("saveTheDate.anadirCalendario")}
+              </BotonEnlace>
+              <BotonEnlace href="/" jerarquia="secundario">
+                {t("saveTheDate.verLaWeb")}
+              </BotonEnlace>
+            </div>
 
-        {/* Sin JavaScript, volver es cargar la página sin `?abierto`. */}
-        <form method="get" action={rutaDe("reserva_la_fecha")} onSubmit={cerrar}>
-          <button
-            type="submit"
-            className="mt-volver-sobre min-h-control-compacto cursor-pointer px-hueco-corto font-cuerpo text-etiqueta uppercase tracking-volver text-tinta-suave transicion-color hover:text-acento"
-          >
-            {t("saveTheDate.volverAlSobre")}
-          </button>
-        </form>
+            {/* Sin JavaScript, volver es cargar la página sin `?abierto`. */}
+            <form method="get" action={rutaDe("reserva_la_fecha")} onSubmit={cerrar}>
+              <button
+                type="submit"
+                className="mt-volver-sobre min-h-control-compacto cursor-pointer px-hueco-corto font-cuerpo text-etiqueta uppercase tracking-volver text-tinta-suave transicion-color hover:text-acento"
+              >
+                {t("saveTheDate.volverAlSobre")}
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );

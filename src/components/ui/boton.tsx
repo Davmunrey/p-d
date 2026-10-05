@@ -47,11 +47,12 @@ const BASE =
   "inline-flex items-center justify-center gap-interno-compacto text-boton uppercase tracking-boton transicion-color disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-transparent disabled:bg-accion-desactivada disabled:text-tinta-desactivada";
 
 const JERARQUIAS: Record<JerarquiaBoton, string> = {
-  primario: "rounded-boton bg-accion px-elemento text-tinta-sobre-accion hover:bg-accion-hover",
+  primario:
+    "rounded-boton bg-accion px-elemento text-tinta-sobre-accion hover:bg-accion-hover active:bg-accion-activa aria-busy:cursor-progress aria-busy:bg-accion aria-busy:text-tinta-sobre-accion",
   secundario:
-    "rounded-boton border border-borde-fuerte px-elemento text-tinta-marca hover:border-marca hover:bg-superficie-hundida",
+    "rounded-boton border border-borde-fuerte px-elemento text-tinta-marca hover:border-marca hover:bg-superficie-hundida active:bg-marca-tenue",
   terciario:
-    "border-b border-borde-fuerte px-interno-compacto text-marca hover:border-marca hover:text-tinta",
+    "border-b border-borde-fuerte px-interno-compacto text-marca hover:border-marca hover:text-tinta active:border-tinta active:text-tinta",
 };
 
 /**

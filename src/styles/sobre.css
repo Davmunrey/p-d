@@ -383,26 +383,40 @@
 }
 
 /*
-  El pie no ocupa sitio hasta que el sobre se ha ido: plegado con `max-height`
-  para que la página no reserve su hueco vacío bajo el sobre cerrado, y con
-  `inert` desde el componente para que nadie llegue a sus botones con el
-  teclado mientras no se ven.
+  El pie no ocupa sitio hasta que el sobre se ha ido, para que la página no
+  reserve su hueco vacío bajo el sobre cerrado, y lleva `inert` desde el
+  componente para que nadie llegue a sus botones con el teclado mientras no se
+  ven.
+
+  SE DESPLIEGA CON LA REJILLA, NO CON `max-height`. Animar `max-height` hasta
+  un alto inventado recalculaba la maquetación en cada fotograma y el
+  documento crecía a tirones; y el margen de arriba aparecía de golpe. Una fila
+  que pasa de `0fr` a `1fr` mide exactamente lo que mide el contenido, y el
+  margen va dentro, así que se despliega con él.
 */
 .pie-sobre {
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   opacity: 0%;
-  overflow: hidden;
   pointer-events: none;
   transform: translateY(var(--recorrido-pie-sobre));
   transition:
     opacity var(--transicion-pie-sobre-fundido) var(--retardo-pie-sobre),
     transform var(--transicion-pie-sobre) var(--retardo-pie-sobre),
-    max-height var(--transicion-pie-sobre);
+    grid-template-rows var(--transicion-pie-sobre);
+}
+
+.pie-sobre-dentro {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pie-sobre-contenido {
+  padding-top: var(--espacio-pie-sobre);
 }
 
 .pieza-sobre[data-fuera] .pie-sobre {
-  margin-top: var(--espacio-pie-sobre);
-  max-height: var(--alto-pie-sobre);
+  grid-template-rows: 1fr;
   opacity: 100%;
   pointer-events: auto;
   transform: none;

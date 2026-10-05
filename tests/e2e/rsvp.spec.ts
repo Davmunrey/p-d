@@ -1300,3 +1300,214 @@ test.describe("Cambiar una respuesta ya dada", () => {
     expect(vigente.estado).toBe("confirmado");
   });
 });
+
+/*
+  AUDITORÍA DE DISEÑO · LO QUE SE VE Y SE TOCA EN EL FORMULARIO.
+
+  · Los radios y la casilla se pintaban con los controles del tema claro sobre
+    el marino: lo NO marcado era un disco blanco y lo marcado un gris apagado.
+  · Si faltaba contestar por alguien, el aviso quedaba por debajo de la primera
+    pantalla del móvil y sin atar a sus radios.
+  · Los pasos 2 y 3 repetían el saludo y la entradilla antes de su pregunta.
+  · «Enviar confirmación» se apagaba sin decir que estaba enviando.
+*/
+test.describe("El formulario se lee y responde", () => {
+  test.skip(!cadena, "Hace falta DATABASE_URL para fabricar la invitación.");
+
+  test("lo marcado es lo que más resalta, y el bloque marino se declara oscuro", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo("e2e-casillas", ["(DES) Marta", "(DES) Nico"]);
+    const contexto = await browser.newContext({
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    const radios = pagina.locator('input[type="radio"]');
+    await radios.nth(0).check();
+
+    const estilos = await radios.evaluateAll((todos) =>
+      todos.slice(0, 2).map((radio) => {
+        const estilo = getComputedStyle(radio);
+        return { aspecto: estilo.appearance, fondo: estilo.backgroundColor };
+      }),
+    );
+    // El control es el de la marca, no el del sistema.
+    expect(estilos[0]!.aspecto).toBe("none");
+    // Marcado: relleno. Sin marcar: hueco, sin disco blanco.
+    expect(estilos[0]!.fondo).not.toBe("rgba(0, 0, 0, 0)");
+    expect(estilos[1]!.fondo).toBe("rgba(0, 0, 0, 0)");
+
+    // Y el bloque le dice al navegador que es oscuro (desplegables, barras…),
+    // sin que el documento deje de ser claro.
+    expect(
+      await pagina
+        .locator('main[data-seccion="inversa"]')
+        .evaluate((main) => getComputedStyle(main).colorScheme),
+    ).toBe("dark");
+    expect(
+      await pagina.evaluate(() => getComputedStyle(document.documentElement).colorScheme),
+    ).toBe("light");
+
+    await contexto.close();
+  });
+
+  test("con colores forzados vuelve el control del sistema, que sí se ve marcado", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo("e2e-forzados", ["(DES) Olga"]);
+    const contexto = await browser.newContext({
+      locale: "es-ES",
+      forcedColors: "active",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    expect(
+      await pagina
+        .locator('input[type="radio"]')
+        .first()
+        .evaluate((radio) => getComputedStyle(radio).appearance),
+    ).toBe("auto");
+
+    await contexto.close();
+  });
+
+  test("si falta alguien, el aviso queda a la vista y atado a sus respuestas", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo("e2e-falta-ancla", [
+      "(DES) Pablo",
+      "(DES) Quique",
+      "(DES) Rosa",
+    ]);
+    const contexto = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    const radios = pagina.locator('input[type="radio"]');
+    await radios.nth(0).check();
+    await radios.nth(2).check();
+    // La tercera persona, sin contestar.
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    await expect(pagina).toHaveURL(/falta=.*#persona-/);
+    const aviso = pagina.getByRole("main").getByRole("alert");
+    await expect(aviso).toContainText("(DES) Rosa");
+    await expect(aviso).toBeInViewport();
+
+    const idDelAviso = await aviso.getAttribute("id");
+    expect(idDelAviso).toBeTruthy();
+    await expect(radios.nth(4)).toHaveAttribute("aria-describedby", idDelAviso!);
+    // Y sólo los de quien falta: los demás no apuntan a ningún aviso.
+    await expect(radios.nth(0)).not.toHaveAttribute("aria-describedby", /.+/);
+
+    await contexto.close();
+  });
+
+  test("en los pasos 2 y 3 manda la pregunta del paso, no el saludo repetido", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo("e2e-pasos", ["(DES) Sara"]);
+    const contexto = await browser.newContext({
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+    const plazo = /Podéis cambiar la respuesta/;
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await expect(pagina.getByRole("heading", { level: 1 })).toContainText(
+      "(DES) Grupo e2e-pasos",
+    );
+    await expect(pagina.getByRole("heading", { level: 2 })).toHaveText(
+      copy.rsvp.pasoAsistenciaTitulo,
+    );
+
+    await pagina.locator('input[type="radio"]').first().check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    await expect(pagina.getByRole("heading", { level: 2 })).toHaveText(
+      copy.rsvp.pasoDetallesTitulo,
+    );
+    // El saludo sigue siendo el h1 —el lector de pantalla sabe dónde está—,
+    // pero ya no se repite la entradilla.
+    await expect(pagina.getByRole("heading", { level: 1 })).toContainText(
+      "(DES) Grupo e2e-pasos",
+    );
+    await expect(pagina.getByText(plazo)).toHaveCount(0);
+    await expect(
+      pagina.getByText(copy.rsvp.etiquetaPaso.replace("{actual}", "2").replace("{total}", "3")),
+    ).toBeVisible();
+
+    // La pregunta del paso es más grande que el nombre de cada persona.
+    const tamano = (selector: string) =>
+      pagina
+        .locator(selector)
+        .first()
+        .evaluate((nodo) => parseFloat(getComputedStyle(nodo).fontSize));
+    expect(await tamano("h2")).toBeGreaterThan(await tamano("legend"));
+
+    await contexto.close();
+  });
+
+  test("mientras se guarda, el botón lo dice y no se puede volver a pulsar", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo("e2e-guardando", ["(DES) Teo"]);
+    const contexto = await browser.newContext({
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.locator('input[type="radio"]').first().check();
+
+    // Se retiene la acción un momento para poder ver el botón mientras espera.
+    let soltar: () => void = () => {};
+    const retenida = new Promise<void>((resolver) => (soltar = resolver));
+    await pagina.route(`**${RUTA_RSVP}/${token}*`, async (ruta) => {
+      if (ruta.request().method() === "POST") await retenida;
+      await ruta.continue();
+    });
+
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    const ocupado = pagina.getByRole("button", { name: copy.rsvp.guardando });
+    await expect(ocupado).toBeVisible();
+    await expect(ocupado).toHaveAttribute("aria-busy", "true");
+    await expect(ocupado).toBeDisabled();
+
+    soltar();
+    await expect(pagina.getByRole("heading", { level: 2 })).toHaveText(
+      copy.rsvp.pasoDetallesTitulo,
+    );
+    // Al llegar, el botón vuelve a ser el de siempre.
+    await expect(pagina.getByRole("button", { name: copy.rsvp.siguiente })).toBeEnabled();
+
+    await contexto.close();
+  });
+});
+
+test.describe("Las pantallas de error del RSVP dicen qué ha pasado", () => {
+  test("un enlace que no vale se titula por lo que es y pide escribir una sola vez", async ({
+    page,
+  }) => {
+    await page.goto(`${RUTA_RSVP}/token-que-no-existe-titulo-000000`);
+
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      copy.rsvp.tituloEnlaceNoValido,
+    );
+    await expect(page.getByText(copy.rsvp.tokenInvalido)).toBeVisible();
+    // «Escribidnos» una vez, junto al correo; no en el párrafo y otra vez debajo.
+    await expect(page.getByRole("main").getByText(/escribidnos/i)).toHaveCount(1);
+  });
+});

@@ -34,7 +34,7 @@ export default async function PaginaRecuperar({
   const enviado = estado === "enviado";
 
   return (
-    <main className="grid min-h-dvh place-items-center px-interno py-elemento">
+    <main className="grid min-h-dvh place-items-center px-margen py-elemento">
       <div className="mx-auto w-full max-w-texto">
         <Etiqueta>{t("meta.titulo")}</Etiqueta>
         <Titulo2 como="h1" className="mt-pila">

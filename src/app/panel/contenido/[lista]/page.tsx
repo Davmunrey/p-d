@@ -571,7 +571,7 @@ function OpcionDeFoto({
         name={campo.columna}
         value={id}
         defaultChecked={elegida}
-        className="size-casilla accent-marca"
+        className="casilla-marca transicion-color"
       />
 
       {fuente ? (

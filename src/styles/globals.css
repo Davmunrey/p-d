@@ -102,6 +102,7 @@
   --color-marca-tenue: var(--marca-tenue);
   --color-accion: var(--accion);
   --color-accion-hover: var(--accion-hover);
+  --color-accion-activa: var(--accion-activa);
   --color-acento: var(--acento);
   --color-acento-hover: var(--acento-hover);
 
@@ -166,6 +167,7 @@
   --text-boton: var(--texto-boton);
   --text-menu: var(--texto-menu);
   --text-monograma: var(--texto-monograma);
+  --text-monograma-secundario: var(--texto-monograma-secundario);
   --text-ampersand: var(--texto-ampersand);
   --text-hito: var(--texto-hito);
   --text-hito-menor: var(--texto-hito-menor);
@@ -212,6 +214,7 @@
   --leading-cuerpo: var(--interlineado-cuerpo);
   --leading-hito: var(--interlineado-hito);
   --leading-compacto: var(--interlineado-compacto);
+  --leading-monograma-secundario: var(--interlineado-monograma-secundario);
   --leading-naipe-nombre: var(--interlineado-naipe-nombre);
   --leading-naipe-anno: var(--interlineado-naipe-anno);
   --tracking-display: var(--espaciado-display);
@@ -225,6 +228,7 @@
   --tracking-pildora: var(--espaciado-pildora);
   --tracking-meta: var(--espaciado-meta);
   --tracking-monograma: var(--espaciado-monograma);
+  --tracking-monograma-secundario: var(--espaciado-monograma-secundario);
   --tracking-pista: var(--espaciado-pista);
   --tracking-enlace-pie: var(--espaciado-enlace-pie);
   --tracking-pie: var(--espaciado-pie);
@@ -600,6 +604,46 @@
   z-index: var(--capa-cabecera);
 }
 
+/*
+  LA CASILLA Y EL RADIO DE LA MARCA. Los controles del sistema se pintaban con
+  el tema claro también dentro de los bloques marino del RSVP: lo NO marcado
+  era un disco blanco y lo marcado un gris apagado, así que «No podré ir» sin
+  marcar destacaba más que el «Sí» elegido. Aquí lo marcado es siempre lo que
+  más resalta, con los colores del bloque en el que esté.
+
+  Con colores forzados (alto contraste de Windows) se vuelve al control del
+  sistema: el fondo de uno propio desaparecería y no se vería si está marcado.
+*/
+@utility casilla-marca {
+  appearance: none;
+  flex: none;
+  margin: 0;
+  inline-size: var(--lado-casilla);
+  block-size: var(--lado-casilla);
+  border: var(--grosor-casilla) solid var(--tinta-tenue);
+  border-radius: var(--radio-campo);
+  padding: var(--hueco-casilla);
+  background-color: transparent;
+
+  /* El punto se pinta sólo dentro del relleno: el hueco hasta el aro queda
+     transparente y deja ver el fondo, sea cual sea. */
+  background-clip: content-box;
+  cursor: pointer;
+
+  &[type="radio"] {
+    border-radius: var(--radio-boton);
+  }
+
+  &:checked {
+    border-color: var(--tinta);
+    background-color: var(--tinta);
+  }
+
+  @media (forced-colors: active) {
+    appearance: auto;
+  }
+}
+
 /** La misma razón, para la navegación fija del panel. */
 @utility capa-lateral {
   z-index: var(--capa-pegajosa);
@@ -709,6 +753,17 @@
 
   p {
     text-wrap: pretty;
+  }
+
+  /*
+    NINGUNA PÁGINA SE DESPLAZA EN HORIZONTAL. Un elemento que se sale por un
+    lado —una barra de muestra en /cocina, un naipe girado— no puede abrir un
+    scroll lateral en el móvil. `clip` y no `hidden`: no crea un contenedor con
+    desplazamiento propio, así que `position: sticky` sigue funcionando.
+  */
+  html,
+  body {
+    overflow-x: clip;
   }
 
   /* Foco visible siempre: se puede rediseñar, nunca eliminar. */

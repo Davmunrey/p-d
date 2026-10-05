@@ -31,6 +31,8 @@ import {
 import { sembrarDesdeLaBase } from "@/lib/rsvp-siembra";
 import { urlDelSitio } from "@/lib/url-sitio";
 
+import { anclaPersona } from "./ancla";
+
 /**
  * EL AVANCE DEL RSVP
  *
@@ -238,7 +240,9 @@ export async function avanzar(datos: FormData): Promise<void> {
     // son cosas distintas, y aquí se sabría a quién falta pero no qué quiso.
     const sinContestar = invitacion.personas.find((p) => !borrador.asistencia[p.id]);
     if (sinContestar) {
-      redirect(`${base}?paso=asistencia&falta=${encodeURIComponent(sinContestar.id)}`);
+      redirect(
+        `${base}?paso=asistencia&falta=${encodeURIComponent(sinContestar.id)}#${anclaPersona(sinContestar.id)}`,
+      );
     }
     redirect(`${base}?paso=${alguienViene ? "detalles" : "mensaje"}`);
   }
@@ -265,7 +269,9 @@ export async function avanzar(datos: FormData): Promise<void> {
   */
   const faltaPorContestar = invitacion.personas.find((p) => !borrador.asistencia[p.id]);
   if (faltaPorContestar) {
-    redirect(`${base}?paso=asistencia&falta=${encodeURIComponent(faltaPorContestar.id)}`);
+    redirect(
+      `${base}?paso=asistencia&falta=${encodeURIComponent(faltaPorContestar.id)}#${anclaPersona(faltaPorContestar.id)}`,
+    );
   }
 
   // Último paso: se envía.

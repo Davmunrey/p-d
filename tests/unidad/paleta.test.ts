@@ -194,6 +194,28 @@ describe("contraste de la paleta", () => {
       expect(contraste(error, resolver("superficie", propias))).toBeGreaterThanOrEqual(4.5);
     });
 
+    it(`en ${nombre} las cajas de aviso se leen y no deslumbran`, () => {
+      for (const estado of ["error", "exito", "aviso"]) {
+        const fondoCaja = resolver(`${estado}-fondo`, propias);
+        expect(
+          contraste(resolver(`${estado}-tinta`, propias), fondoCaja),
+          `${estado} en ${nombre}`,
+        ).toBeGreaterThanOrEqual(4.5);
+        // Una caja de aviso dentro del marino no puede ser lo más claro de la
+        // pantalla: su fondo es oscuro si el de la página lo es.
+        const paginaOscura = luminancia(resolver("fondo", propias)) < 0.18;
+        expect(luminancia(fondoCaja) < 0.18, `${estado}-fondo en ${nombre}`).toBe(paginaOscura);
+      }
+    });
+
+    it(`en ${nombre} las instrucciones pequeñas del sobre se leen`, () => {
+      // «Tocad el sello para abrir», en versalita de 10 px: la única
+      // instrucción del Save the Date cerrado.
+      expect(
+        contraste(resolver("tinta-pista", propias), resolver("fondo", claro)),
+      ).toBeGreaterThanOrEqual(4.5);
+    });
+
     it(`en ${nombre} el botón primario se ve y se lee`, () => {
       const relleno = resolver("accion", propias);
       // 3:1 para el relleno contra la página (elemento de interfaz), 4.5:1
@@ -201,6 +223,10 @@ describe("contraste de la paleta", () => {
       expect(contraste(relleno, resolver("fondo", propias))).toBeGreaterThanOrEqual(3);
       expect(
         contraste(resolver("tinta-sobre-accion", propias), relleno),
+      ).toBeGreaterThanOrEqual(4.5);
+      // Y pulsado: el rótulo se sigue leyendo mientras dura el toque.
+      expect(
+        contraste(resolver("tinta-sobre-accion", propias), resolver("accion-activa", propias)),
       ).toBeGreaterThanOrEqual(4.5);
     });
 

@@ -411,7 +411,7 @@ function Edicion({
             name="pagada"
             value="si"
             defaultChecked={gasto.pagada}
-            className="size-casilla accent-marca"
+            className="casilla-marca transicion-color"
           />
           {t("panel.presupuesto.gastos.campoPagada")}
         </label>

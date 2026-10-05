@@ -268,7 +268,11 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
               autoComplete="off"
             />
             <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
-              <input type="checkbox" name="es_nino" className="size-casilla accent-marca" />
+              <input
+                type="checkbox"
+                name="es_nino"
+                className="casilla-marca transicion-color"
+              />
               <span className="text-cuerpo text-tinta">{t("panel.invitados.esNino")}</span>
             </label>
             <div>

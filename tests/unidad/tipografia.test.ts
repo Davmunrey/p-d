@@ -153,7 +153,8 @@ describe("el conector", () => {
   /**
    * Tres sitios pueden nombrar Italianno, y cada uno por una razón distinta:
    *
-   * - `layout.tsx` la CARGA. Alguien tiene que pedírsela a Google.
+   * - `fuentes/fuentes.ts` la CARGA, desde el propio repositorio, para el
+   *   layout raíz y para la pantalla de error global.
    * - `og.tsx` la PINTA SIN CSS: la tarjeta de WhatsApp se dibuja en un lienzo
    *   donde no hay hoja de estilos que resuelva un token, así que ahí el
    *   nombre de la familia va escrito a mano por fuerza.
@@ -163,7 +164,7 @@ describe("el conector", () => {
    * que la entrega prohíbe.
    */
   const PERMITIDOS = [
-    "src/app/layout.tsx",
+    "src/fuentes/fuentes.ts",
     "src/lib/og.tsx",
     "src/components/ui/tipografia.tsx",
   ];
@@ -196,5 +197,17 @@ describe("el conector", () => {
         "el componente se queda corto, no que haya que repetir la fuente: la entrega " +
         "la limita al conector y al ampersand, una vez por pieza.",
     ).toEqual([]);
+  });
+});
+
+/**
+ * LA PANTALLA DE ERROR GLOBAL SUSTITUYE AL LAYOUT, `<html>` incluido. Sin las
+ * variables de las fuentes salía en la del sistema: Times y Arial justo en la
+ * pantalla que tiene que tranquilizar diciendo «sigue siendo nuestra web».
+ */
+describe("las fuentes llegan a todos los <html>", () => {
+  it.each(["src/app/layout.tsx", "src/app/global-error.tsx"])("%s", (fichero) => {
+    const fuente = readFileSync(join(RAIZ, fichero), "utf8");
+    expect(fuente).toMatch(/<html[^>]*className=\{VARIABLES_DE_FUENTES\}/);
   });
 });

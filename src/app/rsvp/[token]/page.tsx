@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 
-import { EnPreparacion } from "@/components/marketing/en-preparacion";
 import { Boton, BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Constelacion } from "@/components/ui/constelacion";
-import { Cuerpo, Etiqueta, Titulo1, Titulo3 } from "@/components/ui/tipografia";
+import { Cuerpo, Etiqueta, Titulo1, Titulo2 } from "@/components/ui/tipografia";
 import { CONSTELACION_NOVIOS } from "@/config/constelaciones";
 import {
   IDIOMA,
@@ -26,6 +25,8 @@ import { leerBorrador, type Borrador } from "@/lib/rsvp-borrador";
 import { sembrarDesdeLaBase } from "@/lib/rsvp-siembra";
 
 import { avanzar, reabrir } from "./acciones";
+
+import { anclaPersona, avisoPersona } from "./ancla";
 
 /**
  * CONFIRMACIÓN DE ASISTENCIA
@@ -86,7 +87,7 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
   // La base no responde. Es una avería, no un enlace malo, y decirle a
   // alguien que su invitación no vale cuando sí vale es la peor manera de
   // perder una confirmación.
-  if (lecturaConfiguracion.status === "rejected") return <EnPreparacion />;
+  if (lecturaConfiguracion.status === "rejected") return <InvitacionNoDisponible />;
   const configuracion = lecturaConfiguracion.value;
 
   if (lecturaInvitacion.status === "rejected") {
@@ -99,7 +100,7 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
     if (esCupoAgotado(lecturaInvitacion.reason)) {
       return <DemasiadosIntentos correo={configuracion?.correoContacto ?? null} />;
     }
-    return <EnPreparacion />;
+    return <InvitacionNoDisponible />;
   }
   const invitacion = lecturaInvitacion.value;
 
@@ -134,8 +135,10 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
   if (plazoCerrado) {
     return (
       <Marco>
-        <Titulo1 className="text-center">{t("rsvp.titulo")}</Titulo1>
-        <Cuerpo className="mt-elemento text-center">{t("rsvp.plazoCerrado")}</Cuerpo>
+        <Titulo1 className="text-center">{t("rsvp.tituloPlazoCerrado")}</Titulo1>
+        <Cuerpo className="mt-elemento text-center">
+          {configuracion?.correoContacto ? t("rsvp.plazoCerradoTexto") : t("rsvp.plazoCerrado")}
+        </Cuerpo>
         <LineaContacto
           correo={configuracion?.correoContacto ?? null}
           texto={t("rsvp.plazoCerradoContacto")}
@@ -169,20 +172,31 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
 
   return (
     <Marco>
+      {/*
+        LA CABECERA SE PRESENTA UNA VEZ. En el primer paso, el saludo grande y
+        hasta cuándo se puede cambiar la respuesta; en los siguientes, el saludo
+        baja a versalita y manda la pregunta del paso, que es lo que hay que
+        contestar. Antes se repetían en los tres pasos el saludo y «Contadnos si
+        podréis venir», y en el móvil el primer campo del paso 2 quedaba por
+        debajo de la primera pantalla.
+      */}
       <header className="text-center">
-        {paso === "asistencia" ? null : (
-          <Etiqueta>{t("rsvp.etiquetaPaso", { actual, total })}</Etiqueta>
+        {paso === "asistencia" ? (
+          <>
+            <Titulo1>{t("rsvp.saludo", { grupo: invitacion.grupoNombre })}</Titulo1>
+            {configuracion?.fechaLimiteRsvp ? (
+              <Cuerpo className="mx-auto mt-pila max-w-texto">
+                {t("rsvp.entradillaPlazo", {
+                  fecha: fechaLarga(configuracion.fechaLimiteRsvp),
+                })}
+              </Cuerpo>
+            ) : null}
+          </>
+        ) : (
+          <Etiqueta como="h1" tono="tinta">
+            {t("rsvp.saludo", { grupo: invitacion.grupoNombre })}
+          </Etiqueta>
         )}
-        <Titulo1 className={paso === "asistencia" ? "" : "mt-pila"}>
-          {t("rsvp.saludo", { grupo: invitacion.grupoNombre })}
-        </Titulo1>
-        <Cuerpo className="mx-auto mt-pila max-w-texto">
-          {configuracion?.fechaLimiteRsvp
-            ? t("rsvp.entradilla", {
-                fecha: fechaLarga(configuracion.fechaLimiteRsvp),
-              })
-            : t("rsvp.entradillaSinPlazo")}
-        </Cuerpo>
       </header>
 
       {consulta.fallo ? (
@@ -201,7 +215,7 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
       {soloTexto(consulta.largo) ? (
         <p
           role="alert"
-          className="mt-elemento rounded-campo bg-error-fondo p-interno text-pequeno text-error-tinta"
+          className="mt-elemento rounded-campo border border-error bg-error-fondo p-interno text-pequeno text-error-tinta"
         >
           {t("rsvp.demasiadoLargo")}
         </p>
@@ -240,24 +254,37 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
         ) : null}
 
         {paso === "detalles" ? (
-          <PasoDetalles personas={invitacion.personas} borrador={borrador} />
+          <PasoDetalles
+            personas={invitacion.personas}
+            borrador={borrador}
+            etiquetaPaso={t("rsvp.etiquetaPaso", { actual, total })}
+          />
         ) : null}
 
-        {paso === "mensaje" ? <PasoMensaje borrador={borrador} /> : null}
+        {paso === "mensaje" ? (
+          <PasoMensaje
+            borrador={borrador}
+            etiquetaPaso={t("rsvp.etiquetaPaso", { actual, total })}
+          />
+        ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-interno">
           {paso === "asistencia" ? (
             <span />
           ) : (
-            <Boton type="submit" name="direccion" value="atras" jerarquia="terciario">
+            <BotonEnvio name="direccion" value="atras" jerarquia="terciario">
               {t("rsvp.atras")}
-            </Boton>
+            </BotonEnvio>
           )}
           {/*
             Sin doble toque: con JavaScript el botón se apaga mientras la
             acción corre. Dos toques en «Enviar» mandaban dos acuses.
           */}
-          <BotonEnvio name="direccion" value="siguiente">
+          <BotonEnvio
+            name="direccion"
+            value="siguiente"
+            rotuloPendiente={paso === "mensaje" ? t("rsvp.enviando") : t("rsvp.guardando")}
+          >
             {paso === "mensaje" ? t("rsvp.enviar") : t("rsvp.siguiente")}
           </BotonEnvio>
         </div>
@@ -273,7 +300,7 @@ function Marco({ children }: { children: React.ReactNode }) {
   return (
     <main
       data-seccion="inversa"
-      className="grid min-h-dvh place-items-center px-interno py-seccion-fluida"
+      className="grid min-h-dvh place-items-center px-margen py-seccion-fluida"
     >
       <div className="mx-auto w-full max-w-estrecho">
         <div className="mx-auto mb-elemento hidden size-constelacion pantalla-alta:block">
@@ -286,6 +313,22 @@ function Marco({ children }: { children: React.ReactNode }) {
 }
 
 /**
+ * LA BASE NO CONTESTA. Se dice dentro del marino de la invitación —no en una
+ * página genérica de «estamos preparando la web»— y con lo que más le importa
+ * a quien la abre: que su enlace sigue valiendo.
+ */
+function InvitacionNoDisponible() {
+  return (
+    <Marco>
+      <Titulo1 className="text-center">{t("rsvp.invitacionNoDisponible")}</Titulo1>
+      <Cuerpo className="mx-auto mt-elemento max-w-texto text-center">
+        {t("rsvp.invitacionNoDisponibleTexto")}
+      </Cuerpo>
+    </Marco>
+  );
+}
+
+/**
  * CASO DE ERROR. No filtra nada: ni si el token existió alguna vez, ni de
  * quién era, ni cuántas personas tenía. Sólo dice que no vale y a quién
  * escribir.
@@ -293,7 +336,7 @@ function Marco({ children }: { children: React.ReactNode }) {
 function DemasiadosIntentos({ correo }: { correo: string | null }) {
   return (
     <Marco>
-      <Titulo1 className="text-center">{t("rsvp.titulo")}</Titulo1>
+      <Titulo1 className="text-center">{t("rsvp.tituloDemasiadosIntentos")}</Titulo1>
       <Cuerpo className="mx-auto mt-elemento max-w-texto text-center">
         {t("rsvp.demasiadosIntentos")}
       </Cuerpo>
@@ -305,7 +348,7 @@ function DemasiadosIntentos({ correo }: { correo: string | null }) {
 function EnlaceNoValido({ correo }: { correo: string | null }) {
   return (
     <Marco>
-      <Titulo1 className="text-center">{t("rsvp.titulo")}</Titulo1>
+      <Titulo1 className="text-center">{t("rsvp.tituloEnlaceNoValido")}</Titulo1>
       <Cuerpo className="mx-auto mt-elemento max-w-texto text-center">
         {t("rsvp.tokenInvalido")}
       </Cuerpo>
@@ -320,7 +363,7 @@ function EnlaceNoValido({ correo }: { correo: string | null }) {
         Lo que NO cambia es el resto: el mensaje es idéntico exista el token o
         no, y esta línea también, porque no depende del token.
       */}
-      <LineaContacto correo={correo} texto={t("rsvp.enlacePerdido")} />
+      <LineaContacto correo={correo} texto={t("rsvp.pedirEnlaceNuevo")} />
 
       <div className="mt-elemento flex justify-center">
         <BotonEnlace href="/" jerarquia="secundario">
@@ -346,7 +389,7 @@ function LineaContacto({ correo, texto }: { correo: string | null; texto: string
       {texto}{" "}
       <a
         href={`mailto:${correo}`}
-        className="border-b border-borde-fuerte transicion-color hover:text-acento"
+        className="border-b border-borde-fuerte wrap-anywhere transicion-color hover:text-acento"
       >
         {correo}
       </a>
@@ -365,7 +408,7 @@ function Aviso({ motivo, correo }: { motivo: string | undefined; correo: string 
     motivo === "plazo"
       ? t("rsvp.plazoCerrado")
       : motivo === "enlace"
-        ? t("rsvp.tokenInvalido")
+        ? t("rsvp.avisoEnlaceNoValido")
         : motivo === "intentos"
           ? t("rsvp.demasiadosIntentos")
           : motivo === "respuestas"
@@ -377,7 +420,7 @@ function Aviso({ motivo, correo }: { motivo: string | undefined; correo: string 
   return (
     <p
       role="alert"
-      className="mt-elemento rounded-campo bg-error-fondo p-interno text-error-tinta"
+      className="mt-elemento rounded-campo border border-error bg-error-fondo p-interno text-error-tinta"
     >
       {texto}
     </p>
@@ -416,7 +459,7 @@ function PasoAsistencia({
     */
     <div className="grid gap-elemento">
       <div>
-        <Titulo3 como="h2">{t("rsvp.pasoAsistenciaTitulo")}</Titulo3>
+        <Titulo2>{t("rsvp.pasoAsistenciaTitulo")}</Titulo2>
         <Cuerpo className="mt-linea">{t("rsvp.pasoAsistenciaAyuda")}</Cuerpo>
       </div>
 
@@ -426,7 +469,8 @@ function PasoAsistencia({
         return (
           <fieldset
             key={persona.id}
-            className={`grid gap-interno rounded-tarjeta border p-interno ${
+            id={anclaPersona(persona.id)}
+            className={`grid scroll-mt-elemento gap-interno rounded-tarjeta border p-interno ${
               falta ? "border-error" : "border-borde"
             }`}
           >
@@ -449,14 +493,19 @@ function PasoAsistencia({
                   name={`viene-${persona.id}`}
                   value={valor}
                   defaultChecked={elegido === valor}
-                  className="size-casilla accent-marca"
+                  aria-describedby={falta ? avisoPersona(persona.id) : undefined}
+                  className="casilla-marca transicion-color"
                 />
                 <span className="text-cuerpo text-tinta">{rotulo}</span>
               </label>
             ))}
 
             {falta ? (
-              <span role="alert" className="text-pequeno text-error">
+              <span
+                id={avisoPersona(persona.id)}
+                role="alert"
+                className="text-pequeno text-error"
+              >
                 {t("rsvp.errorSinRespuesta", { nombre: persona.nombre })}
               </span>
             ) : null}
@@ -471,16 +520,19 @@ function PasoAsistencia({
 function PasoDetalles({
   personas,
   borrador,
+  etiquetaPaso,
 }: {
   personas: PersonaInvitada[];
   borrador: Borrador;
+  etiquetaPaso: string;
 }) {
   const vienen = personas.filter((p) => borrador.asistencia[p.id] === "confirmado");
 
   return (
     <div className="grid gap-elemento">
       <div>
-        <Titulo3 como="h2">{t("rsvp.pasoDetallesTitulo")}</Titulo3>
+        <Etiqueta>{etiquetaPaso}</Etiqueta>
+        <Titulo2 className="mt-linea">{t("rsvp.pasoDetallesTitulo")}</Titulo2>
         <Cuerpo className="mt-linea">{t("rsvp.pasoDetallesAyuda")}</Cuerpo>
       </div>
 
@@ -525,7 +577,7 @@ function PasoDetalles({
               type="checkbox"
               name={`autobus-${persona.id}`}
               defaultChecked={Boolean(borrador.autobus[persona.id])}
-              className="size-casilla accent-marca"
+              className="casilla-marca transicion-color"
             />
             <span className="text-cuerpo text-tinta">{t("rsvp.autobusPersona")}</span>
           </label>
@@ -536,11 +588,12 @@ function PasoDetalles({
 }
 
 /** PASO 3 · Lo que quieran contarnos. Los dos campos son opcionales. */
-function PasoMensaje({ borrador }: { borrador: Borrador }) {
+function PasoMensaje({ borrador, etiquetaPaso }: { borrador: Borrador; etiquetaPaso: string }) {
   return (
     <div className="grid gap-elemento">
       <div>
-        <Titulo3 como="h2">{t("rsvp.pasoMensajeTitulo")}</Titulo3>
+        <Etiqueta>{etiquetaPaso}</Etiqueta>
+        <Titulo2 className="mt-linea">{t("rsvp.pasoMensajeTitulo")}</Titulo2>
         <Cuerpo className="mt-linea">{t("rsvp.pasoMensajeAyuda")}</Cuerpo>
       </div>
 
@@ -596,7 +649,7 @@ function RespuestaEnviada({
         {alguienViene ? t("rsvp.graciasSiTexto") : t("rsvp.graciasNoTexto")}
       </Cuerpo>
 
-      <dl className="mx-auto mt-bloque grid max-w-texto gap-pila text-left">
+      <dl className="mx-auto mt-bloque grid w-fit max-w-texto gap-pila text-left">
         {vienen.length > 0 ? (
           <div>
             <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
@@ -635,7 +688,7 @@ function RespuestaEnviada({
       {cerrado ? (
         <>
           <Cuerpo className="mx-auto mt-elemento max-w-texto text-pequeno">
-            {t("rsvp.plazoCerrado")}
+            {correo ? t("rsvp.plazoCerradoTexto") : t("rsvp.plazoCerrado")}
           </Cuerpo>
           <LineaContacto correo={correo} texto={t("rsvp.plazoCerradoContacto")} />
         </>

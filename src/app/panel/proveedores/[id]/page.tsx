@@ -366,7 +366,7 @@ function Contactos({
               type="checkbox"
               name="es_del_dia"
               value="si"
-              className="size-casilla accent-marca"
+              className="casilla-marca transicion-color"
             />
             {t("panel.proveedores.campoEsDelDia")}
           </label>
@@ -884,7 +884,7 @@ function CamposServicio({ servicio }: { servicio?: ServicioProveedor }) {
           name="por_invitado"
           value="si"
           defaultChecked={servicio?.porInvitado ?? false}
-          className="size-casilla accent-marca"
+          className="casilla-marca transicion-color"
         />
         {t("panel.proveedores.campoPorInvitado")}
       </label>

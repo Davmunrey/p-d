@@ -1,21 +1,12 @@
-import { IDIOMA, ZONA_HORARIA } from "@/config/constants";
 import { obtenerConfiguracion, obtenerSecciones } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
-import { construirImagenOg, TAMANO_OG, TIPO_OG } from "@/lib/og";
+import { construirImagenOg, FORMATO_FECHA_OG, TAMANO_OG, TIPO_OG } from "@/lib/og";
 
 export const dynamic = "force-dynamic";
 
 export const alt = t("saveTheDate.etiqueta");
 export const size = TAMANO_OG;
 export const contentType = TIPO_OG;
-
-const formatoFecha = new Intl.DateTimeFormat(IDIOMA, {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: ZONA_HORARIA,
-});
 
 /**
  * MISMO CRITERIO QUE LA PÁGINA Y QUE EL `.ics`: si la sección está apagada,
@@ -52,6 +43,6 @@ export default async function ImagenReservaLaFecha() {
     nombreNovia: configuracion.nombreNovia,
     conjuncion: t("portada.conjuncion"),
     nombreNovio: configuracion.nombreNovio,
-    pie: formatoFecha.format(configuracion.fechaCeremonia),
+    pie: FORMATO_FECHA_OG.format(configuracion.fechaCeremonia),
   });
 }

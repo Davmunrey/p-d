@@ -95,7 +95,7 @@ export default async function PaginaReservaLaFecha({
     // La avería ya está en el log. Aquí no se puede saber si la sección estaba
     // encendida, así que se enseña el estado de reserva en vez de un 404 que
     // diría algo falso: la página existe, es la base la que no contesta.
-    return <EnPreparacion />;
+    return <EnPreparacion motivo="averia" />;
   }
 
   // La página existe sólo si su fila está visible. Apagada, 404: mejor que una
@@ -128,7 +128,7 @@ export default async function PaginaReservaLaFecha({
     columna central y se centra en el alto que sobre.
   */
   return (
-    <main className="relative flex min-h-dvh flex-col items-center overflow-x-hidden px-pila pt-sobre-arriba pb-sobre-abajo">
+    <main className="relative flex min-h-dvh flex-col items-center overflow-clip px-pila pt-sobre-arriba pb-sobre-abajo">
       <div
         aria-hidden="true"
         className="animacion-cielo-claro cielo-claro pointer-events-none absolute -inset-sangrado-cielo"

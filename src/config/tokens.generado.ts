@@ -32,3 +32,17 @@ export const PALETAS = {
 } as const;
 
 export type Paleta = keyof typeof PALETAS;
+
+export const ESCALA_OG = {
+  "margenVertical": 72,
+  "margenLateral": 140,
+  "textoEtiqueta": 24,
+  "espaciadoEtiqueta": 8,
+  "textoNombres": 88,
+  "textoConector": 80,
+  "solapeConector": 4,
+  "textoPie": 30,
+  "hueco": 28,
+  "huecoPie": 36,
+  "filete": 2
+} as const;

@@ -39,6 +39,24 @@ const PALETAS = {
  */
 const NECESARIOS = ["fondo", "superficie", "tinta", "tinta-suave", "marca", "acento", "borde"];
 
+/**
+ * La escala de la imagen para compartir, en píxeles: Satori no entiende rem ni
+ * variables. Se exporta como números, con el nombre del semántico sin `og-`.
+ */
+const ESCALA_OG = [
+  "margen-vertical",
+  "margen-lateral",
+  "texto-etiqueta",
+  "espaciado-etiqueta",
+  "texto-nombres",
+  "texto-conector",
+  "solape-conector",
+  "texto-pie",
+  "hueco",
+  "hueco-pie",
+  "filete",
+];
+
 function sinComentarios(css) {
   return css.replace(/\/\*[\s\S]*?\*\//g, "");
 }
@@ -96,6 +114,17 @@ const paletas = Object.fromEntries(
   }),
 );
 
+const escalaOg = Object.fromEntries(
+  ESCALA_OG.map((nombre) => {
+    const literal = resolver(`og-${nombre}`, claro);
+    const px = literal.match(/^(\d+(?:\.\d+)?)px$/);
+    if (!px)
+      throw new Error(`--og-${nombre} vale "${literal}": la imagen sólo entiende píxeles.`);
+    const camello = nombre.replace(/-(\w)/g, (_, letra) => letra.toUpperCase());
+    return [camello, Number(px[1])];
+  }),
+);
+
 const contenido = `/**
  * FICHERO GENERADO — no se edita a mano.
  *
@@ -111,6 +140,8 @@ const contenido = `/**
 export const PALETAS = ${JSON.stringify(paletas, null, 2)} as const;
 
 export type Paleta = keyof typeof PALETAS;
+
+export const ESCALA_OG = ${JSON.stringify(escalaOg, null, 2)} as const;
 `;
 
 writeFileSync(SALIDA, contenido, "utf8");

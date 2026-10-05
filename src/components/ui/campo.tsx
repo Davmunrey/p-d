@@ -63,9 +63,13 @@ function EnvolturaCampo({ etiqueta, ayuda, error, className = "", children }: En
   const id = useId();
   const idError = `${id}-error`;
   const idAyuda = `${id}-ayuda`;
-  const descripcion = [error ? idError : null, ayuda ? idAyuda : null]
-    .filter(Boolean)
-    .join(" ");
+  /*
+    EL ERROR OCUPA EL SITIO DE LA AYUDA. Salían las dos a la vez, una debajo de
+    otra —«para avisaros de cambios» y «revisad el correo»—, y lo que había que
+    leer quedaba en segundo lugar. Con error, el campo dice sólo lo que falla;
+    al corregirlo vuelve la ayuda.
+  */
+  const descripcion = error ? idError : ayuda ? idAyuda : "";
 
   return (
     <div className={`grid gap-interno-compacto ${className}`}>
@@ -84,15 +88,13 @@ function EnvolturaCampo({ etiqueta, ayuda, error, className = "", children }: En
         "aria-describedby": descripcion || undefined,
       })}
 
-      {ayuda ? (
-        <span id={idAyuda} className="text-pequeno text-tinta-suave">
-          {ayuda}
-        </span>
-      ) : null}
-
       {error ? (
         <span id={idError} role="alert" className="text-pequeno text-error">
           {error}
+        </span>
+      ) : ayuda ? (
+        <span id={idAyuda} className="text-pequeno text-tinta-suave">
+          {ayuda}
         </span>
       ) : null}
     </div>

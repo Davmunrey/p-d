@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Boton, BotonEnlace } from "@/components/ui/boton";
@@ -60,7 +59,7 @@ export default async function PaginaAcceso({
   const volver = parametros[PARAMETRO_VOLVER];
 
   return (
-    <main className="grid min-h-dvh place-items-center px-interno py-elemento">
+    <main className="grid min-h-dvh place-items-center px-margen py-elemento">
       <div className="mx-auto w-full max-w-texto">
         <Etiqueta>{t("meta.titulo")}</Etiqueta>
         <Titulo2 como="h1" className="mt-pila">
@@ -97,12 +96,14 @@ export default async function PaginaAcceso({
           />
           <div className="flex flex-wrap items-center gap-elemento">
             <Boton type="submit">{t("acceso.entrar")}</Boton>
-            <Link
-              href={RUTA_RECUPERAR}
-              className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta"
-            >
+            {/*
+              Un enlace que parezca un enlace y se pueda tocar: con el estilo de
+              los rótulos de los campos medía 18 px de alto y, en el móvil, caía
+              solo debajo del botón como si fuera otro rótulo.
+            */}
+            <BotonEnlace href={RUTA_RECUPERAR} jerarquia="terciario">
               {t("acceso.olvidada")}
-            </Link>
+            </BotonEnlace>
           </div>
         </form>
 

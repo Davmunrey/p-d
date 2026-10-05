@@ -192,7 +192,7 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
                       name="columna"
                       value={columna.id}
                       defaultChecked
-                      className="size-casilla accent-marca"
+                      className="casilla-marca transicion-color"
                     />
                     <span className="text-pequeno text-tinta">{t(columna.clave)}</span>
                   </label>

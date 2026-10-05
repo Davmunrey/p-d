@@ -53,9 +53,7 @@ test("con la base sin responder, la landing lo dice en lugar de romperse", async
 
     // Ni un 500 ni una página en blanco: la web sigue en pie y es honesta.
     expect(respuesta?.status()).toBe(200);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      copy.portada.enPreparacion,
-    );
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.portada.noDisponible);
     // Y no se inventa nada para tapar el hueco.
     await expect(page.locator("body")).not.toContainText("(DES)");
   } finally {
@@ -82,9 +80,28 @@ test("la reserva de fecha también aguanta la caída", async ({ page }) => {
     // Estado de reserva y no 404: la página existe, es la base la que calla.
     // Un 404 diría algo falso.
     expect(respuesta?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.portada.noDisponible);
+  } finally {
+    await conPermisoDeLectura(true);
+  }
+});
+
+test("la invitación también: dice que el enlace sigue valiendo, no que la web está a medias", async ({
+  page,
+}) => {
+  try {
+    await conPermisoDeLectura(false);
+
+    const respuesta = await page.goto("/rsvp/desarrollo-familia-uno-000000");
+
+    expect(respuesta?.status()).toBe(200);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      copy.portada.enPreparacion,
+      copy.rsvp.invitacionNoDisponible,
     );
+    await expect(page.getByText(copy.rsvp.invitacionNoDisponibleTexto)).toBeVisible();
+    // Ni el enlace se da por malo, ni se cuenta nada de quién es.
+    await expect(page.locator("body")).not.toContainText(copy.rsvp.tituloEnlaceNoValido);
+    await expect(page.locator("body")).not.toContainText("(DES)");
   } finally {
     await conPermisoDeLectura(true);
   }

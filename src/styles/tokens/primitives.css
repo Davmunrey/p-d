@@ -226,6 +226,9 @@
   --font-size-chip: 0.9063rem;
   --font-size-monograma-pie: 2.75rem;
 
+  /* La versión secundaria de la entrega: los nombres apilados en versalita. */
+  --font-size-monograma-secundario: clamp(0.6875rem, 1.5vw, 0.875rem);
+
   /* Los cuatro componentes del catálogo de la entrega: la píldora de estado
      (13,5 px), el aviso y el texto de una tarjeta (15 px, el mismo escalón
      para los dos), la meta en versalita de la tarjeta (10,5) y su título en
@@ -250,6 +253,7 @@
   --line-height-cita: 1.5;
   --line-height-cuerpo: 1.65;
   --line-height-holgado: 1.6;
+  --line-height-monograma-secundario: 2;
 
   /* Los h3 de hito y de tarjeta van a 1.15 en toda la Landing aplicada, entre
      el 1.1 del título 2 y el 1.2 que el catálogo da al título 3. Y las horas y
@@ -278,6 +282,7 @@
      pie son Jost en caja normal con un espaciado corto. */
   --letter-spacing-pildora: 0.18em;
   --letter-spacing-monograma: 0.04em;
+  --letter-spacing-monograma-secundario: 0.5em;
   --letter-spacing-pista: 0.34em;
   --letter-spacing-enlace-pie: 0.1em;
 
@@ -664,7 +669,6 @@
   --size-solapa: 64%;
   --size-lira-solapa: 34%;
   --size-lira-solapa-alto: 54%;
-  --size-pie-sobre: 22.5rem;
   --width-escenario: min(35rem, 94vw);
   --width-sobre: min(31.25rem, 92vw);
   --width-nota-sobre: 27.5rem;
@@ -853,4 +857,22 @@
 
   /* Los puntos de ruptura viven en el bloque `@theme` de globals.css:
      las media queries se resuelven en compilación y no aceptan var(). */
+
+  /*
+    LA ESCALA DE LA IMAGEN PARA COMPARTIR (1200 × 630). Va en píxeles porque
+    la pinta Satori, que no entiende rem ni variables CSS: el generador de
+    tokens la resuelve y la deja en `tokens.generado.ts`. Calculada para que el
+    contenido quepa con el mismo aire arriba y abajo.
+  */
+  --size-og-margen-vertical: 72px;
+  --size-og-margen-lateral: 140px;
+  --size-og-texto-etiqueta: 24px;
+  --size-og-espaciado-etiqueta: 8px;
+  --size-og-texto-nombres: 88px;
+  --size-og-texto-conector: 80px;
+  --size-og-solape-conector: 4px;
+  --size-og-texto-pie: 30px;
+  --size-og-hueco: 28px;
+  --size-og-hueco-pie: 36px;
+  --size-og-filete: 2px;
 }

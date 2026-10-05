@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 
+import { PantallaEstado } from "@/components/marketing/pantalla-estado";
 import { Boton, BotonEnlace } from "@/components/ui/boton";
-import { Cuerpo, Titulo2 } from "@/components/ui/tipografia";
 import { t } from "@/lib/copy";
 
 /**
@@ -35,22 +35,13 @@ export default function ErrorPublico({
   }, [error]);
 
   return (
-    <main
-      role="alert"
-      className="mx-auto grid min-h-dvh max-w-texto place-items-center px-interno text-center"
-    >
-      <div>
-        <Titulo2 como="h1">{t("errores.falloTitulo")}</Titulo2>
-        <Cuerpo className="mt-pila">{t("errores.falloTexto")}</Cuerpo>
-        <div className="mt-bloque flex flex-wrap justify-center gap-interno">
-          <Boton type="button" onClick={() => retry()}>
-            {t("errores.reintentar")}
-          </Boton>
-          <BotonEnlace href="/" jerarquia="secundario">
-            {t("errores.volverAlInicio")}
-          </BotonEnlace>
-        </div>
-      </div>
-    </main>
+    <PantallaEstado alerta titulo={t("errores.falloTitulo")} texto={t("errores.falloTexto")}>
+      <Boton type="button" onClick={() => retry()}>
+        {t("errores.reintentar")}
+      </Boton>
+      <BotonEnlace href="/" jerarquia="secundario">
+        {t("errores.volverAlInicio")}
+      </BotonEnlace>
+    </PantallaEstado>
   );
 }

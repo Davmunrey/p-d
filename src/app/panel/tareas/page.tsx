@@ -702,7 +702,7 @@ function Plantilla({ grupos, vista }: { grupos: GrupoPlantilla[]; vista: string 
                   type="checkbox"
                   name="grupos"
                   value={grupo.grupo}
-                  className="size-casilla accent-marca"
+                  className="casilla-marca transicion-color"
                 />
                 {nombreDelGrupo(grupo.grupo)}
                 <span className="text-tinta-suave">

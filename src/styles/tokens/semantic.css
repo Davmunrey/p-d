@@ -86,6 +86,13 @@
   --accion: var(--color-marino-700);
   --accion-hover: var(--color-pizarra-900);
 
+  /*
+    EL BOTÓN PULSADO. En el móvil no hay `hover`: sin esto, un toque no
+    respondía hasta que llegaba la página siguiente. Es el tono del `hover`,
+    que en una pantalla táctil no se ve nunca.
+  */
+  --accion-activa: var(--color-pizarra-900);
+
   /* --- Acento (el bronce, a gotas) ------------------------------------ */
   --acento: var(--color-bronce-600);
   --acento-hover: var(--color-bronce-500);
@@ -269,6 +276,7 @@
   --texto-meta: var(--font-size-meta);
   --texto-titulo-tarjeta: var(--font-size-titulo-tarjeta);
   --texto-monograma-pie: var(--font-size-monograma-pie);
+  --texto-monograma-secundario: var(--font-size-monograma-secundario);
   --peso-titulo: var(--font-weight-light);
   --peso-titulo-menor: var(--font-weight-regular);
   --peso-cuerpo: var(--font-weight-regular);
@@ -282,6 +290,7 @@
   --interlineado-cuerpo: var(--line-height-cuerpo);
   --interlineado-hito: var(--line-height-hito);
   --interlineado-compacto: var(--line-height-compacto);
+  --interlineado-monograma-secundario: var(--line-height-monograma-secundario);
   --espaciado-display: var(--letter-spacing-display);
   --espaciado-titulo: var(--letter-spacing-titulo);
   --espaciado-normal: var(--letter-spacing-normal);
@@ -293,6 +302,7 @@
   --espaciado-pildora: var(--letter-spacing-pildora);
   --espaciado-meta: var(--letter-spacing-meta);
   --espaciado-monograma: var(--letter-spacing-monograma);
+  --espaciado-monograma-secundario: var(--letter-spacing-monograma-secundario);
   --espaciado-pista: var(--letter-spacing-pista);
   --espaciado-enlace-pie: var(--letter-spacing-enlace-pie);
   --espaciado-pie: var(--letter-spacing-pie);
@@ -362,6 +372,28 @@
   --ancho-foto-tira: var(--size-foto-tira);
   --ancho-cifra: var(--size-cifra);
   --lado-casilla: var(--size-casilla);
+
+  /* La imagen para compartir: ver `--size-og-*` en primitives.css. */
+  --og-margen-vertical: var(--size-og-margen-vertical);
+  --og-margen-lateral: var(--size-og-margen-lateral);
+  --og-texto-etiqueta: var(--size-og-texto-etiqueta);
+  --og-espaciado-etiqueta: var(--size-og-espaciado-etiqueta);
+  --og-texto-nombres: var(--size-og-texto-nombres);
+  --og-texto-conector: var(--size-og-texto-conector);
+  --og-solape-conector: var(--size-og-solape-conector);
+  --og-texto-pie: var(--size-og-texto-pie);
+  --og-hueco: var(--size-og-hueco);
+  --og-hueco-pie: var(--size-og-hueco-pie);
+  --og-filete: var(--size-og-filete);
+
+  /*
+    LA CASILLA Y EL RADIO DE LA MARCA (`casilla-marca`). Sin marcar, un aro;
+    marcada, el aro y un punto del color de la tinta con un hueco transparente
+    entre los dos. Lo marcado es lo más claro sobre marino y lo más oscuro sobre
+    claro: nunca al revés, que era lo que pintaban los controles del sistema.
+  */
+  --grosor-casilla: var(--border-width-2);
+  --hueco-casilla: var(--space-linea);
   --lado-miniatura: var(--size-miniatura);
   --ancho-columna-token: var(--size-columna-token);
   --alto-barra-muestra: var(--size-barra-muestra);
@@ -473,7 +505,14 @@
   --brillo-papel: var(--color-brillo-papel);
   --brillo-papel-final: var(--color-brillo-papel-0);
   --tinta-remite: var(--color-marino-380);
-  --tinta-pista: var(--color-marino-420);
+
+  /*
+    «Tocad el sello para abrir» es la ÚNICA instrucción del sobre, y en el gris
+    azulado de la entrega (marino-420) se leía a 2,8:1 en 10 px. Pasa al azul de
+    la marca, a 7,8:1: el mismo criterio con el que el resto de los textos
+    pequeños del Save the Date dejaron el gris tenue.
+  */
+  --tinta-pista: var(--color-marino-500);
   --tinta-sello: var(--color-nieve-100);
   --sello-brillo: var(--color-marino-470);
   --sello-medio: var(--color-marino-640);
@@ -517,7 +556,6 @@
   --alto-solapa: var(--size-solapa);
   --ancho-lira-solapa: var(--size-lira-solapa);
   --alto-lira-solapa: var(--size-lira-solapa-alto);
-  --alto-pie-sobre: var(--size-pie-sobre);
   --ancho-sobre: var(--width-sobre);
   --ancho-nota-sobre: var(--width-nota-sobre);
   --proporcion-sobre: var(--ratio-sobre);
@@ -705,6 +743,15 @@
  */
 
 [data-seccion="inversa"] {
+  /*
+    EL NAVEGADOR TAMBIÉN TIENE QUE SABER QUE AQUÍ ES DE NOCHE. No es un tema
+    oscuro —no depende de `prefers-color-scheme` y el documento sigue en
+    claro—: le dice que este bloque es oscuro, y así el desplegable del
+    `<select>`, el asa del área de texto y las barras de desplazamiento dejan
+    de salir blancos sobre el marino.
+  */
+  color-scheme: dark;
+
   --fondo: var(--color-marino-700);
   --superficie: var(--color-marino-775);
   --superficie-elevada: var(--color-nieve-50);
@@ -724,6 +771,19 @@
   /* El rojo de los errores de campo del RSVP: en 13 px sobre marino-700, el
      claro se quedaba en 3,1:1. */
   --error: var(--color-error-sobre-oscuro);
+
+  /*
+    Y LAS CAJAS DE AVISO. Sin reasignarlas, un error del RSVP salía en la caja
+    rosa clara de la página —lo más luminoso de toda la pantalla marino— y la
+    etiqueta «Confirmado» en la menta clara. Fondo hundido y tinta clara del
+    mismo tono, como el resto del bloque.
+  */
+  --error-fondo: var(--color-marino-800);
+  --error-tinta: var(--color-error-sobre-oscuro);
+  --exito-fondo: var(--color-marino-800);
+  --exito-tinta: var(--color-exito-oscuro);
+  --aviso-fondo: var(--color-marino-800);
+  --aviso-tinta: var(--color-aviso-oscuro);
   --tinta: var(--color-nieve-100);
   --tinta-suave: var(--color-marino-200);
   --tinta-tenue: var(--color-marino-350);
@@ -739,6 +799,7 @@
    */
   --accion: var(--color-marino-100);
   --accion-hover: var(--color-blanco);
+  --accion-activa: var(--color-marino-200);
   --tinta-sobre-accion: var(--color-pizarra-900);
   --acento: var(--color-bronce-300);
   --acento-hover: var(--color-bronce-200);
@@ -779,11 +840,19 @@
 }
 
 [data-seccion="pie"] {
+  color-scheme: dark;
+
   --fondo: var(--color-pizarra-950);
   --superficie: var(--color-pizarra-950);
   --superficie-hundida: var(--color-marino-900);
   --marca-tenue: var(--color-marino-800);
   --error: var(--color-error-sobre-oscuro);
+  --error-fondo: var(--color-marino-900);
+  --error-tinta: var(--color-error-sobre-oscuro);
+  --exito-fondo: var(--color-marino-900);
+  --exito-tinta: var(--color-exito-oscuro);
+  --aviso-fondo: var(--color-marino-900);
+  --aviso-tinta: var(--color-aviso-oscuro);
   --tinta: var(--color-nieve-100);
   --tinta-suave: var(--color-marino-450);
   --tinta-tenue: var(--color-marino-450);
@@ -791,6 +860,7 @@
   --marca: var(--color-marino-350);
   --accion: var(--color-marino-100);
   --accion-hover: var(--color-blanco);
+  --accion-activa: var(--color-marino-200);
   --tinta-sobre-accion: var(--color-pizarra-900);
   --acento: var(--color-bronce-300);
   --acento-hover: var(--color-bronce-200);
