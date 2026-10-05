@@ -1,6 +1,9 @@
 import "server-only";
 
+import { ESTADO_RECHAZADO, sillasOcupadas } from "@/lib/aforo";
 import { clienteServidor } from "@/lib/supabase/servidor";
+
+export { ESTADO_RECHAZADO, sillasOcupadas };
 
 /**
  * BODA-83 y BODA-84 · LAS MESAS DEL BANQUETE, DESDE EL PANEL
@@ -61,9 +64,6 @@ export function esFormaMesa(valor: string): valor is FormaMesa {
 
 /** El estado de la confirmación de quien sí viene. */
 export const ESTADO_CONFIRMADO = "confirmado";
-
-/** El de quien ha dicho que no. A ése no se le sienta en ninguna mesa. */
-export const ESTADO_RECHAZADO = "rechazado";
 
 export interface Mesa {
   id: string;
@@ -297,19 +297,24 @@ export async function contarSentados(
 
   let consulta = supabase
     .from("invitados")
-    .select("id", { count: "exact", head: true })
+    .select("id, confirmaciones ( estado, es_vigente )")
     .eq("mesa_id", mesaId);
 
   if (excluyendoGrupo) consulta = consulta.neq("grupo_id", excluyendoGrupo);
 
-  const { count, error } = await consulta;
+  const { data, error } = await consulta;
 
   if (error) {
     console.error("No se pudo contar quién está sentado:", error);
     return null;
   }
 
-  return count ?? 0;
+  // Quien ha dicho que no deja su silla libre, aunque siga apuntado a la mesa.
+  return sillasOcupadas(
+    (data ?? []).map((fila) => ({
+      estado: estadoVigente(fila.confirmaciones as FilaConfirmacion[] | undefined),
+    })),
+  );
 }
 
 /** Una mesa suelta, para las acciones. `null` si no existe o si RLS no la deja ver. */

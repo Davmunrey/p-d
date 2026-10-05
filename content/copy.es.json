@@ -693,7 +693,8 @@
       "errorNoExiste": "Esa mesa ya no existe.",
       "errorEnUso": "No se puede borrar: hay algo que depende de esta mesa.",
       "errorSinPermiso": "Sólo un editor puede tocar las mesas y el reparto.",
-      "errorGuardar": "No hemos podido guardar. Inténtalo de nuevo."
+      "errorGuardar": "No hemos podido guardar. Inténtalo de nuevo.",
+      "noViene": "No viene"
     },
     "importar": {
       "titulo": "Importar invitados",

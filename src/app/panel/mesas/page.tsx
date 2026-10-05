@@ -25,6 +25,7 @@ import {
   obtenerAlergiasPorMesa,
   obtenerComensales,
   obtenerMesas,
+  sillasOcupadas,
   type AlergiaEnMesa,
   type Comensal,
   type FormaMesa,
@@ -420,7 +421,7 @@ function SelectorDeMesa({
         <option key={mesa.id} value={mesa.id}>
           {t("panel.mesas.opcionMesa", {
             mesa: mesa.nombre,
-            sentados: sentadosPorMesa.get(mesa.id)?.length ?? 0,
+            sentados: sillasOcupadas(sentadosPorMesa.get(mesa.id) ?? []),
             capacidad: mesa.capacidad,
           })}
         </option>
@@ -494,7 +495,7 @@ function Plano({
               <MesaEnElPlano
                 key={mesa.id}
                 mesa={mesa}
-                sentados={sentadosPorMesa.get(mesa.id)?.length ?? 0}
+                sentados={sillasOcupadas(sentadosPorMesa.get(mesa.id) ?? [])}
               />
             ))}
           </ul>
@@ -625,12 +626,12 @@ function BloqueMesa({
             más de la fila y sigue siendo texto suelto: ponerle píldora a todo
             dejaría de distinguir lo que hay que mirar.
           */}
-          {sentados.length > mesa.capacidad ? (
+          {sillasOcupadas(sentados) > mesa.capacidad ? (
             <EtiquetaEstado variante="aviso" tamano="compacta" className="px-interno">
-              {ocupacionDe(mesa, sentados.length)}
+              {ocupacionDe(mesa, sillasOcupadas(sentados))}
             </EtiquetaEstado>
           ) : (
-            <span className="text-tinta">{ocupacionDe(mesa, sentados.length)}</span>
+            <span className="text-tinta">{ocupacionDe(mesa, sillasOcupadas(sentados))}</span>
           )}
         </div>
       </div>
@@ -657,7 +658,16 @@ function BloqueMesa({
                     {t("panel.mesas.esNino")}
                   </span>
                 ) : null}
-                {persona.estado !== ESTADO_CONFIRMADO ? (
+                {/*
+                  TRES ESTADOS, NO DOS. Quien dijo que no salía como «Sin
+                  contestar», la misma etiqueta que quien todavía no ha
+                  respondido, mientras la hoja exportada decía «No viene».
+                */}
+                {persona.estado === ESTADO_RECHAZADO ? (
+                  <EtiquetaEstado variante="error" tamano="compacta" className="px-interno">
+                    {t("panel.mesas.noViene")}
+                  </EtiquetaEstado>
+                ) : persona.estado !== ESTADO_CONFIRMADO ? (
                   <EtiquetaEstado variante="aviso" tamano="compacta" className="px-interno">
                     {t("panel.invitados.pendienteRespuesta")}
                   </EtiquetaEstado>

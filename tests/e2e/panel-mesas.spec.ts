@@ -557,4 +557,96 @@ test.describe("El plano de mesas y el reparto", () => {
     // …y lo dice, que es la mitad que importa.
     await expect(page.getByText(copy.panel.mesas.avisoSentadoSinConfirmar)).toBeVisible();
   });
+
+  /**
+   * QUIEN DICE QUE NO DESPUÉS DE SENTADO DEJA SU SILLA LIBRE, Y SE VE.
+   *
+   * Contestar que no por el RSVP no le quita la mesa: el reparto es de los
+   * novios y no se deshace solo. Pero esa silla no puede seguir contando. Antes
+   * contaba —la mesa salía llena y no se podía sentar a nadie más— y además se
+   * pintaba «Sin contestar», la misma etiqueta que la de quien aún no ha dicho
+   * nada, mientras la hoja exportada decía «No viene».
+   */
+  test("la silla de quien dice que no queda libre, y sólo esa", async ({ page }) => {
+    const sello = Date.now();
+    const nombreMesa = `${MARCA} Hueco ${sello}`;
+    const nombrePareja = `${MARCA} Pareja ${sello}`;
+    const nombreSuelto = `${MARCA} Suelto ${sello}`;
+    const nombreTarde = `${MARCA} Tarde ${sello}`;
+
+    const mesaId = await crearMesa(nombreMesa, 2);
+    const parejaId = await crearGrupo(nombrePareja, 2, true);
+    await crearGrupo(nombreSuelto, 1, true);
+    await crearGrupo(nombreTarde, 1, true);
+
+    // La pareja ya estaba sentada, y uno de los dos contesta después que no.
+    const quienNoViene = await conBase(async (sql) => {
+      await sql`update public.invitados set mesa_id = ${mesaId} where grupo_id = ${parejaId}`;
+      const [persona] = await sql<{ id: string; nombre_completo: string }[]>`
+        select id, nombre_completo from public.invitados
+         where grupo_id = ${parejaId}
+         order by nombre limit 1
+      `;
+      await sql`
+        insert into public.confirmaciones
+          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
+        values (${persona.id}, 'rechazado', 'publico', null, null)
+      `;
+      return persona;
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_MESAS);
+
+    const mesa = seccion(page, nombreMesa);
+    await expect(mesa).toContainText(
+      conValores(copy.panel.mesas.ocupacion, { sentados: 1, capacidad: 2 }),
+    );
+    await expect(
+      mesa.locator("li").filter({ hasText: quienNoViene.nombre_completo }),
+      "quien ha dicho que no se distingue de quien aún no ha contestado",
+    ).toContainText(copy.panel.mesas.noViene);
+
+    // CAMINO FELIZ · Su silla libre admite a otro.
+    const suelto = seccion(page, copy.panel.mesas.sinMesaTitulo)
+      .locator("li")
+      .filter({ hasText: nombreSuelto });
+    await suelto
+      .getByLabel(conValores(copy.panel.mesas.campoMesaGrupo, { grupo: nombreSuelto }), {
+        exact: true,
+      })
+      .selectOption(mesaId);
+    await enviar(
+      page,
+      suelto.getByRole("button", { name: copy.panel.mesas.sentarGrupo, exact: true }),
+    );
+    await esperarEstado(page, "sentado");
+
+    expect(await cuantosSentados(mesaId), "la pareja sigue apuntada y el suelto entra").toBe(3);
+    await expect(seccion(page, nombreMesa)).toContainText(
+      conValores(copy.panel.mesas.ocupacion, { sentados: 2, capacidad: 2 }),
+    );
+
+    // CASO DE ERROR · Sólo esa: con la mesa ya llena, el siguiente no cabe.
+    const tarde = seccion(page, copy.panel.mesas.sinMesaTitulo)
+      .locator("li")
+      .filter({ hasText: nombreTarde });
+    await tarde
+      .getByLabel(conValores(copy.panel.mesas.campoMesaGrupo, { grupo: nombreTarde }), {
+        exact: true,
+      })
+      .selectOption(mesaId);
+    await enviar(
+      page,
+      tarde.getByRole("button", { name: copy.panel.mesas.sentarGrupo, exact: true }),
+    );
+    await esperarEstado(page, "sin-sitio");
+
+    expect(await cuantosSentados(mesaId), "con la mesa llena no entra nadie más").toBe(3);
+    await expect(
+      page.getByText(
+        conValores(copy.panel.mesas.errorSinSitio, { mesa: nombreMesa, caben: 2, habria: 3 }),
+      ),
+    ).toBeVisible();
+  });
 });
