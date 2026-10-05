@@ -160,7 +160,8 @@ const MOTIVOS: Record<MotivoNoSeVe, ClaveCopy | null> = {
   "solo-la-primera-foto": "panel.medios.motivos.soloLaPrimeraFoto",
   "sin-medidas": "panel.medios.motivos.sinMedidas",
   "sin-ficha": "panel.medios.motivos.sinFicha",
-  "seccion-sin-medios": "panel.medios.motivos.seccionSinMedios",
+  // Ya lo dice la sección entera, una vez: repetirlo en cada ficha es ruido.
+  "seccion-sin-medios": null,
 };
 
 function BloqueSeccion({

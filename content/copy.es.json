@@ -1172,8 +1172,7 @@
         "soloLaPrimera": "Esta parte de la web enseña sólo la primera. Subidla al principio para que salga ésta.",
         "soloLaPrimeraFoto": "La tarjeta enseña sólo la primera foto, y los vídeos no. Subidla al principio para que salga ésta.",
         "sinMedidas": "La galería sólo coloca fotos con medidas, y ésta no las tiene: los vídeos y algunos formatos, como AVIF, no se pueden medir.",
-        "sinFicha": "Sale cuando se elige como foto en una ficha publicada de Contenido.",
-        "seccionSinMedios": "Esta parte de la web no enseña fotos."
+        "sinFicha": "Sale cuando se elige como foto en una ficha publicada de Contenido."
       },
       "enLaWeb": "En la web",
       "cuantos": "{cuantos} en la web de {total}",
