@@ -257,10 +257,9 @@ export async function obtenerAlergiasPorMesa(): Promise<AlergiaEnMesa[]> {
     .order("mesa", { nullsFirst: true })
     .order("nombre");
 
-  if (error) {
-    console.error("No se pudieron leer las alergias por mesa:", error);
-    return [];
-  }
+  // Como las mesas y los comensales: la pantalla se imprime, y una lista vacía
+  // en papel dice «nadie tiene alergias».
+  if (error) throw new Error(`No se pudieron leer las alergias por mesa: ${error.message}`);
 
   return ((data ?? []) as unknown as FilaAlergia[]).map((fila) => ({
     mesaId: fila.mesa_id,

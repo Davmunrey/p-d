@@ -233,6 +233,12 @@ async function limpiar() {
     `;
     await sql`delete from public.proveedores where nombre like ${`${MARCA}%`}`;
     await sql`delete from public.categorias_proveedor where nombre like ${`${MARCA}%`}`;
+    /*
+      Las correcciones del recuento, por su nota. Las borraba cada test al
+      final, y un test que se cae antes de su última línea dejaba el catering
+      con un «−1» en el menú sin gluten para todos los que venían detrás.
+    */
+    await sql`delete from public.correcciones_recuento where nota like ${`${MARCA}%`}`;
   });
 }
 
@@ -633,6 +639,122 @@ test.describe("El día de la boda", () => {
   });
 
   /**
+   * CAMINO FELIZ · Se corrige un menú que nadie ha pedido todavía.
+   *
+   * Es el caso para el que existe la corrección: dos niños que se presentan sin
+   * haber contestado, cuando no hay ni un «Infantil» confirmado. El desplegable
+   * sólo ofrecía los menús que ya tenían confirmados, así que no se podía.
+   */
+  test("se puede corregir un menú del que no hay ningún confirmado", async ({ page }) => {
+    await sembrar(Date.now() + 7);
+
+    // En la semilla no hay ningún «Infantil» confirmado; si algún día lo hay,
+    // la cuenta sigue siendo la misma: lo confirmado más la corrección.
+    const infantilesConfirmados = await conBase(async (sql) =>
+      Number(
+        (
+          await sql<{ personas: string }[]>`
+            select personas from public.v_menus_confirmados where tipo_menu = 'infantil'
+          `
+        )[0]?.personas ?? 0,
+      ),
+    );
+
+    await entrar(page);
+    await page.goto(RUTA_RECUENTO);
+
+    await page.getByLabel(copy.panel.dia.recuento.campoMenu, { exact: true }).selectOption({
+      label: copy.rsvp.menus.infantil,
+    });
+    await page.getByLabel(copy.panel.dia.recuento.campoAjuste, { exact: true }).fill("2");
+    await page
+      .getByLabel(copy.panel.dia.recuento.campoNota, { exact: true })
+      .fill(`${MARCA} vienen dos niños sin contestar`);
+    await page.getByRole("button", { name: copy.panel.dia.recuento.guardar }).click();
+    await esperarEstado(page, "corregido");
+
+    const [linea] = await conBase(
+      (sql) => sql<{ total: string }[]>`
+        select total from public.v_recuento_catering where tipo_menu = 'infantil'
+      `,
+    );
+    expect(Number(linea?.total), "la línea del menú tiene que existir y sumar").toBe(
+      infantilesConfirmados + 2,
+    );
+
+    await expect(
+      page
+        .locator("tr")
+        .filter({ has: page.getByRole("rowheader", { name: copy.rsvp.menus.infantil }) }),
+    ).toBeVisible();
+
+    await conBase(
+      (sql) => sql`delete from public.correcciones_recuento where tipo_menu = 'infantil'`,
+    );
+  });
+
+  /**
+   * CASO DE ERROR · Un porqué más largo de lo que admite la base lo dice.
+   *
+   * El campo ya corta al escribir; esto es lo que pasa si llega igual (otro
+   * navegador, un formulario viejo en caché). Antes el `check` de la base lo
+   * rechazaba y la pantalla pedía reintentar, que no iba a servir nunca.
+   */
+  test("una nota más larga de lo que cabe se explica y no se guarda", async ({ page }) => {
+    await sembrar(Date.now() + 8);
+
+    await entrar(page);
+    await page.goto(RUTA_RECUENTO);
+
+    const nota = page.getByLabel(copy.panel.dia.recuento.campoNota, { exact: true });
+    const tope = Number(await nota.getAttribute("maxlength"));
+    expect(tope, "el campo tiene que llevar el tope de la base").toBeGreaterThan(0);
+
+    await page.getByLabel(copy.panel.dia.recuento.campoMenu, { exact: true }).selectOption({
+      label: copy.rsvp.menus.vegano,
+    });
+    await page.getByLabel(copy.panel.dia.recuento.campoAjuste, { exact: true }).fill("1");
+    await nota.evaluate((campo) => campo.removeAttribute("maxlength"));
+    await nota.fill(`${MARCA} ${"x".repeat(tope)}`);
+    await page.getByRole("button", { name: copy.panel.dia.recuento.guardar }).click();
+    await esperarEstado(page, "nota-larga");
+
+    await expect(page.getByText(copy.panel.dia.avisos.notaLarga)).toBeVisible();
+    const guardadas = await conBase(
+      (sql) => sql`
+        select 1 from public.correcciones_recuento
+         where tipo_menu = 'vegano' and nota like ${`${MARCA}%`}
+      `,
+    );
+    expect(guardadas, "no se guarda nada").toHaveLength(0);
+  });
+
+  /**
+   * CASO DE ERROR · Si no se pueden leer las alergias, no se afirma que no hay.
+   *
+   * «Nadie ha apuntado ninguna alergia» es una frase que se copia al catering.
+   * Ante una lectura caída, la pantalla de avería con su «Reintentar». Se
+   * simula quitándole a `authenticated` la vista, y se devuelve al acabar.
+   */
+  test("si las alergias no se pueden leer, no dice que nadie tiene alergias", async ({
+    page,
+  }) => {
+    await entrar(page);
+
+    try {
+      await conBase(
+        (sql) => sql`revoke select on public.v_alergias_por_mesa from authenticated`,
+      );
+      await page.goto(RUTA_RECUENTO);
+
+      await expect(page.getByRole("heading", { name: copy.panel.errorTitulo })).toBeVisible();
+      await expect(page.getByText(copy.panel.dia.recuento.alergiasVacio)).toHaveCount(0);
+    } finally {
+      await conBase((sql) => sql`grant select on public.v_alergias_por_mesa to authenticated`);
+    }
+  });
+
+  /**
    * CASO DE ERROR · #70 — una corrección que no es un número se rechaza con
    * palabras en vez de guardar cualquier cosa.
    */
@@ -683,5 +805,80 @@ test.describe("El día de la boda", () => {
     */
     await expect(page.getByText(copy.panel.dia.exportar.esUnaFotoFija)).toBeVisible();
     await expect(page.getByText(/^Generado el /)).toBeVisible();
+  });
+
+  /**
+   * QUIEN HA DICHO QUE NO NO OCUPA SILLA EN EL PAPEL, Y EL BUSCADOR LO DICE.
+   *
+   * Conserva su mesa —el reparto es de los novios—, pero salía en ella con
+   * «No ha confirmado» y un menú al lado, igual que quien todavía no ha dicho
+   * nada. Sobre ese papel se cuentan sillas y platos.
+   */
+  test("quien ha dicho que no sale aparte en el papel y el buscador lo distingue", async ({
+    page,
+  }) => {
+    const sembrado = await sembrar(Date.now() + 9);
+    const noViene = { nombre: "Rodrigo", apellidos: `Ausente Pérez ${sembrado.sello}` };
+    const callada = { nombre: "Inés", apellidos: `Callada Ruiz ${sembrado.sello}` };
+
+    await conBase(async (sql) => {
+      const [suya] = await sql<{ mesa_id: string; grupo_id: string }[]>`
+        select mesa_id, grupo_id from public.invitados
+         where apellidos = ${sembrado.invitado.apellidos}
+      `;
+      const [persona] = await sql<{ id: string }[]>`
+        insert into public.invitados (grupo_id, mesa_id, nombre, apellidos, tipo_menu)
+        values (${suya.grupo_id}, ${suya.mesa_id}, ${noViene.nombre}, ${noViene.apellidos},
+                'vegetariano')
+        returning id
+      `;
+      await sql`
+        insert into public.confirmaciones
+          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
+        values (${persona.id}, 'rechazado', 'publico', null, null)
+      `;
+      // Y otra que no contesta: la base le deja su `pendiente` al darla de alta.
+      await sql`
+        insert into public.invitados (grupo_id, mesa_id, nombre, apellidos)
+        values (${suya.grupo_id}, ${suya.mesa_id}, ${callada.nombre}, ${callada.apellidos})
+      `;
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_EXPORTAR_DIA);
+
+    const mesa = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: sembrado.invitado.mesa }) });
+    await expect(mesa).toContainText(sembrado.invitado.apellidos);
+    await expect(mesa, "quien dijo que no no ocupa silla en su mesa").not.toContainText(
+      noViene.apellidos,
+    );
+
+    // Quien no ha contestado sigue en su mesa, marcado y sin un menú que no pidió.
+    const filaCallada = mesa.locator("tr").filter({ hasText: callada.apellidos });
+    await expect(filaCallada).toContainText(copy.panel.dia.buscar.sinConfirmar);
+    await expect(filaCallada).not.toContainText(copy.rsvp.menus.estandar);
+
+    const noVienen = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: copy.panel.dia.exportar.noVienen }) });
+    await expect(noVienen).toContainText(noViene.apellidos);
+    await expect(noVienen).not.toContainText(copy.rsvp.menus.vegetariano);
+
+    // El buscador: la ficha lo dice antes que nada, y no le pone menú.
+    await page.goto(RUTA_BUSCAR_DIA);
+    const campo = page.getByLabel(copy.panel.dia.buscar.campo, { exact: true });
+
+    await campo.fill("ausente");
+    const fichaNo = page.locator("article").filter({ hasText: noViene.apellidos });
+    await expect(fichaNo).toContainText(copy.panel.dia.buscar.noViene);
+    await expect(fichaNo).not.toContainText(copy.panel.dia.buscar.sinConfirmar);
+    await expect(fichaNo).not.toContainText(copy.rsvp.menus.vegetariano);
+
+    await campo.fill("callada");
+    const fichaCallada = page.locator("article").filter({ hasText: callada.apellidos });
+    await expect(fichaCallada).toContainText(copy.panel.dia.buscar.sinConfirmar);
+    await expect(fichaCallada).not.toContainText(copy.panel.dia.buscar.noViene);
   });
 });

@@ -169,10 +169,9 @@ export async function obtenerAgendaDelDia(): Promise<ProveedorEnLaAgenda[]> {
     .eq("estado", "contratado")
     .order("nombre", { ascending: true });
 
-  if (error) {
-    console.error("No se pudo leer la agenda del día:", error);
-    return [];
-  }
+  // Vacía diría «no hay a quién llamar», y en la hoja de papel faltarían los
+  // teléfonos sin que nadie lo note hasta que hacen falta.
+  if (error) throw new Error(`No se pudo leer la agenda del día: ${error.message}`);
 
   const proveedores = ((data as unknown as FilaAgenda[] | null) ?? []).map((fila) => ({
     id: fila.id,
@@ -236,8 +235,26 @@ export interface InvitadoDelDia {
   tipoMenu: string;
   alergias: string | null;
   esNino: boolean;
-  /** Si ha confirmado. Quien no viene también se busca: para saber que no viene. */
-  confirmado: boolean;
+  /**
+   * Lo que contestó. Quien no viene también se busca: para saber que no viene.
+   *
+   * TRES Y NO DOS. Con un `confirmado: boolean`, quien dijo que no y quien no
+   * ha dicho nada salían igual —«No ha confirmado»— en la hoja de papel y en
+   * el buscador, y con el menú por defecto al lado como si lo hubiera pedido.
+   */
+  respuesta: RespuestaDelDia;
+}
+
+export type RespuestaDelDia = "viene" | "noViene" | "sinContestar";
+
+/** `tentativo` cuenta como sin contestar: «casi seguro» no es una silla. */
+function respuestaVigente(
+  confirmaciones: { estado: string; es_vigente: boolean }[] | null,
+): RespuestaDelDia {
+  const vigente = confirmaciones?.find((confirmacion) => confirmacion.es_vigente);
+  if (vigente?.estado === "confirmado") return "viene";
+  if (vigente?.estado === "rechazado") return "noViene";
+  return "sinContestar";
 }
 
 interface FilaInvitadoDelDia {
@@ -270,10 +287,8 @@ export async function obtenerInvitadosDelDia(): Promise<InvitadoDelDia[]> {
     .order("apellidos", { ascending: true })
     .order("nombre", { ascending: true });
 
-  if (error) {
-    console.error("No se pudieron leer los invitados del día:", error);
-    return [];
-  }
+  // Una lista vacía aquí diría «nadie se llama así» de quien sí está invitado.
+  if (error) throw new Error(`No se pudieron leer los invitados del día: ${error.message}`);
 
   return ((data as unknown as FilaInvitadoDelDia[] | null) ?? []).map((fila) => ({
     id: fila.id,
@@ -283,10 +298,7 @@ export async function obtenerInvitadosDelDia(): Promise<InvitadoDelDia[]> {
     tipoMenu: fila.tipo_menu,
     alergias: fila.alergias,
     esNino: fila.es_nino,
-    confirmado:
-      fila.confirmaciones?.some(
-        (confirmacion) => confirmacion.es_vigente && confirmacion.estado === "confirmado",
-      ) ?? false,
+    respuesta: respuestaVigente(fila.confirmaciones),
   }));
 }
 
@@ -349,10 +361,13 @@ export async function obtenerRecuento(): Promise<LineaDelRecuento[]> {
     .select("tipo_menu, confirmados, con_alergias, ajuste, total, nota, corregido_en")
     .order("tipo_menu", { ascending: true });
 
-  if (error) {
-    console.error("No se pudo leer el recuento del catering:", error);
-    return [];
-  }
+  /*
+    LAS TRES LECTURAS DEL RECUENTO LANZAN, no devuelven ceros. Lo que pintan no
+    es una pantalla vacía sino una afirmación —«nadie tiene alergias», «0
+    adultos»— que se copia tal cual al catering por WhatsApp. Ante la avería,
+    la pantalla de error del panel con su «Reintentar».
+  */
+  if (error) throw new Error(`No se pudo leer el recuento del catering: ${error.message}`);
 
   return ((data as FilaRecuento[] | null) ?? []).map((fila) => ({
     tipoMenu: fila.tipo_menu,
@@ -394,8 +409,7 @@ export async function obtenerCabezas(): Promise<CabezasDelRecuento> {
     .select("es_nino, confirmaciones ( estado, es_vigente )");
 
   if (error) {
-    console.error("No se pudieron contar los invitados del recuento:", error);
-    return { ninos: 0, adultos: 0, sinContestar: 0 };
+    throw new Error(`No se pudieron contar los invitados del recuento: ${error.message}`);
   }
 
   const filas =
@@ -406,16 +420,14 @@ export async function obtenerCabezas(): Promise<CabezasDelRecuento> {
   const cabezas = { ninos: 0, adultos: 0, sinContestar: 0 };
 
   for (const fila of filas) {
-    const vigente = fila.confirmaciones?.find((confirmacion) => confirmacion.es_vigente);
+    const respuesta = respuestaVigente(fila.confirmaciones);
 
-    if (vigente?.estado === "confirmado") {
+    if (respuesta === "viene") {
       if (fila.es_nino) cabezas.ninos += 1;
       else cabezas.adultos += 1;
-      continue;
+    } else if (respuesta === "sinContestar") {
+      cabezas.sinContestar += 1;
     }
-
-    // `tentativo` cuenta como sin contestar: «casi seguro» no es una silla.
-    if (vigente?.estado !== "rechazado") cabezas.sinContestar += 1;
   }
 
   return cabezas;
@@ -456,10 +468,7 @@ export async function obtenerAlergiasPorMesa(): Promise<AlergiaEnLaMesa[]> {
     .order("mesa", { ascending: true, nullsFirst: false })
     .order("apellidos", { ascending: true });
 
-  if (error) {
-    console.error("No se pudieron leer las alergias por mesa:", error);
-    return [];
-  }
+  if (error) throw new Error(`No se pudieron leer las alergias por mesa: ${error.message}`);
 
   return ((data as FilaAlergia[] | null) ?? []).map((fila) => ({
     mesa: fila.mesa,

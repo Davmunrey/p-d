@@ -11,6 +11,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   "sin-permiso": { clave: "panel.dia.avisos.sinPermiso", error: true },
   "menu-invalido": { clave: "panel.dia.avisos.menuInvalido", error: true },
   "ajuste-invalido": { clave: "panel.dia.avisos.ajusteInvalido", error: true },
+  "nota-larga": { clave: "panel.dia.avisos.notaLarga", error: true },
   error: { clave: "panel.dia.avisos.error", error: true },
 };
 

@@ -9,13 +9,14 @@
 
 /** Cómo le fue a la corrección del recuento. Cada valor tiene su aviso. */
 export type EstadoDia =
-  "corregido" | "sin-permiso" | "menu-invalido" | "ajuste-invalido" | "error";
+  "corregido" | "sin-permiso" | "menu-invalido" | "ajuste-invalido" | "nota-larga" | "error";
 
 const ESTADOS: readonly EstadoDia[] = [
   "corregido",
   "sin-permiso",
   "menu-invalido",
   "ajuste-invalido",
+  "nota-larga",
   "error",
 ];
 

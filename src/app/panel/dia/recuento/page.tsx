@@ -5,7 +5,14 @@ import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { IDIOMA, RUTA_ACCESO, RUTA_DIA, ZONA_HORARIA } from "@/config/constants";
+import {
+  IDIOMA,
+  LARGOS_DE_CAMPO,
+  MENUS_RSVP,
+  RUTA_ACCESO,
+  RUTA_DIA,
+  ZONA_HORARIA,
+} from "@/config/constants";
 import {
   obtenerAlergiasPorMesa,
   obtenerCabezas,
@@ -106,12 +113,13 @@ export default async function PaginaRecuento({ searchParams }: Parametros) {
       )}
 
       {/*
-        NO SE OFRECE CORREGIR LO QUE NO EXISTE. Sin ninguna línea, el
-        desplegable de menús sale vacío y el formulario sólo puede terminar en
-        «ese menú no existe»: un botón que no puede funcionar, que es justo lo
-        que la regla 3 no deja mergear.
+        SE CORRIGE CUALQUIER MENÚ, no sólo los que ya tienen confirmados. El
+        caso que justifica la corrección es justo el otro: los dos niños que se
+        presentan sin haber contestado, cuando nadie había pedido «Infantil».
+        La vista hace un `full join` para que esa línea aparezca; la pantalla
+        tiene que dejar escribirla.
       */}
-      {puedeEditar && lineas.length > 0 ? <Corregir lineas={lineas} /> : null}
+      {puedeEditar ? <Corregir menuInicial={lineas[0]?.tipoMenu ?? MENUS_RSVP[0]} /> : null}
 
       <Alergias alergias={alergias} />
     </>
@@ -250,7 +258,7 @@ function Cabezas({
   );
 }
 
-function Corregir({ lineas }: { lineas: LineaDelRecuento[] }) {
+function Corregir({ menuInicial }: { menuInicial: string }) {
   return (
     <section className="mt-bloque max-w-texto" aria-labelledby="corregir-recuento">
       <Titulo3 como="h2" id="corregir-recuento">
@@ -264,12 +272,12 @@ function Corregir({ lineas }: { lineas: LineaDelRecuento[] }) {
         <CampoSeleccion
           etiqueta={t("panel.dia.recuento.campoMenu")}
           name="tipo_menu"
-          defaultValue={lineas[0]?.tipoMenu ?? ""}
+          defaultValue={menuInicial}
           required
         >
-          {lineas.map((linea) => (
-            <option key={linea.tipoMenu} value={linea.tipoMenu}>
-              {nombreDelMenu(linea.tipoMenu)}
+          {MENUS_RSVP.map((menu) => (
+            <option key={menu} value={menu}>
+              {nombreDelMenu(menu)}
             </option>
           ))}
         </CampoSeleccion>
@@ -287,7 +295,11 @@ function Corregir({ lineas }: { lineas: LineaDelRecuento[] }) {
           required
         />
 
-        <CampoTexto etiqueta={t("panel.dia.recuento.campoNota")} name="nota" />
+        <CampoTexto
+          etiqueta={t("panel.dia.recuento.campoNota")}
+          name="nota"
+          maxLength={LARGOS_DE_CAMPO["correcciones_recuento.nota"]}
+        />
 
         <div>
           <BotonEnvio>{t("panel.dia.recuento.guardar")}</BotonEnvio>

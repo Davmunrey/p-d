@@ -667,6 +667,7 @@ export const LARGOS_DE_CAMPO = {
   "contactos_proveedor.nombre": 120,
   "contactos_proveedor.notas": 1000,
   "contactos_proveedor.papel": 80,
+  "correcciones_recuento.nota": 500,
   "documentos_boda.donde_se_pide": 200,
   "documentos_boda.notas": 2000,
   "documentos_boda.titulo": 160,

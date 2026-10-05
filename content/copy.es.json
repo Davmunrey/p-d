@@ -1531,7 +1531,8 @@
         "menu": "Menú",
         "alergias": "Alergias",
         "nino": "Niño",
-        "sinConfirmar": "No ha confirmado"
+        "sinConfirmar": "No ha confirmado",
+        "noViene": "No viene: dijo que no"
       },
       "recuento": {
         "titulo": "Recuento para el catering",
@@ -1570,13 +1571,16 @@
         "generadoEl": "Generado el {fecha}",
         "esUnaFotoFija": "Es una foto fija: lo que cambie después no está aquí.",
         "mesaSinNombre": "Sin mesa",
-        "contactos": "Teléfonos del día"
+        "contactos": "Teléfonos del día",
+        "noVienen": "Han dicho que no vienen",
+        "noVienenAyuda": "No ocupan silla ni plato. Están aquí por si alguno se presenta igual."
       },
       "avisos": {
         "corregido": "Corrección guardada.",
         "sinPermiso": "Esta cuenta sólo puede mirar, así que no se ha guardado nada.",
         "menuInvalido": "Ese menú no existe.",
         "ajusteInvalido": "La corrección tiene que ser un número entero entre −500 y 500.",
+        "notaLarga": "El porqué es demasiado largo para guardarlo. Resumidlo en un par de frases.",
         "error": "No se ha podido guardar. Volved a intentarlo."
       }
     }

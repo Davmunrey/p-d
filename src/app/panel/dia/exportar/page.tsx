@@ -56,7 +56,15 @@ export default async function PaginaExportarDelDia() {
     obtenerAgendaDelDia(),
   ]);
 
-  const porMesa = agruparPorMesa(invitados);
+  /*
+    QUIEN HA DICHO QUE NO SALE APARTE, NO BAJO SU MESA. Conserva la mesa —el
+    reparto es de los novios y no se deshace solo—, pero sobre el papel se
+    cuentan sillas y platos, y una fila más en la mesa 4 es una silla de más.
+  */
+  const porMesa = agruparPorMesa(
+    invitados.filter((invitado) => invitado.respuesta !== "noViene"),
+  );
+  const noVienen = invitados.filter((invitado) => invitado.respuesta === "noViene");
   const generado = formatoMomento.format(new Date());
 
   return (
@@ -136,14 +144,21 @@ export default async function PaginaExportarDelDia() {
                           · {t("panel.dia.buscar.nino")}
                         </span>
                       ) : null}
-                      {!invitado.confirmado ? (
+                      {invitado.respuesta === "sinContestar" ? (
                         <span className="block text-pequeno text-tinta-suave">
                           {t("panel.dia.buscar.sinConfirmar")}
                         </span>
                       ) : null}
                     </td>
                     <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">
-                      {t(`rsvp.menus.${invitado.tipoMenu}` as "rsvp.menus.estandar")}
+                      {/*
+                        El menú sólo de quien viene, como en la hoja de cálculo:
+                        el de quien no ha contestado es el valor por defecto de
+                        la columna, no algo que haya pedido.
+                      */}
+                      {invitado.respuesta === "viene"
+                        ? t(`rsvp.menus.${invitado.tipoMenu}` as "rsvp.menus.estandar")
+                        : ""}
                     </td>
                     <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">
                       {invitado.alergias ?? ""}
@@ -155,6 +170,22 @@ export default async function PaginaExportarDelDia() {
           </div>
         </section>
       ))}
+
+      {noVienen.length > 0 ? (
+        <section className="mt-bloque break-inside-avoid">
+          <Titulo3 como="h2">{t("panel.dia.exportar.noVienen")}</Titulo3>
+          <p className="mt-pila max-w-texto text-pequeno text-tinta-suave">
+            {t("panel.dia.exportar.noVienenAyuda")}
+          </p>
+          <ul className="mt-elemento grid gap-interno-compacto">
+            {noVienen.map((invitado) => (
+              <li key={invitado.id} className="text-cuerpo text-tinta">
+                {[invitado.nombre, invitado.apellidos].filter(Boolean).join(" ")}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {proveedores.length > 0 ? (
         <section className="mt-bloque break-inside-avoid">

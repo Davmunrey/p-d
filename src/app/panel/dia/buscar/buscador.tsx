@@ -124,6 +124,16 @@ function Resultado({ invitado }: { invitado: InvitadoDelDia }) {
     <article className="rounded-campo border border-borde p-elemento">
       <h2 className="text-titulo-3 text-tinta">{nombre}</h2>
 
+      {/*
+        LO PRIMERO, ANTES QUE LA MESA. A quien se presenta habiendo dicho que no
+        hay que buscarle sitio, y eso se tiene que ver sin leer la ficha entera.
+      */}
+      {invitado.respuesta === "noViene" ? (
+        <EtiquetaEstado variante="error" tamano="compacta" className="mt-pila px-interno">
+          {t("panel.dia.buscar.noViene")}
+        </EtiquetaEstado>
+      ) : null}
+
       <p className="mt-pila text-cuerpo text-tinta">
         <span className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
           {t("panel.dia.buscar.mesa")}
@@ -134,13 +144,19 @@ function Resultado({ invitado }: { invitado: InvitadoDelDia }) {
       </p>
 
       <dl className="mt-elemento grid gap-interno-compacto text-pequeno">
-        <div className="flex flex-wrap gap-interno-compacto">
-          <dt className="text-tinta-suave">{t("panel.dia.buscar.menu")}</dt>
-          <dd className="text-tinta">
-            {t(`rsvp.menus.${invitado.tipoMenu}` as "rsvp.menus.estandar")}
-            {invitado.esNino ? ` · ${t("panel.dia.buscar.nino")}` : ""}
-          </dd>
-        </div>
+        {/*
+          El menú sólo de quien viene. El de quien no ha contestado o ha dicho
+          que no es el valor por defecto de la columna, no algo que haya pedido.
+        */}
+        {invitado.respuesta === "viene" ? (
+          <div className="flex flex-wrap gap-interno-compacto">
+            <dt className="text-tinta-suave">{t("panel.dia.buscar.menu")}</dt>
+            <dd className="text-tinta">
+              {t(`rsvp.menus.${invitado.tipoMenu}` as "rsvp.menus.estandar")}
+              {invitado.esNino ? ` · ${t("panel.dia.buscar.nino")}` : ""}
+            </dd>
+          </div>
+        ) : null}
 
         {invitado.alergias ? (
           <div className="flex flex-wrap gap-interno-compacto">
@@ -157,7 +173,7 @@ function Resultado({ invitado }: { invitado: InvitadoDelDia }) {
         ) : null}
       </dl>
 
-      {!invitado.confirmado ? (
+      {invitado.respuesta === "sinContestar" ? (
         <p className="mt-elemento text-pequeno text-tinta-suave">
           {t("panel.dia.buscar.sinConfirmar")}
         </p>

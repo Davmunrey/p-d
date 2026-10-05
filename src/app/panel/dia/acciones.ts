@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { RUTA_ACCESO, RUTA_RECUENTO } from "@/config/constants";
+import { LARGOS_DE_CAMPO, MENUS_RSVP, RUTA_ACCESO, RUTA_RECUENTO } from "@/config/constants";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 import { type EstadoDia, type ResultadoDeMarcar } from "./estado";
@@ -95,7 +95,7 @@ function volver(estado: EstadoDia): never {
  */
 export async function corregirRecuento(datos: FormData): Promise<void> {
   const tipoMenu = String(datos.get("tipo_menu") ?? "").trim();
-  if (!tipoMenu) volver("menu-invalido");
+  if (!(MENUS_RSVP as readonly string[]).includes(tipoMenu)) volver("menu-invalido");
 
   const escrito = String(datos.get("ajuste") ?? "").trim();
 
@@ -111,6 +111,11 @@ export async function corregirRecuento(datos: FormData): Promise<void> {
   }
 
   const nota = String(datos.get("nota") ?? "").trim() || null;
+  /*
+    El tope de la base, contado antes de mandarlo. Si no, el `check` la rechaza
+    y vuelve como «Volved a intentarlo», que no va a funcionar nunca.
+  */
+  if (nota && nota.length > LARGOS_DE_CAMPO["correcciones_recuento.nota"]) volver("nota-larga");
 
   const supabase = await cliente();
   const { data, error } = await supabase
