@@ -149,9 +149,9 @@ export default async function PaginaProveedor({ params, searchParams }: Parametr
   return (
     <>
       <div className="max-w-texto">
-        <Link href={RUTA_PROVEEDORES} className="text-pequeno text-tinta-suave underline">
+        <EnlaceSuave href={RUTA_PROVEEDORES} discreto>
           {t("panel.proveedores.volver")}
-        </Link>
+        </EnlaceSuave>
         <Titulo2 como="h1" className="mt-pila">
           {proveedor.nombre}
         </Titulo2>
@@ -264,7 +264,11 @@ function Datos({
               </dt>
               <dd className="text-cuerpo text-tinta">
                 {fila.enlace ? (
-                  <a href={fila.enlace} className="text-tinta-marca underline">
+                  // Suelto y no en una frase: es un objetivo táctil y lleva su alto.
+                  <a
+                    href={fila.enlace}
+                    className="inline-flex min-h-control-compacto items-center text-tinta-marca underline wrap-anywhere"
+                  >
                     {fila.valor}
                   </a>
                 ) : (

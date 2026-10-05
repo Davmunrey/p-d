@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   IDIOMA,
@@ -88,12 +88,10 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
 
   return (
     <>
-      <Link
-        href={RUTA_INVITADOS}
-        className="text-pequeno text-tinta-suave transicion-color hover:text-tinta"
-      >
+      {/* Con su alto de control: un enlace suelto se toca con el pulgar. */}
+      <EnlaceSuave href={RUTA_INVITADOS} discreto>
         {t("panel.invitados.volver")}
-      </Link>
+      </EnlaceSuave>
 
       <header className="mt-pila max-w-texto">
         <Titulo2 como="h1">{grupo.nombre}</Titulo2>
