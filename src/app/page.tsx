@@ -347,13 +347,28 @@ export default async function PaginaInicio() {
   return (
     <>
       {/* Los datos del evento para buscadores y asistentes de voz. */}
-      <DatosEstructurados configuracion={configuracion} nombres={nombres} />
+      <DatosEstructurados
+        configuracion={configuracion}
+        nombres={nombres}
+        aLaVista={{
+          // La dirección se lee en «Cómo llegar» y, cuando no hay ciudad, en
+          // la portada, que la usa como procedencia. El mapa, sólo en «Cómo
+          // llegar».
+          direccion:
+            aPintar.includes("transporte") ||
+            (aPintar.includes("portada") && !configuracion.ciudadCeremonia),
+          mapa: aPintar.includes("transporte"),
+        }}
+      />
 
       {/* Primer elemento enfocable del documento: quien navega con teclado no
-          debería tener que recorrer once enlaces para llegar al contenido. */}
+          debería tener que recorrer once enlaces para llegar al contenido.
+          Va en la capa modal y no en la de la cabecera: con la misma capa
+          gana el último del documento, que es la cabecera fija, y el
+          monograma y el menú se pintaban encima del enlace enfocado. */}
       <a
         href={`#${ID_CONTENIDO}`}
-        className="sr-only capa-cabecera focus:not-sr-only focus:absolute focus:m-interno focus:rounded-boton focus:bg-superficie focus:px-interno focus:py-pila focus:text-tinta"
+        className="sr-only focus:not-sr-only focus:absolute focus:capa-modal focus:m-interno focus:rounded-boton focus:bg-superficie focus:px-interno focus:py-pila focus:text-tinta"
       >
         {t("navegacion.irAlContenido")}
       </a>
@@ -758,10 +773,11 @@ function Paisaje({
           LA PISTA NO VA SOBRE LA FOTO, VA SOBRE LA PÁGINA. Al empezar la escena
           el marco es un recuadro pequeño y «seguid bajando» queda fuera de él,
           sobre el plano claro: en tinta de foto sería blanco sobre blanco. Va
-          en el gris tenue de la entrega, que es el que se lee ahí.
+          en el gris suave y no en el tenue de la entrega: a once píxeles, el
+          tenue se queda en 3,6:1 sobre ese plano y AA pide 4,5.
         */}
         <p className="pista-paisaje">
-          <span className="inline-flex flex-col items-center gap-pista-raya text-etiqueta uppercase tracking-pista text-tinta-tenue">
+          <span className="inline-flex flex-col items-center gap-pista-raya text-etiqueta uppercase tracking-pista text-tinta-suave">
             {t("paisaje.seguidBajando")}
             <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
           </span>

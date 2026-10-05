@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   LARGOS_DE_CAMPO,
   LIMITE_TEXTO_CANCION,
+  MARCA_RSVP_ENVIADO,
   MENUS_RSVP,
   PASOS_RSVP,
   RUTA_RSVP,
@@ -315,7 +316,7 @@ export async function avanzar(datos: FormData): Promise<void> {
     console.error("El acuse de recibo no salió; la respuesta sí está guardada:", error);
   }
 
-  redirect(`${base}?enviado=1`);
+  redirect(`${base}?${MARCA_RSVP_ENVIADO.parametro}=${MARCA_RSVP_ENVIADO.valor}`);
 }
 
 /**

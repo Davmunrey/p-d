@@ -204,6 +204,40 @@ test.describe("Accesibilidad de la parte pública", () => {
     await auditar(page, "la landing");
   });
 
+  /*
+    LA AUDITORÍA DE ARRIBA SÓLO VE LA PRIMERA PANTALLA. Lo que hay debajo entra
+    con el scroll (`animation-timeline: view()`) y, hasta que entra, está en su
+    primer fotograma: opacidad cero. axe da por oculto todo lo que cuelga de
+    algo con opacidad cero y no le mide el contraste, así que las cabeceras de
+    sección, el programa, los hoteles, la cuenta atrás y el pie pasaban sin
+    mirar. Con movimiento reducido esas entradas son un fundido instantáneo de
+    reloj: al terminar, la página entera está a la vista y se audita entera.
+  */
+  test("la landing entera, por debajo del pliegue, pasa axe sin violaciones graves", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    await esperarEntradas(page);
+
+    // La prueba de que de verdad se ve: el pie, lo último de la página, ya no
+    // cuelga de nada transparente.
+    const opacidadDelPie = await page
+      .locator("footer")
+      .last()
+      .evaluate((pie) => {
+        let opacidad = 1;
+        for (let nodo: Element | null = pie; nodo; nodo = nodo.parentElement) {
+          opacidad *= Number(getComputedStyle(nodo).opacity);
+        }
+        return opacidad;
+      });
+    expect(opacidadDelPie).toBe(1);
+
+    await auditar(page, "la landing entera");
+  });
+
   test("la página de reserva la fecha pasa axe, con el sobre cerrado y abierto", async ({
     page,
   }) => {
@@ -293,7 +327,11 @@ test.describe("El flujo de confirmación, solo con teclado", () => {
     await tabularHasta(page, "button", copy.rsvp.siguiente);
     await page.keyboard.press("Enter");
 
-    // Paso 3 · enviar.
+    // Paso 3 · enviar. Se espera a que el paso esté pintado, como en el 2: sin
+    // esto los sesenta tabuladores de `tabularHasta` pueden gastarse sobre la
+    // página anterior mientras la acción todavía contesta, que en el CI es
+    // justo lo que pasaba una vez de cada pocas.
+    await expect(page.getByText(copy.rsvp.pasoMensajeTitulo)).toBeVisible();
     await tabularHasta(page, "button", copy.rsvp.enviar);
     await page.keyboard.press("Enter");
 

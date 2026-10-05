@@ -163,6 +163,14 @@ export const URL_MAPA_EMBEBIDO = "https://www.openstreetmap.org/export/embed.htm
 export const RUTA_RSVP = "/rsvp";
 
 /**
+ * La marca de «la respuesta acaba de llegar» en la URL del RSVP: la pone la
+ * acción al guardar (`?enviado=1`), la lee la página para dar las gracias y la
+ * lee la analítica para contar el último paso del embudo. Tres sitios que
+ * tienen que decir lo mismo, así que se dice una vez.
+ */
+export const MARCA_RSVP_ENVIADO = { parametro: "enviado", valor: "1" } as const;
+
+/**
  * Cuánto vive el borrador del RSVP a medio rellenar.
  *
  * Generoso a propósito. El caso que hay que aguantar no es el de alguien que

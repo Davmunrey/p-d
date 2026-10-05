@@ -1,10 +1,15 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
 import { useEffect } from "react";
 
-import { POSTHOG_CLAVE, POSTHOG_SERVIDOR, RUTA_RSVP } from "@/config/constants";
+import {
+  MARCA_RSVP_ENVIADO,
+  POSTHOG_CLAVE,
+  POSTHOG_SERVIDOR,
+  RUTA_RSVP,
+} from "@/config/constants";
 import { noQuiereQueLeSigan } from "@/lib/observabilidad/limpiar";
 import { antesDeMedir } from "@/lib/observabilidad/sentry";
 
@@ -43,6 +48,9 @@ import { antesDeMedir } from "@/lib/observabilidad/sentry";
  */
 export function Analitica() {
   const ruta = usePathname();
+  const enviado =
+    useSearchParams().get(MARCA_RSVP_ENVIADO.parametro) === MARCA_RSVP_ENVIADO.valor;
+  const paso = pasoDelEmbudo(ruta, enviado);
 
   useEffect(() => {
     if (!POSTHOG_CLAVE || noQuiereQueLeSigan()) return;
@@ -60,10 +68,15 @@ export function Analitica() {
     });
   }, []);
 
+  /*
+    Se mide al cambiar de ruta o de paso, no de consulta. Ir de un paso del
+    formulario al siguiente cambia `?paso=` y deja la ruta y el paso del
+    embudo igual: contarlo sería apuntar cuatro llegadas al formulario por
+    cada invitado que lo rellena.
+  */
   useEffect(() => {
-    const paso = pasoDelEmbudo(ruta);
     if (paso) medir(paso);
-  }, [ruta]);
+  }, [ruta, paso]);
 
   return null;
 }
@@ -72,12 +85,15 @@ export function Analitica() {
  * Qué paso del embudo es esta ruta, o `null` si no es ninguno.
  *
  * La portada es «ha abierto la invitación»; la pantalla del RSVP, «ha llegado
- * al formulario». El panel, la puerta de acceso y todo lo demás no son pasos de
- * nadie. Es una función pura, y por eso se puede probar sin PostHog.
+ * al formulario»; y la misma pantalla con la marca de enviado, «lo ha
+ * terminado». Ese tercero es el que dice si el RSVP funciona, y no se medía:
+ * las gracias viven en la misma ruta que el formulario, y sólo se miraba la
+ * ruta. El panel, la puerta de acceso y todo lo demás no son pasos de nadie.
+ * Es una función pura, y por eso se puede probar sin PostHog.
  */
-export function pasoDelEmbudo(ruta: string | null): string | null {
+export function pasoDelEmbudo(ruta: string | null, enviado = false): string | null {
   if (ruta === "/") return "landing_vista";
-  if (ruta?.startsWith(`${RUTA_RSVP}/`)) return "rsvp_vista";
+  if (ruta?.startsWith(`${RUTA_RSVP}/`)) return enviado ? "rsvp_enviado" : "rsvp_vista";
   return null;
 }
 

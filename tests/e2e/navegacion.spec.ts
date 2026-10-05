@@ -272,6 +272,36 @@ test.describe("Accesibilidad de la navegación", () => {
     await expect(enfocado).toBeInViewport();
   });
 
+  /*
+    «EN PANTALLA» NO ES «A LA VISTA». `toBeInViewport` sólo mira la caja: el
+    enlace salía dentro de la franja de la cabecera fija, con la misma capa, y
+    el monograma y el menú se pintaban encima. Con movimiento reducido la
+    cabecera es además un velo opaco y lo tapaba casi entero. Lo que importa es
+    qué hay de verdad en el centro del enlace, y se mira en los dos modos.
+  */
+  for (const movimiento of ["no-preference", "reduce"] as const) {
+    test(`el salto al contenido no queda debajo de la cabecera (movimiento ${movimiento})`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ reducedMotion: movimiento });
+      await page.goto("/");
+      await page.keyboard.press("Tab");
+
+      const enlace = page.locator(":focus");
+      await expect(enlace).toHaveText(copy.navegacion.irAlContenido);
+
+      const loQueSeVe = await enlace.evaluate((elemento) => {
+        const caja = elemento.getBoundingClientRect();
+        const encima = document.elementFromPoint(
+          caja.left + caja.width / 2,
+          caja.top + caja.height / 2,
+        );
+        return encima !== null && (encima === elemento || elemento.contains(encima));
+      });
+      expect(loQueSeVe).toBe(true);
+    });
+  }
+
   test("se puede recorrer el menú entero con el teclado", async ({ page }) => {
     await page.goto("/");
 

@@ -19,13 +19,21 @@ import type { ConfiguracionBoda } from "@/lib/bbdd/landing";
  * NO SE PUBLICA NADA QUE NO ESTÉ YA A LA VISTA. Ni el enlace del RSVP, ni el
  * correo de contacto, ni la cuenta: aquí sólo va lo que cualquiera lee al
  * entrar. Un dato estructurado es más fácil de recolectar, no menos.
+ *
+ * Y «a la vista» lo decide la página, no este componente. La dirección y el
+ * punto del mapa salían siempre, aunque los novios hubieran apagado «Cómo
+ * llegar» para no anunciar todavía dónde es: la página ya no los enseñaba y los
+ * buscadores los seguían indexando. Quien pinta la página dice qué se ve.
  */
 export function DatosEstructurados({
   configuracion,
   nombres,
+  aLaVista,
 }: {
   configuracion: ConfiguracionBoda;
   nombres: string;
+  /** Lo que la página enseña de verdad: la dirección escrita y el mapa. */
+  aLaVista: { direccion: boolean; mapa: boolean };
 }) {
   const lugar = configuracion.lugarCeremonia ?? configuracion.lugarBanquete;
 
@@ -42,7 +50,7 @@ export function DatosEstructurados({
           location: {
             "@type": "Place",
             name: lugar,
-            ...(configuracion.direccionCeremonia
+            ...(aLaVista.direccion && configuracion.direccionCeremonia
               ? {
                   address: {
                     "@type": "PostalAddress",
@@ -50,7 +58,9 @@ export function DatosEstructurados({
                   },
                 }
               : {}),
-            ...(configuracion.latitud !== null && configuracion.longitud !== null
+            ...(aLaVista.mapa &&
+            configuracion.latitud !== null &&
+            configuracion.longitud !== null
               ? {
                   geo: {
                     "@type": "GeoCoordinates",

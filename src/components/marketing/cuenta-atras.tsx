@@ -151,7 +151,7 @@ export function CuentaAtras({
             >
               {bloque.valor}
             </div>
-            <div className="mt-naipe-hueco-corto font-cuerpo text-naipe-unidad leading-titulo-menor uppercase tracking-naipe-unidad text-tinta-tenue">
+            <div className="mt-naipe-hueco-corto font-cuerpo text-naipe-unidad leading-titulo-menor uppercase tracking-naipe-unidad text-tinta-suave">
               {bloque.etiqueta}
             </div>
           </div>

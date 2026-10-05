@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Suspense } from "react";
 
 import { Analitica } from "@/components/analitica";
 import { IDIOMA, IDIOMA_OG } from "@/config/constants";
@@ -93,7 +94,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           mitad que importa. No pinta nada —devuelve `null`— y sin clave ni
           consentimiento no arranca siquiera.
         */}
-        <Analitica />
+        {/* `Suspense` porque lee la consulta de la URL: sin él, Next no puede
+            dejar estática ninguna página que cuelgue de este layout. */}
+        <Suspense fallback={null}>
+          <Analitica />
+        </Suspense>
       </body>
     </html>
   );

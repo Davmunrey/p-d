@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**50**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**51**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -698,6 +698,8 @@ El invitado recibe   https://…/rsvp/<token de 32 caracteres>
        ├─ INSERT ... FROM jsonb_array_elements JOIN invitados JOIN grupo del token
        │    → un invitado_id de otro grupo no casa: 0 filas
        ├─ si insertadas ≠ recibidas → RSV04 y se deshace TODO
+       ├─ la canción que el grupo deja de pedir sale de la playlist
+       │    (la corregida la apunta después sugerir_cancion)
        └─ triggers: plazo (RSV03), sellado de fecha (RSV07), vigencia
 
   3. anadir_acompanante(token, …)

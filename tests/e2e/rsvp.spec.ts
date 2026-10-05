@@ -1,4 +1,4 @@
-import { expect, test } from "./utiles/origen-propio";
+import { expect, origenDelTest, test } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
@@ -772,7 +772,12 @@ test.describe("El recorrido del invitado", () => {
         select maximo_intentos_rsvp::int as maximo from public.parametros_seguridad
       `,
     );
-    const headers = origenPropio();
+    // Este test AGOTA el cupo de su origen, así que el origen tiene que ser
+    // sólo suyo: el de `origenDelTest()` cambia con el proyecto y el
+    // reintento. Con el contador del fichero, el proyecto `movil` repetía la
+    // misma IP que acababa de agotar `escritorio`, y la invitación abría ya
+    // con «demasiados intentos».
+    const headers = origenDelTest();
     const contexto = await browser.newContext({
       javaScriptEnabled: false,
       locale: "es-ES",
@@ -1136,6 +1141,64 @@ test.describe("Cambiar una respuesta ya dada", () => {
       filas.some((fila) => !fila.es_vigente && fila.estado === "confirmado"),
       "la respuesta anterior tiene que quedar en el historial",
     ).toBe(true);
+  });
+
+  /**
+   * CORREGIR LA CANCIÓN LA SUSTITUYE; BORRARLA LA RETIRA.
+   *
+   * Quien corrige una errata al cambiar la respuesta veía las dos versiones en
+   * la portada, gastaba una de sus diez plazas y no tenía forma de quitar la
+   * mala. La playlist tiene que acabar con la canción que el grupo pide ahora,
+   * y con ninguna si ya no pide ninguna.
+   */
+  test("corregir la canción al cambiar la respuesta deja sólo la nueva en la playlist", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo(`e2e-cancion-${Date.now()}`, ["(DES) Melómana"]);
+    const enLaPlaylist = () =>
+      conBase(async (sql) =>
+        (
+          await sql<{ texto: string }[]>`
+            select c.texto
+              from public.canciones_sugeridas as c
+              join public.grupos_invitacion as g on g.id = c.grupo_id
+             where g.huella_token = public.huella_token(${token})
+             order by c.texto
+          `
+        ).map((fila) => fila.texto),
+      );
+
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    const enviarConCancion = async (cancion: string) => {
+      await pagina.locator('input[value="confirmado"]').first().check();
+      await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+      await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+      await pagina.locator('input[name="cancion"]').fill(cancion);
+      await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
+      await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
+    };
+
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await enviarConCancion("(DES) Iglesas, Bailando");
+    expect(await enLaPlaylist()).toEqual(["(DES) Iglesas, Bailando"]);
+
+    // La errata se corrige: la vieja sale y entra la buena.
+    await pagina.getByRole("button", { name: copy.rsvp.editarRespuesta }).click();
+    await enviarConCancion("(DES) Iglesias, Bailando");
+    expect(await enLaPlaylist()).toEqual(["(DES) Iglesias, Bailando"]);
+
+    // Y si ya no quiere pedir ninguna, no queda ninguna.
+    await pagina.getByRole("button", { name: copy.rsvp.editarRespuesta }).click();
+    await enviarConCancion("");
+    expect(await enLaPlaylist()).toEqual([]);
+
+    await contexto.close();
   });
 
   /**

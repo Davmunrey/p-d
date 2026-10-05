@@ -16,6 +16,13 @@ describe("pasoDelEmbudo", () => {
     expect(pasoDelEmbudo(`${RUTA_RSVP}/un-token-cualquiera`)).toBe("rsvp_vista");
   });
 
+  it("las gracias del RSVP son el último paso: el que dice si el formulario funciona", () => {
+    expect(pasoDelEmbudo(`${RUTA_RSVP}/un-token-cualquiera`, true)).toBe("rsvp_enviado");
+    // La marca sólo significa algo en el RSVP.
+    expect(pasoDelEmbudo("/", true)).toBe("landing_vista");
+    expect(pasoDelEmbudo(RUTA_PANEL, true)).toBeNull();
+  });
+
   it("el panel, la puerta y todo lo demás no son pasos de nadie", () => {
     expect(pasoDelEmbudo(RUTA_PANEL)).toBeNull();
     expect(pasoDelEmbudo(`${RUTA_PANEL}/invitados`)).toBeNull();

@@ -277,7 +277,7 @@ export function SobreReserva({
         <form method="get" action={rutaDe("reserva_la_fecha")} onSubmit={cerrar}>
           <button
             type="submit"
-            className="mt-volver-sobre min-h-control-compacto cursor-pointer px-hueco-corto font-cuerpo text-etiqueta uppercase tracking-volver text-tinta-tenue transicion-color hover:text-acento"
+            className="mt-volver-sobre min-h-control-compacto cursor-pointer px-hueco-corto font-cuerpo text-etiqueta uppercase tracking-volver text-tinta-suave transicion-color hover:text-acento"
           >
             {t("saveTheDate.volverAlSobre")}
           </button>

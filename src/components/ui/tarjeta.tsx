@@ -88,7 +88,7 @@ export function Tarjeta({
 
       <div className={`flex flex-1 flex-col ${forma.cuerpo}`}>
         {meta ? (
-          <span className={`${forma.meta} uppercase text-tinta-tenue`}>{meta}</span>
+          <span className={`${forma.meta} uppercase text-tinta-suave`}>{meta}</span>
         ) : null}
 
         <Titulo

@@ -11,6 +11,7 @@ import {
   IDIOMA,
   LARGOS_DE_CAMPO,
   LIMITE_TEXTO_CANCION,
+  MARCA_RSVP_ENVIADO,
   MENU_SOLO_NINOS,
   MENUS_RSVP,
   PASOS_RSVP,
@@ -114,7 +115,8 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
     (persona) => persona.estado === "confirmado" || persona.estado === "rechazado",
   );
 
-  if (consulta.enviado === "1" || (yaRespondido && !consulta.paso)) {
+  const enviado = consulta[MARCA_RSVP_ENVIADO.parametro] === MARCA_RSVP_ENVIADO.valor;
+  if (enviado || (yaRespondido && !consulta.paso)) {
     return (
       <Marco>
         <RespuestaEnviada

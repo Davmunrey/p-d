@@ -60,7 +60,7 @@ export function TarjetaReserva({
           <Constelacion clave={CONSTELACION_NOVIOS} escala={ESCALA_ESTRELLA_TARJETA} />
         </div>
 
-        <p className="mt-naipe-hueco-rotulo font-cuerpo peso-cuerpo text-naipe-rotulo leading-titulo-menor uppercase tracking-seccion text-tinta-tenue">
+        <p className="mt-naipe-hueco-rotulo font-cuerpo peso-cuerpo text-naipe-rotulo leading-titulo-menor uppercase tracking-seccion text-tinta-suave">
           {t("saveTheDate.etiqueta")}
         </p>
 
@@ -90,7 +90,7 @@ export function TarjetaReserva({
         </p>
 
         {lugar ? (
-          <p className="mt-naipe-hueco font-cuerpo text-naipe-fecha leading-titulo-menor uppercase tracking-naipe-lugar text-tinta-tenue">
+          <p className="mt-naipe-hueco font-cuerpo text-naipe-fecha leading-titulo-menor uppercase tracking-naipe-lugar text-tinta-suave">
             {lugar}
           </p>
         ) : null}
