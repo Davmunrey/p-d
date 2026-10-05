@@ -416,8 +416,13 @@ test.describe("Las gráficas del presupuesto", () => {
     await page.goto(RUTA_GRAFICAS);
 
     const comparativa = seccion(page, copy.panel.presupuesto.graficas.comparativaTitulo);
+    /*
+      La fila por su TEXTO y no por un `RegExp` del nombre: la marca empieza por
+      «(DES)» y esos paréntesis son un grupo de captura, así que el patrón
+      buscaba «DES E2E…» sin paréntesis y no encontraba nada.
+    */
     // Catering: 2500 previstos y 3000 de coste → se pasa, en negativo y «de más».
-    const pasada = comparativa.getByRole("row", { name: new RegExp(sembrado.grande) });
+    const pasada = comparativa.getByRole("row").filter({ hasText: sembrado.grande });
     await expect(pasada).toContainText(copy.panel.presupuesto.pasado);
     await expect(pasada.getByRole("cell").last()).toContainText("-");
     await expect(
@@ -428,7 +433,7 @@ test.describe("Las gráficas del presupuesto", () => {
     ).toHaveCount(1);
 
     // Flores: 1500 previstos y 1000 de coste → le sobra, sin «de más».
-    const holgada = comparativa.getByRole("row", { name: new RegExp(sembrado.pequena) });
+    const holgada = comparativa.getByRole("row").filter({ hasText: sembrado.pequena });
     await expect(holgada).not.toContainText(copy.panel.presupuesto.pasado);
     await expect(holgada.getByRole("cell").last()).not.toContainText("-");
   });
