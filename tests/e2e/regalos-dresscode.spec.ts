@@ -135,11 +135,13 @@ test("con la sección apagada, el IBAN no está ni en el HTML ni en el menú", a
     expect(sinCuenta.status(), "apagar la sección tiene que cerrar la ruta").toBe(404);
     expect(await sinCuenta.text()).not.toContain(iban);
 
-    // Y el menú tampoco ofrece un enlace a una sección que ya no está.
+    /*
+      Y no queda nada que lleve a ella: ni el ancla ni un enlace a `#regalos`.
+      Se mira el destino y no el rótulo «Regalos» del menú, que no sale en la
+      barra ni con la sección encendida: buscarlo ahí no podía fallar.
+    */
     await page.goto("/");
     await expect(page.locator("#regalos")).toHaveCount(0);
-    await expect(
-      page.getByRole("link", { name: copy.navegacion.secciones.regalos }),
-    ).toHaveCount(0);
+    await expect(page.locator('a[href="#regalos"]')).toHaveCount(0);
   });
 });

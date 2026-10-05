@@ -9,6 +9,7 @@ import {
   RUTAS_CON_PARAMETRO_CONOCIDAS,
   descubrirRutasDelPanel,
 } from "./utiles/rutas-del-panel";
+import { limpiarFichas, sembrarFichas } from "./utiles/fichas-sembradas";
 
 /**
  * BODA-91 · AUDITORÍA DE ACCESIBILIDAD, BLOQUEANTE
@@ -91,10 +92,10 @@ function rutasDelPanel(): string[] {
 
   /*
     LAS RUTAS CON PARÁMETRO SE RESUELVEN, NO SE SALTAN. `[lista]` sale de su
-    propio config; las fichas de invitado y de proveedor necesitarían sembrar
-    una fila y su identificador, así que se quedan fuera CON NOMBRE: si mañana
-    aparece otra ruta dinámica, este test se pone rojo y obliga a decidir qué
-    hacer con ella, en vez de dejarla sin auditar en silencio.
+    propio config; las fichas de invitado y de proveedor se recorren con una
+    fila sembrada (`sembrarFichas`, en el test). Si mañana aparece otra ruta
+    dinámica, este test se pone rojo y obliga a decidir qué hacer con ella, en
+    vez de dejarla sin auditar en silencio.
   */
   expect(
     conParametro.sort(),
@@ -109,6 +110,7 @@ test.afterAll(async () => {
   await conBase(
     (sql) => sql`delete from public.grupos_invitacion where nombre like ${`${MARCA}%`}`,
   );
+  await limpiarFichas(cadena);
 });
 
 /**
@@ -378,7 +380,8 @@ test.describe("Accesibilidad del panel", () => {
       cada ejecución de CI destapa un solo fallo y arreglarlos todos cuesta
       una tarde de tandas. Recogiéndolos, un run enseña la lista entera.
     */
-    const pantallas = rutasDelPanel().map((ruta) => ({ clave: ruta, ruta }));
+    const fichas = await sembrarFichas(cadena!);
+    const pantallas = [...rutasDelPanel(), ...fichas].map((ruta) => ({ clave: ruta, ruta }));
 
     /*
       CUÁNTAS SON, DICHO EN VOZ ALTA. La lista sale del sistema de ficheros, así

@@ -353,7 +353,14 @@ test.describe("Resumen del panel", () => {
     ]);
   });
 
-  test("sin fecha o sin invitados, lo dice en vez de enseñar ceros", async ({ page }) => {
+  /*
+    LAS DOS RAMAS VACÍAS —sin fecha, sin invitados— se prueban en
+    `tests/unidad/resumen-vacio.test.tsx`, pintando la página con esos datos.
+    Aquí, contra la semilla compartida, no se puede llegar a ninguna sin vaciar
+    una base que usan todos los demás tests; este test se llamaba «sin fecha o
+    sin invitados» y no recorría ninguno de los dos casos.
+  */
+  test("con la semilla enseña las cifras y una cuenta atrás concreta", async ({ page }) => {
     await entrar(page);
     await page.goto(RUTA_PANEL);
 

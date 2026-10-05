@@ -176,6 +176,12 @@ test.describe("Cómo llegar", () => {
    * CASO DE ERROR · sin coordenadas, la sección se oculta entera.
    */
   test("sin coordenadas configuradas la sección desaparece", async ({ page }) => {
+    // Primero, con coordenadas, el menú SÍ lleva a «Cómo llegar»: si no, que
+    // después no esté no probaría nada.
+    const enlaceDelMenu = page.locator('nav a[href="#transporte"]');
+    await page.goto("/");
+    await expect(enlaceDelMenu.first()).toBeAttached();
+
     await fijarCoordenadas({ latitud: null, longitud: null });
 
     await page.goto("/");
@@ -191,5 +197,9 @@ test.describe("Cómo llegar", () => {
       que es peor que no ofrecerla.
     */
     await expect(page.locator("#transporte")).toHaveCount(0);
+    await expect(
+      enlaceDelMenu,
+      "el menú no puede llevar a una sección que no está",
+    ).toHaveCount(0);
   });
 });

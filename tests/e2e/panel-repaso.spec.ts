@@ -3,6 +3,7 @@ import { expect, test, type Page } from "./utiles/origen-propio";
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_PANEL } from "@/config/constants";
 
+import { limpiarFichas, sembrarFichas } from "./utiles/fichas-sembradas";
 import { descubrirRutasDelPanel } from "./utiles/rutas-del-panel";
 
 /**
@@ -23,7 +24,9 @@ import { descubrirRutasDelPanel } from "./utiles/rutas-del-panel";
  *     panel lleno de botones de fila es justo lo que se dibuja apretado.
  *   · Hay un `h1` y sólo uno. Es lo que le dice a un lector de pantalla dónde
  *     ha caído.
- *   · Ningún texto se desborda de su caja.
+ *
+ * Y las dos fichas con parámetro —una invitación y un proveedor—, con una fila
+ * sembrada detrás: antes cada spec decía que las miraba el otro.
  *
  * SÓLO CORRE DONDE HAY SUPABASE DE VERDAD, igual que el resto de specs del
  * panel: hace falta sesión, y sesión hace falta GoTrue. Fuera de ese trabajo se
@@ -32,6 +35,7 @@ import { descubrirRutasDelPanel } from "./utiles/rutas-del-panel";
 
 const CORREO_CON_ACCESO = process.env.CORREO_CON_ACCESO;
 const CONTRASENA = process.env.CONTRASENA_PRUEBAS;
+const cadena = process.env.DATABASE_URL;
 
 /** Todas las pantallas del panel, con el nombre que se lee en un fallo. */
 /*
@@ -39,7 +43,7 @@ const CONTRASENA = process.env.CONTRASENA_PRUEBAS;
   de veintiséis rutas mientras la cabecera decía «recorre TODAS»: el guion del
   día —de pie y con el móvil—, mesas, tareas, documentos, contenido, importar,
   gráficas y el comparador se quedaban sin la comprobación táctil. Las fichas
-  con parámetro las decide `accesibilidad.spec.ts`; aquí van las demás.
+  con parámetro van al final, en su propio bloque, con una fila sembrada.
 */
 const PANTALLAS = descubrirRutasDelPanel().estaticas.map(
   (ruta) => [ruta === RUTA_PANEL ? "la portada del panel" : ruta, ruta] as const,
@@ -193,4 +197,56 @@ test.describe("El panel en escritorio", () => {
       expect(await loQueSeSale(page), `${nombre}: desborda en escritorio`).toEqual([]);
     });
   }
+});
+
+/**
+ * LAS DOS FICHAS CON PARÁMETRO, en móvil y en escritorio: la ficha de una
+ * invitación (con su gente y el «Corregir datos» de cada uno) y la de un
+ * proveedor (con sus contactos). Sin una fila detrás no hay pantalla que
+ * recorrer, así que se siembra una y se borra al acabar.
+ */
+test.describe("Las fichas del panel", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  let fichas: string[] = [];
+
+  test.beforeAll(async () => {
+    fichas = await sembrarFichas(cadena!);
+  });
+
+  test.afterAll(async () => {
+    await limpiarFichas(cadena!);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await entrar(page);
+  });
+
+  test("se pueden usar con el pulgar en un móvil", async ({ page }) => {
+    await page.setViewportSize({ width: ANCHO_MOVIL, height: 740 });
+    expect(fichas).toHaveLength(2);
+
+    for (const ruta of fichas) {
+      await page.goto(ruta);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+      expect(await loQueSeSale(page), `${ruta}: algo empuja la página a lo ancho`).toEqual([]);
+      expect(
+        await loQueNoSeDejaTocar(page, MINIMO_TACTIL),
+        `${ruta}: controles por debajo de ${MINIMO_TACTIL}px`,
+      ).toEqual([]);
+    }
+  });
+
+  test("no arrastran la página a lo ancho en escritorio", async ({ page }) => {
+    expect(fichas).toHaveLength(2);
+
+    for (const ruta of fichas) {
+      await page.goto(ruta);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+      expect(await loQueSeSale(page), `${ruta}: desborda en escritorio`).toEqual([]);
+    }
+  });
 });
