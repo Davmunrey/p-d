@@ -275,6 +275,9 @@ test.describe("Los papeles de un proveedor", () => {
       firma un enlace de vida corta. Se recoge ese enlace y se baja el fichero.
     */
     olvidarDestinos(page);
+    const salidaAlPdf = page.waitForRequest((peticion) =>
+      peticion.url().includes(`/storage/v1/object/sign/${BUCKET_DOCUMENTOS}/`),
+    );
     await suyo
       .getByRole("button", {
         name: copy.panel.proveedores.descargarDocumentoDe.replace("{nombre}", nombreDocumento),
@@ -288,7 +291,13 @@ test.describe("Los papeles de un proveedor", () => {
       va al PDF, que es lo que tiene que pasar—, así que los pasos siguientes
       necesitan la pantalla otra vez. Los localizadores son perezosos y se
       vuelven a resolver solos.
+
+      PERO DESPUÉS DE QUE HAYA SALIDO. La URL firmada se lee en la respuesta de
+      la acción, antes de que el navegador vaya a por ella; si el `goto` sale
+      primero, la salida al PDF llega detrás y lo corta: `net::ERR_ABORTED`, un
+      fallo que iba y venía en el CI.
     */
+    await salidaAlPdf;
     await page.goto(`${RUTA_PROVEEDORES}/${proveedorId}`);
 
     const descarga = await request.get(firmada);

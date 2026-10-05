@@ -200,15 +200,27 @@ test.describe("Acceso de verdad", () => {
     const codigo = randomUUID();
     const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
     try {
+      /*
+        LA FILA, COMO LA ESCRIBE GoTrue. Las dos columnas del token del
+        proveedor admiten NULL en la tabla, pero GoTrue las lee como texto
+        plano: con un NULL no puede ni cargar la fila, el canje falla y la
+        vuelta acaba en «enlace no válido» —que es lo que pasó la primera vez
+        que esto corrió—. GoTrue siempre las guarda vacías, y al verificar el
+        enlace anota cuándo emitió el código: se hace igual.
+      */
       await sql`
         insert into auth.flow_state (
           id, user_id, auth_code, code_challenge_method, code_challenge,
-          provider_type, authentication_method, created_at, updated_at
+          provider_type, authentication_method,
+          provider_access_token, provider_refresh_token,
+          auth_code_issued_at, created_at, updated_at
         )
         values (
           ${randomUUID()},
           (select id from auth.users where email = ${CORREO_CON_ACCESO!}),
-          ${codigo}, 's256', ${reto}, 'recovery', 'recovery', now(), now()
+          ${codigo}, 's256', ${reto}, 'recovery', 'recovery',
+          '', '',
+          now(), now(), now()
         )
       `;
     } finally {
