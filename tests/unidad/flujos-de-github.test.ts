@@ -100,6 +100,28 @@ describe("los flujos de GitHub", () => {
     expect(problemas.some((p) => /1 if y 0 fi/.test(p))).toBe(true);
   });
 
+  /*
+    LA COPIA VUELCA CON EL pg_dump DE LA VERSIÓN DE LA BASE. Instalaba el
+    `postgresql-client` de Ubuntu, que es el 16, contra una base 17: pg_dump se
+    niega a volcar un servidor más nuevo que él, y la copia no se habría hecho
+    nunca. La versión de la base la dice `major_version` en supabase/config.toml
+    («tiene que ser la misma que la de la base remota»); si un día se sube, el
+    cliente de la copia tiene que subir con ella.
+  */
+  it("la copia instala el cliente de PostgreSQL de la misma versión que la base", () => {
+    const configuracion = readFileSync(
+      join(__dirname, "..", "..", "supabase", "config.toml"),
+      "utf8",
+    );
+    const mayor = configuracion.match(/^major_version\s*=\s*(\d+)/m)?.[1];
+    expect(mayor, "supabase/config.toml tiene que fijar major_version").toBeTruthy();
+
+    const copia = readFileSync(join(CARPETA, "copia-seguridad.yml"), "utf8");
+    const instalados = [...copia.matchAll(/postgresql-client-(\d+)/g)].map((m) => m[1]);
+    expect(instalados, "la copia tiene que instalar postgresql-client-N").not.toEqual([]);
+    expect(new Set(instalados)).toEqual(new Set([mayor]));
+  });
+
   it("y un paso sin uses ni run, o con los dos, también", () => {
     const base = "name: x\non: push\njobs:\n  uno:\n    runs-on: ubuntu-latest\n    steps:\n";
     expect(problemasDe(`${base}      - name: nada\n`)).toHaveLength(1);

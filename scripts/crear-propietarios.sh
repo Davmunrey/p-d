@@ -10,8 +10,12 @@
 #
 #   export NEXT_PUBLIC_SUPABASE_URL="https://<ref>.supabase.co"
 #   export SUPABASE_SERVICE_ROLE_KEY="<la clave service_role>"
-#   export DATABASE_URL="<la conexión directa a la base>"
+#   export DATABASE_URL="<la cadena del Session pooler>"
 #   ./scripts/crear-propietarios.sh david@ejemplo.es paloma@ejemplo.es
+#
+# DATABASE_URL es la del «Session pooler» (botón Connect del dashboard), no la
+# conexión directa: ésa sólo responde por IPv6 y desde casi cualquier red
+# doméstica da `ENETUNREACH` (ver docs/ENTORNO.md, la tabla de las tres cadenas).
 #
 # La clave `service_role` está en Supabase → Settings → API Keys. NO la pongas
 # en Vercel ni en el repositorio: salta RLS entera, y aquí sólo se usa un

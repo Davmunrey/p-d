@@ -213,6 +213,19 @@ if echo "$SALIDA" | grep -q 'FALLA'; then
   exit 1
 fi
 
+# UN BLOQUE QUE REVIENTA NO PUEDE CONTAR COMO VERDE. Con `ON_ERROR_STOP` en
+# `off`, un `do $$ … $$` que lanza —una función que no existe, una columna
+# renombrada— se salta TODAS sus comprobaciones y el resto sigue: no imprime
+# ningún «FALLA», sólo un ERROR que el filtro de arriba no enseña. Pasó al
+# probar «hoy en la zona de la boda» sin su migración: el bloque entero se
+# esfumó y la suite salió verde con diez comprobaciones menos. La suite en
+# verde no imprime ni un ERROR, así que cualquiera es un bloque perdido.
+if echo "$SALIDA" | grep -q 'ERROR:'; then
+  echo "✗ Un bloque de la suite reventó y sus comprobaciones no llegaron a ejecutarse:"
+  echo "$SALIDA" | grep -A3 'ERROR:' | head -16
+  exit 1
+fi
+
 # Y EL SELLO DEL FINAL. `ON_ERROR_STOP` está en `off` dentro de la suite —a
 # propósito, para que un bloque roto no se lleve por delante los demás—, así que
 # psql puede terminar con cero habiendo saltado media suite. La última línea del
@@ -228,7 +241,7 @@ CORRECTAS=$(echo "$SALIDA" | { grep -c 'OK  ' || true; })
 # Un suelo, para que «se ejecutó entera pero casi todo se saltó» tampoco cuele.
 # Se sube cuando se añaden comprobaciones; bajarlo es una decisión, no un
 # descuido.
-MINIMO=130
+MINIMO=145
 if [ "$CORRECTAS" -lt "$MINIMO" ]; then
   echo "✗ Sólo $CORRECTAS comprobaciones en verde, y se esperaban al menos $MINIMO."
   exit 1

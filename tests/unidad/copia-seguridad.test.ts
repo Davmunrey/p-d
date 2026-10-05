@@ -77,7 +77,11 @@ describe.skipIf(!cadena)("La copia de seguridad", () => {
       */
     const preparar = postgres(destino, { max: 1, prepare: false, onnotice: () => {} });
     await preparar`create schema if not exists extensions`;
+    // Las tres que crea la migración base, y en el mismo esquema: los índices
+    // de búsqueda de invitados usan `extensions.gin_trgm_ops`.
     await preparar`create extension if not exists pgcrypto with schema extensions`;
+    await preparar`create extension if not exists unaccent with schema extensions`;
+    await preparar`create extension if not exists pg_trgm with schema extensions`;
     await preparar`create schema if not exists auth`;
     await preparar.unsafe(
       `create table if not exists auth.users (id uuid primary key, email text)`,
@@ -94,17 +98,26 @@ describe.skipIf(!cadena)("La copia de seguridad", () => {
     }
     await preparar.end();
 
-    // 3. La restauración. `pg_restore` avisa de lo que no puede aplicar y
-    //    sigue: se acepta su código de salida y se juzga por el resultado.
-    await ejecutar(
+    // 3. La restauración, CON SUS PERMISOS y sin tragarse los errores. Antes
+    //    iba con `2>/dev/null || true`: cualquier fallo de pg_restore —una
+    //    extensión que falta, un índice que no se crea— pasaba en silencio y
+    //    el test sólo contaba filas. Ahora sale en rojo con el error delante.
+    //    Se acepta UNO, y con nombre: el volcado de un solo esquema trae su
+    //    `create schema public`, y en cualquier base ese esquema ya existe.
+    const restauracion = await ejecutar(
       "bash",
       [
         "-c",
         `PATH="$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1):$PATH" ` +
-          `pg_restore --no-owner --no-privileges --dbname="${destino}" "${fichero}" 2>/dev/null || true`,
+          `pg_restore --no-owner --dbname="${destino}" "${fichero}" 2>&1; true`,
       ],
       { cwd: RAIZ },
     );
+    const errores = restauracion.stdout
+      .split("\n")
+      .filter((linea) => linea.includes("error:"))
+      .filter((linea) => !linea.includes('schema "public" already exists'));
+    expect(errores, "pg_restore no puede dejar errores por el camino").toEqual([]);
 
     // 4. Lo que importa: ¿está la boda dentro?
     const restaurada = postgres(destino, { max: 1, prepare: false, onnotice: () => {} });
@@ -131,6 +144,36 @@ describe.skipIf(!cadena)("La copia de seguridad", () => {
            where n.nspname = 'public' and c.relkind = 'r' and c.relrowsecurity
         `;
       expect(protegidas.cuantas, "RLS tiene que seguir activado").toBeGreaterThan(10);
+
+      /*
+          Y LOS PERMISOS. El modelo de acceso de esta base son GRANT explícitos
+          —se revoca todo y se concede tabla a tabla—, y la copia los dejaba
+          fuera con `--no-privileges`: restaurada, la base tenía sus filas y sus
+          políticas, pero la portada no podía leer la configuración, el RSVP no
+          podía llamar a su puerta y el panel no veía a nadie.
+        */
+      const [permisos] = await restaurada<
+        {
+          rsvp: boolean;
+          portada: boolean;
+          panel: boolean;
+          cerrado: boolean;
+          privada: boolean;
+        }[]
+      >`
+          select has_function_privilege('anon', 'public.obtener_invitacion(text)', 'execute')    as rsvp,
+                 has_table_privilege('anon', 'public.configuracion_boda', 'select')            as portada,
+                 has_table_privilege('authenticated', 'public.invitados', 'select')            as panel,
+                 has_table_privilege('anon', 'public.invitados', 'select')                     as cerrado,
+                 has_function_privilege('anon', 'public.rotar_token_invitacion(uuid)', 'execute') as privada
+        `;
+      expect(permisos.rsvp, "anon tiene que poder abrir su invitación").toBe(true);
+      expect(permisos.portada, "anon tiene que poder leer la configuración").toBe(true);
+      expect(permisos.panel, "el panel tiene que poder leer invitados").toBe(true);
+      expect(permisos.cerrado, "y anon sigue sin leer la lista de invitados").toBe(false);
+      // Sin los permisos en la copia, toda función restaurada nace con EXECUTE
+      // para PUBLIC: anon podría rotar el enlace de cualquier invitación.
+      expect(permisos.privada, "y anon sigue sin poder rotar enlaces").toBe(false);
     } finally {
       await restaurada.end();
     }

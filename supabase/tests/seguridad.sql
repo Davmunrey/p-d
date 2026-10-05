@@ -474,18 +474,56 @@ begin
   );
 
   -- Y aunque tenga sesión válida, no puede leer nada.
+  --
+  -- CON DATOS DELANTE, o no prueba nada. Este bloque corre antes de que la
+  -- suite meta un solo invitado y `pagos` no lo toca nadie: con las dos tablas
+  -- vacías, «cuenta cero» salía OK con la RLS cerrada y también abierta de par
+  -- en par —comprobado con una política `using (true)`—. Es el mismo agujero
+  -- que `lectura_denegada` cerró para `anon`. Así que primero se siembra un
+  -- invitado y un pago, se comprueba que existen, y al final se deshace todo
+  -- con una excepción a propósito: el resto de la suite no los ve.
   begin
-    set local role authenticated;
-    perform set_config('request.jwt.claim.sub', v_intruso::text, true);
+    declare
+      v_grupo     uuid;
+      v_categoria uuid;
+      v_partida   uuid;
+    begin
+      insert into public.grupos_invitacion (nombre) values ('Grupo del intruso')
+      returning id into v_grupo;
+      insert into public.invitados (grupo_id, nombre) values (v_grupo, 'Invitada visible');
+
+      insert into public.categorias_presupuesto (nombre) values ('Categoría del intruso')
+      returning id into v_categoria;
+      insert into public.partidas_presupuesto (categoria_id, concepto, importe_estimado)
+      values (v_categoria, 'Partida del intruso', 1000)
+      returning id into v_partida;
+      insert into public.pagos (partida_id, importe, fecha_vencimiento)
+      values (v_partida, 10, current_date);
+    end;
 
     select count(*) into v_filas from public.invitados;
-    perform pg_temp.comprobar('un recién registrado no lee la lista de invitados', v_filas = 0);
-
+    perform pg_temp.comprobar('hay invitados que el intruso no debería ver', v_filas > 0);
     select count(*) into v_filas from public.pagos;
-    perform pg_temp.comprobar('un recién registrado no lee los pagos', v_filas = 0);
-  exception when insufficient_privilege then
-    perform pg_temp.comprobar('un recién registrado no lee la lista de invitados', true);
-    perform pg_temp.comprobar('un recién registrado no lee los pagos', true);
+    perform pg_temp.comprobar('hay pagos que el intruso no debería ver', v_filas > 0);
+
+    begin
+      set local role authenticated;
+      perform set_config('request.jwt.claim.sub', v_intruso::text, true);
+
+      select count(*) into v_filas from public.invitados;
+      perform pg_temp.comprobar('un recién registrado no lee la lista de invitados', v_filas = 0);
+
+      select count(*) into v_filas from public.pagos;
+      perform pg_temp.comprobar('un recién registrado no lee los pagos', v_filas = 0);
+    exception when insufficient_privilege then
+      perform pg_temp.comprobar('un recién registrado no lee la lista de invitados', true);
+      perform pg_temp.comprobar('un recién registrado no lee los pagos', true);
+    end;
+
+    reset role;
+    raise exception using errcode = 'P0001', message = 'deshacer-siembra-del-intruso';
+  exception when sqlstate 'P0001' then
+    null;
   end;
 
   reset role;
@@ -1421,6 +1459,119 @@ begin
   perform pg_temp.comprobar(
     'un editor sigue pudiendo guardar los avisos del programa (el CHECK ejecuta avisos_programa_validos)',
     v_ok);
+end $$;
+
+\echo ''
+\echo '========================================'
+\echo '  Toda tabla de dominio deja rastro'
+\echo '========================================'
+
+-- `documentos_boda` nació sin trigger de auditoría (20260812090100), el mismo
+-- olvido que ya se había corregido en `contactos_proveedor`. Para que la
+-- próxima tabla no nazca igual, se comprueba el catálogo entero: toda tabla de
+-- `public` lleva `registrar_auditoria()`, salvo las que están en esta lista CON
+-- SU MOTIVO. Una tabla nueva tiene que decidir dónde va; no puede colarse.
+do $$
+declare
+  v_sin text;
+begin
+  select string_agg(c.relname, ', ' order by c.relname) into v_sin
+    from pg_class as c
+   where c.relnamespace = 'public'::regnamespace
+     and c.relkind = 'r'
+     and c.relname not in (
+       -- La propia bitácora y su configuración: auditarlas sería recursivo.
+       'registro_auditoria', 'campos_auditoria_redactados',
+       -- La maquinaria del cortafuegos: miles de filas por minuto en un ataque,
+       -- y ya es, ella misma, un registro.
+       'intentos_rsvp', 'parametros_seguridad',
+       -- Qué mensajes ha visto cada cual: estado de pantalla, no datos.
+       'mensajes_leidos',
+       -- El contenido público de la landing: lo que dice ya está a la vista
+       -- de todos, y su historia no es un dato de nadie.
+       'alojamientos', 'consejos_vestimenta', 'hitos_historia', 'hitos_programa',
+       'preguntas_frecuentes', 'rutas_llegada', 'canciones_sugeridas'
+     )
+     and not exists (
+       select 1
+         from pg_trigger as t
+         join pg_proc as p on p.oid = t.tgfoid
+        where t.tgrelid = c.oid
+          and not t.tgisinternal
+          and p.proname = 'registrar_auditoria'
+     );
+
+  perform pg_temp.comprobar(
+    'toda tabla de dominio lleva el trigger de auditoría (sin él: ' || coalesce(v_sin, 'ninguna') || ')',
+    v_sin is null
+  );
+end $$;
+
+\echo ''
+\echo '========================================'
+\echo '  «Hoy» es el día de la boda, no el del servidor'
+\echo '========================================'
+
+-- `vencido` y `dias_para_vencer` se contaban con `current_date`, que es el día
+-- en la zona de la SESIÓN (UTC en Supabase). Se prueba con las dos zonas más
+-- separadas del planeta: Kiritimati (UTC+14) y Pago Pago (UTC-11) están a 25
+-- horas, así que a cualquier hora del día al menos una de las dos vive en otra
+-- fecha que la boda. Con `current_date` esto falla siempre en una de ellas.
+do $$
+declare
+  v_hoy       date;
+  v_categoria uuid;
+  v_partida   uuid;
+  v_pago_hoy  uuid;
+  v_pago_ayer uuid;
+  v_tarea     uuid;
+  v_zona      text;
+  v_vencido   boolean;
+  v_dias      integer;
+begin
+  select (now() at time zone c.zona_horaria)::date into v_hoy
+    from public.configuracion_boda as c
+   limit 1;
+
+  if v_hoy is null then
+    raise warning 'FALLA SIN DATOS: no hay configuracion_boda con la que saber qué día es en la boda';
+    return;
+  end if;
+
+  perform pg_temp.comprobar('hoy_en_la_boda() da el día en la zona de la boda', public.hoy_en_la_boda() = v_hoy);
+
+  begin
+    insert into public.categorias_presupuesto (nombre) values ('Categoría del reloj')
+    returning id into v_categoria;
+    insert into public.partidas_presupuesto (categoria_id, concepto, importe_estimado)
+    values (v_categoria, 'Partida del reloj', 1000)
+    returning id into v_partida;
+    insert into public.pagos (partida_id, importe, fecha_vencimiento)
+    values (v_partida, 10, v_hoy) returning id into v_pago_hoy;
+    insert into public.pagos (partida_id, importe, fecha_vencimiento)
+    values (v_partida, 10, v_hoy - 1) returning id into v_pago_ayer;
+    insert into public.tareas (titulo, fecha_limite)
+    values ('Tarea del reloj', v_hoy) returning id into v_tarea;
+
+    foreach v_zona in array array['Pacific/Kiritimati', 'Pacific/Pago_Pago', 'UTC'] loop
+      perform set_config('timezone', v_zona, true);
+
+      select vencido into v_vencido from public.v_pagos where id = v_pago_hoy;
+      perform pg_temp.comprobar('un pago que vence hoy en la boda no está vencido (sesión en ' || v_zona || ')', v_vencido = false);
+
+      select vencido into v_vencido from public.v_pagos where id = v_pago_ayer;
+      perform pg_temp.comprobar('un pago que venció ayer en la boda está vencido (sesión en ' || v_zona || ')', v_vencido = true);
+
+      select dias_para_vencer into v_dias from public.v_tareas where id = v_tarea;
+      perform pg_temp.comprobar('una tarea que vence hoy en la boda vence «hoy» (sesión en ' || v_zona || ')', v_dias = 0);
+    end loop;
+
+    -- La zona se cambió con `set_config(…, true)`: es local a la transacción y
+    -- se deshace sola con todo lo demás.
+    raise exception using errcode = 'P0001', message = 'deshacer-siembra-del-reloj';
+  exception when sqlstate 'P0001' then
+    null;
+  end;
 end $$;
 
 \echo ''

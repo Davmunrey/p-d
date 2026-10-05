@@ -29,8 +29,34 @@ if [ -z "${DATABASE_URL:-}" ]; then
 fi
 
 DESTINO="${DIRECTORIO_COPIAS:-copias}"
-BIN="$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1 || true)"
-[ -n "$BIN" ] && export PATH="$BIN:$PATH"
+
+# PRIMERO, QUÉ VERSIÓN ES LA BASE. Un `pg_dump` más viejo que el servidor se
+# niega a volcarlo («server version mismatch»), y el que se tenía a mano era
+# el más alto instalado, sin mirar nada más: en el runner de GitHub, el 16,
+# contra una base de producción que es PostgreSQL 17. La copia no se habría
+# hecho nunca, ni con todos los secretos bien puestos. Para preguntar vale
+# cualquier `psql`; para volcar, el de la versión del servidor.
+BIN_ALTO="$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1 || true)"
+[ -n "$BIN_ALTO" ] && export PATH="$BIN_ALTO:$PATH"
+
+VERSION_SERVIDOR="$(psql "$DATABASE_URL" -XAtqc 'show server_version_num')"
+MAYOR_SERVIDOR=$((VERSION_SERVIDOR / 10000))
+
+if [ -x "/usr/lib/postgresql/$MAYOR_SERVIDOR/bin/pg_dump" ]; then
+  export PATH="/usr/lib/postgresql/$MAYOR_SERVIDOR/bin:$PATH"
+fi
+
+if ! command -v pg_dump >/dev/null; then
+  echo "No hay pg_dump. Instala postgresql-client-$MAYOR_SERVIDOR." >&2
+  exit 1
+fi
+
+MAYOR_PG_DUMP="$(pg_dump --version | sed -E 's/^[^0-9]*([0-9]+).*/\1/')"
+if [ "$MAYOR_PG_DUMP" -lt "$MAYOR_SERVIDOR" ]; then
+  echo "La base es PostgreSQL $MAYOR_SERVIDOR y este pg_dump es el $MAYOR_PG_DUMP: no puede volcarla." >&2
+  echo "Instala postgresql-client-$MAYOR_SERVIDOR (repositorio apt.postgresql.org)." >&2
+  exit 1
+fi
 
 mkdir -p "$DESTINO"
 
@@ -39,14 +65,17 @@ mkdir -p "$DESTINO"
 FECHA="$(date -u +%Y-%m-%d)"
 FICHERO="$DESTINO/boda-$FECHA.dump"
 
-# `--no-owner` y `--no-privileges`: los roles de Supabase no existen en la base
-# donde se restaure, y sin esto `pg_restore` se llena de errores por cada
-# `alter owner` que no puede aplicar. Las POLÍTICAS RLS sí van dentro —son
-# parte del esquema— que es lo que de verdad hay que recuperar.
+# `--no-owner`, y NADA MÁS: los permisos van dentro. Antes también iba
+# `--no-privileges`, con la idea de que los roles de Supabase no existirían
+# donde se restaurase. En un Supabase sí existen —`anon`, `authenticated` y
+# `service_role` están en todos—, y el modelo de acceso de esta base está hecho
+# de GRANT explícitos: se revoca todo y se concede tabla a tabla. Sin ellos, la
+# base restaurada tenía sus filas y sus políticas, pero la portada no podía leer
+# `configuracion_boda`, el RSVP no podía llamar a `obtener_invitacion` y el
+# panel no veía nada. Las POLÍTICAS RLS van dentro igual —son esquema—.
 pg_dump "$DATABASE_URL" \
   --format=custom \
   --no-owner \
-  --no-privileges \
   --schema=public \
   --file="$FICHERO" >&2
 

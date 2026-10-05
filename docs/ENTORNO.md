@@ -112,12 +112,21 @@ tumbaba el 404 y la página de sistema de diseño, que ni siquiera tocan la base
 
 ```bash
 # Levanta un PostgreSQL desechable con las migraciones y el seed
-export DATABASE_URL="$(./scripts/preparar-bbdd.sh)"
+export DATABASE_URL="$(sudo ./scripts/preparar-bbdd.sh)"
 npm run dev
 ```
 
-O se copia `.env.example` a `.env.local` y se rellena. `.env*` está en
-`.gitignore`: esos ficheros no se suben nunca.
+**Necesita `sudo` y un Debian o Ubuntu con PostgreSQL instalado**
+(`sudo apt-get install postgresql`): el guion crea el clúster en
+`/var/lib/postgresql/pruebaboda` y lo lanza como el usuario `postgres`, igual
+que en el CI. Sin `sudo`, `su postgres` pide una contraseña que no se ve y el
+guion falla sin decir por qué. En macOS no hay ni ese usuario ni esa ruta: allí
+lo práctico es `supabase start`, que levanta la base con todo lo de Supabase, y
+`supabase db reset` para cargar las migraciones y el seed.
+
+Para el resto de variables, se copia `.env.example` a `.env.local` y se
+rellena. `.env*` está en `.gitignore` —esos ficheros no se suben nunca— con la
+única excepción de `.env.example`, que sólo lleva los nombres.
 
 ---
 
@@ -328,11 +337,103 @@ abierta, con el enlace al registro. Mientras esa incidencia siga abierta, **no
 hay copia**: hasta que el primer run salga verde, la lista de invitados vive
 sólo en Supabase.
 
+**La copia es del esquema `public`, con sus permisos.** Lleva las tablas, los
+datos, las políticas RLS y los GRANT de los que vive la web —sin ellos la
+portada no podría leer la configuración ni el RSVP abrir una invitación, y toda
+función restaurada nacería ejecutable por cualquiera—. No lleva lo que no es de
+`public`: las cuentas del panel (`auth.users`, con sus contraseñas, que gestiona
+Supabase), el trigger que crea un perfil al darse de alta, los buckets ni la
+purga programada. Todo eso lo ponen las migraciones.
+
+**Se vuelca con el `pg_dump` de la versión de la base.** Uno más viejo se niega
+a volcarla, y el de Ubuntu es el 16 contra una base 17: el flujo instala el
+cliente 17 del repositorio oficial de PostgreSQL, y el guion compara versiones
+antes de volcar y falla con un mensaje claro si no casan. Si un día se sube la
+versión de la base, se sube también `major_version` en `supabase/config.toml` y
+el cliente del flujo; un test vigila que los dos digan lo mismo.
+
+### La purga de los intentos del RSVP
+
+Cada vez que alguien abre su invitación queda una fila en `intentos_rsvp` con
+su IP y la huella de su token: es lo que usa el cortafuegos. No hace falta
+guardarlas más allá de `parametros_seguridad.dias_retencion_intentos` (30 días),
+y de borrarlas se encarga pg_cron dentro de la propia base, todas las noches a
+las 04:30 UTC. Lo programa la migración `20261005100200`; no depende de ningún
+secreto de GitHub ni de que un flujo llegue a ejecutarse.
+
+Para comprobarlo, en el editor SQL de Supabase:
+
+```sql
+select jobname, schedule, command from cron.job;
+select status, start_time from cron.job_run_details order by start_time desc limit 5;
+```
+
 ### Restaurar
 
-`pg_restore --no-owner --no-privileges --dbname="<destino>" copias/boda-<fecha>.dump`
+Las copias están en el repositorio privado de `REPO_COPIAS`, una por día:
+`copias/boda-<fecha>.dump`.
 
-La restauración está probada en `tests/unidad/copia-seguridad.test.ts`, y no
-sólo el volcado: el test restaura en una base vacía y comprueba que vuelven las
-filas **y las políticas RLS**. Sin esa segunda mitad, una copia podría devolver
-la lista de invitados a una base donde la lee cualquiera.
+**Si se perdió algo concreto** —una tabla vaciada, unas filas borradas—, no se
+restaura encima de producción a ciegas: se restaura en una base aparte y se
+copia desde ahí lo que falte. En una máquina con PostgreSQL, en una base vacía
+que tenga lo que la copia da por hecho:
+
+```bash
+createdb boda_rescate
+psql -d boda_rescate \
+  -c 'create schema extensions' \
+  -c 'create extension pgcrypto with schema extensions' \
+  -c 'create extension unaccent with schema extensions' \
+  -c 'create extension pg_trgm with schema extensions' \
+  -c 'create schema auth' \
+  -c 'create table auth.users (id uuid primary key, email text)'
+pg_restore --no-owner --dbname=boda_rescate copias/boda-<fecha>.dump
+```
+
+Los roles `anon`, `authenticated` y `service_role` tienen que existir en ese
+servidor para que los permisos se apliquen (`sudo ./scripts/preparar-bbdd.sh`
+deja uno así). Es exactamente lo que hace `tests/unidad/copia-seguridad.test.ts`
+cada vez que corre: restaura en una base vacía, sin tragarse ningún error de
+`pg_restore`, y comprueba que vuelven las filas, las políticas RLS y los
+permisos.
+
+**Si se perdió el proyecto entero**, en un Supabase nuevo:
+
+1. Se aplican las migraciones (`supabase link` y `supabase db push`, como en
+   «Para aplicar migraciones en producción»). Crean el esquema, los permisos,
+   el trigger de altas, los buckets y la purga.
+2. Se cargan **sólo los datos**, en una transacción y **sin disparar
+   triggers**: si no, cada invitado restaurado crearía otra confirmación
+   inicial y cada fila otra entrada de auditoría. Antes se vacía lo que las
+   migraciones dejaron sembrado (las secciones, los parámetros, la plantilla de
+   tareas), que chocaría con las mismas filas de la copia:
+
+   ```bash
+   pg_restore --data-only --no-owner --file=datos.sql copias/boda-<fecha>.dump
+   cat > vaciar.sql <<'SQL'
+   do $$
+   declare t text;
+   begin
+     for t in select tablename from pg_tables where schemaname = 'public' loop
+       execute format('truncate table public.%I cascade', t);
+     end loop;
+   end $$;
+   SQL
+   psql "<Session pooler del proyecto nuevo>" --single-transaction -v ON_ERROR_STOP=1 \
+     -f vaciar.sql \
+     -c 'set session_replication_role = replica' \
+     -f datos.sql \
+     -c 'set session_replication_role = origin' \
+     -c 'delete from public.perfiles as p where not exists (select 1 from auth.users as u where u.id = p.usuario_id)'
+   ```
+
+3. Las cuentas del panel no viajan en la copia: el último paso de arriba borra
+   los perfiles que apuntan a cuentas que ya no existen, y los novios se dan de
+   alta otra vez con `scripts/crear-propietarios.sh`. Sus tareas y sus
+   anotaciones se quedan, sin autor.
+
+Los enlaces de las invitaciones siguen valiendo: la base guarda la huella
+SHA-256 de cada token, sin secreto aparte, así que el mismo enlace da la misma
+huella en el proyecto nuevo. Este procedimiento se probó sobre una base recién
+migrada con una copia de la de desarrollo: las mismas filas en cada tabla, ni
+una entrada de auditoría de más, y las invitaciones abriendo.

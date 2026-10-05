@@ -53,10 +53,18 @@ jobs:
 
       - name: Instalar PostgreSQL
         # Para tener `pg_dump`, y de la misma versión mayor que el servidor:
-        # un `pg_dump` más viejo que la base se niega a volcarla.
+        # un `pg_dump` más viejo que la base se niega a volcarla. El paquete de
+        # Ubuntu es el 16 y la base de producción es la 17 (`major_version` en
+        # supabase/config.toml): con él, la copia no se habría hecho nunca. Se
+        # instala del repositorio oficial de PostgreSQL, y
+        # tests/unidad/flujos-de-github.test.ts vigila que este número y el de
+        # config.toml no se separen. El guion, además, lo comprueba contra el
+        # servidor antes de volcar.
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
 
       - name: Traer el repositorio de copias
         uses: actions/checkout@v4

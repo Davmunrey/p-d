@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**51**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**54**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -27,7 +27,7 @@ Cada una tiene su reverso exacto en
 [`supabase/migrations/rollback/`](../supabase/migrations/rollback/), con el mismo
 nombre. Se ejecutan en orden **inverso**.
 
-En números: **37 tablas, 15 vistas, 20 enumerados, 54 funciones, 72 políticas RLS.**
+En números: **37 tablas, 15 vistas, 20 enumerados, 55 funciones, 72 políticas RLS.**
 
 Esos cinco números no se escriben a mano: los cuenta la suite de seguridad contra
 el catálogo de la base recién migrada, y si el documento dice otra cosa, el CI se
@@ -502,6 +502,10 @@ lo escriben los novios desde el panel, sin desplegar.
 
 - `parametros_seguridad` — fila única con los límites del cortafuegos
   (intentos, ventana, retención). Son configuración: se ajustan sin migración.
+  La retención la aplica `purgar_intentos_rsvp()`, que pg_cron ejecuta todas
+  las noches a las 04:30 UTC (trabajo `purgar-intentos-rsvp`, migración
+  `20261005100200`). Fuera de Supabase, sin pg_cron, no se programa y se avisa;
+  en Supabase no poder programarla tumba la migración.
 - `intentos_rsvp` — intentos de resolver un token. Guarda la **huella** del token
   intentado, nunca el token: la bitácora de seguridad no puede convertirse en un
   almacén de credenciales.
@@ -539,6 +543,13 @@ Las vistas **materializadas** están prohibidas sobre estas tablas: no admiten
 `v_servicios_importe` existe para que la fórmula del coste por invitado viva en
 la base de datos y no replicada en TypeScript: si mañana se decide contar a los
 niños a media tarifa, se cambia aquí y el panel entero se entera.
+
+**«Hoy» es el día de la boda, no el del servidor.** `v_pagos` decide `vencido`
+y `v_tareas` cuenta `dias_para_vencer` con `hoy_en_la_boda()`: el día de
+`now()` en `configuracion_boda.zona_horaria`. Con `current_date` contaban en la
+zona de la sesión, que en Supabase es UTC, y entre la medianoche y las dos de la
+madrugada en Madrid el panel iba un día por detrás. Cualquier vencimiento nuevo
+se calcula con esa función, nunca con `current_date`.
 
 ---
 
