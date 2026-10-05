@@ -9,6 +9,7 @@ import { obtenerConfiguracion } from "@/lib/bbdd/landing";
 import { obtenerPendientes } from "@/lib/bbdd/invitados";
 import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
+import { avisoDe } from "@/lib/avisos";
 
 import { recordarPorWhatsApp } from "../acciones";
 
@@ -57,7 +58,7 @@ export default async function PaginaPendientes({ searchParams }: Parametros) {
 
   const consulta = await searchParams;
   const estado = typeof consulta.estado === "string" ? consulta.estado : "";
-  const aviso = AVISOS[estado];
+  const aviso = avisoDe(AVISOS, estado);
 
   const [pendientes, configuracion] = await Promise.all([
     obtenerPendientes(),

@@ -1,4 +1,5 @@
 import { t, type ClaveCopy } from "@/lib/copy";
+import { avisoDe } from "@/lib/avisos";
 
 /**
  * `role="alert"` sólo para lo que ha ido mal. Un «documento apuntado» anunciado
@@ -26,7 +27,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
 };
 
 export function AvisoDocumentos({ estado }: { estado: string }) {
-  const aviso = AVISOS[estado];
+  const aviso = avisoDe(AVISOS, estado);
   if (!aviso) return null;
 
   return (

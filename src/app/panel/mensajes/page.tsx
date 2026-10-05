@@ -15,6 +15,7 @@ import {
 import { t, type ClaveCopy } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 import { normalizar } from "@/lib/texto";
+import { avisoDe } from "@/lib/avisos";
 
 import { marcarLeido, moderarCancion } from "./acciones";
 
@@ -76,7 +77,7 @@ export default async function PaginaMensajes({ searchParams }: Parametros) {
     : mensajes;
 
   const sinLeer = mensajes.filter((mensaje) => !mensaje.leido).length;
-  const aviso = AVISOS[soloTexto(consulta.estado)];
+  const aviso = avisoDe(AVISOS, soloTexto(consulta.estado));
 
   return (
     <div className="grid gap-bloque">

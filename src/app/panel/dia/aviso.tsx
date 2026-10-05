@@ -1,4 +1,5 @@
 import { t, type ClaveCopy } from "@/lib/copy";
+import { avisoDe } from "@/lib/avisos";
 
 /**
  * `role="alert"` sólo para lo que ha ido mal, como en el resto del panel: una
@@ -14,7 +15,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
 };
 
 export function AvisoDia({ estado }: { estado: string }) {
-  const aviso = AVISOS[estado];
+  const aviso = avisoDe(AVISOS, estado);
   if (!aviso) return null;
 
   return (

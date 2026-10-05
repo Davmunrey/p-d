@@ -13,6 +13,7 @@ import { accesoActual } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import { t } from "@/lib/copy";
 import { localDesdeInstante } from "@/lib/zona-horaria";
+import { avisoDe } from "@/lib/avisos";
 
 import { guardarAjustes, guardarRegalos } from "./acciones";
 
@@ -106,7 +107,7 @@ export default async function PaginaAjustes({
   if (!acceso) redirect(RUTA_ACCESO);
 
   const { estado } = await searchParams;
-  const aviso = estado && estado in AVISOS ? AVISOS[estado] : null;
+  const aviso = avisoDe(AVISOS, estado) ?? null;
 
   const supabase = await clienteServidor();
   const { data } = await supabase

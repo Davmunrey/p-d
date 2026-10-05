@@ -6,6 +6,7 @@ import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO } from "@/config/constants";
 import { accesoActual, type RolPanel } from "@/lib/sesion";
 import { t } from "@/lib/copy";
+import { avisoDe } from "@/lib/avisos";
 
 import { guardarNombre } from "./acciones";
 
@@ -41,7 +42,7 @@ export default async function PaginaCuenta({
   if (!acceso) redirect(RUTA_ACCESO);
 
   const { estado } = await searchParams;
-  const aviso = estado && estado in AVISOS ? AVISOS[estado] : null;
+  const aviso = avisoDe(AVISOS, estado) ?? null;
 
   return (
     <div className="grid max-w-texto gap-pila">

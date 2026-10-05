@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { CAPACIDAD_MAXIMA_MESA, CAPACIDAD_MINIMA_MESA } from "@/config/constants";
 import { t, type ClaveCopy } from "@/lib/copy";
+import { avisoDe } from "@/lib/avisos";
 
 /**
  * `role="alert"` sólo para lo que ha ido mal. Un «mesa guardada» anunciado a
@@ -119,7 +120,7 @@ export function AvisoMesas({ estado, detalle }: { estado: string; detalle: Detal
     );
   }
 
-  const aviso = AVISOS[estado];
+  const aviso = avisoDe(AVISOS, estado);
   if (!aviso) return null;
 
   return <Recuadro error={aviso.error}>{t(aviso.clave)}</Recuadro>;

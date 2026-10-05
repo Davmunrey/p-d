@@ -2,7 +2,15 @@ import { expect, origenDelTest, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_ACCESO, RUTA_INVITADOS, RUTA_PANEL, RUTA_RSVP } from "../../src/config/constants";
+import {
+  RUTA_ACCESO,
+  RUTA_DIA,
+  RUTA_INVITADOS,
+  RUTA_MESAS,
+  RUTA_PANEL,
+  RUTA_PENDIENTES,
+  RUTA_RSVP,
+} from "../../src/config/constants";
 
 /**
  * BODA-50/51/52 · Las invitaciones
@@ -661,4 +669,39 @@ test.describe("Repartir la invitación", () => {
     await page.goto(ficha);
     await expect(page.getByText(/Invitación mandada el/)).toBeVisible();
   });
+});
+
+/*
+  UN `?estado=` INVENTADO NO TUMBA LA PANTALLA. Con `AVISOS[estado]`, un
+  `?estado=constructor` devolvía la función `Object` —verdadera— y la pantalla
+  reventaba al traducirla: un enlace manipulado dejaba sin invitados, mesas,
+  pendientes ni día. Ahora el aviso sólo sale de lo que el mapa declara.
+*/
+test.describe("Un estado inventado en la URL", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  test.beforeEach(async ({ page }) => {
+    await entrar(page);
+  });
+
+  test("un estado que sí existe sigue enseñando su aviso", async ({ page }) => {
+    await page.goto(`${RUTA_INVITADOS}?estado=creada`);
+    await expect(page.getByRole("main").getByRole("status")).toContainText(
+      copy.panel.invitados.creada,
+    );
+  });
+
+  for (const ruta of [RUTA_INVITADOS, RUTA_MESAS, RUTA_PENDIENTES, RUTA_DIA]) {
+    test(`${ruta} aguanta «constructor», «__proto__» y «toString»`, async ({ page }) => {
+      for (const trampa of ["constructor", "__proto__", "toString"]) {
+        const respuesta = await page.goto(`${ruta}?estado=${trampa}`);
+        expect(respuesta?.status(), `${ruta}?estado=${trampa}`).toBe(200);
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        await expect(page.getByText(copy.panel.errorTitulo)).toHaveCount(0);
+      }
+    });
+  }
 });

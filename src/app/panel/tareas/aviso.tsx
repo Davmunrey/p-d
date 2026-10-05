@@ -1,4 +1,5 @@
 import { t, type ClaveCopy } from "@/lib/copy";
+import { avisoDe } from "@/lib/avisos";
 
 /**
  * `role="alert"` sólo para lo que ha ido mal. Un «tarea apuntada» anunciado a
@@ -52,10 +53,10 @@ function textoGeneradas(creadas: string): string {
 
 export function AvisoTareas({ estado, creadas }: { estado: string; creadas: string }) {
   const esGeneradas = estado === "generadas";
-  const aviso = AVISOS[estado];
+  const aviso = avisoDe(AVISOS, estado);
   if (!esGeneradas && !aviso) return null;
 
-  const error = esGeneradas ? false : aviso.error;
+  const error = !esGeneradas && Boolean(aviso?.error);
 
   return (
     <p
@@ -64,7 +65,7 @@ export function AvisoTareas({ estado, creadas }: { estado: string; creadas: stri
         error ? "bg-error-fondo text-error-tinta" : "bg-exito-fondo text-exito-tinta"
       }`}
     >
-      {esGeneradas ? textoGeneradas(creadas) : t(aviso.clave)}
+      {esGeneradas || !aviso ? textoGeneradas(creadas) : t(aviso.clave)}
     </p>
   );
 }

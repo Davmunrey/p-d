@@ -1,4 +1,5 @@
 import { t, type ClaveCopy } from "@/lib/copy";
+import { avisoDe } from "@/lib/avisos";
 
 /**
  * `role="alert"` sólo para lo que ha ido mal. Un «pago apuntado» anunciado a
@@ -42,7 +43,7 @@ export function AvisoPagos({ estado, queda }: { estado: string; queda: string })
     );
   }
 
-  const aviso = AVISOS[estado];
+  const aviso = avisoDe(AVISOS, estado);
   if (!aviso) return null;
 
   return <Recuadro error={aviso.error}>{t(aviso.clave)}</Recuadro>;

@@ -1,4 +1,5 @@
 import { t, type ClaveCopy } from "@/lib/copy";
+import { avisoDe } from "@/lib/avisos";
 
 /**
  * El resultado de la última acción, en una frase.
@@ -28,7 +29,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
 };
 
 export function AvisoEstado({ estado }: { estado: string }) {
-  const aviso = AVISOS[estado];
+  const aviso = avisoDe(AVISOS, estado);
   if (!aviso) return null;
 
   return (
