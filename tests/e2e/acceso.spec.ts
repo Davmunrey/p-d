@@ -2,6 +2,7 @@ import { expect, test } from "./utiles/origen-propio";
 
 import copy from "../../content/copy.es.json";
 import {
+  PARAMETRO_VOLVER,
   RUTA_ACCESO,
   RUTA_CONFIRMAR_ACCESO,
   RUTA_NUEVA_CONTRASENA,
@@ -185,8 +186,73 @@ test.describe("La puerta del panel", () => {
     await expect(page.getByRole("main").getByRole("alert")).toHaveText(copy.acceso.errorEnlace);
   });
 
+  /*
+    EL CÓDIGO DE LA PLANTILLA DE SERIE. Con `@supabase/ssr` el enlace del correo
+    vuelve con `?code=…&sb_flow_id=…` (PKCE), y la ruta sólo leía `token_hash`.
+    Un código que no se puede canjear tiene que acabar como un token
+    inventado: en la puerta, con el mismo aviso. El canje bueno se prueba con
+    un Supabase de verdad, en acceso-real.spec.ts.
+  */
+  test("un código de recuperación inventado tampoco", async ({ page }) => {
+    await page.goto(`${RUTA_CONFIRMAR_ACCESO}?code=inventado&sb_flow_id=${"a".repeat(32)}`);
+
+    await expect(page).toHaveURL(new RegExp("estado=enlace-invalido"));
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(copy.acceso.errorEnlace);
+  });
+
   test("el panel no se indexa", async ({ request }) => {
     const respuesta = await request.get(RUTA_PANEL);
     expect(respuesta.headers()["x-robots-tag"] ?? "").toContain("noindex");
+  });
+});
+
+/*
+  LA SESIÓN SE CIERRA A MITAD DE UN FORMULARIO. Cerrar sesión en el móvil la
+  cierra también en el portátil, y el siguiente «Guardar» del panel llega a la
+  puerta sin usuario. Una acción de servidor no sabe seguir un 307: recibía el
+  HTML de la puerta y el panel enseñaba su pantalla de error, en inglés. Aquí
+  no hace falta sesión para probarlo —es justo lo que no hay—: basta con
+  hablarle a la puerta como le habla el navegador.
+*/
+test.describe("Guardar en el panel sin sesión", () => {
+  const PANTALLA = `${RUTA_PANEL}/cuenta`;
+  const PUERTA = `${RUTA_ACCESO}?${PARAMETRO_VOLVER}=${encodeURIComponent(PANTALLA)}`;
+
+  test("una acción manda a la puerta con la cabecera que el cliente de Next entiende", async ({
+    request,
+  }) => {
+    const respuesta = await request.post(PANTALLA, {
+      headers: { "next-action": "0".repeat(42) },
+      data: "[]",
+      maxRedirects: 0,
+    });
+
+    expect(respuesta.status(), "nada de 307: la acción no sabe seguirlo").toBe(200);
+    expect(respuesta.headers()["location"]).toBeUndefined();
+    expect(respuesta.headers()["x-action-redirect"]).toBe(`${PUERTA};replace`);
+    expect(respuesta.headers()["cache-control"] ?? "").toContain("no-store");
+  });
+
+  test("sin JavaScript, el formulario acaba en la puerta con un GET, no repitiendo el envío", async ({
+    request,
+  }) => {
+    const respuesta = await request.post(PANTALLA, {
+      form: { nombre: "Alguien" },
+      maxRedirects: 0,
+    });
+
+    expect(respuesta.status(), "303: «mira esto otro», sin volver a mandar el formulario").toBe(
+      303,
+    );
+    expect(new URL(respuesta.headers()["location"]!, "http://x").pathname).toBe(RUTA_ACCESO);
+  });
+
+  test("y una visita sin sesión sigue siendo la redirección de siempre", async ({
+    request,
+  }) => {
+    const respuesta = await request.get(PANTALLA, { maxRedirects: 0 });
+
+    expect(respuesta.status()).toBe(307);
+    expect(respuesta.headers()["x-action-redirect"]).toBeUndefined();
   });
 });

@@ -23,6 +23,8 @@
  *   · conexión  → PostHog y Sentry, si están configurados. Supabase sólo se
  *                 habla desde el servidor: no hay cliente en el navegador.
  *   · marcos    → el mapa de OpenStreetMap; que nos enmarquen, nadie.
+ *   · formularios → los nuestros, y el bucket: las descargas de documentos
+ *                 redirigen a su URL firmada.
  *
  * `'unsafe-eval'` sólo fuera de producción: el modo de desarrollo de Next lo
  * necesita, y en producción es justo lo que se quiere prohibir.
@@ -67,7 +69,12 @@ export function construirCsp(nonce: string, origenes: OrigenesCsp): string {
     `frame-src ${lista(mapa)}`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
-    `form-action 'self'`,
+    // Y el bucket: «Descargar» un documento —de un proveedor o de la boda— es
+    // un formulario cuya acción redirige a la URL firmada de Storage. Sin
+    // JavaScript, o pulsando antes de que cargue, el navegador aplica
+    // `form-action` también a esa redirección y se negaba a seguirla: el
+    // contrato no se descargaba. Es nuestro propio proyecto, no un tercero.
+    `form-action ${lista("'self'", supabase)}`,
     `object-src 'none'`,
   ];
 

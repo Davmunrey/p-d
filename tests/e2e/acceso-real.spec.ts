@@ -1,7 +1,17 @@
+import { createHash, randomUUID } from "node:crypto";
+
 import { expect, test } from "./utiles/origen-propio";
+import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_ACCESO, RUTA_PANEL } from "../../src/config/constants";
+import {
+  PARAMETRO_VOLVER,
+  RUTA_ACCESO,
+  RUTA_CONFIRMAR_ACCESO,
+  RUTA_NUEVA_CONTRASENA,
+  RUTA_PANEL,
+  RUTA_RECUPERAR,
+} from "../../src/config/constants";
 
 /**
  * BODA-40 · El recorrido completo, contra un Supabase de verdad
@@ -140,5 +150,107 @@ test.describe("Acceso de verdad", () => {
 
     expect(existente).toBe(inventado);
     expect(existente).toBe(copy.acceso.errorCredenciales);
+  });
+
+  /*
+    RECUPERAR LA CONTRASEÑA, DE VERDAD. Con `@supabase/ssr` el flujo es PKCE:
+    pedir la recuperación deja en ESTE navegador un verificador, y el enlace del
+    correo vuelve con un código que sólo se canjea junto a él. La ruta de vuelta
+    sólo sabía de `token_hash`, así que con la plantilla de serie de Supabase
+    ningún enlace funcionaba.
+
+    El correo no se puede leer aquí —el buzón de pruebas de Supabase no se
+    levanta en el CI—, así que se hace lo que haría el enlace: GoTrue, al
+    verificarlo, apunta en `auth.flow_state` un código atado al reto del
+    verificador y redirige con él. Se apunta ese mismo código para el
+    verificador que la web dejó en las cookies, y se abre la vuelta. Lo que se
+    prueba es nuestra parte entera: la cookie que deja la petición, el canje
+    contra GoTrue y el destino.
+  */
+  test("pedir la recuperación y abrir el enlace en el mismo navegador lleva a elegir contraseña", async ({
+    page,
+    context,
+  }) => {
+    const cadena = process.env.DATABASE_URL;
+    test.skip(!cadena, "Hace falta la base del Supabase local para apuntar el código.");
+
+    await page.goto(RUTA_RECUPERAR);
+    await page.getByLabel(copy.acceso.correo).fill(CORREO_CON_ACCESO!);
+    await page.getByRole("button", { name: copy.acceso.recuperarEnviar }).click();
+    await expect(page.getByRole("main").getByRole("status")).toHaveText(
+      copy.acceso.recuperarEnviado,
+    );
+
+    // El verificador del flujo, en su cookie: `…-flow-<id>-code-verifier`.
+    const ranura = (await context.cookies()).find((galleta) =>
+      /-flow-[0-9a-f]{32}-code-verifier$/.test(galleta.name),
+    );
+    expect(ranura, "pedir la recuperación tiene que dejar el verificador PKCE").toBeTruthy();
+    const flujo = ranura!.name.match(/-flow-([0-9a-f]{32})-code-verifier$/)![1]!;
+
+    const crudo = decodeURIComponent(ranura!.value);
+    const texto = crudo.startsWith("base64-")
+      ? Buffer.from(crudo.slice("base64-".length), "base64url").toString("utf8")
+      : crudo;
+    const guardado = texto.startsWith('"') ? (JSON.parse(texto) as string) : texto;
+    const [verificador, marca] = guardado.split("/");
+    expect(marca, "el verificador va marcado como recuperación").toBe("recovery");
+
+    const reto = createHash("sha256").update(verificador!).digest("base64url");
+    const codigo = randomUUID();
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    try {
+      await sql`
+        insert into auth.flow_state (
+          id, user_id, auth_code, code_challenge_method, code_challenge,
+          provider_type, authentication_method, created_at, updated_at
+        )
+        values (
+          ${randomUUID()},
+          (select id from auth.users where email = ${CORREO_CON_ACCESO!}),
+          ${codigo}, 's256', ${reto}, 'recovery', 'recovery', now(), now()
+        )
+      `;
+    } finally {
+      await sql.end();
+    }
+
+    await page.goto(`${RUTA_CONFIRMAR_ACCESO}?code=${codigo}&sb_flow_id=${flujo}`);
+
+    await expect(page).toHaveURL(new RegExp(RUTA_NUEVA_CONTRASENA));
+    // Con sesión, la pantalla deja elegir la contraseña; sin ella, no.
+    await expect(page.getByLabel(copy.acceso.nuevaContrasena)).toBeVisible();
+  });
+
+  /*
+    LA SESIÓN SE CIERRA A MITAD DE UN FORMULARIO. Cerrar sesión en el móvil la
+    cierra también en el portátil (`signOut()` es global). El siguiente
+    «Guardar» del panel acababa en la pantalla de error del panel, en inglés,
+    porque la acción recibía el HTML de la puerta. Tiene que acabar en la
+    puerta, recordando a dónde volver.
+  */
+  test("con la sesión cerrada en otro sitio, guardar en el panel lleva a la puerta, no a un error", async ({
+    page,
+    context,
+  }) => {
+    await identificarse(page, CORREO_CON_ACCESO!);
+    await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
+
+    const pantalla = `${RUTA_PANEL}/cuenta`;
+    await page.goto(pantalla);
+    const campo = page.getByLabel(copy.panel.cuenta.nombre);
+    await expect(campo).toBeVisible();
+
+    // Lo mismo que ve este navegador cuando la sesión se cerró en otro: sus
+    // cookies ya no valen.
+    await context.clearCookies();
+
+    await campo.fill("Nombre que no llega a guardarse");
+    await page.getByRole("button", { name: copy.panel.cuenta.guardar }).click();
+
+    await expect(page).toHaveURL(
+      new RegExp(`${RUTA_ACCESO}\\?${PARAMETRO_VOLVER}=${encodeURIComponent(pantalla)}`),
+    );
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.acceso.titulo);
   });
 });

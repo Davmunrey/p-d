@@ -46,11 +46,25 @@ describe("construirCsp", () => {
     expect(directiva("frame-src")).toBe("https://www.openstreetmap.org");
   });
 
-  it("nadie nos enmarca, ningún plugin, ningún formulario a otro sitio", () => {
+  it("nadie nos enmarca, ningún plugin, ningún formulario a otro sitio que no sea nuestro", () => {
     expect(directiva("frame-ancestors")).toBe("'none'");
     expect(directiva("object-src")).toBe("'none'");
-    expect(directiva("form-action")).toBe("'self'");
     expect(directiva("base-uri")).toBe("'self'");
+  });
+
+  /*
+    «Descargar» un documento es un formulario cuya acción redirige a la URL
+    firmada de Storage, y el navegador aplica `form-action` también a esa
+    redirección. Con sólo `'self'`, sin JavaScript —o pulsando antes de que
+    cargue— el contrato no se descargaba.
+  */
+  it("los formularios pueden acabar en el bucket, que es adonde redirigen las descargas", () => {
+    expect(directiva("form-action")).toBe("'self' https://abc.supabase.co");
+  });
+
+  it("y sin Supabase configurado, sólo en la propia web", () => {
+    const sinNada = construirCsp("n", { mapa: ORIGENES.mapa, desarrollo: false });
+    expect(sinNada).toContain("form-action 'self';");
   });
 
   it("sin un servicio configurado, su origen no se abre", () => {

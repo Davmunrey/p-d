@@ -1,8 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 
-import { MUESTREO_TRAZAS, SENTRY_DSN } from "@/config/constants";
+import { SENTRY_DSN } from "@/config/constants";
 import { noQuiereQueLeSigan } from "@/lib/observabilidad/limpiar";
-import { antesDeMandar } from "@/lib/observabilidad/sentry";
+import { OPCIONES_SENTRY } from "@/lib/observabilidad/opciones-sentry";
 
 /**
  * BODA-93 (#64) · LOS ERRORES DEL NAVEGADOR
@@ -25,13 +25,7 @@ import { antesDeMandar } from "@/lib/observabilidad/sentry";
  * terceros. Aquí no se enciende, y por eso está escrito.
  */
 if (SENTRY_DSN && !noQuiereQueLeSigan()) {
-  Sentry.init({
-    dsn: SENTRY_DSN,
-    tracesSampleRate: MUESTREO_TRAZAS,
-    sendDefaultPii: false,
-    beforeSend: antesDeMandar,
-    beforeBreadcrumb: (miga) => antesDeMandar(miga as never),
-  });
+  Sentry.init({ dsn: SENTRY_DSN, ...OPCIONES_SENTRY });
 }
 
 /*

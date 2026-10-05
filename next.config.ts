@@ -60,6 +60,18 @@ function origenesDeImagen() {
 const nextConfig: NextConfig = {
   images: { remotePatterns: origenesDeImagen() },
   /*
+    EL DSN DE SENTRY, TAMBIÉN EN EL NAVEGADOR. Next sólo mete en el bundle del
+    cliente las variables con prefijo `NEXT_PUBLIC_`, y ENTORNO.md pide
+    `SENTRY_DSN`: con sólo esa, el Sentry del navegador —el que se entera de lo
+    que le pasa a un invitado en el RSVP— no arrancaba nunca, mientras el del
+    servidor sí, y la comprobación a mano salía bien con un error de servidor.
+    Aquí se copia al compilar. El DSN es público por diseño: identifica el
+    proyecto y sólo sirve para mandarle informes.
+  */
+  env: {
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN || "",
+  },
+  /*
     EL TOPE DE LAS ACCIONES DE SERVIDOR, QUE POR DEFECTO ES 1 MB. Las subidas
     del panel —fotos, vídeos, contratos— viajan por una acción de servidor, y
     Next corta el cuerpo ANTES de que corra `subirMedio`: una foto de 3 MB

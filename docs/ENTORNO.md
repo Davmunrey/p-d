@@ -20,18 +20,18 @@ solo están los **nombres**.
 **Settings → Environment Variables.** Marcar las tres ramas (Production,
 Preview, Development) salvo que se indique otra cosa.
 
-| Variable                        | De dónde se saca                                                                                                                              |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                  | Botón **Connect** del dashboard → pestaña **Transaction pooler**                                                                              |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Botón **Connect** → pestaña de frameworks, o Settings → **API Keys**                                                                          |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Igual que la anterior: salen juntas                                                                                                           |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Settings → **API Keys** → `service_role`. **Hace falta para subir fotos** (BODA-29): Storage no admite escrituras con la sesión de un usuario |
-| `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                                                                                    |
-| `RESEND_API_KEY`                | [resend.com](https://resend.com) → **API Keys**. Sin ella no se manda el acuse de recibo, y no es un error                                    |
-| `CORREO_REMITENTE`              | La dirección desde la que se escribe, en un dominio **verificado** en Resend                                                                  |
-| `SENTRY_DSN`                    | [sentry.io](https://sentry.io) → proyecto → **Settings → Client Keys (DSN)**. Sin ella no se arranca Sentry, y no es un error                 |
-| `NEXT_PUBLIC_POSTHOG_KEY`       | [posthog.com](https://posthog.com) → **Project settings → Project API key**. Sin ella no se arranca la analítica                              |
-| `NEXT_PUBLIC_POSTHOG_HOST`      | Opcional. `https://eu.i.posthog.com` por defecto; sólo se cambia si el proyecto está en la nube americana                                     |
+| Variable                        | De dónde se saca                                                                                                                                                              |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                  | Botón **Connect** del dashboard → pestaña **Transaction pooler**                                                                                                              |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Botón **Connect** → pestaña de frameworks, o Settings → **API Keys**                                                                                                          |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Igual que la anterior: salen juntas                                                                                                                                           |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Settings → **API Keys** → `service_role`. **Hace falta para subir fotos** (BODA-29): Storage no admite escrituras con la sesión de un usuario                                 |
+| `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                                                                                                                    |
+| `RESEND_API_KEY`                | [resend.com](https://resend.com) → **API Keys**. Sin ella no se manda el acuse de recibo, y no es un error                                                                    |
+| `CORREO_REMITENTE`              | La dirección desde la que se escribe, en un dominio **verificado** en Resend                                                                                                  |
+| `SENTRY_DSN`                    | [sentry.io](https://sentry.io) → proyecto → **Settings → Client Keys (DSN)**. Sin ella no se arranca Sentry, y no es un error. Basta ésta: el navegador la recibe al compilar |
+| `NEXT_PUBLIC_POSTHOG_KEY`       | [posthog.com](https://posthog.com) → **Project settings → Project API key**. Sin ella no se arranca la analítica                                                              |
+| `NEXT_PUBLIC_POSTHOG_HOST`      | Opcional. `https://eu.i.posthog.com` por defecto; sólo se cambia si el proyecto está en la nube americana                                                                     |
 
 **El pooler, no la conexión directa.** Cada petición a la web arranca una
 función efímera; con conexión directa se agotan las conexiones del servidor en
@@ -96,10 +96,27 @@ tres en una hora). El nombre del mensaje es la constante
 `AVISO_CONFIRMACION_FALLIDA` de `src/config/constants.ts`: si se cambia ahí, hay
 que cambiarlo también en la regla, o la alerta se apaga en silencio.
 
+**Una sola variable para los dos lados.** El navegador sólo recibe variables
+`NEXT_PUBLIC_*`, así que `next.config.ts` copia `SENTRY_DSN` a
+`NEXT_PUBLIC_SENTRY_DSN` al compilar. Hasta que se hizo, con sólo `SENTRY_DSN`
+arrancaba el Sentry del servidor y el del navegador no —el que se entera de lo
+que le pasa a un invitado en el RSVP—. El DSN es público por diseño; tras
+cambiarlo hay que volver a desplegar, porque va dentro del bundle.
+
+**Las trazas pasan por el mismo filtro que los errores.** Con el muestreo
+encendido, las transacciones y sus tramos llevan la URL de la página, que en el
+RSVP es el token: van por `beforeSendTransaction` y `beforeSendSpan`, no por
+`beforeSend`. Las opciones de Sentry viven en
+`src/lib/observabilidad/opciones-sentry.ts` y los dos arranques las comparten:
+un filtro nuevo llega a los dos o a ninguno. Los identificadores de Sentry
+(`event_id`, los de la traza) salen intactos: no son datos de nadie, y uno
+estropeado hace que Sentry rechace el informe entero.
+
 **Lo que no se puede probar en CI**: que un error provocado a propósito llegue
 al panel de Sentry hace falta comprobarlo a mano sobre el preview, porque leerlo
 de vuelta exige un token de la API de Sentry que no va a estar en el
-repositorio. Se hace una vez tras configurar el DSN.
+repositorio. Se hace una vez tras configurar el DSN, **con un error del
+navegador y otro del servidor**: uno solo no dice si arrancan los dos.
 
 Si falta `DATABASE_URL`, **la web despliega igual** y muestra que está en
 preparación, dejando el error en el log del servidor. Se decidió así tras un

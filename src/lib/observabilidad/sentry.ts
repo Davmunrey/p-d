@@ -56,7 +56,42 @@ export function antesDeMandar<T>(informe: T): T {
     sinIdentidad.request = limpia;
   }
 
-  return limpiarProfundo(sinIdentidad) as T;
+  return conSusIdentificadores(informe, limpiarProfundo(sinIdentidad)) as T;
+}
+
+/**
+ * LOS IDENTIFICADORES DE SENTRY NO SON DATOS DE NADIE, y el filtro no los
+ * puede tocar: el `event_id` va en la cabecera del sobre y el servidor de
+ * Sentry rechaza uno que no sea un UUID, y los de la traza son los que atan un
+ * error a su petición. Son hexadecimal puro, así que se devuelven tal cual
+ * estaban —y sólo si de verdad lo son: nada que no tenga forma de identificador
+ * se cuela por aquí—.
+ */
+const IDENTIFICADOR = /^[0-9a-f]{16,32}$/;
+const CAMPOS_IDENTIFICADOR = ["event_id", "trace_id", "span_id", "parent_span_id"] as const;
+
+function conSusIdentificadores(original: unknown, limpio: unknown): unknown {
+  if (!original || typeof original !== "object" || !limpio || typeof limpio !== "object") {
+    return limpio;
+  }
+  if (Array.isArray(original) && Array.isArray(limpio)) {
+    return limpio.map((elemento, indice) => conSusIdentificadores(original[indice], elemento));
+  }
+
+  const antes = original as Record<string, unknown>;
+  const despues = limpio as Record<string, unknown>;
+  for (const campo of CAMPOS_IDENTIFICADOR) {
+    const valor = antes[campo];
+    if (typeof valor === "string" && IDENTIFICADOR.test(valor)) despues[campo] = valor;
+  }
+  // Donde viven: `contexts.trace` en un error y en una transacción, y cada
+  // tramo de `spans` en una transacción.
+  for (const rama of ["contexts", "trace", "spans"]) {
+    if (rama in antes && rama in despues) {
+      despues[rama] = conSusIdentificadores(antes[rama], despues[rama]);
+    }
+  }
+  return despues;
 }
 
 /**

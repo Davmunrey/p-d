@@ -157,10 +157,50 @@ function aLaPuerta(peticion: NextRequest): NextResponse {
     `${peticion.nextUrl.pathname}${peticion.nextUrl.search}`,
   );
 
-  const respuesta = NextResponse.redirect(destino);
+  /*
+    UNA ACCIÓN DEL PANEL NO SIGUE UN 307. Si la sesión se cerró en otro
+    dispositivo —`signOut()` es global: cerrar en el móvil cierra también el
+    portátil—, el siguiente «Guardar» llega aquí sin usuario. Con un 307, el
+    `fetch` de la acción lo seguía con el mismo POST hasta la puerta, recibía
+    HTML en vez del formato de una acción, y el cliente de Next lo convertía en
+    «An unexpected response was received from the server»: la pantalla de error
+    del panel, en inglés, en vez de la puerta. Lo que el cliente sí entiende es
+    la cabecera con la que las propias acciones redirigen, y con ella hace una
+    navegación completa a la puerta, que recuerda a dónde se volvía.
+  */
+  if (peticion.headers.has(CABECERA_ACCION)) {
+    const respuesta = new NextResponse(null, {
+      headers: {
+        [CABECERA_REDIRECCION_ACCION]: `${destino.pathname}${destino.search};replace`,
+      },
+    });
+    sinGuardarEnCache(respuesta);
+    return respuesta;
+  }
+
+  /*
+    Y UN FORMULARIO SIN JAVASCRIPT TAMPOCO REPITE SU POST. El 307 conserva el
+    método: el navegador volvía a mandar el formulario —datos incluidos— a la
+    puerta. El 303 dice «ve a mirar esto otro», con un GET. Las visitas normales
+    siguen con el 307 de siempre.
+  */
+  const esLectura = peticion.method === "GET" || peticion.method === "HEAD";
+  const respuesta = NextResponse.redirect(
+    destino,
+    esLectura ? REDIRECCION_TEMPORAL : REDIRECCION_A_OTRA,
+  );
   sinGuardarEnCache(respuesta);
   return respuesta;
 }
+
+/** La cabecera con la que el cliente de Next marca una acción de servidor. */
+const CABECERA_ACCION = "next-action";
+/** Y la que entiende como «esta acción redirige a…» (ver server-action-reducer). */
+const CABECERA_REDIRECCION_ACCION = "x-action-redirect";
+/** 307: «la misma petición, en otra dirección». La de siempre para visitas. */
+const REDIRECCION_TEMPORAL = 307;
+/** 303: «mira esto otro», con GET, sea cual sea el método original. */
+const REDIRECCION_A_OTRA = 303;
 
 export const config = {
   /**

@@ -65,14 +65,29 @@ const CORREO = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
  * `^\+?[0-9 ().-]{6,25}$`.
  *
  * SE EXIGEN AL MENOS SEIS CIFRAS DE VERDAD, y no seis caracteres del conjunto.
- * Sin eso, «2026-08-12 14:30» —una fecha en un mensaje de error— es un teléfono
- * perfectamente válido para la expresión, y los informes acabarían tapando las
- * horas, que es justo lo que hay que poder leer al depurar.
+ *
+ * Y TIENE QUE ESTAR SUELTO: ni pegado a una letra o una cifra por delante o por
+ * detrás, ni detrás de un punto o un guion. Sin eso, cualquier tramo de seis
+ * cifras dentro de un identificador hexadecimal era «un teléfono»: más de la
+ * mitad de los `event_id` de Sentry salían con «[quitado]» dentro, el servidor
+ * de Sentry rechaza un sobre con un identificador que no es un UUID, y la
+ * alerta de confirmaciones fallidas contaba la mitad.
  */
-const TELEFONO = /\+?[\d][\d ().-]{4,24}\d/g;
+const TELEFONO = /(?<![\w.-])\+?\d[\d ().-]{4,24}\d(?![\w:-])/g;
+
+/**
+ * Una fecha, con o sin hora: «2026-08-12» o «2026-08-12 14». Encaja en el
+ * patrón de un teléfono —cifras y guiones— y taparla dejaría los informes de
+ * error sin lo primero que se mira al depurar.
+ */
+const FECHA = /^\d{4}-\d{1,2}-\d{1,2}(?:[ T]\d{1,2})?$/;
 
 function tieneCifrasSuficientes(candidato: string): boolean {
   return (candidato.match(/\d/g) ?? []).length >= 6;
+}
+
+function pareceTelefono(candidato: string): boolean {
+  return tieneCifrasSuficientes(candidato) && !FECHA.test(candidato);
 }
 
 /**
@@ -84,7 +99,7 @@ function tieneCifrasSuficientes(candidato: string): boolean {
 export function limpiarTexto(texto: string): string {
   return taparRutasDeInvitacion(texto)
     .replace(CORREO, TAPADO)
-    .replace(TELEFONO, (candidato) => (tieneCifrasSuficientes(candidato) ? TAPADO : candidato));
+    .replace(TELEFONO, (candidato) => (pareceTelefono(candidato) ? TAPADO : candidato));
 }
 
 /**

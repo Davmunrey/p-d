@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 
-import { MUESTREO_TRAZAS, SENTRY_DSN } from "@/config/constants";
-import { antesDeMandar } from "@/lib/observabilidad/sentry";
+import { SENTRY_DSN } from "@/config/constants";
+import { OPCIONES_SENTRY } from "@/lib/observabilidad/opciones-sentry";
 
 /**
  * BODA-93 (#64) · LOS ERRORES DEL SERVIDOR
@@ -30,18 +30,7 @@ export async function register() {
     middleware es justo por donde pasan todas las peticiones del panel.
   */
   if (process.env.NEXT_RUNTIME === "nodejs" || process.env.NEXT_RUNTIME === "edge") {
-    Sentry.init({
-      dsn: SENTRY_DSN,
-      tracesSampleRate: MUESTREO_TRAZAS,
-      sendDefaultPii: false,
-      beforeSend: antesDeMandar,
-      /*
-        Las migas de pan también salen por aquí. Llevan dentro las URL por las
-        que se ha pasado, así que sin limpiarlas el token viajaría igual, sólo
-        que en otra parte del mismo informe.
-      */
-      beforeBreadcrumb: (miga) => antesDeMandar(miga as never),
-    });
+    Sentry.init({ dsn: SENTRY_DSN, ...OPCIONES_SENTRY });
   }
 }
 

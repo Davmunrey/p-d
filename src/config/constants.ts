@@ -611,7 +611,9 @@ export const CAPACIDAD_MAXIMA_MESA = 30;
  * es a propósito: una clave de mentira manda datos reales a un sitio que nadie
  * mira.
  */
-export const SENTRY_DSN = process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN ?? "";
+// En el servidor vale `SENTRY_DSN`; en el navegador, la copia que next.config.ts
+// mete al compilar como `NEXT_PUBLIC_SENTRY_DSN`.
+export const SENTRY_DSN = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN || "";
 
 export const POSTHOG_CLAVE = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "";
 
