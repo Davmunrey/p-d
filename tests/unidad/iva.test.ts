@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { PORCENTAJE_IVA } from "@/config/constants";
-import { basesDelPresupuesto } from "@/lib/iva";
+import { basesDelPresupuesto, ordenarPorPrecioComparable } from "@/lib/iva";
 
 /**
  * BODA-73 · PONER TRES PRESUPUESTOS EN LA MISMA BASE
@@ -62,5 +62,36 @@ describe("basesDelPresupuesto()", () => {
       conIva: 0,
       indeterminado: false,
     });
+  });
+});
+
+describe("ordenarPorPrecioComparable", () => {
+  const de = (nombre: string, importe: number | null, iva: boolean | null) => ({
+    nombre,
+    importePresupuestado: importe,
+    ivaIncluido: iva,
+  });
+
+  it("EL CASO: el barato de verdad va primero aunque su cifra cruda sea mayor", () => {
+    // A: 2.000 sin IVA (2.420 con él). B: 2.300 con IVA (1.900,83 sin él).
+    const orden = ordenarPorPrecioComparable([de("A", 2000, false), de("B", 2300, true)]);
+    expect(orden.map((p) => p.nombre)).toEqual(["B", "A"]);
+  });
+
+  it("los que no dicen si llevan IVA van detrás, y al final los que no dan precio", () => {
+    const orden = ordenarPorPrecioComparable([
+      de("sin precio", null, null),
+      de("no lo dice", 100, null),
+      de("caro", 5000, true),
+      de("barato", 1000, false),
+    ]);
+    expect(orden.map((p) => p.nombre)).toEqual(["barato", "caro", "no lo dice", "sin precio"]);
+  });
+
+  it("entre iguales respeta el orden en que llegan, y no cambia la lista original", () => {
+    const lista = [de("Beta", 1210, true), de("Alfa", 1000, false)];
+    const orden = ordenarPorPrecioComparable(lista);
+    expect(orden.map((p) => p.nombre)).toEqual(["Beta", "Alfa"]);
+    expect(lista.map((p) => p.nombre)).toEqual(["Beta", "Alfa"]);
   });
 });

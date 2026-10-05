@@ -287,6 +287,39 @@ test.describe("La comparativa de una categoría", () => {
   });
 
   /**
+   * EL MÁS BARATO DE VERDAD VA A LA IZQUIERDA, aunque su cifra cruda sea mayor.
+   *
+   * Las columnas se ordenaban por lo presupuestado tal cual: 2.000 € sin IVA
+   * (2.420 € con él) salía antes que 2.300 € con IVA (1.900,83 € sin él), y
+   * el «más barato» de la izquierda era el caro.
+   */
+  test("las columnas se ordenan sobre la misma base, no por la cifra cruda", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const caro = `${MARCA} Parece barato ${sello}`;
+    const barato = `${MARCA} Parece caro ${sello}`;
+    const categoriaId = await conBase(async (sql) => {
+      const [categoria] = await sql<{ id: string }[]>`
+        insert into public.categorias_proveedor (nombre, orden)
+        values (${`${MARCA} Orden ${sello}`}, 61)
+        returning id
+      `;
+      await sql`
+        insert into public.proveedores (categoria_id, nombre, importe_presupuestado, iva_incluido)
+        values (${categoria.id}, ${caro}, 2000, false), (${categoria.id}, ${barato}, 2300, true)
+      `;
+      return categoria.id;
+    });
+
+    await entrar(page);
+    await page.goto(`${RUTA_COMPARADOR}?categoria=${categoriaId}`);
+
+    const columnas = page.locator("thead").getByRole("link");
+    await expect(columnas).toHaveText([barato, caro]);
+  });
+
+  /**
    * CASO DE ERROR · una categoría que no existe se dice con palabras.
    *
    * Llega de dos sitios reales: un enlace guardado de una categoría que después

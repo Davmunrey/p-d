@@ -53,3 +53,40 @@ export function basesDelPresupuesto(
     ? { sinIva: importe / FACTOR, conIva: importe, indeterminado: false }
     : { sinIva: importe, conIva: importe * FACTOR, indeterminado: false };
 }
+
+/**
+ * EN QUÉ ORDEN SE PONEN VARIOS PRESUPUESTOS: de más barato a más caro, SOBRE
+ * LA MISMA BASE.
+ *
+ * La comparativa ordenaba por la cifra cruda, y eso es justo lo que este
+ * módulo existe para evitar: 2.000 € sin IVA (2.420 € con él) salía antes que
+ * 2.300 € con IVA (1.900,83 € sin él), y el «más barato» de la izquierda era
+ * el caro.
+ *
+ * Detrás de los comparables van los que no dicen si llevan IVA —no se pueden
+ * poner en fila con los demás, entre ellos por su cifra— y al final los que no
+ * han dado precio. Entre iguales se respeta el orden en que llegan.
+ */
+export function ordenarPorPrecioComparable<
+  T extends { importePresupuestado: number | null; ivaIncluido: boolean | null },
+>(presupuestos: readonly T[]): T[] {
+  const tramo = (presupuesto: T): [number, number] => {
+    const bases = basesDelPresupuesto(
+      presupuesto.importePresupuestado,
+      presupuesto.ivaIncluido,
+    );
+    if (bases.sinIva !== null) return [0, bases.sinIva];
+    if (bases.indeterminado) return [1, presupuesto.importePresupuestado ?? 0];
+    return [2, 0];
+  };
+
+  return presupuestos
+    .map((presupuesto, indice) => ({ presupuesto, indice, clave: tramo(presupuesto) }))
+    .sort(
+      (uno, otro) =>
+        uno.clave[0] - otro.clave[0] ||
+        uno.clave[1] - otro.clave[1] ||
+        uno.indice - otro.indice,
+    )
+    .map(({ presupuesto }) => presupuesto);
+}

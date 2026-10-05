@@ -1,6 +1,7 @@
 import "server-only";
 
 import { esIdentificador } from "@/lib/identificador";
+import { ordenarPorPrecioComparable } from "@/lib/iva";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -667,7 +668,8 @@ export async function obtenerCategoria(id: string): Promise<CategoriaProveedor |
  * del de un catering no es una comparación, es una suma disfrazada.
  *
  * EL ORDEN LO PONE EL DINERO, no el alfabeto: se compara para elegir, y lo
- * primero que se mira es cuánto pide cada uno. Quien todavía no ha dado precio
+ * primero que se mira es cuánto pide cada uno — sin IVA para todos, que es la
+ * única forma de que «el más barato» lo sea. Quien todavía no ha dado precio
  * va al final, que es donde está en la decisión.
  */
 export async function obtenerComparativa(categoriaId: string): Promise<ProveedorComparado[]> {
@@ -689,14 +691,11 @@ export async function obtenerComparativa(categoriaId: string): Promise<Proveedor
   const filas =
     (data as unknown as (FilaProveedor & { servicios: { nombre: string }[] })[] | null) ?? [];
 
-  return filas
-    .map((fila) => ({
+  // Sobre la misma base, no por la cifra cruda: ver `ordenarPorPrecioComparable`.
+  return ordenarPorPrecioComparable(
+    filas.map((fila) => ({
       ...aProveedor(fila),
       servicios: (fila.servicios ?? []).map((servicio) => servicio.nombre).sort(),
-    }))
-    .sort((uno, otro) => {
-      if (uno.importePresupuestado === null) return otro.importePresupuestado === null ? 0 : 1;
-      if (otro.importePresupuestado === null) return -1;
-      return uno.importePresupuestado - otro.importePresupuestado;
-    });
+    })),
+  );
 }
