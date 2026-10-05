@@ -321,6 +321,57 @@ test.describe("Los pagos y sus vencimientos", () => {
   });
 
   /**
+   * UN PAGO DE UN GASTO QUE YA SE HABÍA PASADO SE PUEDE SEGUIR EDITANDO.
+   *
+   * Si los pagos suman más que el gasto —de antes de que la base lo impidiera,
+   * o porque se apuntaron con el gasto todavía a cero—, cambiar sólo la fecha
+   * de uno respondía «no cabe»: se comprobaba el tope aunque el dinero no se
+   * moviera. Ahora sólo se comprueba si cambia el importe o el gasto.
+   */
+  test("cambiar sólo la fecha de un pago no pregunta si cabe", async ({ page }) => {
+    const montaje = await montar("Pasado");
+    const [primero] = await conBase(async (sql) => {
+      // Con el gasto a cero no hay tope; al subirlo a 1.000 queda por debajo.
+      await sql`update public.partidas_presupuesto set importe_estimado = 0 where id = ${montaje.gastoId}`;
+      const pagosCreados = await sql<{ id: string }[]>`
+        insert into public.pagos (partida_id, importe, fecha_vencimiento)
+        values (${montaje.gastoId}, 600, current_date + 10), (${montaje.gastoId}, 600, current_date + 20)
+        returning id
+      `;
+      await sql`update public.partidas_presupuesto set importe_estimado = 1000 where id = ${montaje.gastoId}`;
+      return pagosCreados;
+    });
+
+    await entrar(page);
+    await page.goto(`${RUTA_PAGOS}?editar=${primero.id}#pago-${primero.id}`);
+
+    const fila = filaDe(page, primero.id);
+    await fila.getByLabel(pagos.campoVencimiento, { exact: true }).fill("2027-07-01");
+    await fila.getByRole("button", { name: pagos.guardar }).click();
+    await esperarEstado(page, "pago-editado");
+
+    const [movido] = await conBase(
+      (sql) => sql<{ fecha: string }[]>`
+        select fecha_vencimiento::text as fecha from public.pagos where id = ${primero.id}
+      `,
+    );
+    expect(movido.fecha).toBe("2027-07-01");
+
+    // CASO DE ERROR · subirle el importe sí se comprueba, y no cabe.
+    await page.goto(`${RUTA_PAGOS}?editar=${primero.id}#pago-${primero.id}`);
+    await filaDe(page, primero.id).getByLabel(pagos.campoImporte, { exact: true }).fill("650");
+    await filaDe(page, primero.id).getByRole("button", { name: pagos.guardar }).click();
+    await esperarEstado(page, "no-cabe");
+
+    const [igual] = await conBase(
+      (sql) => sql<{ importe: string }[]>`
+        select importe from public.pagos where id = ${primero.id}
+      `,
+    );
+    expect(Number(igual.importe)).toBe(600);
+  });
+
+  /**
    * LO VENCIDO SE DISTINGUE SIN EL COLOR.
    *
    * Es un criterio de aceptación del ticket y no un adorno: el recuadro rojo no

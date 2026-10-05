@@ -261,8 +261,20 @@ export async function editarPago(datos: FormData): Promise<void> {
   const leido = leerPago(datos);
   if ("fallo" in leido) rechazar(leido.fallo);
 
-  const holgura = await loQueNoCabe(leido.gastoId, leido.importe, id);
-  if (holgura !== null) rechazar("no-cabe", { queda: String(holgura) });
+  /*
+    SI NO CAMBIA EL DINERO NO HAY NADA QUE CABER. Cambiar la fecha o las notas
+    de un pago de un gasto que ya se había pasado respondía «no cabe», y ese
+    pago no se podía tocar. La base hace lo mismo desde 20261005120000.
+  */
+  const anterior = await importeDe(id);
+  const mismoDinero =
+    anterior !== null &&
+    anterior.partidaId === leido.gastoId &&
+    anterior.importe === leido.importe;
+  if (!mismoDinero) {
+    const holgura = await loQueNoCabe(leido.gastoId, leido.importe, id);
+    if (holgura !== null) rechazar("no-cabe", { queda: String(holgura) });
+  }
 
   const supabase = await cliente();
   const { data, error } = await supabase

@@ -15,6 +15,7 @@ export type EstadoGastos =
   | "sin-categorias"
   | "no-existe"
   | "tiene-pagos"
+  | "por-debajo-de-pagos"
   | "referencia-rota"
   | "sin-permiso"
   | "error";

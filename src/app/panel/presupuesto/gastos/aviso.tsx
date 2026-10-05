@@ -21,18 +21,37 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   error: { clave: "panel.presupuesto.gastos.errorGuardar", error: true },
 };
 
-export function AvisoGastos({ estado }: { estado: string }) {
+/**
+ * EL DE «POR DEBAJO DE SUS PAGOS» LLEVA LA CIFRA, como el «no cabe» de los
+ * pagos: decir cuánto hay apuntado resuelve el problema en la misma frase.
+ * Sin cifra —la paró la base y no esta pantalla— se dice sin ella.
+ */
+export function AvisoGastos({ estado, apuntado }: { estado: string; apuntado: string }) {
+  if (estado === "por-debajo-de-pagos") {
+    return (
+      <Recuadro error>
+        {apuntado
+          ? t("panel.presupuesto.gastos.errorPorDebajoDePagos", { apuntado })
+          : t("panel.presupuesto.gastos.errorPorDebajoDePagosSinCifra")}
+      </Recuadro>
+    );
+  }
+
   const aviso = avisoDe(AVISOS, estado);
   if (!aviso) return null;
 
+  return <Recuadro error={aviso.error}>{t(aviso.clave)}</Recuadro>;
+}
+
+function Recuadro({ error, children }: { error?: boolean; children: React.ReactNode }) {
   return (
     <p
-      role={aviso.error ? "alert" : "status"}
+      role={error ? "alert" : "status"}
       className={`mt-elemento rounded-campo p-interno text-pequeno ${
-        aviso.error ? "bg-error-fondo text-error-tinta" : "bg-exito-fondo text-exito-tinta"
+        error ? "bg-error-fondo text-error-tinta" : "bg-exito-fondo text-exito-tinta"
       }`}
     >
-      {t(aviso.clave)}
+      {children}
     </p>
   );
 }

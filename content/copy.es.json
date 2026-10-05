@@ -1119,6 +1119,8 @@
         "errorCategoria": "Elegid en qué categoría va.",
         "errorImporte": "Ese importe no se entiende. Escribid sólo números y dos decimales como mucho: 8600 u 8.600,50.",
         "errorTienePagos": "Este gasto tiene pagos apuntados. Borrad antes los pagos: lo que ya se pagó tiene que seguir contando.",
+        "errorPorDebajoDePagos": "Ese importe se queda por debajo de lo que ya hay apuntado en pagos ({apuntado}). Bajad antes los pagos, o dejad el gasto en esa cifra como mínimo.",
+        "errorPorDebajoDePagosSinCifra": "Ese importe se queda por debajo de lo que ya hay apuntado en pagos. Bajad antes los pagos.",
         "errorNoExiste": "Ese gasto ya no está.",
         "errorSinPermiso": "Vuestro perfil no puede hacer cambios aquí.",
         "errorGuardar": "No se ha podido guardar. Probad otra vez.",

@@ -105,6 +105,12 @@ export default async function PaginaGastos({ searchParams }: Parametros) {
 
   const agrupados = porCategoria(gastos);
 
+  const apuntadoCrudo = soloTexto(consulta.apuntado);
+  const apuntado =
+    apuntadoCrudo && euros && Number.isFinite(Number(apuntadoCrudo))
+      ? euros(Number(apuntadoCrudo))
+      : "";
+
   return (
     <>
       <header className="max-w-texto">
@@ -115,7 +121,7 @@ export default async function PaginaGastos({ searchParams }: Parametros) {
         </EnlaceSuave>
       </header>
 
-      <AvisoGastos estado={estado} />
+      <AvisoGastos estado={estado} apuntado={apuntado} />
 
       <Totales totales={totales} euros={euros} />
 

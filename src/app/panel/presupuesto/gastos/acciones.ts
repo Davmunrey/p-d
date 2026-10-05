@@ -61,8 +61,9 @@ function volver(estado: EstadoGastos): never {
  * es trabajo que se nota en una pantalla con cuarenta gastos, y además miente
  * sobre lo que ha pasado.
  */
-function rechazar(estado: EstadoGastos): never {
-  redirect(`${RUTA_GASTOS}?estado=${estado}`);
+function rechazar(estado: EstadoGastos, extra?: Record<string, string>): never {
+  const parametros = new URLSearchParams({ estado, ...extra });
+  redirect(`${RUTA_GASTOS}?${parametros.toString()}`);
 }
 
 async function cliente() {
@@ -92,6 +93,9 @@ function motivo(error: { code?: string; message?: string }): EstadoGastos {
     return "referencia-rota";
   }
   if (error.code === "23503") return "tiene-pagos";
+  // PAR01 es el trigger: el gasto quedaría por debajo de sus pagos. Se llega
+  // aquí cuando la comprobación previa no lo vio (otro pago entró en medio).
+  if (error.message?.includes("PAR01")) return "por-debajo-de-pagos";
 
   console.error("Fallo escribiendo un gasto:", error);
   return "error";
@@ -170,6 +174,10 @@ export async function editarGasto(datos: FormData): Promise<void> {
   if (!cantidades) rechazar("importe");
 
   const supabase = await cliente();
+
+  const apuntado = await loQueSeQuedaFuera(supabase, id, cantidades);
+  if (apuntado !== null) rechazar("por-debajo-de-pagos", { apuntado: String(apuntado) });
+
   const { data, error } = await supabase
     .from("partidas_presupuesto")
     .update({
@@ -190,6 +198,45 @@ export async function editarGasto(datos: FormData): Promise<void> {
   if (!data?.length) rechazar("sin-permiso");
 
   volver("gasto-editado");
+}
+
+/**
+ * ¿DEJARÍA ESTE IMPORTE PAGOS FUERA? Devuelve lo apuntado si sí, `null` si no.
+ *
+ * Bajar el gasto por debajo de lo que ya hay en pagos se aceptaba sin aviso, y
+ * a partir de ahí ningún pago de ese gasto se podía editar. La base lo impide
+ * ahora (PAR01); aquí se mira antes para poder decir CUÁNTO hay apuntado.
+ *
+ * Con la misma regla que la base: el tope es el acordado o el estimado, cero
+ * no compara, y SUBIR no se impide nunca, aunque siga sin cubrir —es el camino
+ * para arreglar uno que ya se había pasado—.
+ */
+async function loQueSeQuedaFuera(
+  supabase: Awaited<ReturnType<typeof cliente>>,
+  id: string,
+  cantidades: { estimado: number; real: number | null },
+): Promise<number | null> {
+  const { data } = await supabase
+    .from("partidas_presupuesto")
+    .select("importe_estimado, importe_real, pagos ( importe )")
+    .eq("id", id)
+    .maybeSingle();
+
+  const fila = data as {
+    importe_estimado: string | number | null;
+    importe_real: string | number | null;
+    pagos: { importe: string | number }[] | null;
+  } | null;
+  // Sin poder leerlo decide la base, que es quien manda de todas formas.
+  if (!fila) return null;
+
+  const tope = cantidades.real ?? cantidades.estimado;
+  const antes = Number(fila.importe_real ?? fila.importe_estimado ?? 0);
+  if (tope <= 0 || tope >= antes) return null;
+
+  const apuntado = (fila.pagos ?? []).reduce((suma, pago) => suma + Number(pago.importe), 0);
+  const redondeado = Math.round(apuntado * 100) / 100;
+  return redondeado > tope ? redondeado : null;
 }
 
 /**

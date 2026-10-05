@@ -436,4 +436,62 @@ test.describe("Los gastos del presupuesto", () => {
     );
     expect(filas, "el gasto sigue estando: sus pagos lo sostienen").toHaveLength(1);
   });
+
+  /**
+   * UN GASTO NO BAJA POR DEBAJO DE LO QUE YA HAY EN PAGOS.
+   *
+   * Se aceptaba sin aviso, y a partir de ahí ningún pago de ese gasto se podía
+   * editar, ni siquiera para cambiarle la fecha. Ahora se dice con la cifra, y
+   * dejarlo justo en lo apuntado sí se puede.
+   */
+  test("bajar un gasto por debajo de sus pagos se explica y no se guarda", async ({ page }) => {
+    const categoria = await crearCategoria("BajoPagos");
+    const concepto = `${MARCA} Catering con señal`;
+
+    const partidaId = await conBase(async (sql) => {
+      const [partida] = await sql<{ id: string }[]>`
+        insert into public.partidas_presupuesto (categoria_id, concepto, importe_estimado)
+        values (${categoria.id}, ${concepto}, 2000)
+        returning id
+      `;
+      await sql`
+        insert into public.pagos (partida_id, importe, fecha_vencimiento)
+        values (${partida.id}, 500, current_date), (${partida.id}, 700, current_date)
+      `;
+      return partida.id;
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_GASTOS);
+
+    // CASO DE ERROR · 1.000 € con 1.200 € ya apuntados.
+    let abierto = await abrirEdicion(page, partidaId);
+    await abierto.getByLabel(gastos.campoEstimado, { exact: true }).fill("1000");
+    await abierto.getByRole("button", { name: gastos.guardar }).click();
+    await esperarEstado(page, "por-debajo-de-pagos");
+
+    const aviso = gastos.errorPorDebajoDePagos.split("{apuntado}")[0].trim();
+    await expect(page.getByText(aviso)).toContainText("1200,00");
+
+    const [sigue] = await conBase(
+      (sql) => sql<{ importe_estimado: string }[]>`
+        select importe_estimado from public.partidas_presupuesto where id = ${partidaId}
+      `,
+    );
+    expect(Number(sigue.importe_estimado), "no se ha guardado").toBe(2000);
+
+    // CAMINO FELIZ · justo en lo apuntado, sí.
+    await page.goto(RUTA_GASTOS);
+    abierto = await abrirEdicion(page, partidaId);
+    await abierto.getByLabel(gastos.campoEstimado, { exact: true }).fill("1200");
+    await abierto.getByRole("button", { name: gastos.guardar }).click();
+    await esperarEstado(page, "gasto-editado");
+
+    const [ajustado] = await conBase(
+      (sql) => sql<{ importe_estimado: string }[]>`
+        select importe_estimado from public.partidas_presupuesto where id = ${partidaId}
+      `,
+    );
+    expect(Number(ajustado.importe_estimado)).toBe(1200);
+  });
 });
