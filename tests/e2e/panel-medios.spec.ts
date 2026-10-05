@@ -417,7 +417,18 @@ test.describe("El gestor de fotos y vídeos", () => {
 
     await ficha.getByRole("button", { name: copy.panel.medios.publicar }).click();
     await esperarEstado(page, "publicado");
-    await expect(fichaDe(page, alternativo).getByText(copy.panel.medios.enLaWeb)).toBeVisible();
+
+    /*
+      PUBLICADA NO ES «EN LA WEB». La portada enseña una sola foto y la semilla
+      ya trae la suya delante: la ficha tiene que decir que no se ve, y por qué.
+      Antes decía «En la web» de una foto que la web no pintaba.
+    */
+    await expect(
+      fichaDe(page, alternativo).getByText(copy.panel.medios.publicadaNoSeVe),
+    ).toBeVisible();
+    await expect(
+      fichaDe(page, alternativo).getByText(copy.panel.medios.motivos.soloLaPrimera),
+    ).toBeVisible();
 
     /*
       LA PORTADA PINTA UNA SOLA FOTO: la primera por orden. La semilla ya trae
@@ -439,6 +450,10 @@ test.describe("El gestor de fotos y vídeos", () => {
       (await publicada.text()).includes(alternativo),
       "publicada y primera en el orden, la landing la sirve con su texto alternativo",
     ).toBe(true);
+
+    // Y ahora que la web la pinta, el panel dice que se ve.
+    await page.goto(RUTA_MEDIOS);
+    await expect(fichaDe(page, alternativo).getByText(copy.panel.medios.enLaWeb)).toBeVisible();
 
     // Retirar no borra: vuelve a borrador y el fichero sigue donde estaba.
     await fichaDe(page, alternativo)

@@ -111,3 +111,30 @@ export async function obtenerMediosDelPanel(): Promise<SeccionConMedios[]> {
   // El orden de las secciones es el del enumerado, no el alfabético de SQL.
   return SECCIONES.map((seccion) => ({ seccion, medios: porSeccion.get(seccion) ?? [] }));
 }
+
+/**
+ * Los medios que alguna ficha PUBLICADA de Contenido ha elegido como foto.
+ *
+ * Historia y alojamiento no pintan su sección de medios entera: pintan la foto
+ * que cada hito u hotel elige. Sin esto, el gestor no puede saber cuáles de
+ * esas fotos se ven en la web y cuáles esperan a que alguien las elija.
+ */
+export async function obtenerMediosElegidosEnFichas(): Promise<Set<string>> {
+  const supabase = await clienteServidor();
+
+  const lecturas = await Promise.all(
+    (["hitos_historia", "alojamientos"] as const).map((tabla) =>
+      supabase.from(tabla).select("medio_id").eq("publicado", true).not("medio_id", "is", null),
+    ),
+  );
+
+  const fallo = lecturas.find((lectura) => lectura.error)?.error;
+  if (fallo)
+    throw new Error(`No se pudieron leer las fotos elegidas en las fichas: ${fallo.message}`);
+
+  return new Set(
+    lecturas.flatMap((lectura) =>
+      ((lectura.data ?? []) as { medio_id: string }[]).map((fila) => fila.medio_id),
+    ),
+  );
+}

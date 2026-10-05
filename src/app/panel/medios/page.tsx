@@ -14,8 +14,18 @@ import {
   TIPOS_MEDIO_ADMITIDOS,
 } from "@/config/constants";
 import { type Seccion } from "@/config/secciones";
-import { obtenerMediosDelPanel, type MedioDelPanel } from "@/lib/bbdd/medios";
-import { t } from "@/lib/copy";
+import {
+  obtenerMediosDelPanel,
+  obtenerMediosElegidosEnFichas,
+  type MedioDelPanel,
+} from "@/lib/bbdd/medios";
+import { t, type ClaveCopy } from "@/lib/copy";
+import {
+  seccionEnsenaMedios,
+  visibilidadEnLaWeb,
+  type MotivoNoSeVe,
+  type Visibilidad,
+} from "@/lib/medios-en-la-web";
 import { accesoActual } from "@/lib/sesion";
 import { haySubidaDeMedios } from "@/lib/supabase/servicio";
 
@@ -84,7 +94,10 @@ export default async function PaginaMedios({ searchParams }: Parametros) {
   const bruto = typeof consulta.estado === "string" ? consulta.estado : "";
   const estado = esEstadoMedios(bruto) ? bruto : null;
 
-  const secciones = await obtenerMediosDelPanel();
+  const [secciones, elegidos] = await Promise.all([
+    obtenerMediosDelPanel(),
+    obtenerMediosElegidosEnFichas(),
+  ]);
   const puedeEditar = acceso.rol !== "lector";
   const urlBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -131,6 +144,7 @@ export default async function PaginaMedios({ searchParams }: Parametros) {
           key={seccion}
           seccion={seccion}
           medios={medios}
+          elegidos={elegidos}
           puedeEditar={puedeEditar}
           urlBase={urlBase}
         />
@@ -139,18 +153,41 @@ export default async function PaginaMedios({ searchParams }: Parametros) {
   );
 }
 
+/** Por qué un medio publicado no sale, en una frase. */
+const MOTIVOS: Record<MotivoNoSeVe, ClaveCopy | null> = {
+  borrador: null,
+  "solo-la-primera": "panel.medios.motivos.soloLaPrimera",
+  "solo-la-primera-foto": "panel.medios.motivos.soloLaPrimeraFoto",
+  "sin-medidas": "panel.medios.motivos.sinMedidas",
+  "sin-ficha": "panel.medios.motivos.sinFicha",
+  "seccion-sin-medios": "panel.medios.motivos.seccionSinMedios",
+};
+
 function BloqueSeccion({
   seccion,
   medios,
+  elegidos,
   puedeEditar,
   urlBase,
 }: {
   seccion: Seccion;
   medios: MedioDelPanel[];
+  elegidos: ReadonlySet<string>;
   puedeEditar: boolean;
   urlBase: string | undefined;
 }) {
-  const publicados = medios.filter((medio) => medio.publicado).length;
+  /*
+    «EN LA WEB» ES LO QUE LA WEB PINTA, no lo publicado. La portada enseña una
+    sola foto y la galería sólo las que tienen medidas: contar lo publicado
+    decía «3 en la web» de una sección que enseñaba una.
+  */
+  const visibilidad = visibilidadEnLaWeb(seccion, medios, elegidos);
+  const seVen = medios.filter((medio) => visibilidad.get(medio.id)?.seVe).length;
+  const ensena = seccionEnsenaMedios(seccion);
+
+  // Una parte de la web que no enseña fotos y en la que no hay nada no se
+  // ofrece: subir ahí sería guardar algo que no va a salir nunca.
+  if (!ensena && medios.length === 0) return null;
 
   return (
     <section className="border-t border-borde pt-bloque">
@@ -158,10 +195,16 @@ function BloqueSeccion({
         <Titulo3 como="h2">{t(`navegacion.secciones.${seccion}`)}</Titulo3>
         {medios.length > 0 ? (
           <Etiqueta>
-            {t("panel.medios.cuantos", { cuantos: publicados, total: medios.length })}
+            {t("panel.medios.cuantos", { cuantos: seVen, total: medios.length })}
           </Etiqueta>
         ) : null}
       </div>
+
+      {!ensena ? (
+        <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
+          {t("panel.medios.seccionSinMedios")}
+        </Cuerpo>
+      ) : null}
 
       {medios.length === 0 ? (
         <Cuerpo className="mt-pila text-pequeno text-tinta-suave">
@@ -173,6 +216,7 @@ function BloqueSeccion({
             <Ficha
               key={medio.id}
               medio={medio}
+              visibilidad={visibilidad.get(medio.id) ?? { seVe: false, motivo: "borrador" }}
               puedeEditar={puedeEditar}
               urlBase={urlBase}
               esElPrimero={indice === 0}
@@ -182,19 +226,21 @@ function BloqueSeccion({
         </ul>
       )}
 
-      {puedeEditar ? <FormularioSubida seccion={seccion} /> : null}
+      {puedeEditar && ensena ? <FormularioSubida seccion={seccion} /> : null}
     </section>
   );
 }
 
 function Ficha({
   medio,
+  visibilidad,
   puedeEditar,
   urlBase,
   esElPrimero,
   esElUltimo,
 }: {
   medio: MedioDelPanel;
+  visibilidad: Visibilidad;
   puedeEditar: boolean;
   urlBase: string | undefined;
   esElPrimero: boolean;
@@ -234,8 +280,15 @@ function Ficha({
 
       <div className="grid gap-pila">
         <div className="flex flex-wrap items-center gap-interno-compacto">
-          <EtiquetaEstado variante={medio.publicado ? "marca" : "contorno"} tamano="versalita">
-            {medio.publicado ? t("panel.medios.enLaWeb") : t("panel.medios.borrador")}
+          <EtiquetaEstado
+            variante={visibilidad.seVe ? "marca" : medio.publicado ? "aviso" : "contorno"}
+            tamano="versalita"
+          >
+            {visibilidad.seVe
+              ? t("panel.medios.enLaWeb")
+              : medio.publicado
+                ? t("panel.medios.publicadaNoSeVe")
+                : t("panel.medios.borrador")}
           </EtiquetaEstado>
 
           {medio.tipo === "video" ? <Etiqueta>{t("panel.medios.esVideo")}</Etiqueta> : null}
@@ -246,6 +299,13 @@ function Ficha({
               : t("panel.medios.sinMedida")}
           </Etiqueta>
         </div>
+
+        {/* Publicada y sin salir: se dice por qué, que es lo que hay que arreglar. */}
+        {!visibilidad.seVe && MOTIVOS[visibilidad.motivo] ? (
+          <Cuerpo className="max-w-texto text-pequeno text-tinta-suave">
+            {t(MOTIVOS[visibilidad.motivo]!)}
+          </Cuerpo>
+        ) : null}
 
         {puedeEditar ? (
           <>
