@@ -93,10 +93,11 @@ export default defineConfig({
             LA CLAVE DE SERVICIO, VACÍA POR DEFECTO Y A PROPÓSITO.
 
             Sólo la tiene el trabajo de CI que levanta Supabase de verdad. En
-            cualquier otro sitio llega vacía, `haySubidaDeMedios` es `false` y la
-            pantalla de medios lo dice en vez de reventar. Así el camino de «no
-            está configurado» se recorre en cada ejecución de la suite, que es
-            justo el que nadie prueba y el que se ve el día del despliegue.
+            cualquier otro sitio llega vacía y `haySubidaDeMedios` es `false`,
+            pero eso NO basta para recorrer el camino de «no está configurado»:
+            la pantalla de medios exige sesión, y sin Supabase no hay sesión.
+            Ese camino lo prueba `tests/unidad/sin-clave-de-servicio.test.tsx`,
+            con una sesión de editor y la clave ausente.
           */
           SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
 
