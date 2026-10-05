@@ -171,13 +171,23 @@ export function EtiquetaSeccion({
   className?: string;
 }) {
   return (
+    /*
+      EL ROMBO VA EN LÍNEA CON EL TEXTO, no como una columna aparte. Con
+      `inline-flex`, cuando una versalita larga se partía en dos líneas dentro
+      de una sección centrada —«Vuestra presencia ya es el regalo» en el
+      móvil—, la caja ocupaba todo el ancho y el rombo se quedaba solo en el
+      borde izquierdo, lejos de la primera palabra.
+    */
     <span
-      className={`inline-flex items-center gap-interno-compacto text-etiqueta uppercase tracking-seccion ${
+      className={`inline-block text-etiqueta uppercase tracking-seccion text-balance ${
         realzada ? "text-acento" : "text-tinta-suave"
       } ${className}`}
     >
       {realzada ? (
-        <span aria-hidden className="size-linea rotate-45 bg-current opacity-80" />
+        <span
+          aria-hidden
+          className="me-interno-compacto inline-block size-linea rotate-45 bg-current align-middle opacity-80"
+        />
       ) : null}
       {children}
     </span>

@@ -1158,11 +1158,18 @@ function Transporte({
             className="mb-antes-rutas"
           />
 
-          <ul className="border-t border-borde">
+          {/*
+            UNA SOLA REJILLA PARA TODAS LAS RUTAS. Cada fila era su propia
+            rejilla con la primera columna `auto`, así que «1 h 50» la ensanchaba
+            sólo en su fila y su texto empezaba más a la izquierda que el de
+            «18 min»: las descripciones no se alineaban. Con `subgrid`, la
+            columna de la duración la marca la más ancha y vale para todas.
+          */}
+          <ul className="rejilla-dato gap-x-elemento border-t border-borde">
             {rutas.map((ruta) => (
               <li
                 key={ruta.id}
-                className="animacion-izquierda-al-ver rejilla-dato gap-elemento border-b border-borde py-pila"
+                className="animacion-izquierda-al-ver col-span-full grid grid-cols-subgrid border-b border-borde py-pila"
               >
                 <span className="font-titulo peso-titulo-menor text-cifra-dato-menor text-marca">
                   {ruta.duracion}

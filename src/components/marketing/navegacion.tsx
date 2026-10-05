@@ -48,6 +48,9 @@ export function Navegacion({
   const tira = useRef<HTMLUListElement>(null);
   const anclaActiva = useAnclaVisible(enlaces, cabecera);
 
+  const confirmar = enlaces.find((enlace) => enlace.seccion === "rsvp");
+  const secciones = enlaces.filter((enlace) => enlace !== confirmar);
+
   // La sección activa se trae a la vista dentro de la tira: si no, en móvil el
   // invitado va por «Playlist» y el menú sigue enseñando «Inicio».
   useEffect(() => {
@@ -123,63 +126,73 @@ export function Navegacion({
           partido en seco parece un fallo, mientras que un degradado dice «esto
           sigue» sin escribirlo. También de la entrega.
         */}
-        <nav aria-label={etiqueta} className="desvanecer-final ml-auto min-w-0">
-          <ul
-            ref={tira}
-            className="flex h-cabecera items-stretch justify-start gap-tira-nav overflow-x-auto"
-          >
-            {enlaces.map((enlace) => {
-              const activo = enlace.ancla === anclaActiva;
+        {/*
+          CONFIRMAR VA FUERA DE LA TIRA, como en la entrega. Dentro de la tira
+          era su último elemento, así que en el móvil quedaba fuera de la
+          pantalla —había que deslizar la barra para encontrar lo único que se
+          le pide al invitado— y en escritorio se deshacía en el degradado del
+          final. Sigue dentro del <nav>: es parte del menú, y el lector de
+          pantalla lo encuentra donde siempre, el último.
+        */}
+        <nav aria-label={etiqueta} className="ml-auto flex min-w-0 items-center gap-tira-nav">
+          <div className="desvanecer-final min-w-0">
+            <ul
+              ref={tira}
+              className="flex h-cabecera items-stretch justify-start gap-tira-nav overflow-x-auto"
+            >
+              {secciones.map((enlace) => {
+                const activo = enlace.ancla === anclaActiva;
 
-              /*
-                CONFIRMAR NO ES UNA SECCIÓN MÁS, y la entrega lo dibuja así: un
-                botón relleno al final de la tira, no un rótulo igual que los
-                demás. Es lo único que se le pide al invitado, y perdido entre
-                otras trece entradas del mismo peso deja de pedirse.
-
-                Se reconoce por la sección y no por su posición: el orden lo
-                deciden los novios desde el panel, y atarlo al último elemento
-                convertiría un cambio de orden en un botón que desaparece.
-              */
-              const esConfirmar = enlace.seccion === "rsvp";
-
-              return (
-                <li key={enlace.seccion} className="flex shrink-0 items-stretch">
-                  <a
-                    href={`#${enlace.ancla}`}
-                    data-ancla={enlace.ancla}
-                    aria-current={activo ? "location" : undefined}
-                    className={[
-                      /*
-                        EL ENLACE OCUPA EL ALTO DE LA BARRA, no el de su texto.
-                        Con `py-linea` el área que se puede tocar eran 28 px, muy
-                        por debajo de los 44 que hace falta acertar con el pulgar
-                        —y esto se va a ver en móvil casi siempre—. Estirarlo no
-                        cambia nada de lo que se ve: cambia lo que se puede
-                        pulsar, que es lo que estaba mal.
-                      */
-                      "flex items-center whitespace-nowrap text-menu uppercase tracking-menu transicion-color",
-                      /*
-                        LA PÍLDORA NO SE ESTIRA CON LA BARRA —la centra un
-                        `my-auto`, porque un botón relleno del alto entero de la
-                        cabecera sería una mancha—, así que su altura la marcaba
-                        sólo el relleno: 34 px. Por debajo de los 44 que hace
-                        falta acertar con el pulgar, y justamente en lo ÚNICO que
-                        se le pide al invitado. El mínimo se pone explícito.
-                      */
-                      esConfirmar
-                        ? "my-auto min-h-control-compacto rounded-boton bg-accion px-pila py-interno-compacto tracking-pildora text-tinta-sobre-accion hover:bg-accion-hover"
-                        : activo
+                return (
+                  <li key={enlace.seccion} className="flex shrink-0 items-stretch">
+                    <a
+                      href={`#${enlace.ancla}`}
+                      data-ancla={enlace.ancla}
+                      aria-current={activo ? "location" : undefined}
+                      className={[
+                        /*
+                          EL ENLACE OCUPA EL ALTO DE LA BARRA, no el de su
+                          texto. Con `py-linea` el área que se puede tocar eran
+                          28 px, muy por debajo de los 44 que hace falta acertar
+                          con el pulgar —y esto se va a ver en móvil casi
+                          siempre—. Estirarlo no cambia nada de lo que se ve:
+                          cambia lo que se puede pulsar, que es lo que estaba
+                          mal.
+                        */
+                        "flex items-center whitespace-nowrap text-menu uppercase tracking-menu transicion-color",
+                        activo
                           ? "marca-activa border-borde-marca text-tinta-marca"
                           : "marca-activa border-transparent text-tinta-suave hover:text-tinta",
-                    ].join(" ")}
-                  >
-                    {enlace.rotulo}
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
+                      ].join(" ")}
+                    >
+                      {enlace.rotulo}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/*
+            CONFIRMAR NO ES UNA SECCIÓN MÁS, y la entrega lo dibuja así: un
+            botón relleno al final de la barra, no un rótulo igual que los
+            demás. Se reconoce por la sección y no por su posición: el orden lo
+            deciden los novios desde el panel.
+
+            LA PÍLDORA NO SE ESTIRA CON LA BARRA —un botón relleno del alto
+            entero de la cabecera sería una mancha—, así que su altura mínima se
+            pone explícita: los 44 px que hace falta acertar con el pulgar.
+          */}
+          {confirmar ? (
+            <a
+              href={`#${confirmar.ancla}`}
+              data-ancla={confirmar.ancla}
+              aria-current={confirmar.ancla === anclaActiva ? "location" : undefined}
+              className="flex min-h-control-compacto shrink-0 items-center whitespace-nowrap rounded-boton bg-accion px-pila py-interno-compacto text-menu uppercase tracking-pildora text-tinta-sobre-accion transicion-color hover:bg-accion-hover active:bg-accion-activa"
+            >
+              {confirmar.rotulo}
+            </a>
+          ) : null}
         </nav>
       </div>
     </header>
