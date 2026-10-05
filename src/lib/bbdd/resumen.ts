@@ -25,7 +25,6 @@ export interface EstadisticasInvitados {
   rechazados: number;
   pendientes: number;
   plazasAutobus: number;
-  necesitanAlojamiento: number;
 }
 
 export interface MenuConfirmado {
@@ -72,7 +71,6 @@ export async function obtenerResumen(): Promise<ResumenBoda> {
       // número o todavía no.
       pendientes: cuenta(fila?.pendientes) + cuenta(fila?.tentativos),
       plazasAutobus: cuenta(fila?.plazas_autobus),
-      necesitanAlojamiento: cuenta(fila?.necesitan_alojamiento),
     },
     menus: ((menus.data ?? []) as Record<string, unknown>[]).map((menu) => ({
       tipoMenu: String(menu.tipo_menu),

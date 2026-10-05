@@ -336,6 +336,21 @@ test.describe("Resumen del panel", () => {
 
     // Si esto no sube, las cifras no salen de la base.
     expect(despues).toBe(antes + 1);
+
+    /*
+      Y EN LA LOGÍSTICA SÓLO LO QUE EL RSVP PREGUNTA. Salía «Necesitan
+      alojamiento: 0» —el formulario no lo pregunta y la base guarda `false`
+      para todos—, que se leía como un dato. Son tres cifras: adultos, niños y
+      autobús.
+    */
+    const logistica = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: copy.panel.resumen.bloqueLogistica }) });
+    await expect(logistica.getByRole("term")).toHaveText([
+      copy.panel.resumen.adultos,
+      copy.panel.resumen.ninos,
+      copy.panel.resumen.autobus,
+    ]);
   });
 
   test("sin fecha o sin invitados, lo dice en vez de enseñar ceros", async ({ page }) => {

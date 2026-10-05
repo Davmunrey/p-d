@@ -130,10 +130,12 @@ export default async function PaginaResumen() {
               rotulo={t("panel.resumen.autobus")}
               valor={resumen.invitados.plazasAutobus}
             />
-            <Cifra
-              rotulo={t("panel.resumen.alojamiento")}
-              valor={resumen.invitados.necesitanAlojamiento}
-            />
+            {/*
+              NO HAY CIFRA DE ALOJAMIENTO, a propósito. El RSVP no lo pregunta,
+              así que la base guarda `false` para todo el que viene y la cifra
+              salía «0» como si fuera una respuesta. Volverá el día que el
+              formulario pregunte: un dato que nadie ha dado no se enseña.
+            */}
           </Bloque>
 
           <Menus menus={resumen.menus} />
