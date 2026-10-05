@@ -1328,17 +1328,26 @@ test.describe("El formulario se lee y responde", () => {
     const radios = pagina.locator('input[type="radio"]');
     await radios.nth(0).check();
 
-    const estilos = await radios.evaluateAll((todos) =>
-      todos.slice(0, 2).map((radio) => {
-        const estilo = getComputedStyle(radio);
-        return { aspecto: estilo.appearance, fondo: estilo.backgroundColor };
-      }),
-    );
+    const estilos = () =>
+      radios.evaluateAll((todos) =>
+        todos.slice(0, 2).map((radio) => {
+          const estilo = getComputedStyle(radio);
+          return { aspecto: estilo.appearance, fondo: estilo.backgroundColor };
+        }),
+      );
     // El control es el de la marca, no el del sistema.
-    expect(estilos[0]!.aspecto).toBe("none");
-    // Marcado: relleno. Sin marcar: hueco, sin disco blanco.
-    expect(estilos[0]!.fondo).not.toBe("rgba(0, 0, 0, 0)");
-    expect(estilos[1]!.fondo).toBe("rgba(0, 0, 0, 0)");
+    expect((await estilos())[0]!.aspecto).toBe("none");
+    /*
+      Marcado: relleno. Sin marcar: hueco, sin disco blanco.
+
+      SE ESPERA AL COLOR FINAL: el radio lleva `transicion-color`, y leerlo
+      justo después de marcarlo da el del primer fotograma —transparente—. En
+      local daba tiempo; en el CI, más rápido, no.
+    */
+    await expect
+      .poll(async () => (await estilos())[0]!.fondo, { timeout: 5_000 })
+      .not.toBe("rgba(0, 0, 0, 0)");
+    expect((await estilos())[1]!.fondo).toBe("rgba(0, 0, 0, 0)");
 
     // Y el bloque le dice al navegador que es oscuro (desplegables, barras…),
     // sin que el documento deje de ser claro.
