@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
@@ -372,9 +373,9 @@ function Contactos({
           </label>
 
           <div className="sm:col-span-2">
-            <Boton type="submit" jerarquia="secundario">
+            <BotonEnvio jerarquia="secundario">
               {t("panel.proveedores.anadirContacto")}
-            </Boton>
+            </BotonEnvio>
           </div>
         </form>
       ) : null}
@@ -434,9 +435,9 @@ function Contacto({
           <form action={quitarContacto}>
             <input type="hidden" name="proveedor_id" value={proveedorId} />
             <input type="hidden" name="id" value={contacto.id} />
-            <Boton type="submit" jerarquia="terciario">
+            <BotonEnvio jerarquia="terciario">
               {t("panel.proveedores.quitarContacto")}
-            </Boton>
+            </BotonEnvio>
           </form>
         ) : null}
       </div>
@@ -568,7 +569,7 @@ function Edicion({
         </div>
 
         <div className="sm:col-span-2">
-          <Boton type="submit">{t("panel.proveedores.guardar")}</Boton>
+          <BotonEnvio>{t("panel.proveedores.guardar")}</BotonEnvio>
         </div>
       </form>
     </section>
@@ -580,9 +581,7 @@ function Borrado({ proveedor }: { proveedor: FichaProveedor }) {
     <section className="mt-elemento">
       <form action={borrarProveedor} className="flex flex-wrap items-center gap-interno">
         <input type="hidden" name="id" value={proveedor.id} />
-        <Boton type="submit" jerarquia="terciario">
-          {t("panel.proveedores.borrar")}
-        </Boton>
+        <BotonEnvio jerarquia="terciario">{t("panel.proveedores.borrar")}</BotonEnvio>
         <Etiqueta>{t("panel.proveedores.borrarAyuda")}</Etiqueta>
       </form>
     </section>
@@ -628,7 +627,7 @@ function ConfirmarBorrado({
       <form action={borrarProveedor} className="mt-elemento flex flex-wrap gap-interno">
         <input type="hidden" name="id" value={proveedor.id} />
         <input type="hidden" name="confirmar" value="si" />
-        <Boton type="submit">{t("panel.proveedores.confirmarBorrado")}</Boton>
+        <BotonEnvio>{t("panel.proveedores.confirmarBorrado")}</BotonEnvio>
         <Link
           href={`${RUTA_PROVEEDORES}/${proveedor.id}`}
           className="inline-flex min-h-control items-center text-pequeno text-tinta-marca underline"
@@ -688,9 +687,7 @@ function Fase({ proveedor }: { proveedor: FichaProveedor }) {
           defaultValue={proveedor.motivoDescarte ?? ""}
         />
 
-        <Boton type="submit" jerarquia="secundario">
-          {t("panel.proveedores.cambiarEstado")}
-        </Boton>
+        <BotonEnvio jerarquia="secundario">{t("panel.proveedores.cambiarEstado")}</BotonEnvio>
       </form>
     </section>
   );
@@ -732,7 +729,7 @@ function ConfirmarContratado({
         <input type="hidden" name="id" value={proveedor.id} />
         <input type="hidden" name="estado" value="contratado" />
         <input type="hidden" name="confirmar" value="si" />
-        <Boton type="submit">{t("panel.proveedores.confirmarContratado")}</Boton>
+        <BotonEnvio>{t("panel.proveedores.confirmarContratado")}</BotonEnvio>
         <Link
           href={`${RUTA_PROVEEDORES}/${proveedor.id}`}
           className="inline-flex min-h-control items-center text-pequeno text-tinta-marca underline"
@@ -804,9 +801,9 @@ function Servicios({
             <input type="hidden" name="proveedor_id" value={proveedor.id} />
             <CamposServicio />
             <div className="sm:col-span-2">
-              <Boton type="submit" jerarquia="secundario">
+              <BotonEnvio jerarquia="secundario">
                 {t("panel.proveedores.anadirServicio")}
-              </Boton>
+              </BotonEnvio>
             </div>
           </form>
         </section>
@@ -962,9 +959,9 @@ function Servicio({
             <input type="hidden" name="id" value={servicio.id} />
             <CamposServicio servicio={servicio} />
             <div className="sm:col-span-2">
-              <Boton type="submit" jerarquia="secundario">
+              <BotonEnvio jerarquia="secundario">
                 {t("panel.proveedores.guardarServicio")}
-              </Boton>
+              </BotonEnvio>
             </div>
           </form>
 
@@ -1098,9 +1095,9 @@ function Documentos({
           />
 
           <div className="sm:col-span-2">
-            <Boton type="submit" jerarquia="secundario">
+            <BotonEnvio jerarquia="secundario">
               {t("panel.proveedores.subirDocumento")}
-            </Boton>
+            </BotonEnvio>
           </div>
         </form>
       ) : null}
@@ -1197,7 +1194,7 @@ function Documento({
             <input type="hidden" name="proveedor_id" value={proveedorId} />
             <input type="hidden" name="id" value={documento.id} />
             <input type="hidden" name="confirmar" value="si" />
-            <Boton type="submit">{t("panel.proveedores.confirmarDocumento")}</Boton>
+            <BotonEnvio>{t("panel.proveedores.confirmarDocumento")}</BotonEnvio>
             <Link
               href={`${RUTA_PROVEEDORES}/${proveedorId}`}
               className="inline-flex min-h-control items-center text-pequeno text-tinta-marca underline"

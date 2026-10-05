@@ -705,3 +705,49 @@ test.describe("Un estado inventado en la URL", () => {
     });
   }
 });
+
+/*
+  UN DOBLE TOQUE NO CREA DOS INVITACIONES. Los formularios del panel no se
+  bloqueaban mientras la acción estaba en vuelo: con la conexión del móvil, un
+  segundo toque en «Crear» antes de que volviera la respuesta creaba dos
+  grupos —o dos personas, dos pagos, dos fotos—. Todos los botones de envío del
+  panel se apagan ahora mientras su formulario está enviando.
+*/
+test.describe("Un doble toque en el panel", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  test("crear una invitación con la respuesta retenida no la duplica", async ({ page }) => {
+    await entrar(page);
+    await page.goto(RUTA_INVITADOS);
+    const marca = `${MARCA} doble toque ${Date.now()}`;
+    await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(marca);
+
+    // Se retiene la acción para que el segundo toque llegue con la primera en vuelo.
+    let soltar: () => void = () => {};
+    const retenida = new Promise<void>((resolver) => (soltar = resolver));
+    await page.route(`**${RUTA_INVITADOS}*`, async (ruta) => {
+      if (ruta.request().method() === "POST") await retenida;
+      await ruta.continue();
+    });
+
+    const crear = page.getByRole("button", { name: copy.panel.invitados.crear });
+    await crear.click();
+    await expect(crear).toBeDisabled();
+    await crear.click({ force: true }).catch(() => {});
+
+    soltar();
+    await expect(page).toHaveURL(FICHA);
+
+    const [{ cuantos }] = await conBase(
+      (sql) => sql<{ cuantos: number }[]>`
+        select count(*)::int as cuantos from public.grupos_invitacion where nombre = ${marca}
+      `,
+    );
+    expect(cuantos).toBe(1);
+
+    await conBase((sql) => sql`delete from public.grupos_invitacion where nombre = ${marca}`);
+  });
+});

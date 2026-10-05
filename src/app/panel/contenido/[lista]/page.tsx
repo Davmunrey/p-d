@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -334,9 +334,9 @@ function AvisoSeccionApagada({
         <form action={alternarVisible} className="justify-self-start">
           <input type="hidden" name="seccion" value={seccion} />
           <input type="hidden" name="visible" value="si" />
-          <Boton type="submit" jerarquia="secundario">
+          <BotonEnvio jerarquia="secundario">
             {t("panel.contenido.listas.comun.encenderSeccion", { seccion: nombreSeccion })}
-          </Boton>
+          </BotonEnvio>
         </form>
       ) : null}
     </div>
@@ -380,9 +380,9 @@ function Alta({
           />
         ))}
 
-        <Boton type="submit" className="justify-self-start">
+        <BotonEnvio className="justify-self-start">
           {t("panel.contenido.listas.comun.anadir")}
-        </Boton>
+        </BotonEnvio>
       </form>
     </section>
   );
@@ -699,10 +699,10 @@ function Ficha({
                   urlBase={urlBase}
                 />
               ))}
-              <Boton type="submit" className="justify-self-start">
+              <BotonEnvio className="justify-self-start">
                 {t("panel.contenido.listas.comun.guardar")}
                 <DeQueFicha nombre={nombre} />
-              </Boton>
+              </BotonEnvio>
             </form>
           </details>
 
@@ -767,20 +767,20 @@ function Botones({
       <form action={alternarPublicado}>
         {ocultos}
         <input type="hidden" name="publicado" value={fila.publicado ? "no" : "si"} />
-        <Boton type="submit" jerarquia="terciario">
+        <BotonEnvio jerarquia="terciario">
           {fila.publicado
             ? t("panel.contenido.listas.comun.retirar")
             : t("panel.contenido.listas.comun.publicar")}
           <DeQueFicha nombre={nombre} />
-        </Boton>
+        </BotonEnvio>
       </form>
 
       <form action={pedirBorrado}>
         {ocultos}
-        <Boton type="submit" jerarquia="terciario">
+        <BotonEnvio jerarquia="terciario">
           {t("panel.contenido.listas.comun.borrar")}
           <DeQueFicha nombre={nombre} />
-        </Boton>
+        </BotonEnvio>
       </form>
 
       {/* El botón que no lleva a ningún sitio no se pinta, en vez de pintarse
@@ -826,10 +826,10 @@ function Mover({
       {variante ? <input type="hidden" name="variante" value={variante} /> : null}
       <input type="hidden" name="ficha" value={fila.id} />
       <input type="hidden" name="direccion" value={direccion} />
-      <Boton type="submit" jerarquia="terciario">
+      <BotonEnvio jerarquia="terciario">
         {t(direccion === "subir" ? "panel.contenido.subirOrden" : "panel.contenido.bajarOrden")}
         <DeQueFicha nombre={nombre} />
-      </Boton>
+      </BotonEnvio>
     </form>
   );
 }
@@ -870,18 +870,18 @@ function Confirmacion({
       <div className="flex flex-wrap gap-interno-compacto">
         <form action={borrarFicha}>
           {ocultos}
-          <Boton type="submit" jerarquia="secundario">
+          <BotonEnvio jerarquia="secundario">
             {t("panel.contenido.listas.comun.borrarConfirmar")}
-          </Boton>
+          </BotonEnvio>
         </form>
 
         {fila.publicado ? (
           <form action={alternarPublicado}>
             {ocultos}
             <input type="hidden" name="publicado" value="no" />
-            <Boton type="submit" jerarquia="terciario">
+            <BotonEnvio jerarquia="terciario">
               {t("panel.contenido.listas.comun.borrarMejorRetirar")}
-            </Boton>
+            </BotonEnvio>
           </form>
         ) : null}
       </div>

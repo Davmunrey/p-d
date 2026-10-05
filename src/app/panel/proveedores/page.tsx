@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
@@ -135,9 +135,7 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
             </option>
           ))}
         </CampoSeleccion>
-        <Boton type="submit" jerarquia="secundario">
-          {t("panel.proveedores.buscar")}
-        </Boton>
+        <BotonEnvio jerarquia="secundario">{t("panel.proveedores.buscar")}</BotonEnvio>
       </form>
 
       {categorias.length === 0 ? (
@@ -239,9 +237,9 @@ function SeccionCategoria({
           {puedeEditar && total === 0 ? (
             <form action={borrarCategoria}>
               <input type="hidden" name="id" value={categoria.id} />
-              <Boton type="submit" jerarquia="terciario">
+              <BotonEnvio jerarquia="terciario">
                 {t("panel.proveedores.borrarCategoria")}
-              </Boton>
+              </BotonEnvio>
             </form>
           ) : null}
         </div>
@@ -371,7 +369,7 @@ function FormularioProveedor({ categorias }: { categorias: CategoriaProveedor[] 
         </div>
 
         <div className="sm:col-span-2">
-          <Boton type="submit">{t("panel.proveedores.crear")}</Boton>
+          <BotonEnvio>{t("panel.proveedores.crear")}</BotonEnvio>
         </div>
       </form>
     </section>
@@ -400,9 +398,7 @@ function FormularioCategoria() {
           type="text"
           maxLength={LARGOS_DE_CAMPO["categorias_proveedor.descripcion"]}
         />
-        <Boton type="submit" jerarquia="secundario">
-          {t("panel.proveedores.crearCategoria")}
-        </Boton>
+        <BotonEnvio jerarquia="secundario">{t("panel.proveedores.crearCategoria")}</BotonEnvio>
       </form>
     </section>
   );

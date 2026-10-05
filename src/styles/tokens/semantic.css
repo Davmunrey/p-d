@@ -372,6 +372,9 @@
   --ancho-foto-tira: var(--size-foto-tira);
   --ancho-cifra: var(--size-cifra);
   --lado-casilla: var(--size-casilla);
+  --alto-barra-grafica: var(--size-barra-grafica);
+  --alto-barra-grafica-par: var(--size-barra-grafica-par);
+  --ancho-rotulo-grafica: var(--size-rotulo-grafica);
 
   /* La imagen para compartir: ver `--size-og-*` en primitives.css. */
   --og-margen-vertical: var(--size-og-margen-vertical);

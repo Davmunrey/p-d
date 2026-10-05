@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -290,7 +290,7 @@ function Corregir({ lineas }: { lineas: LineaDelRecuento[] }) {
         <CampoTexto etiqueta={t("panel.dia.recuento.campoNota")} name="nota" />
 
         <div>
-          <Boton type="submit">{t("panel.dia.recuento.guardar")}</Boton>
+          <BotonEnvio>{t("panel.dia.recuento.guardar")}</BotonEnvio>
         </div>
       </form>
     </section>

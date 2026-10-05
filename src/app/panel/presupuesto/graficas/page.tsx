@@ -2,17 +2,14 @@ import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import {
-  ALTO_BARRA_GRAFICA,
-  ANCHO_GRAFICA,
-  HUECO_BARRA_GRAFICA,
-  PARTE_ROTULO_GRAFICA,
-  RUTA_ACCESO,
-  RUTA_PRESUPUESTO,
-} from "@/config/constants";
+import { RUTA_ACCESO, RUTA_PRESUPUESTO } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import { obtenerPagos } from "@/lib/bbdd/pagos";
-import { obtenerResumenPresupuesto, type ResumenCategoria } from "@/lib/bbdd/presupuesto";
+import {
+  loQueVaCostando,
+  obtenerResumenPresupuesto,
+  type ResumenCategoria,
+} from "@/lib/bbdd/presupuesto";
 import { t } from "@/lib/copy";
 import {
   evolucionMensual,
@@ -42,19 +39,23 @@ import { accesoActual } from "@/lib/sesion";
  *     también por posición y por cifra.
  *
  * 2 · CADA GRÁFICA LLEVA SU TABLA, y no una versión resumida: la misma
- *     información. El `<svg>` va `aria-hidden` porque para un lector de
+ *     información. La gráfica va `aria-hidden` porque para un lector de
  *     pantalla no es nada, y debajo está la tabla de verdad — la que se puede
  *     recorrer celda a celda y la que se copia y se pega.
  *
- * 3 · SE DIBUJA EN EL SERVIDOR, sin una línea de JavaScript. Son barras y
- *     rectángulos: una librería de gráficas aquí serían doscientos kilobytes
- *     para pintar lo que hace un `<rect>`.
+ * 3 · SE DIBUJA EN EL SERVIDOR, sin una línea de JavaScript. Son barras: una
+ *     librería de gráficas aquí serían doscientos kilobytes para pintar lo que
+ *     hace un `<div>` con su ancho.
+ *
+ * 4 · BARRAS EN HTML, NO UN LIENZO SVG. Eran un `<svg>` de 1000 unidades de
+ *     ancho que el navegador escalaba al hueco, rótulos incluidos: en el móvil
+ *     los nombres de las categorías salían a 4,5 px. Ahora el rótulo es texto
+ *     a su tamaño y sólo la barra se estira, en proporción a su cifra.
  */
 export const dynamic = "force-dynamic";
 
-/** Cuánto del lienzo queda para las barras, una vez apartado el rótulo. */
-const ANCHO_BARRAS = ANCHO_GRAFICA * (1 - PARTE_ROTULO_GRAFICA);
-const INICIO_BARRAS = ANCHO_GRAFICA * PARTE_ROTULO_GRAFICA;
+/** El ancho de una barra, en tanto por ciento de su pista. */
+const ancho = (parte: number, todo: number) => ({ width: `${proporcion(parte, todo) * 100}%` });
 
 export default async function PaginaGraficas() {
   const acceso = await accesoActual();
@@ -69,7 +70,9 @@ export default async function PaginaGraficas() {
   const euros = moneda ? formateadorDeImporte(moneda) : null;
   const reparto = repartoPorCategoria(resumen);
   const meses = evolucionMensual(pagos);
-  const comparables = resumen.filter((fila) => fila.importePrevisto > 0 || fila.real > 0);
+  const comparables = resumen.filter(
+    (fila) => fila.importePrevisto > 0 || loQueVaCostando(fila) > 0,
+  );
 
   const hayAlgo = reparto.length > 0 || meses.length > 0 || comparables.length > 0;
 
@@ -144,7 +147,6 @@ function Seccion({
  */
 function Reparto({ reparto, euros }: { reparto: ParteDelGasto[]; euros: Euros }) {
   const mayor = reparto[0]?.importe ?? 0;
-  const alto = reparto.length * (ALTO_BARRA_GRAFICA + HUECO_BARRA_GRAFICA);
 
   return (
     <Seccion
@@ -158,34 +160,24 @@ function Reparto({ reparto, euros }: { reparto: ParteDelGasto[]; euros: Euros })
         </Cuerpo>
       ) : (
         <>
-          <svg
-            aria-hidden="true"
-            viewBox={`0 0 ${ANCHO_GRAFICA} ${alto}`}
-            className="mt-elemento w-full"
-          >
-            {reparto.map((parte, indice) => {
-              const y = indice * (ALTO_BARRA_GRAFICA + HUECO_BARRA_GRAFICA);
-              return (
-                <g key={parte.categoria}>
-                  <text
-                    x={0}
-                    y={y + ALTO_BARRA_GRAFICA / 2}
-                    dominantBaseline="middle"
-                    className="fill-tinta text-pequeno"
-                  >
-                    {parte.categoria}
-                  </text>
-                  <rect
-                    x={INICIO_BARRAS}
-                    y={y}
-                    width={proporcion(parte.importe, mayor) * ANCHO_BARRAS}
-                    height={ALTO_BARRA_GRAFICA}
-                    fill="var(--serie-real)"
+          <ul aria-hidden="true" data-grafica className="mt-elemento grid gap-interno-compacto">
+            {reparto.map((parte) => (
+              <li
+                key={parte.categoria}
+                data-fila={parte.categoria}
+                className="rejilla-grafica items-center gap-interno"
+              >
+                <span className="text-pequeno text-tinta wrap-anywhere">{parte.categoria}</span>
+                <span className="flex h-barra-grafica">
+                  <span
+                    data-barra
+                    className="bg-serie-real"
+                    style={ancho(parte.importe, mayor)}
                   />
-                </g>
-              );
-            })}
-          </svg>
+                </span>
+              </li>
+            ))}
+          </ul>
 
           <TablaReparto reparto={reparto} euros={euros} />
         </>
@@ -244,7 +236,6 @@ function TablaReparto({ reparto, euros }: { reparto: ParteDelGasto[]; euros: Eur
  */
 function Evolucion({ meses, euros }: { meses: MesDelGasto[]; euros: Euros }) {
   const total = meses[meses.length - 1]?.acumulado ?? 0;
-  const alto = meses.length * (ALTO_BARRA_GRAFICA + HUECO_BARRA_GRAFICA);
 
   return (
     <Seccion
@@ -258,46 +249,41 @@ function Evolucion({ meses, euros }: { meses: MesDelGasto[]; euros: Euros }) {
         </Cuerpo>
       ) : (
         <>
-          <svg
-            aria-hidden="true"
-            viewBox={`0 0 ${ANCHO_GRAFICA} ${alto}`}
-            className="mt-elemento w-full"
-          >
-            {meses.map((mes, indice) => {
-              const y = indice * (ALTO_BARRA_GRAFICA + HUECO_BARRA_GRAFICA);
-              return (
-                <g key={mes.clave}>
-                  <text
-                    x={0}
-                    y={y + ALTO_BARRA_GRAFICA / 2}
-                    dominantBaseline="middle"
-                    className="fill-tinta text-pequeno"
-                  >
-                    {mes.etiqueta}
-                  </text>
-                  {/*
-                    Dos barras superpuestas: el acumulado en claro y lo de ese
-                    mes en oscuro encima. Así se ve de un vistazo cuánto de lo
-                    que llevamos gastado se gastó justo ese mes.
-                  */}
-                  <rect
-                    x={INICIO_BARRAS}
-                    y={y}
-                    width={proporcion(mes.acumulado, total) * ANCHO_BARRAS}
-                    height={ALTO_BARRA_GRAFICA}
-                    fill="var(--serie-previsto)"
+          <Leyenda
+            series={[
+              ["bg-serie-previsto", t("panel.presupuesto.graficas.leyendaAcumulado")],
+              ["bg-serie-real", t("panel.presupuesto.graficas.leyendaMes")],
+            ]}
+          />
+          <ul aria-hidden="true" data-grafica className="mt-pila grid gap-interno-compacto">
+            {meses.map((mes) => (
+              <li
+                key={mes.clave}
+                data-fila={mes.etiqueta}
+                className="rejilla-grafica items-center gap-interno"
+              >
+                <span className="text-pequeno text-tinta">{mes.etiqueta}</span>
+                {/*
+                  UNA BARRA APILADA: lo que ya se llevaba gastado en claro y lo
+                  de ese mes en oscuro, AL FINAL. Antes el tramo del mes se
+                  pintaba encima desde el principio de la barra, y parecía que
+                  ese mes se había gastado lo primero en vez de lo último.
+                */}
+                <span className="flex h-barra-grafica">
+                  <span
+                    data-barra="antes"
+                    className="bg-serie-previsto"
+                    style={ancho(mes.acumulado - mes.importe, total)}
                   />
-                  <rect
-                    x={INICIO_BARRAS}
-                    y={y}
-                    width={proporcion(mes.importe, total) * ANCHO_BARRAS}
-                    height={ALTO_BARRA_GRAFICA}
-                    fill="var(--serie-real)"
+                  <span
+                    data-barra="mes"
+                    className="bg-serie-real"
+                    style={ancho(mes.importe, total)}
                   />
-                </g>
-              );
-            })}
-          </svg>
+                </span>
+              </li>
+            ))}
+          </ul>
 
           <div className="mt-elemento overflow-x-auto">
             <table className="w-full border-collapse text-left">
@@ -351,10 +337,8 @@ function Evolucion({ meses, euros }: { meses: MesDelGasto[]; euros: Euros }) {
 function Comparativa({ categorias, euros }: { categorias: ResumenCategoria[]; euros: Euros }) {
   const mayor = Math.max(
     0,
-    ...categorias.map((fila) => Math.max(fila.importePrevisto, fila.real)),
+    ...categorias.map((fila) => Math.max(fila.importePrevisto, loQueVaCostando(fila))),
   );
-  const altoPar = ALTO_BARRA_GRAFICA + HUECO_BARRA_GRAFICA;
-  const alto = categorias.length * (altoPar + HUECO_BARRA_GRAFICA);
 
   return (
     <Seccion
@@ -368,44 +352,46 @@ function Comparativa({ categorias, euros }: { categorias: ResumenCategoria[]; eu
         </Cuerpo>
       ) : (
         <>
-          <svg
-            aria-hidden="true"
-            viewBox={`0 0 ${ANCHO_GRAFICA} ${alto}`}
-            className="mt-elemento w-full"
-          >
-            {categorias.map((fila, indice) => {
-              const y = indice * (altoPar + HUECO_BARRA_GRAFICA);
-              const media = ALTO_BARRA_GRAFICA / 2;
-              const seHaPasado = fila.real > fila.importePrevisto;
-
+          <Leyenda
+            series={[
+              ["bg-serie-previsto", t("panel.presupuesto.graficas.leyendaPrevisto")],
+              ["bg-serie-real", t("panel.presupuesto.graficas.leyendaReal")],
+              ["bg-serie-exceso", t("panel.presupuesto.graficas.leyendaExceso")],
+            ]}
+          />
+          <ul aria-hidden="true" data-grafica className="mt-pila grid gap-pila">
+            {categorias.map((fila) => {
+              const vaCostando = loQueVaCostando(fila);
+              const seHaPasado = fila.desviacion < 0;
               return (
-                <g key={fila.categoriaId}>
-                  <text
-                    x={0}
-                    y={y + ALTO_BARRA_GRAFICA}
-                    dominantBaseline="middle"
-                    className="fill-tinta text-pequeno"
-                  >
+                <li
+                  key={fila.categoriaId}
+                  data-fila={fila.categoria}
+                  className="rejilla-grafica items-center gap-interno"
+                >
+                  <span className="text-pequeno text-tinta wrap-anywhere">
                     {fila.categoria}
-                  </text>
-                  <rect
-                    x={INICIO_BARRAS}
-                    y={y}
-                    width={proporcion(fila.importePrevisto, mayor) * ANCHO_BARRAS}
-                    height={media}
-                    fill="var(--serie-previsto)"
-                  />
-                  <rect
-                    x={INICIO_BARRAS}
-                    y={y + media + HUECO_BARRA_GRAFICA / 2}
-                    width={proporcion(fila.real, mayor) * ANCHO_BARRAS}
-                    height={media}
-                    fill={seHaPasado ? "var(--serie-exceso)" : "var(--serie-real)"}
-                  />
-                </g>
+                  </span>
+                  <span className="grid gap-linea">
+                    <span className="flex h-barra-grafica-par">
+                      <span
+                        data-barra="previsto"
+                        className="bg-serie-previsto"
+                        style={ancho(fila.importePrevisto, mayor)}
+                      />
+                    </span>
+                    <span className="flex h-barra-grafica-par">
+                      <span
+                        data-barra="real"
+                        className={seHaPasado ? "bg-serie-exceso" : "bg-serie-real"}
+                        style={ancho(vaCostando, mayor)}
+                      />
+                    </span>
+                  </span>
+                </li>
               );
             })}
-          </svg>
+          </ul>
 
           <div className="mt-elemento overflow-x-auto">
             <table className="w-full border-collapse text-left">
@@ -427,33 +413,64 @@ function Comparativa({ categorias, euros }: { categorias: ResumenCategoria[]; eu
                 </tr>
               </thead>
               <tbody>
-                {categorias.map((fila) => {
-                  const diferencia = fila.real - fila.importePrevisto;
-                  return (
-                    <tr key={fila.categoriaId}>
-                      <th scope="row" className={FILA}>
-                        {fila.categoria}
-                      </th>
-                      <td className={CIFRA}>{escribir(euros, fila.importePrevisto)}</td>
-                      <td className={CIFRA}>{escribir(euros, fila.real)}</td>
-                      {/*
-                        EL SIGNO SE ESCRIBE, Y EL COLOR NO ES LO ÚNICO QUE AVISA:
-                        pasarse cien euros y ahorrárselos se distinguen leyendo,
-                        no sólo mirando.
-                      */}
-                      <td className={`${CIFRA} ${diferencia > 0 ? "text-error-tinta" : ""}`}>
-                        {diferencia > 0 ? "+" : ""}
-                        {escribir(euros, diferencia)}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {categorias.map((fila) => (
+                  <tr key={fila.categoriaId}>
+                    <th scope="row" className={FILA}>
+                      {fila.categoria}
+                    </th>
+                    <td className={CIFRA}>{escribir(euros, fila.importePrevisto)}</td>
+                    <td className={CIFRA}>{escribir(euros, loQueVaCostando(fila))}</td>
+                    {/*
+                      LA MISMA DIFERENCIA Y EL MISMO SIGNO QUE LA TABLA DEL
+                      PRESUPUESTO: lo que queda es positivo y lo que se pasa,
+                      negativo y con su palabra. Aquí se calculaba al revés —
+                      real menos previsto, con un «+» delante del exceso— y la
+                      misma categoría salía en positivo en una pantalla y en
+                      negativo en la otra.
+                    */}
+                    <td className={`${CIFRA} ${fila.desviacion < 0 ? "text-error-tinta" : ""}`}>
+                      {escribir(euros, fila.desviacion)}
+                      {fila.desviacion < 0 ? (
+                        <span className="ml-interno-compacto text-etiqueta uppercase tracking-etiqueta">
+                          {t("panel.presupuesto.pasado")}
+                        </span>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </>
       )}
     </Seccion>
+  );
+}
+
+/**
+ * LA LEYENDA DE LAS GRÁFICAS DE VARIAS SERIES. Sin ella no se sabía qué tono
+ * era el previsto y cuál lo que va costando. Va en HTML y no se esconde: es
+ * texto que sí se lee, y la muestra de color sólo acompaña al nombre.
+ */
+function Leyenda({ series }: { series: [clase: string, nombre: string][] }) {
+  return (
+    <ul
+      aria-label={t("panel.presupuesto.graficas.leyenda")}
+      className="mt-elemento flex flex-wrap gap-x-elemento gap-y-linea"
+    >
+      {series.map(([clase, nombre]) => (
+        <li
+          key={nombre}
+          className="flex items-center gap-interno-compacto text-pequeno text-tinta-suave"
+        >
+          <span
+            aria-hidden="true"
+            className={`inline-block size-casilla rounded-etiqueta ${clase}`}
+          />
+          {nombre}
+        </li>
+      ))}
+    </ul>
   );
 }
 

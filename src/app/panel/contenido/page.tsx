@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { RUTA_ACCESO } from "@/config/constants";
@@ -167,10 +167,10 @@ function Fila({
             <input type="hidden" name="seccion" value={fila.seccion} />
             {/* Viaja el valor que se quiere dejar puesto, no el actual. */}
             <input type="hidden" name="visible" value={fila.visible ? "no" : "si"} />
-            <Boton type="submit" jerarquia="terciario">
+            <BotonEnvio jerarquia="terciario">
               {fila.visible ? t("panel.contenido.ocultar") : t("panel.contenido.mostrar")}
               <DeQueSeccion nombre={nombre} />
-            </Boton>
+            </BotonEnvio>
           </form>
 
           {/*
@@ -204,10 +204,10 @@ function Mover({
     <form action={moverSeccion}>
       <input type="hidden" name="seccion" value={seccion} />
       <input type="hidden" name="direccion" value={direccion} />
-      <Boton type="submit" jerarquia="terciario">
+      <BotonEnvio jerarquia="terciario">
         {t(direccion === "subir" ? "panel.contenido.subirOrden" : "panel.contenido.bajarOrden")}
         <DeQueSeccion nombre={nombre} />
-      </Boton>
+      </BotonEnvio>
     </form>
   );
 }

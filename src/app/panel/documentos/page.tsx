@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
-import { Boton, BotonEnlace } from "@/components/ui/boton";
+import { BotonEnlace } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -397,9 +398,9 @@ function Fila({
                 defaultValue={hoy}
                 required
               />
-              <Boton type="submit" jerarquia="secundario">
+              <BotonEnvio jerarquia="secundario">
                 {t("panel.documentos.marcarConseguido")}
-              </Boton>
+              </BotonEnvio>
             </form>
           ) : null}
 
@@ -418,11 +419,11 @@ function Fila({
               `POST` y sigue funcionando sin JavaScript.
             */}
             {confirmando ? <input type="hidden" name="confirmar" value="si" /> : null}
-            <Boton type="submit" jerarquia="terciario">
+            <BotonEnvio jerarquia="terciario">
               {confirmando
                 ? t("panel.documentos.borrarDeVerdad")
                 : t("panel.documentos.borrar")}
-            </Boton>
+            </BotonEnvio>
           </form>
         </div>
       ) : null}
@@ -509,7 +510,7 @@ function Edicion({ documento }: { documento: DocumentoBoda }) {
       </div>
 
       <div className="flex flex-wrap gap-interno sm:col-span-2">
-        <Boton type="submit">{t("panel.documentos.guardar")}</Boton>
+        <BotonEnvio>{t("panel.documentos.guardar")}</BotonEnvio>
         <BotonEnlace href={RUTA_DOCUMENTOS} jerarquia="terciario">
           {t("panel.documentos.cancelar")}
         </BotonEnlace>
@@ -586,7 +587,7 @@ function FormularioAlta() {
         </div>
 
         <div className="sm:col-span-2">
-          <Boton type="submit">{t("panel.documentos.apuntar")}</Boton>
+          <BotonEnvio>{t("panel.documentos.apuntar")}</BotonEnvio>
         </div>
       </form>
     </section>

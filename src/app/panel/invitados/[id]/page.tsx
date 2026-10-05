@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
@@ -180,7 +180,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
               </div>
 
               <div>
-                <Boton type="submit">{t("panel.invitados.repartirBoton")}</Boton>
+                <BotonEnvio>{t("panel.invitados.repartirBoton")}</BotonEnvio>
               </div>
             </form>
           ) : null}
@@ -243,9 +243,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
                   <form action={quitarPersona}>
                     <input type="hidden" name="grupo_id" value={grupo.id} />
                     <input type="hidden" name="persona_id" value={persona.id} />
-                    <Boton type="submit" jerarquia="terciario">
-                      {t("panel.invitados.quitar")}
-                    </Boton>
+                    <BotonEnvio jerarquia="terciario">{t("panel.invitados.quitar")}</BotonEnvio>
                   </form>
                 ) : null}
               </li>
@@ -276,9 +274,9 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
               <span className="text-cuerpo text-tinta">{t("panel.invitados.esNino")}</span>
             </label>
             <div>
-              <Boton type="submit" jerarquia="secundario">
+              <BotonEnvio jerarquia="secundario">
                 {t("panel.invitados.anadirPersona")}
-              </Boton>
+              </BotonEnvio>
             </div>
           </form>
         ) : null}
@@ -296,9 +294,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
           </Cuerpo>
           <form action={emitirEnlace} className="mt-elemento">
             <input type="hidden" name="grupo_id" value={grupo.id} />
-            <Boton type="submit" jerarquia="secundario">
-              {t("panel.invitados.emitirEnlace")}
-            </Boton>
+            <BotonEnvio jerarquia="secundario">{t("panel.invitados.emitirEnlace")}</BotonEnvio>
           </form>
         </section>
       ) : null}

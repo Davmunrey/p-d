@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO } from "@/config/constants";
@@ -73,7 +73,7 @@ export default async function PaginaCuenta({
           autoComplete="name"
         />
         <div>
-          <Boton type="submit">{t("panel.cuenta.guardar")}</Boton>
+          <BotonEnvio>{t("panel.cuenta.guardar")}</BotonEnvio>
         </div>
       </form>
 

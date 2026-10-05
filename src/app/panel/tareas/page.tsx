@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -407,9 +407,9 @@ function Controles({
               <input type="hidden" name="id" value={tarea.id} />
               <input type="hidden" name="estado" value={estado} />
               <input type="hidden" name="vista" value={contexto.vista} />
-              <Boton type="submit" jerarquia="secundario">
+              <BotonEnvio jerarquia="secundario">
                 {t("panel.tareas.moverA", { estado: nombreDelEstado(estado) })}
-              </Boton>
+              </BotonEnvio>
             </form>
           ))}
 
@@ -434,11 +434,11 @@ function Controles({
             value={tarea.estado === ESTADO_HECHA ? ESTADO_INICIAL_TAREA : ESTADO_HECHA}
           />
           <input type="hidden" name="vista" value={contexto.vista} />
-          <Boton type="submit" jerarquia="secundario">
+          <BotonEnvio jerarquia="secundario">
             {tarea.estado === ESTADO_HECHA
               ? t("panel.tareas.reabrir")
               : t("panel.tareas.completar")}
-          </Boton>
+          </BotonEnvio>
         </form>
       )}
 
@@ -453,9 +453,7 @@ function Controles({
           <form action={duplicarTarea}>
             <input type="hidden" name="id" value={tarea.id} />
             <input type="hidden" name="vista" value={contexto.vista} />
-            <Boton type="submit" jerarquia="terciario">
-              {t("panel.tareas.duplicar")}
-            </Boton>
+            <BotonEnvio jerarquia="terciario">{t("panel.tareas.duplicar")}</BotonEnvio>
           </form>
 
           <form action={borrarTarea}>
@@ -467,9 +465,9 @@ function Controles({
               que no hay dos caminos que puedan discrepar.
             */}
             {confirmandoEsta ? <input type="hidden" name="confirmar" value="si" /> : null}
-            <Boton type="submit" jerarquia={confirmandoEsta ? "secundario" : "terciario"}>
+            <BotonEnvio jerarquia={confirmandoEsta ? "secundario" : "terciario"}>
               {confirmandoEsta ? t("panel.tareas.confirmarBorrado") : t("panel.tareas.borrar")}
-            </Boton>
+            </BotonEnvio>
           </form>
         </>
       )}
@@ -491,9 +489,9 @@ function FormularioMover({
       <input type="hidden" name="id" value={tarea.id} />
       <input type="hidden" name="direccion" value={direccion} />
       <input type="hidden" name="vista" value={vista} />
-      <Boton type="submit" jerarquia="terciario">
+      <BotonEnvio jerarquia="terciario">
         {direccion === "subir" ? t("panel.tareas.subirOrden") : t("panel.tareas.bajarOrden")}
-      </Boton>
+      </BotonEnvio>
     </form>
   );
 }
@@ -622,7 +620,7 @@ function FormularioAlta({
         <input type="hidden" name="vista" value={vista} />
         <CamposTarea responsables={responsables} proveedores={proveedores} />
         <div className="sm:col-span-2">
-          <Boton type="submit">{t("panel.tareas.crear")}</Boton>
+          <BotonEnvio>{t("panel.tareas.crear")}</BotonEnvio>
         </div>
       </form>
     </section>
@@ -644,7 +642,7 @@ function FormularioEdicion({ tarea, contexto }: { tarea: Tarea; contexto: Contex
           proveedores={contexto.proveedores}
         />
         <div className="flex flex-wrap items-center gap-interno sm:col-span-2">
-          <Boton type="submit">{t("panel.tareas.guardar")}</Boton>
+          <BotonEnvio>{t("panel.tareas.guardar")}</BotonEnvio>
           <EnlaceSuave
             href={`${RUTA_TAREAS}${contexto.vista ? `?vista=${contexto.vista}` : ""}`}
             discreto
@@ -715,9 +713,7 @@ function Plantilla({ grupos, vista }: { grupos: GrupoPlantilla[]; vista: string 
           </fieldset>
 
           <div>
-            <Boton type="submit" jerarquia="secundario">
-              {t("panel.tareas.generar")}
-            </Boton>
+            <BotonEnvio jerarquia="secundario">{t("panel.tareas.generar")}</BotonEnvio>
           </div>
         </form>
       )}

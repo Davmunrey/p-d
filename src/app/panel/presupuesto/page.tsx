@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
@@ -268,7 +268,7 @@ function DecidirGastos({
               </option>
             ))}
           </CampoSeleccion>
-          <Boton type="submit">{t("panel.presupuesto.moverYBorrar")}</Boton>
+          <BotonEnvio>{t("panel.presupuesto.moverYBorrar")}</BotonEnvio>
         </form>
       )}
     </section>
@@ -322,16 +322,12 @@ function Edicion({ categorias }: { categorias: CategoriaPresupuesto[] }) {
                 min={0}
                 defaultValue={String(categoria.orden)}
               />
-              <Boton type="submit" jerarquia="secundario">
-                {t("panel.presupuesto.guardar")}
-              </Boton>
+              <BotonEnvio jerarquia="secundario">{t("panel.presupuesto.guardar")}</BotonEnvio>
             </form>
 
             <form action={borrarCategoria} className="mt-interno-compacto">
               <input type="hidden" name="id" value={categoria.id} />
-              <Boton type="submit" jerarquia="terciario">
-                {t("panel.presupuesto.borrar")}
-              </Boton>
+              <BotonEnvio jerarquia="terciario">{t("panel.presupuesto.borrar")}</BotonEnvio>
             </form>
           </li>
         ))}
@@ -370,7 +366,7 @@ function Alta() {
           type="number"
           min={0}
         />
-        <Boton type="submit">{t("panel.presupuesto.crear")}</Boton>
+        <BotonEnvio>{t("panel.presupuesto.crear")}</BotonEnvio>
       </form>
     </section>
   );

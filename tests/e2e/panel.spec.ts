@@ -2,7 +2,7 @@ import { expect, test } from "./utiles/origen-propio";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_CUENTA, RUTA_PANEL } from "../../src/config/constants";
-import { MODULOS } from "../../src/config/modulos";
+import { MODULOS, MODULOS_ENTREGADOS } from "../../src/config/modulos";
 
 /**
  * BODA-42 · El esqueleto del panel
@@ -140,3 +140,70 @@ test.describe("La caché del panel", () => {
  * una hora, un fallo puntual de la base dejaba la pantalla de «estamos
  * preparando la web» servida durante esa hora entera, y pasó en producción.
  */
+
+/*
+  AUDITORÍA DE DISEÑO · LA NAVEGACIÓN DEL PANEL.
+
+  · En el móvil, la barra de abajo repartía su ancho a partes iguales: con
+    trece módulos en 390 px, cada casilla tenía 28 px y los rótulos —que no se
+    parten— se montaban unos encima de otros.
+  · En escritorio, el lateral fijo no se desplazaba: con menos de ~750 px de
+    alto, los últimos módulos quedaban fuera de la pantalla y no había forma de
+    llegar a ellos.
+*/
+test.describe("La navegación del panel en pantallas pequeñas", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  async function entrar(page: import("@playwright/test").Page) {
+    await page.goto(RUTA_ACCESO);
+    await page.getByLabel(copy.acceso.correo).fill(CORREO_CON_ACCESO!);
+    await page.getByLabel(copy.acceso.contrasena).fill(CONTRASENA!);
+    await page.getByRole("button", { name: copy.acceso.entrar }).click();
+    await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
+  }
+
+  test("en el móvil cada rótulo de la barra se lee entero, y el módulo actual está a la vista", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await entrar(page);
+    const ultimo = MODULOS_ENTREGADOS.at(-1)!;
+    await page.goto(ultimo.ruta);
+
+    const barra = page.getByRole("navigation", { name: copy.panel.navegacion }).last();
+    const enlaces = barra.getByRole("link");
+    const medidas = await enlaces.evaluateAll((todos) =>
+      todos.map((enlace) => ({
+        sobra: enlace.scrollWidth - enlace.clientWidth,
+        ancho: enlace.getBoundingClientRect().width,
+      })),
+    );
+    for (const medida of medidas) {
+      // Ningún rótulo se sale de su enlace ni queda en una casilla mínima.
+      expect(medida.sobra).toBeLessThanOrEqual(1);
+      expect(medida.ancho).toBeGreaterThanOrEqual(44);
+    }
+
+    const actual = barra.locator('[aria-current="page"]');
+    await expect(actual).toBeInViewport();
+  });
+
+  test("en un portátil bajo, el lateral se desplaza y llega al último módulo", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 560 });
+    await entrar(page);
+
+    const lateral = page.getByRole("navigation", { name: copy.panel.navegacion }).first();
+    const ultimo = lateral.getByRole("link", {
+      name: copy.panel.modulos[MODULOS_ENTREGADOS.at(-1)!.clave],
+    });
+    await ultimo.scrollIntoViewIfNeeded();
+    await expect(ultimo).toBeInViewport();
+    await ultimo.click();
+    await expect(page).toHaveURL(new RegExp(MODULOS_ENTREGADOS.at(-1)!.ruta));
+  });
+});

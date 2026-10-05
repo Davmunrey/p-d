@@ -20,7 +20,7 @@ import {
  *     —el `<svg>` va `aria-hidden`—, así que si la tabla miente, para un lector
  *     de pantalla la pantalla entera miente.
  *
- * 2 · LA BARRA MIDE LO QUE TIENE QUE MEDIR. Se lee el `width` del `<rect>` y se
+ * 2 · LA BARRA MIDE LO QUE TIENE QUE MEDIR. Se lee el ancho de la barra y se
  *     compara con la proporción que le toca. Sin esto, una gráfica con todas
  *     las barras iguales pasaría el test de la tabla tan tranquila.
  *
@@ -218,9 +218,11 @@ test.describe("Las gráficas del presupuesto", () => {
     const reparto = seccion(page, copy.panel.presupuesto.graficas.repartoTitulo);
 
     const anchoDe = async (categoria: string) => {
-      const grupo = reparto.locator("svg g").filter({ hasText: categoria });
-      const ancho = await grupo.locator("rect").first().getAttribute("width");
-      return Number(ancho);
+      const fila = reparto.locator("[data-fila]").filter({ hasText: categoria });
+      return fila
+        .locator("[data-barra]")
+        .first()
+        .evaluate((barra) => barra.getBoundingClientRect().width);
     };
 
     const anchoGrande = await anchoDe(sembrado.grande);
@@ -275,7 +277,7 @@ test.describe("Las gráficas del presupuesto", () => {
       const ambito = seccion(page, titulo);
       await expect(ambito, `falta la sección «${titulo}»`).toBeVisible();
 
-      const dibuja = await ambito.locator("svg").count();
+      const dibuja = await ambito.locator("[data-grafica]").count();
       const explica = await ambito.getByText(vacio).count();
 
       expect(
@@ -293,20 +295,20 @@ test.describe("Las gráficas del presupuesto", () => {
   });
 
   /**
-   * TODA GRÁFICA LLEVA SU TABLA, y el `<svg>` no cuenta para quien no lo ve.
+   * TODA GRÁFICA LLEVA SU TABLA, y el dibujo no cuenta para quien no lo ve.
    *
    * Es el criterio de accesibilidad del ticket, y se comprueba estructuralmente:
-   * cada `<svg>` de la pantalla está oculto a la accesibilidad, y hay al menos
+   * cada gráfica de la pantalla está oculta a la accesibilidad, y hay al menos
    * tantas tablas como gráficas.
    */
-  test("cada gráfica tiene su tabla y ningún svg se anuncia", async ({ page }) => {
+  test("cada gráfica tiene su tabla y ninguna se anuncia", async ({ page }) => {
     await sembrar(Date.now() + 2);
 
     await entrar(page);
     await page.goto(RUTA_GRAFICAS);
 
     /*
-      SE RECORREN LAS SECCIONES Y NO `main svg`. Buscar por `main` ata el test a
+      SE RECORREN LAS SECCIONES Y NO `main [data-grafica]`. Buscar por `main` ata el test a
       una etiqueta del layout que no tiene nada que ver con lo que se afirma; si
       un día el panel envuelve el contenido de otra forma, este test se cae
       diciendo «no hay gráficas» cuando las hay. Las secciones son de esta
@@ -335,13 +337,13 @@ test.describe("Las gráficas del presupuesto", () => {
       */
       await expect(ambito, `falta la sección «${titulo}»`).toBeVisible();
 
-      const svgs = ambito.locator("svg");
+      const svgs = ambito.locator("[data-grafica]");
       const cuantas = await svgs.count();
 
       for (let i = 0; i < cuantas; i += 1) {
         await expect(
           svgs.nth(i),
-          "un `<svg>` sin `aria-hidden` se le lee a alguien como un montón de nada",
+          "una gráfica sin `aria-hidden` se le lee a alguien como un montón de nada",
         ).toHaveAttribute("aria-hidden", "true");
       }
 
@@ -356,5 +358,78 @@ test.describe("Las gráficas del presupuesto", () => {
     }
 
     expect(dibujadas, "tiene que haber alguna gráfica que comprobar").toBeGreaterThan(0);
+  });
+
+  /*
+    AUDITORÍA DE DISEÑO · LAS GRÁFICAS SE LEEN EN EL MÓVIL Y DICEN LO MISMO QUE
+    EL PRESUPUESTO.
+
+    · Eran un lienzo SVG que se escalaba entero, rótulos incluidos: a 390 px los
+      nombres de las categorías salían a 4,5 px.
+    · La barra del mes se pintaba desde el principio del acumulado, no al final.
+    · «Previsto contra real» usaba sólo el importe real y restaba al revés que
+      la tabla del presupuesto: la misma categoría salía con signo distinto.
+    · Las gráficas de dos tonos no tenían leyenda.
+  */
+  test("en el móvil los rótulos se leen a su tamaño y hay leyenda", async ({ page }) => {
+    const sembrado = await sembrar(Date.now() + 3);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await entrar(page);
+    await page.goto(RUTA_GRAFICAS);
+
+    const reparto = seccion(page, copy.panel.presupuesto.graficas.repartoTitulo);
+    const rotulo = reparto.locator("[data-fila]").filter({ hasText: sembrado.grande }).first();
+    const tamano = await rotulo
+      .locator("span")
+      .first()
+      .evaluate((nodo) => parseFloat(getComputedStyle(nodo).fontSize));
+    expect(tamano).toBeGreaterThanOrEqual(12);
+
+    const comparativa = seccion(page, copy.panel.presupuesto.graficas.comparativaTitulo);
+    const leyenda = comparativa.getByRole("list", {
+      name: copy.panel.presupuesto.graficas.leyenda,
+    });
+    await expect(leyenda).toContainText(copy.panel.presupuesto.graficas.leyendaPrevisto);
+    await expect(leyenda).toContainText(copy.panel.presupuesto.graficas.leyendaReal);
+  });
+
+  test("la barra de cada mes va al final de lo que ya se llevaba gastado", async ({ page }) => {
+    await sembrar(Date.now() + 4);
+    await entrar(page);
+    await page.goto(RUTA_GRAFICAS);
+
+    const evolucion = seccion(page, copy.panel.presupuesto.graficas.evolucionTitulo);
+    const fila = evolucion.locator("[data-fila]").last();
+    const [antes, mes] = await Promise.all([
+      fila.locator('[data-barra="antes"]').boundingBox(),
+      fila.locator('[data-barra="mes"]').boundingBox(),
+    ]);
+    // El tramo del mes empieza donde acaba lo anterior: va detrás, no encima.
+    expect(Math.abs(mes!.x - (antes!.x + antes!.width))).toBeLessThanOrEqual(1);
+  });
+
+  test("la diferencia lleva el mismo signo y la misma palabra que el presupuesto", async ({
+    page,
+  }) => {
+    const sembrado = await sembrar(Date.now() + 5);
+    await entrar(page);
+    await page.goto(RUTA_GRAFICAS);
+
+    const comparativa = seccion(page, copy.panel.presupuesto.graficas.comparativaTitulo);
+    // Catering: 2500 previstos y 3000 de coste → se pasa, en negativo y «de más».
+    const pasada = comparativa.getByRole("row", { name: new RegExp(sembrado.grande) });
+    await expect(pasada).toContainText(copy.panel.presupuesto.pasado);
+    await expect(pasada.getByRole("cell").last()).toContainText("-");
+    await expect(
+      comparativa
+        .locator("[data-fila]")
+        .filter({ hasText: sembrado.grande })
+        .locator(".bg-serie-exceso"),
+    ).toHaveCount(1);
+
+    // Flores: 1500 previstos y 1000 de coste → le sobra, sin «de más».
+    const holgada = comparativa.getByRole("row", { name: new RegExp(sembrado.pequena) });
+    await expect(holgada).not.toContainText(copy.panel.presupuesto.pasado);
+    await expect(holgada.getByRole("cell").last()).not.toContainText("-");
   });
 });

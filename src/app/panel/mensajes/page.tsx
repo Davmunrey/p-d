@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -123,9 +123,7 @@ export default async function PaginaMensajes({ searchParams }: Parametros) {
                 type="search"
                 defaultValue={busqueda}
               />
-              <Boton type="submit" jerarquia="secundario">
-                {t("panel.mensajes.buscar")}
-              </Boton>
+              <BotonEnvio jerarquia="secundario">{t("panel.mensajes.buscar")}</BotonEnvio>
             </form>
 
             {visibles.length === 0 ? (
@@ -193,11 +191,11 @@ function Mensaje({ mensaje, puedeEditar }: { mensaje: MensajeInvitado; puedeEdit
           <form action={marcarLeido}>
             <input type="hidden" name="confirmacion_id" value={mensaje.id} />
             <input type="hidden" name="leido" value={mensaje.leido ? "1" : "0"} />
-            <Boton type="submit" jerarquia="terciario">
+            <BotonEnvio jerarquia="terciario">
               {mensaje.leido
                 ? t("panel.mensajes.marcarNoLeido")
                 : t("panel.mensajes.marcarLeido")}
-            </Boton>
+            </BotonEnvio>
           </form>
         ) : null}
 
@@ -233,9 +231,9 @@ function Cancion({ cancion, puedeEditar }: { cancion: CancionSugerida; puedeEdit
         <form action={moderarCancion}>
           <input type="hidden" name="cancion_id" value={cancion.id} />
           <input type="hidden" name="aprobar" value={cancion.aprobada ? "0" : "1"} />
-          <Boton type="submit" jerarquia="terciario">
+          <BotonEnvio jerarquia="terciario">
             {cancion.aprobada ? t("panel.mensajes.ocultar") : t("panel.mensajes.mostrar")}
-          </Boton>
+          </BotonEnvio>
         </form>
       ) : null}
     </li>

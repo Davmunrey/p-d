@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { NavegacionPanel } from "@/components/panel/navegacion-panel";
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { ID_CONTENIDO, RUTA_ACCESO } from "@/config/constants";
 import { accesoActual } from "@/lib/sesion";
 import { t } from "@/lib/copy";
@@ -60,9 +60,7 @@ export default async function LayoutPanel({ children }: { children: ReactNode })
           </p>
 
           <form action={cerrarSesion}>
-            <Boton type="submit" jerarquia="terciario">
-              {t("acceso.cerrarSesion")}
-            </Boton>
+            <BotonEnvio jerarquia="terciario">{t("acceso.cerrarSesion")}</BotonEnvio>
           </form>
         </header>
 

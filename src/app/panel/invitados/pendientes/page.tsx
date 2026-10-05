@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_ACCESO, RUTA_INVITADOS, ZONA_HORARIA } from "@/config/constants";
 import { obtenerConfiguracion } from "@/lib/bbdd/landing";
@@ -167,9 +167,9 @@ export default async function PaginaPendientes({ searchParams }: Parametros) {
                     className="w-full rounded-campo border border-borde bg-superficie p-interno text-pequeno text-tinta"
                   />
                   <div>
-                    <Boton type="submit" jerarquia="secundario">
+                    <BotonEnvio jerarquia="secundario">
                       {t("panel.pendientes.recordarBoton")}
-                    </Boton>
+                    </BotonEnvio>
                   </div>
                 </form>
               ) : null}

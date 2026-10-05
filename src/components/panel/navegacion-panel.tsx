@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 import { MODULOS_ENTREGADOS, moduloActivo, type ClaveModulo } from "@/config/modulos";
 import { t } from "@/lib/copy";
@@ -52,13 +53,28 @@ function etiquetaDe(clave: ClaveModulo): string {
 export function NavegacionPanel() {
   const ruta = usePathname();
   const activo = moduloActivo(ruta);
+  const tira = useRef<HTMLUListElement>(null);
+
+  /*
+    EL MÓDULO ACTUAL, A LA VISTA EN LA BARRA DEL MÓVIL. La tira se desplaza en
+    horizontal y, al abrir un módulo del final, su enlace quedaba fuera de la
+    pantalla: no se veía dónde estaba uno. Se centra moviendo sólo la tira
+    —`scrollLeft`, no `scrollIntoView`, que también movería la página—.
+  */
+  useEffect(() => {
+    const contenedor = tira.current;
+    const enlace = contenedor?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!contenedor || !enlace) return;
+    contenedor.scrollLeft =
+      enlace.offsetLeft - (contenedor.clientWidth - enlace.offsetWidth) / 2;
+  }, [activo]);
 
   return (
     <>
       {/* Lateral, en escritorio */}
       <nav
         aria-label={t("panel.navegacion")}
-        className="fixed inset-y-0 left-0 capa-lateral hidden w-lateral flex-col gap-elemento border-r border-borde bg-superficie px-interno py-elemento md:flex"
+        className="fixed inset-y-0 left-0 capa-lateral hidden w-lateral flex-col gap-elemento overflow-y-auto overscroll-contain border-r border-borde bg-superficie px-interno py-elemento md:flex"
       >
         <Link
           href="/"
@@ -87,13 +103,19 @@ export function NavegacionPanel() {
         className="fixed inset-x-0 bottom-0 capa-lateral border-t border-borde bg-superficie barra-inferior md:hidden"
       >
         {/*
-          Se desplaza en horizontal si un día no caben. Es lo único que aguanta
-          crecer de dos módulos a nueve sin volverse ilegible ni esconder la
-          mitad detrás de un botón más.
+          SE DESPLAZA DE VERDAD EN HORIZONTAL. Cada destino mide lo que mide su
+          rótulo. Antes se repartían el ancho a partes iguales —`flex-1
+          basis-0`— y con trece módulos en 390 px cada casilla tenía 28 px: los
+          rótulos, que no se parten, se montaban unos encima de otros y no se
+          leía ninguno. El degradado del final dice «hay más» sin escribirlo,
+          como en la barra de la portada.
         */}
-        <ul className="flex h-barra-movil items-stretch overflow-x-auto">
+        <ul
+          ref={tira}
+          className="desvanecer-final flex h-barra-movil items-stretch gap-linea overflow-x-auto px-interno-compacto"
+        >
           {MODULOS_ENTREGADOS.map((modulo) => (
-            <li key={modulo.clave} className="flex min-w-0 flex-1 basis-0">
+            <li key={modulo.clave} className="flex shrink-0">
               <Enlace
                 ruta={modulo.ruta}
                 etiqueta={etiquetaDe(modulo.clave)}

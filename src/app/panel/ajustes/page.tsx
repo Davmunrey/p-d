@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
@@ -362,7 +362,7 @@ export default async function PaginaAjustes({
 
         {soloLectura ? null : (
           <div>
-            <Boton type="submit">{t("panel.ajustes.guardar")}</Boton>
+            <BotonEnvio>{t("panel.ajustes.guardar")}</BotonEnvio>
           </div>
         )}
       </form>
@@ -437,7 +437,7 @@ function Regalos({
 
         {soloPropietario ? null : (
           <div>
-            <Boton type="submit">{t("panel.ajustes.guardarRegalos")}</Boton>
+            <BotonEnvio>{t("panel.ajustes.guardarRegalos")}</BotonEnvio>
           </div>
         )}
       </Grupo>

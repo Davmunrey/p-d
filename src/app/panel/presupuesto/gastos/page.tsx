@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
@@ -328,9 +328,9 @@ function Fila({
             </Link>
             <form action={borrarGasto}>
               <input type="hidden" name="id" value={gasto.id} />
-              <Boton type="submit" jerarquia="terciario">
+              <BotonEnvio jerarquia="terciario">
                 {t("panel.presupuesto.gastos.borrar")}
-              </Boton>
+              </BotonEnvio>
             </form>
           </div>
         ) : null}
@@ -425,9 +425,9 @@ function Edicion({
         />
 
         <div className="flex flex-wrap items-baseline gap-interno sm:col-span-2">
-          <Boton type="submit" jerarquia="secundario">
+          <BotonEnvio jerarquia="secundario">
             {t("panel.presupuesto.gastos.guardar")}
-          </Boton>
+          </BotonEnvio>
           {/*
             SALIR SIN GUARDAR TIENE QUE ESTAR. Sin esta salida, quien abre la
             edición por curiosidad sólo puede cerrarla guardando o retrocediendo
@@ -445,9 +445,7 @@ function Edicion({
 
       <form action={borrarGasto} className="mt-interno-compacto">
         <input type="hidden" name="id" value={gasto.id} />
-        <Boton type="submit" jerarquia="terciario">
-          {t("panel.presupuesto.gastos.borrar")}
-        </Boton>
+        <BotonEnvio jerarquia="terciario">{t("panel.presupuesto.gastos.borrar")}</BotonEnvio>
       </form>
     </>
   );
@@ -520,7 +518,7 @@ function Alta({
         />
 
         <div className="sm:col-span-2">
-          <Boton type="submit">{t("panel.presupuesto.gastos.crear")}</Boton>
+          <BotonEnvio>{t("panel.presupuesto.gastos.crear")}</BotonEnvio>
         </div>
       </form>
     </section>

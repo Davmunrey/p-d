@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import type { ReactNode } from "react";
 
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -230,9 +230,7 @@ export default async function PaginaMesas({ searchParams }: Parametros) {
             reparto puede llevárselo a la finca.
           */}
           <form method="get" action={RUTA_MESAS_EXPORTAR} className="print:hidden">
-            <Boton type="submit" jerarquia="terciario">
-              {t("panel.mesas.exportar")}
-            </Boton>
+            <BotonEnvio jerarquia="terciario">{t("panel.mesas.exportar")}</BotonEnvio>
           </form>
         </div>
 
@@ -347,9 +345,7 @@ function SinSentar({
                     mesas={mesas}
                     sentadosPorMesa={sentadosPorMesa}
                   />
-                  <Boton type="submit" jerarquia="secundario">
-                    {t("panel.mesas.sentarGrupo")}
-                  </Boton>
+                  <BotonEnvio jerarquia="secundario">{t("panel.mesas.sentarGrupo")}</BotonEnvio>
                 </form>
               ) : null}
 
@@ -381,9 +377,7 @@ function SinSentar({
                           mesas={mesas}
                           sentadosPorMesa={sentadosPorMesa}
                         />
-                        <Boton type="submit" jerarquia="terciario">
-                          {t("panel.mesas.sentar")}
-                        </Boton>
+                        <BotonEnvio jerarquia="terciario">{t("panel.mesas.sentar")}</BotonEnvio>
                       </form>
                     ) : null}
                   </li>
@@ -687,9 +681,7 @@ function BloqueMesa({
                   />
                   {/* «Sentar» sería raro sobre alguien que ya está sentado: lo
                       que se hace aquí es cambiarle de sitio o levantarle. */}
-                  <Boton type="submit" jerarquia="terciario">
-                    {t("panel.mesas.mover")}
-                  </Boton>
+                  <BotonEnvio jerarquia="terciario">{t("panel.mesas.mover")}</BotonEnvio>
                 </form>
               ) : null}
             </li>
@@ -842,9 +834,7 @@ function FormularioMesa({
         </div>
 
         <div className="sm:col-span-2">
-          <Boton type="submit" jerarquia="secundario">
-            {t("panel.mesas.guardar")}
-          </Boton>
+          <BotonEnvio jerarquia="secundario">{t("panel.mesas.guardar")}</BotonEnvio>
         </div>
       </form>
 
@@ -854,9 +844,7 @@ function FormularioMesa({
         ) : (
           <form action={colocarMesa}>
             <input type="hidden" name="id" value={mesa.id} />
-            <Boton type="submit" jerarquia="secundario">
-              {t("panel.mesas.colocar")}
-            </Boton>
+            <BotonEnvio jerarquia="secundario">{t("panel.mesas.colocar")}</BotonEnvio>
           </form>
         )}
 
@@ -868,9 +856,9 @@ function FormularioMesa({
         <form action={borrarMesa}>
           <input type="hidden" name="id" value={mesa.id} />
           {confirmandoBorrado ? <input type="hidden" name="confirmar" value="si" /> : null}
-          <Boton type="submit" jerarquia="terciario">
+          <BotonEnvio jerarquia="terciario">
             {confirmandoBorrado ? t("panel.mesas.confirmarBorrado") : t("panel.mesas.borrar")}
-          </Boton>
+          </BotonEnvio>
         </form>
       </div>
     </div>
@@ -915,9 +903,9 @@ function Empujar({ mesa }: { mesa: Mesa }) {
               en una pantalla con doce mesas hay cuarenta y ocho flechas, y
               «Arriba» a secas no dice de cuál.
             */}
-            <Boton type="submit" jerarquia="secundario" aria-label={flecha.nombre}>
+            <BotonEnvio jerarquia="secundario" aria-label={flecha.nombre}>
               {flecha.glifo}
-            </Boton>
+            </BotonEnvio>
           </form>
         ))}
       </div>
@@ -977,7 +965,7 @@ function FormularioNuevaMesa() {
         </div>
 
         <div className="sm:col-span-2">
-          <Boton type="submit">{t("panel.mesas.crear")}</Boton>
+          <BotonEnvio>{t("panel.mesas.crear")}</BotonEnvio>
         </div>
       </form>
     </section>

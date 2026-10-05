@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
@@ -353,11 +353,11 @@ function Fila({
                 limpia al deshacer.
               */}
               {pago.pagadoEn ? <input type="hidden" name="deshacer" value="si" /> : null}
-              <Boton type="submit" jerarquia={pago.pagadoEn ? "terciario" : "secundario"}>
+              <BotonEnvio jerarquia={pago.pagadoEn ? "terciario" : "secundario"}>
                 {pago.pagadoEn
                   ? t("panel.presupuesto.pagos.deshacerPago")
                   : t("panel.presupuesto.pagos.marcarPagado")}
-              </Boton>
+              </BotonEnvio>
             </form>
 
             <Enlace href={`${RUTA_PAGOS}?editar=${pago.id}#pago-${pago.id}`}>
@@ -366,9 +366,9 @@ function Fila({
 
             <form action={borrarPago}>
               <input type="hidden" name="id" value={pago.id} />
-              <Boton type="submit" jerarquia="terciario">
+              <BotonEnvio jerarquia="terciario">
                 {t("panel.presupuesto.pagos.borrar")}
-              </Boton>
+              </BotonEnvio>
             </form>
           </div>
         ) : null}
@@ -487,9 +487,7 @@ function Edicion({ pago, gastos }: { pago: Pago; gastos: GastoParaPagar[] }) {
         />
 
         <div className="flex flex-wrap items-baseline gap-interno sm:col-span-2">
-          <Boton type="submit" jerarquia="secundario">
-            {t("panel.presupuesto.pagos.guardar")}
-          </Boton>
+          <BotonEnvio jerarquia="secundario">{t("panel.presupuesto.pagos.guardar")}</BotonEnvio>
           {/*
             Salir sin guardar tiene que estar: sin ella, quien abre la edición por
             curiosidad sólo puede cerrarla guardando lo que hubiera tocado sin
@@ -558,7 +556,7 @@ function Alta({ gastos }: { gastos: GastoParaPagar[] }) {
         />
 
         <div className="sm:col-span-2">
-          <Boton type="submit">{t("panel.presupuesto.pagos.crear")}</Boton>
+          <BotonEnvio>{t("panel.presupuesto.pagos.crear")}</BotonEnvio>
         </div>
       </form>
     </section>

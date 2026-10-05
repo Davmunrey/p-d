@@ -103,6 +103,9 @@
   --color-accion: var(--accion);
   --color-accion-hover: var(--accion-hover);
   --color-accion-activa: var(--accion-activa);
+  --color-serie-previsto: var(--serie-previsto);
+  --color-serie-real: var(--serie-real);
+  --color-serie-exceso: var(--serie-exceso);
   --color-acento: var(--acento);
   --color-acento-hover: var(--acento-hover);
 
@@ -327,6 +330,8 @@
   --spacing-campo: var(--alto-campo);
   --spacing-cifra: var(--ancho-cifra);
   --spacing-casilla: var(--lado-casilla);
+  --spacing-barra-grafica: var(--alto-barra-grafica);
+  --spacing-barra-grafica-par: var(--alto-barra-grafica-par);
 
   /* Un solo token da `size-miniatura`: el hueco es cuadrado por definición. */
   --spacing-miniatura: var(--lado-miniatura);
@@ -475,6 +480,16 @@
  * columna por cada ancho mínimo que quepa. Tres en escritorio, una en móvil,
  * y entre medias lo que dé el ancho — sin `breakpoint` escrito.
  */
+
+/*
+  Una fila de gráfica: el rótulo a la izquierda, con un ancho que crece con la
+  pantalla pero no se come las barras, y la barra en lo que queda.
+*/
+@utility rejilla-grafica {
+  display: grid;
+  grid-template-columns: minmax(0, var(--ancho-rotulo-grafica)) minmax(0, 1fr);
+}
+
 @utility rejilla-tarjetas {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-tarjeta-minima)), 1fr));

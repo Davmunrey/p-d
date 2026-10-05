@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 
-import { Boton, BotonEnlace } from "@/components/ui/boton";
+import { BotonEnlace } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { Cuerpo, Etiqueta, Titulo3 } from "@/components/ui/tipografia";
 import { RUTA_INVITADOS } from "@/config/constants";
 import { t } from "@/lib/copy";
@@ -73,9 +74,7 @@ export function FormularioImportacion() {
           <p className="text-pequeno text-tinta-suave">{t("panel.importar.ficheroAyuda")}</p>
         </div>
         <div>
-          <Boton type="submit" disabled={analizando}>
-            {t("panel.importar.analizar")}
-          </Boton>
+          <BotonEnvio disabled={analizando}>{t("panel.importar.analizar")}</BotonEnvio>
         </div>
       </form>
 
@@ -188,9 +187,7 @@ export function FormularioImportacion() {
             <form action={enviar} className="mt-elemento flex flex-wrap gap-interno">
               <input type="hidden" name="contenido" value={estado.contenido} />
               <input type="hidden" name="serie" value={estado.serie} />
-              <Boton type="submit" disabled={enviando}>
-                {t("panel.importar.confirmar")}
-              </Boton>
+              <BotonEnvio disabled={enviando}>{t("panel.importar.confirmar")}</BotonEnvio>
               <BotonEnlace href={RUTA_INVITADOS} jerarquia="terciario">
                 {t("panel.importar.cancelar")}
               </BotonEnlace>

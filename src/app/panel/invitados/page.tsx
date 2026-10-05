@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
@@ -113,9 +113,7 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
           <option value="sin-contestar">{t("panel.invitados.sinContestar")}</option>
           <option value="contestado">{t("panel.invitados.contestado")}</option>
         </CampoSeleccion>
-        <Boton type="submit" jerarquia="secundario">
-          {t("panel.invitados.buscar")}
-        </Boton>
+        <BotonEnvio jerarquia="secundario">{t("panel.invitados.buscar")}</BotonEnvio>
       </form>
 
       {grupos.length === 0 ? (
@@ -200,9 +198,9 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
               </div>
             </fieldset>
 
-            <Boton type="submit" jerarquia="secundario" className="mt-elemento">
+            <BotonEnvio jerarquia="secundario" className="mt-elemento">
               {t("panel.invitados.exportar")}
-            </Boton>
+            </BotonEnvio>
           </form>
         </section>
       ) : null}
@@ -238,7 +236,7 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
               defaultValue={0}
             />
             <div>
-              <Boton type="submit">{t("panel.invitados.crear")}</Boton>
+              <BotonEnvio>{t("panel.invitados.crear")}</BotonEnvio>
             </div>
           </form>
 

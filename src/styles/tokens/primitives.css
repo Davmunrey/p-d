@@ -424,6 +424,11 @@
    */
   --size-casilla: 1.25rem;
 
+  /* Las gráficas del presupuesto: barras en HTML, con su alto propio. */
+  --size-barra-grafica: 1.5rem;
+  --size-barra-grafica-par: 0.75rem;
+  --size-rotulo-grafica: clamp(6rem, 32%, 14rem);
+
   /**
    * Lado de la miniatura del gestor de medios. Cuadrada a propósito: las fotos
    * de la landing son unas verticales y otras apaisadas, y una rejilla de

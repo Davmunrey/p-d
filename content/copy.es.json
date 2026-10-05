@@ -1125,7 +1125,7 @@
         "evolucionEntradilla": "Sólo lo pagado de verdad, mes a mes y acumulado. Los meses sin ningún pago no aparecen.",
         "evolucionVacio": "Todavía no se ha pagado nada, así que no hay evolución que dibujar.",
         "comparativaTitulo": "Previsto contra real",
-        "comparativaEntradilla": "Lo que se apuntó al principio frente a lo que está costando. En rojo, lo que se ha pasado.",
+        "comparativaEntradilla": "Lo que se apuntó al principio frente a lo que va costando, con la misma cuenta que la tabla del presupuesto. En rojo, lo que se pasa.",
         "comparativaVacio": "Todavía no hay ninguna categoría con importe previsto.",
         "columnaCategoria": "Categoría",
         "columnaImporte": "Gastado",
@@ -1134,10 +1134,16 @@
         "columnaPagado": "Pagado ese mes",
         "columnaAcumulado": "Acumulado",
         "columnaPrevisto": "Previsto",
-        "columnaReal": "Real",
+        "columnaReal": "Va costando",
         "columnaDesviacion": "Diferencia",
         "laTabla": "La misma información, en una tabla",
-        "porcentaje": "{numero} %"
+        "porcentaje": "{numero} %",
+        "leyenda": "Leyenda",
+        "leyendaAcumulado": "Acumulado",
+        "leyendaMes": "Pagado ese mes",
+        "leyendaPrevisto": "Previsto",
+        "leyendaReal": "Va costando",
+        "leyendaExceso": "Por encima de lo previsto"
       }
     },
     "medios": {

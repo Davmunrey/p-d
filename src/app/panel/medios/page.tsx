@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -268,18 +268,18 @@ function Ficha({
                 maxLength={LARGOS_DE_CAMPO["medios.texto_alternativo"]}
                 required
               />
-              <Boton type="submit" jerarquia="secundario">
+              <BotonEnvio jerarquia="secundario">
                 {t("panel.medios.guardarAlternativo")}
-              </Boton>
+              </BotonEnvio>
             </form>
 
             <div className="flex flex-wrap items-center gap-interno-compacto">
               <form action={alternarPublicado}>
                 <input type="hidden" name="medio_id" value={medio.id} />
                 <input type="hidden" name="publicar" value={medio.publicado ? "0" : "1"} />
-                <Boton type="submit" jerarquia={medio.publicado ? "terciario" : "primario"}>
+                <BotonEnvio jerarquia={medio.publicado ? "terciario" : "primario"}>
                   {medio.publicado ? t("panel.medios.despublicar") : t("panel.medios.publicar")}
-                </Boton>
+                </BotonEnvio>
               </form>
 
               {/*
@@ -291,9 +291,7 @@ function Ficha({
                 <form action={moverMedio}>
                   <input type="hidden" name="medio_id" value={medio.id} />
                   <input type="hidden" name="hacia" value="arriba" />
-                  <Boton type="submit" jerarquia="terciario">
-                    {t("panel.medios.subirOrden")}
-                  </Boton>
+                  <BotonEnvio jerarquia="terciario">{t("panel.medios.subirOrden")}</BotonEnvio>
                 </form>
               ) : null}
 
@@ -301,17 +299,13 @@ function Ficha({
                 <form action={moverMedio}>
                   <input type="hidden" name="medio_id" value={medio.id} />
                   <input type="hidden" name="hacia" value="abajo" />
-                  <Boton type="submit" jerarquia="terciario">
-                    {t("panel.medios.bajarOrden")}
-                  </Boton>
+                  <BotonEnvio jerarquia="terciario">{t("panel.medios.bajarOrden")}</BotonEnvio>
                 </form>
               ) : null}
 
               <form action={borrarMedio}>
                 <input type="hidden" name="medio_id" value={medio.id} />
-                <Boton type="submit" jerarquia="terciario">
-                  {t("panel.medios.borrar")}
-                </Boton>
+                <BotonEnvio jerarquia="terciario">{t("panel.medios.borrar")}</BotonEnvio>
               </form>
             </div>
           </>
@@ -378,7 +372,7 @@ function FormularioSubida({ seccion }: { seccion: Seccion }) {
         />
 
         <div>
-          <Boton type="submit">{t("panel.medios.subir")}</Boton>
+          <BotonEnvio>{t("panel.medios.subir")}</BotonEnvio>
         </div>
       </form>
     </details>
