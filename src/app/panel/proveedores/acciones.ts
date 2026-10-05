@@ -119,6 +119,11 @@ async function cliente() {
  */
 function motivo(error: { code?: string; message?: string }): EstadoProveedores {
   if (error.code === "42501" || error.message?.includes("RSV06")) return "sin-permiso";
+  // Una categoría con el nombre de otra, aunque cambien mayúsculas o espacios:
+  // el índice único va sobre `lower(btrim(nombre))`.
+  if (error.code === "23505" && error.message?.includes("categorias_proveedor_nombre")) {
+    return "nombre-repetido";
+  }
   /*
     UN 23503 NO SIGNIFICA LO MISMO EN LAS DOS DIRECCIONES. Al BORRAR, la clave
     ajena que salta es la de quien cuelga de esta fila: «tiene cosas colgando».

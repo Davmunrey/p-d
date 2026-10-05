@@ -20,6 +20,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   "categoria-creada": { clave: "panel.proveedores.avisoCategoriaCreada", error: false },
   "categoria-borrada": { clave: "panel.proveedores.avisoCategoriaBorrada", error: false },
   nombre: { clave: "panel.proveedores.errorNombre", error: true },
+  "nombre-repetido": { clave: "panel.proveedores.errorNombreRepetido", error: true },
   categoria: { clave: "panel.proveedores.errorCategoria", error: true },
   importe: { clave: "panel.proveedores.errorImporte", error: true },
   valoracion: { clave: "panel.proveedores.errorValoracion", error: true },

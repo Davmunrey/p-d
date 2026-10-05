@@ -11,6 +11,7 @@ export type EstadoPresupuesto =
   | "categoria-borrada"
   | "gastos-movidos"
   | "nombre"
+  | "nombre-repetido"
   | "importe"
   | "orden"
   | "decidir-gastos"

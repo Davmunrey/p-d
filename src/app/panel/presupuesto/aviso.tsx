@@ -17,6 +17,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   "gastos-movidos": { clave: "panel.presupuesto.avisoGastosMovidos", error: false },
   "decidir-gastos": { clave: "panel.presupuesto.avisoDecidirGastos", error: true },
   nombre: { clave: "panel.presupuesto.errorNombre", error: true },
+  "nombre-repetido": { clave: "panel.presupuesto.errorNombreRepetido", error: true },
   importe: { clave: "panel.presupuesto.errorImporte", error: true },
   orden: { clave: "panel.presupuesto.errorOrden", error: true },
   destino: { clave: "panel.presupuesto.errorDestino", error: true },

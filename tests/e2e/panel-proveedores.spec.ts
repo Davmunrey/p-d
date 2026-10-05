@@ -405,6 +405,18 @@ test.describe("El módulo de proveedores", () => {
     await expect(
       suya.getByRole("button", { name: copy.panel.proveedores.borrarCategoria }),
     ).toHaveCount(0);
+
+    // CASO DE ERROR · otra con el mismo nombre, en mayúsculas y con espacios,
+    // es la misma: se dice así y no como «no se ha podido guardar».
+    await page.goto(RUTA_PROVEEDORES);
+    await seccion(page, copy.panel.proveedores.nuevaCategoriaTitulo)
+      .getByLabel(copy.panel.proveedores.campoNombreCategoria, { exact: true })
+      .fill(` ${nombreCategoria.toUpperCase()}  `);
+    await seccion(page, copy.panel.proveedores.nuevaCategoriaTitulo)
+      .getByRole("button", { name: copy.panel.proveedores.crearCategoria })
+      .click();
+    await esperarEstado(page, "nombre-repetido");
+    await expect(page.getByText(copy.panel.proveedores.errorNombreRepetido)).toBeVisible();
   });
 });
 

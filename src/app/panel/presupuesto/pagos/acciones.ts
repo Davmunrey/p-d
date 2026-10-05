@@ -327,7 +327,7 @@ export async function marcarPagado(datos: FormData): Promise<void> {
   const hoy = dias?.hoy ?? diaDelCalendario(new Date(), ZONA_HORARIA);
 
   const supabase = await cliente();
-  const { data, error } = await supabase
+  let consulta = supabase
     .from("pagos")
     .update({
       pagado_en: hecho ? hoy : null,
@@ -335,11 +335,27 @@ export async function marcarPagado(datos: FormData): Promise<void> {
       // `pagos_justificante_solo_si_pagado`—, así que al deshacer se va con él.
       ...(hecho ? {} : { justificante_ruta: null }),
     })
-    .eq("id", id)
-    .select("id");
+    .eq("id", id);
+  /*
+    MARCAR SÓLO LO QUE ESTÁ SIN PAGAR. Desde una pantalla vieja —otra pestaña,
+    el móvil del otro—, «Marcar pagado» sobre un pago que ya lo estaba le
+    reescribía la fecha con la de hoy, y la de verdad no se podía recuperar.
+  */
+  if (hecho) consulta = consulta.is("pagado_en", null);
+  const { data, error } = await consulta.select("id");
 
   if (error) rechazar(motivo(error));
-  if (!data?.length) rechazar("sin-permiso");
+  if (!data?.length) {
+    // Cero filas: o ya estaba pagado —y entonces lo pedido ya es verdad—, o
+    // no existe, o RLS no deja. Se distingue leyendo, sin escribir nada.
+    const { data: actual } = await supabase
+      .from("pagos")
+      .select("pagado_en")
+      .eq("id", id)
+      .maybeSingle();
+    if (hecho && actual?.pagado_en) volver("marcado-pagado");
+    rechazar(actual ? "sin-permiso" : "no-existe");
+  }
 
   volver(hecho ? "marcado-pagado" : "marcado-pendiente");
 }

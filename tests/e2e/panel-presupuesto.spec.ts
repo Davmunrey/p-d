@@ -204,6 +204,43 @@ test.describe("Las categorías del presupuesto", () => {
   });
 
   /**
+   * CASO DE ERROR · Un nombre que ya existe se dice como tal.
+   *
+   * El índice único va sobre `lower(btrim(nombre))`, así que «Flores» y
+   * « FLORES » son la misma categoría. Antes volvía como «No se ha podido
+   * guardar. Probad otra vez», que no iba a funcionar nunca.
+   */
+  test("una categoría con el nombre de otra se explica y no se crea", async ({ page }) => {
+    const nombre = `${MARCA} Repetida ${Date.now()}`;
+    await conBase(
+      (sql) => sql`
+        insert into public.categorias_presupuesto (nombre, importe_previsto, orden)
+        values (${nombre}, 100, 90)
+      `,
+    );
+
+    await entrar(page);
+    await page.goto(RUTA_PRESUPUESTO);
+
+    const alta = seccion(page, copy.panel.presupuesto.nuevaTitulo);
+    await alta
+      .getByLabel(copy.panel.presupuesto.campoNombre, { exact: true })
+      .fill(`  ${nombre.toUpperCase()} `);
+    await alta.getByLabel(copy.panel.presupuesto.campoPrevisto, { exact: true }).fill("200");
+    await alta.getByRole("button", { name: copy.panel.presupuesto.crear }).click();
+    await esperarEstado(page, "nombre-repetido");
+
+    await expect(page.getByText(copy.panel.presupuesto.errorNombreRepetido)).toBeVisible();
+    const [{ cuantas }] = await conBase(
+      (sql) => sql<{ cuantas: number }[]>`
+        select count(*)::int as cuantas from public.categorias_presupuesto
+         where lower(btrim(nombre)) = lower(${nombre})
+      `,
+    );
+    expect(cuantas, "sigue habiendo una sola").toBe(1);
+  });
+
+  /**
    * CASO DE ERROR · Borrar una categoría con gastos pregunta a dónde van.
    */
   test("una categoría con gastos no se borra sin decidir qué pasa con ellos", async ({

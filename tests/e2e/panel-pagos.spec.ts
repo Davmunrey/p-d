@@ -372,6 +372,50 @@ test.describe("Los pagos y sus vencimientos", () => {
   });
 
   /**
+   * «MARCAR PAGADO» DESDE UNA PANTALLA VIEJA NO REESCRIBE LA FECHA.
+   *
+   * Con el pago ya marcado en otra pestaña (o en el móvil del otro), pulsar el
+   * botón que seguía en esta le ponía la fecha de hoy encima de la de verdad,
+   * y ésa no se podía recuperar.
+   */
+  test("marcar pagado lo que ya estaba pagado no cambia su fecha", async ({ page }) => {
+    const montaje = await montar("Viejo");
+    const pago = await apuntar(montaje.gastoId, 200, 5);
+    const borrado = await apuntar(montaje.gastoId, 100, 6);
+
+    await entrar(page);
+    await page.goto(RUTA_PAGOS);
+    await expect(
+      filaDe(page, pago).getByRole("button", { name: pagos.marcarPagado }),
+    ).toBeVisible();
+
+    // Mientras, alguien lo marca en otro sitio, con su fecha.
+    await conBase(
+      (sql) => sql`update public.pagos set pagado_en = '2027-01-15' where id = ${pago}`,
+    );
+
+    await filaDe(page, pago).getByRole("button", { name: pagos.marcarPagado }).click();
+    await esperarEstado(page, "marcado-pagado");
+
+    const [sigue] = await conBase(
+      (sql) => sql<{ fecha: string }[]>`
+        select pagado_en::text as fecha from public.pagos where id = ${pago}
+      `,
+    );
+    expect(sigue.fecha, "la fecha en que se pagó de verdad no se toca").toBe("2027-01-15");
+
+    // CASO DE ERROR · el otro lo borró: se dice, en vez de «sin permiso».
+    await page.goto(RUTA_PAGOS);
+    await expect(
+      filaDe(page, borrado).getByRole("button", { name: pagos.marcarPagado }),
+    ).toBeVisible();
+    await conBase((sql) => sql`delete from public.pagos where id = ${borrado}`);
+    await filaDe(page, borrado).getByRole("button", { name: pagos.marcarPagado }).click();
+    await esperarEstado(page, "no-existe");
+    await expect(page.getByText(pagos.errorNoExiste)).toBeVisible();
+  });
+
+  /**
    * LO VENCIDO SE DISTINGUE SIN EL COLOR.
    *
    * Es un criterio de aceptación del ticket y no un adorno: el recuadro rojo no

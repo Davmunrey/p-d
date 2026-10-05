@@ -71,6 +71,11 @@ async function cliente() {
 
 function motivo(error: { code?: string; message?: string }): EstadoPresupuesto {
   if (error.code === "42501" || error.message?.includes("RSV06")) return "sin-permiso";
+  // El índice único va sobre `lower(btrim(nombre))`: «Banquete» y « banquete »
+  // son la misma categoría. Antes acababa en «No se ha podido guardar».
+  if (error.code === "23505" && error.message?.includes("categorias_presupuesto_nombre")) {
+    return "nombre-repetido";
+  }
   console.error("Fallo escribiendo en el presupuesto:", error);
   return "error";
 }
