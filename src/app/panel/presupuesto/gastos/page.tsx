@@ -411,7 +411,7 @@ function Edicion({
           ))}
         </CampoSeleccion>
 
-        <label className="flex items-center gap-interno-compacto text-pequeno text-tinta">
+        <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno text-pequeno text-tinta transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
           <input
             type="checkbox"
             name="pagada"

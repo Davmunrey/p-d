@@ -366,7 +366,7 @@ function Contactos({
             type="tel"
           />
 
-          <label className="flex items-center gap-interno-compacto text-pequeno text-tinta sm:col-span-2">
+          <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno text-pequeno text-tinta transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue sm:col-span-2">
             <input
               type="checkbox"
               name="es_del_dia"
@@ -879,7 +879,7 @@ function CamposServicio({ servicio }: { servicio?: ServicioProveedor }) {
         }
       />
 
-      <label className="flex items-center gap-interno-compacto text-pequeno text-tinta sm:col-span-2">
+      <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno text-pequeno text-tinta transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue sm:col-span-2">
         <input
           type="checkbox"
           name="por_invitado"
@@ -1071,7 +1071,9 @@ function Documentos({
               accept={TIPOS_ACEPTADOS}
               required
               aria-describedby="documento-fichero-ayuda"
-              className="text-pequeno text-tinta"
+              // Como el de Fotos y vídeos: alto de control y el botón del
+              // sistema vestido de botón secundario, que se toca con el pulgar.
+              className="min-h-control w-full rounded-campo border border-borde bg-superficie px-interno py-interno-compacto text-pequeno text-tinta file:mr-interno file:min-h-control-compacto file:rounded-boton file:border file:border-borde-fuerte file:bg-superficie file:px-interno file:text-etiqueta file:uppercase file:tracking-boton file:text-tinta-marca"
             />
             <span id="documento-fichero-ayuda" className="text-pequeno text-tinta-suave">
               {t("panel.proveedores.campoFicheroAyuda", { megas: PESO_MAXIMO_DOCUMENTO_MB })}
