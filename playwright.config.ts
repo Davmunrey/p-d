@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+import { exigirBaseLocal } from "./tests/e2e/utiles/base-local";
+
 /**
  * Regla 4 del proyecto: cada ticket entrega su test E2E. Esta configuración es
  * la que hace que eso sea ejecutable.
@@ -7,6 +9,9 @@ import { defineConfig, devices } from "@playwright/test";
  * Se prueba en Chromium de escritorio y en Safari móvil: la mayoría de
  * invitados abrirá el enlace desde WhatsApp en el móvil.
  */
+
+// Antes que nada: ni un test contra una base que no sea de esta máquina.
+exigirBaseLocal(process.env.DATABASE_URL);
 
 const PUERTO = process.env.PORT ?? "3000";
 const URL_BASE = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PUERTO}`;
