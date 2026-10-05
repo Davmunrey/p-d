@@ -35,7 +35,8 @@ let memoria: ColaDeMarcas | null = null;
 
 const oyentes = new Set<() => void>();
 
-function leerDelAlmacen(): ColaDeMarcas {
+/** Lo que hay en el almacén, o `null` si no se puede leer. */
+function leerDelAlmacen(): ColaDeMarcas | null {
   try {
     const guardado = window.localStorage.getItem(CLAVE_ALMACEN_DIA);
     const leido: unknown = guardado ? JSON.parse(guardado) : null;
@@ -44,11 +45,12 @@ function leerDelAlmacen(): ColaDeMarcas {
     /*
       UN ALMACÉN ILEGIBLE NO PUEDE TUMBAR LA PANTALLA. `localStorage` lanza en
       la navegación privada de Safari, y el JSON puede estar a medias si el
-      móvil se apagó escribiendo. En los dos casos se empieza de cero: es peor
-      que recuperar la cola, e infinitamente mejor que un guion en blanco el día
-      de la boda.
+      móvil se apagó escribiendo. Quien llama decide: para pintar se empieza de
+      cero, y para escribir se sigue con lo que esta pestaña tiene en memoria.
+      Es peor que recuperar la cola, e infinitamente mejor que un guion en
+      blanco el día de la boda.
     */
-    return VACIA;
+    return null;
   }
 }
 
@@ -62,8 +64,27 @@ function escribirEnElAlmacen(cola: ColaDeMarcas): void {
 }
 
 export function instantanea(): ColaDeMarcas {
-  memoria ??= leerDelAlmacen();
+  memoria ??= leerDelAlmacen() ?? VACIA;
   return memoria;
+}
+
+/**
+ * LO ÚLTIMO QUE HAY, LO HAYA ESCRITO ESTA PESTAÑA U OTRA.
+ *
+ * Para ESCRIBIR se parte siempre del almacén y no de la memoria. La memoria es
+ * la foto que tenía esta pestaña, y si otra apuntó algo después —el panel
+ * abierto dos veces en el mismo móvil pasa en cuanto se abre un enlace—,
+ * escribir desde la foto vieja borraba del almacén la marca de la otra. Esa
+ * marca no había llegado al servidor, y ya no llegaba nunca.
+ */
+function vigente(): ColaDeMarcas {
+  return leerDelAlmacen() ?? instantanea();
+}
+
+/** Cambia la memoria sólo si cambia de verdad: la identidad es lo que mira React. */
+function recordar(cola: ColaDeMarcas): void {
+  if (memoria !== null && JSON.stringify(memoria) === JSON.stringify(cola)) return;
+  memoria = cola;
 }
 
 export function instantaneaDelServidor(): ColaDeMarcas {
@@ -73,14 +94,24 @@ export function instantaneaDelServidor(): ColaDeMarcas {
 export function suscribirse(alCambiar: () => void): () => void {
   oyentes.add(alCambiar);
   /*
-    OTRA PESTAÑA TAMBIÉN CUENTA. `storage` salta cuando el mismo panel está
-    abierto en dos sitios —el móvil de cada uno, que es el caso normal ese día—
-    y así lo que marca uno aparece en la pantalla del otro sin recargar.
+    OTRA PESTAÑA TAMBIÉN CUENTA. `storage` salta en las demás pestañas del
+    mismo navegador cuando una escribe, y así lo que marca una aparece en la
+    otra sin recargar.
+
+    Y HAY QUE VOLVER A LEER antes de avisar. Avisar a secas no hacía nada:
+    React pedía otra vez la instantánea, recibía la misma memoria de siempre y
+    no repintaba. La sincronización que prometía este comentario no ocurría.
   */
-  window.addEventListener("storage", alCambiar);
+  const desdeOtraPestana = (evento: StorageEvent) => {
+    // `key` es `null` cuando se vacía el almacén entero.
+    if (evento.key !== null && evento.key !== CLAVE_ALMACEN_DIA) return;
+    recordar(leerDelAlmacen() ?? instantanea());
+    alCambiar();
+  };
+  window.addEventListener("storage", desdeOtraPestana);
   return () => {
     oyentes.delete(alCambiar);
-    window.removeEventListener("storage", alCambiar);
+    window.removeEventListener("storage", desdeOtraPestana);
   };
 }
 
@@ -92,7 +123,7 @@ function fijar(cola: ColaDeMarcas): void {
 
 /** Apunta una marca como pendiente de mandar. */
 export function apuntar(id: string, marca: string | null): void {
-  fijar({ ...instantanea(), [id]: marca });
+  fijar({ ...vigente(), [id]: marca });
 }
 
 /**
@@ -111,7 +142,7 @@ export function soltar(mandadas: readonly (readonly [string, string | null])[]):
   if (mandadas.length === 0) return;
 
   const quedan: ColaDeMarcas = {};
-  for (const [clave, marca] of Object.entries(instantanea())) {
+  for (const [clave, marca] of Object.entries(vigente())) {
     const mandada = mandadas.find(([id]) => id === clave);
     if (!mandada || mandada[1] !== marca) quedan[clave] = marca;
   }
