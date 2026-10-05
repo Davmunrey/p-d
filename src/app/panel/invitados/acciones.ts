@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
+  LARGOS_DE_CAMPO,
   LONGITUD_MINIMA_NOMBRE,
   MAXIMO_ACOMPANANTES,
   RUTA_ACCESO,
   RUTA_INVITADOS,
   RUTA_PENDIENTES,
 } from "@/config/constants";
+import { esCorreoValido } from "@/lib/correo-valido";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 /**
@@ -33,9 +35,13 @@ type Estado =
   | "creada"
   | "enlace-emitido"
   | "persona-anadida"
+  | "persona-editada"
   | "persona-quitada"
   | "nombre"
+  | "nombre-largo"
   | "nombre-persona"
+  | "persona-larga"
+  | "correo"
   | "acompanantes"
   | "no-existe"
   | "quitar-con-respuesta"
@@ -85,6 +91,9 @@ async function cliente() {
 export async function crearInvitacion(datos: FormData): Promise<void> {
   const nombre = texto(datos, "nombre");
   if (nombre.length < LONGITUD_MINIMA_NOMBRE) volver("nombre");
+  // El tope de la base, dicho antes: si no, el CHECK lo rechaza y la pantalla
+  // pide reintentar algo que no va a funcionar nunca.
+  if (nombre.length > LARGOS_DE_CAMPO["grupos_invitacion.nombre"]) volver("nombre-largo");
 
   const ladoBruto = texto(datos, "lado");
   const lado = (LADOS as readonly string[]).includes(ladoBruto) ? ladoBruto : "ambos";
@@ -143,19 +152,53 @@ export async function emitirEnlace(datos: FormData): Promise<void> {
   );
 }
 
-export async function anadirPersona(datos: FormData): Promise<void> {
-  const grupoId = texto(datos, "grupo_id");
+/**
+ * Nombre, apellidos y correo de una persona, comprobados como los comprueba la
+ * base. Lo comparten el alta y la edición.
+ */
+function datosPersona(
+  datos: FormData,
+):
+  | { ok: false; estado: Estado }
+  | { ok: true; valores: { nombre: string; apellidos: string | null; correo: string | null } } {
   const nombre = texto(datos, "nombre");
   const apellidos = texto(datos, "apellidos") || null;
+  const correo = texto(datos, "correo_electronico") || null;
+
+  if (nombre.length < LONGITUD_MINIMA_NOMBRE) return { ok: false, estado: "nombre-persona" };
+  if (
+    nombre.length > LARGOS_DE_CAMPO["invitados.nombre"] ||
+    (apellidos?.length ?? 0) > LARGOS_DE_CAMPO["invitados.apellidos"]
+  ) {
+    return { ok: false, estado: "persona-larga" };
+  }
+  if (correo && !esCorreoValido(correo)) return { ok: false, estado: "correo" };
+
+  return { ok: true, valores: { nombre, apellidos, correo } };
+}
+
+export async function anadirPersona(datos: FormData): Promise<void> {
+  const grupoId = texto(datos, "grupo_id");
   const esNino = datos.get("es_nino") !== null;
 
   if (!grupoId) volver("no-existe");
-  if (nombre.length < LONGITUD_MINIMA_NOMBRE) volver("nombre-persona", grupoId);
+  const persona = datosPersona(datos);
+  if (!persona.ok) volver(persona.estado, grupoId);
+  const { nombre, apellidos, correo } = persona.valores;
 
   const supabase = await cliente();
-  const { error, count } = await supabase
-    .from("invitados")
-    .insert({ grupo_id: grupoId, nombre, apellidos, es_nino: esNino }, { count: "exact" });
+  const { error, count } = await supabase.from("invitados").insert(
+    {
+      grupo_id: grupoId,
+      nombre,
+      apellidos,
+      // El correo es a donde sale el acuse cuando contesta (BODA-57). Sin un
+      // sitio donde apuntarlo, el acuse no podía salir nunca.
+      correo_electronico: correo,
+      es_nino: esNino,
+    },
+    { count: "exact" },
+  );
 
   if (error) {
     console.error("No se pudo añadir a la persona:", error);
@@ -165,6 +208,40 @@ export async function anadirPersona(datos: FormData): Promise<void> {
   if (count === 0) volver("sin-permiso", grupoId);
 
   volver("persona-anadida", grupoId);
+}
+
+/**
+ * Corrige el nombre, los apellidos o el correo de alguien ya dado de alta.
+ *
+ * NO TOCA LO QUE CONTESTÓ: el menú, las alergias y si viene son suyos, y
+ * viven en su respuesta. Tampoco «es menor», que arrastra el menú infantil y
+ * tiene su propia regla en la base. Esto es corregir una errata o apuntar el
+ * correo que faltaba, que es lo que el panel no dejaba hacer.
+ */
+export async function editarPersona(datos: FormData): Promise<void> {
+  const grupoId = texto(datos, "grupo_id");
+  const personaId = texto(datos, "persona_id");
+  if (!grupoId || !personaId) volver("no-existe");
+
+  const persona = datosPersona(datos);
+  if (!persona.ok) volver(persona.estado, grupoId);
+  const { nombre, apellidos, correo } = persona.valores;
+
+  const supabase = await cliente();
+  const { data, error } = await supabase
+    .from("invitados")
+    .update({ nombre, apellidos, correo_electronico: correo })
+    .eq("id", personaId)
+    .eq("grupo_id", grupoId)
+    .select("id");
+
+  if (error) {
+    console.error("No se pudo editar a la persona:", error);
+    volver("error", grupoId);
+  }
+  if (!data?.length) volver("sin-permiso", grupoId);
+
+  volver("persona-editada", grupoId);
 }
 
 /**

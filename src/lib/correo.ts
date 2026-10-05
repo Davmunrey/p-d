@@ -48,6 +48,28 @@ export async function enviarCorreo(correo: Correo): Promise<ResultadoCorreo> {
   if (!hayCorreo) return { estado: "sin-configurar" };
   if (correo.para.length === 0) return { estado: "sin-destinatario" };
 
+  /*
+    UNA CARTA POR DESTINATARIO, NO UNA CON TODOS EN «PARA». Los de una misma
+    invitación son una familia, pero no necesariamente comparten el correo con
+    quien no lo sabe: con todos en `to`, cada uno veía las direcciones de los
+    demás, que es justo lo que `destinatarios_confirmacion()` dice evitar.
+
+    Una tras otra y no a la vez: Resend limita las peticiones por segundo, y
+    son dos o tres cartas.
+  */
+  const ids: string[] = [];
+  for (const direccion of correo.para) {
+    const resultado = await enviarUna(direccion, correo);
+    if (resultado.estado === "fallo") return resultado;
+    ids.push(resultado.id);
+  }
+  return { estado: "enviado", id: ids.join(",") };
+}
+
+async function enviarUna(
+  direccion: string,
+  correo: Correo,
+): Promise<{ estado: "enviado"; id: string } | { estado: "fallo"; motivo: string }> {
   try {
     const respuesta = await fetch(`${URL_RESEND}/emails`, {
       method: "POST",
@@ -61,7 +83,7 @@ export async function enviarCorreo(correo: Correo): Promise<ResultadoCorreo> {
       },
       body: JSON.stringify({
         from: REMITENTE,
-        to: correo.para,
+        to: [direccion],
         subject: correo.asunto,
         html: correo.html,
         text: correo.texto,

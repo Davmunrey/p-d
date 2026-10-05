@@ -25,8 +25,13 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   valoracion: { clave: "panel.proveedores.errorValoracion", error: true },
   "contacto-sin-via": { clave: "panel.proveedores.errorContactoSinVia", error: true },
   telefono: { clave: "panel.proveedores.errorTelefono", error: true },
+  correo: { clave: "panel.proveedores.errorCorreo", error: true },
   estado: { clave: "panel.proveedores.errorEstado", error: true },
   "descarte-sin-motivo": { clave: "panel.proveedores.errorDescarteSinMotivo", error: true },
+  "descarte-motivo-corto": {
+    clave: "panel.proveedores.errorDescarteMotivoCorto",
+    error: true,
+  },
   "confirmar-contratado": { clave: "panel.proveedores.avisoConfirmarContratado", error: true },
   "confirmar-borrado": { clave: "panel.proveedores.avisoConfirmarBorrado", error: true },
   "documento-subido": { clave: "panel.proveedores.avisoDocumentoSubido", error: false },

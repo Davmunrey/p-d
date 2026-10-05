@@ -10,6 +10,7 @@ import {
   RUTA_AJUSTES,
   TOPE_AVISOS_PROGRAMA,
 } from "@/config/constants";
+import { esCorreoValido } from "@/lib/correo-valido";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 import { instanteDesdeLocal } from "@/lib/zona-horaria";
 
@@ -115,7 +116,9 @@ export async function guardarAjustes(datos: FormData) {
   if (hashtag && !/^#[\p{L}\p{N}_]{1,60}$/u.test(hashtag)) volver("hashtag");
 
   const correo = textoONulo(datos, "correo_contacto");
-  if (correo && !/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(correo)) volver("correo");
+  // La regla de la base (`es_correo_valido`), no una parecida: la de antes
+  // dejaba pasar «a@b.c» y el CHECK lo rechazaba con el aviso genérico.
+  if (correo && !esCorreoValido(correo)) volver("correo");
 
   const latCeremonia = coordenada(datos, "latitud_ceremonia", 90);
   const lonCeremonia = coordenada(datos, "longitud_ceremonia", 180);

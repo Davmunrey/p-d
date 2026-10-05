@@ -309,6 +309,58 @@ test.describe("El acuse de recibo", () => {
     expect(cuantas, "una sola respuesta registrada").toBe(1);
   });
 
+  /**
+   * DOS CORREOS EN LA MISMA INVITACIÓN, DOS CARTAS.
+   *
+   * Salía una sola con los dos en «para», y cada uno veía la dirección del
+   * otro. Una familia no comparte necesariamente su correo con quien no lo
+   * sabe; cada carta va ahora sólo a su destinatario.
+   */
+  test("con dos correos en la invitación, cada uno recibe la suya y sólo la suya", async ({
+    browser,
+  }) => {
+    await levantarBuzon();
+
+    const sello = Date.now();
+    const token = `desarrollo-correo-dos-${sello}-000000`;
+    const correos = [`uno-${sello}@ejemplo.test`, `dos-${sello}@ejemplo.test`];
+    await conBase(async (sql) => {
+      const [grupo] = await sql<{ id: string }[]>`
+        insert into public.grupos_invitacion (nombre, huella_token)
+        values (${`(DES) Correo dos ${sello}`}, public.huella_token(${token}))
+        returning id
+      `;
+      for (const [indice, correo] of correos.entries()) {
+        await sql`
+          insert into public.invitados (grupo_id, nombre, apellidos, correo_electronico)
+          values (${grupo.id}, ${`(DES) Persona ${indice + 1} ${sello}`}, '(DES)', ${correo})
+        `;
+      }
+    });
+
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origen(),
+    });
+    const pagina = await contexto.newPage();
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    for (const opcion of await pagina.locator('input[value="confirmado"]').all()) {
+      await opcion.check();
+    }
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+    await pagina.getByRole("button", { name: copy.rsvp.enviar }).click();
+    await expect(pagina.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
+    await contexto.close();
+
+    await expect(() => expect(recibidos).toHaveLength(2)).toPass({ timeout: 10_000 });
+    expect(
+      recibidos.map((carta) => carta.to).sort(),
+      "cada carta, a una sola dirección",
+    ).toEqual(correos.map((correo) => [correo]).sort());
+  });
+
   test("sin correo en la ficha no se manda nada, y la respuesta se guarda", async ({
     browser,
   }) => {

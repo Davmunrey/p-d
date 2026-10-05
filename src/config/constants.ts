@@ -633,6 +633,25 @@ export const AVISO_CONFIRMACION_FALLIDA = "confirmacion-fallida";
 export const FORMA_TELEFONO = /^\+?[0-9 ().-]{6,25}$/;
 
 /**
+ * LA FORMA DE UN CORREO QUE ACEPTA LA BASE: la de `es_correo_valido()`, que
+ * usan los CHECK de todas las tablas con correo. Algo, arroba, algo, punto y
+ * al menos dos caracteres.
+ *
+ * El `type="email"` del navegador no basta: según la norma, «info@finca» es
+ * un correo válido, y la base lo rechaza. Sin comprobarlo aquí, el aviso era
+ * «no se ha podido guardar» sin decir qué campo, y el alta volvía vacía.
+ * `[:space:]` de Postgres es `\s` aquí; el unitario compara las dos.
+ */
+export const FORMA_CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
+
+/**
+ * Lo mínimo que tiene que tener el motivo de un descarte, según el CHECK
+ * `proveedores_motivo_descarte_longitud` (entre 3 y 1000). «No» no es un
+ * motivo, y la base lo devolvía como avería.
+ */
+export const LONGITUD_MINIMA_MOTIVO_DESCARTE = 3;
+
+/**
  * LO LARGO QUE PUEDE SER CADA CAMPO DE TEXTO, SEGÚN LA BASE
  *
  * Todos estos números ya existían: los escribe la base en un `check` de la

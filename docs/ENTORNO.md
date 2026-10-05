@@ -313,6 +313,12 @@ Se manda con [Resend](https://resend.com) y hacen falta dos variables:
 nada más**: la confirmación del invitado se guarda igual y la web no cambia. Es
 a propósito — un acuse de recibo no puede costar una respuesta.
 
+**A quién se manda lo decide la ficha de cada invitado**: el acuse sale a los
+emails apuntados en el panel (Invitados → la invitación → «Email» al añadir a
+alguien, o «Corregir datos» en quien ya está). Sin ningún email en esa
+invitación no sale nada, aunque Resend esté configurado. Cada destinatario
+recibe su propia carta: nadie ve la dirección de los demás.
+
 El remitente tiene que estar en un dominio verificado en Resend. Con una
 dirección de un dominio sin verificar, Resend acepta la petición y luego no
 entrega, que es la forma más silenciosa de que no llegue nada.

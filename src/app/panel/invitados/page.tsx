@@ -6,6 +6,7 @@ import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   IDIOMA,
+  LARGOS_DE_CAMPO,
   MAXIMO_ACOMPANANTES,
   RUTA_ACCESO,
   RUTA_INVITADOS,
@@ -216,6 +217,7 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
               name="nombre"
               required
               autoComplete="off"
+              maxLength={LARGOS_DE_CAMPO["grupos_invitacion.nombre"]}
             />
             <CampoSeleccion
               etiqueta={t("panel.invitados.lado")}

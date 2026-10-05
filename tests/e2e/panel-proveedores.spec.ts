@@ -561,6 +561,69 @@ test.describe("El embudo del proveedor", () => {
   });
 
   /**
+   * CASO DE ERROR · «No» no es un motivo, y se dice antes de que lo diga la base.
+   *
+   * El CHECK pide al menos tres letras, y la pantalla sólo miraba que no
+   * estuviera vacío: «No» volvía como «No se ha podido guardar. Probad otra
+   * vez», que no iba a funcionar nunca.
+   */
+  test("un motivo de una palabra suelta se explica y no descarta", async ({ page }) => {
+    const id = await crearProveedor(`${MARCA} Motivo corto ${Date.now()}`);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
+
+    const fase = seccion(page, copy.panel.proveedores.estadoTitulo);
+    await fase
+      .getByLabel(copy.panel.proveedores.campoEstado, { exact: true })
+      .selectOption({ label: copy.panel.proveedores.estados.descartado });
+    await fase
+      .getByLabel(copy.panel.proveedores.campoMotivoDescarte, { exact: true })
+      .fill("No");
+    await fase.getByRole("button", { name: copy.panel.proveedores.cambiarEstado }).click();
+    await esperarEstado(page, "descarte-motivo-corto");
+
+    await expect(page.getByText(copy.panel.proveedores.errorDescarteMotivoCorto)).toBeVisible();
+    const [sigue] = await conBase(
+      (sql) => sql<{ estado: string }[]>`
+        select estado from public.proveedores where id = ${id}
+      `,
+    );
+    expect(sigue.estado).toBe("investigando");
+  });
+
+  /**
+   * CASO DE ERROR · Un email sin «.es» lo deja pasar el navegador; la base no.
+   *
+   * Antes volvía como «No se ha podido guardar» sin decir qué campo. Se prueba
+   * en el contacto, y la regla es la misma función que usa el alta.
+   */
+  test("un email sin dominio completo se explica y no guarda el contacto", async ({ page }) => {
+    const id = await crearProveedor(`${MARCA} Correo malo ${Date.now()}`);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
+
+    const contacto = seccion(page, copy.panel.proveedores.contactosTitulo);
+    await contacto
+      .getByLabel(copy.panel.proveedores.campoNombreContacto, { exact: true })
+      .fill("(DES) Rocío");
+    await contacto
+      .getByLabel(copy.panel.proveedores.campoCorreo, { exact: true })
+      .fill("rocio@fincalasierra");
+    await contacto
+      .getByRole("button", { name: copy.panel.proveedores.anadirContacto, exact: true })
+      .click();
+    await esperarEstado(page, "correo");
+
+    await expect(page.getByText(copy.panel.proveedores.errorCorreo)).toBeVisible();
+    const contactos = await conBase(
+      (sql) => sql`select 1 from public.contactos_proveedor where proveedor_id = ${id}`,
+    );
+    expect(contactos, "no se guarda el contacto").toHaveLength(0);
+  });
+
+  /**
    * CASO DE ERROR · Contratar a un segundo de la categoría pide confirmación.
    */
   test("contratar a un segundo de la misma categoría pregunta antes", async ({ page }) => {

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import {
   BUCKET_DOCUMENTOS,
   LARGOS_DE_CAMPO,
+  LONGITUD_MINIMA_MOTIVO_DESCARTE,
   LONGITUD_MINIMA_NOMBRE,
   RUTA_ACCESO,
   RUTA_PROVEEDORES,
@@ -25,6 +26,7 @@ import { admitirDocumento, componerRutaDocumento, identificadorDeRuta } from "@/
 import { leerImporte } from "@/lib/importe";
 import { accesoActual } from "@/lib/sesion";
 import { clienteDeServicio, haySubidaDeMedios } from "@/lib/supabase/servicio";
+import { esCorreoValido } from "@/lib/correo-valido";
 import { esTelefonoValido } from "@/lib/telefono";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
@@ -215,6 +217,11 @@ function camposProveedor(datos: FormData):
   const telefono = opcional(datos, "telefono");
   if (telefono && !esTelefonoValido(telefono)) return { ok: false, estado: "telefono" };
 
+  // Y el correo por lo mismo: «info@fincalasierra» lo deja pasar el navegador
+  // y lo rechaza la base.
+  const correo = opcional(datos, "correo_electronico");
+  if (correo && !esCorreoValido(correo)) return { ok: false, estado: "correo" };
+
   const categoriaId = texto(datos, "categoria_id");
   if (!categoriaId) return { ok: false, estado: "categoria" };
 
@@ -260,7 +267,7 @@ function camposProveedor(datos: FormData):
       categoria_id: categoriaId,
       nombre,
       persona_contacto: opcional(datos, "persona_contacto"),
-      correo_electronico: opcional(datos, "correo_electronico"),
+      correo_electronico: correo,
       telefono,
       sitio_web: sitioWeb,
       valoracion,
@@ -333,6 +340,11 @@ export async function cambiarEstado(datos: FormData): Promise<void> {
 
   const motivo_descarte = nuevo === "descartado" ? opcional(datos, "motivo_descarte") : null;
   if (nuevo === "descartado" && !motivo_descarte) volver("descarte-sin-motivo", id);
+  // «No» o «ya» no son un motivo, y el CHECK de la base pide al menos tres
+  // letras: sin esto volvía como «no se ha podido guardar».
+  if (motivo_descarte && motivo_descarte.length < LONGITUD_MINIMA_MOTIVO_DESCARTE) {
+    volver("descarte-motivo-corto", id);
+  }
 
   const supabase = await cliente();
 
@@ -478,6 +490,7 @@ export async function anadirContacto(datos: FormData): Promise<void> {
   // no se puede llamar no sirve para lo único que sirve esta tabla.
   if (!correo && !telefono) volver("contacto-sin-via", proveedorId);
   if (telefono && !esTelefonoValido(telefono)) volver("telefono", proveedorId);
+  if (correo && !esCorreoValido(correo)) volver("correo", proveedorId);
 
   const supabase = await cliente();
   const { data, error } = await supabase

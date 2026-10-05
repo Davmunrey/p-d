@@ -41,6 +41,8 @@ export interface PersonaDelGrupo {
   esAcompanante: boolean;
   tipoMenu: string;
   alergias: string | null;
+  /** A dónde se manda el acuse cuando contesta. Lo apunta el panel. */
+  correo: string | null;
   estado: string;
 }
 
@@ -63,6 +65,7 @@ interface FilaPersona {
   es_acompanante: boolean;
   tipo_menu: string;
   alergias: string | null;
+  correo_electronico: string | null;
   confirmaciones: FilaConfirmacion[];
 }
 
@@ -154,6 +157,7 @@ export async function obtenerGrupo(id: string): Promise<DetalleGrupo | null> {
       `id, nombre, lado, maximo_acompanantes, token_emitido_en,
        invitacion_enviada_en, recordatorio_enviado_en,
        invitados ( id, nombre, apellidos, es_nino, es_acompanante, tipo_menu, alergias,
+                   correo_electronico,
                    confirmaciones ( estado, es_vigente ) )`,
     )
     .eq("id", id)
@@ -179,6 +183,7 @@ function componerGrupo(
       esAcompanante: persona.es_acompanante,
       tipoMenu: persona.tipo_menu,
       alergias: persona.alergias,
+      correo: persona.correo_electronico,
       estado: estadoVigente(persona.confirmaciones),
     }))
     // Mismo orden que ve el invitado en su enlace: los titulares primero.
@@ -227,6 +232,7 @@ export async function obtenerGruposConGente(): Promise<DetalleGrupo[]> {
       `id, nombre, lado, maximo_acompanantes, token_emitido_en,
        invitacion_enviada_en, recordatorio_enviado_en,
        invitados ( id, nombre, apellidos, es_nino, es_acompanante, tipo_menu, alergias,
+                   correo_electronico,
                    confirmaciones ( estado, es_vigente ) )`,
     )
     .order("nombre");

@@ -6,6 +6,7 @@ import { CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   IDIOMA,
+  LARGOS_DE_CAMPO,
   RUTA_ACCESO,
   RUTA_INVITADOS,
   RUTA_RSVP,
@@ -16,7 +17,13 @@ import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 import { urlDelSitio } from "@/lib/url-sitio";
 
-import { anadirPersona, emitirEnlace, quitarPersona, repartirPorWhatsApp } from "../acciones";
+import {
+  anadirPersona,
+  editarPersona,
+  emitirEnlace,
+  quitarPersona,
+  repartirPorWhatsApp,
+} from "../acciones";
 import { AvisoEstado } from "../aviso";
 
 /**
@@ -236,16 +243,21 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
             {grupo.gente.map((persona) => (
               <li
                 key={persona.id}
-                className="flex flex-wrap items-center justify-between gap-interno rounded-campo border border-borde px-interno py-pila"
+                className="rounded-campo border border-borde px-interno py-pila"
               >
-                <Persona persona={persona} />
-                {puedeEditar && persona.estado === "pendiente" ? (
-                  <form action={quitarPersona}>
-                    <input type="hidden" name="grupo_id" value={grupo.id} />
-                    <input type="hidden" name="persona_id" value={persona.id} />
-                    <BotonEnvio jerarquia="terciario">{t("panel.invitados.quitar")}</BotonEnvio>
-                  </form>
-                ) : null}
+                <div className="flex flex-wrap items-center justify-between gap-interno">
+                  <Persona persona={persona} />
+                  {puedeEditar && persona.estado === "pendiente" ? (
+                    <form action={quitarPersona}>
+                      <input type="hidden" name="grupo_id" value={grupo.id} />
+                      <input type="hidden" name="persona_id" value={persona.id} />
+                      <BotonEnvio jerarquia="terciario">
+                        {t("panel.invitados.quitar")}
+                      </BotonEnvio>
+                    </form>
+                  ) : null}
+                </div>
+                {puedeEditar ? <EditarPersona grupoId={grupo.id} persona={persona} /> : null}
               </li>
             ))}
           </ul>
@@ -254,17 +266,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
         {puedeEditar ? (
           <form action={anadirPersona} className="mt-elemento grid max-w-texto gap-interno">
             <input type="hidden" name="grupo_id" value={grupo.id} />
-            <CampoTexto
-              etiqueta={t("panel.invitados.nombrePersona")}
-              name="nombre"
-              required
-              autoComplete="off"
-            />
-            <CampoTexto
-              etiqueta={t("panel.invitados.apellidosPersona")}
-              name="apellidos"
-              autoComplete="off"
-            />
+            <CamposPersona />
             <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
               <input
                 type="checkbox"
@@ -302,6 +304,78 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
   );
 }
 
+/**
+ * Nombre, apellidos y email, con los topes de la base. Los mismos en el alta y
+ * en la corrección, para que no se separen.
+ */
+function CamposPersona({ persona }: { persona?: PersonaDelGrupo }) {
+  return (
+    <>
+      <CampoTexto
+        etiqueta={t("panel.invitados.nombrePersona")}
+        name="nombre"
+        required
+        autoComplete="off"
+        maxLength={LARGOS_DE_CAMPO["invitados.nombre"]}
+        defaultValue={persona?.nombre}
+      />
+      <CampoTexto
+        etiqueta={t("panel.invitados.apellidosPersona")}
+        name="apellidos"
+        autoComplete="off"
+        maxLength={LARGOS_DE_CAMPO["invitados.apellidos"]}
+        defaultValue={persona?.apellidos ?? undefined}
+      />
+      <CampoTexto
+        etiqueta={t("panel.invitados.correoPersona")}
+        ayuda={t("panel.invitados.correoPersonaAyuda")}
+        name="correo_electronico"
+        type="email"
+        inputMode="email"
+        autoComplete="off"
+        defaultValue={persona?.correo ?? undefined}
+      />
+    </>
+  );
+}
+
+/**
+ * Corregir a alguien ya dado de alta: una errata en el nombre, o el email que
+ * faltaba para que le llegue el acuse. Plegado, porque es lo excepcional.
+ */
+function EditarPersona({ grupoId, persona }: { grupoId: string; persona: PersonaDelGrupo }) {
+  const etiqueta = t("panel.invitados.editarPersonaDe", {
+    persona: [persona.nombre, persona.apellidos].filter(Boolean).join(" "),
+  });
+  return (
+    <details className="mt-interno-compacto">
+      {/*
+        El nombre de la persona va en la etiqueta accesible y no en un texto
+        oculto: «Corregir datos» repetido en cada fila no dice de quién, y un
+        texto oculto con el nombre lo haría salir dos veces al buscarlo.
+      */}
+      <summary
+        aria-label={etiqueta}
+        className="inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-suave underline decoration-borde-fuerte underline-offset-4 transicion-color hover:text-tinta hover:decoration-borde-marca"
+      >
+        {t("panel.invitados.editarPersona")}
+      </summary>
+      <form
+        action={editarPersona}
+        aria-label={etiqueta}
+        className="mt-elemento grid max-w-texto gap-interno"
+      >
+        <input type="hidden" name="grupo_id" value={grupoId} />
+        <input type="hidden" name="persona_id" value={persona.id} />
+        <CamposPersona persona={persona} />
+        <div>
+          <BotonEnvio jerarquia="secundario">{t("panel.invitados.guardarPersona")}</BotonEnvio>
+        </div>
+      </form>
+    </details>
+  );
+}
+
 function Persona({ persona }: { persona: PersonaDelGrupo }) {
   const clave = ROTULO_ESTADO[persona.estado];
   return (
@@ -313,6 +387,11 @@ function Persona({ persona }: { persona: PersonaDelGrupo }) {
         {clave ? t(clave as "rsvp.vieneSi") : t("panel.invitados.sinContestar")}
         {persona.alergias ? ` · ${persona.alergias}` : ""}
       </Etiqueta>
+      {persona.correo ? (
+        <span className="mt-linea block text-pequeno text-tinta-suave wrap-anywhere">
+          {persona.correo}
+        </span>
+      ) : null}
     </div>
   );
 }
