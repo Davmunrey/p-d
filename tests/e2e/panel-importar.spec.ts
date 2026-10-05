@@ -272,4 +272,82 @@ test.describe("Importar invitados", () => {
     // Con acento y ñ: si esto llega roto, el problema es la codificación.
     expect(texto).toContain(copy.panel.importar.muestraApellidos);
   });
+
+  /**
+   * LA PLANTILLA QUE OFRECE LA PANTALLA SE PUEDE SUBIR TAL CUAL.
+   *
+   * Su fila de muestra decía «La novia» en el lado, que es como lo escribe la
+   * pantalla, y el importador sólo entendía «novia»: subirla sin tocarla daba
+   * «Fila 2 · «La novia» no es un lado» y ningún botón de importar. No se
+   * confirma: la muestra no lleva la marca de los datos de prueba.
+   */
+  test("la plantilla descargada se analiza sin un solo error", async ({ page }) => {
+    const respuesta = await page.request.get(`${RUTA_INVITADOS}/importar/plantilla`);
+    const bytes = await respuesta.body();
+
+    await page.getByLabel(copy.panel.importar.fichero).setInputFiles({
+      name: "plantilla.csv",
+      mimeType: "text/csv",
+      buffer: bytes,
+    });
+    await page.getByRole("button", { name: copy.panel.importar.analizar }).click();
+
+    await expect(
+      page.getByRole("heading", { name: copy.panel.importar.previaTitulo }),
+    ).toBeVisible();
+    await expect(page.getByText(copy.panel.importar.muestraNombre)).toBeVisible();
+    await expect(page.getByText(copy.panel.importar.erroresTituloUna)).toHaveCount(0);
+    await expect(botonImportar(page)).toBeVisible();
+  });
+
+  /**
+   * UNA INVITACIÓN ESCRITA SIN TILDES ES LA MISMA INVITACIÓN.
+   *
+   * La vista previa comparaba sin acentos y la base con ellos: con «Familia
+   * Pérez» ya dada de alta, «Familia Perez;Ana» salía como duplicado —bien— y
+   * «Familia Perez;Marta» acababa en una SEGUNDA invitación, con su propio
+   * enlace, separada del resto de su familia.
+   */
+  test("sin tildes se suma a la invitación que ya existe, y caza al repetido", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const conTilde = `${MARCA} Familia Pérez ${sello}`;
+    const sinTilde = `${MARCA} familia perez ${sello}`;
+    const ana = `(DES) Ana ${sello}`;
+    const marta = `(DES) Marta ${sello}`;
+
+    await subir(page, ["Grupo;Nombre", `${conTilde};${ana}`].join("\n"));
+    await botonImportar(page).click();
+    await expect(page).toHaveURL(/estado=importados/);
+
+    // CAMINO FELIZ · Marta, escrita sin tildes, entra en la invitación de Ana.
+    await page.goto(`${RUTA_INVITADOS}/importar`);
+    await subir(page, ["Grupo;Nombre", `${sinTilde};${marta}`].join("\n"));
+    const filaMarta = page.locator("tr").filter({ hasText: marta });
+    await expect(filaMarta).toBeVisible();
+    await expect(
+      filaMarta,
+      "la vista previa no puede anunciar una invitación nueva que no lo es",
+    ).not.toContainText(copy.panel.importar.grupoNuevo);
+    await botonImportar(page).click();
+    await expect(page).toHaveURL(/estado=importados/);
+
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    try {
+      const grupos = await sql<{ grupo_id: string }[]>`
+        select distinct grupo_id from public.invitados where nombre in (${ana}, ${marta})
+      `;
+      expect(grupos, "Ana y Marta comparten invitación, y por tanto enlace").toHaveLength(1);
+    } finally {
+      await sql.end();
+    }
+
+    // CASO DE ERROR · Ana otra vez, sin tildes y en mayúsculas: es la misma.
+    await page.goto(`${RUTA_INVITADOS}/importar`);
+    await subir(page, ["Grupo;Nombre", `${sinTilde.toUpperCase()};${ana}`].join("\n"));
+    await expect(page.getByText(copy.panel.importar.erroresTituloUna)).toBeVisible();
+    await expect(botonImportar(page)).toHaveCount(0);
+    expect(await cuantasPersonas(ana)).toBe(1);
+  });
 });

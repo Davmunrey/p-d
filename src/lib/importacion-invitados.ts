@@ -3,7 +3,7 @@ import {
   LONGITUD_MINIMA_NOMBRE,
   MAXIMO_FILAS_IMPORTACION,
 } from "@/config/constants";
-import { analizarCsv } from "@/lib/csv";
+import { analizarCsv, celda as celdaCsv } from "@/lib/csv";
 import { t, type ClaveCopy } from "@/lib/copy";
 
 /**
@@ -34,11 +34,24 @@ type Columna = keyof typeof COLUMNAS;
 
 const OBLIGATORIAS: Columna[] = ["grupo", "nombre"];
 
-const LADOS: Record<string, "novia" | "novio" | "ambos"> = {
+type Lado = "novia" | "novio" | "ambos";
+
+const LADOS: Record<string, Lado> = {
   novia: "novia",
   novio: "novio",
   ambos: "ambos",
   "los dos": "ambos",
+  /*
+    Y LOS RÓTULOS CON QUE LOS ESCRIBE LA PROPIA WEB. La plantilla de muestra y
+    la vista previa dicen «La novia», y quien rellena la hoja copia lo que ve:
+    el importador rechazaba la fila de su propia plantilla.
+  */
+  ...Object.fromEntries(
+    (["novia", "novio", "ambos"] as const).map((lado) => [
+      normalizar(t(`panel.invitados.lados.${lado}`)),
+      lado,
+    ]),
+  ),
 };
 
 /** Lo afirmativo que puede escribir alguien en una hoja de cálculo. */
@@ -99,9 +112,52 @@ function situarColumnas(cabecera: string[]): {
   return { posiciones, ignoradas };
 }
 
+/**
+ * Cuándo dos nombres de invitación son la misma invitación: sin mayúsculas ni
+ * acentos. Es el criterio de `importar_invitados()` en la base (con
+ * `sin_acentos`), y tiene que serlo: si la vista previa y la base no coinciden,
+ * la vista previa avisa de un duplicado en «Familia Perez» y la base crea
+ * después otra invitación para el resto de la familia.
+ */
+export function claveGrupo(grupo: string): string {
+  return normalizar(grupo);
+}
+
 /** Una clave única de persona, para cazar duplicados sin distinguir formas. */
 export function clavePersona(grupo: string, nombre: string, apellidos: string | null): string {
-  return [normalizar(grupo), normalizar(nombre), normalizar(apellidos ?? "")].join("|");
+  return [claveGrupo(grupo), normalizar(nombre), normalizar(apellidos ?? "")].join("|");
+}
+
+/**
+ * La plantilla de ejemplo: las columnas y una fila de muestra.
+ *
+ * Vive aquí, junto a quien la lee, y no en la ruta que la sirve: así el test
+ * puede pasarla por `leerImportacion` y comprobar que la plantilla que se
+ * ofrece se importa sin un solo error. Sin el BOM, que lo pone la ruta.
+ *
+ * La fila de muestra lleva acento y ñ a propósito: es la comprobación de que
+ * la codificación sobrevive al viaje de ida y vuelta por Excel. Si alguien
+ * abre la plantilla y ve «ZubeldÃ­a», el problema está en su Excel y no en su
+ * lista, y es mucho mejor descubrirlo aquí que con doscientos apellidos rotos.
+ */
+export function plantillaDeImportacion(): string {
+  const columnas = [
+    t("panel.importar.columna.grupo"),
+    t("panel.importar.columna.nombre"),
+    t("panel.importar.columna.apellidos"),
+    t("panel.importar.columna.lado"),
+    t("panel.importar.columna.nino"),
+  ];
+
+  const muestra = [
+    t("panel.importar.muestraGrupo"),
+    t("panel.importar.muestraNombre"),
+    t("panel.importar.muestraApellidos"),
+    t("panel.invitados.lados.novia"),
+    t("panel.invitados.no"),
+  ];
+
+  return [columnas, muestra].map((fila) => fila.map(celdaCsv).join(";")).join("\r\n");
 }
 
 /**

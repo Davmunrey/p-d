@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import { RUTA_ACCESO, RUTA_INVITADOS } from "@/config/constants";
 import { obtenerGruposConGente } from "@/lib/bbdd/invitados";
 import { decodificar } from "@/lib/csv";
-import { clavePersona, leerImportacion, type FilaImportada } from "@/lib/importacion-invitados";
+import {
+  claveGrupo,
+  clavePersona,
+  leerImportacion,
+  type FilaImportada,
+} from "@/lib/importacion-invitados";
 import { t } from "@/lib/copy";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
@@ -49,12 +54,15 @@ async function personasExistentes(): Promise<Set<string>> {
   return claves;
 }
 
-/** Los nombres de grupo del fichero que todavía no existen en la base. */
+/**
+ * Los nombres de grupo del fichero que todavía no existen en la base, con el
+ * mismo criterio que la base usa al importar: sin mayúsculas ni acentos.
+ */
 function gruposPorCrear(filas: FilaImportada[], existentes: string[]): string[] {
-  const yaHay = new Set(existentes.map((nombre) => nombre.trim().toLowerCase()));
+  const yaHay = new Set(existentes.map(claveGrupo));
   const nuevos: string[] = [];
   for (const fila of filas) {
-    const clave = fila.grupo.trim().toLowerCase();
+    const clave = claveGrupo(fila.grupo);
     if (!yaHay.has(clave)) {
       yaHay.add(clave);
       nuevos.push(fila.grupo);

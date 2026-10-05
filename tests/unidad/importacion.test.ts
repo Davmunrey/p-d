@@ -1,8 +1,16 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import copy from "../../content/copy.es.json";
 import { analizarCsv, decodificar, detectarSeparador } from "../../src/lib/csv";
-import { clavePersona, leerImportacion } from "../../src/lib/importacion-invitados";
+import {
+  claveGrupo,
+  clavePersona,
+  leerImportacion,
+  plantillaDeImportacion,
+} from "../../src/lib/importacion-invitados";
 
 /**
  * BODA-53 · LO QUE UN CSV DE VERDAD LE HACE A UN PARSER
@@ -204,5 +212,71 @@ describe("Decidir qué se da de alta y qué no", () => {
     const lectura = leerImportacion(`Grupo;Nombre\n${filas}`);
     expect(lectura.filas).toEqual([]);
     expect(lectura.errores[0].motivo).toContain("600");
+  });
+});
+
+describe("La plantilla que ofrece la propia pantalla", () => {
+  const CABECERA = "Grupo;Nombre;Apellidos;Lado;Niño";
+
+  /*
+    La fila de muestra decía «La novia» en la columna del lado —el rótulo de la
+    pantalla— y el importador sólo aceptaba «novia»: quien descargaba la
+    plantilla y la subía sin tocarla veía su única fila rechazada.
+  */
+  it("se importa tal cual, sin un solo error", () => {
+    const lectura = leerImportacion(`\uFEFF${plantillaDeImportacion()}`);
+    expect(lectura.errores).toEqual([]);
+    expect(lectura.columnasIgnoradas).toEqual([]);
+    expect(lectura.filas).toEqual([
+      {
+        grupo: copy.panel.importar.muestraGrupo,
+        nombre: copy.panel.importar.muestraNombre,
+        apellidos: copy.panel.importar.muestraApellidos,
+        lado: "novia",
+        nino: false,
+      },
+    ]);
+  });
+
+  it("el lado vale escrito como lo escribe la pantalla", () => {
+    const lectura = leerImportacion(
+      `${CABECERA}\nA;Ana;;${copy.panel.invitados.lados.novio};\nB;Bea;;${copy.panel.invitados.lados.ambos.toUpperCase()};`,
+    );
+    expect(lectura.errores).toEqual([]);
+    expect(lectura.filas.map((fila) => fila.lado)).toEqual(["novio", "ambos"]);
+  });
+});
+
+describe("Un solo criterio de «la misma invitación»", () => {
+  /*
+    La vista previa comparaba sin acentos y la base con ellos: avisaba de que
+    Ana ya estaba en «Familia Perez» y después creaba una segunda invitación
+    para Marta. La base usa ahora `sin_acentos` (20261005110000) y la pantalla
+    esta clave; las dos tienen que decir lo mismo.
+  */
+  it("ni las tildes ni las mayúsculas ni los espacios de los bordes separan invitaciones", () => {
+    expect(claveGrupo("Familia Pérez")).toBe(claveGrupo("familia perez"));
+    expect(claveGrupo("  FAMILIA PÉREZ ")).toBe(claveGrupo("Familia Perez"));
+  });
+
+  it("y sí las separa un nombre distinto", () => {
+    expect(claveGrupo("Familia Pérez")).not.toBe(claveGrupo("Familia Pérez García"));
+  });
+
+  it("la base compara con sin_acentos, que es lo que esta clave imita", () => {
+    const migracion = readFileSync(
+      join(
+        __dirname,
+        "..",
+        "..",
+        "supabase",
+        "migrations",
+        "20261005110000_importar_sin_acentos.sql",
+      ),
+      "utf8",
+    );
+    expect(migracion).toMatch(
+      /lower\(public\.sin_acentos\(btrim\(g\.nombre\)\)\) = lower\(public\.sin_acentos\(v_nombre_gr\)\)/,
+    );
   });
 });

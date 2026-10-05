@@ -7,6 +7,7 @@ import { BotonEnvio } from "@/components/ui/boton-envio";
 import { Cuerpo, Etiqueta, Titulo3 } from "@/components/ui/tipografia";
 import { RUTA_INVITADOS } from "@/config/constants";
 import { t } from "@/lib/copy";
+import { claveGrupo } from "@/lib/importacion-invitados";
 
 import { analizarFichero, importar } from "./acciones";
 import { ESTADO_INICIAL, estadoVigente } from "./estado";
@@ -153,7 +154,11 @@ export function FormularioImportacion() {
                   >
                     <td className="py-linea pr-interno text-tinta">
                       {fila.grupo}
-                      {estado.gruposNuevos.includes(fila.grupo) ? (
+                      {/* Por su clave y no por cómo está escrito: «Familia Perez» y
+                          «familia pérez» son la misma invitación nueva. */}
+                      {estado.gruposNuevos.some(
+                        (nuevo) => claveGrupo(nuevo) === claveGrupo(fila.grupo),
+                      ) ? (
                         <span className="ml-interno-compacto text-tinta-suave">
                           {t("panel.importar.grupoNuevo")}
                         </span>
