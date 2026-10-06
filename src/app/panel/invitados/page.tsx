@@ -210,11 +210,18 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
                     {grupo.personas === 1
                       ? t("panel.invitados.personasUna")
                       : t("panel.invitados.personasCuenta", { personas: grupo.personas })}
-                    {grupo.tokenEmitidoEn
-                      ? ` · ${t("panel.invitados.enlaceEmitidoEn", {
-                          fecha: formatoFecha.format(grupo.tokenEmitidoEn),
+                    {/*
+                      LO QUE SE MIRA ES SI SE HA MANDADO, no si hay enlace:
+                      «emitido el 3» no dice si la familia lo tiene. Y con el
+                      orden «sin enviar primero», es lo que explica la lista.
+                    */}
+                    {grupo.invitacionEnviadaEn
+                      ? ` · ${t("panel.invitados.listaMandadaEn", {
+                          fecha: formatoFecha.format(grupo.invitacionEnviadaEn),
                         })}`
-                      : ` · ${t("panel.invitados.enlaceNunca")}`}
+                      : grupo.tokenEmitidoEn
+                        ? ` · ${t("panel.invitados.listaSinMandar")}`
+                        : ` · ${t("panel.invitados.enlaceNunca")}`}
                   </span>
                 </div>
                 <span className="text-pequeno text-tinta-suave tabular-nums">

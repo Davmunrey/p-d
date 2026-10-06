@@ -459,9 +459,11 @@ test.describe("Exportar invitados", () => {
         values (${pequena}, 'novia') returning id
       `;
       await sql`insert into public.invitados (grupo_id, nombre) values (${a.id}, '(DES) Sola')`;
+      // La grande ya está mandada; la pequeña, no.
       const [b] = await sql<{ id: string }[]>`
-        insert into public.grupos_invitacion (nombre, lado, maximo_acompanantes)
-        values (${grande}, 'novio', 1) returning id
+        insert into public.grupos_invitacion
+          (nombre, lado, maximo_acompanantes, invitacion_enviada_en)
+        values (${grande}, 'novio', 1, now() - interval '1 day') returning id
       `;
       for (const nombre of ["(DES) Uno", "(DES) Dos", "(DES) Tres"]) {
         await sql`insert into public.invitados (grupo_id, nombre) values (${b.id}, ${nombre})`;
@@ -477,6 +479,17 @@ test.describe("Exportar invitados", () => {
     await expect(enlaces.first()).toContainText(pequena);
     await page.goto(`${RUTA_INVITADOS}?${buscar}&orden=personas`);
     await expect(enlaces.first()).toContainText(grande);
+
+    // Cada fila dice si se ha mandado —no sólo si hay enlace—, y «sin enviar
+    // primero» pone delante a la que falta.
+    await expect(page.getByRole("link", { name: grande })).toContainText(
+      copy.panel.invitados.listaMandadaEn.split("{")[0],
+    );
+    await expect(page.getByRole("link", { name: pequena })).not.toContainText(
+      copy.panel.invitados.listaMandadaEn.split("{")[0],
+    );
+    await page.goto(`${RUTA_INVITADOS}?${buscar}&orden=envio`);
+    await expect(enlaces.first()).toContainText(pequena);
 
     // Por lado y por acompañantes, cada filtro deja sólo la suya.
     await page.goto(`${RUTA_INVITADOS}?${buscar}&lado_filtro=novio`);

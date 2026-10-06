@@ -540,6 +540,8 @@
       "emitirEnlace": "Emitir enlace nuevo",
       "enlaceEmitido": "Enlace nuevo emitido. El anterior ya no vale.",
       "enlaceNunca": "Sin emitir",
+      "listaMandadaEn": "Mandada el {fecha}",
+      "listaSinMandar": "Sin mandar todavía",
       "enlaceEmitidoEn": "Emitido el {fecha}",
       "volver": "← Volver a invitados",
       "personasTitulo": "Quién va en esta invitación",
