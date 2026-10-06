@@ -35,6 +35,8 @@ export interface OrigenesCsp {
   posthog?: string | null;
   sentry?: string | null;
   mapa: string;
+  /** Adonde redirigen «Abrir WhatsApp» y «Recordar por WhatsApp». */
+  whatsapp: string;
   desarrollo: boolean;
 }
 
@@ -52,6 +54,7 @@ export function construirCsp(nonce: string, origenes: OrigenesCsp): string {
   const posthog = origenDe(origenes.posthog);
   const sentry = origenDe(origenes.sentry);
   const mapa = origenDe(origenes.mapa);
+  const whatsapp = origenDe(origenes.whatsapp);
 
   const lista = (...valores: (string | null)[]) => valores.filter(Boolean).join(" ");
 
@@ -74,7 +77,10 @@ export function construirCsp(nonce: string, origenes: OrigenesCsp): string {
     // JavaScript, o pulsando antes de que cargue, el navegador aplica
     // `form-action` también a esa redirección y se negaba a seguirla: el
     // contrato no se descargaba. Es nuestro propio proyecto, no un tercero.
-    `form-action ${lista("'self'", supabase)}`,
+    // Y WhatsApp, por lo mismo: repartir la invitación anota el envío y
+    // redirige a `wa.me`. Sin él, sin JavaScript, la invitación quedaba
+    // «mandada» y WhatsApp no se abría.
+    `form-action ${lista("'self'", supabase, whatsapp)}`,
     `object-src 'none'`,
   ];
 

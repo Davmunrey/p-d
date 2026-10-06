@@ -10,8 +10,10 @@ import {
   RUTA_ACCESO,
   RUTA_INVITADOS,
   RUTA_PENDIENTES,
+  URL_WHATSAPP,
 } from "@/config/constants";
 import { esCorreoValido } from "@/lib/correo-valido";
+import { ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 /**
@@ -45,6 +47,8 @@ type Estado =
   | "acompanantes"
   | "no-existe"
   | "quitar-con-respuesta"
+  | "persona-no-existe"
+  | "confirmar-emision"
   | "sin-permiso"
   | "error";
 
@@ -71,9 +75,17 @@ function texto(datos: FormData, campo: string): string {
   redirección ya las vuelve a leer de la base enteras. Se revalida sólo lo que
   NO se va a visitar.
 */
-function volver(estado: Estado, grupoId?: string): never {
+function volver(estado: Estado, grupoId?: string, token?: string): never {
   const base = grupoId ? `${RUTA_INVITADOS}/${grupoId}` : RUTA_INVITADOS;
-  redirect(`${base}?estado=${estado}`);
+  /*
+    EL ENLACE EN CLARO SIGUE EN LA FICHA MIENTRAS SE TRABAJA EN ELLA. Al crear
+    la invitación el grupo está vacío y su enlace todavía no sirve; añadir a la
+    primera persona recargaba la ficha sin `?token=` y el enlace desaparecía,
+    así que había que emitir otro sí o sí. El token ya iba en esta misma URL:
+    traerlo de vuelta no lo expone en ningún sitio nuevo.
+  */
+  const conToken = token ? `&token=${encodeURIComponent(token)}` : "";
+  redirect(`${base}?estado=${estado}${conToken}`);
 }
 
 async function cliente() {
@@ -136,6 +148,21 @@ export async function emitirEnlace(datos: FormData): Promise<void> {
   if (!grupoId) volver("no-existe");
 
   const supabase = await cliente();
+
+  /*
+    SI LA FAMILIA YA TIENE SU ENLACE, EMITIR OTRO SE LO ANULA. La ficha lo
+    pide con una casilla, y aquí se comprueba igual: sin JavaScript la casilla
+    es `required`, pero un formulario mandado a mano no lo es.
+  */
+  const { data: grupo } = await supabase
+    .from("grupos_invitacion")
+    .select("invitacion_enviada_en")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (grupo?.invitacion_enviada_en && datos.get("confirmo_anular") === null) {
+    volver("confirmar-emision", grupoId);
+  }
+
   const { data, error } = await supabase.rpc("rotar_token_invitacion", {
     p_grupo_id: grupoId,
   });
@@ -179,11 +206,12 @@ function datosPersona(
 
 export async function anadirPersona(datos: FormData): Promise<void> {
   const grupoId = texto(datos, "grupo_id");
+  const token = texto(datos, "token");
   const esNino = datos.get("es_nino") !== null;
 
   if (!grupoId) volver("no-existe");
   const persona = datosPersona(datos);
-  if (!persona.ok) volver(persona.estado, grupoId);
+  if (!persona.ok) volver(persona.estado, grupoId, token);
   const { nombre, apellidos, correo } = persona.valores;
 
   const supabase = await cliente();
@@ -202,12 +230,12 @@ export async function anadirPersona(datos: FormData): Promise<void> {
 
   if (error) {
     console.error("No se pudo añadir a la persona:", error);
-    volver("error", grupoId);
+    volver("error", grupoId, token);
   }
   // RLS no da error cuando prohíbe una escritura: no toca ninguna fila.
-  if (count === 0) volver("sin-permiso", grupoId);
+  if (count === 0) volver("sin-permiso", grupoId, token);
 
-  volver("persona-anadida", grupoId);
+  volver("persona-anadida", grupoId, token);
 }
 
 /**
@@ -221,10 +249,11 @@ export async function anadirPersona(datos: FormData): Promise<void> {
 export async function editarPersona(datos: FormData): Promise<void> {
   const grupoId = texto(datos, "grupo_id");
   const personaId = texto(datos, "persona_id");
+  const token = texto(datos, "token");
   if (!grupoId || !personaId) volver("no-existe");
 
   const persona = datosPersona(datos);
-  if (!persona.ok) volver(persona.estado, grupoId);
+  if (!persona.ok) volver(persona.estado, grupoId, token);
   const { nombre, apellidos, correo } = persona.valores;
 
   const supabase = await cliente();
@@ -237,11 +266,19 @@ export async function editarPersona(datos: FormData): Promise<void> {
 
   if (error) {
     console.error("No se pudo editar a la persona:", error);
-    volver("error", grupoId);
+    volver("error", grupoId, token);
   }
-  if (!data?.length) volver("sin-permiso", grupoId);
+  // Cero filas a un editor es que la persona ya no está: la quitaron desde
+  // otra pestaña. «Sólo un editor puede…» se lo decía a quien lo es.
+  if (!data?.length) {
+    volver(
+      (await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "persona-no-existe",
+      grupoId,
+      token,
+    );
+  }
 
-  volver("persona-editada", grupoId);
+  volver("persona-editada", grupoId, token);
 }
 
 /**
@@ -256,6 +293,7 @@ export async function editarPersona(datos: FormData): Promise<void> {
 export async function quitarPersona(datos: FormData): Promise<void> {
   const grupoId = texto(datos, "grupo_id");
   const personaId = texto(datos, "persona_id");
+  const token = texto(datos, "token");
   if (!grupoId || !personaId) volver("no-existe");
 
   const supabase = await cliente();
@@ -277,11 +315,11 @@ export async function quitarPersona(datos: FormData): Promise<void> {
 
   if (errorLectura) {
     console.error("No se pudo comprobar si la persona había contestado:", errorLectura);
-    volver("error", grupoId);
+    volver("error", grupoId, token);
   }
 
   if (confirmacion && confirmacion.estado !== "pendiente") {
-    volver("quitar-con-respuesta", grupoId);
+    volver("quitar-con-respuesta", grupoId, token);
   }
 
   const { error, count } = await supabase
@@ -292,11 +330,17 @@ export async function quitarPersona(datos: FormData): Promise<void> {
 
   if (error) {
     console.error("No se pudo quitar a la persona:", error);
-    volver("error", grupoId);
+    volver("error", grupoId, token);
   }
-  if (count === 0) volver("sin-permiso", grupoId);
+  if (count === 0) {
+    volver(
+      (await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "persona-no-existe",
+      grupoId,
+      token,
+    );
+  }
 
-  volver("persona-quitada", grupoId);
+  volver("persona-quitada", grupoId, token);
 }
 
 /**
@@ -349,7 +393,7 @@ export async function repartirPorWhatsApp(datos: FormData): Promise<void> {
     quien reparte los tiene en su agenda. Pedirlos sólo para esto sería recoger
     doscientos datos personales para ahorrarse un toque en la pantalla.
   */
-  redirect(`https://wa.me/?text=${encodeURIComponent(mensaje)}`);
+  redirect(`${URL_WHATSAPP}?text=${encodeURIComponent(mensaje)}`);
 }
 
 /**
@@ -387,5 +431,5 @@ export async function recordarPorWhatsApp(datos: FormData): Promise<void> {
   }
 
   revalidatePath(RUTA_PENDIENTES);
-  redirect(`https://wa.me/?text=${encodeURIComponent(mensaje)}`);
+  redirect(`${URL_WHATSAPP}?text=${encodeURIComponent(mensaje)}`);
 }

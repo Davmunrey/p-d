@@ -6,6 +6,7 @@ import {
   RUTA_ACCESO,
   RUTA_DIA,
   RUTA_INVITADOS,
+  URL_WHATSAPP,
   RUTA_MESAS,
   RUTA_PANEL,
   RUTA_PENDIENTES,
@@ -180,10 +181,8 @@ test.describe("Invitaciones", () => {
       EL ENLACE SE LEE AQUÍ, ANTES DE TOCAR NADA MÁS.
 
       El token en claro no está en la base —sólo su huella— así que la ficha
-      sólo puede pintarlo cuando la acción que acaba de correr se lo pasa en la
-      URL. Cualquier otra cosa que se haga después, añadir a alguien incluido,
-      recarga la ficha sin `?token=` y el campo desaparece. Leerlo más tarde no
-      es leer un valor viejo: es esperar a un campo que ya no existe.
+      sólo puede pintarlo mientras viaja en la URL. Las acciones de la propia
+      ficha lo conservan; salir de ella lo pierde.
     */
     const primero = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
 
@@ -244,8 +243,11 @@ test.describe("Invitaciones", () => {
       .fill("(DES) Xabi");
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
 
-    // Mientras no ha contestado, sí se puede quitar: el botón está.
-    await expect(page.getByRole("button", { name: copy.panel.invitados.quitar })).toBeVisible();
+    // Mientras no ha contestado, sí se puede quitar: el control está, y dice a quién.
+    const quitarAXabi = page.getByLabel(
+      copy.panel.invitados.quitarDe.replace("{persona}", "(DES) Xabi"),
+    );
+    await expect(quitarAXabi).toBeVisible();
 
     const contexto = await browser.newContext({
       locale: "es-ES",
@@ -259,11 +261,9 @@ test.describe("Invitaciones", () => {
     await expect(invitada.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasNo);
     await contexto.close();
 
-    // Contestado: el botón de quitar desaparece.
+    // Contestado: el control de quitar desaparece.
     await page.reload();
-    await expect(page.getByRole("button", { name: copy.panel.invitados.quitar })).toHaveCount(
-      0,
-    );
+    await expect(quitarAXabi).toHaveCount(0);
   });
 });
 
@@ -679,9 +679,8 @@ test.describe("Repartir la invitación", () => {
    *
    * CON ALGUIEN DENTRO, porque sin personas no hay a quién invitar y la ficha
    * no ofrece el botón de WhatsApp (ese caso tiene su propio test más arriba).
-   * Añadir a la persona recarga la ficha sin `?token=`, así que después se
-   * emite un enlace nuevo: es la única forma de volver a tener el token en
-   * claro en la pantalla.
+   * Añadir a la persona ya no hace perder el enlace: la ficha lo conserva
+   * mientras se trabaja en ella, así que se lee tal cual.
    */
   async function crearConEnlace(page: Page, sufijo: string): Promise<string> {
     await page.goto(RUTA_INVITADOS);
@@ -695,8 +694,6 @@ test.describe("Repartir la invitación", () => {
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
     await expect(page.getByText("(DES) Reparto")).toBeVisible();
 
-    await page.getByRole("button", { name: copy.panel.invitados.emitirEnlace }).click();
-    await expect(page).toHaveURL(/estado=enlace-emitido/);
     return page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
   }
 
@@ -959,5 +956,180 @@ test.describe("El email y los datos de cada persona", () => {
     await conBase(
       (sql) => sql`delete from public.grupos_invitacion where nombre = ${nombreGrupo}`,
     );
+  });
+});
+
+/**
+ * AUDITORÍA DEL PANEL · LA FICHA DE UNA INVITACIÓN
+ *
+ * El enlace que se perdía al añadir a la primera persona, el enlace de la
+ * familia que se anulaba de un toque, quitar sin confirmar y una ficha que no
+ * decía quién es menor ni cuántos acompañantes caben.
+ */
+test.describe("La ficha de una invitación", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  test.beforeEach(async ({ page }) => {
+    await entrar(page);
+  });
+
+  async function crear(page: Page, nombre: string, acompanantes = 0): Promise<string> {
+    await page.goto(RUTA_INVITADOS);
+    await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(nombre);
+    await page.getByLabel(copy.panel.invitados.maximoAcompanantes).fill(String(acompanantes));
+    await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
+    await expect(page).toHaveURL(FICHA);
+    return page.url().match(/invitados\/([^?]+)/)![1]!;
+  }
+
+  async function anadir(page: Page, nombre: string, menor = false) {
+    // El alta, y no la corrección de quien ya está: las dos tienen «Nombre».
+    const alta = page.locator('form[aria-labelledby="anadir-persona"]');
+    await alta.getByLabel(copy.panel.invitados.nombrePersona, { exact: true }).fill(nombre);
+    if (menor) await alta.getByLabel(copy.panel.invitados.esNino).check();
+    await alta.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
+    await expect(page.getByText(nombre).first()).toBeVisible();
+  }
+
+  test("añadir a la gente no hace perder el enlace, y se puede mandar sin emitir otro", async ({
+    page,
+  }) => {
+    await crear(page, `${MARCA} sin perder ${Date.now()}`);
+    const enlace = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
+
+    await anadir(page, "(DES) Primera");
+    await anadir(page, "(DES) Segunda");
+
+    await expect(page).toHaveURL(/estado=persona-anadida/);
+    await expect(page.getByLabel(copy.panel.invitados.copiarEnlace)).toHaveValue(enlace);
+    await expect(
+      page.getByRole("button", { name: copy.panel.invitados.repartirBoton }),
+    ).toBeVisible();
+  });
+
+  test("la ficha dice quién es menor y cuántos acompañantes caben", async ({ page }) => {
+    await crear(page, `${MARCA} detalles ${Date.now()}`, 2);
+    await anadir(page, "(DES) Peque", true);
+
+    await expect(
+      page.locator("header").filter({ has: page.getByRole("heading", { level: 1 }) }),
+    ).toContainText(copy.panel.invitados.puedeTraer.replace("{cuantos}", "2"));
+    await expect(page.locator("li").filter({ hasText: "(DES) Peque" })).toContainText(
+      copy.panel.invitados.menor,
+    );
+  });
+
+  test("quitar a alguien se confirma, y repetirlo desde una pantalla vieja lo dice", async ({
+    page,
+    context,
+  }) => {
+    const id = await crear(page, `${MARCA} quitar dos veces ${Date.now()}`);
+    await anadir(page, "(DES) Zuriñe");
+
+    // Una segunda pestaña con la misma ficha, que no se recarga.
+    const vieja = await context.newPage();
+    await vieja.goto(`${RUTA_INVITADOS}/${id}`);
+
+    const etiqueta = copy.panel.invitados.quitarDe.replace("{persona}", "(DES) Zuriñe");
+    const confirmar = copy.panel.invitados.quitarConfirmar;
+
+    await page.getByLabel(etiqueta).click();
+    await page.getByRole("button", { name: confirmar }).click();
+    await expect(page).toHaveURL(/estado=persona-quitada/);
+    await expect(page.getByText("(DES) Zuriñe")).toHaveCount(0);
+
+    await vieja.getByLabel(etiqueta).click();
+    await vieja.getByRole("button", { name: confirmar }).click();
+    await expect(vieja).toHaveURL(/estado=persona-no-existe/);
+    await expect(vieja.getByText(copy.panel.invitados.errorPersonaNoExiste)).toBeVisible();
+    await expect(vieja.getByText(copy.panel.invitados.errorSinPermiso)).toHaveCount(0);
+  });
+
+  /**
+   * CASO DE ERROR · la familia ya tiene su enlace en el WhatsApp. Emitir otro
+   * se lo anula, y eso se confirma; sin confirmarlo —aunque el formulario se
+   * mande a mano, sin la casilla— el enlace no cambia.
+   */
+  test("emitir otro enlace de una invitación ya mandada pide confirmarlo", async ({ page }) => {
+    const id = await crear(page, `${MARCA} ya mandada ${Date.now()}`);
+    await anadir(page, "(DES) Mandada");
+    await conBase(
+      (sql) =>
+        sql`update public.grupos_invitacion set invitacion_enviada_en = now() where id = ${id}`,
+    );
+    const huellaAntes = await conBase(
+      (sql) => sql<{ huella: string }[]>`
+        select encode(huella_token, 'hex') as huella from public.grupos_invitacion where id = ${id}
+      `,
+    );
+
+    await page.goto(`${RUTA_INVITADOS}/${id}`);
+    await expect(page.getByText(copy.panel.invitados.repartirYaMandada)).toBeVisible();
+    const casilla = page.getByLabel(copy.panel.invitados.emitirConfirmar);
+    await expect(casilla).toHaveAttribute("required", "");
+
+    // Mandado a mano, sin la casilla: no se anula nada.
+    await casilla.evaluate((nodo) => nodo.removeAttribute("required"));
+    await page.getByRole("button", { name: copy.panel.invitados.emitirEnlace }).click();
+    await expect(page).toHaveURL(/estado=confirmar-emision/);
+    await expect(page.getByText(copy.panel.invitados.errorConfirmarEmision)).toBeVisible();
+    const huellaDespues = await conBase(
+      (sql) => sql<{ huella: string }[]>`
+        select encode(huella_token, 'hex') as huella from public.grupos_invitacion where id = ${id}
+      `,
+    );
+    expect(huellaDespues[0]!.huella).toBe(huellaAntes[0]!.huella);
+
+    // Confirmándolo, sí.
+    await page.getByLabel(copy.panel.invitados.emitirConfirmar).check();
+    await page.getByRole("button", { name: copy.panel.invitados.emitirEnlace }).click();
+    await expect(page).toHaveURL(/estado=enlace-emitido/);
+  });
+});
+
+/**
+ * CON EL BUNDLE SIN CARGAR, «ABRIR WHATSAPP» TIENE QUE ABRIR WHATSAPP. La
+ * acción anota el envío y redirige a `wa.me`; sin la hidratación, el
+ * formulario se manda como un formulario de siempre, y la CSP no tenía `wa.me`
+ * en `form-action`: la invitación quedaba «mandada» y WhatsApp no se abría.
+ *
+ * No se apaga JavaScript entero: el panel llega en bloques que revela un
+ * script en línea, y sin él no se ve nada. Se bloquea el bundle, que es lo que
+ * pasa de verdad con mala cobertura —se pulsa antes de que cargue—.
+ */
+test.describe("Repartir con el bundle sin cargar", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  test("«Abrir WhatsApp» llega a WhatsApp", async ({ page }) => {
+    await entrar(page);
+    await page.goto(RUTA_INVITADOS);
+    await page
+      .getByLabel(copy.panel.invitados.nombreGrupo)
+      .fill(`${MARCA} sin js ${Date.now()}`);
+    await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
+    await expect(page).toHaveURL(FICHA);
+    await page
+      .locator('form[aria-labelledby="anadir-persona"]')
+      .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
+      .fill("(DES) Sin bundle");
+    await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
+    await expect(page.getByText("(DES) Sin bundle").first()).toBeVisible();
+
+    // Desde aquí, la ficha se carga sin su JavaScript.
+    await page.route("**/_next/static/**/*.js", (ruta) => ruta.abort());
+    await page.route(`${URL_WHATSAPP}**`, (ruta) =>
+      ruta.fulfill({ status: 200, contentType: "text/plain", body: "wa" }),
+    );
+    await page.reload();
+
+    const peticion = page.waitForRequest((p) => p.url().startsWith(URL_WHATSAPP));
+    await page.getByRole("button", { name: copy.panel.invitados.repartirBoton }).click();
+    await peticion;
   });
 });

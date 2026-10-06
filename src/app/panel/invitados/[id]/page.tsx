@@ -107,6 +107,13 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
             rechazados: grupo.rechazados,
             pendientes: grupo.pendientes,
           })}
+          {" · "}
+          {/* El cupo no salía en ninguna parte: ni aquí ni en la lista. */}
+          {grupo.maximoAcompanantes === 0
+            ? t("panel.invitados.sinAcompanantes")
+            : grupo.maximoAcompanantes === 1
+              ? t("panel.invitados.puedeTraerUno")
+              : t("panel.invitados.puedeTraer", { cuantos: grupo.maximoAcompanantes })}
         </Cuerpo>
       </header>
 
@@ -216,8 +223,54 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
               : ""}
           </Cuerpo>
           <Cuerpo className="mt-pila text-pequeno text-tinta-suave">
-            {t("panel.invitados.repartirSoloConEnlace")}
+            {grupo.invitacionEnviadaEn
+              ? t("panel.invitados.repartirYaMandada")
+              : t("panel.invitados.repartirSoloConEnlace")}
           </Cuerpo>
+        </section>
+      ) : null}
+
+      {/*
+        EL ENLACE, JUSTO DEBAJO DE «MANDAR LA INVITACIÓN», que es el texto que
+        manda emitirlo. Estaba al final de la página: en el móvil, con cuatro
+        personas, a 1600 px de la frase que decía que se pulsara.
+      */}
+      {puedeEditar ? (
+        <section className="mt-elemento max-w-texto">
+          <Titulo3 como="h2">{t("panel.invitados.columnaEnlace")}</Titulo3>
+          <Cuerpo className="mt-pila text-pequeno">
+            {grupo.tokenEmitidoEn
+              ? t("panel.invitados.enlaceEmitidoEn", {
+                  fecha: formatoFecha.format(grupo.tokenEmitidoEn),
+                })
+              : t("panel.invitados.enlaceNunca")}
+          </Cuerpo>
+          <form action={emitirEnlace} className="mt-pila grid gap-interno">
+            <input type="hidden" name="grupo_id" value={grupo.id} />
+            {/*
+              SI YA SE MANDÓ, ANULAR EL QUE TIENEN SE CONFIRMA. Un toque de más
+              dejaba muerto el enlace del WhatsApp de la familia sin avisar, y
+              la lista seguía diciendo «mandada».
+            */}
+            {grupo.invitacionEnviadaEn ? (
+              <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
+                <input
+                  type="checkbox"
+                  name="confirmo_anular"
+                  required
+                  className="casilla-marca transicion-color"
+                />
+                <span className="text-pequeno text-tinta">
+                  {t("panel.invitados.emitirConfirmar")}
+                </span>
+              </label>
+            ) : null}
+            <div>
+              <BotonEnvio jerarquia="secundario">
+                {t("panel.invitados.emitirEnlace")}
+              </BotonEnvio>
+            </div>
+          </form>
         </section>
       ) : null}
 
@@ -247,19 +300,15 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
                 key={persona.id}
                 className="rounded-campo border border-borde px-interno py-pila"
               >
-                <div className="flex flex-wrap items-center justify-between gap-interno">
-                  <Persona persona={persona} />
-                  {puedeEditar && persona.estado === "pendiente" ? (
-                    <form action={quitarPersona}>
-                      <input type="hidden" name="grupo_id" value={grupo.id} />
-                      <input type="hidden" name="persona_id" value={persona.id} />
-                      <BotonEnvio jerarquia="terciario">
-                        {t("panel.invitados.quitar")}
-                      </BotonEnvio>
-                    </form>
-                  ) : null}
-                </div>
-                {puedeEditar ? <EditarPersona grupoId={grupo.id} persona={persona} /> : null}
+                <Persona persona={persona} />
+                {puedeEditar ? (
+                  <div className="flex flex-wrap items-start gap-x-elemento">
+                    <EditarPersona grupoId={grupo.id} persona={persona} token={token} />
+                    {persona.estado === "pendiente" ? (
+                      <QuitarPersona grupoId={grupo.id} persona={persona} token={token} />
+                    ) : null}
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -280,6 +329,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
               {t("panel.invitados.anadirPersonaTitulo")}
             </Etiqueta>
             <input type="hidden" name="grupo_id" value={grupo.id} />
+            {token ? <input type="hidden" name="token" value={token} /> : null}
             <CamposPersona />
             <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
               <input
@@ -297,23 +347,6 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
           </form>
         ) : null}
       </section>
-
-      {puedeEditar ? (
-        <section className="mt-bloque border-t border-borde pt-bloque">
-          <Titulo3 como="h2">{t("panel.invitados.columnaEnlace")}</Titulo3>
-          <Cuerpo className="mt-pila max-w-texto text-pequeno">
-            {grupo.tokenEmitidoEn
-              ? t("panel.invitados.enlaceEmitidoEn", {
-                  fecha: formatoFecha.format(grupo.tokenEmitidoEn),
-                })
-              : t("panel.invitados.enlaceNunca")}
-          </Cuerpo>
-          <form action={emitirEnlace} className="mt-elemento">
-            <input type="hidden" name="grupo_id" value={grupo.id} />
-            <BotonEnvio jerarquia="secundario">{t("panel.invitados.emitirEnlace")}</BotonEnvio>
-          </form>
-        </section>
-      ) : null}
     </>
   );
 }
@@ -357,7 +390,15 @@ function CamposPersona({ persona }: { persona?: PersonaDelGrupo }) {
  * Corregir a alguien ya dado de alta: una errata en el nombre, o el email que
  * faltaba para que le llegue el acuse. Plegado, porque es lo excepcional.
  */
-function EditarPersona({ grupoId, persona }: { grupoId: string; persona: PersonaDelGrupo }) {
+function EditarPersona({
+  grupoId,
+  persona,
+  token,
+}: {
+  grupoId: string;
+  persona: PersonaDelGrupo;
+  token: string;
+}) {
   const etiqueta = t("panel.invitados.editarPersonaDe", {
     persona: [persona.nombre, persona.apellidos].filter(Boolean).join(" "),
   });
@@ -381,6 +422,7 @@ function EditarPersona({ grupoId, persona }: { grupoId: string; persona: Persona
       >
         <input type="hidden" name="grupo_id" value={grupoId} />
         <input type="hidden" name="persona_id" value={persona.id} />
+        {token ? <input type="hidden" name="token" value={token} /> : null}
         <CamposPersona persona={persona} />
         <div>
           <BotonEnvio jerarquia="secundario">{t("panel.invitados.guardarPersona")}</BotonEnvio>
@@ -390,17 +432,69 @@ function EditarPersona({ grupoId, persona }: { grupoId: string; persona: Persona
   );
 }
 
+/**
+ * QUITAR A ALGUIEN SE CONFIRMA. El botón estaba pegado a «Corregir datos»: un
+ * toque de más borraba a la persona con su correo, sin deshacer. Y se llamaba
+ * «Quitar» a secas, así que con dos personas el lector de pantalla decía dos
+ * veces lo mismo sin decir de quién. Sin JavaScript, como el resto: un
+ * desplegable que, abierto, explica y ofrece el botón que de verdad quita.
+ */
+function QuitarPersona({
+  grupoId,
+  persona,
+  token,
+}: {
+  grupoId: string;
+  persona: PersonaDelGrupo;
+  token: string;
+}) {
+  const nombre = [persona.nombre, persona.apellidos].filter(Boolean).join(" ");
+  return (
+    <details className="mt-interno-compacto">
+      <summary
+        aria-label={t("panel.invitados.quitarDe", { persona: nombre })}
+        className="inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-suave underline decoration-borde-fuerte underline-offset-4 transicion-color hover:text-error-tinta hover:decoration-error"
+      >
+        {t("panel.invitados.quitar")}
+      </summary>
+      <form action={quitarPersona} className="mt-pila grid max-w-texto gap-interno">
+        <input type="hidden" name="grupo_id" value={grupoId} />
+        <input type="hidden" name="persona_id" value={persona.id} />
+        {token ? <input type="hidden" name="token" value={token} /> : null}
+        <p className="text-pequeno text-tinta-suave">{t("panel.invitados.quitarAviso")}</p>
+        <div>
+          <BotonEnvio jerarquia="secundario">
+            {/* Sin el nombre: va dentro del desplegable de esa persona, que ya lo dice. */}
+            {t("panel.invitados.quitarConfirmar")}
+          </BotonEnvio>
+        </div>
+      </form>
+    </details>
+  );
+}
+
 function Persona({ persona }: { persona: PersonaDelGrupo }) {
   const clave = ROTULO_ESTADO[persona.estado];
+  /*
+    QUIÉN ES MENOR, QUIÉN ES ACOMPAÑANTE Y QUÉ COME. Estaba todo en la base y
+    nada en la ficha: si al darlo de alta se olvidó marcar «Es menor», sólo se
+    veía descargando el CSV.
+  */
+  const detalles = [
+    clave ? t(clave as "rsvp.vieneSi") : t("panel.invitados.sinContestar"),
+    persona.esNino ? t("panel.invitados.menor") : null,
+    persona.esAcompanante ? t("panel.invitados.acompanante") : null,
+    persona.estado === "confirmado"
+      ? t(`panel.menus.${persona.tipoMenu}` as "panel.menus.estandar")
+      : null,
+    persona.alergias,
+  ].filter(Boolean);
   return (
     <div>
       <span className="text-cuerpo text-tinta">
         {[persona.nombre, persona.apellidos].filter(Boolean).join(" ")}
       </span>
-      <Etiqueta className="mt-linea">
-        {clave ? t(clave as "rsvp.vieneSi") : t("panel.invitados.sinContestar")}
-        {persona.alergias ? ` · ${persona.alergias}` : ""}
-      </Etiqueta>
+      <Etiqueta className="mt-linea">{detalles.join(" · ")}</Etiqueta>
       {persona.correo ? (
         <span className="mt-linea block text-pequeno text-tinta-suave wrap-anywhere">
           {persona.correo}

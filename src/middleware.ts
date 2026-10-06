@@ -8,6 +8,7 @@ import {
   RUTA_PANEL,
   SENTRY_DSN,
   URL_MAPA_EMBEBIDO,
+  URL_WHATSAPP,
 } from "@/config/constants";
 import { construirCsp } from "@/lib/csp";
 import { recordarInvitacion } from "@/lib/invitacion";
@@ -60,6 +61,7 @@ function conCsp(peticion: NextRequest): string {
     posthog: POSTHOG_SERVIDOR,
     sentry: SENTRY_DSN,
     mapa: URL_MAPA_EMBEBIDO,
+    whatsapp: URL_WHATSAPP,
     desarrollo: process.env.NODE_ENV !== "production",
   });
   peticion.headers.set("x-nonce", nonce);

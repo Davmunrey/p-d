@@ -156,6 +156,14 @@ export const MAPA_MARGEN_GRADOS = 0.012;
 export const URL_MAPA_EMBEBIDO = "https://www.openstreetmap.org/export/embed.html";
 
 /**
+ * Adonde se manda una invitación o un recordatorio: `wa.me` sin número abre el
+ * selector de contactos con el mensaje escrito. Va aquí y no repetido en cada
+ * acción porque también lo necesita la CSP —sin él en `form-action`, el salto
+ * se bloqueaba sin JavaScript después de anotar el envío—.
+ */
+export const URL_WHATSAPP = "https://wa.me/";
+
+/**
  * Raíz del RSVP público. El enlace de cada invitación es `${RUTA_RSVP}/token`,
  * y esta ruta es además el ámbito de la cookie del borrador: fuera del RSVP no
  * se manda, que es donde no pinta nada.

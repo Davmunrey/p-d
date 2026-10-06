@@ -1,3 +1,4 @@
+import { MAXIMO_ACOMPANANTES } from "@/config/constants";
 import { t, type ClaveCopy } from "@/lib/copy";
 import { avisoDe } from "@/lib/avisos";
 
@@ -28,6 +29,8 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   acompanantes: { clave: "panel.invitados.errorAcompanantes", error: true },
   "no-existe": { clave: "panel.invitados.errorNoExiste", error: true },
   "quitar-con-respuesta": { clave: "panel.invitados.errorQuitarConRespuesta", error: true },
+  "persona-no-existe": { clave: "panel.invitados.errorPersonaNoExiste", error: true },
+  "confirmar-emision": { clave: "panel.invitados.errorConfirmarEmision", error: true },
   "sin-permiso": { clave: "panel.invitados.errorSinPermiso", error: true },
   error: { clave: "panel.invitados.errorGuardar", error: true },
 };
@@ -43,7 +46,8 @@ export function AvisoEstado({ estado }: { estado: string }) {
         aviso.error ? "bg-error-fondo text-error-tinta" : "bg-exito-fondo text-exito-tinta"
       }`}
     >
-      {t(aviso.clave)}
+      {/* El tope sale de la constante: el copy lleva el hueco, no el número. */}
+      {t(aviso.clave, { maximo: MAXIMO_ACOMPANANTES })}
     </p>
   );
 }

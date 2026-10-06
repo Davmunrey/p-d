@@ -14,6 +14,7 @@ const ORIGENES = {
   posthog: "https://eu.i.posthog.com",
   sentry: "https://o1.ingest.sentry.io/api/2/envelope/",
   mapa: "https://www.openstreetmap.org/export/embed.html?bbox=1",
+  whatsapp: "https://wa.me/",
   desarrollo: false,
 };
 
@@ -59,16 +60,33 @@ describe("construirCsp", () => {
     cargue— el contrato no se descargaba.
   */
   it("los formularios pueden acabar en el bucket, que es adonde redirigen las descargas", () => {
-    expect(directiva("form-action")).toBe("'self' https://abc.supabase.co");
+    expect(directiva("form-action")).toBe("'self' https://abc.supabase.co https://wa.me");
+  });
+
+  /*
+    Y WhatsApp: «Abrir WhatsApp» anota el envío y redirige a `wa.me`. Sin su
+    origen, sin JavaScript, la invitación quedaba «mandada» y WhatsApp no se
+    abría nunca.
+  */
+  it("los formularios pueden acabar en WhatsApp, que es adonde lleva repartir", () => {
+    expect(directiva("form-action")).toContain("https://wa.me");
   });
 
   it("y sin Supabase configurado, sólo en la propia web", () => {
-    const sinNada = construirCsp("n", { mapa: ORIGENES.mapa, desarrollo: false });
-    expect(sinNada).toContain("form-action 'self';");
+    const sinNada = construirCsp("n", {
+      mapa: ORIGENES.mapa,
+      whatsapp: ORIGENES.whatsapp,
+      desarrollo: false,
+    });
+    expect(sinNada).toContain("form-action 'self' https://wa.me;");
   });
 
   it("sin un servicio configurado, su origen no se abre", () => {
-    const sinNada = construirCsp("n", { mapa: ORIGENES.mapa, desarrollo: false });
+    const sinNada = construirCsp("n", {
+      mapa: ORIGENES.mapa,
+      whatsapp: ORIGENES.whatsapp,
+      desarrollo: false,
+    });
     expect(sinNada).toContain("connect-src 'self';");
     expect(sinNada).toContain("img-src 'self' data: blob:;");
     expect(sinNada).not.toContain("undefined");
