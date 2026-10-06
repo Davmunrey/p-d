@@ -722,7 +722,10 @@ function ConfirmarContratado({
       <ul className="mt-elemento grid gap-linea">
         {otros.map((otro) => (
           <li key={otro.id} className="text-pequeno text-tinta">
-            <Link href={`${RUTA_PROVEEDORES}/${otro.id}`} className="underline">
+            <Link
+              href={`${RUTA_PROVEEDORES}/${otro.id}`}
+              className="inline-flex min-h-control-compacto items-center underline"
+            >
               {otro.nombre}
             </Link>
           </li>

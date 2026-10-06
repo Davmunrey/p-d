@@ -1,6 +1,5 @@
-import Link from "next/link";
-
 import { AvisoDesvios } from "@/components/panel/aviso-desvios";
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_INVITADOS, ZONA_HORARIA } from "@/config/constants";
 import { obtenerConfiguracion } from "@/lib/bbdd/landing";
@@ -86,12 +85,9 @@ export default async function PaginaResumen() {
       {resumen.invitados.personas === 0 ? (
         <section>
           <Cuerpo className="max-w-texto">{t("panel.resumen.sinInvitados")}</Cuerpo>
-          <Link
-            href={RUTA_INVITADOS}
-            className="mt-pila inline-block border-b border-borde-fuerte text-cuerpo text-tinta transicion-color hover:text-tinta-marca"
-          >
+          <EnlaceSuave href={RUTA_INVITADOS} className="mt-pila">
             {t("panel.resumen.irAInvitados")}
-          </Link>
+          </EnlaceSuave>
         </section>
       ) : (
         <>

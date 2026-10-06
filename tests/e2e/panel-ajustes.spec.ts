@@ -172,6 +172,39 @@ test.describe("Ajustes de la boda", () => {
     await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorCoordenadas);
   });
 
+  /*
+    LOS TOPES DE LA BASE, ANTES DE ESCRIBIR. El campo ya corta al escribir;
+    esto es lo que pasa si llega igual (un formulario viejo en caché, otro
+    navegador). Antes el CHECK lo rechazaba y la pantalla decía «no hemos podido
+    guardar los ajustes. Inténtalo de nuevo», que no iba a funcionar nunca.
+  */
+  test("una dirección más larga de lo que cabe se explica y no se guarda", async ({ page }) => {
+    const campo = page.getByLabel(copy.panel.ajustes.direccionCeremonia, { exact: true });
+    const tope = Number(await campo.getAttribute("maxlength"));
+    expect(tope, "el campo tiene que llevar el tope de la base").toBeGreaterThan(0);
+
+    const larga = `${MARCA} ${"Calle Mayor ".repeat(Math.ceil(tope / 12) + 1)}`;
+    await campo.evaluate((input) => input.removeAttribute("maxlength"));
+    await campo.fill(larga);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+
+    await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorLargo);
+
+    await page.goto(RUTA_AJUSTES);
+    await expect(
+      page.getByLabel(copy.panel.ajustes.direccionCeremonia, { exact: true }),
+    ).not.toHaveValue(larga);
+  });
+
+  test("una frase del paisaje de una sola letra se explica", async ({ page }) => {
+    const campo = page.getByLabel(copy.panel.ajustes.paisajeIntro, { exact: true });
+    await campo.evaluate((input) => input.removeAttribute("minlength"));
+    await campo.fill("Y");
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+
+    await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorPaisajeCorto);
+  });
+
   test("un hashtag sin almohadilla se rechaza", async ({ page }) => {
     await page.getByLabel(copy.panel.ajustes.hashtag).fill("PalomaYDavid");
     await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();

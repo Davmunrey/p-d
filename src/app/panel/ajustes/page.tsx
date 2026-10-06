@@ -5,6 +5,7 @@ import { CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   LARGOS_DE_CAMPO,
+  LONGITUD_MINIMA_FRASE_PAISAJE,
   LONGITUD_MINIMA_NOMBRE,
   RUTA_ACCESO,
   TOPE_AVISOS_PROGRAMA,
@@ -50,6 +51,8 @@ const AVISOS: Record<string, { texto: string; error: boolean }> = {
   hashtag: { texto: t("panel.ajustes.errorHashtag"), error: true },
   correo: { texto: t("panel.ajustes.errorCorreo"), error: true },
   avisos: { texto: t("panel.ajustes.errorAvisos"), error: true },
+  largo: { texto: t("panel.ajustes.errorLargo"), error: true },
+  "paisaje-corto": { texto: t("panel.ajustes.errorPaisajeCorto"), error: true },
   "sin-permiso": { texto: t("panel.ajustes.errorSinPermiso"), error: true },
   error: { texto: t("panel.ajustes.errorGuardar"), error: true },
 };
@@ -173,6 +176,7 @@ export default async function PaginaAjustes({
               name="nombre_novia"
               etiqueta={t("panel.ajustes.nombreNovia")}
               defaultValue={data?.nombre_novia ?? ""}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.nombre_novia"]}
               minLength={LONGITUD_MINIMA_NOMBRE}
               required
               disabled={soloLectura}
@@ -181,6 +185,7 @@ export default async function PaginaAjustes({
               name="nombre_novio"
               etiqueta={t("panel.ajustes.nombreNovio")}
               defaultValue={data?.nombre_novio ?? ""}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.nombre_novio"]}
               minLength={LONGITUD_MINIMA_NOMBRE}
               required
               disabled={soloLectura}
@@ -209,12 +214,14 @@ export default async function PaginaAjustes({
             name="lugar_ceremonia"
             etiqueta={t("panel.ajustes.lugarCeremonia")}
             defaultValue={data?.lugar_ceremonia ?? ""}
+            maxLength={LARGOS_DE_CAMPO["configuracion_boda.lugar_ceremonia"]}
             disabled={soloLectura}
           />
           <CampoTexto
             name="direccion_ceremonia"
             etiqueta={t("panel.ajustes.direccionCeremonia")}
             defaultValue={data?.direccion_ceremonia ?? ""}
+            maxLength={LARGOS_DE_CAMPO["configuracion_boda.direccion_ceremonia"]}
             disabled={soloLectura}
           />
           {/*
@@ -260,6 +267,7 @@ export default async function PaginaAjustes({
             ayuda={t("panel.ajustes.paisajeIntroAyuda")}
             defaultValue={data?.paisaje_intro ?? ""}
             maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_intro"]}
+            minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
             disabled={soloLectura}
           />
           <CampoTexto
@@ -268,6 +276,7 @@ export default async function PaginaAjustes({
             ayuda={t("panel.ajustes.paisajeTituloAyuda")}
             defaultValue={data?.paisaje_titulo ?? ""}
             maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_titulo"]}
+            minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
             disabled={soloLectura}
           />
           <CampoTexto
@@ -276,6 +285,7 @@ export default async function PaginaAjustes({
             ayuda={t("panel.ajustes.paisajeCierreAyuda")}
             defaultValue={data?.paisaje_cierre ?? ""}
             maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_cierre"]}
+            minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
             disabled={soloLectura}
           />
           <div className="grid gap-elemento sm:grid-cols-2">
@@ -310,12 +320,14 @@ export default async function PaginaAjustes({
             name="lugar_banquete"
             etiqueta={t("panel.ajustes.lugarBanquete")}
             defaultValue={data?.lugar_banquete ?? ""}
+            maxLength={LARGOS_DE_CAMPO["configuracion_boda.lugar_banquete"]}
             disabled={soloLectura}
           />
           <CampoTexto
             name="direccion_banquete"
             etiqueta={t("panel.ajustes.direccionBanquete")}
             defaultValue={data?.direccion_banquete ?? ""}
+            maxLength={LARGOS_DE_CAMPO["configuracion_boda.direccion_banquete"]}
             disabled={soloLectura}
           />
           <div className="grid gap-elemento sm:grid-cols-2">

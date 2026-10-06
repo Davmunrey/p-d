@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
+  LARGOS_DE_CAMPO,
   LONGITUD_MAXIMA_AVISO_PROGRAMA,
+  LONGITUD_MINIMA_FRASE_PAISAJE,
   LONGITUD_MINIMA_NOMBRE,
   RUTA_ACCESO,
   RUTA_AJUSTES,
@@ -50,6 +52,8 @@ type Estado =
   | "hashtag"
   | "correo"
   | "avisos"
+  | "largo"
+  | "paisaje-corto"
   | "sin-permiso"
   | "error";
 
@@ -110,6 +114,36 @@ export async function guardarAjustes(datos: FormData) {
     nombreNovio.length < LONGITUD_MINIMA_NOMBRE
   ) {
     volver("nombres");
+  }
+
+  /*
+    LOS TOPES DE LA BASE, ANTES DE ESCRIBIR. Sin esto, una dirección de 301
+    caracteres o un nombre de 81 llegaban al CHECK y volvían como «no hemos
+    podido guardar los ajustes. Inténtalo de nuevo», que no va a funcionar.
+  */
+  const topes: [string, number][] = [
+    ["nombre_novia", LARGOS_DE_CAMPO["configuracion_boda.nombre_novia"]],
+    ["nombre_novio", LARGOS_DE_CAMPO["configuracion_boda.nombre_novio"]],
+    ["lugar_ceremonia", LARGOS_DE_CAMPO["configuracion_boda.lugar_ceremonia"]],
+    ["direccion_ceremonia", LARGOS_DE_CAMPO["configuracion_boda.direccion_ceremonia"]],
+    ["ciudad_ceremonia", LARGOS_DE_CAMPO["configuracion_boda.ciudad_ceremonia"]],
+    ["lugar_banquete", LARGOS_DE_CAMPO["configuracion_boda.lugar_banquete"]],
+    ["direccion_banquete", LARGOS_DE_CAMPO["configuracion_boda.direccion_banquete"]],
+    ["paisaje_intro", LARGOS_DE_CAMPO["configuracion_boda.paisaje_intro"]],
+    ["paisaje_titulo", LARGOS_DE_CAMPO["configuracion_boda.paisaje_titulo"]],
+    ["paisaje_cierre", LARGOS_DE_CAMPO["configuracion_boda.paisaje_cierre"]],
+  ];
+  if (topes.some(([campo, tope]) => texto(datos, campo).length > tope)) volver("largo");
+
+  const frasesDelPaisaje = ["paisaje_intro", "paisaje_titulo", "paisaje_cierre"].map((campo) =>
+    texto(datos, campo),
+  );
+  if (
+    frasesDelPaisaje.some(
+      (frase) => frase.length > 0 && frase.length < LONGITUD_MINIMA_FRASE_PAISAJE,
+    )
+  ) {
+    volver("paisaje-corto");
   }
 
   const hashtag = textoONulo(datos, "hashtag");

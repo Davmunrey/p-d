@@ -465,6 +465,8 @@
       "avisosPrograma": "Avisos al pie del programa",
       "avisosProgramaAyuda": "Uno por línea, hasta seis. Salen como etiquetas bajo el programa del día: «Etiqueta elegante · ceremonia al aire libre». Vacío, no se pinta nada.",
       "errorAvisos": "Los avisos del programa son como mucho seis, y ninguno pasa de 120 caracteres.",
+      "errorLargo": "Algún texto es más largo de lo que cabe: los nombres, el lugar, la dirección o las frases del paisaje. Acortadlo y volved a guardar.",
+      "errorPaisajeCorto": "Las frases del paisaje, si se ponen, necesitan al menos dos letras.",
       "grupoRegalos": "Cuenta para los regalos",
       "regalosAyuda": "Sin cuenta escrita, la sección de Regalos no aparece en la web. Vaciarla es la forma de quitarla.",
       "iban": "IBAN",

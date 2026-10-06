@@ -202,7 +202,7 @@ function Tabla({
               >
                 <Link
                   href={`${RUTA_PROVEEDORES}/${candidato.id}`}
-                  className="text-tinta-marca underline"
+                  className="inline-flex min-h-control-compacto items-center text-tinta-marca underline"
                 >
                   {candidato.nombre}
                 </Link>

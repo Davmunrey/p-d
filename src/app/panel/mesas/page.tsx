@@ -518,7 +518,7 @@ function Plano({
               <li key={mesa.id}>
                 <a
                   href={`#${anclaDe(mesa)}`}
-                  className="inline-block rounded-etiqueta border border-borde px-interno py-linea text-pequeno text-tinta-marca transicion-color hover:border-borde-marca"
+                  className="inline-flex min-h-control-compacto items-center rounded-etiqueta border border-borde px-interno text-pequeno text-tinta-marca transicion-color hover:border-borde-marca"
                 >
                   {mesa.nombre}
                 </a>

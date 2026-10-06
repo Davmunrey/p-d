@@ -342,6 +342,13 @@ export const LONGITUD_MINIMA_CONTRASENA = 12;
 export const LONGITUD_MINIMA_NOMBRE = 2;
 
 /**
+ * Lo mínimo de cada frase del paisaje («Por si os animáis…»), según sus CHECK
+ * (`between 2 and …` sobre el texto recortado). Una sola letra no es una frase,
+ * y la base la rechazaba con el aviso genérico de «no hemos podido guardar».
+ */
+export const LONGITUD_MINIMA_FRASE_PAISAJE = 2;
+
+/**
  * Cuánto se queda el «Copiado» en un botón de copiar, en milisegundos.
  *
  * Suficiente para leerlo sin prisa y poco para que no se quede fijo: un aviso
@@ -681,6 +688,12 @@ export const LARGOS_DE_CAMPO = {
   "categorias_proveedor.descripcion": 500,
   "categorias_proveedor.nombre": 80,
   "configuracion_boda.ciudad_ceremonia": 80,
+  "configuracion_boda.direccion_banquete": 300,
+  "configuracion_boda.direccion_ceremonia": 300,
+  "configuracion_boda.lugar_banquete": 160,
+  "configuracion_boda.lugar_ceremonia": 160,
+  "configuracion_boda.nombre_novia": 80,
+  "configuracion_boda.nombre_novio": 80,
   "configuracion_boda.paisaje_cierre": 80,
   "configuracion_boda.paisaje_intro": 60,
   "configuracion_boda.paisaje_titulo": 200,
