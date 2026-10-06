@@ -4,8 +4,10 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { SECCIONES } from "@/config/secciones";
+import { TIPOS_MEDIBLES } from "@/lib/dimensiones";
 import {
   seccionEnsenaMedios,
+  tiposQuePinta,
   visibilidadEnLaWeb,
   type MedioParaPintar,
 } from "@/lib/medios-en-la-web";
@@ -66,7 +68,8 @@ describe("visibilidadEnLaWeb", () => {
     expect(v.get("a")).toEqual({ seVe: true });
     expect(v.get("b")).toEqual({ seVe: true });
     expect(v.get("avif")).toEqual({ seVe: false, motivo: "sin-medidas" });
-    expect(v.get("v")).toEqual({ seVe: false, motivo: "sin-medidas" });
+    // Un vídeo no es una foto sin medir: no sale nunca, y se dice así.
+    expect(v.get("v")).toEqual({ seVe: false, motivo: "solo-fotos" });
   });
 
   it("en historia y alojamiento, sólo la que elige una ficha", () => {
@@ -79,6 +82,22 @@ describe("visibilidadEnLaWeb", () => {
     expect(v.get("suelta")).toEqual({ seVe: false, motivo: "sin-ficha" });
   });
 
+  it("un vídeo en historia no «sale cuando se elige»: el selector sólo ofrece fotos", () => {
+    const v = visibilidadEnLaWeb("historia", [foto("v", { tipo: "video" })], nadie);
+    expect(v.get("v")).toEqual({ seVe: false, motivo: "solo-fotos" });
+  });
+
+  it("con la sección apagada no se ve nada de lo publicado, y lo demás sigue en borrador", () => {
+    const v = visibilidadEnLaWeb(
+      "portada",
+      [foto("a"), foto("borrador", { publicado: false })],
+      nadie,
+      false,
+    );
+    expect(v.get("a")).toEqual({ seVe: false, motivo: "seccion-oculta" });
+    expect(v.get("borrador")).toEqual({ seVe: false, motivo: "borrador" });
+  });
+
   it("en las secciones que no enseñan fotos, ninguna, aunque esté publicada", () => {
     const v = visibilidadEnLaWeb("programa", [foto("a")], nadie);
     expect(v.get("a")).toEqual({ seVe: false, motivo: "seccion-sin-medios" });
@@ -89,6 +108,31 @@ describe("visibilidadEnLaWeb", () => {
     expect(SECCIONES.filter(seccionEnsenaMedios).sort()).toEqual(
       ["alojamiento", "galeria", "historia", "paisaje", "portada", "reserva_la_fecha"].sort(),
     );
+  });
+});
+
+describe("tiposQuePinta: sólo se deja subir lo que esa parte de la web enseña", () => {
+  it("portada y paisaje, foto o vídeo", () => {
+    expect(tiposQuePinta("portada")).toContain("video/mp4");
+    expect(tiposQuePinta("paisaje")).toContain("image/avif");
+  });
+
+  it("la tarjeta, historia y alojamiento, sólo fotos", () => {
+    for (const seccion of ["reserva_la_fecha", "historia", "alojamiento"] as const) {
+      expect(
+        tiposQuePinta(seccion).every((tipo) => tipo.startsWith("image/")),
+        seccion,
+      ).toBe(true);
+      expect(tiposQuePinta(seccion), seccion).toContain("image/jpeg");
+    }
+  });
+
+  it("la galería, sólo lo que se sabe medir: ni vídeo ni AVIF", () => {
+    expect([...tiposQuePinta("galeria")].sort()).toEqual([...TIPOS_MEDIBLES].sort());
+  });
+
+  it("y donde la web no enseña medios, nada", () => {
+    expect(tiposQuePinta("programa")).toEqual([]);
   });
 });
 

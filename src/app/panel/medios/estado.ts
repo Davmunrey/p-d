@@ -16,6 +16,7 @@ export type EstadoMedios =
   | "publicado"
   | "despublicado"
   | "borrado"
+  | "borrado-sin-fichero"
   | "movido"
   | "alternativo-guardado"
   | "sin-fichero"
@@ -26,7 +27,21 @@ export type EstadoMedios =
   | "sin-configurar"
   | "sin-permiso"
   | "no-existe"
+  | "confirmar-borrado"
   | "error";
+
+/**
+ * DÓNDE SE ENSEÑA EL AVISO. La pantalla vuelve a la ficha o a la sección de la
+ * que salió la acción —en el móvil, la galería está a dos mil píxeles de la
+ * cabecera— y el aviso se pinta ahí, junto a lo que acaba de cambiar.
+ */
+export function anclaDeMedio(id: string): string {
+  return `medio-${id}`;
+}
+
+export function anclaDeSeccion(seccion: string): string {
+  return `seccion-${seccion}`;
+}
 
 /** Cuáles se cuentan como un fallo. Decide el color del aviso y su `role`. */
 export const ESTADOS_DE_ERROR: readonly EstadoMedios[] = [
@@ -38,6 +53,10 @@ export const ESTADOS_DE_ERROR: readonly EstadoMedios[] = [
   "sin-configurar",
   "sin-permiso",
   "no-existe",
+  "confirmar-borrado",
+  // Se ha borrado, pero el fichero sigue siendo público por su URL: hay que
+  // decirlo en rojo, no felicitar.
+  "borrado-sin-fichero",
   "error",
 ];
 

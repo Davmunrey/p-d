@@ -150,6 +150,13 @@ function deWebp(datos: Uint8Array): Dimensiones | null {
 }
 
 /**
+ * LOS FORMATOS QUE ESTE MÓDULO SABE MEDIR, uno por lector de abajo. Lo que no
+ * está aquí sale sin medidas, y la galería —que sólo coloca fotos con medidas—
+ * no lo enseña nunca: por eso el panel no lo ofrece para la galería.
+ */
+export const TIPOS_MEDIBLES = ["image/png", "image/jpeg", "image/webp"] as const;
+
+/**
  * Lee el tamaño de la cabecera. `null` si el formato no se sabe leer — que es
  * un resultado válido y no un fallo: la base admite ancho y alto vacíos.
  *

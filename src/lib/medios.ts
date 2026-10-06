@@ -41,6 +41,15 @@ const EXTENSIONES: Record<(typeof TIPOS_MEDIO_ADMITIDOS)[number], string> = {
   "video/mp4": "mp4",
 };
 
+/**
+ * Cómo se nombra un tipo delante de quien sube: «JPG», «PNG», «MP4». Sale de
+ * la misma extensión que se guarda, así que la ayuda no puede nombrar un
+ * formato que la subida no admita.
+ */
+export function rotuloDeTipo(tipo: string): string {
+  return esTipoAdmitido(tipo) ? EXTENSIONES[tipo].toUpperCase() : tipo;
+}
+
 export type MotivoRechazo = "tipo" | "peso";
 
 export type Veredicto =

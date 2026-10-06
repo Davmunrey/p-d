@@ -114,6 +114,37 @@ function fichaDe(pagina: Page, alternativo: string) {
   return pagina.locator("li").filter({ has: pagina.locator(`input[value="${alternativo}"]`) });
 }
 
+/**
+ * BORRAR, EN SUS DOS PASOS: abrir «Borrar» en la ficha y confirmar. El
+ * desplegable se busca por su texto y no por su nombre accesible, que lleva
+ * detrás el texto alternativo de la foto para quien no la ve.
+ */
+async function borrar(pagina: Page, alternativo: string) {
+  const ficha = fichaDe(pagina, alternativo);
+  await ficha.locator("summary", { hasText: copy.panel.medios.borrar }).click();
+  await ficha.getByRole("button", { name: copy.panel.medios.borrarConfirmar }).click();
+}
+
+/** Una fila de `medios` puesta por SQL, sin fichero detrás: para lo que no sube nada. */
+async function ponerMedio(
+  sql: postgres.Sql,
+  alternativo: string,
+  seccion: string,
+  extra: { publicado?: boolean; tipo?: "imagen" | "video" } = {},
+): Promise<string> {
+  const [fila] = await sql<{ id: string }[]>`
+    insert into public.medios
+      (ruta_almacenamiento, poster_ruta, texto_alternativo, seccion, tipo, publicado, ancho, alto)
+    values
+      (${`${seccion}/e2e-${Date.now()}-${Math.round(Math.random() * 1e6)}.${extra.tipo === "video" ? "mp4" : "png"}`},
+       ${extra.tipo === "video" ? `${seccion}/e2e-poster-${Date.now()}.png` : null},
+       ${sql.json({ es: alternativo })}, ${seccion}::public.seccion_landing,
+       ${extra.tipo ?? "imagen"}::public.tipo_medio, ${extra.publicado ?? false}, 2, 2)
+    returning id
+  `;
+  return fila.id;
+}
+
 /** Una fila de `medios`, con lo justo para saber dónde está y en qué puesto. */
 interface PuestoDeMedio {
   texto: string;
@@ -403,9 +434,7 @@ test.describe("El gestor de fotos y vídeos", () => {
       // En otra pestaña, alguien la borra.
       await sql`delete from public.medios where texto_alternativo->>'es' = ${alternativo}`;
 
-      await ficha
-        .getByRole("button", { name: copy.panel.medios.publicar, exact: true })
-        .click();
+      await ficha.getByRole("button", { name: copy.panel.medios.publicar }).click();
       await esperarEstado(page, "no-existe");
       await expect(page.getByText(copy.panel.medios.errorNoExiste)).toBeVisible();
     } finally {
@@ -466,7 +495,12 @@ test.describe("El gestor de fotos y vídeos", () => {
       fichaDe(page, alternativo).getByText(copy.panel.medios.publicadaNoSeVe),
     ).toBeVisible();
     await expect(
-      fichaDe(page, alternativo).getByText(copy.panel.medios.motivos.soloLaPrimera),
+      fichaDe(page, alternativo).getByText(
+        copy.panel.medios.motivos.soloLaPrimera.replace(
+          "{boton}",
+          copy.panel.medios.subirOrden,
+        ),
+      ),
     ).toBeVisible();
 
     /*
@@ -479,7 +513,7 @@ test.describe("El gestor de fotos y vídeos", () => {
       const portada = await request.get("/");
       if ((await portada.text()).includes(alternativo)) break;
       await fichaDe(page, alternativo)
-        .getByRole("button", { name: copy.panel.medios.subirOrden, exact: true })
+        .getByRole("button", { name: copy.panel.medios.subirOrden })
         .click();
       await esperarEstado(page, "movido");
     }
@@ -492,7 +526,9 @@ test.describe("El gestor de fotos y vídeos", () => {
 
     // Y ahora que la web la pinta, el panel dice que se ve.
     await page.goto(RUTA_MEDIOS);
-    await expect(fichaDe(page, alternativo).getByText(copy.panel.medios.enLaWeb)).toBeVisible();
+    await expect(
+      fichaDe(page, alternativo).getByText(copy.panel.medios.enLaWeb, { exact: true }),
+    ).toBeVisible();
 
     // Retirar no borra: vuelve a borrador y el fichero sigue donde estaba.
     await fichaDe(page, alternativo)
@@ -503,9 +539,7 @@ test.describe("El gestor de fotos y vídeos", () => {
       fichaDe(page, alternativo).getByText(copy.panel.medios.borrador),
     ).toBeVisible();
 
-    await fichaDe(page, alternativo)
-      .getByRole("button", { name: copy.panel.medios.borrar })
-      .click();
+    await borrar(page, alternativo);
     await esperarEstado(page, "borrado");
     await expect(fichaDe(page, alternativo)).toHaveCount(0);
   });
@@ -643,10 +677,156 @@ test.describe("El gestor de fotos y vídeos", () => {
     ).toBeLessThan(puestos.get(delante.texto)!);
 
     for (const alternativo of [primera, segunda]) {
-      await fichaDe(page, alternativo)
-        .getByRole("button", { name: copy.panel.medios.borrar })
-        .click();
+      await borrar(page, alternativo);
       await esperarEstado(page, "borrado");
+    }
+  });
+
+  /**
+   * BORRAR SE CONFIRMA, y la pregunta dice lo que se pierde. Antes un toque al
+   * lado de «Quitar de la web» borraba fila y fichero sin vuelta atrás. No sube
+   * nada: la fila se pone por SQL.
+   */
+  test("borrar pide confirmación, y sin ella no borra", async ({ page }) => {
+    const alternativo = `${MARCA} confirmar ${Date.now()}`;
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    try {
+      await ponerMedio(sql, alternativo, "galeria", { publicado: true });
+      const cuantas = async () =>
+        (
+          await sql<{ n: number }[]>`
+            select count(*)::int as n from public.medios where texto_alternativo->>'es' = ${alternativo}
+          `
+        )[0].n;
+
+      await entrar(page);
+      await page.goto(RUTA_MEDIOS);
+      const ficha = fichaDe(page, alternativo);
+      await ficha.locator("summary", { hasText: copy.panel.medios.borrar }).click();
+      // Está publicada y con medidas en la galería: se ve, y la pregunta lo dice.
+      await expect(ficha.getByText(copy.panel.medios.borrarEnLaWeb)).toBeVisible();
+
+      // CASO DE ERROR · el formulario llega sin la confirmación, como si se
+      // mandara desde fuera: no se borra nada.
+      await ficha.locator('input[name="confirmado"]').evaluate((campo) => campo.remove());
+      await ficha.getByRole("button", { name: copy.panel.medios.borrarConfirmar }).click();
+      await esperarEstado(page, "confirmar-borrado");
+      expect(await cuantas()).toBe(1);
+      // El aviso sale en la ficha, que es a donde vuelve la pantalla.
+      await expect(fichaDe(page, alternativo).getByRole("alert")).toBeVisible();
+
+      // CAMINO FELIZ · confirmando, se va.
+      await borrar(page, alternativo);
+      await esperarEstado(page, "borrado");
+      expect(await cuantas()).toBe(0);
+    } finally {
+      await sql`delete from public.medios where texto_alternativo->>'es' = ${alternativo}`;
+      await sql.end();
+    }
+  });
+
+  /**
+   * CASO DE ERROR · mover una foto que se borró en otra pestaña. Decía «No
+   * hemos podido guardar. Inténtalo de nuevo» —y reintentar no arreglaba nada—
+   * y lo registraba como avería.
+   */
+  test("mover una foto que ya no existe dice que ya no existe", async ({ page }) => {
+    const sello = Date.now();
+    const primera = `${MARCA} mover A ${sello}`;
+    const segunda = `${MARCA} mover B ${sello}`;
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    try {
+      await ponerMedio(sql, primera, "historia");
+      await ponerMedio(sql, segunda, "historia");
+
+      await entrar(page);
+      await page.goto(RUTA_MEDIOS);
+      const ficha = fichaDe(page, segunda);
+      await expect(ficha).toHaveCount(1);
+
+      await sql`delete from public.medios where texto_alternativo->>'es' = ${segunda}`;
+      await ficha.getByRole("button", { name: copy.panel.medios.subirOrden }).click();
+      await esperarEstado(page, "no-existe");
+      await expect(page.getByText(copy.panel.medios.errorNoExiste)).toBeVisible();
+    } finally {
+      await sql`delete from public.medios where texto_alternativo->>'es' in (${primera}, ${segunda})`;
+      await sql.end();
+    }
+  });
+
+  /**
+   * SÓLO SE OFRECE LO QUE ESA PARTE DE LA WEB PINTA. La galería no enseña
+   * vídeos: antes se dejaban subir, se publicaban y se quedaban en «no se ve».
+   */
+  test("la galería no ofrece vídeo, y si llega uno lo rechaza junto al formulario", async ({
+    page,
+  }) => {
+    await entrar(page);
+    await page.goto(RUTA_MEDIOS);
+
+    const formulario = await formularioDe(page, "galeria");
+    const campo = formulario.locator('input[type="file"][name="fichero"]');
+    await expect(campo).not.toHaveAttribute("accept", /video/);
+    await expect(campo).not.toHaveAttribute("accept", /avif/);
+    // Sin vídeo, no hay fotograma que pedir.
+    await expect(formulario.locator('input[name="poster"]')).toHaveCount(0);
+
+    // CASO DE ERROR · el `accept` no impide elegirlo «con todos los archivos».
+    await campo.setInputFiles(
+      comoFichero("paisaje.mp4", "video/mp4", Buffer.from("no-soy-un-mp4")),
+    );
+    await formulario
+      .getByLabel(copy.panel.medios.alternativo)
+      .fill(`${MARCA} vídeo en la galería`);
+    await formulario
+      .getByRole("button", { name: copy.panel.medios.subir, exact: true })
+      .click();
+
+    await esperarEstado(page, "tipo-no-admitido");
+    // El aviso sale en la galería, con su formulario abierto debajo.
+    const galeria = page.locator("#seccion-galeria");
+    await expect(galeria.getByText(copy.panel.medios.errorTipo)).toBeVisible();
+    await expect(galeria.locator("details[open]")).toHaveCount(1);
+  });
+
+  /**
+   * UNA SECCIÓN APAGADA NO ENSEÑA NADA. El panel decía «En la web» de las fotos
+   * de una sección que la landing no pintaba.
+   */
+  test("con la sección apagada, lo publicado no está «en la web», y se dice", async ({
+    page,
+  }) => {
+    const alternativo = `${MARCA} apagada ${Date.now()}`;
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    const [previa] = await sql<{ visible: boolean }[]>`
+      select visible from public.secciones_landing where seccion = 'galeria'
+    `;
+    try {
+      await ponerMedio(sql, alternativo, "galeria", { publicado: true });
+      await sql`update public.secciones_landing set visible = false where seccion = 'galeria'`;
+
+      await entrar(page);
+      await page.goto(RUTA_MEDIOS);
+
+      const ficha = fichaDe(page, alternativo);
+      await expect(ficha.getByText(copy.panel.medios.publicadaNoSeVe)).toBeVisible();
+      await expect(
+        page.locator("#seccion-galeria").getByText(copy.panel.medios.seccionApagada),
+      ).toBeVisible();
+
+      // CAMINO FELIZ · encendida, la misma foto sí está en la web.
+      await sql`update public.secciones_landing set visible = true where seccion = 'galeria'`;
+      await page.goto(RUTA_MEDIOS);
+      await expect(
+        fichaDe(page, alternativo).getByText(copy.panel.medios.enLaWeb, { exact: true }),
+      ).toBeVisible();
+    } finally {
+      await sql`
+        update public.secciones_landing set visible = ${previa?.visible ?? true}
+         where seccion = 'galeria'
+      `;
+      await sql`delete from public.medios where texto_alternativo->>'es' = ${alternativo}`;
+      await sql.end();
     }
   });
 });

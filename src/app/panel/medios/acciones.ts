@@ -6,11 +6,12 @@ import { BUCKET_MEDIOS, LARGOS_DE_CAMPO, RUTA_ACCESO, RUTA_MEDIOS } from "@/conf
 import { SECCIONES, type Seccion } from "@/config/secciones";
 import { medirImagen } from "@/lib/dimensiones";
 import { admitirFichero, componerRuta, identificadorDeRuta } from "@/lib/medios";
+import { tiposQuePinta } from "@/lib/medios-en-la-web";
 import { accesoActual, ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteDeServicio, haySubidaDeMedios } from "@/lib/supabase/servicio";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
-import { ESTADOS_DE_ERROR, type EstadoMedios } from "./estado";
+import { ESTADOS_DE_ERROR, anclaDeMedio, anclaDeSeccion, type EstadoMedios } from "./estado";
 
 /**
  * BODA-29 · SUBIR, PUBLICAR, ORDENAR Y BORRAR
@@ -83,11 +84,28 @@ function esSeccion(valor: string): valor is Seccion {
  * sí la aplica, el problema está en cómo el enrutador apila una navegación a la
  * ruta en la que ya está.
  */
-function volver(estado: EstadoMedios): never {
+function volver(
+  estado: EstadoMedios,
+  donde: { medio?: string; seccion?: Seccion } = {},
+): never {
   if (ESTADOS_DE_ERROR.includes(estado)) {
     console.warn(`Subida de medio rechazada: ${estado}`);
   }
-  redirect(`${RUTA_MEDIOS}?estado=${estado}`, RedirectType.replace);
+
+  /*
+    Y SE VUELVE A DONDE SE ESTABA. Sin ancla, cada acción subía la pantalla a la
+    cabecera: para bajar una foto cuatro puestos en la galería había que
+    volver a buscarla cuatro veces, y el aviso salía arriba, lejos de la foto.
+  */
+  const parametros = new URLSearchParams({ estado });
+  if (donde.medio) parametros.set("medio", donde.medio);
+  if (donde.seccion) parametros.set("seccion", donde.seccion);
+  const ancla = donde.medio
+    ? `#${anclaDeMedio(donde.medio)}`
+    : donde.seccion
+      ? `#${anclaDeSeccion(donde.seccion)}`
+      : "";
+  redirect(`${RUTA_MEDIOS}?${parametros}${ancla}`, RedirectType.replace);
 }
 
 async function cliente() {
@@ -107,6 +125,9 @@ function motivo(error: { code?: string; message?: string } | null): EstadoMedios
   if (!error) return "error";
   if (error.code === "42501" || error.message?.includes("MED03")) return "sin-permiso";
   if (error.message?.includes("MED01")) return "sin-alternativo";
+  // `reordenar_medio()` no la encuentra: se borró en otra pestaña. No es una
+  // avería, y «inténtalo de nuevo» no arreglaría nada.
+  if (error.message?.includes("MED02")) return "no-existe";
   console.error("Fallo al escribir en medios:", error);
   return "error";
 }
@@ -135,16 +156,18 @@ export async function subirMedio(datos: FormData): Promise<void> {
     alternativo.length < 3 ||
     alternativo.length > LARGOS_DE_CAMPO["medios.texto_alternativo"]
   ) {
-    volver("sin-alternativo");
+    volver("sin-alternativo", { seccion });
   }
 
   const original = fichero(datos, "fichero");
-  if (!original) volver("sin-fichero");
+  if (!original) volver("sin-fichero", { seccion });
 
   const veredicto = admitirFichero(original);
   if (!veredicto.admitido) {
-    volver(veredicto.motivo === "tipo" ? "tipo-no-admitido" : "demasiado-grande");
+    volver(veredicto.motivo === "tipo" ? "tipo-no-admitido" : "demasiado-grande", { seccion });
   }
+  // Admitido en el bucket no es admitido AQUÍ: un vídeo en la galería no sale.
+  if (!tiposQuePinta(seccion).includes(original.type)) volver("tipo-no-admitido", { seccion });
 
   /*
     UN VÍDEO SIN PÓSTER NO ENTRA, y no es una manía: el póster es lo que se ve
@@ -154,16 +177,18 @@ export async function subirMedio(datos: FormData): Promise<void> {
     poder decirlo con palabras en vez de con un error de restricción.
   */
   const poster = fichero(datos, "poster");
-  if (veredicto.tipo === "video" && !poster) volver("sin-poster");
+  if (veredicto.tipo === "video" && !poster) volver("sin-poster", { seccion });
 
   let veredictoPoster: ReturnType<typeof admitirFichero> | null = null;
   if (veredicto.tipo === "video" && poster) {
     veredictoPoster = admitirFichero(poster);
     if (!veredictoPoster.admitido) {
-      volver(veredictoPoster.motivo === "tipo" ? "tipo-no-admitido" : "demasiado-grande");
+      volver(veredictoPoster.motivo === "tipo" ? "tipo-no-admitido" : "demasiado-grande", {
+        seccion,
+      });
     }
     // Un vídeo de póster no es un póster: lo que hace falta es un fotograma.
-    if (veredictoPoster.tipo !== "imagen") volver("tipo-no-admitido");
+    if (veredictoPoster.tipo !== "imagen") volver("tipo-no-admitido", { seccion });
   }
 
   const bytes = new Uint8Array(await original.arrayBuffer());
@@ -206,7 +231,7 @@ export async function subirMedio(datos: FormData): Promise<void> {
     .select("id")
     .maybeSingle();
 
-  if (error || !fila) volver(motivo(error));
+  if (error || !fila) volver(motivo(error), { seccion });
 
   // 2. Y AHORA LOS FICHEROS, con la única llave que abre Storage.
   const servicio = clienteDeServicio();
@@ -270,10 +295,10 @@ export async function subirMedio(datos: FormData): Promise<void> {
     if (falloPoster) {
       await servicio.storage.from(BUCKET_MEDIOS).remove([ruta]);
     }
-    volver("error");
+    volver("error", { seccion });
   }
 
-  volver("subido");
+  volver("subido", { medio: fila.id });
 }
 
 /**
@@ -301,10 +326,10 @@ export async function alternarPublicado(datos: FormData): Promise<void> {
 
   // Cero filas y sin error: o RLS ha dicho que no, o la foto ya no está. El
   // rol desempata. Ver la cabecera del fichero.
-  if (error) volver(motivo(error));
+  if (error) volver(motivo(error), { medio: id });
   if (!data) volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
 
-  volver(publicar ? "publicado" : "despublicado");
+  volver(publicar ? "publicado" : "despublicado", { medio: id });
 }
 
 /**
@@ -328,8 +353,8 @@ export async function moverMedio(datos: FormData): Promise<void> {
     p_hacia_arriba: texto(datos, "hacia") === "arriba",
   });
 
-  if (error) volver(motivo(error));
-  volver("movido");
+  if (error) volver(motivo(error), { medio: id });
+  volver("movido", { medio: id });
 }
 
 /**
@@ -351,31 +376,45 @@ export async function borrarMedio(datos: FormData): Promise<void> {
   const id = texto(datos, "medio_id");
   if (!id) volver("error");
 
+  /*
+    SE CONFIRMA, porque no tiene vuelta atrás: se van la fila y el fichero, y
+    si era la foto de portada, la portada se queda sin foto. El formulario de
+    confirmar es el único que manda este campo.
+  */
+  if (texto(datos, "confirmado") !== "si") volver("confirmar-borrado", { medio: id });
+
+  /*
+    SIN LA CLAVE DE SERVICIO NO SE BORRA. Se podría quitar la fila, pero el
+    fichero se quedaría en el bucket público, accesible por su URL para quien
+    la tenga —justo lo que borrar viene a evitar—, y la pantalla felicitaba con
+    «Borrado, también el fichero».
+  */
+  if (!haySubidaDeMedios) volver("sin-configurar", { medio: id });
+
   const supabase = await cliente();
   const { data, error } = await supabase
     .from("medios")
     .delete()
     .eq("id", id)
-    .select("ruta_almacenamiento, poster_ruta")
+    .select("ruta_almacenamiento, poster_ruta, seccion")
     .maybeSingle();
 
-  if (error) volver(motivo(error));
+  if (error) volver(motivo(error), { medio: id });
   if (!data) volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
 
-  if (haySubidaDeMedios) {
-    const rutas = [data.ruta_almacenamiento, data.poster_ruta].filter((ruta): ruta is string =>
-      Boolean(ruta),
-    );
-    const { error: fallo } = await clienteDeServicio()
-      .storage.from(BUCKET_MEDIOS)
-      .remove(rutas);
+  const rutas = [data.ruta_almacenamiento, data.poster_ruta].filter((ruta): ruta is string =>
+    Boolean(ruta),
+  );
+  const { error: fallo } = await clienteDeServicio().storage.from(BUCKET_MEDIOS).remove(rutas);
 
-    // Se registra pero no se convierte en error de pantalla: la fila ya no
-    // está, así que para quien mira la web el borrado ha ocurrido entero.
-    if (fallo) console.error("Fila borrada, fichero huérfano en Storage:", fallo);
+  // La ficha ya no existe: se vuelve a su sección. Y si el fichero se quedó,
+  // se dice, en vez de dar por borrado algo que sigue en internet.
+  const seccion = esSeccion(String(data.seccion)) ? (data.seccion as Seccion) : undefined;
+  if (fallo) {
+    console.error("Fila borrada, fichero huérfano en Storage:", fallo);
+    volver("borrado-sin-fichero", { seccion });
   }
-
-  volver("borrado");
+  volver("borrado", { seccion });
 }
 
 /**
@@ -396,7 +435,7 @@ export async function guardarAlternativo(datos: FormData): Promise<void> {
     alternativo.length < 3 ||
     alternativo.length > LARGOS_DE_CAMPO["medios.texto_alternativo"]
   ) {
-    volver("sin-alternativo");
+    volver("sin-alternativo", { medio: id });
   }
 
   const supabase = await cliente();
@@ -407,8 +446,8 @@ export async function guardarAlternativo(datos: FormData): Promise<void> {
     .select("id")
     .maybeSingle();
 
-  if (error) volver(motivo(error));
+  if (error) volver(motivo(error), { medio: id });
   if (!data) volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
 
-  volver("alternativo-guardado");
+  volver("alternativo-guardado", { medio: id });
 }

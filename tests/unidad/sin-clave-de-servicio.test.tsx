@@ -40,6 +40,8 @@ vi.mock("@/lib/bbdd/medios", () => ({
   obtenerMediosDelPanel: async () => [{ seccion: "portada", medios: [] }],
   obtenerMediosElegidosEnFichas: async () => new Set<string>(),
 }));
+vi.mock("@/lib/bbdd/contenido", () => ({ obtenerEstadoDeLasSecciones: async () => null }));
+vi.mock("@/lib/bbdd/landing", () => ({ obtenerConfiguracion: async () => null }));
 
 describe("sin SUPABASE_SERVICE_ROLE_KEY", () => {
   beforeEach(() => {
@@ -62,6 +64,21 @@ describe("sin SUPABASE_SERVICE_ROLE_KEY", () => {
     datos.set("texto_alternativo", "Una foto de prueba");
 
     await expect(subirMedio(datos)).rejects.toThrow(/estado=sin-configurar/);
+    expect(redirigir).toHaveBeenCalledTimes(1);
+  });
+
+  /*
+    BORRAR TAMPOCO. Sin la clave se podía quitar la fila, pero el fichero se
+    quedaba en el bucket público —accesible por su enlace— y la pantalla
+    felicitaba con «Borrado, también el fichero».
+  */
+  it("borrar vuelve con «sin-configurar» sin tocar la base", async () => {
+    const { borrarMedio } = await import("../../src/app/panel/medios/acciones");
+    const datos = new FormData();
+    datos.set("medio_id", "00000000-0000-4000-8000-000000000001");
+    datos.set("confirmado", "si");
+
+    await expect(borrarMedio(datos)).rejects.toThrow(/estado=sin-configurar/);
     expect(redirigir).toHaveBeenCalledTimes(1);
   });
 });

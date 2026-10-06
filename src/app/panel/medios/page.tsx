@@ -4,25 +4,33 @@ import { redirect } from "next/navigation";
 
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   LARGOS_DE_CAMPO,
   BUCKET_MEDIOS,
+  IDIOMA,
   PESO_MAXIMO_IMAGEN_MB,
   PESO_MAXIMO_VIDEO_MB,
   RUTA_ACCESO,
+  RUTA_AJUSTES,
+  RUTA_CONTENIDO,
   TIPOS_MEDIO_ADMITIDOS,
 } from "@/config/constants";
 import { type Seccion } from "@/config/secciones";
+import { obtenerEstadoDeLasSecciones } from "@/lib/bbdd/contenido";
+import { obtenerConfiguracion } from "@/lib/bbdd/landing";
 import {
   obtenerMediosDelPanel,
   obtenerMediosElegidosEnFichas,
   type MedioDelPanel,
 } from "@/lib/bbdd/medios";
 import { t, type ClaveCopy } from "@/lib/copy";
+import { rotuloDeTipo } from "@/lib/medios";
 import {
   seccionEnsenaMedios,
+  tiposQuePinta,
   visibilidadEnLaWeb,
   type MotivoNoSeVe,
   type Visibilidad,
@@ -37,7 +45,13 @@ import {
   moverMedio,
   subirMedio,
 } from "./acciones";
-import { ESTADOS_DE_ERROR, esEstadoMedios, type EstadoMedios } from "./estado";
+import {
+  ESTADOS_DE_ERROR,
+  anclaDeMedio,
+  anclaDeSeccion,
+  esEstadoMedios,
+  type EstadoMedios,
+} from "./estado";
 
 /** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
 export const metadata: Metadata = { title: t("panel.medios.titulo") };
@@ -71,6 +85,11 @@ const AVISOS: Record<EstadoMedios, string> = {
   publicado: t("panel.medios.avisoPublicado"),
   despublicado: t("panel.medios.avisoDespublicado"),
   borrado: t("panel.medios.avisoBorrado"),
+  "borrado-sin-fichero": t("panel.medios.avisoBorradoSinFichero"),
+  "confirmar-borrado": t("panel.medios.errorConfirmarBorrado", {
+    borrar: t("panel.medios.borrar"),
+    confirmar: t("panel.medios.borrarConfirmar"),
+  }),
   movido: t("panel.medios.avisoMovido"),
   "alternativo-guardado": t("panel.medios.avisoAlternativo"),
   "sin-fichero": t("panel.medios.errorSinFichero"),
@@ -84,8 +103,46 @@ const AVISOS: Record<EstadoMedios, string> = {
   error: t("panel.medios.errorGuardar"),
 };
 
-/** Lo que acepta el `<input type="file">`, del mismo sitio que el bucket. */
-const TIPOS_ACEPTADOS = TIPOS_MEDIO_ADMITIDOS.join(",");
+/**
+ * Lo que acepta el campo del fotograma: las imágenes que admite el bucket, del
+ * mismo sitio que todo lo demás. Escrito a mano, el día que se añadiera un
+ * formato el campo de la foto lo ofrecería y el del fotograma no.
+ */
+const TIPOS_POSTER = TIPOS_MEDIO_ADMITIDOS.filter((tipo) => tipo.startsWith("image/"));
+
+/** «JPG, PNG o WEBP», para la ayuda y para el error de formato. */
+const lista = new Intl.ListFormat(IDIOMA, { type: "disjunction" });
+function nombrar(tipos: readonly string[]): string {
+  return lista.format(tipos.map(rotuloDeTipo));
+}
+
+/** Por qué una sección entera no sale en la web, aunque tenga cosas publicadas. */
+type Oculta = "apagada" | "paisaje-sin-titulo";
+
+/** El aviso de una acción, donde toque pintarlo. */
+function Aviso({ estado, className = "" }: { estado: EstadoMedios; className?: string }) {
+  const esError = ESTADOS_DE_ERROR.includes(estado);
+  return (
+    <p
+      role={esError ? "alert" : "status"}
+      className={`rounded-campo p-interno text-pequeno ${
+        esError ? "bg-error-fondo text-error-tinta" : "bg-exito-fondo text-exito-tinta"
+      } ${className}`}
+    >
+      {AVISOS[estado]}
+    </p>
+  );
+}
+
+/**
+ * El nombre de la foto dentro de un botón, sólo para quien no lo ve. «Borrar»
+ * repetido veinte veces no dice de qué foto es a un lector de pantalla ni deja
+ * nombrarlo por voz; el texto oculto sí, y sin `aria-label` el nombre sigue
+ * empezando por lo que se ve escrito (WCAG 2.5.3).
+ */
+function DeQue({ nombre }: { nombre: string }) {
+  return <span className="sr-only"> {nombre}</span>;
+}
 
 interface Parametros {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -96,15 +153,44 @@ export default async function PaginaMedios({ searchParams }: Parametros) {
   if (!acceso) redirect(RUTA_ACCESO);
 
   const consulta = await searchParams;
-  const bruto = typeof consulta.estado === "string" ? consulta.estado : "";
+  const leer = (clave: string) => (typeof consulta[clave] === "string" ? consulta[clave] : "");
+  const bruto = leer("estado");
   const estado = esEstadoMedios(bruto) ? bruto : null;
 
-  const [secciones, elegidos] = await Promise.all([
+  const [secciones, elegidos, estadoDeSecciones, configuracion] = await Promise.all([
     obtenerMediosDelPanel(),
     obtenerMediosElegidosEnFichas(),
+    obtenerEstadoDeLasSecciones(),
+    obtenerConfiguracion(),
   ]);
   const puedeEditar = acceso.rol !== "lector";
   const urlBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  /*
+    LO QUE LA WEB NO PINTA AUNQUE TENGA FOTOS: una sección apagada en Contenido
+    y el paisaje sin título, que la portada se salta. Si las secciones no se han
+    podido leer no se da ninguna por apagada: mejor no avisar que avisar mal.
+  */
+  const ocultas = new Map<Seccion, Oculta>();
+  for (const fila of estadoDeSecciones ?? []) {
+    if (!fila.visible) ocultas.set(fila.seccion, "apagada");
+  }
+  if (!ocultas.has("paisaje") && configuracion && !configuracion.paisajeTitulo) {
+    ocultas.set("paisaje", "paisaje-sin-titulo");
+  }
+
+  /*
+    DÓNDE VA EL AVISO: en la ficha o en la sección de la que salió la acción,
+    que es a donde vuelve la pantalla. Si ya no están —la foto se borró en otra
+    pestaña—, arriba, como siempre.
+  */
+  const medioSenalado = leer("medio");
+  const seccionSenalada = leer("seccion");
+  const enUnaFicha = secciones.some(({ medios }) =>
+    medios.some((medio) => medio.id === medioSenalado),
+  );
+  const enUnaSeccion =
+    !enUnaFicha && secciones.some(({ seccion }) => seccion === seccionSenalada);
 
   return (
     <div className="grid gap-bloque">
@@ -113,18 +199,7 @@ export default async function PaginaMedios({ searchParams }: Parametros) {
         <Cuerpo className="mt-pila">{t("panel.medios.descripcion")}</Cuerpo>
       </header>
 
-      {estado ? (
-        <p
-          role={ESTADOS_DE_ERROR.includes(estado) ? "alert" : "status"}
-          className={`rounded-campo p-interno text-pequeno ${
-            ESTADOS_DE_ERROR.includes(estado)
-              ? "bg-error-fondo text-error-tinta"
-              : "bg-exito-fondo text-exito-tinta"
-          }`}
-        >
-          {AVISOS[estado]}
-        </p>
-      ) : null}
+      {estado && !enUnaFicha && !enUnaSeccion ? <Aviso estado={estado} /> : null}
 
       {/*
         Se dice ARRIBA y una sola vez, no dentro de cada formulario: sin la
@@ -152,6 +227,10 @@ export default async function PaginaMedios({ searchParams }: Parametros) {
           elegidos={elegidos}
           puedeEditar={puedeEditar}
           urlBase={urlBase}
+          oculta={ocultas.get(seccion)}
+          estado={estado}
+          medioSenalado={enUnaFicha ? medioSenalado : null}
+          senalada={enUnaSeccion && seccion === seccionSenalada}
         />
       ))}
     </div>
@@ -165,8 +244,10 @@ const MOTIVOS: Record<MotivoNoSeVe, ClaveCopy | null> = {
   "solo-la-primera-foto": "panel.medios.motivos.soloLaPrimeraFoto",
   "sin-medidas": "panel.medios.motivos.sinMedidas",
   "sin-ficha": "panel.medios.motivos.sinFicha",
+  "solo-fotos": "panel.medios.motivos.soloFotos",
   // Ya lo dice la sección entera, una vez: repetirlo en cada ficha es ruido.
   "seccion-sin-medios": null,
+  "seccion-oculta": null,
 };
 
 function BloqueSeccion({
@@ -175,19 +256,29 @@ function BloqueSeccion({
   elegidos,
   puedeEditar,
   urlBase,
+  oculta,
+  estado,
+  medioSenalado,
+  senalada,
 }: {
   seccion: Seccion;
   medios: MedioDelPanel[];
   elegidos: ReadonlySet<string>;
   puedeEditar: boolean;
   urlBase: string | undefined;
+  oculta: Oculta | undefined;
+  estado: EstadoMedios | null;
+  /** La ficha a la que ha vuelto la pantalla, si es de esta sección. */
+  medioSenalado: string | null;
+  /** Si la pantalla ha vuelto a esta sección (una subida, un borrado). */
+  senalada: boolean;
 }) {
   /*
     «EN LA WEB» ES LO QUE LA WEB PINTA, no lo publicado. La portada enseña una
     sola foto y la galería sólo las que tienen medidas: contar lo publicado
     decía «3 en la web» de una sección que enseñaba una.
   */
-  const visibilidad = visibilidadEnLaWeb(seccion, medios, elegidos);
+  const visibilidad = visibilidadEnLaWeb(seccion, medios, elegidos, !oculta);
   const seVen = medios.filter((medio) => visibilidad.get(medio.id)?.seVe).length;
   const ensena = seccionEnsenaMedios(seccion);
 
@@ -195,10 +286,15 @@ function BloqueSeccion({
   // ofrece: subir ahí sería guardar algo que no va a salir nunca.
   if (!ensena && medios.length === 0) return null;
 
+  const nombre = t(`navegacion.secciones.${seccion}`);
+
   return (
-    <section className="border-t border-borde pt-bloque">
+    <section
+      id={anclaDeSeccion(seccion)}
+      className="scroll-mt-elemento border-t border-borde pt-bloque"
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-interno">
-        <Titulo3 como="h2">{t(`navegacion.secciones.${seccion}`)}</Titulo3>
+        <Titulo3 como="h2">{nombre}</Titulo3>
         {medios.length > 0 ? (
           <Etiqueta>
             {t("panel.medios.cuantos", { cuantos: seVen, total: medios.length })}
@@ -212,6 +308,24 @@ function BloqueSeccion({
         </Cuerpo>
       ) : null}
 
+      {/* Dicho una vez por sección, no en cada ficha: es la sección la que no sale. */}
+      {ensena && oculta ? (
+        <div className="mt-pila max-w-texto">
+          <Cuerpo className="text-pequeno text-tinta-suave">
+            {oculta === "apagada"
+              ? t("panel.medios.seccionApagada")
+              : t("panel.medios.paisajeSinTitulo")}
+          </Cuerpo>
+          <EnlaceSuave href={oculta === "apagada" ? RUTA_CONTENIDO : RUTA_AJUSTES}>
+            {oculta === "apagada"
+              ? t("panel.medios.irAContenido")
+              : t("panel.medios.irAAjustes")}
+          </EnlaceSuave>
+        </div>
+      ) : null}
+
+      {senalada && estado ? <Aviso estado={estado} className="mt-elemento" /> : null}
+
       {medios.length === 0 ? (
         <Cuerpo className="mt-pila text-pequeno text-tinta-suave">
           {t("panel.medios.seccionVacia")}
@@ -223,16 +337,26 @@ function BloqueSeccion({
               key={medio.id}
               medio={medio}
               visibilidad={visibilidad.get(medio.id) ?? { seVe: false, motivo: "borrador" }}
+              elegido={elegidos.has(medio.id)}
               puedeEditar={puedeEditar}
               urlBase={urlBase}
               esElPrimero={indice === 0}
               esElUltimo={indice === medios.length - 1}
+              aviso={medio.id === medioSenalado ? estado : null}
             />
           ))}
         </ul>
       )}
 
-      {puedeEditar && ensena ? <FormularioSubida seccion={seccion} /> : null}
+      {puedeEditar && ensena ? (
+        <FormularioSubida
+          seccion={seccion}
+          nombre={nombre}
+          // Tras un error de subida se vuelve con el formulario abierto, junto
+          // al aviso: cerrado, parecía que no había pasado nada.
+          abierto={senalada && estado !== null && ESTADOS_DE_ERROR.includes(estado)}
+        />
+      ) : null}
     </section>
   );
 }
@@ -240,17 +364,23 @@ function BloqueSeccion({
 function Ficha({
   medio,
   visibilidad,
+  elegido,
   puedeEditar,
   urlBase,
   esElPrimero,
   esElUltimo,
+  aviso,
 }: {
   medio: MedioDelPanel;
   visibilidad: Visibilidad;
+  /** Si la usa una ficha publicada de Contenido: borrarla la deja sin foto. */
+  elegido: boolean;
   puedeEditar: boolean;
   urlBase: string | undefined;
   esElPrimero: boolean;
   esElUltimo: boolean;
+  /** El aviso de la acción que acaba de volver a esta ficha. */
+  aviso: EstadoMedios | null;
 }) {
   /*
     LA MINIATURA ES SIEMPRE UNA IMAGEN, también la de un vídeo: para eso está el
@@ -265,7 +395,8 @@ function Ficha({
 
   return (
     <li
-      className={`grid gap-interno rounded-tarjeta border p-interno sm:grid-cols-[auto_1fr] ${
+      id={anclaDeMedio(medio.id)}
+      className={`grid scroll-mt-elemento gap-interno rounded-tarjeta border p-interno sm:grid-cols-[auto_1fr] ${
         medio.publicado ? "border-borde" : "border-borde-fuerte bg-superficie-tenue"
       }`}
     >
@@ -285,6 +416,8 @@ function Ficha({
       </div>
 
       <div className="grid gap-pila">
+        {aviso ? <Aviso estado={aviso} /> : null}
+
         <div className="flex flex-wrap items-center gap-interno-compacto">
           <EtiquetaEstado
             variante={visibilidad.seVe ? "marca" : medio.publicado ? "aviso" : "contorno"}
@@ -309,7 +442,7 @@ function Ficha({
         {/* Publicada y sin salir: se dice por qué, que es lo que hay que arreglar. */}
         {!visibilidad.seVe && MOTIVOS[visibilidad.motivo] ? (
           <Cuerpo className="max-w-texto text-pequeno text-tinta-suave">
-            {t(MOTIVOS[visibilidad.motivo]!)}
+            {t(MOTIVOS[visibilidad.motivo]!, { boton: t("panel.medios.subirOrden") })}
           </Cuerpo>
         ) : null}
 
@@ -341,6 +474,7 @@ function Ficha({
               />
               <BotonEnvio jerarquia="secundario" className="justify-self-start">
                 {t("panel.medios.guardarAlternativo")}
+                <DeQue nombre={medio.textoAlternativo} />
               </BotonEnvio>
             </form>
 
@@ -350,6 +484,7 @@ function Ficha({
                 <input type="hidden" name="publicar" value={medio.publicado ? "0" : "1"} />
                 <BotonEnvio jerarquia={medio.publicado ? "terciario" : "primario"}>
                   {medio.publicado ? t("panel.medios.despublicar") : t("panel.medios.publicar")}
+                  <DeQue nombre={medio.textoAlternativo} />
                 </BotonEnvio>
               </form>
 
@@ -362,7 +497,10 @@ function Ficha({
                 <form action={moverMedio}>
                   <input type="hidden" name="medio_id" value={medio.id} />
                   <input type="hidden" name="hacia" value="arriba" />
-                  <BotonEnvio jerarquia="terciario">{t("panel.medios.subirOrden")}</BotonEnvio>
+                  <BotonEnvio jerarquia="terciario">
+                    {t("panel.medios.subirOrden")}
+                    <DeQue nombre={medio.textoAlternativo} />
+                  </BotonEnvio>
                 </form>
               ) : null}
 
@@ -370,15 +508,48 @@ function Ficha({
                 <form action={moverMedio}>
                   <input type="hidden" name="medio_id" value={medio.id} />
                   <input type="hidden" name="hacia" value="abajo" />
-                  <BotonEnvio jerarquia="terciario">{t("panel.medios.bajarOrden")}</BotonEnvio>
+                  <BotonEnvio jerarquia="terciario">
+                    {t("panel.medios.bajarOrden")}
+                    <DeQue nombre={medio.textoAlternativo} />
+                  </BotonEnvio>
                 </form>
               ) : null}
-
-              <form action={borrarMedio}>
-                <input type="hidden" name="medio_id" value={medio.id} />
-                <BotonEnvio jerarquia="terciario">{t("panel.medios.borrar")}</BotonEnvio>
-              </form>
             </div>
+
+            {/*
+              BORRAR SE CONFIRMA. Se van la fila y el fichero, sin vuelta atrás,
+              y un toque al lado de «Quitar de la web» dejaba la portada sin
+              foto. La pregunta dice lo que se pierde: si está en la web y si la
+              usa una ficha de Contenido, que se quedaría sin foto en silencio.
+              Sin la clave de servicio no se ofrece: el fichero se quedaría en
+              el bucket público.
+            */}
+            {haySubidaDeMedios ? (
+              <details>
+                <summary className="inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-suave underline decoration-borde-fuerte underline-offset-4 transicion-color hover:text-error-tinta hover:decoration-error">
+                  {t("panel.medios.borrar")}
+                  <DeQue nombre={medio.textoAlternativo} />
+                </summary>
+                <form action={borrarMedio} className="mt-pila grid max-w-texto gap-interno">
+                  <input type="hidden" name="medio_id" value={medio.id} />
+                  <input type="hidden" name="confirmado" value="si" />
+                  <p className="text-pequeno text-tinta-suave">
+                    {[
+                      t("panel.medios.borrarAviso"),
+                      visibilidad.seVe ? t("panel.medios.borrarEnLaWeb") : null,
+                      elegido ? t("panel.medios.borrarEnUnaFicha") : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  </p>
+                  <div>
+                    <BotonEnvio jerarquia="secundario">
+                      {t("panel.medios.borrarConfirmar")}
+                    </BotonEnvio>
+                  </div>
+                </form>
+              </details>
+            ) : null}
           </>
         ) : (
           <Cuerpo className="max-w-texto text-pequeno">{medio.textoAlternativo}</Cuerpo>
@@ -388,11 +559,30 @@ function Ficha({
   );
 }
 
-function FormularioSubida({ seccion }: { seccion: Seccion }) {
+function FormularioSubida({
+  seccion,
+  nombre,
+  abierto,
+}: {
+  seccion: Seccion;
+  /** El nombre de la sección, para decir a cuál se sube sin tener que verlo. */
+  nombre: string;
+  abierto: boolean;
+}) {
+  /*
+    SÓLO SE OFRECE LO QUE ESA PARTE DE LA WEB PINTA. Un vídeo en la galería, en
+    la tarjeta del Save the Date o en historia no sale nunca, y un AVIF en la
+    galería tampoco: se subía, se publicaba y se quedaba en «no se ve».
+  */
+  const tipos = tiposQuePinta(seccion);
+  const fotos = tipos.filter((tipo) => tipo.startsWith("image/"));
+  const videos = tipos.filter((tipo) => tipo.startsWith("video/"));
+
   return (
-    <details className="mt-elemento">
+    <details className="mt-elemento" open={abierto}>
       <summary className="inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca">
         {t("panel.medios.subirTitulo")}
+        <DeQue nombre={nombre} />
       </summary>
 
       {/*
@@ -408,14 +598,25 @@ function FormularioSubida({ seccion }: { seccion: Seccion }) {
         </Cuerpo>
 
         <CampoFichero
-          etiqueta={t("panel.medios.fichero")}
-          ayuda={t("panel.medios.ficheroAyuda", {
-            imagenMb: PESO_MAXIMO_IMAGEN_MB,
-            videoMb: PESO_MAXIMO_VIDEO_MB,
-          })}
+          etiqueta={
+            videos.length > 0 ? t("panel.medios.fichero") : t("panel.medios.ficheroFoto")
+          }
+          ayuda={
+            videos.length > 0
+              ? t("panel.medios.ficheroAyuda", {
+                  fotos: nombrar(fotos),
+                  imagenMb: PESO_MAXIMO_IMAGEN_MB,
+                  videos: nombrar(videos),
+                  videoMb: PESO_MAXIMO_VIDEO_MB,
+                })
+              : t("panel.medios.ficheroAyudaFotos", {
+                  fotos: nombrar(fotos),
+                  imagenMb: PESO_MAXIMO_IMAGEN_MB,
+                })
+          }
           name="fichero"
           seccion={seccion}
-          accept={TIPOS_ACEPTADOS}
+          accept={tipos.join(",")}
           required
         />
 
@@ -423,15 +624,18 @@ function FormularioSubida({ seccion }: { seccion: Seccion }) {
           EL PÓSTER NO ES OPCIONAL PARA UN VÍDEO, pero sí para una foto — y como
           esto es un formulario sin JavaScript, no se puede exigir según lo que
           se elija arriba. Se pide siempre como opcional y lo comprueba la
-          acción, que es donde de todas formas tenía que comprobarse.
+          acción, que es donde de todas formas tenía que comprobarse. Donde no
+          se admite vídeo, no se pide.
         */}
-        <CampoFichero
-          etiqueta={t("panel.medios.poster")}
-          ayuda={t("panel.medios.posterAyuda")}
-          name="poster"
-          seccion={seccion}
-          accept="image/jpeg,image/png,image/webp,image/avif"
-        />
+        {videos.length > 0 ? (
+          <CampoFichero
+            etiqueta={t("panel.medios.poster")}
+            ayuda={t("panel.medios.posterAyuda")}
+            name="poster"
+            seccion={seccion}
+            accept={TIPOS_POSTER.join(",")}
+          />
+        ) : null}
 
         <CampoTexto
           etiqueta={t("panel.medios.alternativo")}
