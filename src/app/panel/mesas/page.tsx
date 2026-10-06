@@ -319,7 +319,7 @@ function SinSentar({
           {grupos.map((grupo) => (
             <li
               key={grupo.id}
-              className="rounded-campo border border-borde px-interno py-interno-compacto"
+              className="@container rounded-campo border border-borde px-interno py-interno-compacto"
             >
               {/*
                 UNA FILA POR GRUPO Y OTRA POR PERSONA, con el desplegable al
@@ -329,7 +329,7 @@ function SinSentar({
                 rótulo sigue ahí para el lector de pantalla; a la vista ya lo
                 dice el nombre que tiene al lado.
               */}
-              <div className={FILA_REPARTO}>
+              <div className={FILA_GRUPO}>
                 <div className="flex flex-wrap items-baseline gap-x-interno gap-y-linea">
                   <span className="text-cuerpo text-tinta">{grupo.nombre}</span>
                   <Rotulo className="text-tinta-suave">
@@ -454,11 +454,17 @@ function SelectorDeMesa({
 }
 
 /**
- * La fila del reparto: quién a la izquierda y su desplegable a la derecha. En
- * el móvil van una debajo de otra; desde tableta, en la misma línea.
+ * La fila del reparto: quién a la izquierda y su desplegable a la derecha
+ * cuando caben en la TARJETA —no en la pantalla—, y uno debajo de otro cuando
+ * no. Ver `reparto-en-linea` en globals.css: con `sm:` la tableta dejaba los
+ * desplegables en 30 px. La tarjeta que la contiene lleva `@container`.
  */
 const FILA_REPARTO =
-  "grid gap-interno-compacto sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] sm:items-center";
+  "grid gap-interno-compacto reparto-en-linea:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] reparto-en-linea:items-center";
+
+/** La del grupo pide más: su botón es «Sentar al grupo entero». */
+const FILA_GRUPO =
+  "grid gap-interno-compacto grupo-en-linea:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] grupo-en-linea:items-center";
 
 /**
  * La vista de alergias no trae el id de la persona, y dos con el mismo nombre
@@ -653,7 +659,7 @@ function BloqueMesa({
     // dos hojas. Media mesa al final de una página es media mesa que nadie lee.
     <section
       id={anclaDe(mesa)}
-      className="break-inside-avoid rounded-tarjeta border border-borde p-interno"
+      className="@container break-inside-avoid rounded-tarjeta border border-borde p-interno"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-interno border-b border-borde pb-interno-compacto">
         <Titulo3>{mesa.nombre}</Titulo3>

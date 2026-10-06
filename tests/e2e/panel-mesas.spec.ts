@@ -415,6 +415,35 @@ test.describe("El plano de mesas y el reparto", () => {
     expect(guardada.capacidad, "una capacidad que no vale no se guarda").toBe(8);
   });
 
+  /**
+   * LOS DESPLEGABLES DEL REPARTO TIENEN SITIO EN UNA TABLETA. Con el punto de
+   * ruptura de la pantalla, a 820 px la fila del grupo dejaba el desplegable en
+   * 30 px —«Sentar al grupo entero» se comía el resto— y no se podía leer qué
+   * mesa se elegía. Ahora la fila mide su tarjeta y se apila cuando no cabe.
+   */
+  test("en una tableta, ningún desplegable del reparto se queda sin sitio", async ({
+    page,
+  }) => {
+    await crearMesa(`${MARCA} Tableta ${Date.now()}`, 8);
+    // Un grupo sin sentar: es el que lleva la fila con «Sentar al grupo entero».
+    await crearGrupo(`${MARCA} Tableta ${Date.now()}`, 2, true);
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await entrar(page);
+    await page.goto(RUTA_MESAS);
+    await page.waitForLoadState("networkidle");
+
+    const anchos = await page
+      .locator('select[name="mesa_id"]')
+      .evaluateAll((desplegables) =>
+        desplegables
+          .map((desplegable) => desplegable.getBoundingClientRect().width)
+          .filter((ancho) => ancho > 0),
+      );
+    expect(anchos.length, "hace falta alguien a quien sentar").toBeGreaterThan(0);
+    // Lo que ocupa «Elegir mesa…» con su flecha: por debajo, no se lee.
+    expect(Math.min(...anchos)).toBeGreaterThanOrEqual(160);
+  });
+
   test("si la base falla, no se descarga un reparto vacío que parezca de verdad", async ({
     page,
   }) => {

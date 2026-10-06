@@ -431,6 +431,24 @@
 @custom-variant pantalla-alta (@media (min-height: 52rem));
 
 /**
+ * EL REPARTO DE MESAS EN UNA LÍNEA — por el ancho de su tarjeta, no de la
+ * pantalla.
+ *
+ * Quién se sienta y su desplegable van en la misma línea cuando caben, y uno
+ * debajo de otro cuando no. Con el punto de ruptura de la pantalla eso fallaba
+ * dos veces: la lista de «sin mesa» va a todo lo ancho y las tarjetas de cada
+ * mesa, en columnas, así que el mismo ancho de ventana daba filas holgadas en
+ * una y desplegables de 30 px en la otra. Mide la tarjeta (`@container`).
+ *
+ * Dos umbrales porque son dos filas: la de cada persona lleva un desplegable y
+ * «Sentar»; la del grupo, un desplegable y «Sentar al grupo entero», que pide
+ * bastante más. Valor directo, como los breakpoints: una container query no
+ * acepta `var()`.
+ */
+@custom-variant reparto-en-linea (@container (min-width: 40rem));
+@custom-variant grupo-en-linea (@container (min-width: 52rem));
+
+/**
  * Patrón «dato + contenido»: una columna estrecha con la hora o la duración,
  * y otra con el texto. Se repite en el programa del día y en cómo llegar, así
  * que vive aquí en lugar de como valor arbitrario en cada sitio.
