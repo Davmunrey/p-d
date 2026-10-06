@@ -375,6 +375,46 @@ test.describe("El plano de mesas y el reparto", () => {
    * ninguna mesa que montar. Se simula la caída quitándole a `authenticated`
    * el permiso de lectura sobre `mesas`, y se devuelve al acabar.
    */
+  /**
+   * LOS DATOS DE CADA MESA VAN PLEGADOS, Y SE ABREN SOLOS SI HAY ALGO QUE DECIR.
+   *
+   * Abiertos en todas las mesas eran seis campos por mesa entre el reparto. El
+   * camino feliz: la mesa sale con sus datos plegados. El caso de error: una
+   * capacidad que no vale vuelve con el formulario de ESA mesa abierto, junto
+   * al aviso, y no hay que ir a buscarlo.
+   */
+  test("los datos de una mesa van plegados, y se abren solos si fallan", async ({ page }) => {
+    const nombre = `${MARCA} Plegada ${Date.now()}`;
+    await crearMesa(nombre, 8);
+
+    await entrar(page);
+    await page.goto(RUTA_MESAS);
+    await page.waitForLoadState("networkidle");
+
+    const datos = seccion(page, nombre).locator("details");
+    await expect(datos, "los datos de la mesa salen plegados").not.toHaveAttribute("open");
+
+    await datos.locator("summary").click();
+    const capacidad = datos.getByLabel(copy.panel.mesas.campoCapacidad, { exact: true });
+    // Sin el tope del campo, para que lo rechace el servidor y no el navegador.
+    await capacidad.evaluate((campo) => campo.removeAttribute("max"));
+    await capacidad.fill("99");
+    await enviar(page, datos.getByRole("button", { name: copy.panel.mesas.guardar }));
+    await esperarEstado(page, "capacidad");
+
+    await expect(
+      seccion(page, nombre).locator("details"),
+      "vuelve con los datos de esa mesa abiertos",
+    ).toHaveAttribute("open");
+    const [guardada] = await conBase(
+      (sql) =>
+        sql<
+          { capacidad: number }[]
+        >`select capacidad from public.mesas where nombre = ${nombre}`,
+    );
+    expect(guardada.capacidad, "una capacidad que no vale no se guarda").toBe(8);
+  });
+
   test("si la base falla, no se descarga un reparto vacío que parezca de verdad", async ({
     page,
   }) => {

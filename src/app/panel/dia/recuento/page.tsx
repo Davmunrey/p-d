@@ -134,6 +134,12 @@ function TablaDelRecuento({
   totalMenus: number;
 }) {
   return (
+    /*
+      EN EL MÓVIL, MENOS AIRE Y SIN ESPACIADO EN LOS RÓTULOS. Con los márgenes
+      y la versalita de escritorio la tabla medía más que la pantalla, y la
+      columna que se quedaba fuera era justo el total: la cifra que se canta al
+      catering por teléfono.
+    */
     <div className="mt-bloque overflow-x-auto">
       <table className="w-full border-collapse text-left">
         <caption className="sr-only">{t("panel.dia.recuento.titulo")}</caption>
@@ -148,7 +154,7 @@ function TablaDelRecuento({
               <th
                 key={titulo}
                 scope="col"
-                className="border-b border-borde-fuerte px-interno py-interno-compacto text-etiqueta uppercase tracking-etiqueta text-tinta-suave"
+                className="border-b border-borde-fuerte px-interno-compacto py-interno-compacto text-etiqueta uppercase text-tinta-suave sm:px-interno sm:tracking-etiqueta"
               >
                 {titulo}
               </th>
@@ -161,7 +167,7 @@ function TablaDelRecuento({
             <tr key={linea.tipoMenu}>
               <th
                 scope="row"
-                className="border-b border-borde px-interno py-interno-compacto text-left align-top text-cuerpo text-tinta"
+                className="border-b border-borde px-interno-compacto py-interno-compacto sm:px-interno text-left align-top text-cuerpo text-tinta"
               >
                 {nombreDelMenu(linea.tipoMenu)}
                 {linea.conAlergias > 0 ? (
@@ -171,11 +177,11 @@ function TablaDelRecuento({
                 ) : null}
               </th>
 
-              <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo tabular-nums text-tinta">
+              <td className="border-b border-borde px-interno-compacto py-interno-compacto sm:px-interno align-top text-cuerpo tabular-nums text-tinta">
                 {linea.confirmados}
               </td>
 
-              <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo tabular-nums text-tinta">
+              <td className="border-b border-borde px-interno-compacto py-interno-compacto sm:px-interno align-top text-cuerpo tabular-nums text-tinta">
                 {/*
                   EL SIGNO SE ESCRIBE SIEMPRE, también el más. «2» y «+2» se
                   leen distinto de un vistazo, y esta columna es exactamente la
@@ -196,7 +202,7 @@ function TablaDelRecuento({
                 ) : null}
               </td>
 
-              <td className="border-b border-borde px-interno py-interno-compacto align-top text-titulo-3 tabular-nums text-tinta">
+              <td className="border-b border-borde px-interno-compacto py-interno-compacto sm:px-interno align-top text-titulo-3 tabular-nums text-tinta">
                 {linea.total}
               </td>
             </tr>
@@ -207,13 +213,13 @@ function TablaDelRecuento({
           <tr>
             <th
               scope="row"
-              className="px-interno py-interno-compacto text-left text-etiqueta uppercase tracking-etiqueta text-tinta-suave"
+              className="px-interno-compacto py-interno-compacto sm:px-interno text-left text-etiqueta uppercase tracking-etiqueta text-tinta-suave"
             >
               {t("panel.dia.recuento.total")}
             </th>
             <td />
             <td />
-            <td className="px-interno py-interno-compacto text-titulo-3 tabular-nums text-tinta">
+            <td className="px-interno-compacto py-interno-compacto sm:px-interno text-titulo-3 tabular-nums text-tinta">
               {totalMenus}
             </td>
           </tr>
@@ -229,13 +235,20 @@ function Cabezas({
   cabezas: { ninos: number; adultos: number; sinContestar: number };
 }) {
   return (
-    <dl className="mt-bloque grid grid-cols-3 gap-interno">
+    <dl className="mt-bloque grid grid-cols-2 gap-interno sm:grid-cols-3">
       {[
         { clave: "panel.dia.recuento.adultos", valor: cabezas.adultos },
         { clave: "panel.dia.recuento.ninos", valor: cabezas.ninos },
         { clave: "panel.dia.recuento.sinContestar", valor: cabezas.sinContestar },
       ].map((dato) => (
-        <div key={dato.clave} className="rounded-campo border border-borde p-elemento">
+        // «Sin contestar» lleva una frase debajo: en el móvil ocupa la fila
+        // entera, porque en un tercio de pantalla salía una palabra por línea.
+        <div
+          key={dato.clave}
+          className={`rounded-campo border border-borde p-elemento ${
+            dato.clave === "panel.dia.recuento.sinContestar" ? "col-span-2 sm:col-span-1" : ""
+          }`}
+        >
           <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
             {t(dato.clave as "panel.dia.recuento.adultos")}
           </dt>

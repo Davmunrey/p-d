@@ -441,6 +441,8 @@ test.describe("Los servicios de un proveedor", () => {
       esa base — y ésa es justo la coherencia que resuelve la acción.
     */
     const renglon = servicio(page, nombre);
+    // El formulario de cada servicio va plegado: se abre como lo abriría alguien.
+    await renglon.locator("summary").click();
     await renglon.getByLabel(copy.panel.proveedores.campoPorInvitado, { exact: true }).check();
     await renglon
       .getByLabel(copy.panel.proveedores.campoBaseCalculo, { exact: true })

@@ -48,7 +48,8 @@ export function AvisoDesvios({ desvios }: { desvios: Desvio[] }) {
           <li key={desvio.categoriaId} className="flex items-baseline gap-interno-compacto">
             <Icono grado={desvio.grado} />
             <span className="text-pequeno text-tinta">
-              <span className="font-titulo text-tinta">{desvio.categoria}</span>{" "}
+              {/* El nombre resalta por peso, no cambiando de letra a media frase. */}
+              <strong className="font-destacado text-tinta">{desvio.categoria}</strong>{" "}
               {t(
                 desvio.grado === "superado"
                   ? "panel.resumen.desvios.superado"

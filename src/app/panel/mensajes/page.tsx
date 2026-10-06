@@ -117,14 +117,22 @@ export default async function PaginaMensajes({ searchParams }: Parametros) {
               method="get"
               className="mt-pila grid items-end gap-interno sm:grid-cols-[1fr_auto]"
             >
+              {/* La ayuda bajo la fila y no bajo el campo, para que no lo
+                  suba por encima del botón (ver el buscador de invitados). */}
               <CampoTexto
                 etiqueta={t("panel.mensajes.buscar")}
-                ayuda={t("panel.mensajes.buscarAyuda")}
+                aria-describedby="ayuda-buscar-mensajes"
                 name="buscar"
                 type="search"
                 defaultValue={busqueda}
               />
               <BotonEnvio jerarquia="secundario">{t("panel.mensajes.buscar")}</BotonEnvio>
+              <p
+                id="ayuda-buscar-mensajes"
+                className="text-pequeno text-tinta-suave sm:col-span-2"
+              >
+                {t("panel.mensajes.buscarAyuda")}
+              </p>
             </form>
 
             {visibles.length === 0 ? (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -90,17 +91,42 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
         <Titulo2 como="h1">{t("panel.invitados.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.invitados.descripcion")}</Cuerpo>
       </header>
+      {/*
+        LAS ACCIONES, ARRIBA. Estaban al final, debajo de la lista y de la
+        exportación: con cuarenta invitaciones, crear la siguiente o importar
+        la hoja exigía bajar seis mil píxeles para encontrar el botón.
+      */}
+      <div className="mt-elemento flex flex-wrap items-center gap-interno-compacto">
+        {puedeEditar ? (
+          <>
+            <BotonEnlace href="#nueva-invitacion">
+              {t("panel.invitados.accionNueva")}
+            </BotonEnlace>
+            <BotonEnlace href={`${RUTA_INVITADOS}/importar`} jerarquia="secundario">
+              {t("panel.importar.enlaceDesdeLista")}
+            </BotonEnlace>
+          </>
+        ) : null}
+        <BotonEnlace href={RUTA_PENDIENTES} jerarquia="terciario">
+          {t("panel.pendientes.enlaceDesdeLista")}
+        </BotonEnlace>
+      </div>
 
       <AvisoEstado estado={soloTexto(consulta.estado)} />
 
       {/* Filtro por GET: queda en la URL y funciona sin JavaScript. */}
+      {/*
+        LA AYUDA DEL BUSCADOR VA DEBAJO DE LA FILA, no del campo: colgada del
+        campo lo subía por encima del desplegable y del botón, y la fila salía
+        torcida. Sigue unida al campo por `aria-describedby`.
+      */}
       <form
         method="get"
         className="mt-bloque grid items-end gap-interno sm:grid-cols-[1fr_auto_auto]"
       >
         <CampoTexto
           etiqueta={t("panel.invitados.buscar")}
-          ayuda={t("panel.invitados.buscarAyuda")}
+          aria-describedby="ayuda-buscar-invitados"
           name="buscar"
           type="search"
           defaultValue={busqueda}
@@ -115,6 +141,9 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
           <option value="contestado">{t("panel.invitados.contestado")}</option>
         </CampoSeleccion>
         <BotonEnvio jerarquia="secundario">{t("panel.invitados.buscar")}</BotonEnvio>
+        <p id="ayuda-buscar-invitados" className="text-pequeno text-tinta-suave sm:col-span-3">
+          {t("panel.invitados.buscarAyuda")}
+        </p>
       </form>
 
       {grupos.length === 0 ? (
@@ -122,15 +151,22 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
       ) : visibles.length === 0 ? (
         <Cuerpo className="mt-bloque">{t("panel.invitados.sinResultados")}</Cuerpo>
       ) : (
-        <ul className="mt-bloque grid gap-interno">
+        <ul className="mt-bloque grid gap-interno-compacto">
           {visibles.map((grupo) => (
             <li key={grupo.id}>
+              {/*
+                UNA FILA POR INVITACIÓN, no una tarjeta. El nombre iba a tamaño
+                de título y cada invitación ocupaba cien píxeles: la lista de
+                una boda mediana no cabía en cuatro pantallas.
+              */}
               <Link
                 href={`${RUTA_INVITADOS}/${grupo.id}`}
-                className="grid gap-linea rounded-tarjeta border border-borde p-interno transicion-color hover:border-borde-marca hover:bg-superficie-tenue sm:grid-cols-[1fr_auto] sm:items-center"
+                className="grid gap-linea rounded-tarjeta border border-borde px-interno py-interno-compacto transicion-color hover:border-borde-marca hover:bg-superficie-tenue sm:grid-cols-[1fr_auto] sm:items-center"
               >
                 <div>
-                  <span className="font-titulo text-titulo-3 text-tinta">{grupo.nombre}</span>
+                  <span className="font-titulo text-cuerpo-grande text-tinta">
+                    {grupo.nombre}
+                  </span>
                   <span className="mt-linea block text-pequeno text-tinta-suave">
                     {grupo.personas === 1
                       ? t("panel.invitados.personasUna")
@@ -207,7 +243,10 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
       ) : null}
 
       {puedeEditar ? (
-        <section className="mt-bloque border-t border-borde pt-bloque">
+        <section
+          id="nueva-invitacion"
+          className="mt-bloque scroll-mt-bloque border-t border-borde pt-bloque"
+        >
           <Titulo3 como="h2">{t("panel.invitados.nuevaTitulo")}</Titulo3>
           <Cuerpo className="mt-pila max-w-texto">{t("panel.invitados.nuevaAyuda")}</Cuerpo>
 
@@ -241,27 +280,6 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
               <BotonEnvio>{t("panel.invitados.crear")}</BotonEnvio>
             </div>
           </form>
-
-          {/*
-            Y la otra vía, para cuando la lista ya existe en una hoja: teclear
-            doscientos nombres de uno en uno en el formulario de arriba no es
-            una opción, y el resultado de intentarlo es que falte gente.
-          */}
-          <Cuerpo className="mt-elemento max-w-texto text-pequeno text-tinta-suave">
-            <Link
-              href={`${RUTA_INVITADOS}/importar`}
-              className="text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
-            >
-              {t("panel.importar.enlaceDesdeLista")}
-            </Link>
-            {" · "}
-            <Link
-              href={RUTA_PENDIENTES}
-              className="text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
-            >
-              {t("panel.pendientes.enlaceDesdeLista")}
-            </Link>
-          </Cuerpo>
         </section>
       ) : (
         <Etiqueta className="mt-bloque">{t("panel.invitados.errorSinPermiso")}</Etiqueta>

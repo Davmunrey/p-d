@@ -204,9 +204,27 @@ function Mover({
     <form action={moverSeccion}>
       <input type="hidden" name="seccion" value={seccion} />
       <input type="hidden" name="direccion" value={direccion} />
-      <BotonEnvio jerarquia="terciario">
-        {t(direccion === "subir" ? "panel.contenido.subirOrden" : "panel.contenido.bajarOrden")}
-        <DeQueSeccion nombre={nombre} />
+      {/*
+        UNA FLECHA A LA VISTA Y LA FRASE PARA EL LECTOR. «Subir en el orden» y
+        «Bajar en el orden» en versalita, junto a «Ocultar de la web», eran tres
+        botones largos por sección: la fila se leía como un muro de rótulos y
+        el que importa —ocultar— no se distinguía. La flecha dice lo mismo, y
+        el nombre accesible sigue siendo la frase entera con su sección.
+      */}
+      <BotonEnvio jerarquia="secundario">
+        <span aria-hidden="true">
+          {t(
+            direccion === "subir"
+              ? "panel.contenido.flechaSubir"
+              : "panel.contenido.flechaBajar",
+          )}
+        </span>
+        <span className="sr-only">
+          {t(
+            direccion === "subir" ? "panel.contenido.subirOrden" : "panel.contenido.bajarOrden",
+          )}
+          <DeQueSeccion nombre={nombre} />
+        </span>
       </BotonEnvio>
     </form>
   );

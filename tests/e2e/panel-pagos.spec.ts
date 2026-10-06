@@ -424,6 +424,24 @@ test.describe("Los pagos y sus vencimientos", () => {
    * sin saberlo. Se simula quitándole a `authenticated` la vista que lee, y se
    * devuelve al acabar.
    */
+  /**
+   * LOS MESES, CON LA PREPOSICIÓN EN MINÚSCULA.
+   *
+   * El título de cada mes llevaba `capitalize` de CSS, que pone mayúscula a
+   * cada palabra: «Octubre De 2026». La semilla tiene pagos por venir, así que
+   * siempre hay al menos un mes que mirar.
+   */
+  test("cada mes se titula «Octubre de 2026», no «Octubre De 2026»", async ({ page }) => {
+    await entrar(page);
+    await page.goto(RUTA_PAGOS);
+
+    const meses = page.getByRole("heading", { level: 2, name: / de \d{4}$/ });
+    await expect(meses.first()).toBeVisible();
+    for (const mes of await meses.allInnerTexts()) {
+      expect(mes, "mayúscula sólo en la primera letra").toMatch(/^\p{Lu}[\p{Ll}]+ de \d{4}$/u);
+    }
+  });
+
   test("si los pagos no se pueden leer, no dice que no hay ninguno", async ({ page }) => {
     await entrar(page);
 
@@ -451,12 +469,6 @@ test.describe("Los pagos y sus vencimientos", () => {
 
     await entrar(page);
     await page.goto(RUTA_PAGOS);
-    /*
-      HIDRATADA ANTES DE TOCAR EL TIPO. Al hidratar un `<input>`, React le
-      vuelve a poner el `type` de sus propiedades: si llegaba después del
-      cambio, el campo volvía a ser de fecha, el 31 de febrero se quedaba en
-      nada y el `required` paraba el envío sin que saliera ninguna petición.
-    */
     await page.waitForLoadState("networkidle");
 
     const alta = seccion(page, pagos.nuevaTitulo);
@@ -464,9 +476,18 @@ test.describe("Los pagos y sus vencimientos", () => {
       .getByLabel(pagos.campoGasto, { exact: true })
       .selectOption({ label: `${montaje.categoria} · ${montaje.concepto}` });
     await alta.getByLabel(pagos.campoImporte, { exact: true }).fill("100");
+    /*
+      EL VALOR SE ESCRIBE EN EL ELEMENTO, SIN PASAR POR REACT. Tras cada evento
+      de teclado React le devuelve al `<input>` el `type` de sus propiedades:
+      con `fill` el campo volvía a ser de fecha, el 31 de febrero se quedaba en
+      nada y el `required` paraba el envío sin que saliera ninguna petición.
+      Al enviar, React lee el formulario del DOM, así que el valor viaja igual.
+    */
     const vencimiento = alta.getByLabel(pagos.campoVencimiento, { exact: true });
-    await vencimiento.evaluate((campo) => campo.setAttribute("type", "text"));
-    await vencimiento.fill("2027-02-31");
+    await vencimiento.evaluate((campo: HTMLInputElement) => {
+      campo.type = "text";
+      campo.value = "2027-02-31";
+    });
     await expect(vencimiento, "la fecha imposible tiene que llegar escrita").toHaveValue(
       "2027-02-31",
     );

@@ -435,15 +435,17 @@ test.describe("Los documentos de la boda civil", () => {
 
     await entrar(page);
     await page.goto(RUTA_DOCUMENTOS);
-    // Hidratada antes de tocar el tipo: React se lo devolvería a `date` al
-    // hidratar, y la fecha imposible se quedaría en nada (ver pagos).
     await page.waitForLoadState("networkidle");
 
     const alta = seccion(page, documentos.nuevoTitulo);
     await alta.getByLabel(documentos.campoTitulo, { exact: true }).fill(titulo);
+    // En el elemento y sin pasar por React, que tras cada tecla le devuelve
+    // el `type` de fecha y la vaciaría (ver el mismo caso en pagos).
     const caduca = alta.getByLabel(documentos.campoCaduca, { exact: true });
-    await caduca.evaluate((campo) => campo.setAttribute("type", "text"));
-    await caduca.fill("2027-02-30");
+    await caduca.evaluate((campo: HTMLInputElement) => {
+      campo.type = "text";
+      campo.value = "2027-02-30";
+    });
     await expect(caduca, "la fecha imposible tiene que llegar escrita").toHaveValue(
       "2027-02-30",
     );

@@ -258,6 +258,7 @@ export default async function PaginaMesas({ searchParams }: Parametros) {
                   soloTexto(consulta.estado) === "confirmar-borrado" &&
                   mesaDelAviso?.id === mesa.id
                 }
+                datosAbiertos={mesaDelAviso?.id === mesa.id}
               />
             ))}
           </div>
@@ -320,39 +321,54 @@ function SinSentar({
               key={grupo.id}
               className="rounded-campo border border-borde px-interno py-interno-compacto"
             >
-              <div className="flex flex-wrap items-baseline justify-between gap-interno">
-                <span className="text-cuerpo text-tinta">{grupo.nombre}</span>
-                <Rotulo className="text-tinta-suave">
-                  {grupo.personas.length === 1
-                    ? t("panel.mesas.grupoPersonasUna")
-                    : t("panel.mesas.grupoPersonas", { cuantas: grupo.personas.length })}
-                </Rotulo>
-              </div>
-
               {/*
+                UNA FILA POR GRUPO Y OTRA POR PERSONA, con el desplegable al
+                lado del nombre. Antes cada persona llevaba encima su rótulo
+                «Mesa de …» y debajo un desplegable a todo lo ancho: con
+                noventa invitados la pantalla medía treinta mil píxeles. El
+                rótulo sigue ahí para el lector de pantalla; a la vista ya lo
+                dice el nombre que tiene al lado.
+              */}
+              <div className={FILA_REPARTO}>
+                <div className="flex flex-wrap items-baseline gap-x-interno gap-y-linea">
+                  <span className="text-cuerpo text-tinta">{grupo.nombre}</span>
+                  <Rotulo className="text-tinta-suave">
+                    {grupo.personas.length === 1
+                      ? t("panel.mesas.grupoPersonasUna")
+                      : t("panel.mesas.grupoPersonas", { cuantas: grupo.personas.length })}
+                  </Rotulo>
+                </div>
+
+                {/*
                 SENTAR AL GRUPO ENTERO ES EL BOTÓN QUE DE VERDAD SE USA, y por
                 eso va el primero y con el desplegable propio. Colocar a una
                 familia de cinco de uno en uno son cinco viajes en los que es
                 facilísimo dejarse a la abuela en otra mesa.
               */}
-              {puedeEditar && mesas.length > 0 ? (
-                <form
-                  action={sentarGrupo}
-                  className="mt-interno-compacto grid items-end gap-interno-compacto print:hidden sm:grid-cols-[1fr_auto]"
-                >
-                  <input type="hidden" name="grupo_id" value={grupo.id} />
-                  <SelectorDeMesa
-                    etiqueta={t("panel.mesas.campoMesaGrupo", { grupo: grupo.nombre })}
-                    mesas={mesas}
-                    sentadosPorMesa={sentadosPorMesa}
-                  />
-                  <BotonEnvio jerarquia="secundario">{t("panel.mesas.sentarGrupo")}</BotonEnvio>
-                </form>
-              ) : null}
+                {puedeEditar && mesas.length > 0 ? (
+                  <form
+                    action={sentarGrupo}
+                    className="grid items-center gap-interno-compacto print:hidden sm:grid-cols-[minmax(0,1fr)_auto]"
+                  >
+                    <input type="hidden" name="grupo_id" value={grupo.id} />
+                    <SelectorDeMesa
+                      etiqueta={t("panel.mesas.campoMesaGrupo", { grupo: grupo.nombre })}
+                      mesas={mesas}
+                      sentadosPorMesa={sentadosPorMesa}
+                    />
+                    <BotonEnvio jerarquia="secundario">
+                      {t("panel.mesas.sentarGrupo")}
+                    </BotonEnvio>
+                  </form>
+                ) : null}
+              </div>
 
-              <ul className="mt-interno-compacto grid gap-interno-compacto">
+              <ul className="mt-interno-compacto grid">
                 {grupo.personas.map((persona) => (
-                  <li key={persona.id}>
+                  <li
+                    key={persona.id}
+                    className={`${FILA_REPARTO} border-t border-borde-tenue py-interno-compacto`}
+                  >
                     <div className="flex flex-wrap items-baseline gap-interno-compacto">
                       <span className="text-pequeno text-tinta">{persona.nombreCompleto}</span>
                       <span className="text-pequeno text-tinta-suave">
@@ -368,7 +384,7 @@ function SinSentar({
                     {puedeEditar && mesas.length > 0 ? (
                       <form
                         action={sentarInvitado}
-                        className="mt-interno-compacto grid items-end gap-interno-compacto print:hidden sm:grid-cols-[1fr_auto]"
+                        className="flex items-center gap-interno-compacto print:hidden"
                       >
                         <input type="hidden" name="invitado_id" value={persona.id} />
                         <SelectorDeMesa
@@ -413,7 +429,14 @@ function SelectorDeMesa({
   conSinMesa?: boolean;
 }) {
   return (
-    <CampoSeleccion etiqueta={etiqueta} name="mesa_id" defaultValue={actual ?? ""}>
+    <CampoSeleccion
+      etiqueta={etiqueta}
+      etiquetaOculta
+      // En la fila, el desplegable se queda con lo que no ocupa el botón.
+      className="min-w-0 flex-1"
+      name="mesa_id"
+      defaultValue={actual ?? ""}
+    >
       <option value="">
         {conSinMesa ? t("panel.mesas.opcionSinMesa") : t("panel.mesas.opcionElegirMesa")}
       </option>
@@ -428,6 +451,23 @@ function SelectorDeMesa({
       ))}
     </CampoSeleccion>
   );
+}
+
+/**
+ * La fila del reparto: quién a la izquierda y su desplegable a la derecha. En
+ * el móvil van una debajo de otra; desde tableta, en la misma línea.
+ */
+const FILA_REPARTO =
+  "grid gap-interno-compacto sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] sm:items-center";
+
+/**
+ * La vista de alergias no trae el id de la persona, y dos con el mismo nombre
+ * y la misma alergia en una mesa —padre e hijo, los dos Hugo, los dos sin
+ * lactosa— repetían la clave: React avisaba y podía pintar una de las dos
+ * filas encima de la otra. La posición en la lista las separa.
+ */
+function claveDeAlergia(fila: AlergiaEnMesa, indice: number): string {
+  return `${indice}-${fila.nombre}-${fila.apellidos ?? ""}`;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -595,6 +635,7 @@ function BloqueMesa({
   sentadosPorMesa,
   puedeEditar,
   confirmandoBorrado,
+  datosAbiertos,
 }: {
   mesa: Mesa;
   sentados: Comensal[];
@@ -603,6 +644,7 @@ function BloqueMesa({
   sentadosPorMesa: Map<string, Comensal[]>;
   puedeEditar: boolean;
   confirmandoBorrado: boolean;
+  datosAbiertos: boolean;
 }) {
   const presidencia = mesa.forma === FORMA_PRESIDENCIA;
 
@@ -645,9 +687,12 @@ function BloqueMesa({
           {t("panel.mesas.mesaVacia")}
         </Cuerpo>
       ) : (
-        <ul className="mt-elemento grid gap-interno-compacto">
+        <ul className="mt-interno-compacto grid">
           {sentados.map((persona) => (
-            <li key={persona.id} className="border-b border-borde-tenue pb-interno-compacto">
+            <li
+              key={persona.id}
+              className={`${FILA_REPARTO} border-b border-borde-tenue py-interno-compacto`}
+            >
               <div className="flex flex-wrap items-baseline gap-interno-compacto">
                 <span className="text-cuerpo text-tinta">{persona.nombreCompleto}</span>
                 <span className="text-pequeno text-tinta-suave">
@@ -679,7 +724,7 @@ function BloqueMesa({
               {puedeEditar ? (
                 <form
                   action={sentarInvitado}
-                  className="mt-interno-compacto grid items-end gap-interno-compacto print:hidden sm:grid-cols-[1fr_auto]"
+                  className="flex items-center gap-interno-compacto print:hidden"
                 >
                   <input type="hidden" name="invitado_id" value={persona.id} />
                   <SelectorDeMesa
@@ -703,11 +748,8 @@ function BloqueMesa({
         <div className="mt-elemento rounded-campo bg-aviso-fondo p-interno">
           <Rotulo className="text-aviso-tinta">{t("panel.mesas.alergiasTitulo")}</Rotulo>
           <ul className="mt-pila grid gap-linea">
-            {alergias.map((fila) => (
-              <li
-                key={`${fila.nombre}-${fila.alergias}`}
-                className="text-pequeno text-aviso-tinta"
-              >
+            {alergias.map((fila, indice) => (
+              <li key={claveDeAlergia(fila, indice)} className="text-pequeno text-aviso-tinta">
                 {t("panel.mesas.alergiaDe", {
                   quien: [fila.nombre, fila.apellidos].filter(Boolean).join(" "),
                   alergias: fila.alergias,
@@ -719,7 +761,11 @@ function BloqueMesa({
       ) : null}
 
       {puedeEditar ? (
-        <FormularioMesa mesa={mesa} confirmandoBorrado={confirmandoBorrado} />
+        <FormularioMesa
+          mesa={mesa}
+          confirmandoBorrado={confirmandoBorrado}
+          abierto={datosAbiertos}
+        />
       ) : null}
     </section>
   );
@@ -740,8 +786,8 @@ function AlergiasSinMesa({ alergias }: { alergias: AlergiaEnMesa[] }) {
     <div className="mt-elemento rounded-campo bg-aviso-fondo p-interno">
       <Rotulo className="text-aviso-tinta">{t("panel.mesas.alergiasSinMesaTitulo")}</Rotulo>
       <ul className="mt-pila grid gap-linea">
-        {alergias.map((fila) => (
-          <li key={`${fila.nombre}-${fila.alergias}`} className="text-pequeno text-aviso-tinta">
+        {alergias.map((fila, indice) => (
+          <li key={claveDeAlergia(fila, indice)} className="text-pequeno text-aviso-tinta">
             {t("panel.mesas.alergiaDe", {
               quien: [fila.nombre, fila.apellidos].filter(Boolean).join(" "),
               alergias: fila.alergias,
@@ -760,93 +806,111 @@ function AlergiasSinMesa({ alergias }: { alergias: AlergiaEnMesa[] }) {
 function FormularioMesa({
   mesa,
   confirmandoBorrado,
+  abierto,
 }: {
   mesa: Mesa;
   confirmandoBorrado: boolean;
+  abierto: boolean;
 }) {
   const colocada = mesa.posicionX !== null && mesa.posicionY !== null;
 
   return (
     <div className="mt-elemento border-t border-borde pt-interno print:hidden">
-      <Rotulo className="text-tinta-suave">{t("panel.mesas.editarTitulo")}</Rotulo>
-
-      <form action={editarMesa} className="mt-interno-compacto grid gap-interno sm:grid-cols-2">
-        <input type="hidden" name="id" value={mesa.id} />
-
-        <CampoTexto
-          etiqueta={t("panel.mesas.campoNombre")}
-          name="nombre"
-          type="text"
-          required
-          maxLength={LARGOS_DE_CAMPO["mesas.nombre"]}
-          defaultValue={mesa.nombre}
-        />
-        <CampoTexto
-          etiqueta={t("panel.mesas.campoCapacidad")}
-          ayuda={t("panel.mesas.campoCapacidadAyuda", {
-            minima: CAPACIDAD_MINIMA_MESA,
-            maxima: CAPACIDAD_MAXIMA_MESA,
-          })}
-          name="capacidad"
-          type="number"
-          required
-          min={CAPACIDAD_MINIMA_MESA}
-          max={CAPACIDAD_MAXIMA_MESA}
-          step={1}
-          defaultValue={mesa.capacidad}
-        />
-        <CampoSeleccion
-          etiqueta={t("panel.mesas.campoForma")}
-          ayuda={t("panel.mesas.campoFormaAyuda")}
-          name="forma"
-          defaultValue={mesa.forma}
+      {/*
+        LOS DATOS DE LA MESA VAN PLEGADOS. Se escriben una vez y se miran
+        pocas: abiertos en cada mesa eran seis campos por doce mesas entre
+        quien se sienta dónde, que es lo que se viene a hacer aquí. Se abren
+        solos cuando la acción vuelve con algo que decir de esta mesa.
+      */}
+      <details open={abierto}>
+        <summary
+          aria-label={t("panel.mesas.editarDe", { mesa: mesa.nombre })}
+          className="inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-suave underline decoration-borde-fuerte underline-offset-4 transicion-color hover:text-tinta hover:decoration-borde-marca"
         >
-          {FORMAS_MESA.map((forma) => (
-            <option key={forma} value={forma}>
-              {nombreDeLaForma(forma)}
-            </option>
-          ))}
-        </CampoSeleccion>
+          {t("panel.mesas.editarTitulo")}
+        </summary>
 
-        {/*
+        <form
+          action={editarMesa}
+          className="mt-interno-compacto grid gap-interno sm:grid-cols-2"
+        >
+          <input type="hidden" name="id" value={mesa.id} />
+
+          <CampoTexto
+            etiqueta={t("panel.mesas.campoNombre")}
+            name="nombre"
+            type="text"
+            required
+            maxLength={LARGOS_DE_CAMPO["mesas.nombre"]}
+            defaultValue={mesa.nombre}
+          />
+          <CampoTexto
+            etiqueta={t("panel.mesas.campoCapacidad")}
+            ayuda={t("panel.mesas.campoCapacidadAyuda", {
+              minima: CAPACIDAD_MINIMA_MESA,
+              maxima: CAPACIDAD_MAXIMA_MESA,
+            })}
+            name="capacidad"
+            type="number"
+            required
+            min={CAPACIDAD_MINIMA_MESA}
+            max={CAPACIDAD_MAXIMA_MESA}
+            step={1}
+            defaultValue={mesa.capacidad}
+          />
+          <CampoSeleccion
+            etiqueta={t("panel.mesas.campoForma")}
+            ayuda={t("panel.mesas.campoFormaAyuda")}
+            name="forma"
+            defaultValue={mesa.forma}
+          >
+            {FORMAS_MESA.map((forma) => (
+              <option key={forma} value={forma}>
+                {nombreDeLaForma(forma)}
+              </option>
+            ))}
+          </CampoSeleccion>
+
+          {/*
           LAS COORDENADAS SE PUEDEN ESCRIBIR, y no sólo empujar. Colocar doce
           mesas en dos filas rectas a base de flechas es media hora; escribiendo
           el mismo número en la vertical de las seis de arriba, un minuto.
         */}
-        <CampoTexto
-          etiqueta={t("panel.mesas.campoPosicionX")}
-          ayuda={t("panel.mesas.campoPosicionXAyuda", { lado: LADO_PLANO_MESAS })}
-          name="posicion_x"
-          type="number"
-          min={0}
-          max={LADO_PLANO_MESAS}
-          defaultValue={mesa.posicionX ?? ""}
-        />
-        <CampoTexto
-          etiqueta={t("panel.mesas.campoPosicionY")}
-          ayuda={t("panel.mesas.campoPosicionYAyuda", { lado: LADO_PLANO_MESAS })}
-          name="posicion_y"
-          type="number"
-          min={0}
-          max={LADO_PLANO_MESAS}
-          defaultValue={mesa.posicionY ?? ""}
-        />
-
-        <div className="sm:col-span-2">
-          <CampoTextoLargo
-            etiqueta={t("panel.mesas.campoNotas")}
-            ayuda={t("panel.mesas.campoNotasAyuda")}
-            name="notas"
-            rows={2}
-            maxLength={LARGOS_DE_CAMPO["mesas.notas"]}
-            defaultValue={mesa.notas ?? ""}
+          <CampoTexto
+            etiqueta={t("panel.mesas.campoPosicionX")}
+            ayuda={t("panel.mesas.campoPosicionXAyuda", { lado: LADO_PLANO_MESAS })}
+            name="posicion_x"
+            type="number"
+            min={0}
+            max={LADO_PLANO_MESAS}
+            defaultValue={mesa.posicionX ?? ""}
           />
-        </div>
+          <CampoTexto
+            etiqueta={t("panel.mesas.campoPosicionY")}
+            ayuda={t("panel.mesas.campoPosicionYAyuda", { lado: LADO_PLANO_MESAS })}
+            name="posicion_y"
+            type="number"
+            min={0}
+            max={LADO_PLANO_MESAS}
+            defaultValue={mesa.posicionY ?? ""}
+          />
 
-        <div className="sm:col-span-2">
-          <BotonEnvio jerarquia="secundario">{t("panel.mesas.guardar")}</BotonEnvio>
-        </div>
-      </form>
+          <div className="sm:col-span-2">
+            <CampoTextoLargo
+              etiqueta={t("panel.mesas.campoNotas")}
+              ayuda={t("panel.mesas.campoNotasAyuda")}
+              name="notas"
+              rows={2}
+              maxLength={LARGOS_DE_CAMPO["mesas.notas"]}
+              defaultValue={mesa.notas ?? ""}
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <BotonEnvio jerarquia="secundario">{t("panel.mesas.guardar")}</BotonEnvio>
+          </div>
+        </form>
+      </details>
 
       <div className="mt-elemento flex flex-wrap items-end gap-interno">
         {colocada ? (

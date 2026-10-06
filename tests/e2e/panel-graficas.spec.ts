@@ -3,6 +3,7 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import {
+  IDIOMA,
   RUTA_ACCESO,
   RUTA_GRAFICAS,
   RUTA_PANEL,
@@ -192,7 +193,11 @@ test.describe("Las gráficas del presupuesto", () => {
       ),
     );
 
-    const esperado = ((sembrado.importeGrande / totalReal) * 100).toFixed(1);
+    // Con la coma decimal del castellano, como lo escribe la pantalla.
+    const esperado = new Intl.NumberFormat(IDIOMA, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format((sembrado.importeGrande / totalReal) * 100);
     await expect(grande).toContainText(
       copy.panel.presupuesto.graficas.porcentaje.replace("{numero}", esperado),
     );

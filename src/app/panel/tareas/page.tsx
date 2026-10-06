@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
+import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
@@ -257,7 +258,20 @@ function Tarjeta({
       ) : (
         <>
           <div className="flex flex-wrap items-baseline justify-between gap-interno">
-            <span className="text-cuerpo text-tinta">{tarea.titulo}</span>
+            {/*
+              LO HECHO SE APAGA. Una tarea terminada pesaba lo mismo que una por
+              hacer, y en la lista había que leer la línea de abajo para saber
+              cuál era cuál. El estado sigue escrito: el tachado no es lo único.
+            */}
+            <span
+              className={
+                tarea.estado === ESTADO_HECHA
+                  ? "text-cuerpo text-tinta-suave line-through"
+                  : "text-cuerpo text-tinta"
+              }
+            >
+              {tarea.titulo}
+            </span>
             <Plazo tarea={tarea} vencida={vencida} pronto={pronto} />
           </div>
 
@@ -399,7 +413,7 @@ function Controles({
   const confirmandoEsta = contexto.confirmando === tarea.id;
 
   return (
-    <div className="mt-elemento flex flex-wrap items-center gap-interno">
+    <div className="mt-interno-compacto flex flex-wrap items-center gap-interno">
       {enTablero ? (
         <>
           {ESTADOS_TAREA.filter((estado) => estado !== tarea.estado).map((estado) => (
@@ -442,11 +456,14 @@ function Controles({
         </form>
       )}
 
-      <EnlaceSuave
+      {/* Con el mismo aspecto que «Duplicar» y «Borrar»: son tres acciones de
+          la misma fila y cada una iba vestida de una forma distinta. */}
+      <BotonEnlace
         href={`${RUTA_TAREAS}?${contexto.vista ? `vista=${contexto.vista}&` : ""}editar=${tarea.id}#tarea-${tarea.id}`}
+        jerarquia="terciario"
       >
         {t("panel.tareas.editar")}
-      </EnlaceSuave>
+      </BotonEnlace>
 
       {enTablero ? null : (
         <>

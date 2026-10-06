@@ -688,9 +688,11 @@ function Fase({ proveedor }: { proveedor: FichaProveedor }) {
           ))}
         </CampoSeleccion>
 
+        {/* La ayuda bajo la fila: colgada del campo, lo subía por encima del
+            desplegable y del botón (ver el buscador de invitados). */}
         <CampoTexto
           etiqueta={t("panel.proveedores.campoMotivoDescarte")}
-          ayuda={t("panel.proveedores.campoMotivoDescarteAyuda")}
+          aria-describedby="ayuda-motivo-descarte"
           name="motivo_descarte"
           type="text"
           maxLength={LARGOS_DE_CAMPO["proveedores.motivo_descarte"]}
@@ -698,6 +700,9 @@ function Fase({ proveedor }: { proveedor: FichaProveedor }) {
         />
 
         <BotonEnvio jerarquia="secundario">{t("panel.proveedores.cambiarEstado")}</BotonEnvio>
+        <p id="ayuda-motivo-descarte" className="text-pequeno text-tinta-suave sm:col-span-3">
+          {t("panel.proveedores.campoMotivoDescarteAyuda")}
+        </p>
       </form>
     </section>
   );
@@ -965,21 +970,36 @@ function Servicio({
 
       {puedeEditar ? (
         <>
-          <form
-            action={editarServicio}
-            className="mt-elemento grid gap-interno border-t border-borde-tenue pt-interno sm:grid-cols-2"
-          >
-            <input type="hidden" name="proveedor_id" value={proveedorId} />
-            <input type="hidden" name="id" value={servicio.id} />
-            <CamposServicio servicio={servicio} />
-            <div className="sm:col-span-2">
-              <BotonEnvio jerarquia="secundario">
-                {t("panel.proveedores.guardarServicio")}
-              </BotonEnvio>
-            </div>
-          </form>
+          {/*
+            EL FORMULARIO VA PLEGADO. Abierto en cada servicio eran seis campos
+            con su ayuda debajo del resumen: unos novecientos píxeles por línea
+            del desglose en el móvil, para algo que se corrige pocas veces.
+          */}
+          <details className="mt-interno-compacto border-t border-borde-tenue pt-interno-compacto">
+            <summary
+              aria-label={t("panel.proveedores.corregirServicioDe", {
+                nombre: servicio.nombre,
+              })}
+              className="inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-suave underline decoration-borde-fuerte underline-offset-4 transicion-color hover:text-tinta hover:decoration-borde-marca"
+            >
+              {t("panel.proveedores.corregirServicio")}
+            </summary>
+            <form
+              action={editarServicio}
+              className="mt-elemento grid gap-interno sm:grid-cols-2"
+            >
+              <input type="hidden" name="proveedor_id" value={proveedorId} />
+              <input type="hidden" name="id" value={servicio.id} />
+              <CamposServicio servicio={servicio} />
+              <div className="sm:col-span-2">
+                <BotonEnvio jerarquia="secundario">
+                  {t("panel.proveedores.guardarServicio")}
+                </BotonEnvio>
+              </div>
+            </form>
+          </details>
 
-          <form action={borrarServicio} className="mt-elemento">
+          <form action={borrarServicio} className="mt-interno-compacto">
             <input type="hidden" name="proveedor_id" value={proveedorId} />
             <input type="hidden" name="id" value={servicio.id} />
             <Boton

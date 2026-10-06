@@ -176,13 +176,13 @@ export async function editarMesa(datos: FormData): Promise<void> {
   if (!id) volver("no-existe");
 
   const nombre = texto(datos, "nombre");
-  if (!nombre) volver("nombre");
+  if (!nombre) volver("nombre", { mesa: id });
 
   const capacidad = leerCapacidad(texto(datos, "capacidad"));
-  if (capacidad === null) volver("capacidad");
+  if (capacidad === null) volver("capacidad", { mesa: id });
 
   const forma = texto(datos, "forma");
-  if (!esFormaMesa(forma)) volver("forma");
+  if (!esFormaMesa(forma)) volver("forma", { mesa: id });
 
   const posicion = leerPosicion(datos);
   if (!posicion.ok) volver("posicion", { mesa: id });
@@ -201,7 +201,7 @@ export async function editarMesa(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error));
+  if (error) volver(motivo(error), { mesa: id });
   if (!data?.length) volver("sin-permiso");
 
   volver("editada");

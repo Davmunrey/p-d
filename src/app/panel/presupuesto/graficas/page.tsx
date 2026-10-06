@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO, RUTA_PRESUPUESTO } from "@/config/constants";
+import { IDIOMA, RUTA_ACCESO, RUTA_PRESUPUESTO } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import { obtenerPagos } from "@/lib/bbdd/pagos";
 import {
@@ -20,6 +20,16 @@ import {
 } from "@/lib/graficas";
 import { formateadorDeImporte } from "@/lib/importe";
 import { accesoActual } from "@/lib/sesion";
+
+/**
+ * «54,1 %» y no «54.1 %». `toFixed` escribe el decimal con punto, que en
+ * castellano es el separador de millares: la tabla de al lado, con los
+ * importes, ya usaba la coma.
+ */
+const formatoPorcentaje = new Intl.NumberFormat(IDIOMA, {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
 
 /**
  * BODA-63 (#49) · CÓMO VA EL DINERO
@@ -215,7 +225,7 @@ function TablaReparto({ reparto, euros }: { reparto: ParteDelGasto[]; euros: Eur
               <td className={CIFRA}>{escribir(euros, parte.importe)}</td>
               <td className={CIFRA}>
                 {t("panel.presupuesto.graficas.porcentaje", {
-                  numero: parte.porcentaje.toFixed(1),
+                  numero: formatoPorcentaje.format(parte.porcentaje),
                 })}
               </td>
             </tr>

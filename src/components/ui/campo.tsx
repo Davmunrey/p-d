@@ -29,6 +29,13 @@ interface Envoltura {
   }) => ReactNode;
   /** Para colocar el campo en una fila: el ancho lo decide quien lo usa. */
   className?: string;
+  /**
+   * La etiqueta se queda para el lector de pantalla y sale de la vista. Sólo
+   * cuando la fila ya dice de qué es el campo —«María García» y a su lado el
+   * desplegable de mesa—: repetir «Mesa de María García» encima de cada uno
+   * doblaba la altura de la lista sin decir nada que no se viera ya.
+   */
+  etiquetaOculta?: boolean;
 }
 
 /**
@@ -59,7 +66,14 @@ const FORMAS = {
   pildora: "min-h-control-grande rounded-boton px-pila",
 } as const;
 
-function EnvolturaCampo({ etiqueta, ayuda, error, className = "", children }: Envoltura) {
+function EnvolturaCampo({
+  etiqueta,
+  ayuda,
+  error,
+  className = "",
+  etiquetaOculta = false,
+  children,
+}: Envoltura) {
   const id = useId();
   const idError = `${id}-error`;
   const idAyuda = `${id}-ayuda`;
@@ -72,12 +86,20 @@ function EnvolturaCampo({ etiqueta, ayuda, error, className = "", children }: En
   const descripcion = error ? idError : ayuda ? idAyuda : "";
 
   return (
-    <div className={`grid gap-interno-compacto ${className}`}>
+    /*
+      `content-start`: en una rejilla de dos columnas, el campo que no lleva
+      ayuda se estira hasta la altura del que sí, y sin esto el hueco se
+      repartía entre la etiqueta y la caja — la caja bajaba y la fila salía
+      torcida. Así todo se queda arriba y lo que sobra, debajo.
+    */
+    <div className={`grid content-start gap-interno-compacto ${className}`}>
       <label
         htmlFor={id}
-        className={`text-etiqueta uppercase tracking-etiqueta ${
-          error ? "text-error" : "text-tinta-suave"
-        }`}
+        className={
+          etiquetaOculta
+            ? "sr-only"
+            : `text-etiqueta uppercase tracking-etiqueta ${error ? "text-error" : "text-tinta-suave"}`
+        }
       >
         {etiqueta}
       </label>
@@ -102,7 +124,7 @@ function EnvolturaCampo({ etiqueta, ayuda, error, className = "", children }: En
 }
 
 type PropiedadesTexto = Omit<ComponentPropsWithoutRef<"input">, "id" | "className"> &
-  Pick<Envoltura, "etiqueta" | "ayuda" | "error" | "className"> & {
+  Pick<Envoltura, "etiqueta" | "ayuda" | "error" | "className" | "etiquetaOculta"> & {
     forma?: keyof typeof FORMAS;
   };
 
@@ -111,11 +133,18 @@ export function CampoTexto({
   ayuda,
   error,
   className,
+  etiquetaOculta,
   forma = "caja",
   ...resto
 }: PropiedadesTexto) {
   return (
-    <EnvolturaCampo etiqueta={etiqueta} ayuda={ayuda} error={error} className={className}>
+    <EnvolturaCampo
+      etiqueta={etiqueta}
+      ayuda={ayuda}
+      error={error}
+      className={className}
+      etiquetaOculta={etiquetaOculta}
+    >
       {(propiedades) => (
         <input
           {...propiedades}
@@ -147,17 +176,25 @@ export function CampoTextoLargo({ etiqueta, ayuda, error, ...resto }: Propiedade
 }
 
 type PropiedadesSeleccion = Omit<ComponentPropsWithoutRef<"select">, "id" | "className"> &
-  Pick<Envoltura, "etiqueta" | "ayuda" | "error">;
+  Pick<Envoltura, "etiqueta" | "ayuda" | "error" | "className" | "etiquetaOculta">;
 
 export function CampoSeleccion({
   etiqueta,
   ayuda,
   error,
+  className,
+  etiquetaOculta,
   children,
   ...resto
 }: PropiedadesSeleccion) {
   return (
-    <EnvolturaCampo etiqueta={etiqueta} ayuda={ayuda} error={error}>
+    <EnvolturaCampo
+      etiqueta={etiqueta}
+      ayuda={ayuda}
+      error={error}
+      className={className}
+      etiquetaOculta={etiquetaOculta}
+    >
       {(propiedades) => (
         <select
           {...propiedades}

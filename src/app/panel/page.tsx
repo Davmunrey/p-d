@@ -145,7 +145,12 @@ function Bloque({ titulo, children }: { titulo: string; children: React.ReactNod
   return (
     <section>
       <Titulo3 como="h2">{titulo}</Titulo3>
-      <dl className="mt-pila grid gap-interno sm:grid-cols-2 lg:grid-cols-4">{children}</dl>
+      {/*
+        DOS POR FILA DESDE EL MÓVIL. Son números cortos: uno por fila convertía
+        el resumen en diez tarjetas apiladas, cada una a todo lo ancho para
+        enseñar dos cifras.
+      */}
+      <dl className="mt-pila grid grid-cols-2 gap-interno lg:grid-cols-4">{children}</dl>
     </section>
   );
 }
@@ -165,10 +170,18 @@ function Cifra({
   destacada?: boolean;
 }) {
   return (
-    <div className="rounded-tarjeta border border-borde p-interno">
+    <div className="flex flex-col rounded-tarjeta border border-borde p-interno">
       <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">{rotulo}</dt>
+      {/*
+        SIN `tabular-nums`, Y ES A PROPÓSITO. En la letra de títulos las cifras
+        tabulares son las de estilo antiguo —el 1 como una I versalita, el 3 y
+        el 9 colgando bajo la línea—, y «139» parecía «I 39». Las de por defecto
+        ya son de caja alta, y en una cifra suelta no hay columna que alinear.
+        `mt-auto`: si el rótulo ocupa dos líneas, la cifra se queda abajo, a la
+        altura de las de al lado.
+      */}
       <dd
-        className={`mt-linea font-titulo text-titulo-2 tabular-nums ${
+        className={`mt-auto pt-linea font-titulo text-titulo-2 ${
           destacada ? "text-tinta-marca" : "text-tinta"
         }`}
       >
@@ -185,7 +198,7 @@ function Menus({ menus }: { menus: ResumenBoda["menus"] }) {
       {menus.length === 0 ? (
         <Cuerpo className="mt-pila max-w-texto">{t("panel.resumen.sinMenus")}</Cuerpo>
       ) : (
-        <dl className="mt-pila grid gap-interno sm:grid-cols-2 lg:grid-cols-3">
+        <dl className="mt-pila grid grid-cols-2 gap-interno lg:grid-cols-3">
           {menus.map((menu) => (
             <div key={menu.tipoMenu} className="rounded-tarjeta border border-borde p-interno">
               <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
@@ -198,7 +211,7 @@ function Menus({ menus }: { menus: ResumenBoda["menus"] }) {
                 dato suelto.
               */}
               <dd className="mt-linea">
-                <span className="block font-titulo text-titulo-2 tabular-nums text-tinta">
+                <span className="block font-titulo text-titulo-2 text-tinta">
                   {formatoNumero.format(menu.personas)}
                 </span>
                 {menu.conAlergias > 0 ? (

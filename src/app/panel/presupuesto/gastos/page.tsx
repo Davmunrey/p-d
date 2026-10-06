@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
+import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -326,12 +327,12 @@ function Fila({
               abrir en otra pestaña y deshacer con el botón de atrás. El ancla
               devuelve la vista al gasto en vez de al principio de la página.
             */}
-            <Link
+            <BotonEnlace
               href={`${RUTA_GASTOS}?editar=${gasto.id}#gasto-${gasto.id}`}
-              className="inline-flex min-h-control-compacto items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
+              jerarquia="terciario"
             >
               {t("panel.presupuesto.gastos.editar")}
-            </Link>
+            </BotonEnlace>
             <form action={borrarGasto}>
               <input type="hidden" name="id" value={gasto.id} />
               <BotonEnvio jerarquia="terciario">

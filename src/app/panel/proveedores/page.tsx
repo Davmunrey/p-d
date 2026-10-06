@@ -116,9 +116,11 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
         method="get"
         className="mt-bloque grid items-end gap-interno sm:grid-cols-[1fr_auto_auto]"
       >
+        {/* La ayuda bajo la fila y no bajo el campo, para que no lo suba por
+            encima del desplegable y del botón (ver el buscador de invitados). */}
         <CampoTexto
           etiqueta={t("panel.proveedores.buscar")}
-          ayuda={t("panel.proveedores.buscarAyuda")}
+          aria-describedby="ayuda-buscar-proveedores"
           name="buscar"
           type="search"
           defaultValue={busqueda}
@@ -136,6 +138,12 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
           ))}
         </CampoSeleccion>
         <BotonEnvio jerarquia="secundario">{t("panel.proveedores.buscar")}</BotonEnvio>
+        <p
+          id="ayuda-buscar-proveedores"
+          className="text-pequeno text-tinta-suave sm:col-span-3"
+        >
+          {t("panel.proveedores.buscarAyuda")}
+        </p>
       </form>
 
       {categorias.length === 0 ? (

@@ -262,7 +262,19 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
         ) : null}
 
         {puedeEditar ? (
-          <form action={anadirPersona} className="mt-elemento grid max-w-texto gap-interno">
+          <form
+            action={anadirPersona}
+            aria-labelledby="anadir-persona"
+            className="mt-elemento grid max-w-texto gap-interno"
+          >
+            {/*
+              EL ALTA LLEVA SU RÓTULO. Los campos salían justo debajo de la
+              última persona, sin nada encima: «Nombre», vacío, bajo «Pilar
+              Peña» se leía como un campo de Pilar y no como alguien nuevo.
+            */}
+            <Etiqueta id="anadir-persona" como="h3" className="block">
+              {t("panel.invitados.anadirPersonaTitulo")}
+            </Etiqueta>
             <input type="hidden" name="grupo_id" value={grupo.id} />
             <CamposPersona />
             <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">

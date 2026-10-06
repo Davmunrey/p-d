@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
-import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
+import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   LARGOS_DE_CAMPO,
   RUTA_ACCESO,
@@ -340,7 +340,11 @@ function Alta() {
   return (
     <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
       <Titulo3 como="h2">{t("panel.presupuesto.nuevaTitulo")}</Titulo3>
-      <Etiqueta className="mt-pila block">{t("panel.presupuesto.nuevaAyuda")}</Etiqueta>
+      {/* Una frase entera se lee en minúscula: en versalita espaciada era un
+          rótulo de cuarenta palabras que costaba seguir. */}
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
+        {t("panel.presupuesto.nuevaAyuda")}
+      </Cuerpo>
 
       <form
         action={crearCategoria}
@@ -353,9 +357,11 @@ function Alta() {
           required
           maxLength={LARGOS_DE_CAMPO["categorias_presupuesto.nombre"]}
         />
+        {/* La ayuda del importe va bajo la fila: colgada del campo, lo subía
+            por encima de los otros dos y del botón. */}
         <CampoTexto
           etiqueta={t("panel.presupuesto.campoPrevisto")}
-          ayuda={t("panel.presupuesto.campoPrevistoAyuda")}
+          aria-describedby="ayuda-previsto-nueva"
           name="importe_previsto"
           type="text"
           inputMode="decimal"
@@ -367,6 +373,9 @@ function Alta() {
           min={0}
         />
         <BotonEnvio>{t("panel.presupuesto.crear")}</BotonEnvio>
+        <p id="ayuda-previsto-nueva" className="text-pequeno text-tinta-suave sm:col-span-4">
+          {t("panel.presupuesto.campoPrevistoAyuda")}
+        </p>
       </form>
     </section>
   );

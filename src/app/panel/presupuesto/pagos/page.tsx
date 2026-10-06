@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
+import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -80,6 +81,15 @@ const formatoDia = new Intl.DateTimeFormat(IDIOMA, {
   timeZone: ZONA_HORARIA,
 });
 
+/**
+ * «Octubre de 2026», con la mayúscula sólo en la primera letra. El `capitalize`
+ * de CSS ponía una en cada palabra —«Octubre De 2026»—, que en castellano está
+ * mal: la preposición va en minúscula.
+ */
+function mayusculaInicial(texto: string): string {
+  return texto.charAt(0).toLocaleUpperCase(IDIOMA) + texto.slice(1);
+}
+
 const formatoMes = new Intl.DateTimeFormat(IDIOMA, {
   month: "long",
   year: "numeric",
@@ -155,8 +165,8 @@ export default async function PaginaPagos({ searchParams }: Parametros) {
 
           {[...porMes(proximos)].map(([mes, delMes]) => (
             <section key={mes} className="mt-bloque">
-              <Titulo3 como="h2" className="border-b border-borde pb-linea capitalize">
-                {formatoMes.format(comoDia(`${mes}-01`))}
+              <Titulo3 como="h2" className="border-b border-borde pb-linea">
+                {mayusculaInicial(formatoMes.format(comoDia(`${mes}-01`)))}
               </Titulo3>
               <Lista
                 pagos={delMes}
@@ -360,9 +370,12 @@ function Fila({
               </BotonEnvio>
             </form>
 
-            <Enlace href={`${RUTA_PAGOS}?editar=${pago.id}#pago-${pago.id}`}>
+            <BotonEnlace
+              href={`${RUTA_PAGOS}?editar=${pago.id}#pago-${pago.id}`}
+              jerarquia="terciario"
+            >
               {t("panel.presupuesto.pagos.editar")}
-            </Enlace>
+            </BotonEnlace>
 
             <form action={borrarPago}>
               <input type="hidden" name="id" value={pago.id} />
