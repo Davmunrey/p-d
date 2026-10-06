@@ -24,7 +24,7 @@ import { accesoActual } from "@/lib/sesion";
 import { normalizar } from "@/lib/texto";
 import { avisoDe } from "@/lib/avisos";
 
-import { marcarLeido, moderarCancion } from "./acciones";
+import { destacarMensaje, marcarLeido, moderarCancion } from "./acciones";
 
 /**
  * BODA-112/113 · LO QUE ESCRIBEN LOS INVITADOS
@@ -51,6 +51,8 @@ const formatoFecha = new Intl.DateTimeFormat(IDIOMA, {
 
 const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   marcado: { clave: "panel.mensajes.marcado", error: false },
+  destacado: { clave: "panel.mensajes.avisoDestacado", error: false },
+  "sin-destacar": { clave: "panel.mensajes.avisoSinDestacar", error: false },
   "cancion-ocultada": { clave: "panel.mensajes.cancionOcultada", error: false },
   "cancion-mostrada": { clave: "panel.mensajes.cancionMostrada", error: false },
   "no-existe": { clave: "panel.mensajes.errorNoExiste", error: true },
@@ -71,18 +73,20 @@ export default async function PaginaMensajes({ searchParams }: Parametros) {
 
   const consulta = await searchParams;
   const busqueda = soloTexto(consulta.buscar);
+  const soloDestacados = soloTexto(consulta.destacados) === "1";
 
   const [mensajes, canciones] = await Promise.all([obtenerMensajes(), obtenerCancionesTodas()]);
 
   const puedeEditar = acceso.rol !== "lector";
   const aguja = normalizar(busqueda);
-  const visibles = busqueda
-    ? mensajes.filter(
-        (mensaje) =>
-          normalizar(mensaje.texto).includes(aguja) ||
-          normalizar(mensaje.grupoNombre).includes(aguja),
-      )
-    : mensajes;
+  const visibles = mensajes
+    .filter((mensaje) => !soloDestacados || mensaje.destacado)
+    .filter(
+      (mensaje) =>
+        !busqueda ||
+        normalizar(mensaje.texto).includes(aguja) ||
+        normalizar(mensaje.grupoNombre).includes(aguja),
+    );
 
   const sinLeer = mensajes.filter((mensaje) => !mensaje.leido).length;
   const aviso = avisoDe(AVISOS, soloTexto(consulta.estado));
@@ -140,6 +144,23 @@ export default async function PaginaMensajes({ searchParams }: Parametros) {
               >
                 {t("panel.mensajes.buscarAyuda")}
               </p>
+              {/*
+                LOS DESTACADOS, DE UN TOQUE: es lo que se busca la semana antes
+                de la boda —«¿quién dijo que llegaba tarde?»— y no se recuerda
+                con qué palabras lo escribió.
+              */}
+              <label className="flex min-h-control-compacto cursor-pointer items-center gap-interno-compacto sm:col-span-2">
+                <input
+                  type="checkbox"
+                  name="destacados"
+                  value="1"
+                  defaultChecked={soloDestacados}
+                  className="casilla-marca transicion-color"
+                />
+                <span className="text-pequeno text-tinta">
+                  {t("panel.mensajes.soloDestacados")}
+                </span>
+              </label>
             </form>
 
             {visibles.length === 0 ? (
@@ -258,11 +279,18 @@ function Mensaje({ mensaje, puedeEditar }: { mensaje: MensajeInvitado; puedeEdit
             fecha: formatoFecha.format(mensaje.escritoEn),
           })}
         </Etiqueta>
-        {mensaje.leido ? null : (
-          <EtiquetaEstado variante="marca" tamano="versalita">
-            {t("panel.mensajes.nuevo")}
-          </EtiquetaEstado>
-        )}
+        <span className="flex flex-wrap gap-interno-compacto">
+          {mensaje.destacado ? (
+            <EtiquetaEstado variante="aviso-marcada" tamano="versalita">
+              {t("panel.mensajes.destacado")}
+            </EtiquetaEstado>
+          ) : null}
+          {mensaje.leido ? null : (
+            <EtiquetaEstado variante="marca" tamano="versalita">
+              {t("panel.mensajes.nuevo")}
+            </EtiquetaEstado>
+          )}
+        </span>
       </div>
 
       {/*
@@ -283,6 +311,18 @@ function Mensaje({ mensaje, puedeEditar }: { mensaje: MensajeInvitado; puedeEdit
               {mensaje.leido
                 ? t("panel.mensajes.marcarNoLeido")
                 : t("panel.mensajes.marcarLeido")}
+            </BotonEnvio>
+          </form>
+        ) : null}
+
+        {puedeEditar ? (
+          <form action={destacarMensaje}>
+            <input type="hidden" name="confirmacion_id" value={mensaje.id} />
+            <input type="hidden" name="destacado" value={mensaje.destacado ? "1" : "0"} />
+            <BotonEnvio jerarquia="terciario">
+              {mensaje.destacado
+                ? t("panel.mensajes.quitarDestacado")
+                : t("panel.mensajes.destacar")}
             </BotonEnvio>
           </form>
         ) : null}

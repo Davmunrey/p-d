@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**56**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**57**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -27,7 +27,7 @@ Cada una tiene su reverso exacto en
 [`supabase/migrations/rollback/`](../supabase/migrations/rollback/), con el mismo
 nombre. Se ejecutan en orden **inverso**.
 
-En números: **37 tablas, 15 vistas, 20 enumerados, 56 funciones, 72 políticas RLS.**
+En números: **38 tablas, 15 vistas, 20 enumerados, 56 funciones, 74 políticas RLS.**
 
 Esos cinco números no se escriben a mano: los cuenta la suite de seguridad contra
 el catálogo de la base recién migrada, y si el documento dice otra cosa, el CI se
@@ -370,6 +370,13 @@ Una fila por respuesta. La anterior deja de ser vigente; nunca se edita.
   lo abra uno de los novios no lo deja sin leer para el otro. Las dos claves
   foráneas borran en cascada y `anon` no tiene ningún privilegio: la bandeja es
   del panel.
+
+- `mensajes_destacados` — los mensajes que se han destacado desde la bandeja
+  porque avisan de algo práctico (una alergia, una llegada tarde), para que no
+  se pierdan al marcarlos como leídos. Misma forma y mismo motivo que
+  `mensajes_leidos`: tabla aparte porque `confirmaciones` es inmutable, clave
+  primaria `confirmacion_id`, `destacado_por` como dato, cascada en las dos
+  claves foráneas, RLS forzada y ningún privilegio para `anon`.
 
 ### 3.3 Economía
 

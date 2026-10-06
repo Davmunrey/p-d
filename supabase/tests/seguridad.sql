@@ -99,7 +99,10 @@ declare
     -- BODA-105: aquí dentro hay DNI y certificados de nacimiento.
     'documentos_boda',
     -- BODA-82/100/103: gestión interna; a un invitado no le incumbe nada.
-    'plantilla_tareas', 'guion_dia', 'correcciones_recuento'
+    'plantilla_tareas', 'guion_dia', 'correcciones_recuento',
+    -- BODA-112: qué mensajes se han leído y cuáles se han destacado. El
+    -- mensaje lo escribió el invitado; lo que hacemos con él es del panel.
+    'mensajes_leidos', 'mensajes_destacados'
   ];
 begin
   foreach t in array privadas loop
@@ -1485,8 +1488,9 @@ begin
        -- La maquinaria del cortafuegos: miles de filas por minuto en un ataque,
        -- y ya es, ella misma, un registro.
        'intentos_rsvp', 'parametros_seguridad',
-       -- Qué mensajes ha visto cada cual: estado de pantalla, no datos.
-       'mensajes_leidos',
+       -- Qué mensajes ha visto cada cual y cuáles se han destacado: estado de
+       -- pantalla, no datos.
+       'mensajes_leidos', 'mensajes_destacados',
        -- El contenido público de la landing: lo que dice ya está a la vista
        -- de todos, y su historia no es un dato de nadie.
        'alojamientos', 'consejos_vestimenta', 'hitos_historia', 'hitos_programa',

@@ -203,6 +203,120 @@ test.describe("Bandeja de mensajes", () => {
   });
 
   /**
+   * BODA-112 · DESTACAR LO PRÁCTICO. Entre treinta «¡qué ganas!» llega un «la
+   * abuela es celíaca», y no puede perderse al marcarlo como leído.
+   */
+  test("destacar un mensaje lo deja a la vista y el filtro de destacados lo encuentra", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const grupo = `${MARCA} Destacar ${sello}`;
+    const practico = `(DES) La abuela es celíaca ${sello}`;
+    const saludo = `(DES) Qué ganas ${sello}`;
+    const [confirmacion] = await conBase(async (sql) => {
+      const [g] = await sql<{ id: string }[]>`
+        insert into public.grupos_invitacion (nombre) values (${grupo}) returning id
+      `;
+      const ids: string[] = [];
+      for (const [nombre, mensaje] of [
+        ["(DES) Abuela", practico],
+        ["(DES) Nieto", saludo],
+      ]) {
+        const [persona] = await sql<{ id: string }[]>`
+          insert into public.invitados (grupo_id, nombre) values (${g.id}, ${nombre}) returning id
+        `;
+        const [c] = await sql<{ id: string }[]>`
+          insert into public.confirmaciones
+            (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento, mensaje)
+          values (${persona.id}, 'confirmado', 'publico', false, false, ${mensaje})
+          returning id
+        `;
+        ids.push(c.id);
+      }
+      return ids;
+    });
+
+    try {
+      await entrar(page);
+      await page.goto(RUTA_MENSAJES);
+      const entrada = page.locator("li").filter({ hasText: practico });
+      await entrada.getByRole("button", { name: copy.panel.mensajes.destacar }).click();
+      await expect(page.getByText(copy.panel.mensajes.avisoDestacado)).toBeVisible();
+      await expect(
+        page
+          .locator("li")
+          .filter({ hasText: practico })
+          .getByText(copy.panel.mensajes.destacado, { exact: true }),
+      ).toBeVisible();
+
+      // Escrito en la base, no sólo en la pantalla.
+      const marcas = await conBase(
+        (sql) => sql`
+          select 1 from public.mensajes_destacados where confirmacion_id = ${confirmacion}
+        `,
+      );
+      expect(marcas).toHaveLength(1);
+
+      // Sólo los destacados: el práctico sí, el saludo del mismo grupo no.
+      await page.goto(
+        `${RUTA_MENSAJES}?destacados=1&buscar=${encodeURIComponent(String(sello))}`,
+      );
+      await expect(page.getByText(practico)).toBeVisible();
+      await expect(page.getByText(saludo)).toHaveCount(0);
+
+      // Y se quita igual.
+      await page
+        .locator("li")
+        .filter({ hasText: practico })
+        .getByRole("button", { name: copy.panel.mensajes.quitarDestacado })
+        .click();
+      await expect(page.getByText(copy.panel.mensajes.avisoSinDestacar)).toBeVisible();
+      const sinMarca = await conBase(
+        (sql) => sql`
+          select 1 from public.mensajes_destacados where confirmacion_id = ${confirmacion}
+        `,
+      );
+      expect(sinMarca).toHaveLength(0);
+    } finally {
+      await conBase((sql) => sql`delete from public.grupos_invitacion where nombre = ${grupo}`);
+    }
+  });
+
+  /**
+   * CASO DE ERROR · destacar el mensaje de una invitación que se borró mientras
+   * la bandeja estaba abierta dice que ya no está, sin culpar al permiso.
+   */
+  test("destacar un mensaje que ya no está lo dice", async ({ page }) => {
+    const sello = Date.now();
+    const grupo = `${MARCA} Se va ${sello}`;
+    const texto = `(DES) Llegamos tarde ${sello}`;
+    await conBase(async (sql) => {
+      const [g] = await sql<{ id: string }[]>`
+        insert into public.grupos_invitacion (nombre) values (${grupo}) returning id
+      `;
+      const [persona] = await sql<{ id: string }[]>`
+        insert into public.invitados (grupo_id, nombre) values (${g.id}, '(DES) Tarde') returning id
+      `;
+      await sql`
+        insert into public.confirmaciones
+          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento, mensaje)
+        values (${persona.id}, 'confirmado', 'publico', false, false, ${texto})
+      `;
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_MENSAJES);
+    const entrada = page.locator("li").filter({ hasText: texto });
+    await expect(entrada).toBeVisible();
+
+    await conBase((sql) => sql`delete from public.grupos_invitacion where nombre = ${grupo}`);
+    await entrada.getByRole("button", { name: copy.panel.mensajes.destacar }).click();
+
+    await expect(page.getByText(copy.panel.mensajes.errorNoExiste)).toBeVisible();
+    await expect(page.getByText(copy.panel.mensajes.errorSinPermiso)).toHaveCount(0);
+  });
+
+  /**
    * BODA-113 · LA LISTA PARA EL DJ y la cuenta por grupo contra el tope.
    *
    * El fichero lleva sólo lo que se ve en la web y en el orden en que llegó:

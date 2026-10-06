@@ -21,6 +21,8 @@ export interface MensajeInvitado {
   grupoId: string | null;
   grupoNombre: string;
   leido: boolean;
+  /** Avisa de algo práctico y alguien lo ha dejado a la vista. */
+  destacado: boolean;
 }
 
 export interface CancionSugerida {
@@ -53,7 +55,7 @@ interface FilaMensaje {
 export async function obtenerMensajes(): Promise<MensajeInvitado[]> {
   const supabase = await clienteServidor();
 
-  const [respuestas, marcas] = await Promise.all([
+  const [respuestas, marcas, destacadas] = await Promise.all([
     supabase
       .from("confirmaciones")
       .select(
@@ -64,6 +66,7 @@ export async function obtenerMensajes(): Promise<MensajeInvitado[]> {
       .not("mensaje", "is", null)
       .order("respondido_en", { ascending: false }),
     supabase.from("mensajes_leidos").select("confirmacion_id"),
+    supabase.from("mensajes_destacados").select("confirmacion_id"),
   ]);
 
   if (respuestas.error) {
@@ -73,6 +76,13 @@ export async function obtenerMensajes(): Promise<MensajeInvitado[]> {
   // mensajes y todos salen como nuevos, que es el fallo inofensivo de los dos.
   const leidos = new Set(
     ((marcas.data ?? []) as { confirmacion_id: string }[]).map(
+      (marca) => marca.confirmacion_id,
+    ),
+  );
+  // Lo mismo con los destacados: si no se pueden leer, ninguno sale destacado,
+  // y los mensajes siguen ahí.
+  const destacados = new Set(
+    ((destacadas.data ?? []) as { confirmacion_id: string }[]).map(
       (marca) => marca.confirmacion_id,
     ),
   );
@@ -88,6 +98,7 @@ export async function obtenerMensajes(): Promise<MensajeInvitado[]> {
         grupoId: grupo?.id ?? null,
         grupoNombre: grupo?.nombre ?? "",
         leido: leidos.has(fila.id),
+        destacado: destacados.has(fila.id),
       };
     });
 }

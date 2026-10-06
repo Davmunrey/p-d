@@ -629,7 +629,13 @@
       "errorNoExiste": "Eso ya no está: el invitado cambió su respuesta después de que abrierais esta página. Lo que veis ahora es lo vigente.",
       "errorSinPermiso": "Sólo un editor puede moderar la playlist o marcar mensajes.",
       "errorGuardar": "No hemos podido guardar. Inténtalo de nuevo.",
-      "marcado": "Mensaje actualizado."
+      "marcado": "Mensaje actualizado.",
+      "destacar": "Destacar",
+      "quitarDestacado": "Quitar el destacado",
+      "destacado": "Destacado",
+      "avisoDestacado": "Mensaje destacado: se queda a la vista aunque lo marquéis como leído.",
+      "avisoSinDestacar": "Ya no está destacado.",
+      "soloDestacados": "Sólo los destacados"
     },
     "mesas": {
       "titulo": "Mesas",

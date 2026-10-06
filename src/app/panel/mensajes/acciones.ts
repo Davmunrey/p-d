@@ -19,7 +19,14 @@ import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
  */
 
 type Estado =
-  "marcado" | "cancion-ocultada" | "cancion-mostrada" | "no-existe" | "sin-permiso" | "error";
+  | "marcado"
+  | "destacado"
+  | "sin-destacar"
+  | "cancion-ocultada"
+  | "cancion-mostrada"
+  | "no-existe"
+  | "sin-permiso"
+  | "error";
 
 /*
   NO SE REVALIDA LA RUTA A LA QUE SE VA A REDIRIGIR.
@@ -97,6 +104,47 @@ export async function marcarLeido(datos: FormData): Promise<void> {
   if (count === 0 && !leidoAhora) volver("sin-permiso");
 
   volver("marcado");
+}
+
+/**
+ * Destaca un mensaje que avisa de algo práctico, o le quita el destacado.
+ *
+ * Es la misma forma que marcar como leído —una tabla de marcas aparte, porque
+ * `confirmaciones` es inmutable— y por eso el mismo orden: el rol primero, para
+ * que el cero de un `delete` sólo pueda significar «ya no estaba destacado»,
+ * que es justo lo que se pedía.
+ */
+export async function destacarMensaje(datos: FormData): Promise<void> {
+  const confirmacionId = texto(datos, "confirmacion_id");
+  const destacadoAhora = texto(datos, "destacado") === "1";
+  if (!confirmacionId) volver("error");
+
+  const acceso = await accesoActual();
+  if (!acceso) redirect(RUTA_ACCESO);
+  if (acceso.rol === "lector") volver("sin-permiso");
+
+  const supabase = await cliente();
+  const { error, count } = destacadoAhora
+    ? await supabase
+        .from("mensajes_destacados")
+        .delete({ count: "exact" })
+        .eq("confirmacion_id", confirmacionId)
+    : await supabase
+        .from("mensajes_destacados")
+        .upsert(
+          { confirmacion_id: confirmacionId, destacado_por: acceso.usuarioId },
+          { count: "exact" },
+        );
+
+  if (error) {
+    // El mensaje se fue con su invitación mientras la bandeja seguía abierta.
+    if (error.code === "23503") volver("no-existe");
+    console.error("No se pudo destacar el mensaje:", error);
+    volver("error");
+  }
+  if (count === 0 && !destacadoAhora) volver("sin-permiso");
+
+  volver(destacadoAhora ? "sin-destacar" : "destacado");
 }
 
 /**
