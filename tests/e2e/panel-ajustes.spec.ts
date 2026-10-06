@@ -459,57 +459,64 @@ test.describe("Ajustes de la boda", () => {
    * en la base mientras tanto.
    */
   test("un error en un campo no deshace lo escrito en los demás", async ({ page }) => {
+    const lugarEnLaBase = () =>
+      conBase(
+        async (sql) =>
+          (
+            await sql<{ lugar: string | null }[]>`
+              select lugar_ceremonia as lugar from public.configuracion_boda
+            `
+          )[0].lugar,
+      );
+
     const lugar = page.getByLabel(copy.panel.ajustes.lugarCeremonia, { exact: true });
     const limite = page.getByLabel(copy.panel.ajustes.limiteRsvp);
-    const lugarOriginal = await lugar.inputValue();
+    const lugarOriginal = await lugarEnLaBase();
     const limiteOriginal = await limite.inputValue();
     const ceremonia = await page.getByLabel(copy.panel.ajustes.fechaCeremonia).inputValue();
     const lugarNuevo = `${MARCA} Ermita de prueba ${Date.now()}`;
 
-    await lugar.fill(lugarNuevo);
-    await limite.fill(ceremonia.replace(/^(\d{4})/, (anio) => String(Number(anio) + 1)));
-    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+    /*
+      SE DEJA COMO ESTABA POR SQL Y EN UN `finally`. Restaurarlo desde la
+      pantalla esperaba el aviso «guardado»… que ya estaba puesto por el
+      guardado anterior: el test acababa sin esperar al último envío, y en el
+      CI el lugar se quedaba cambiado y tumbaba «Reserva la fecha», que busca
+      la finca del seed.
+    */
+    try {
+      await lugar.fill(lugarNuevo);
+      await limite.fill(ceremonia.replace(/^(\d{4})/, (anio) => String(Number(anio) + 1)));
+      await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
 
-    const bloque = page.locator(`#${anclaDeCampo("fecha_limite_rsvp")}`);
-    await expect(bloque.getByRole("alert")).toHaveText(copy.panel.ajustes.errorLimiteTarde);
-    await expect(page.getByLabel(copy.panel.ajustes.limiteRsvp)).toHaveAttribute(
-      "aria-invalid",
-      "true",
-    );
-    await expect(
-      page.getByLabel(copy.panel.ajustes.lugarCeremonia, { exact: true }),
-      "el lugar que se había escrito sigue ahí",
-    ).toHaveValue(lugarNuevo);
+      const bloque = page.locator(`#${anclaDeCampo("fecha_limite_rsvp")}`);
+      await expect(bloque.getByRole("alert")).toHaveText(copy.panel.ajustes.errorLimiteTarde);
+      await expect(page.getByLabel(copy.panel.ajustes.limiteRsvp)).toHaveAttribute(
+        "aria-invalid",
+        "true",
+      );
+      await expect(
+        page.getByLabel(copy.panel.ajustes.lugarCeremonia, { exact: true }),
+        "el lugar que se había escrito sigue ahí",
+      ).toHaveValue(lugarNuevo);
 
-    // En la base, nada todavía.
-    const enLaBase = await conBase(
-      async (sql) =>
-        (
-          await sql<{ lugar: string | null }[]>`
-          select lugar_ceremonia as lugar from public.configuracion_boda
-        `
-        )[0].lugar,
-    );
-    expect(enLaBase ?? "").toBe(lugarOriginal);
+      // En la base, nada todavía.
+      expect(await lugarEnLaBase()).toBe(lugarOriginal);
 
-    // Se corrige la fecha y se guarda: entra también el lugar.
-    await page.getByLabel(copy.panel.ajustes.limiteRsvp).fill(limiteOriginal);
-    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
-    await expect(page.locator("main").getByRole("status")).toContainText(
-      copy.panel.ajustes.guardado,
-    );
-    await expect(
-      page.getByLabel(copy.panel.ajustes.lugarCeremonia, { exact: true }),
-    ).toHaveValue(lugarNuevo);
-
-    // Como estaba.
-    await page
-      .getByLabel(copy.panel.ajustes.lugarCeremonia, { exact: true })
-      .fill(lugarOriginal);
-    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
-    await expect(page.locator("main").getByRole("status")).toContainText(
-      copy.panel.ajustes.guardado,
-    );
+      // Se corrige la fecha y se guarda: entra también el lugar.
+      await page.getByLabel(copy.panel.ajustes.limiteRsvp).fill(limiteOriginal);
+      await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+      await expect(page.locator("main").getByRole("status")).toContainText(
+        copy.panel.ajustes.guardado,
+      );
+      await expect.poll(lugarEnLaBase).toBe(lugarNuevo);
+      await expect(
+        page.getByLabel(copy.panel.ajustes.lugarCeremonia, { exact: true }),
+      ).toHaveValue(lugarNuevo);
+    } finally {
+      await conBase(
+        (sql) => sql`update public.configuracion_boda set lugar_ceremonia = ${lugarOriginal}`,
+      );
+    }
   });
 
   /**
