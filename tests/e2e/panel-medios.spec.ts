@@ -104,6 +104,21 @@ function pngMinimo(): Buffer {
 }
 
 /**
+ * El mismo PNG de 2×2 con un trozo de texto de relleno: sigue siendo un PNG
+ * válido —los trozos `tEXt` son opcionales y nadie los pinta— y pesa lo que
+ * se le pida. Sirve para ver por dónde viaja un fichero que ya no es pequeño.
+ */
+function pngConRelleno(bytes: number): Buffer {
+  const minimo = pngMinimo();
+  const fin = minimo.length - 12; // IEND: 4 de longitud + 4 de tipo + 4 de CRC.
+  const relleno = trozo(
+    "tEXt",
+    Buffer.concat([Buffer.from("Relleno\0"), Buffer.alloc(bytes, 97)]),
+  );
+  return Buffer.concat([minimo.subarray(0, fin), relleno, minimo.subarray(fin)]);
+}
+
+/**
  * La ficha cuyo texto alternativo es el que buscamos.
  *
  * SE LOCALIZA POR EL TEXTO ALTERNATIVO Y NO POR POSICIÓN. La suite deja fotos
@@ -828,5 +843,112 @@ test.describe("El gestor de fotos y vídeos", () => {
       await sql`delete from public.medios where texto_alternativo->>'es' = ${alternativo}`;
       await sql.end();
     }
+  });
+
+  /**
+   * #50 · EL FICHERO NO PASA POR EL SERVIDOR. En Vercel una petición de más de
+   * 4,5 MB no llega ni a ejecutarse, así que una foto de móvil no se podía
+   * subir. Ahora va del navegador a Storage con una URL firmada, y las
+   * acciones sólo llevan su descripción: lo que se comprueba aquí es eso, que
+   * el PUT a Storage sale del navegador y que ninguna acción carga el fichero.
+   */
+  test("la foto viaja del navegador a Storage, no dentro de una acción", async ({ page }) => {
+    const alternativo = `${MARCA} directa ${Date.now()}`;
+    const grande = pngConRelleno(600_000);
+
+    const cuerpos: number[] = [];
+    let subidaDirecta = false;
+    page.on("request", (peticion) => {
+      if (peticion.method() === "POST" && peticion.headers()["next-action"]) {
+        cuerpos.push(peticion.postDataBuffer()?.length ?? 0);
+      }
+      if (peticion.method() === "PUT" && peticion.url().includes("/object/upload/sign/")) {
+        subidaDirecta = true;
+      }
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_MEDIOS);
+    const formulario = await formularioDe(page, "galeria");
+    await formulario
+      .locator('input[type="file"][name="fichero"]')
+      .setInputFiles(comoFichero("grande.png", "image/png", grande));
+    await formulario.getByLabel(copy.panel.medios.alternativo).fill(alternativo);
+    await formulario
+      .getByRole("button", { name: copy.panel.medios.subir, exact: true })
+      .click();
+    await esperarEstado(page, "subido");
+
+    expect(subidaDirecta, "el fichero tiene que ir del navegador a Storage").toBe(true);
+    expect(
+      Math.max(...cuerpos),
+      "ninguna acción de servidor puede llevar el fichero dentro",
+    ).toBeLessThan(grande.length / 10);
+
+    // Y lo que llegó se midió en el servidor, del objeto de verdad.
+    const ficha = fichaDe(page, alternativo);
+    await expect(ficha.getByText("2 × 2")).toBeVisible();
+
+    await borrar(page, alternativo);
+    await esperarEstado(page, "borrado");
+  });
+
+  /**
+   * CASO DE ERROR · la subida se corta a medias (el móvil pierde la cobertura).
+   * No puede quedar una fila apuntando a un fichero que no está, y hay que
+   * decirlo junto al formulario, que sigue abierto.
+   */
+  test("si la subida a Storage se corta, no queda nada y se dice", async ({ page }) => {
+    const alternativo = `${MARCA} cortada ${Date.now()}`;
+    await page.route("**/object/upload/sign/**", (ruta) =>
+      ruta.request().method() === "PUT" ? ruta.abort("connectionreset") : ruta.continue(),
+    );
+
+    await entrar(page);
+    await page.goto(RUTA_MEDIOS);
+    const formulario = await formularioDe(page, "galeria");
+    await formulario
+      .locator('input[type="file"][name="fichero"]')
+      .setInputFiles(comoFichero("prueba.png", "image/png", pngMinimo()));
+    await formulario.getByLabel(copy.panel.medios.alternativo).fill(alternativo);
+    await formulario
+      .getByRole("button", { name: copy.panel.medios.subir, exact: true })
+      .click();
+
+    await esperarEstado(page, "subida-cortada");
+    await expect(
+      page.locator("#seccion-galeria").getByText(copy.panel.medios.errorSubidaCortada),
+    ).toBeVisible();
+    expect(await ordenEnLaBase([alternativo]), "no queda ninguna fila a medias").toEqual([]);
+  });
+
+  /**
+   * Y SIN JAVASCRIPT, EL CAMINO DE SIEMPRE: el fichero viaja dentro del
+   * formulario y lo sube `subirMedio`. Se prueba con el bundle sin cargar, que
+   * es como se abre esto desde el móvil con mala cobertura.
+   */
+  test("sin el bundle cargado, la foto sube por el servidor", async ({ page }) => {
+    const alternativo = `${MARCA} sin bundle ${Date.now()}`;
+    await entrar(page);
+    await page.route("**/_next/static/**/*.js", (ruta) => ruta.abort());
+    await page.goto(RUTA_MEDIOS);
+
+    const bloque = page
+      .locator("details")
+      .filter({ has: page.locator('input[name="seccion"][value="galeria"]') });
+    await bloque.locator("summary").click();
+    await bloque
+      .locator('input[type="file"][name="fichero"]')
+      .setInputFiles(comoFichero("prueba.png", "image/png", pngMinimo()));
+    await bloque.getByLabel(copy.panel.medios.alternativo).fill(alternativo);
+    await bloque.getByRole("button", { name: copy.panel.medios.subir, exact: true }).click();
+
+    await expect(page).toHaveURL(/estado=subido/);
+    await page.unrouteAll();
+    await page.goto(RUTA_MEDIOS);
+    await expect(fichaDe(page, alternativo).getByText("2 × 2")).toBeVisible();
+
+    await borrar(page, alternativo);
+    await esperarEstado(page, "borrado");
   });
 });

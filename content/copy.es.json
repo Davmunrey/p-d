@@ -1399,6 +1399,10 @@
       "errorSinPermiso": "Sólo un editor puede tocar las fotos de la web.",
       "errorNoExiste": "Esa foto o vídeo ya no existe. Puede que la haya borrado alguien mientras mirabais.",
       "errorConfirmarBorrado": "Para borrar hay que confirmarlo: abrid «{borrar}» y pulsad «{confirmar}».",
+      "errorSubidaCortada": "La subida se ha cortado antes de terminar y no se ha guardado nada. Revisad la conexión y volved a intentarlo.",
+      "subidaPreparando": "Preparando la subida…",
+      "subidaSubiendo": "Subiendo… {porcentaje}",
+      "subidaGuardando": "Guardando…",
       "errorGuardar": "No hemos podido guardar. Volved a intentarlo en un momento."
     },
     "contenido": {

@@ -43,6 +43,24 @@ export const PESO_MAXIMO_VIDEO_MB = 50;
 export const PLAZO_SUBIDA_MS = 30_000;
 
 /**
+ * Lo que se espera a que el NAVEGADOR termine de subir un fichero a Storage.
+ *
+ * Es otro plazo porque es otro viaje: las fotos y los vídeos de la web ya no
+ * pasan por el servidor —Vercel corta cualquier petición de más de 4,5 MB—,
+ * sino del móvil a Storage directamente. Y ese viaje lo hace una línea de
+ * datos, a veces en el pueblo de la boda: cincuenta megas a un megabit son
+ * siete minutos. Diez dejan margen sin dejar una subida muerta para siempre.
+ */
+export const PLAZO_SUBIDA_NAVEGADOR_MS = 10 * 60_000;
+
+/**
+ * Cuánto pueden guardar los navegadores un fichero de medios, en segundos. Es
+ * el valor por defecto de Storage, el mismo que llevan las subidas que hace el
+ * servidor; la subida desde el navegador tiene que mandarlo explícito.
+ */
+export const CACHE_MEDIOS_SEGUNDOS = 3600;
+
+/**
  * Lo que se espera a que Resend acepte un correo antes de darlo por perdido.
  *
  * Por lo mismo que arriba: un `fetch` sin `signal` espera hasta que undici se

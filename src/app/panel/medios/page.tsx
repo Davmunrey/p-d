@@ -38,13 +38,8 @@ import {
 import { accesoActual } from "@/lib/sesion";
 import { haySubidaDeMedios } from "@/lib/supabase/servicio";
 
-import {
-  alternarPublicado,
-  borrarMedio,
-  guardarAlternativo,
-  moverMedio,
-  subirMedio,
-} from "./acciones";
+import { alternarPublicado, borrarMedio, guardarAlternativo, moverMedio } from "./acciones";
+import { DeQue } from "./de-que";
 import {
   ESTADOS_DE_ERROR,
   anclaDeMedio,
@@ -52,6 +47,7 @@ import {
   esEstadoMedios,
   type EstadoMedios,
 } from "./estado";
+import { FormularioSubida } from "./formulario-subida";
 
 /** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
 export const metadata: Metadata = { title: t("panel.medios.titulo") };
@@ -86,6 +82,7 @@ const AVISOS: Record<EstadoMedios, string> = {
   despublicado: t("panel.medios.avisoDespublicado"),
   borrado: t("panel.medios.avisoBorrado"),
   "borrado-sin-fichero": t("panel.medios.avisoBorradoSinFichero"),
+  "subida-cortada": t("panel.medios.errorSubidaCortada"),
   "confirmar-borrado": t("panel.medios.errorConfirmarBorrado", {
     borrar: t("panel.medios.borrar"),
     confirmar: t("panel.medios.borrarConfirmar"),
@@ -116,6 +113,35 @@ function nombrar(tipos: readonly string[]): string {
   return lista.format(tipos.map(rotuloDeTipo));
 }
 
+/**
+ * SÓLO SE OFRECE LO QUE ESA PARTE DE LA WEB PINTA. Un vídeo en la galería, en
+ * la tarjeta del Save the Date o en historia no sale nunca, y un AVIF en la
+ * galería tampoco: se subía, se publicaba y se quedaba en «no se ve».
+ */
+function camposDeSubida(seccion: Seccion) {
+  const tipos = tiposQuePinta(seccion);
+  const fotos = tipos.filter((tipo) => tipo.startsWith("image/"));
+  const videos = tipos.filter((tipo) => tipo.startsWith("video/"));
+  const conVideo = videos.length > 0;
+
+  return {
+    accept: tipos.join(","),
+    acceptPoster: conVideo ? TIPOS_POSTER.join(",") : null,
+    etiquetaFichero: conVideo ? t("panel.medios.fichero") : t("panel.medios.ficheroFoto"),
+    ayudaFichero: conVideo
+      ? t("panel.medios.ficheroAyuda", {
+          fotos: nombrar(fotos),
+          imagenMb: PESO_MAXIMO_IMAGEN_MB,
+          videos: nombrar(videos),
+          videoMb: PESO_MAXIMO_VIDEO_MB,
+        })
+      : t("panel.medios.ficheroAyudaFotos", {
+          fotos: nombrar(fotos),
+          imagenMb: PESO_MAXIMO_IMAGEN_MB,
+        }),
+  };
+}
+
 /** Por qué una sección entera no sale en la web, aunque tenga cosas publicadas. */
 type Oculta = "apagada" | "paisaje-sin-titulo";
 
@@ -132,16 +158,6 @@ function Aviso({ estado, className = "" }: { estado: EstadoMedios; className?: s
       {AVISOS[estado]}
     </p>
   );
-}
-
-/**
- * El nombre de la foto dentro de un botón, sólo para quien no lo ve. «Borrar»
- * repetido veinte veces no dice de qué foto es a un lector de pantalla ni deja
- * nombrarlo por voz; el texto oculto sí, y sin `aria-label` el nombre sigue
- * empezando por lo que se ve escrito (WCAG 2.5.3).
- */
-function DeQue({ nombre }: { nombre: string }) {
-  return <span className="sr-only"> {nombre}</span>;
 }
 
 interface Parametros {
@@ -355,6 +371,7 @@ function BloqueSeccion({
           // Tras un error de subida se vuelve con el formulario abierto, junto
           // al aviso: cerrado, parecía que no había pasado nada.
           abierto={senalada && estado !== null && ESTADOS_DE_ERROR.includes(estado)}
+          {...camposDeSubida(seccion)}
         />
       ) : null}
     </section>
@@ -556,157 +573,5 @@ function Ficha({
         )}
       </div>
     </li>
-  );
-}
-
-function FormularioSubida({
-  seccion,
-  nombre,
-  abierto,
-}: {
-  seccion: Seccion;
-  /** El nombre de la sección, para decir a cuál se sube sin tener que verlo. */
-  nombre: string;
-  abierto: boolean;
-}) {
-  /*
-    SÓLO SE OFRECE LO QUE ESA PARTE DE LA WEB PINTA. Un vídeo en la galería, en
-    la tarjeta del Save the Date o en historia no sale nunca, y un AVIF en la
-    galería tampoco: se subía, se publicaba y se quedaba en «no se ve».
-  */
-  const tipos = tiposQuePinta(seccion);
-  const fotos = tipos.filter((tipo) => tipo.startsWith("image/"));
-  const videos = tipos.filter((tipo) => tipo.startsWith("video/"));
-
-  return (
-    <details className="mt-elemento" open={abierto}>
-      <summary className="inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca">
-        {t("panel.medios.subirTitulo")}
-        <DeQue nombre={nombre} />
-      </summary>
-
-      {/*
-        SIN `encType`. Lo pone React por su cuenta —un `<form action={fn}>` es
-        una acción de servidor y React elige la codificación—, y declararlo a
-        mano es meterse en medio de algo que ya está resuelto.
-      */}
-      <form action={subirMedio} className="mt-elemento grid max-w-texto gap-interno">
-        <input type="hidden" name="seccion" value={seccion} />
-
-        <Cuerpo className="text-pequeno text-tinta-suave">
-          {t("panel.medios.subirAyuda")}
-        </Cuerpo>
-
-        <CampoFichero
-          etiqueta={
-            videos.length > 0 ? t("panel.medios.fichero") : t("panel.medios.ficheroFoto")
-          }
-          ayuda={
-            videos.length > 0
-              ? t("panel.medios.ficheroAyuda", {
-                  fotos: nombrar(fotos),
-                  imagenMb: PESO_MAXIMO_IMAGEN_MB,
-                  videos: nombrar(videos),
-                  videoMb: PESO_MAXIMO_VIDEO_MB,
-                })
-              : t("panel.medios.ficheroAyudaFotos", {
-                  fotos: nombrar(fotos),
-                  imagenMb: PESO_MAXIMO_IMAGEN_MB,
-                })
-          }
-          name="fichero"
-          seccion={seccion}
-          accept={tipos.join(",")}
-          required
-        />
-
-        {/*
-          EL PÓSTER NO ES OPCIONAL PARA UN VÍDEO, pero sí para una foto — y como
-          esto es un formulario sin JavaScript, no se puede exigir según lo que
-          se elija arriba. Se pide siempre como opcional y lo comprueba la
-          acción, que es donde de todas formas tenía que comprobarse. Donde no
-          se admite vídeo, no se pide.
-        */}
-        {videos.length > 0 ? (
-          <CampoFichero
-            etiqueta={t("panel.medios.poster")}
-            ayuda={t("panel.medios.posterAyuda")}
-            name="poster"
-            seccion={seccion}
-            accept={TIPOS_POSTER.join(",")}
-          />
-        ) : null}
-
-        <CampoTexto
-          etiqueta={t("panel.medios.alternativo")}
-          ayuda={t("panel.medios.alternativoAyuda")}
-          name="texto_alternativo"
-          minLength={3}
-          maxLength={LARGOS_DE_CAMPO["medios.texto_alternativo"]}
-          required
-        />
-
-        <div>
-          <BotonEnvio>{t("panel.medios.subir")}</BotonEnvio>
-        </div>
-      </form>
-    </details>
-  );
-}
-
-/**
- * Un campo de fichero con la misma etiqueta y ayuda que los demás.
- *
- * NO SE REUTILIZA `CampoTexto` con `type="file"`: un selector de ficheros no
- * lleva borde ni relleno de campo de texto —el navegador pinta su propio botón
- * dentro—, y forzarle las clases de un `input` de texto deja un rectángulo
- * vacío con un botón descolocado en una esquina.
- */
-function CampoFichero({
-  etiqueta,
-  ayuda,
-  name,
-  seccion,
-  accept,
-  required = false,
-}: {
-  etiqueta: string;
-  ayuda: string;
-  name: string;
-  /**
-   * EL IDENTIFICADOR LLEVA LA SECCIÓN, y no es decorativo: esta pantalla pinta
-   * DIECISÉIS formularios de subida, uno por sección. Con `id="campo-fichero"`
-   * a secas había dieciséis elementos con el mismo identificador, así que
-   * quince de las dieciséis etiquetas apuntaban al campo de la portada:
-   * pulsar «Foto o vídeo» en la galería abría el selector de otra sección.
-   */
-  seccion: Seccion;
-  accept: string;
-  required?: boolean;
-}) {
-  const id = `campo-${name}-${seccion}`;
-  const idAyuda = `${id}-ayuda`;
-
-  return (
-    <div className="grid gap-interno-compacto">
-      <label
-        htmlFor={id}
-        className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave"
-      >
-        {etiqueta}
-      </label>
-      <input
-        id={id}
-        name={name}
-        type="file"
-        accept={accept}
-        required={required}
-        aria-describedby={idAyuda}
-        className="min-h-control w-full rounded-campo border border-borde bg-superficie px-interno py-interno-compacto text-pequeno text-tinta file:mr-interno file:min-h-control-compacto file:rounded-boton file:border file:border-borde-fuerte file:bg-superficie file:px-interno file:text-etiqueta file:uppercase file:tracking-boton file:text-tinta-marca"
-      />
-      <span id={idAyuda} className="text-pequeno text-tinta-suave">
-        {ayuda}
-      </span>
-    </div>
   );
 }

@@ -1,3 +1,5 @@
+import { RUTA_MEDIOS } from "@/config/constants";
+
 /**
  * BODA-29 · LOS ESTADOS DE LA PANTALLA DE MEDIOS
  *
@@ -28,6 +30,7 @@ export type EstadoMedios =
   | "sin-permiso"
   | "no-existe"
   | "confirmar-borrado"
+  | "subida-cortada"
   | "error";
 
 /**
@@ -43,6 +46,26 @@ export function anclaDeSeccion(seccion: string): string {
   return `seccion-${seccion}`;
 }
 
+/**
+ * A dónde vuelve la pantalla tras una acción: el acuse en `?estado=` y el ancla
+ * de la ficha o de la sección. Lo usan las acciones al redirigir y el
+ * formulario de subida, que es el único que se mueve desde el navegador.
+ */
+export function destinoDe(
+  estado: EstadoMedios,
+  donde: { medio?: string; seccion?: string } = {},
+): string {
+  const parametros = new URLSearchParams({ estado });
+  if (donde.medio) parametros.set("medio", donde.medio);
+  if (donde.seccion) parametros.set("seccion", donde.seccion);
+  const ancla = donde.medio
+    ? `#${anclaDeMedio(donde.medio)}`
+    : donde.seccion
+      ? `#${anclaDeSeccion(donde.seccion)}`
+      : "";
+  return `${RUTA_MEDIOS}?${parametros}${ancla}`;
+}
+
 /** Cuáles se cuentan como un fallo. Decide el color del aviso y su `role`. */
 export const ESTADOS_DE_ERROR: readonly EstadoMedios[] = [
   "sin-fichero",
@@ -54,6 +77,7 @@ export const ESTADOS_DE_ERROR: readonly EstadoMedios[] = [
   "sin-permiso",
   "no-existe",
   "confirmar-borrado",
+  "subida-cortada",
   // Se ha borrado, pero el fichero sigue siendo público por su URL: hay que
   // decirlo en rojo, no felicitar.
   "borrado-sin-fichero",
@@ -72,4 +96,16 @@ export function esEstadoMedios(valor: string): valor is EstadoMedios {
       ...ESTADOS_DE_ERROR,
     ] as string[]
   ).includes(valor);
+}
+
+/** Una subida firmada: a qué ruta del bucket va y la URL con la que se sube. */
+export interface FicheroASubir {
+  ruta: string;
+  url: string;
+}
+
+/** Lo que devuelve `prepararSubida`: el fichero y, si es vídeo, su fotograma. */
+export interface SubidaPreparada {
+  fichero: FicheroASubir;
+  poster: FicheroASubir | null;
 }

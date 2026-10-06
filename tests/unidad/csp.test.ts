@@ -38,11 +38,12 @@ describe("construirCsp", () => {
     expect(construirCsp("n", { ...ORIGENES, desarrollo: true })).toContain("'unsafe-eval'");
   });
 
-  it("las imágenes y el vídeo vienen del bucket; la conexión, de la analítica y los avisos", () => {
+  it("las imágenes y el vídeo vienen del bucket; la conexión, del bucket, la analítica y los avisos", () => {
     expect(directiva("img-src")).toBe("'self' data: blob: https://abc.supabase.co");
     expect(directiva("media-src")).toBe("'self' https://abc.supabase.co");
+    // El bucket, porque el panel sube las fotos del navegador a Storage.
     expect(directiva("connect-src")).toBe(
-      "'self' https://eu.i.posthog.com https://o1.ingest.sentry.io",
+      "'self' https://abc.supabase.co https://eu.i.posthog.com https://o1.ingest.sentry.io",
     );
     expect(directiva("frame-src")).toBe("https://www.openstreetmap.org");
   });

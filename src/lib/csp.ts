@@ -68,7 +68,10 @@ export function construirCsp(nonce: string, origenes: OrigenesCsp): string {
     `img-src ${lista("'self'", "data:", "blob:", supabase)}`,
     `media-src ${lista("'self'", supabase)}`,
     `font-src 'self'`,
-    `connect-src ${lista("'self'", posthog, sentry)}`,
+    // Y el bucket: las fotos y los vídeos del panel suben del navegador a
+    // Storage directamente, porque por el servidor no caben (ver
+    // `panel/medios/formulario-subida.tsx`).
+    `connect-src ${lista("'self'", supabase, posthog, sentry)}`,
     `frame-src ${lista(mapa)}`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,

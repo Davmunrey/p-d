@@ -117,6 +117,23 @@ export function componerRuta(seccion: string, extension: string, azar: string): 
 }
 
 /**
+ * ¿ES UNA RUTA DE LAS QUE COMPONE `componerRuta` PARA ESA SECCIÓN?
+ *
+ * La subida desde el navegador devuelve al servidor la ruta a la que subió, y
+ * eso es un dato que viene de fuera: sin esta comprobación, confirmar podría
+ * dar de alta una fila apuntando al fichero de otra foto, y descartar podría
+ * borrarlo. Sólo vale `<seccion>/<12 de [0-9a-z]>.<extensión admitida>`.
+ */
+export function esRutaDeSeccion(ruta: string, seccion: string): boolean {
+  const extensiones = Object.values(EXTENSIONES).join("|");
+  const prefijo = `${seccion}/`;
+  return (
+    ruta.startsWith(prefijo) &&
+    new RegExp(`^[0-9a-z]{12}\\.(${extensiones})$`).test(ruta.slice(prefijo.length))
+  );
+}
+
+/**
  * Un identificador de ruta, sin depender de que exista `crypto.randomUUID`.
  *
  * Se le pasa la fuente de azar en lugar de tomarla de dentro: una función que

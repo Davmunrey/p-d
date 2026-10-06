@@ -2,16 +2,28 @@
 
 import { redirect, RedirectType } from "next/navigation";
 
-import { BUCKET_MEDIOS, LARGOS_DE_CAMPO, RUTA_ACCESO, RUTA_MEDIOS } from "@/config/constants";
+import { BUCKET_MEDIOS, LARGOS_DE_CAMPO, RUTA_ACCESO } from "@/config/constants";
 import { SECCIONES, type Seccion } from "@/config/secciones";
 import { medirImagen } from "@/lib/dimensiones";
-import { admitirFichero, componerRuta, identificadorDeRuta } from "@/lib/medios";
+import {
+  admitirFichero,
+  componerRuta,
+  esRutaDeSeccion,
+  identificadorDeRuta,
+  type Veredicto,
+} from "@/lib/medios";
 import { tiposQuePinta } from "@/lib/medios-en-la-web";
 import { accesoActual, ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteDeServicio, haySubidaDeMedios } from "@/lib/supabase/servicio";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
-import { ESTADOS_DE_ERROR, anclaDeMedio, anclaDeSeccion, type EstadoMedios } from "./estado";
+import {
+  ESTADOS_DE_ERROR,
+  destinoDe,
+  type EstadoMedios,
+  type FicheroASubir,
+  type SubidaPreparada,
+} from "./estado";
 
 /**
  * BODA-29 · SUBIR, PUBLICAR, ORDENAR Y BORRAR
@@ -97,15 +109,7 @@ function volver(
     cabecera: para bajar una foto cuatro puestos en la galería había que
     volver a buscarla cuatro veces, y el aviso salía arriba, lejos de la foto.
   */
-  const parametros = new URLSearchParams({ estado });
-  if (donde.medio) parametros.set("medio", donde.medio);
-  if (donde.seccion) parametros.set("seccion", donde.seccion);
-  const ancla = donde.medio
-    ? `#${anclaDeMedio(donde.medio)}`
-    : donde.seccion
-      ? `#${anclaDeSeccion(donde.seccion)}`
-      : "";
-  redirect(`${RUTA_MEDIOS}?${parametros}${ancla}`, RedirectType.replace);
+  redirect(destinoDe(estado, donde), RedirectType.replace);
 }
 
 async function cliente() {
@@ -132,26 +136,57 @@ function motivo(error: { code?: string; message?: string } | null): EstadoMedios
   return "error";
 }
 
+/** Lo que se sabe de un fichero sin abrirlo: su tipo y su peso. */
+interface FicheroPedido {
+  type: string;
+  size: number;
+}
+
 /**
- * SUBIR UN MEDIO.
- *
- * Todo lo que se puede saber sin tocar la red se comprueba antes de tocarla: el
- * tipo, el peso, el texto alternativo y —si es vídeo— el póster. Quien sube una
- * foto de veinte megas desde el móvil se entera con el fichero ya en el
- * servidor, sí, pero sin haber pagado además la subida al bucket.
+ * Lo que manda el navegador como descripción de un fichero, comprobado: viene
+ * de fuera, y un `size` que no fuera un número dejaría pasar cualquier peso.
  */
-export async function subirMedio(datos: FormData): Promise<void> {
+function comoFicheroPedido(valor: unknown): FicheroPedido | null {
+  if (typeof valor !== "object" || valor === null) return null;
+  const { type, size } = valor as Record<string, unknown>;
+  return typeof type === "string" &&
+    typeof size === "number" &&
+    Number.isFinite(size) &&
+    size > 0
+    ? { type, size }
+    : null;
+}
+
+type Admitido = Extract<Veredicto, { admitido: true }>;
+
+/**
+ * TODO LO QUE SE PUEDE SABER SIN TOCAR STORAGE, igual se suba por el servidor
+ * o desde el navegador: quién sube, a qué sección, con qué texto alternativo,
+ * qué tipo y qué peso —y, si es vídeo, su póster—. Lo que no vale vuelve con su
+ * motivo antes de que viaje un solo byte.
+ */
+async function validarSubida(pedido: {
+  seccion: string;
+  alternativo: string;
+  fichero: FicheroPedido | null;
+  poster: FicheroPedido | null;
+}): Promise<{
+  seccion: Seccion;
+  alternativo: string;
+  veredicto: Admitido;
+  veredictoPoster: Admitido | null;
+  perfilId: string;
+}> {
   const acceso = await accesoActual();
   if (!acceso) redirect(RUTA_ACCESO);
   if (acceso.rol === "lector") volver("sin-permiso");
 
   if (!haySubidaDeMedios) volver("sin-configurar");
 
-  const seccionBruta = texto(datos, "seccion");
-  if (!esSeccion(seccionBruta)) volver("error");
-  const seccion: Seccion = seccionBruta;
+  if (!esSeccion(pedido.seccion)) volver("error");
+  const seccion: Seccion = pedido.seccion;
 
-  const alternativo = texto(datos, "texto_alternativo");
+  const alternativo = pedido.alternativo.trim();
   if (
     alternativo.length < 3 ||
     alternativo.length > LARGOS_DE_CAMPO["medios.texto_alternativo"]
@@ -159,7 +194,7 @@ export async function subirMedio(datos: FormData): Promise<void> {
     volver("sin-alternativo", { seccion });
   }
 
-  const original = fichero(datos, "fichero");
+  const original = pedido.fichero;
   if (!original) volver("sin-fichero", { seccion });
 
   const veredicto = admitirFichero(original);
@@ -176,20 +211,86 @@ export async function subirMedio(datos: FormData): Promise<void> {
     lo exige con `medios_poster_solo_de_video`; aquí se comprueba antes para
     poder decirlo con palabras en vez de con un error de restricción.
   */
-  const poster = fichero(datos, "poster");
+  const poster = pedido.poster;
   if (veredicto.tipo === "video" && !poster) volver("sin-poster", { seccion });
 
-  let veredictoPoster: ReturnType<typeof admitirFichero> | null = null;
+  let veredictoPoster: Admitido | null = null;
   if (veredicto.tipo === "video" && poster) {
-    veredictoPoster = admitirFichero(poster);
-    if (!veredictoPoster.admitido) {
-      volver(veredictoPoster.motivo === "tipo" ? "tipo-no-admitido" : "demasiado-grande", {
+    const delPoster = admitirFichero(poster);
+    if (!delPoster.admitido) {
+      volver(delPoster.motivo === "tipo" ? "tipo-no-admitido" : "demasiado-grande", {
         seccion,
       });
     }
     // Un vídeo de póster no es un póster: lo que hace falta es un fotograma.
-    if (veredictoPoster.tipo !== "imagen") volver("tipo-no-admitido", { seccion });
+    if (delPoster.tipo !== "imagen") volver("tipo-no-admitido", { seccion });
+    veredictoPoster = delPoster;
   }
+
+  return { seccion, alternativo, veredicto, veredictoPoster, perfilId: acceso.perfilId };
+}
+
+/** Una ruta nueva en el bucket, con el azar que le toca. */
+function rutaNueva(seccion: Seccion, veredicto: Admitido): string {
+  return componerRuta(seccion, veredicto.extension, identificadorDeRuta(Math.random()));
+}
+
+/**
+ * LA FILA, CON LA SESIÓN: es aquí donde RLS —`medios_editor_escribir`, o sea
+ * `puede_editar()`— dice si esta persona puede. Nace sin publicar, así que
+ * mientras no hay fichero detrás no se ve en ninguna parte.
+ */
+async function insertarFila(datos: {
+  ruta: string;
+  rutaPoster: string | null;
+  alternativo: string;
+  seccion: Seccion;
+  tipo: Admitido["tipo"];
+  medida: { ancho: number; alto: number } | null;
+  perfilId: string;
+}): Promise<{ id: string }> {
+  const supabase = await cliente();
+  const { data: fila, error } = await supabase
+    .from("medios")
+    .insert({
+      ruta_almacenamiento: datos.ruta,
+      poster_ruta: datos.rutaPoster,
+      texto_alternativo: { es: datos.alternativo },
+      seccion: datos.seccion,
+      tipo: datos.tipo,
+      ancho: datos.medida?.ancho ?? null,
+      alto: datos.medida?.alto ?? null,
+      publicado: false,
+      // `perfiles.id`, NO el de Auth: es a `perfiles` a quien apunta
+      // `medios_subido_por_fk`. Ver el comentario de `Acceso` en `sesion.ts`.
+      subido_por: datos.perfilId,
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (error || !fila) volver(motivo(error), { seccion: datos.seccion });
+  return fila;
+}
+
+/**
+ * SUBIR UN MEDIO, POR EL SERVIDOR. Es el camino sin JavaScript: el fichero
+ * viaja dentro del formulario. Con JavaScript el formulario va por
+ * `prepararSubida` y `confirmarSubida`, y el fichero no pasa por aquí —en
+ * Vercel, una petición de más de 4,5 MB no llega ni a ejecutarse—.
+ *
+ * Todo lo que se puede saber sin tocar la red se comprueba antes de tocarla.
+ */
+export async function subirMedio(datos: FormData): Promise<void> {
+  const original = fichero(datos, "fichero");
+  const poster = fichero(datos, "poster");
+  const { seccion, alternativo, veredicto, veredictoPoster, perfilId } = await validarSubida({
+    seccion: texto(datos, "seccion"),
+    alternativo: texto(datos, "texto_alternativo"),
+    fichero: original,
+    poster,
+  });
+  // `validarSubida` ya ha vuelto si no hay fichero; esto es para el compilador.
+  if (!original) volver("sin-fichero", { seccion });
 
   const bytes = new Uint8Array(await original.arrayBuffer());
 
@@ -205,33 +306,19 @@ export async function subirMedio(datos: FormData): Promise<void> {
   */
   const medida = veredicto.tipo === "imagen" ? medirImagen(bytes) : null;
 
-  const ruta = componerRuta(seccion, veredicto.extension, identificadorDeRuta(Math.random()));
-  const rutaPoster =
-    veredictoPoster?.admitido === true
-      ? componerRuta(seccion, veredictoPoster.extension, identificadorDeRuta(Math.random()))
-      : null;
+  const ruta = rutaNueva(seccion, veredicto);
+  const rutaPoster = veredictoPoster ? rutaNueva(seccion, veredictoPoster) : null;
 
   // 1. LA FILA PRIMERO. Aquí es donde RLS dice si esta persona puede o no.
-  const supabase = await cliente();
-  const { data: fila, error } = await supabase
-    .from("medios")
-    .insert({
-      ruta_almacenamiento: ruta,
-      poster_ruta: rutaPoster,
-      texto_alternativo: { es: alternativo },
-      seccion,
-      tipo: veredicto.tipo,
-      ancho: medida?.ancho ?? null,
-      alto: medida?.alto ?? null,
-      publicado: false,
-      // `perfiles.id`, NO el de Auth: es a `perfiles` a quien apunta
-      // `medios_subido_por_fk`. Ver el comentario de `Acceso` en `sesion.ts`.
-      subido_por: acceso.perfilId,
-    })
-    .select("id")
-    .maybeSingle();
-
-  if (error || !fila) volver(motivo(error), { seccion });
+  const fila = await insertarFila({
+    ruta,
+    rutaPoster,
+    alternativo,
+    seccion,
+    tipo: veredicto.tipo,
+    medida,
+    perfilId,
+  });
 
   // 2. Y AHORA LOS FICHEROS, con la única llave que abre Storage.
   const servicio = clienteDeServicio();
@@ -291,7 +378,7 @@ export async function subirMedio(datos: FormData): Promise<void> {
   */
   if (fallo || falloPoster) {
     console.error("No se pudo subir el fichero a Storage:", fallo ?? falloPoster);
-    await supabase.from("medios").delete().eq("id", fila.id);
+    await (await cliente()).from("medios").delete().eq("id", fila.id);
     if (falloPoster) {
       await servicio.storage.from(BUCKET_MEDIOS).remove([ruta]);
     }
@@ -299,6 +386,193 @@ export async function subirMedio(datos: FormData): Promise<void> {
   }
 
   volver("subido", { medio: fila.id });
+}
+
+/**
+ * SUBIR DESDE EL NAVEGADOR, EN TRES PASOS.
+ *
+ * El fichero va del navegador a Storage sin pasar por el servidor, porque por
+ * el servidor no cabe: Vercel corta cualquier petición de más de 4,5 MB antes
+ * de que llegue a ejecutarse, y una foto de móvil pesa cinco u ocho. La ayuda
+ * prometía diez megas por foto y cincuenta por vídeo, y en producción no
+ * entraba ni una foto normal.
+ *
+ *   1. `prepararSubida` comprueba lo mismo que siempre —quién, dónde, qué tipo,
+ *      cuánto pesa, el texto alternativo, el póster— con lo que dice el
+ *      navegador del fichero, y devuelve una URL de subida firmada por
+ *      fichero. Sin fila todavía: si nadie confirma, no queda nada publicable.
+ *   2. El navegador sube a esas URLs.
+ *   3. `confirmarSubida` NO SE FÍA de lo que dijo el navegador: mira el tipo y
+ *      el peso del objeto que llegó de verdad, lo mide si es una foto y sólo
+ *      entonces da de alta la fila, con la sesión y RLS decidiendo. Si algo no
+ *      vale, borra lo subido.
+ *
+ * Si la subida se corta a medias, `descartarSubida` borra lo que llegase. Lo
+ * peor que puede quedar —el navegador se cierra entre el paso 2 y el 3— es un
+ * fichero sin fila, con un nombre aleatorio que nadie conoce: no sale en
+ * ninguna parte, igual que el huérfano que deja un borrado a medias.
+ */
+export async function prepararSubida(pedido: {
+  seccion: string;
+  alternativo: string;
+  fichero: unknown;
+  poster: unknown;
+}): Promise<SubidaPreparada> {
+  const { seccion, veredicto, veredictoPoster } = await validarSubida({
+    seccion: String(pedido.seccion ?? ""),
+    alternativo: String(pedido.alternativo ?? ""),
+    fichero: comoFicheroPedido(pedido.fichero),
+    poster: comoFicheroPedido(pedido.poster),
+  });
+
+  const servicio = clienteDeServicio();
+  const firmar = async (ruta: string): Promise<FicheroASubir> => {
+    const { data, error } = await servicio.storage
+      .from(BUCKET_MEDIOS)
+      .createSignedUploadUrl(ruta);
+    if (error || !data) {
+      console.error("No se pudo firmar la subida:", error);
+      volver("error", { seccion });
+    }
+    return { ruta, url: data.signedUrl };
+  };
+
+  return {
+    fichero: await firmar(rutaNueva(seccion, veredicto)),
+    poster: veredictoPoster ? await firmar(rutaNueva(seccion, veredictoPoster)) : null,
+  };
+}
+
+/** Lo que Storage dice de un objeto que ya está subido: su tipo y su peso. */
+async function describirObjeto(ruta: string): Promise<FicheroPedido | null> {
+  const corte = ruta.lastIndexOf("/");
+  const nombre = ruta.slice(corte + 1);
+  const { data } = await clienteDeServicio()
+    .storage.from(BUCKET_MEDIOS)
+    .list(ruta.slice(0, corte), { search: nombre });
+  const metadatos = data?.find((objeto) => objeto.name === nombre)?.metadata as
+    { size?: unknown; mimetype?: unknown } | undefined;
+  return comoFicheroPedido({ type: metadatos?.mimetype, size: metadatos?.size });
+}
+
+export async function confirmarSubida(pedido: {
+  seccion: string;
+  alternativo: string;
+  ruta: string;
+  rutaPoster: string | null;
+}): Promise<void> {
+  const seccionBruta = String(pedido.seccion ?? "");
+  const ruta = String(pedido.ruta ?? "");
+  const rutaPoster = pedido.rutaPoster ? String(pedido.rutaPoster) : null;
+
+  // Las rutas vienen del navegador: sólo valen las que compone esta pantalla.
+  if (
+    !esSeccion(seccionBruta) ||
+    !esRutaDeSeccion(ruta, seccionBruta) ||
+    (rutaPoster !== null && !esRutaDeSeccion(rutaPoster, seccionBruta))
+  ) {
+    volver("error");
+  }
+
+  const servicio = clienteDeServicio();
+  const subidas = [ruta, rutaPoster].filter((cual): cual is string => cual !== null);
+  const objeto = await describirObjeto(ruta);
+  const objetoPoster = rutaPoster ? await describirObjeto(rutaPoster) : null;
+
+  /*
+    LO QUE SE COMPRUEBA ES LO QUE LLEGÓ, con las mismas reglas que al
+    preparar. Si algo no vale, lo subido se borra antes de volver: el bucket es
+    público y no tiene por qué quedarse con lo que el panel ha rechazado.
+  */
+  let comprobado: Awaited<ReturnType<typeof validarSubida>>;
+  try {
+    if (!objeto || (rutaPoster !== null && !objetoPoster)) volver("subida-cortada");
+    comprobado = await validarSubida({
+      seccion: seccionBruta,
+      alternativo: String(pedido.alternativo ?? ""),
+      fichero: objeto,
+      poster: objetoPoster,
+    });
+    // La extensión de la ruta tiene que ser la del tipo que llegó, y un póster
+    // sólo acompaña a un vídeo.
+    if (!ruta.endsWith(`.${comprobado.veredicto.extension}`)) volver("tipo-no-admitido");
+    if (rutaPoster && !comprobado.veredictoPoster) volver("tipo-no-admitido");
+  } catch (salida) {
+    await servicio.storage.from(BUCKET_MEDIOS).remove(subidas);
+    throw salida;
+  }
+
+  const { seccion, alternativo, veredicto, perfilId } = comprobado;
+  let medida: { ancho: number; alto: number } | null = null;
+  if (veredicto.tipo === "imagen") {
+    const { data } = await servicio.storage.from(BUCKET_MEDIOS).download(ruta);
+    medida = data ? medirImagen(new Uint8Array(await data.arrayBuffer())) : null;
+  }
+
+  try {
+    const fila = await insertarFila({
+      ruta,
+      rutaPoster,
+      alternativo,
+      seccion,
+      tipo: veredicto.tipo,
+      medida,
+      perfilId,
+    });
+    volver("subido", { medio: fila.id });
+  } catch (salida) {
+    // `volver` sale lanzando la redirección: sólo se limpia si no fue ésa.
+    if (!esRedireccionA(salida, "subido")) {
+      await servicio.storage.from(BUCKET_MEDIOS).remove(subidas);
+    }
+    throw salida;
+  }
+}
+
+/** Si lo lanzado es la redirección de `volver` a ese estado. */
+function esRedireccionA(salida: unknown, estado: EstadoMedios): boolean {
+  const digest = (salida as { digest?: unknown } | null)?.digest;
+  return typeof digest === "string" && digest.includes(`estado=${estado}`);
+}
+
+/**
+ * LA SUBIDA SE CORTÓ: se borra lo que llegase y se dice. Sólo se borra lo que
+ * no tiene fila —una ruta que ya es de una foto no se toca, venga lo que venga
+ * del navegador— y sólo rutas con la forma de las de esta pantalla.
+ */
+export async function descartarSubida(pedido: {
+  seccion: string;
+  rutas: unknown;
+}): Promise<void> {
+  const acceso = await accesoActual();
+  if (!acceso) redirect(RUTA_ACCESO);
+
+  const seccion = String(pedido.seccion ?? "");
+  if (!esSeccion(seccion)) volver("subida-cortada");
+
+  const rutas = (Array.isArray(pedido.rutas) ? pedido.rutas : [])
+    .map(String)
+    .filter((ruta) => esRutaDeSeccion(ruta, seccion))
+    .slice(0, 2);
+
+  if (acceso.rol !== "lector" && haySubidaDeMedios && rutas.length > 0) {
+    const lista = rutas.join(",");
+    const { data: conFila } = await (
+      await cliente()
+    )
+      .from("medios")
+      .select("ruta_almacenamiento, poster_ruta")
+      .or(`ruta_almacenamiento.in.(${lista}),poster_ruta.in.(${lista})`);
+    const ocupadas = new Set(
+      (conFila ?? []).flatMap((fila) => [fila.ruta_almacenamiento, fila.poster_ruta]),
+    );
+    const sueltas = rutas.filter((ruta) => !ocupadas.has(ruta));
+    if (sueltas.length > 0) {
+      await clienteDeServicio().storage.from(BUCKET_MEDIOS).remove(sueltas);
+    }
+  }
+
+  volver("subida-cortada", { seccion });
 }
 
 /**

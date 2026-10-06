@@ -79,7 +79,10 @@ const nextConfig: NextConfig = {
     nuestra, mientras la ayuda del formulario prometía diez megas. Se declara
     el mayor de los topes que el módulo promete, y un unitario lo ata a la
     constante. Ojo: Vercel corta los cuerpos de más de 4,5 MB antes de llegar
-    aquí; es un límite de plataforma, no de esta configuración.
+    aquí; es un límite de plataforma, no de esta configuración. Por eso, con
+    JavaScript, las fotos y los vídeos van del navegador a Storage y no por la
+    acción (ver `panel/medios/formulario-subida.tsx`); este tope queda para el
+    camino sin JavaScript y para los sitios que aún suben por el servidor.
   */
   experimental: { serverActions: { bodySizeLimit: `${PESO_MAXIMO_VIDEO_MB}mb` } },
 

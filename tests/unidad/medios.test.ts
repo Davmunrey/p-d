@@ -6,7 +6,13 @@ import {
   TIPOS_MEDIO_ADMITIDOS,
 } from "@/config/constants";
 import { SECCIONES } from "@/config/secciones";
-import { admitirFichero, componerRuta, identificadorDeRuta, topeEnMegas } from "@/lib/medios";
+import {
+  admitirFichero,
+  componerRuta,
+  esRutaDeSeccion,
+  identificadorDeRuta,
+  topeEnMegas,
+} from "@/lib/medios";
 
 /**
  * BODA-29 · Los bordes de admitir un fichero
@@ -160,5 +166,30 @@ describe("componer la ruta", () => {
       expect(ruta, `«${ruta}» no la aceptaría la base`).toMatch(comoLaBase);
       expect(ruta).not.toContain("..");
     }
+  });
+});
+
+/**
+ * LA RUTA QUE DEVUELVE EL NAVEGADOR. La subida directa le pide al navegador que
+ * diga a dónde subió, y confirmar o descartar se fían de eso sólo si tiene la
+ * forma exacta de las rutas que compone esta pantalla: si no, confirmar podría
+ * dar de alta el fichero de otra foto y descartar podría borrarlo.
+ */
+describe("reconocer una ruta de la subida", () => {
+  it("vale la que compone la pantalla, en cualquier sección", () => {
+    for (const seccion of SECCIONES) {
+      const ruta = componerRuta(seccion, "jpg", identificadorDeRuta(0.5));
+      expect(esRutaDeSeccion(ruta, seccion), ruta).toBe(true);
+    }
+  });
+
+  it("no vale la de otra sección, ni salirse de la carpeta, ni otra forma de nombre", () => {
+    const buena = componerRuta("galeria", "png", identificadorDeRuta(0.25));
+    expect(esRutaDeSeccion(buena, "portada")).toBe(false);
+    expect(esRutaDeSeccion("galeria/../portada/abcdefghijkl.png", "galeria")).toBe(false);
+    expect(esRutaDeSeccion("galeria/desarrollo/portada.jpg", "galeria")).toBe(false);
+    expect(esRutaDeSeccion("galeria/abcdefghijkl.exe", "galeria")).toBe(false);
+    expect(esRutaDeSeccion("galeria/ABCDEFGHIJKL.png", "galeria")).toBe(false);
+    expect(esRutaDeSeccion("galeria/abcdefghijkl.png,poster_ruta.eq.x", "galeria")).toBe(false);
   });
 });
