@@ -16,7 +16,13 @@ import {
 import { ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
-import { type EstadoTareas } from "./estado";
+import {
+  ANCLA_ALTA_TAREA,
+  ANCLA_PLANTILLA,
+  anclaDeTarea,
+  DESDE,
+  type EstadoTareas,
+} from "./estado";
 
 /**
  * BODA-80/81/82 · LAS TAREAS, DESDE EL PANEL
@@ -62,15 +68,43 @@ function opcional(datos: FormData, campo: string): string | null {
  */
 function volver(
   estado: EstadoTareas,
-  opciones: { vista?: string; tarea?: string; creadas?: number } = {},
+  opciones: {
+    vista?: string;
+    tarea?: string;
+    creadas?: number;
+    /** La tarea cuyo formulario vuelve abierto, con el aviso dentro. */
+    editar?: string;
+    /** De qué formulario sin tarjeta viene: el alta o la plantilla. */
+    desde?: string;
+    /** El sitio de la pantalla al que se vuelve. */
+    ancla?: string;
+  } = {},
 ): never {
   const consulta = new URLSearchParams();
   if (opciones.vista) consulta.set("vista", opciones.vista);
   consulta.set("estado", estado);
   if (opciones.tarea) consulta.set("tarea", opciones.tarea);
+  if (opciones.editar) consulta.set("editar", opciones.editar);
+  if (opciones.desde) consulta.set("desde", opciones.desde);
   if (opciones.creadas !== undefined) consulta.set("creadas", String(opciones.creadas));
 
-  redirect(`${RUTA_TAREAS}?${consulta.toString()}`);
+  redirect(
+    `${RUTA_TAREAS}?${consulta.toString()}${opciones.ancla ? `#${opciones.ancla}` : ""}`,
+  );
+}
+
+/** Volver a una tarjeta, con su aviso al lado: el caso de casi todas las acciones. */
+function aLaTarea(
+  estado: EstadoTareas,
+  id: string,
+  opciones: { vista?: string; editar?: string } = {},
+): never {
+  volver(estado, { ...opciones, tarea: id, ancla: anclaDeTarea(id) });
+}
+
+/** Cero filas: o no podéis, o la tarea ya no está —y entonces no hay tarjeta—. */
+async function ceroFilas(vista: string | undefined): Promise<never> {
+  volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe", { vista });
 }
 
 /** La vista desde la que se envió el formulario, para volver a ella. */
@@ -165,8 +199,12 @@ function camposTarea(datos: FormData):
 
 export async function crearTarea(datos: FormData): Promise<void> {
   const vista = vistaDe(datos);
+  // Los errores del alta vuelven al alta, que está al final de la pantalla.
+  const alAlta: (estado: EstadoTareas) => never = (estado) =>
+    volver(estado, { vista, desde: DESDE.alta, ancla: ANCLA_ALTA_TAREA });
+
   const campos = camposTarea(datos);
-  if (!campos.ok) volver(campos.estado, { vista });
+  if (!campos.ok) alAlta(campos.estado);
 
   const supabase = await cliente();
   const { data, error } = await supabase
@@ -180,10 +218,10 @@ export async function crearTarea(datos: FormData): Promise<void> {
     .insert({ ...campos.valores, estado: ESTADO_INICIAL_TAREA })
     .select("id");
 
-  if (error) volver(motivo(error), { vista });
-  if (!data?.length) volver("sin-permiso", { vista });
+  if (error) alAlta(motivo(error));
+  if (!data?.length) alAlta("sin-permiso");
 
-  volver("creada", { vista });
+  aLaTarea("creada", data[0]!.id as string, { vista });
 }
 
 export async function editarTarea(datos: FormData): Promise<void> {
@@ -191,8 +229,9 @@ export async function editarTarea(datos: FormData): Promise<void> {
   const id = texto(datos, "id");
   if (!id) volver("no-existe", { vista });
 
+  // Los errores vuelven con el formulario abierto: se pierde lo escrito si no.
   const campos = camposTarea(datos);
-  if (!campos.ok) volver(campos.estado, { vista });
+  if (!campos.ok) aLaTarea(campos.estado, id, { vista, editar: id });
 
   const supabase = await cliente();
   const { data, error } = await supabase
@@ -201,12 +240,10 @@ export async function editarTarea(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error), { vista });
-  if (!data?.length) {
-    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe", { vista });
-  }
+  if (error) aLaTarea(motivo(error), id, { vista, editar: id });
+  if (!data?.length) await ceroFilas(vista);
 
-  volver("editada", { vista });
+  aLaTarea("editada", id, { vista });
 }
 
 /**
@@ -224,7 +261,7 @@ export async function cambiarEstadoTarea(datos: FormData): Promise<void> {
   if (!id) volver("no-existe", { vista });
 
   const nuevo = texto(datos, "estado");
-  if (!esEstadoTarea(nuevo)) volver("estado", { vista });
+  if (!esEstadoTarea(nuevo)) aLaTarea("estado", id, { vista });
 
   const supabase = await cliente();
   const { data, error } = await supabase
@@ -234,12 +271,10 @@ export async function cambiarEstadoTarea(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error), { vista });
-  if (!data?.length) {
-    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe", { vista });
-  }
+  if (error) aLaTarea(motivo(error), id, { vista });
+  if (!data?.length) await ceroFilas(vista);
 
-  volver(nuevo === ESTADO_HECHA ? "completada" : "estado-cambiado", { vista });
+  aLaTarea(nuevo === ESTADO_HECHA ? "completada" : "estado-cambiado", id, { vista });
 }
 
 /**
@@ -280,7 +315,7 @@ export async function duplicarTarea(datos: FormData): Promise<void> {
       proveedor_id: string | null;
     }>();
 
-  if (fallo) volver(motivo(fallo), { vista });
+  if (fallo) aLaTarea(motivo(fallo), id, { vista });
   if (!original) volver("no-existe", { vista });
 
   const { data, error } = await supabase
@@ -288,10 +323,11 @@ export async function duplicarTarea(datos: FormData): Promise<void> {
     .insert({ ...original, estado: ESTADO_INICIAL_TAREA })
     .select("id");
 
-  if (error) volver(motivo(error), { vista });
+  if (error) aLaTarea(motivo(error), id, { vista });
   if (!data?.length) volver("sin-permiso", { vista });
 
-  volver("duplicada", { vista });
+  // A la copia, que es la que hay que tocar: le falta la fecha.
+  aLaTarea("duplicada", data[0]!.id as string, { vista });
 }
 
 /**
@@ -307,15 +343,14 @@ export async function borrarTarea(datos: FormData): Promise<void> {
   const id = texto(datos, "id");
   if (!id) volver("no-existe", { vista });
 
-  if (texto(datos, "confirmar") !== "si") volver("confirmar-borrado", { vista, tarea: id });
+  // La pregunta va a la tarjeta, junto al botón que la contesta.
+  if (texto(datos, "confirmar") !== "si") aLaTarea("confirmar-borrado", id, { vista });
 
   const supabase = await cliente();
   const { data, error } = await supabase.from("tareas").delete().eq("id", id).select("id");
 
-  if (error) volver(motivo(error), { vista });
-  if (!data?.length) {
-    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe", { vista });
-  }
+  if (error) aLaTarea(motivo(error), id, { vista });
+  if (!data?.length) await ceroFilas(vista);
 
   volver("borrada", { vista });
 }
@@ -344,7 +379,7 @@ export async function moverTarea(datos: FormData): Promise<void> {
 
   const direccion = texto(datos, "direccion");
   const haciaArriba = direccion === "subir";
-  if (!haciaArriba && direccion !== "bajar") volver("sin-mover", { vista });
+  if (!haciaArriba && direccion !== "bajar") aLaTarea("sin-mover", id, { vista });
 
   /*
     Se lee la lista ENTERA por el mismo camino que la pinta la pantalla. Repetir
@@ -359,7 +394,7 @@ export async function moverTarea(datos: FormData): Promise<void> {
   const columna = deLaColumna(tareas, actual.estado);
   const desde = columna.findIndex((tarea) => tarea.id === id);
   const hasta = haciaArriba ? desde - 1 : desde + 1;
-  if (hasta < 0 || hasta >= columna.length) volver("sin-mover", { vista });
+  if (hasta < 0 || hasta >= columna.length) aLaTarea("sin-mover", id, { vista });
 
   const orden = columna.map((tarea) => tarea.id);
   [orden[desde], orden[hasta]] = [orden[hasta], orden[desde]];
@@ -378,13 +413,13 @@ export async function moverTarea(datos: FormData): Promise<void> {
       .eq("id", tareaId)
       .select("id");
 
-    if (error) volver(motivo(error), { vista });
-    if (!data?.length) {
-      volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe", { vista });
-    }
+    if (error) aLaTarea(motivo(error), id, { vista });
+    if (!data?.length) await ceroFilas(vista);
   }
 
-  volver("movida", { vista });
+  // A la tarjeta, en su sitio nuevo: para subirla tres puestos se pulsa tres
+  // veces sin tener que volver a buscarla.
+  aLaTarea("movida", id, { vista });
 }
 
 /**
@@ -409,17 +444,21 @@ export async function generarDesdePlantilla(datos: FormData): Promise<void> {
     .map((valor) => String(valor).trim())
     .filter(Boolean);
 
-  if (grupos.length === 0) volver("sin-grupos", { vista });
+  // El resultado, junto al botón que se pulsó: la plantilla está al final.
+  const aLaPlantilla = { vista, desde: DESDE.plantilla, ancla: ANCLA_PLANTILLA };
+  if (grupos.length === 0) volver("sin-grupos", aLaPlantilla);
 
   const supabase = await cliente();
   const { data, error } = await supabase.rpc("generar_tareas_desde_plantilla", {
     p_grupos: grupos,
   });
 
-  if (error) volver(motivo(error), { vista });
+  if (error) volver(motivo(error), aLaPlantilla);
 
   const creadas = Number(data ?? 0);
-  if (!Number.isFinite(creadas) || creadas <= 0) volver("ya-estaban", { vista, creadas: 0 });
+  if (!Number.isFinite(creadas) || creadas <= 0) {
+    volver("ya-estaban", { ...aLaPlantilla, creadas: 0 });
+  }
 
-  volver("generadas", { vista, creadas });
+  volver("generadas", { ...aLaPlantilla, creadas });
 }

@@ -20,6 +20,7 @@ import {
   obtenerGruposPlantilla,
   obtenerResponsables,
   obtenerTareas,
+  PRIORIDAD_INICIAL_TAREA,
   PRIORIDADES_TAREA,
   vencePronto,
   type GrupoPlantilla,
@@ -39,6 +40,7 @@ import {
   moverTarea,
 } from "./acciones";
 import { AvisoTareas } from "./aviso";
+import { ANCLA_ALTA_TAREA, ANCLA_PLANTILLA, anclaDeTarea, DESDE } from "./estado";
 import { comoDia, nombreDeLaPrioridad, nombreDelEstado, nombreDelGrupo } from "./formato";
 
 /** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
@@ -98,13 +100,28 @@ export default async function PaginaTareas({ searchParams }: Parametros) {
 
   const puedeEditar = acceso.rol !== "lector";
 
+  /*
+    EL AVISO VA DONDE SE HIZO LA ACCIÓN: en la tarjeta que se tocó, en el alta
+    o en la plantilla, que están al final. Arriba sólo si no se sabe, o si la
+    tarea ya no está.
+  */
+  const estado = soloTexto(consulta.estado);
+  const aviso = <AvisoTareas estado={estado} creadas={soloTexto(consulta.creadas)} />;
+  const deLaTarea = soloTexto(consulta.tarea);
+  const enUnaTarea = tareas.some((tarea) => tarea.id === deLaTarea) ? deLaTarea : "";
+  const desde = puedeEditar ? soloTexto(consulta.desde) : "";
+  const enElAlta = desde === DESDE.alta;
+  const enLaPlantilla = desde === DESDE.plantilla;
+
   const contexto: Contexto = {
     vista,
     editando,
-    confirmando,
+    confirmando: enUnaTarea && confirmando === enUnaTarea ? confirmando : "",
     puedeEditar,
     responsables,
     proveedores,
+    enUnaTarea,
+    aviso,
   };
 
   return (
@@ -123,7 +140,7 @@ export default async function PaginaTareas({ searchParams }: Parametros) {
         </div>
       </header>
 
-      <AvisoTareas estado={soloTexto(consulta.estado)} creadas={soloTexto(consulta.creadas)} />
+      {enUnaTarea || enElAlta || enLaPlantilla ? null : aviso}
 
       {tareas.length === 0 ? (
         <Cuerpo className="mt-bloque max-w-texto">{t("panel.tareas.vacio")}</Cuerpo>
@@ -134,10 +151,17 @@ export default async function PaginaTareas({ searchParams }: Parametros) {
       )}
 
       {puedeEditar ? (
-        <FormularioAlta responsables={responsables} proveedores={proveedores} vista={vista} />
+        <FormularioAlta
+          responsables={responsables}
+          proveedores={proveedores}
+          vista={vista}
+          aviso={enElAlta ? aviso : null}
+        />
       ) : null}
 
-      {puedeEditar ? <Plantilla grupos={grupos} vista={vista} /> : null}
+      {puedeEditar ? (
+        <Plantilla grupos={grupos} vista={vista} aviso={enLaPlantilla ? aviso : null} />
+      ) : null}
     </>
   );
 }
@@ -153,6 +177,9 @@ interface Contexto {
   puedeEditar: boolean;
   responsables: Responsable[];
   proveedores: Proveedor[];
+  /** La tarea a la que vuelve la última acción: su aviso se pinta en ella. */
+  enUnaTarea: string;
+  aviso: ReactNode;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -189,12 +216,18 @@ function Lista({ tareas, contexto }: { tareas: Tarea[]; contexto: Contexto }) {
  */
 function Tablero({ tareas, contexto }: { tareas: Tarea[]; contexto: Contexto }) {
   return (
-    <div className="mt-bloque grid gap-bloque md:grid-cols-3">
+    /*
+      TRES COLUMNAS SÓLO DONDE CABEN. Con `md`, a 820 px y con el lateral del
+      panel, cada columna medía 147 px y las tarjetas 183: invadían la de al
+      lado y la de «Hecha» salía cortada. Hasta escritorio van apiladas, como
+      en el móvil, y cada columna puede encogerse sin que su contenido la rompa.
+    */
+    <div className="mt-bloque grid gap-bloque lg:grid-cols-3">
       {ESTADOS_TAREA.map((estado) => {
         const columna = deLaColumna(tareas, estado);
 
         return (
-          <section key={estado}>
+          <section key={estado} className="min-w-0">
             <div className="flex flex-wrap items-baseline justify-between gap-interno border-b border-borde pb-interno-compacto">
               <Titulo3 como="h2">{nombreDelEstado(estado)}</Titulo3>
               <span className="text-pequeno text-tinta-suave">
@@ -252,8 +285,8 @@ function Tarjeta({
 
   return (
     <li
-      id={`tarea-${tarea.id}`}
-      className={`rounded-tarjeta border bg-superficie p-interno ${
+      id={anclaDeTarea(tarea.id)}
+      className={`min-w-0 scroll-mt-elemento rounded-tarjeta border bg-superficie p-interno ${
         vencida ? "border-error" : pronto ? "border-aviso" : "border-borde"
       }`}
     >
@@ -267,15 +300,19 @@ function Tarjeta({
               hacer, y en la lista había que leer la línea de abajo para saber
               cuál era cuál. El estado sigue escrito: el tachado no es lo único.
             */}
-            <span
+            {/*
+              EL TÍTULO ES UN ENCABEZADO: se navega de tarjeta en tarjeta con
+              el lector de pantalla, igual que en el resto del panel.
+            */}
+            <h3
               className={
                 tarea.estado === ESTADO_HECHA
-                  ? "text-cuerpo text-tinta-suave line-through"
-                  : "text-cuerpo text-tinta"
+                  ? "min-w-0 font-cuerpo peso-cuerpo text-cuerpo leading-cuerpo tracking-normal text-tinta-suave line-through wrap-anywhere"
+                  : "min-w-0 font-cuerpo peso-cuerpo text-cuerpo leading-cuerpo tracking-normal text-tinta wrap-anywhere"
               }
             >
               {tarea.titulo}
-            </span>
+            </h3>
             <Plazo tarea={tarea} vencida={vencida} pronto={pronto} />
           </div>
 
@@ -310,6 +347,18 @@ function Tarjeta({
           ) : null}
         </>
       )}
+
+      {contexto.enUnaTarea === tarea.id ? contexto.aviso : null}
+
+      {/* La salida de la pregunta de borrar, junto al botón que la contesta. */}
+      {contexto.confirmando === tarea.id ? (
+        <EnlaceSuave
+          href={`${RUTA_TAREAS}${contexto.vista ? `?vista=${contexto.vista}` : ""}#${anclaDeTarea(tarea.id)}`}
+          className="mt-interno-compacto"
+        >
+          {t("panel.tareas.noBorrar")}
+        </EnlaceSuave>
+      ) : null}
     </li>
   );
 }
@@ -427,6 +476,7 @@ function Controles({
               <input type="hidden" name="vista" value={contexto.vista} />
               <BotonEnvio jerarquia="secundario">
                 {t("panel.tareas.moverA", { estado: nombreDelEstado(estado) })}
+                <DeQueTarea tarea={tarea} />
               </BotonEnvio>
             </form>
           ))}
@@ -456,6 +506,7 @@ function Controles({
             {tarea.estado === ESTADO_HECHA
               ? t("panel.tareas.reabrir")
               : t("panel.tareas.completar")}
+            <DeQueTarea tarea={tarea} />
           </BotonEnvio>
         </form>
       )}
@@ -467,6 +518,7 @@ function Controles({
         jerarquia="terciario"
       >
         {t("panel.tareas.editar")}
+        <DeQueTarea tarea={tarea} />
       </BotonEnlace>
 
       {enTablero ? null : (
@@ -474,7 +526,10 @@ function Controles({
           <form action={duplicarTarea}>
             <input type="hidden" name="id" value={tarea.id} />
             <input type="hidden" name="vista" value={contexto.vista} />
-            <BotonEnvio jerarquia="terciario">{t("panel.tareas.duplicar")}</BotonEnvio>
+            <BotonEnvio jerarquia="terciario">
+              {t("panel.tareas.duplicar")}
+              <DeQueTarea tarea={tarea} />
+            </BotonEnvio>
           </form>
 
           <form action={borrarTarea}>
@@ -488,6 +543,7 @@ function Controles({
             {confirmandoEsta ? <input type="hidden" name="confirmar" value="si" /> : null}
             <BotonEnvio jerarquia={confirmandoEsta ? "secundario" : "terciario"}>
               {confirmandoEsta ? t("panel.tareas.confirmarBorrado") : t("panel.tareas.borrar")}
+              <DeQueTarea tarea={tarea} />
             </BotonEnvio>
           </form>
         </>
@@ -512,9 +568,21 @@ function FormularioMover({
       <input type="hidden" name="vista" value={vista} />
       <BotonEnvio jerarquia="terciario">
         {direccion === "subir" ? t("panel.tareas.subirOrden") : t("panel.tareas.bajarOrden")}
+        <DeQueTarea tarea={tarea} />
       </BotonEnvio>
     </form>
   );
+}
+
+/**
+ * DE QUÉ TAREA ES CADA BOTÓN, PARA QUIEN NO LO VE. Un lector de pantalla oía
+ * «Marcar hecha» ocho veces seguidas sin saber de cuál. El rótulo visible
+ * queda al principio del nombre accesible —quien dicta «pulsa Marcar hecha»
+ * sigue acertando (WCAG 2.5.3)— y la tarea va detrás, oculta a la vista. Es el
+ * mismo arreglo que el de las secciones del contenido.
+ */
+function DeQueTarea({ tarea }: { tarea: Tarea }) {
+  return <span className="sr-only"> {tarea.titulo}</span>;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -551,10 +619,15 @@ function CamposTarea({
         />
       </div>
 
+      {/*
+        NACE EN «MEDIA», COMO EN LA BASE. Con `""` y sin opción vacía el
+        navegador marcaba la primera —«Baja»— y la tarea apuntada sólo con su
+        título caía al fondo de la lista.
+      */}
       <CampoSeleccion
         etiqueta={t("panel.tareas.campoPrioridad")}
         name="prioridad"
-        defaultValue={tarea?.prioridad ?? ""}
+        defaultValue={tarea?.prioridad ?? PRIORIDAD_INICIAL_TAREA}
       >
         {PRIORIDADES_TAREA.map((prioridad) => (
           <option key={prioridad} value={prioridad}>
@@ -592,6 +665,19 @@ function CamposTarea({
             {responsable.nombre}
           </option>
         ))}
+        {/*
+          QUIEN YA NO TIENE ACCESO SIGUE SIENDO EL RESPONSABLE hasta que alguien
+          lo cambie a propósito. No estaba en la lista, el navegador marcaba
+          «Sin asignar» y guardar sólo para cambiar la fecha le quitaba la tarea.
+        */}
+        {tarea?.responsableId &&
+        !responsables.some((responsable) => responsable.id === tarea.responsableId) ? (
+          <option value={tarea.responsableId}>
+            {t("panel.tareas.responsableSinAcceso", {
+              nombre: tarea.responsable ?? t("panel.tareas.sinResponsable"),
+            })}
+          </option>
+        ) : null}
       </CampoSeleccion>
 
       <CampoSeleccion
@@ -625,17 +711,24 @@ function FormularioAlta({
   responsables,
   proveedores,
   vista,
+  aviso,
 }: {
   responsables: Responsable[];
   proveedores: Proveedor[];
   vista: string;
+  aviso: ReactNode;
 }) {
   return (
-    <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
+    <section
+      id={ANCLA_ALTA_TAREA}
+      className="mt-bloque scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
+    >
       <Titulo3 como="h2">{t("panel.tareas.nuevaTitulo")}</Titulo3>
       <Cuerpo className="mt-pila max-w-texto text-pequeno">
         {t("panel.tareas.nuevaAyuda")}
       </Cuerpo>
+
+      {aviso}
 
       <form action={crearTarea} className="mt-elemento grid gap-interno sm:grid-cols-2">
         <input type="hidden" name="vista" value={vista} />
@@ -693,13 +786,26 @@ function FormularioEdicion({ tarea, contexto }: { tarea: Tarea; contexto: Contex
  * duplica nada y lo dice con su cifra («0 creadas»). Sin ese aviso, quien
  * genera dos veces se queda sin saber si acaba de duplicar veinte tareas.
  */
-function Plantilla({ grupos, vista }: { grupos: GrupoPlantilla[]; vista: string }) {
+function Plantilla({
+  grupos,
+  vista,
+  aviso,
+}: {
+  grupos: GrupoPlantilla[];
+  vista: string;
+  aviso: ReactNode;
+}) {
   return (
-    <section className="mt-elemento rounded-tarjeta border border-borde p-interno">
+    <section
+      id={ANCLA_PLANTILLA}
+      className="mt-elemento scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
+    >
       <Titulo3 como="h2">{t("panel.tareas.plantillaTitulo")}</Titulo3>
       <Cuerpo className="mt-pila max-w-texto text-pequeno">
         {t("panel.tareas.plantillaAyuda")}
       </Cuerpo>
+
+      {aviso}
 
       {grupos.length === 0 ? (
         <Cuerpo className="mt-elemento text-pequeno">{t("panel.tareas.plantillaVacia")}</Cuerpo>
@@ -728,10 +834,25 @@ function Plantilla({ grupos, vista }: { grupos: GrupoPlantilla[]; vista: string 
                   {grupo.cuantas === 1
                     ? t("panel.tareas.plantillaCuantasUna")
                     : t("panel.tareas.plantillaCuantas", { cuantas: grupo.cuantas })}
+                  {/*
+                    LO QUE YA SALIÓ DE CADA GRUPO. La pantalla enseñaba los
+                    grupos igual el primer día que el centésimo, y no se sabía
+                    cuáles se habían generado.
+                  */}
+                  {grupo.yaEnLaLista > 0
+                    ? ` · ${t("panel.tareas.plantillaYaEnLaLista", { cuantas: grupo.yaEnLaLista })}`
+                    : ""}
                 </span>
               </label>
             ))}
           </fieldset>
+
+          {/* Lo que pasa de verdad al repetir, para que nadie se lleve una sorpresa. */}
+          {grupos.some((grupo) => grupo.yaEnLaLista > 0) ? (
+            <p className="max-w-texto text-pequeno text-tinta-suave">
+              {t("panel.tareas.plantillaRepone")}
+            </p>
+          ) : null}
 
           <div>
             <BotonEnvio jerarquia="secundario">{t("panel.tareas.generar")}</BotonEnvio>

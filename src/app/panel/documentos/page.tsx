@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
@@ -19,6 +21,7 @@ import {
   ESTADOS_DOCUMENTO,
   obtenerDocumentos,
   porEstado,
+  TITULAR_INICIAL_DOCUMENTO,
   TITULARES_DOCUMENTO,
   type DocumentoBoda,
   type EstadoDocumento,
@@ -33,6 +36,7 @@ import {
   marcarConseguido,
 } from "./acciones";
 import { AvisoDocumentos } from "./aviso";
+import { ANCLA_ALTA_DOCUMENTO, anclaDeDocumento, DESDE_EL_ALTA } from "./estado";
 
 /** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
 export const metadata: Metadata = { title: t("panel.documentos.titulo") };
@@ -124,8 +128,8 @@ export default async function PaginaDocumentos({ searchParams }: Parametros) {
 
   const consulta = await searchParams;
   const editando = soloTexto(consulta.editar);
-  const confirmandoBorrado =
-    soloTexto(consulta.estado) === "confirmar-borrado" ? soloTexto(consulta.borrar) : "";
+  const estado = soloTexto(consulta.estado);
+  const confirmandoBorrado = estado === "confirmar-borrado" ? soloTexto(consulta.borrar) : "";
 
   const [documentos, dias] = await Promise.all([obtenerDocumentos(), obtenerDiasDeLaBoda()]);
 
@@ -143,6 +147,17 @@ export default async function PaginaDocumentos({ searchParams }: Parametros) {
   const caducados = caducanAntesDeLaBoda(documentos);
   const grupos = porEstado(documentos);
 
+  /*
+    EL AVISO VA DONDE SE HIZO LA ACCIÓN: en el papel que se tocó o en el alta,
+    que está al final. Arriba sólo si no se sabe, o si el papel ya no está.
+  */
+  const delDocumento = soloTexto(consulta.documento) || confirmandoBorrado;
+  const enUnDocumento = documentos.some((documento) => documento.id === delDocumento)
+    ? delDocumento
+    : "";
+  const enElAlta = puedeEditar && soloTexto(consulta.desde) === DESDE_EL_ALTA.desde;
+  const aviso = <AvisoDocumentos estado={estado} />;
+
   return (
     <>
       <header className="max-w-texto">
@@ -150,7 +165,7 @@ export default async function PaginaDocumentos({ searchParams }: Parametros) {
         <Cuerpo className="mt-pila">{t("panel.documentos.descripcion")}</Cuerpo>
       </header>
 
-      <AvisoDocumentos estado={soloTexto(consulta.estado)} />
+      {enUnDocumento || enElAlta ? null : aviso}
 
       {documentos.length > 0 ? <Caducados documentos={caducados} dia={dia} /> : null}
 
@@ -168,12 +183,14 @@ export default async function PaginaDocumentos({ searchParams }: Parametros) {
               editando={editando}
               confirmandoBorrado={confirmandoBorrado}
               puedeEditar={puedeEditar}
+              enUnDocumento={enUnDocumento}
+              aviso={aviso}
             />
           ))}
         </div>
       )}
 
-      {puedeEditar ? <FormularioAlta /> : null}
+      {puedeEditar ? <FormularioAlta aviso={enElAlta ? aviso : null} /> : null}
     </>
   );
 }
@@ -269,6 +286,8 @@ function SeccionEstado({
   editando,
   confirmandoBorrado,
   puedeEditar,
+  enUnDocumento,
+  aviso,
 }: {
   estado: EstadoDocumento;
   documentos: DocumentoBoda[];
@@ -277,6 +296,9 @@ function SeccionEstado({
   editando: string;
   confirmandoBorrado: string;
   puedeEditar: boolean;
+  /** El papel al que vuelve la última acción: su aviso se pinta en él. */
+  enUnDocumento: string;
+  aviso: ReactNode;
 }) {
   return (
     <section>
@@ -306,8 +328,8 @@ function SeccionEstado({
           {documentos.map((documento) => (
             <li
               key={documento.id}
-              id={`documento-${documento.id}`}
-              className="rounded-tarjeta border border-borde bg-superficie p-interno"
+              id={anclaDeDocumento(documento.id)}
+              className="scroll-mt-elemento rounded-tarjeta border border-borde bg-superficie p-interno"
             >
               {puedeEditar && editando === documento.id ? (
                 <Edicion documento={documento} />
@@ -320,6 +342,7 @@ function SeccionEstado({
                   puedeEditar={puedeEditar}
                 />
               )}
+              {enUnDocumento === documento.id ? aviso : null}
             </li>
           ))}
         </ul>
@@ -344,8 +367,11 @@ function Fila({
   return (
     <div className="grid gap-interno-compacto">
       <div className="flex flex-wrap items-baseline justify-between gap-interno">
-        <div>
-          <span className="text-cuerpo text-tinta">{documento.titulo}</span>
+        <div className="min-w-0">
+          {/* El título es un encabezado: se navega de papel en papel. */}
+          <h3 className="font-cuerpo peso-cuerpo text-cuerpo leading-cuerpo tracking-normal text-tinta wrap-anywhere">
+            {documento.titulo}
+          </h3>
           <span className="mt-linea block text-pequeno text-tinta-suave">
             {nombreDelTitular(documento.deQuien)}
             {documento.dondeSePide ? ` · ${documento.dondeSePide}` : ""}
@@ -375,9 +401,17 @@ function Fila({
             })
           : t("panel.documentos.sinObtener")}
         {" · "}
+        {/*
+          SIN FECHA NO ES SIEMPRE «NO CADUCA». Un papel todavía sin conseguir no
+          tiene caducidad porque nadie la sabe aún —«se añade cuando os la
+          digan»—, y leer «No caduca» en el empadronamiento es justo el error
+          que este módulo existe para evitar.
+        */}
         {documento.caducaEn
           ? t("panel.documentos.caducaEl", { fecha: dia.format(comoDia(documento.caducaEn)) })
-          : t("panel.documentos.noCaduca")}
+          : documento.estado === "conseguido"
+            ? t("panel.documentos.noCaduca")
+            : t("panel.documentos.caducidadPorSaber")}
       </p>
 
       {documento.notas ? (
@@ -402,8 +436,17 @@ function Fila({
                 defaultValue={hoy}
                 required
               />
+              {/* Con la caducidad que hubiera: al renovar, se corrige la vieja. */}
+              <CampoTexto
+                etiqueta={t("panel.documentos.campoCaduca")}
+                ayuda={t("panel.documentos.campoCaducaAyuda")}
+                name="caduca_en"
+                type="date"
+                defaultValue={documento.caducaEn ?? ""}
+              />
               <BotonEnvio jerarquia="secundario">
                 {t("panel.documentos.marcarConseguido")}
+                <DeQueDocumento documento={documento} />
               </BotonEnvio>
             </form>
           ) : null}
@@ -413,6 +456,7 @@ function Fila({
             jerarquia="terciario"
           >
             {t("panel.documentos.editar")}
+            <DeQueDocumento documento={documento} />
           </BotonEnlace>
 
           <form action={borrarDocumento}>
@@ -423,16 +467,33 @@ function Fila({
               `POST` y sigue funcionando sin JavaScript.
             */}
             {confirmando ? <input type="hidden" name="confirmar" value="si" /> : null}
-            <BotonEnvio jerarquia="terciario">
+            <BotonEnvio jerarquia={confirmando ? "secundario" : "terciario"}>
               {confirmando
                 ? t("panel.documentos.borrarDeVerdad")
                 : t("panel.documentos.borrar")}
+              <DeQueDocumento documento={documento} />
             </BotonEnvio>
           </form>
+
+          {/* La salida de la pregunta, junto al botón que la contesta. */}
+          {confirmando ? (
+            <EnlaceSuave href={`${RUTA_DOCUMENTOS}#${anclaDeDocumento(documento.id)}`}>
+              {t("panel.documentos.noBorrar")}
+            </EnlaceSuave>
+          ) : null}
         </div>
       ) : null}
     </div>
   );
+}
+
+/**
+ * DE QUÉ PAPEL ES CADA BOTÓN, PARA QUIEN NO LO VE: «Ya lo tenemos» repetido
+ * diez veces no dice de cuál. El rótulo visible queda al principio del nombre
+ * accesible (WCAG 2.5.3) y el título va detrás, oculto a la vista.
+ */
+function DeQueDocumento({ documento }: { documento: DocumentoBoda }) {
+  return <span className="sr-only"> {documento.titulo}</span>;
 }
 
 /**
@@ -524,13 +585,18 @@ function Edicion({ documento }: { documento: DocumentoBoda }) {
 }
 
 /** Alta de documento. Sin `<details>`: el formulario está, y se ve que está. */
-function FormularioAlta() {
+function FormularioAlta({ aviso }: { aviso: ReactNode }) {
   return (
-    <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
+    <section
+      id={ANCLA_ALTA_DOCUMENTO}
+      className="mt-bloque scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
+    >
       <Titulo3 como="h2">{t("panel.documentos.nuevoTitulo")}</Titulo3>
       <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.documentos.nuevoAyuda")}
       </Cuerpo>
+
+      {aviso}
 
       <form action={apuntarDocumento} className="mt-elemento grid gap-interno sm:grid-cols-2">
         <CampoTexto
@@ -540,7 +606,11 @@ function FormularioAlta() {
           required
           maxLength={LARGOS_DE_CAMPO["documentos_boda.titulo"]}
         />
-        <CampoSeleccion etiqueta={t("panel.documentos.campoDeQuien")} name="de_quien">
+        <CampoSeleccion
+          etiqueta={t("panel.documentos.campoDeQuien")}
+          name="de_quien"
+          defaultValue={TITULAR_INICIAL_DOCUMENTO}
+        >
           {TITULARES_DOCUMENTO.map((titular) => (
             <option key={titular} value={titular}>
               {nombreDelTitular(titular)}

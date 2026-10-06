@@ -502,6 +502,87 @@ test.describe("Los documentos de la boda civil", () => {
    * un día con los permisos de su dueño y se convierte en la puerta de atrás de
    * la tabla que protege.
    */
+  /**
+   * APUNTAR SÓLO CON EL TÍTULO DEJA EL PAPEL «DE LOS DOS», como la base. El
+   * desplegable marcaba la primera opción y quedaba como de la novia. Y sin
+   * caducidad todavía no es «No caduca»: es que aún no se sabe —«se añade
+   * cuando os la digan»—. La pantalla vuelve al papel recién apuntado.
+   */
+  test("apuntar sólo el título lo deja de los dos y con la caducidad por saber", async ({
+    page,
+  }) => {
+    const prefijo = `${MARCA} Sólo título`;
+    await limpiar(prefijo);
+    const titulo = `${prefijo} ${Date.now()}`;
+
+    try {
+      await entrar(page);
+      await page.goto(RUTA_DOCUMENTOS);
+
+      const alta = seccion(page, documentos.nuevoTitulo);
+      await alta.getByLabel(documentos.campoTitulo, { exact: true }).fill(titulo);
+      await alta.getByRole("button", { name: documentos.apuntar }).click();
+      await esperarEstado(page, "apuntado");
+
+      const [fila] = await conBase(
+        (sql) => sql<{ id: string; de_quien: string }[]>`
+          select id, de_quien from public.documentos_boda where titulo = ${titulo}
+        `,
+      );
+      expect(fila.de_quien, "sin tocar el desplegable, el de la base").toBe("ambos");
+
+      await expect(page).toHaveURL(new RegExp(`#documento-${fila.id}$`));
+      const suya = filaDe(page, fila.id);
+      await expect(suya).toContainText(documentos.avisoApuntado);
+      await expect(suya).toContainText(documentos.caducidadPorSaber);
+      await expect(suya).not.toContainText(documentos.noCaduca);
+    } finally {
+      await limpiar(prefijo);
+    }
+  });
+
+  /**
+   * «YA LO TENEMOS» PIDE TAMBIÉN LA CADUCIDAD. El atajo sólo apuntaba la fecha
+   * de obtención: el empadronamiento, que vale tres meses, quedaba «No caduca»
+   * y el aviso verde aseguraba que nada caducaba antes de la boda.
+   */
+  test("«Ya lo tenemos» apunta la caducidad, y avisa si no llega a la boda", async ({
+    page,
+  }) => {
+    const prefijo = `${MARCA} Con caducidad`;
+    await limpiar(prefijo);
+    const id = await sembrar({
+      titulo: `${prefijo} ${Date.now()}`,
+      estado: "pendiente",
+      obtenidoEn: null,
+      caducaEn: null,
+    });
+    const caduca = await relativaALaBoda(-20);
+
+    try {
+      await entrar(page);
+      await page.goto(RUTA_DOCUMENTOS);
+
+      const suya = filaDe(page, id);
+      await suya.getByLabel(documentos.campoCaduca, { exact: true }).fill(caduca);
+      await suya.getByRole("button", { name: documentos.marcarConseguido }).click();
+      await esperarEstado(page, "conseguido");
+
+      const [guardada] = await conBase(
+        (sql) => sql<{ estado: string; caduca_en: string | null }[]>`
+          select estado, to_char(caduca_en, 'YYYY-MM-DD') as caduca_en
+            from public.documentos_boda where id = ${id}
+        `,
+      );
+      expect(guardada.estado).toBe("conseguido");
+      expect(guardada.caduca_en, "la caducidad viaja con el atajo").toBe(caduca);
+      expect(await avisoDeLaBase(id), "y la base lo da por caducado antes").toBe(true);
+      await expect(filaDe(page, id)).toContainText(documentos.caducaAntes);
+    } finally {
+      await limpiar(prefijo);
+    }
+  });
+
   test("anon no puede leer los documentos de la boda", async () => {
     for (const objeto of ["documentos_boda", "v_documentos_boda"]) {
       const intento = await conBase((sql) =>

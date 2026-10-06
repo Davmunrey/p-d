@@ -11,7 +11,12 @@ import {
 import { ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
-import { type EstadoDocumentos } from "./estado";
+import {
+  ANCLA_ALTA_DOCUMENTO,
+  anclaDeDocumento,
+  DESDE_EL_ALTA,
+  type EstadoDocumentos,
+} from "./estado";
 
 /**
  * BODA-105 · APUNTAR, CONSEGUIR Y BORRAR PAPELES
@@ -52,9 +57,32 @@ function opcional(datos: FormData, campo: string): string | null {
   Este módulo no tiene ninguna otra pantalla que dependa de él, así que aquí no
   se revalida nada en absoluto.
 */
-function volver(estado: EstadoDocumentos, extra?: Record<string, string>): never {
+function volver(
+  estado: EstadoDocumentos,
+  extra?: Record<string, string>,
+  /** El sitio de la pantalla al que se vuelve, y donde se pinta el aviso. */
+  ancla?: string,
+): never {
   const parametros = new URLSearchParams({ estado, ...extra });
-  redirect(`${RUTA_DOCUMENTOS}?${parametros.toString()}`);
+  redirect(`${RUTA_DOCUMENTOS}?${parametros.toString()}${ancla ? `#${ancla}` : ""}`);
+}
+
+/**
+ * VOLVER AL PAPEL QUE SE TOCÓ, con su aviso al lado. Toda acción volvía al
+ * principio: «Ya lo tenemos» o «Borrar» en el último de la lista obligaban a
+ * bajar a buscarlo para ver qué había pasado o para confirmar.
+ */
+function alDocumento(
+  estado: EstadoDocumentos,
+  id: string,
+  extra?: Record<string, string>,
+): never {
+  volver(estado, { documento: id, ...extra }, anclaDeDocumento(id));
+}
+
+/** Cero filas: o no podéis, o el papel ya no está —y entonces no hay fila—. */
+async function ceroFilas(): Promise<never> {
+  volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
 }
 
 async function cliente() {
@@ -172,8 +200,12 @@ function camposDocumento(datos: FormData):
 }
 
 export async function apuntarDocumento(datos: FormData): Promise<void> {
+  // Los errores del alta vuelven al alta, que está al final de la pantalla.
+  const alAlta: (estado: EstadoDocumentos) => never = (estado) =>
+    volver(estado, DESDE_EL_ALTA, ANCLA_ALTA_DOCUMENTO);
+
   const campos = camposDocumento(datos);
-  if (!campos.ok) volver(campos.estado);
+  if (!campos.ok) alAlta(campos.estado);
 
   const supabase = await cliente();
   const { data, error } = await supabase
@@ -181,19 +213,20 @@ export async function apuntarDocumento(datos: FormData): Promise<void> {
     .insert(campos.valores)
     .select("id");
 
-  if (error) volver(motivo(error));
+  if (error) alAlta(motivo(error));
   // Cero filas y sin error es RLS callando: un lector no apunta documentos.
-  if (!data?.length) volver("sin-permiso");
+  if (!data?.length) alAlta("sin-permiso");
 
-  volver("apuntado");
+  alDocumento("apuntado", data[0]!.id as string);
 }
 
 export async function editarDocumento(datos: FormData): Promise<void> {
   const id = texto(datos, "id");
   if (!id) volver("no-existe");
 
+  // Los errores vuelven con la edición abierta: es donde están los campos.
   const campos = camposDocumento(datos);
-  if (!campos.ok) volver(campos.estado);
+  if (!campos.ok) alDocumento(campos.estado, id, { editar: id });
 
   const supabase = await cliente();
   const { data, error } = await supabase
@@ -202,12 +235,10 @@ export async function editarDocumento(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error));
-  if (!data?.length) {
-    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
-  }
+  if (error) alDocumento(motivo(error), id, { editar: id });
+  if (!data?.length) await ceroFilas();
 
-  volver("editado");
+  alDocumento("editado", id);
 }
 
 /**
@@ -233,22 +264,30 @@ export async function marcarConseguido(datos: FormData): Promise<void> {
   if (!id) volver("no-existe");
 
   const obtenidoEn = fecha(datos, "obtenido_en");
-  if (obtenidoEn === undefined) volver("fecha");
-  if (!obtenidoEn) volver("sin-fecha-obtencion");
+  if (obtenidoEn === undefined) alDocumento("fecha", id);
+  if (!obtenidoEn) alDocumento("sin-fecha-obtencion", id);
+
+  /*
+    Y SU CADUCIDAD, QUE ES LO QUE SE LEE EN EL PAPEL RECIÉN RECOGIDO. El atajo
+    sólo pedía la fecha de obtención: un empadronamiento que vale tres meses
+    quedaba «No caduca», y el aviso verde aseguraba que nada caducaba antes de
+    la boda. El campo llega con la caducidad que hubiera, así que renovar un
+    papel deja corregir la vieja; vacío es que no caduca.
+  */
+  const caducaEn = fecha(datos, "caduca_en");
+  if (caducaEn === undefined) alDocumento("fecha", id);
 
   const supabase = await cliente();
   const { data, error } = await supabase
     .from("documentos_boda")
-    .update({ estado: "conseguido", obtenido_en: obtenidoEn })
+    .update({ estado: "conseguido", obtenido_en: obtenidoEn, caduca_en: caducaEn })
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error));
-  if (!data?.length) {
-    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
-  }
+  if (error) alDocumento(motivo(error), id);
+  if (!data?.length) await ceroFilas();
 
-  volver("conseguido");
+  alDocumento("conseguido", id);
 }
 
 /**
@@ -270,7 +309,10 @@ export async function borrarDocumento(datos: FormData): Promise<void> {
   const id = texto(datos, "id");
   if (!id) volver("no-existe");
 
-  if (texto(datos, "confirmar") !== "si") volver("confirmar-borrado", { borrar: id });
+  // La pregunta va al papel, junto al botón que la contesta.
+  if (texto(datos, "confirmar") !== "si") {
+    volver("confirmar-borrado", { borrar: id }, anclaDeDocumento(id));
+  }
 
   const supabase = await cliente();
   const { data, error } = await supabase
@@ -279,10 +321,8 @@ export async function borrarDocumento(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error));
-  if (!data?.length) {
-    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
-  }
+  if (error) alDocumento(motivo(error), id);
+  if (!data?.length) await ceroFilas();
 
   volver("borrado");
 }

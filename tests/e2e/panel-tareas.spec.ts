@@ -534,5 +534,124 @@ test.describe("El módulo de tareas", () => {
       `,
     );
     expect(repetidas, "cada fila de la plantilla tiene UNA tarea: ni cero ni dos").toEqual([]);
+
+    // Y la pantalla dice lo que ya salió del grupo, y qué pasa si se repite.
+    const despues = seccion(page, copy.panel.tareas.plantillaTitulo);
+    await expect(despues).toContainText(copy.panel.tareas.plantillaRepone);
+  });
+
+  /**
+   * APUNTAR SÓLO CON EL TÍTULO —«con el título basta», dice la ayuda— NACE EN
+   * «MEDIA», COMO EN LA BASE. El desplegable marcaba la primera opción, «Baja»,
+   * y la tarea caía al fondo de la lista.
+   *
+   * Y LA PANTALLA VUELVE A SU TARJETA, con el aviso dentro y los botones
+   * diciendo de qué tarea son: un lector de pantalla oía «Marcar hecha» ocho
+   * veces seguidas sin saber de cuál.
+   */
+  test("apuntar sólo el título nace en «Media», y se vuelve a su tarjeta", async ({ page }) => {
+    const titulo = `${MARCA} Sólo el título ${Date.now()}`;
+
+    await entrar(page);
+    await page.goto(RUTA_TAREAS);
+
+    const alta = seccion(page, copy.panel.tareas.nuevaTitulo);
+    await alta.getByLabel(copy.panel.tareas.campoTitulo, { exact: true }).fill(titulo);
+    await alta.getByRole("button", { name: copy.panel.tareas.crear }).click();
+    await esperarEstado(page, "creada");
+
+    const [creada] = await conBase(
+      (sql) => sql<{ id: string; prioridad: string }[]>`
+        select id, prioridad from public.tareas where titulo = ${titulo}
+      `,
+    );
+    expect(creada.prioridad, "sin tocar el desplegable, la de la base").toBe("media");
+
+    await expect(page).toHaveURL(new RegExp(`#tarea-${creada.id}$`));
+    await expect(tarjeta(page, creada.id)).toContainText(copy.panel.tareas.avisoCreada);
+    await expect(
+      tarjeta(page, creada.id).getByRole("button", {
+        name: `${copy.panel.tareas.completar} ${titulo}`,
+      }),
+    ).toBeVisible();
+  });
+
+  /**
+   * QUIEN YA NO TIENE ACCESO SIGUE SIENDO EL RESPONSABLE. No estaba en el
+   * desplegable, el navegador marcaba «Sin asignar», y guardar sólo para
+   * cambiar la fecha le quitaba la tarea sin que nadie lo hubiera decidido.
+   */
+  test("cambiar la fecha de una tarea de alguien sin acceso no le quita la tarea", async ({
+    page,
+  }) => {
+    const [inactivo] = await conBase(
+      (sql) => sql<{ id: string; nombre_completo: string }[]>`
+        select id, nombre_completo from public.perfiles where not activo limit 1
+      `,
+    );
+    expect(inactivo, "la base de pruebas trae un perfil desactivado").toBeDefined();
+
+    const titulo = `${MARCA} De quien se fue ${Date.now()}`;
+    const [{ id }] = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        insert into public.tareas (titulo, responsable_id)
+        values (${titulo}, ${inactivo.id})
+        returning id
+      `,
+    );
+
+    await entrar(page);
+    await page.goto(`${RUTA_TAREAS}?editar=${id}#tarea-${id}`);
+
+    const suya = tarjeta(page, id);
+    await expect(
+      suya.getByLabel(copy.panel.tareas.campoResponsable, { exact: true }),
+    ).toHaveValue(inactivo.id);
+    await suya
+      .getByLabel(copy.panel.tareas.campoFechaLimite, { exact: true })
+      .fill("2027-01-15");
+    await suya.getByRole("button", { name: copy.panel.tareas.guardar, exact: true }).click();
+    await esperarEstado(page, "editada");
+
+    const [guardada] = await conBase(
+      (sql) => sql<{ responsable_id: string | null; fecha_limite: string | null }[]>`
+        select responsable_id, fecha_limite::text from public.tareas where id = ${id}
+      `,
+    );
+    expect(guardada.fecha_limite).toBe("2027-01-15");
+    expect(guardada.responsable_id, "sigue siendo suya").toBe(inactivo.id);
+  });
+
+  /**
+   * EL TABLERO CABE EN UNA TABLETA. A 820 px, con el lateral del panel, las
+   * columnas medían 147 px y las tarjetas 183: invadían la de al lado y la de
+   * «Hecha» salía cortada. Ahora van apiladas hasta escritorio.
+   */
+  test("en una tableta, ninguna tarjeta del tablero se sale de su columna", async ({
+    page,
+  }) => {
+    await conBase(
+      (sql) => sql`
+        insert into public.tareas (titulo, estado)
+        values (${`${MARCA} Tableta ${Date.now()}`}, 'hecha')
+      `,
+    );
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await entrar(page);
+    await page.goto(`${RUTA_TAREAS}?vista=tablero`);
+    await page.waitForLoadState("networkidle");
+
+    const fuera = await page.locator("li[id^='tarea-']").evaluateAll(
+      (tarjetas) =>
+        tarjetas.filter((tarjetaSuelta) => {
+          const columna = tarjetaSuelta.closest("section");
+          if (!columna) return false;
+          return (
+            tarjetaSuelta.getBoundingClientRect().right >
+            columna.getBoundingClientRect().right + 1
+          );
+        }).length,
+    );
+    expect(fuera, "ninguna tarjeta invade la columna de al lado").toBe(0);
   });
 });

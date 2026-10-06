@@ -24,3 +24,14 @@ export type EstadoDocumentos =
   | "no-existe"
   | "sin-permiso"
   | "error";
+
+/** El sitio de cada papel en la pantalla: a él vuelve lo que se hace sobre él. */
+export function anclaDeDocumento(id: string): string {
+  return `documento-${id}`;
+}
+
+/** El alta, al final de la pantalla: sus errores se pintan junto a ella. */
+export const ANCLA_ALTA_DOCUMENTO = "nuevo-documento";
+
+/** Lo que dice en la URL que un aviso viene del alta y no de un papel concreto. */
+export const DESDE_EL_ALTA = { desde: "alta" } as const;

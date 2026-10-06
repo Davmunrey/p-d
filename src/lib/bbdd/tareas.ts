@@ -92,6 +92,8 @@ export interface Responsable {
 export interface GrupoPlantilla {
   grupo: string;
   cuantas: number;
+  /** Cuántas de sus tareas están ya en la lista. */
+  yaEnLaLista: number;
 }
 
 /**
@@ -211,20 +213,40 @@ export async function obtenerResponsables(): Promise<Responsable[]> {
 export async function obtenerGruposPlantilla(): Promise<GrupoPlantilla[]> {
   const supabase = await clienteServidor();
 
-  const { data, error } = await supabase
-    .from("plantilla_tareas")
-    .select("grupo")
-    .order("orden", { ascending: true, nullsFirst: false });
+  /*
+    CON LO QUE YA SALIÓ DE CADA GRUPO. `tareas.plantilla_id` es el rastro de
+    qué fila generó cada tarea; contarlo por grupo dice cuáles se generaron ya,
+    y que una tarea borrada vuelve si se genera otra vez.
+  */
+  const [plantilla, generadas] = await Promise.all([
+    supabase
+      .from("plantilla_tareas")
+      .select("id, grupo")
+      .order("orden", { ascending: true, nullsFirst: false }),
+    supabase.from("tareas").select("plantilla_id").not("plantilla_id", "is", null),
+  ]);
 
-  if (error)
-    throw new Error(`No se pudieron leer los grupos de la plantilla: ${error.message}`);
+  if (plantilla.error)
+    throw new Error(
+      `No se pudieron leer los grupos de la plantilla: ${plantilla.error.message}`,
+    );
+  if (generadas.error)
+    throw new Error(
+      `No se pudo leer qué tareas salieron de la plantilla: ${generadas.error.message}`,
+    );
 
-  const cuenta = new Map<string, number>();
-  for (const fila of data as { grupo: string }[]) {
-    cuenta.set(fila.grupo, (cuenta.get(fila.grupo) ?? 0) + 1);
+  const yaGeneradas = new Set(
+    (generadas.data as { plantilla_id: string }[]).map((fila) => fila.plantilla_id),
+  );
+  const cuenta = new Map<string, { cuantas: number; yaEnLaLista: number }>();
+  for (const fila of plantilla.data as { id: string; grupo: string }[]) {
+    const suya = cuenta.get(fila.grupo) ?? { cuantas: 0, yaEnLaLista: 0 };
+    suya.cuantas += 1;
+    if (yaGeneradas.has(fila.id)) suya.yaEnLaLista += 1;
+    cuenta.set(fila.grupo, suya);
   }
 
-  return [...cuenta].map(([grupo, cuantas]) => ({ grupo, cuantas }));
+  return [...cuenta].map(([grupo, cuentas]) => ({ grupo, ...cuentas }));
 }
 
 /** Ya pasó su fecha y sigue sin hacerse. Lo único de la lista que es tarde. */

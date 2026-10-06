@@ -32,3 +32,20 @@ export type EstadoTareas =
   | "referencia-rota"
   | "sin-permiso"
   | "error";
+
+/**
+ * A DÓNDE VUELVE LA PANTALLA TRAS UNA ACCIÓN, y dónde se pinta su aviso.
+ *
+ * Toda acción volvía al principio: confirmar un borrado obligaba a bajar tres
+ * pantallas hasta la tarjeta, y subir una tarjeta tres puestos, a buscarla tres
+ * veces. Cada acción vuelve a la tarjeta que tocó, o al alta, o a la plantilla.
+ */
+export function anclaDeTarea(id: string): string {
+  return `tarea-${id}`;
+}
+
+export const ANCLA_ALTA_TAREA = "nueva-tarea";
+export const ANCLA_PLANTILLA = "plantilla";
+
+/** De qué formulario sin tarjeta viene el aviso: el alta o la plantilla. */
+export const DESDE = { alta: "alta", plantilla: "plantilla" } as const;

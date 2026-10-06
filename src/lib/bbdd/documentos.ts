@@ -39,6 +39,13 @@ export const TITULARES_DOCUMENTO = ["novia", "novio", "ambos"] as const;
 
 export type TitularDocumento = (typeof TITULARES_DOCUMENTO)[number];
 
+/**
+ * Con quién nace un papel apuntado sin elegir: «los dos», como el `default`
+ * de la tabla. El desplegable del alta marcaba el primero —«La novia»— y un
+ * papel apuntado sólo con su título quedaba como de ella.
+ */
+export const TITULAR_INICIAL_DOCUMENTO: TitularDocumento = "ambos";
+
 export function esTitularDocumento(valor: string): valor is TitularDocumento {
   return (TITULARES_DOCUMENTO as readonly string[]).includes(valor);
 }
