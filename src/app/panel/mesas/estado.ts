@@ -20,6 +20,11 @@ export type EstadoMesas =
   | "movida"
   | "sentado"
   | "sentado-sin-confirmar"
+  | "sentado-no-viene"
+  | "grupo-sentado"
+  | "grupo-sentado-sin-confirmar"
+  | "editada-pasada"
+  | "presidencia-repetida"
   | "levantado"
   | "nombre"
   | "nombre-repetido"
@@ -35,3 +40,35 @@ export type EstadoMesas =
   | "en-uso"
   | "sin-permiso"
   | "error";
+
+/**
+ * A DÓNDE VUELVE LA PANTALLA TRAS UNA ACCIÓN, y dónde se pinta su aviso.
+ *
+ * La pantalla de mesas mide veinte mil píxeles en un móvil, y cada acción
+ * volvía arriba del todo: para empujar una mesa diez pasos había que bajar
+ * diez veces hasta sus flechas, y la confirmación de borrar salía arriba con
+ * el botón abajo. Cada formulario manda el ancla de su sitio —la bolsa de «sin
+ * mesa», el bloque de una mesa, el plano— y la acción vuelve ahí.
+ */
+export const ANCLA_SIN_MESA = "sin-mesa";
+export const ANCLA_SIN_RESPUESTA = "sin-respuesta";
+export const ANCLA_PLANO = "plano";
+/** El alta, al final de la pantalla: sus errores se pintan junto al formulario. */
+export const ANCLA_NUEVA = "nueva-mesa";
+/** Los bloques de mesa. Ninguna acción vuelve aquí: es para el índice de la pantalla. */
+export const ANCLA_REPARTO = "reparto";
+
+export function anclaDeMesa(id: string): string {
+  return `mesa-${id}`;
+}
+
+/** Si un ancla que llega de un formulario es de las de esta pantalla. */
+export function esAnclaDeMesas(valor: string): boolean {
+  return (
+    valor === ANCLA_SIN_MESA ||
+    valor === ANCLA_SIN_RESPUESTA ||
+    valor === ANCLA_PLANO ||
+    valor === ANCLA_NUEVA ||
+    /^mesa-[0-9a-f-]{36}$/.test(valor)
+  );
+}

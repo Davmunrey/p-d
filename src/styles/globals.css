@@ -362,6 +362,7 @@
   --aspect-foto-tarjeta: var(--proporcion-foto-tarjeta);
   --aspect-foto-tira: var(--proporcion-foto-tira);
   --aspect-hito: var(--proporcion-hito);
+  --aspect-plano: var(--proporcion-plano);
 
   /*
     EL ANILLO SE COMPONE AQUÍ Y NO EN LA CAPA SEMÁNTICA porque su color cambia
@@ -391,6 +392,7 @@
   --container-contenido: var(--ancho-contenido);
   --container-amplio: var(--ancho-amplio);
   --container-medio: var(--ancho-medio);
+  --container-plano: var(--ancho-plano);
   --container-cuenta: var(--ancho-cuenta);
   --container-playlist: var(--ancho-playlist);
   --container-cabecera-seccion: var(--ancho-cabecera);
@@ -447,6 +449,15 @@
  */
 @custom-variant reparto-en-linea (@container (min-width: 40rem));
 @custom-variant grupo-en-linea (@container (min-width: 52rem));
+
+/**
+ * Y dentro de cada fila, su formulario: desplegable y botón van juntos sólo si
+ * al desplegable le quedan sus 10rem al lado del botón más largo, «Sentar al
+ * grupo entero», que mide casi 17rem. Si no, uno encima de otro. Sin esto, a
+ * 1280 px el del grupo se quedaba en 97 px —«Elegir r»— y a 1024 el de
+ * «Cambiar de mesa», en 124. Mide el formulario, que lleva su `@container`.
+ */
+@custom-variant formulario-en-linea (@container (min-width: 30rem));
 
 /**
  * Patrón «dato + contenido»: una columna estrecha con la hora o la duración,

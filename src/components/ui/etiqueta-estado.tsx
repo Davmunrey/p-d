@@ -79,13 +79,13 @@ const VARIANTES: Record<VarianteEtiqueta, string> = {
   error: "bg-error-fondo text-error-tinta",
 
   /*
-    LAS DOS «MARCADAS» EXISTEN POR CONTRASTE, no por gusto. `--error-tinta`
-    sobre `--error-fondo` da 4,12:1 y `--aviso-tinta` sobre el suyo 2,9:1: los
-    dos por debajo del 4,5:1 que AA pide para texto pequeño, y las etiquetas más
-    urgentes de todo el panel —«Vencida», «Vence hoy»— van justo en el tamaño
-    más pequeño que hay. Estas dos escriben en `--tinta` (16:1) y llevan el
-    color del estado al BORDE, donde un 3:1 basta porque es una mancha y no una
-    letra. Se lee igual de rápido y se lee de verdad.
+    LAS DOS «MARCADAS» NACIERON POR CONTRASTE: cuando se crearon, la tinta de
+    error daba 4,12:1 sobre su fondo y la de aviso 2,9:1, por debajo del 4,5:1
+    de AA. Las tintas se subieron después en la capa semántica —hoy, medidas:
+    error 4,69:1, aviso 4,81:1, éxito 4,85:1— y las simples ya cumplen. Las
+    marcadas se quedan para lo más urgente del panel —«Vencida», «Vence hoy»—:
+    escriben en `--tinta` (16:1) y llevan el color del estado al BORDE, donde
+    un 3:1 basta porque es una mancha y no una letra.
   */
   "aviso-marcada": "border border-aviso bg-aviso-fondo text-tinta",
   "error-marcada": "border border-error bg-error-fondo text-tinta",

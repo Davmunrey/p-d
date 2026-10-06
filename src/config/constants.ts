@@ -637,6 +637,17 @@ export const LADO_PLANO_MESAS = 10000;
 export const PASO_PLANO_MESAS = 250;
 
 /**
+ * La distancia entre los huecos donde «Colocar en el plano» deja una mesa.
+ *
+ * Antes todas iban al centro: la segunda tapaba a la primera, las dos tapaban
+ * la pista de baile y separarlas eran once flechas por mesa. Ahora se busca el
+ * primer hueco libre de una rejilla con este paso, lejos de la pista: mil
+ * quinientas unidades —un 15 % del lienzo— separan dos mesas lo bastante para
+ * que no se pisen sus rótulos en un móvil.
+ */
+export const SEPARACION_COLOCAR_MESA = 1500;
+
+/**
  * Cuánta gente cabe en una mesa, como mínimo y como máximo.
  *
  * Los mismos números que `mesas_capacidad_rango`. No son una regla de la boda

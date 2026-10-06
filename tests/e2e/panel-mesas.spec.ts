@@ -8,7 +8,14 @@ import {
   RUTA_MESAS,
   RUTA_MESAS_EXPORTAR,
   RUTA_PANEL,
+  SEPARACION_COLOCAR_MESA,
 } from "../../src/config/constants";
+import {
+  ANCLA_NUEVA,
+  ANCLA_PLANO,
+  ANCLA_SIN_MESA,
+  anclaDeMesa,
+} from "../../src/app/panel/mesas/estado";
 import { laPista, seguirLaPista } from "./utiles/rastro";
 
 /**
@@ -35,7 +42,17 @@ const cadena = process.env.DATABASE_URL;
 
 const MARCA = "(DES) E2E Mesas";
 
-/** El centro del lienzo, que es donde «Colocar en el plano» deja una mesa. */
+/**
+ * La forma que marca la presidencia. No se importa de `lib/bbdd/mesas`, que es
+ * `server-only`; el `satisfies` la ata a las formas que el panel sabe nombrar.
+ */
+const FORMA_PRESIDENCIA = "imperial" satisfies keyof typeof copy.panel.mesas.formas;
+
+/**
+ * El centro del lienzo. «Colocar en el plano» ya no deja ahí la mesa: el centro
+ * es la pista de baile, y dos mesas colocadas seguidas acababan una encima de
+ * otra. Se busca el primer hueco libre alrededor.
+ */
 const CENTRO = 5000;
 
 async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T> {
@@ -240,6 +257,21 @@ async function crearGrupo(
   return id;
 }
 
+async function posicionDe(mesaId: string): Promise<{ x: number; y: number }> {
+  const [fila] = await conBase(
+    (sql) => sql<{ posicion_x: string | null; posicion_y: string | null }[]>`
+      select posicion_x, posicion_y from public.mesas where id = ${mesaId}
+    `,
+  );
+  expect(fila?.posicion_x, "la mesa tiene que estar colocada").not.toBeNull();
+  return { x: Number(fila.posicion_x), y: Number(fila.posicion_y) };
+}
+
+/** Que la pestaña volvió a ese sitio de la pantalla, y no a la cabecera. */
+async function volvioA(pagina: Page, ancla: string): Promise<void> {
+  await expect(pagina).toHaveURL(new RegExp(`#${ancla}$`));
+}
+
 async function cuantosSentados(mesaId: string): Promise<number> {
   const [fila] = await conBase(
     (sql) => sql<{ cuantos: string }[]>`
@@ -317,10 +349,21 @@ test.describe("El plano de mesas y el reparto", () => {
     // Nace sin colocar: crear una mesa no es decidir dónde va.
     expect(creada.posicion_x).toBeNull();
 
-    // Colocarla la deja en el centro, que es desde donde se empuja.
+    // Colocarla la deja en un hueco libre, no en el centro de la pista.
     const suya = seccion(page, nombre);
     await enviar(page, suya.getByRole("button", { name: copy.panel.mesas.colocar }));
     await esperarEstado(page, "colocada");
+
+    const [colocada] = await conBase(
+      (sql) => sql<{ posicion_x: string | null; posicion_y: string | null }[]>`
+        select posicion_x, posicion_y from public.mesas where id = ${creada.id}
+      `,
+    );
+    expect(colocada.posicion_x, "colocar tiene que guardar una posición").not.toBeNull();
+    expect(
+      [Number(colocada.posicion_x), Number(colocada.posicion_y)],
+      "el centro es la pista: una mesa colocada no cae encima",
+    ).not.toEqual([CENTRO, CENTRO]);
 
     // Y un empujón a la derecha la mueve exactamente un paso.
     await enviar(
@@ -336,8 +379,10 @@ test.describe("El plano de mesas y el reparto", () => {
         select posicion_x, posicion_y from public.mesas where id = ${creada.id}
       `,
     );
-    expect(Number(movida.posicion_x)).toBe(CENTRO + PASO_PLANO_MESAS);
-    expect(Number(movida.posicion_y), "empujar a la derecha no toca la vertical").toBe(CENTRO);
+    expect(Number(movida.posicion_x)).toBe(Number(colocada.posicion_x) + PASO_PLANO_MESAS);
+    expect(Number(movida.posicion_y), "empujar a la derecha no toca la vertical").toBe(
+      Number(colocada.posicion_y),
+    );
 
     /*
       SE VUELVE A LA URL LIMPIA, sin `?estado=`. Con `page.reload()` la
@@ -347,7 +392,7 @@ test.describe("El plano de mesas y el reparto", () => {
     await page.goto(RUTA_MESAS);
     await expect(
       seccion(page, nombre).getByLabel(copy.panel.mesas.campoPosicionX, { exact: true }),
-    ).toHaveValue(String(CENTRO + PASO_PLANO_MESAS));
+    ).toHaveValue(String(Number(colocada.posicion_x) + PASO_PLANO_MESAS));
 
     // Y la mesa está en el plano, con su rótulo y su ocupación.
     await expect(
@@ -416,12 +461,14 @@ test.describe("El plano de mesas y el reparto", () => {
   });
 
   /**
-   * LOS DESPLEGABLES DEL REPARTO TIENEN SITIO EN UNA TABLETA. Con el punto de
-   * ruptura de la pantalla, a 820 px la fila del grupo dejaba el desplegable en
-   * 30 px —«Sentar al grupo entero» se comía el resto— y no se podía leer qué
-   * mesa se elegía. Ahora la fila mide su tarjeta y se apila cuando no cabe.
+   * LOS DESPLEGABLES DEL REPARTO TIENEN SITIO, DE LA TABLETA AL PORTÁTIL. Con
+   * el punto de ruptura de la pantalla, a 820 px la fila del grupo dejaba el
+   * desplegable en 30 px —«Sentar al grupo entero» se comía el resto—. Y con
+   * la fila del grupo en línea, a 1280 px se quedaba en 97: «Elegir r». Ahora
+   * la fila mide su tarjeta, el formulario se mide a sí mismo, y se apilan
+   * cuando no caben.
    */
-  test("en una tableta, ningún desplegable del reparto se queda sin sitio", async ({
+  test("de la tableta al portátil, ningún desplegable del reparto se queda sin sitio", async ({
     page,
   }) => {
     await crearMesa(`${MARCA} Tableta ${Date.now()}`, 8);
@@ -432,16 +479,19 @@ test.describe("El plano de mesas y el reparto", () => {
     await page.goto(RUTA_MESAS);
     await page.waitForLoadState("networkidle");
 
-    const anchos = await page
-      .locator('select[name="mesa_id"]')
-      .evaluateAll((desplegables) =>
-        desplegables
-          .map((desplegable) => desplegable.getBoundingClientRect().width)
-          .filter((ancho) => ancho > 0),
-      );
-    expect(anchos.length, "hace falta alguien a quien sentar").toBeGreaterThan(0);
-    // Lo que ocupa «Elegir mesa…» con su flecha: por debajo, no se lee.
-    expect(Math.min(...anchos)).toBeGreaterThanOrEqual(160);
+    for (const ancho of [820, 1024, 1280, 1440]) {
+      await page.setViewportSize({ width: ancho, height: 1180 });
+      const anchos = await page
+        .locator('select[name="mesa_id"]')
+        .evaluateAll((desplegables) =>
+          desplegables
+            .map((desplegable) => desplegable.getBoundingClientRect().width)
+            .filter((medida) => medida > 0),
+        );
+      expect(anchos.length, "hace falta alguien a quien sentar").toBeGreaterThan(0);
+      // Lo que ocupa «Elegir mesa…» con su flecha: por debajo, no se lee.
+      expect(Math.min(...anchos), `a ${ancho} px`).toBeGreaterThanOrEqual(160);
+    }
   });
 
   test("si la base falla, no se descarga un reparto vacío que parezca de verdad", async ({
@@ -495,7 +545,7 @@ test.describe("El plano de mesas y el reparto", () => {
       page,
       suyo.getByRole("button", { name: copy.panel.mesas.sentarGrupo, exact: true }),
     );
-    await esperarEstado(page, "sentado");
+    await esperarEstado(page, "grupo-sentado");
 
     /*
       PRIMERO LA BASE Y DESPUÉS LA PANTALLA, en ese orden a propósito: lo que el
@@ -689,7 +739,7 @@ test.describe("El plano de mesas y el reparto", () => {
       page,
       suelto.getByRole("button", { name: copy.panel.mesas.sentarGrupo, exact: true }),
     );
-    await esperarEstado(page, "sentado");
+    await esperarEstado(page, "grupo-sentado");
 
     expect(await cuantosSentados(mesaId), "la pareja sigue apuntada y el suelto entra").toBe(3);
     await expect(seccion(page, nombreMesa)).toContainText(
@@ -717,5 +767,305 @@ test.describe("El plano de mesas y el reparto", () => {
         conValores(copy.panel.mesas.errorSinSitio, { mesa: nombreMesa, caben: 2, habria: 3 }),
       ),
     ).toBeVisible();
+  });
+
+  /**
+   * COLOCAR NO AMONTONA, Y SE SIGUE MOVIENDO DESDE EL PLANO.
+   *
+   * Toda mesa colocada caía en el centro —que es la pista de baile— y la
+   * segunda, encima de la primera. Y cada empujón volvía a la cabecera: para
+   * mover una mesa diez pasos había que bajar diez veces hasta sus flechas.
+   */
+  test("colocar deja cada mesa en un hueco, y se sigue moviendo desde el plano", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const primera = `${MARCA} Sitio A ${sello}`;
+    const segunda = `${MARCA} Sitio B ${sello}`;
+    const idPrimera = await crearMesa(primera, 6);
+    const idSegunda = await crearMesa(segunda, 6);
+
+    await entrar(page);
+    await page.goto(RUTA_MESAS);
+
+    // El índice de arriba lleva al plano sin recorrer las bolsas.
+    await page
+      .getByRole("navigation", { name: copy.panel.mesas.indice })
+      .getByRole("link", { name: copy.panel.mesas.planoTitulo, exact: true })
+      .click();
+    await volvioA(page, ANCLA_PLANO);
+    await expect(
+      page.getByRole("heading", { name: copy.panel.mesas.planoTitulo }),
+    ).toBeInViewport();
+
+    await enviar(
+      page,
+      seccion(page, primera).getByRole("button", { name: copy.panel.mesas.colocar }),
+    );
+    await esperarEstado(page, "colocada");
+    await volvioA(page, ANCLA_PLANO);
+    const colocada = await posicionDe(idPrimera);
+
+    // Las flechas de esa mesa, bajo el plano y con su nombre.
+    const plano = seccion(page, copy.panel.mesas.planoTitulo);
+    await expect(
+      plano.getByText(conValores(copy.panel.mesas.seguirMoviendo, { mesa: primera })),
+    ).toBeVisible();
+    await enviar(
+      page,
+      plano.getByRole("button", {
+        name: conValores(copy.panel.mesas.empujarDerecha, { mesa: primera }),
+      }),
+    );
+    await esperarEstado(page, "movida");
+    await volvioA(page, ANCLA_PLANO);
+    const movida = await posicionDe(idPrimera);
+    expect(movida).toEqual({ x: colocada.x + PASO_PLANO_MESAS, y: colocada.y });
+    // Y siguen ahí para el empujón siguiente.
+    await expect(
+      seccion(page, copy.panel.mesas.planoTitulo).getByText(
+        conValores(copy.panel.mesas.seguirMoviendo, { mesa: primera }),
+      ),
+    ).toBeVisible();
+
+    // La segunda va a otro hueco: no encima de la primera.
+    await enviar(
+      page,
+      seccion(page, segunda).getByRole("button", { name: copy.panel.mesas.colocar }),
+    );
+    await esperarEstado(page, "colocada");
+    const otra = await posicionDe(idSegunda);
+    const separadas =
+      Math.abs(otra.x - movida.x) >= SEPARACION_COLOCAR_MESA ||
+      Math.abs(otra.y - movida.y) >= SEPARACION_COLOCAR_MESA;
+    expect(separadas, "dos mesas colocadas seguidas no se pisan").toBe(true);
+  });
+
+  /**
+   * SENTAR AL GRUPO ENTERO MUEVE A TODO EL GRUPO, y se dice antes. La fila
+   * contaba «1 persona» y movía a dos: quien ya estaba en otra mesa se cambiaba
+   * sin que nada lo nombrara.
+   *
+   * CASO DE ERROR · la mesa elegida se borra desde el otro móvil antes de
+   * pulsar. Antes contestaba «elegid una mesa» a quien sí la había elegido;
+   * ahora dice que ya no existe, en la bolsa de la que salió, y no mueve a
+   * nadie.
+   */
+  test("sentar a un grupo nombra a quién más mueve, y en una mesa borrada no sienta a nadie", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const nombreOrigen = `${MARCA} Origen ${sello}`;
+    const nombreDestino = `${MARCA} Destino ${sello}`;
+    const nombreGrupo = `${MARCA} Repartidos ${sello}`;
+
+    const origenId = await crearMesa(nombreOrigen, 8);
+    const destinoId = await crearMesa(nombreDestino, 8);
+    const grupoId = await crearGrupo(nombreGrupo, 2, true);
+
+    // Uno de los dos ya tiene mesa; el otro, no.
+    const yaSentado = await conBase(async (sql) => {
+      const [persona] = await sql<{ id: string; nombre_completo: string }[]>`
+        select id, nombre_completo from public.invitados
+         where grupo_id = ${grupoId}
+         order by nombre limit 1
+      `;
+      await sql`update public.invitados set mesa_id = ${origenId} where id = ${persona.id}`;
+      return persona;
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_MESAS);
+
+    const suyo = seccion(page, copy.panel.mesas.sinMesaTitulo)
+      .locator("li")
+      .filter({ hasText: nombreGrupo });
+    await expect(suyo).toContainText(
+      conValores(copy.panel.mesas.tambienSeMueven, {
+        quienes: conValores(copy.panel.mesas.seMueveDe, {
+          quien: yaSentado.nombre_completo,
+          mesa: nombreOrigen,
+        }),
+      }),
+    );
+
+    await suyo
+      .getByLabel(conValores(copy.panel.mesas.campoMesaGrupo, { grupo: nombreGrupo }), {
+        exact: true,
+      })
+      .selectOption(destinoId);
+    await conBase((sql) => sql`delete from public.mesas where id = ${destinoId}`);
+    await enviar(
+      page,
+      suyo.getByRole("button", { name: copy.panel.mesas.sentarGrupo, exact: true }),
+    );
+    await esperarEstado(page, "no-existe");
+    await volvioA(page, ANCLA_SIN_MESA);
+
+    await expect(
+      seccion(page, copy.panel.mesas.sinMesaTitulo).getByText(copy.panel.mesas.errorNoExiste),
+    ).toBeVisible();
+    const sitios = await conBase(
+      (sql) => sql<{ id: string; mesa_id: string | null }[]>`
+        select id, mesa_id from public.invitados where grupo_id = ${grupoId}
+      `,
+    );
+    for (const sitio of sitios) {
+      expect(sitio.mesa_id, "nadie se mueve hacia una mesa que no existe").toBe(
+        sitio.id === yaSentado.id ? origenId : null,
+      );
+    }
+  });
+
+  /**
+   * BAJAR LA CAPACIDAD POR DEBAJO DE LOS SENTADOS SE GUARDA, PERO SE DICE.
+   * Salía «Mesa guardada» en verde y el «3 de 2» sólo se veía en su bloque.
+   */
+  test("bajar la capacidad por debajo de los sentados se guarda, y avisa con cifras", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const nombreMesa = `${MARCA} Encoge ${sello}`;
+    const mesaId = await crearMesa(nombreMesa, 4);
+    const grupoId = await crearGrupo(`${MARCA} Encogidos ${sello}`, 3, true);
+    await conBase(
+      (sql) => sql`update public.invitados set mesa_id = ${mesaId} where grupo_id = ${grupoId}`,
+    );
+
+    await entrar(page);
+    await page.goto(RUTA_MESAS);
+
+    const datos = seccion(page, nombreMesa).locator("details");
+    await datos.locator("summary").click();
+    await datos.getByLabel(copy.panel.mesas.campoCapacidad, { exact: true }).fill("2");
+    await enviar(page, datos.getByRole("button", { name: copy.panel.mesas.guardar }));
+    await esperarEstado(page, "editada-pasada");
+    await volvioA(page, anclaDeMesa(mesaId));
+
+    const [guardada] = await conBase(
+      (sql) => sql<{ capacidad: number }[]>`
+        select capacidad from public.mesas where id = ${mesaId}
+      `,
+    );
+    expect(guardada.capacidad, "se guarda: la decisión es suya").toBe(2);
+    await expect(seccion(page, nombreMesa)).toContainText(
+      conValores(copy.panel.mesas.avisoEditadaPasada, {
+        mesa: nombreMesa,
+        caben: 2,
+        habria: 3,
+      }),
+    );
+  });
+
+  /**
+   * LA PRESIDENCIA ES UNA SOLA. Nada impedía una segunda mesa imperial, y el
+   * plano y el reparto pintaban dos «Presidencia». El error vuelve al alta, al
+   * final de la pantalla, que es donde se pulsó.
+   */
+  test("no se crea una segunda mesa presidencial, y el error sale junto al alta", async ({
+    page,
+  }) => {
+    const nombre = `${MARCA} Segunda presidencia ${Date.now()}`;
+
+    // La semilla trae una; si una base no la tiene, se pone para la prueba.
+    await conBase(async (sql) => {
+      const [hay] = await sql<{ id: string }[]>`
+        select id from public.mesas where forma = ${FORMA_PRESIDENCIA} limit 1
+      `;
+      if (hay) return;
+      const [puesta] = await sql<{ id: string }[]>`
+        insert into public.mesas (nombre, capacidad, forma)
+        values (${`${MARCA} Presidencia ${Date.now()}`}, 8, ${FORMA_PRESIDENCIA})
+        returning id
+      `;
+      mesasCreadas.push(puesta.id);
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_MESAS);
+
+    const alta = seccion(page, copy.panel.mesas.nuevaTitulo);
+    await alta.getByLabel(copy.panel.mesas.campoNombre, { exact: true }).fill(nombre);
+    await alta.getByLabel(copy.panel.mesas.campoCapacidad, { exact: true }).fill("8");
+    await alta
+      .getByLabel(copy.panel.mesas.campoForma, { exact: true })
+      .selectOption(FORMA_PRESIDENCIA);
+    await enviar(page, alta.getByRole("button", { name: copy.panel.mesas.crear }));
+    await esperarEstado(page, "presidencia-repetida");
+    await volvioA(page, ANCLA_NUEVA);
+
+    const [creada] = await conBase(
+      (sql) => sql<{ id: string }[]>`select id from public.mesas where nombre = ${nombre}`,
+    );
+    if (creada) mesasCreadas.push(creada.id);
+    expect(creada, "la segunda presidencia no llega a la base").toBeUndefined();
+
+    // El aviso nombra la que ya existe, y es de verdad la presidencial.
+    const laOtra = new URL(ultimoDestino(page), "http://localhost").searchParams.get("mesa");
+    const [otra] = await conBase(
+      (sql) => sql<{ nombre: string; forma: string }[]>`
+        select nombre, forma from public.mesas where id = ${laOtra!}
+      `,
+    );
+    expect(otra.forma).toBe(FORMA_PRESIDENCIA);
+    await expect(seccion(page, copy.panel.mesas.nuevaTitulo)).toContainText(
+      conValores(copy.panel.mesas.errorPresidenciaRepetida, { mesa: otra.nombre }),
+    );
+  });
+
+  /**
+   * QUIEN DIJO QUE NO VIENE NO OCUPA SILLA, TAMBIÉN AL CAMBIARLE DE MESA. Se le
+   * contaba y una mesa llena lo rechazaba; y si cabía, se contestaba «todavía
+   * no ha confirmado», cuando sí contestó: que no.
+   */
+  test("cambiar de mesa a quien no viene no ocupa silla, y lo dice", async ({ page }) => {
+    const sello = Date.now();
+    const nombreLlena = `${MARCA} Completa ${sello}`;
+    const nombreVieja = `${MARCA} Vieja ${sello}`;
+
+    const llenaId = await crearMesa(nombreLlena, 2);
+    const viejaId = await crearMesa(nombreVieja, 4);
+    const llenos = await crearGrupo(`${MARCA} Ocupan ${sello}`, 2, true);
+    const conNo = await crearGrupo(`${MARCA} Rechaza ${sello}`, 1, true);
+
+    const quien = await conBase(async (sql) => {
+      await sql`update public.invitados set mesa_id = ${llenaId} where grupo_id = ${llenos}`;
+      await sql`update public.invitados set mesa_id = ${viejaId} where grupo_id = ${conNo}`;
+      const [persona] = await sql<{ id: string; nombre_completo: string }[]>`
+        select id, nombre_completo from public.invitados where grupo_id = ${conNo}
+      `;
+      await sql`
+        insert into public.confirmaciones
+          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
+        values (${persona.id}, 'rechazado', 'publico', null, null)
+      `;
+      return persona;
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_MESAS);
+
+    const fila = seccion(page, nombreVieja)
+      .locator("li")
+      .filter({ hasText: quien.nombre_completo });
+    await fila
+      .getByLabel(conValores(copy.panel.mesas.campoMesaDe, { quien: quien.nombre_completo }), {
+        exact: true,
+      })
+      .selectOption(llenaId);
+    await enviar(page, fila.getByRole("button", { name: copy.panel.mesas.mover, exact: true }));
+    await esperarEstado(page, "sentado-no-viene");
+    await volvioA(page, anclaDeMesa(viejaId));
+
+    const [movido] = await conBase(
+      (sql) => sql<{ mesa_id: string | null }[]>`
+        select mesa_id from public.invitados where id = ${quien.id}
+      `,
+    );
+    expect(movido.mesa_id, "se cambia aunque la mesa esté llena").toBe(llenaId);
+    await expect(page.getByText(copy.panel.mesas.avisoSentadoNoViene)).toBeVisible();
+    await expect(seccion(page, nombreLlena)).toContainText(
+      conValores(copy.panel.mesas.ocupacion, { sentados: 2, capacidad: 2 }),
+    );
   });
 });

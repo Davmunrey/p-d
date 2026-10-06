@@ -612,6 +612,7 @@
      dress code), 1000 (cuenta atrás), 900 (playlist), 620 (cabecera apilada),
      480 (entradilla centrada), 460 (entradilla de cómo llegar), 520 (cita). */
   --width-medio: 67.5rem;
+  --width-plano: 40rem;
   --width-cuenta: 62.5rem;
   --width-playlist: 56.25rem;
   --width-cabecera: 38.75rem;

@@ -316,8 +316,12 @@ export async function contarSentados(
   );
 }
 
-/** Una mesa suelta, para las acciones. `null` si no existe o si RLS no la deja ver. */
-export async function obtenerMesa(id: string): Promise<Mesa | null> {
+/**
+ * Una mesa suelta, para las acciones. `null` si no existe o si RLS no la deja
+ * ver; `undefined` si no se ha podido mirar. Eran lo mismo, y una lectura
+ * fallida acababa en «elegid una mesa» delante de quien sí la había elegido.
+ */
+export async function obtenerMesa(id: string): Promise<Mesa | null | undefined> {
   const supabase = await clienteServidor();
 
   const { data, error } = await supabase
@@ -328,7 +332,7 @@ export async function obtenerMesa(id: string): Promise<Mesa | null> {
 
   if (error) {
     console.error("No se pudo leer la mesa:", error);
-    return null;
+    return undefined;
   }
   if (!data) return null;
 

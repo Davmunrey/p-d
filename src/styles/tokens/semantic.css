@@ -440,6 +440,12 @@
    * fila y son fotos de origen distinto —un carrete, un móvil, una captura—:
    * dejar cada una con su proporción convierte la fila en una escalera. */
   --proporcion-hito: var(--ratio-cuadrado);
+
+  /* El plano de las mesas: CUADRADO, porque sus coordenadas lo son —un lienzo
+   * de lado `LADO_PLANO_MESAS` en las dos direcciones—, y con su propio token.
+   * Tomaba la proporción del mapa de la landing: si el estudio la cambiaba,
+   * la sala se deformaba y las mesas cambiaban de sitio en pantalla. */
+  --proporcion-plano: var(--ratio-cuadrado);
   --sombra-sutil: var(--shadow-1);
 
   /* La de una tarjeta al levantarse al pasar el ratón (Landing aplicada); la
@@ -720,6 +726,10 @@
   --ancho-contenido: var(--width-content);
   --ancho-amplio: var(--width-wide);
   --ancho-medio: var(--width-medio);
+
+  /* El plano entero tiene que caber en la pantalla de un portátil: más ancho,
+   * se baja a mirar las mesas de abajo y desaparecen las de arriba. */
+  --ancho-plano: var(--width-plano);
   --ancho-cuenta: var(--width-cuenta);
   --ancho-playlist: var(--width-playlist);
   --ancho-cabecera: var(--width-cabecera);

@@ -9,19 +9,31 @@ import {
   PASO_PLANO_MESAS,
   RUTA_ACCESO,
   RUTA_MESAS,
+  SEPARACION_COLOCAR_MESA,
 } from "@/config/constants";
 import {
   contarSentados,
   esFormaMesa,
   ESTADO_CONFIRMADO,
+  ESTADO_RECHAZADO,
   FORMA_INICIAL_MESA,
+  FORMA_PRESIDENCIA,
   obtenerMesa,
+  obtenerMesas,
   obtenerSentablesDelGrupo,
   obtenerSitioDeInvitado,
+  type Mesa,
 } from "@/lib/bbdd/mesas";
+import { ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
-import { type EstadoMesas } from "./estado";
+import {
+  ANCLA_NUEVA,
+  ANCLA_PLANO,
+  anclaDeMesa,
+  esAnclaDeMesas,
+  type EstadoMesas,
+} from "./estado";
 
 /**
  * BODA-83 y BODA-84 · COLOCAR LAS MESAS Y SENTAR A LA GENTE
@@ -69,12 +81,44 @@ function opcional(datos: FormData, campo: string): string | null {
  * cambio de nombre entre la acción y el repintado no deja una frase mintiendo,
  * y la barra de direcciones no acaba con el nombre de una mesa dentro.
  */
-function volver(estado: EstadoMesas, detalle?: Record<string, string | number>): never {
+function volver(
+  estado: EstadoMesas,
+  detalle?: Record<string, string | number>,
+  /** El sitio de la pantalla al que se vuelve, y donde se pinta el aviso. */
+  ancla?: string,
+): never {
   const parametros = new URLSearchParams({ estado });
   for (const [clave, valor] of Object.entries(detalle ?? {})) {
     parametros.set(clave, String(valor));
   }
-  redirect(`${RUTA_MESAS}?${parametros.toString()}`);
+  if (ancla) parametros.set("ancla", ancla);
+  redirect(`${RUTA_MESAS}?${parametros.toString()}${ancla ? `#${ancla}` : ""}`);
+}
+
+/** El ancla que manda el formulario, si es de las de esta pantalla. */
+function anclaDelFormulario(datos: FormData): string | undefined {
+  const ancla = texto(datos, "ancla");
+  return esAnclaDeMesas(ancla) ? ancla : undefined;
+}
+
+/**
+ * CERO FILAS NO ES SIEMPRE «NO PODÉIS»: con la mesa borrada desde el otro
+ * móvil, a la propietaria le salía «sólo un editor puede tocar las mesas».
+ */
+async function ceroFilas(): Promise<EstadoMesas> {
+  return (await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe";
+}
+
+/**
+ * LA PRESIDENCIA ES UNA SOLA. La forma «imperial» es la que la marca, y nada
+ * impedía una segunda: el plano y el reparto pintaban dos «Presidencia». Se
+ * comprueba aquí y no con un índice único porque una base que ya tenga dos no
+ * podría aplicar la migración; se avisa al crear o al cambiar la forma.
+ */
+async function otraPresidencia(excepto?: string): Promise<Mesa | null | undefined> {
+  const mesas = await obtenerMesas().catch(() => undefined);
+  if (!mesas) return undefined;
+  return mesas.find((mesa) => mesa.forma === FORMA_PRESIDENCIA && mesa.id !== excepto) ?? null;
 }
 
 async function cliente() {
@@ -144,13 +188,24 @@ export async function crearMesa(datos: FormData): Promise<void> {
   const nombre = texto(datos, "nombre");
   // La base exige entre 1 y 60 caracteres: lo que se corta aquí es el campo
   // vacío o con un espacio, no un nombre corto de verdad («A», «1»).
-  if (!nombre) volver("nombre");
+  if (!nombre) volver("nombre", undefined, ANCLA_NUEVA);
 
+  /*
+    LOS ERRORES DEL ALTA VUELVEN AL ALTA. El formulario está al final de la
+    pantalla, y el aviso salía en la cabecera: quien pulsaba «Crear mesa» no
+    veía nada cambiar donde estaba y lo volvía a pulsar.
+  */
   const capacidad = leerCapacidad(texto(datos, "capacidad"));
-  if (capacidad === null) volver("capacidad");
+  if (capacidad === null) volver("capacidad", undefined, ANCLA_NUEVA);
 
   const forma = texto(datos, "forma") || FORMA_INICIAL_MESA;
-  if (!esFormaMesa(forma)) volver("forma");
+  if (!esFormaMesa(forma)) volver("forma", undefined, ANCLA_NUEVA);
+
+  if (forma === FORMA_PRESIDENCIA) {
+    const otra = await otraPresidencia();
+    if (otra === undefined) volver("error", undefined, ANCLA_NUEVA);
+    if (otra) volver("presidencia-repetida", { mesa: otra.id }, ANCLA_NUEVA);
+  }
 
   const supabase = await cliente();
   const { data, error } = await supabase
@@ -164,11 +219,13 @@ export async function crearMesa(datos: FormData): Promise<void> {
     .insert({ nombre, capacidad, forma, notas: opcional(datos, "notas") })
     .select("id");
 
-  if (error) volver(motivo(error));
+  if (error) volver(motivo(error), undefined, ANCLA_NUEVA);
   // Cero filas y sin error es RLS callando: un lector no crea mesas.
   if (!data?.length) volver("sin-permiso");
 
-  volver("creada");
+  // A su bloque, que es donde está el botón de colocarla.
+  const nueva = data[0]!.id as string;
+  volver("creada", { mesa: nueva }, anclaDeMesa(nueva));
 }
 
 export async function editarMesa(datos: FormData): Promise<void> {
@@ -176,16 +233,22 @@ export async function editarMesa(datos: FormData): Promise<void> {
   if (!id) volver("no-existe");
 
   const nombre = texto(datos, "nombre");
-  if (!nombre) volver("nombre", { mesa: id });
+  if (!nombre) volver("nombre", { mesa: id }, anclaDeMesa(id));
 
   const capacidad = leerCapacidad(texto(datos, "capacidad"));
-  if (capacidad === null) volver("capacidad", { mesa: id });
+  if (capacidad === null) volver("capacidad", { mesa: id }, anclaDeMesa(id));
 
   const forma = texto(datos, "forma");
-  if (!esFormaMesa(forma)) volver("forma", { mesa: id });
+  if (!esFormaMesa(forma)) volver("forma", { mesa: id }, anclaDeMesa(id));
 
   const posicion = leerPosicion(datos);
-  if (!posicion.ok) volver("posicion", { mesa: id });
+  if (!posicion.ok) volver("posicion", { mesa: id }, anclaDeMesa(id));
+
+  if (forma === FORMA_PRESIDENCIA) {
+    const otra = await otraPresidencia(id);
+    if (otra === undefined) volver("error", { mesa: id }, anclaDeMesa(id));
+    if (otra) volver("presidencia-repetida", { mesa: otra.id }, anclaDeMesa(id));
+  }
 
   const supabase = await cliente();
   const { data, error } = await supabase
@@ -201,10 +264,40 @@ export async function editarMesa(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error), { mesa: id });
-  if (!data?.length) volver("sin-permiso");
+  if (error) volver(motivo(error), { mesa: id }, anclaDeMesa(id));
+  if (!data?.length) volver(await ceroFilas());
 
-  volver("editada");
+  /*
+    BAJAR LA CAPACIDAD POR DEBAJO DE LOS SENTADOS SE GUARDA, PERO SE DICE. Es
+    la segunda puerta por la que una mesa se pasa sin enterarse —la primera es
+    sentar, y ésa ya avisa—: antes salía «Mesa guardada» en verde y el «9 de 8»
+    sólo se veía en su bloque.
+  */
+  const sentados = await contarSentados(id);
+  if (sentados !== null && sentados > capacidad) {
+    volver("editada-pasada", { mesa: id, caben: capacidad, habria: sentados }, anclaDeMesa(id));
+  }
+  volver("editada", { mesa: id }, anclaDeMesa(id));
+}
+
+/**
+ * El primer hueco libre de una rejilla para colocar una mesa: recorrida de
+ * arriba abajo y de izquierda a derecha, sin la zona de la pista de baile —que
+ * está en el centro— y sin los huecos que ya ocupa otra mesa.
+ */
+function primerHuecoLibre(ocupadas: { x: number; y: number }[]): { x: number; y: number } {
+  const centro = LADO_PLANO_MESAS / 2;
+  const cerca = (a: number, b: number) => Math.abs(a - b) < SEPARACION_COLOCAR_MESA;
+
+  for (let y = SEPARACION_COLOCAR_MESA; y < LADO_PLANO_MESAS; y += SEPARACION_COLOCAR_MESA) {
+    for (let x = SEPARACION_COLOCAR_MESA; x < LADO_PLANO_MESAS; x += SEPARACION_COLOCAR_MESA) {
+      const enLaPista = cerca(x, centro) && cerca(y, centro);
+      const ocupado = ocupadas.some((otra) => cerca(x, otra.x) && cerca(y, otra.y));
+      if (!enLaPista && !ocupado) return { x, y };
+    }
+  }
+  // Sala llena de mesas: se deja en el centro y se coloca a mano.
+  return { x: centro, y: centro };
 }
 
 /**
@@ -219,19 +312,26 @@ export async function colocarMesa(datos: FormData): Promise<void> {
   const id = texto(datos, "id");
   if (!id) volver("no-existe");
 
-  const centro = LADO_PLANO_MESAS / 2;
+  const mesas = await obtenerMesas().catch(() => undefined);
+  if (!mesas) volver("error", { mesa: id }, anclaDeMesa(id));
+  const hueco = primerHuecoLibre(
+    mesas
+      .filter((mesa) => mesa.id !== id && mesa.posicionX !== null && mesa.posicionY !== null)
+      .map((mesa) => ({ x: mesa.posicionX!, y: mesa.posicionY! })),
+  );
 
   const supabase = await cliente();
   const { data, error } = await supabase
     .from("mesas")
-    .update({ posicion_x: centro, posicion_y: centro })
+    .update({ posicion_x: hueco.x, posicion_y: hueco.y })
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (error) volver(motivo(error), { mesa: id }, anclaDeMesa(id));
+  if (!data?.length) volver(await ceroFilas());
 
-  volver("colocada");
+  // Al plano, con sus flechas debajo: lo siguiente es empujarla a su sitio.
+  volver("colocada", { mesa: id }, ANCLA_PLANO);
 }
 
 /**
@@ -252,9 +352,12 @@ export async function empujarMesa(datos: FormData): Promise<void> {
   const sentido = texto(datos, "sentido");
 
   const mesa = await obtenerMesa(id);
+  if (mesa === undefined) volver("error", { mesa: id }, ANCLA_PLANO);
   if (!mesa) volver("no-existe");
   // Una mesa sin colocar no se puede empujar: no hay desde dónde.
-  if (mesa.posicionX === null || mesa.posicionY === null) volver("posicion", { mesa: id });
+  if (mesa.posicionX === null || mesa.posicionY === null) {
+    volver("posicion", { mesa: id }, anclaDeMesa(id));
+  }
 
   let x = mesa.posicionX;
   let y = mesa.posicionY;
@@ -273,7 +376,7 @@ export async function empujarMesa(datos: FormData): Promise<void> {
       x += PASO_PLANO_MESAS;
       break;
     default:
-      volver("posicion", { mesa: id });
+      volver("posicion", { mesa: id }, ANCLA_PLANO);
   }
 
   const supabase = await cliente();
@@ -283,10 +386,12 @@ export async function empujarMesa(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (error) volver(motivo(error), { mesa: id }, ANCLA_PLANO);
+  if (!data?.length) volver(await ceroFilas());
 
-  volver("movida");
+  // Al plano, con las flechas de esta mesa debajo: se ven la mesa moviéndose
+  // y el botón para seguir moviéndola, sin bajar veinte mil píxeles cada vez.
+  volver("movida", { mesa: id }, ANCLA_PLANO);
 }
 
 /**
@@ -310,14 +415,17 @@ export async function borrarMesa(datos: FormData): Promise<void> {
   if (texto(datos, "confirmar") !== "si") {
     const sentados = await contarSentados(id);
     // Sin recuento no se borra: quedaría gente de pie sin haberlo preguntado.
-    if (sentados === null) volver("error");
-    if (sentados > 0) volver("confirmar-borrado", { mesa: id, cuantos: sentados });
+    if (sentados === null) volver("error", { mesa: id }, anclaDeMesa(id));
+    // El aviso y el botón de confirmar, juntos en el bloque de la mesa.
+    if (sentados > 0) {
+      volver("confirmar-borrado", { mesa: id, cuantos: sentados }, anclaDeMesa(id));
+    }
   }
 
   const { data, error } = await supabase.from("mesas").delete().eq("id", id).select("id");
 
-  if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (error) volver(motivo(error), { mesa: id }, anclaDeMesa(id));
+  if (!data?.length) volver(await ceroFilas());
 
   volver("borrada");
 }
@@ -327,14 +435,15 @@ export async function borrarMesa(datos: FormData): Promise<void> {
 /* -------------------------------------------------------------------------- */
 
 export async function sentarInvitado(datos: FormData): Promise<void> {
+  const ancla = anclaDelFormulario(datos);
   const invitadoId = texto(datos, "invitado_id");
-  if (!invitadoId) volver("invitado");
+  if (!invitadoId) volver("invitado", undefined, ancla);
 
   const mesaId = texto(datos, "mesa_id");
   const supabase = await cliente();
 
   const sitio = await obtenerSitioDeInvitado(invitadoId);
-  if (!sitio) volver("invitado");
+  if (!sitio) volver("invitado", undefined, ancla);
 
   /*
     SIN MESA ELEGIDA SE LEVANTA DE LA SILLA: es la única forma de deshacer una
@@ -346,7 +455,7 @@ export async function sentarInvitado(datos: FormData): Promise<void> {
     nunca la tuvo suena a que algo se ha deshecho.
   */
   if (!mesaId) {
-    if (!sitio.mesaId) volver("mesa");
+    if (!sitio.mesaId) volver("mesa", undefined, ancla);
 
     const { data, error } = await supabase
       .from("invitados")
@@ -354,23 +463,31 @@ export async function sentarInvitado(datos: FormData): Promise<void> {
       .eq("id", invitadoId)
       .select("id");
 
-    if (error) volver(motivo(error));
-    if (!data?.length) volver("sin-permiso");
+    if (error) volver(motivo(error), undefined, ancla);
+    if (!data?.length) volver("sin-permiso", undefined, ancla);
 
-    volver("levantado");
+    volver("levantado", undefined, ancla);
   }
 
   // Ya estaba en esa mesa: no se escribe nada y no se cuenta a nadie dos veces.
-  if (sitio.mesaId === mesaId) volver("sentado");
+  if (sitio.mesaId === mesaId) volver("sentado", undefined, ancla);
 
   const mesa = await obtenerMesa(mesaId);
-  if (!mesa) volver("mesa");
+  if (mesa === undefined) volver("error", undefined, ancla);
+  // Se eligió una mesa, y ya no está: la borró alguien desde el otro móvil.
+  if (!mesa) volver("no-existe", undefined, ancla);
 
+  /*
+    QUIEN DIJO QUE NO VIENE NO OCUPA SILLA, como en el resto del módulo: si se
+    le cambia de mesa, no se le cuenta, y no se contesta que «todavía no ha
+    confirmado», porque sí contestó.
+  */
+  const noViene = sitio.estado === ESTADO_RECHAZADO;
   const sentados = await contarSentados(mesaId);
   // Sin recuento no se sienta a nadie: el tope dejaría de existir en silencio.
-  if (sentados === null) volver("error");
-  if (sentados + 1 > mesa.capacidad) {
-    volver("sin-sitio", { mesa: mesa.id, caben: mesa.capacidad, habria: sentados + 1 });
+  if (sentados === null) volver("error", undefined, ancla);
+  if (!noViene && sentados + 1 > mesa.capacidad) {
+    volver("sin-sitio", { mesa: mesa.id, caben: mesa.capacidad, habria: sentados + 1 }, ancla);
   }
 
   const { data, error } = await supabase
@@ -379,8 +496,8 @@ export async function sentarInvitado(datos: FormData): Promise<void> {
     .eq("id", invitadoId)
     .select("id");
 
-  if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (error) volver(motivo(error), undefined, ancla);
+  if (!data?.length) volver("sin-permiso", undefined, ancla);
 
   /*
     SENTAR A QUIEN NO HA CONTESTADO SE PERMITE. El reparto se empieza antes de
@@ -388,7 +505,15 @@ export async function sentarInvitado(datos: FormData): Promise<void> {
     viene hay que ponerla en algún sitio. Lo que no puede pasar es que se olvide
     que sigue sin confirmar, así que se guarda y se dice.
   */
-  volver(sitio.estado === ESTADO_CONFIRMADO ? "sentado" : "sentado-sin-confirmar");
+  volver(
+    noViene
+      ? "sentado-no-viene"
+      : sitio.estado === ESTADO_CONFIRMADO
+        ? "sentado"
+        : "sentado-sin-confirmar",
+    undefined,
+    ancla,
+  );
 }
 
 /**
@@ -407,23 +532,25 @@ export async function sentarInvitado(datos: FormData): Promise<void> {
  * «no caben» contra sí misma.
  */
 export async function sentarGrupo(datos: FormData): Promise<void> {
+  const ancla = anclaDelFormulario(datos);
   const grupoId = texto(datos, "grupo_id");
-  if (!grupoId) volver("grupo");
+  if (!grupoId) volver("grupo", undefined, ancla);
 
   const mesaId = texto(datos, "mesa_id");
-  if (!mesaId) volver("mesa");
+  if (!mesaId) volver("mesa", undefined, ancla);
 
   const mesa = await obtenerMesa(mesaId);
-  if (!mesa) volver("mesa");
+  if (mesa === undefined) volver("error", undefined, ancla);
+  if (!mesa) volver("no-existe", undefined, ancla);
 
   const gente = await obtenerSentablesDelGrupo(grupoId);
-  if (gente.length === 0) volver("grupo");
+  if (gente.length === 0) volver("grupo", undefined, ancla);
 
   const otros = await contarSentados(mesaId, grupoId);
-  if (otros === null) volver("error");
+  if (otros === null) volver("error", undefined, ancla);
   const habria = otros + gente.length;
   if (habria > mesa.capacidad) {
-    volver("sin-sitio", { mesa: mesa.id, caben: mesa.capacidad, habria });
+    volver("sin-sitio", { mesa: mesa.id, caben: mesa.capacidad, habria }, ancla);
   }
 
   const supabase = await cliente();
@@ -436,9 +563,15 @@ export async function sentarGrupo(datos: FormData): Promise<void> {
     )
     .select("id");
 
-  if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (error) volver(motivo(error), undefined, ancla);
+  if (!data?.length) volver("sin-permiso", undefined, ancla);
 
+  // Con la cifra: mueve a todo el grupo, también a quien ya estaba en otra
+  // mesa, y el aviso tiene que decir a cuántos ha sentado.
   const todosConfirmados = gente.every((persona) => persona.estado === ESTADO_CONFIRMADO);
-  volver(todosConfirmados ? "sentado" : "sentado-sin-confirmar");
+  volver(
+    todosConfirmados ? "grupo-sentado" : "grupo-sentado-sin-confirmar",
+    { mesa: mesa.id, cuantos: gente.length },
+    ancla,
+  );
 }

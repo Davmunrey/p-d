@@ -8,6 +8,7 @@ import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/cam
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
+  IDIOMA,
   LARGOS_DE_CAMPO,
   CAPACIDAD_MAXIMA_MESA,
   CAPACIDAD_MINIMA_MESA,
@@ -46,6 +47,15 @@ import {
   sentarInvitado,
 } from "./acciones";
 import { AvisoMesas } from "./aviso";
+import {
+  ANCLA_NUEVA,
+  ANCLA_PLANO,
+  ANCLA_REPARTO,
+  ANCLA_SIN_MESA,
+  ANCLA_SIN_RESPUESTA,
+  anclaDeMesa,
+  esAnclaDeMesas,
+} from "./estado";
 
 /** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
 export const metadata: Metadata = { title: t("panel.mesas.titulo") };
@@ -110,8 +120,22 @@ function ocupacionDe(mesa: Mesa, sentados: number): string {
 
 /** El identificador del bloque de una mesa, para saltar a él desde el plano. */
 function anclaDe(mesa: Mesa): string {
-  return `mesa-${mesa.id}`;
+  return anclaDeMesa(mesa.id);
 }
+
+const listaDeNombres = new Intl.ListFormat(IDIOMA, { type: "conjunction" });
+
+/** Los estados que vuelven a una mesa con algo que decir de sus datos. */
+const ESTADOS_DE_SUS_DATOS = new Set([
+  "nombre",
+  "nombre-repetido",
+  "capacidad",
+  "forma",
+  "posicion",
+  "presidencia-repetida",
+  "editada-pasada",
+  "error",
+]);
 
 /**
  * LA VERSALITA DE ESTA PANTALLA, Y POR QUÉ NO ES `<Etiqueta>`.
@@ -172,6 +196,62 @@ export default async function PaginaMesas({ searchParams }: Parametros) {
   // El aviso viaja con el `id` de la mesa; el nombre se resuelve aquí contra lo
   // que acaba de leerse, así que nunca enseña un nombre viejo.
   const mesaDelAviso = mesas.find((mesa) => mesa.id === soloTexto(consulta.mesa));
+  const estado = soloTexto(consulta.estado);
+
+  /*
+    EL AVISO VA DONDE VUELVE LA PANTALLA: en la bolsa, en el bloque de la mesa o
+    bajo el plano, según de dónde salió la acción. Arriba sólo si no se sabe, o
+    si el sitio ya no existe (la mesa se borró).
+  */
+  const anclaPedida = soloTexto(consulta.ancla);
+  const sitios = new Set([
+    ANCLA_SIN_MESA,
+    ANCLA_SIN_RESPUESTA,
+    ANCLA_PLANO,
+    // El alta sólo se pinta a quien puede crear: sin ella, el aviso va arriba.
+    ...(puedeEditar ? [ANCLA_NUEVA] : []),
+    ...mesas.map((mesa) => anclaDe(mesa)),
+  ]);
+  const ancla = esAnclaDeMesas(anclaPedida) && sitios.has(anclaPedida) ? anclaPedida : null;
+  const aviso = (
+    <AvisoMesas
+      estado={estado}
+      detalle={{
+        mesa: mesaDelAviso?.nombre ?? "",
+        caben: soloTexto(consulta.caben),
+        habria: soloTexto(consulta.habria),
+        cuantos: soloTexto(consulta.cuantos),
+      }}
+    />
+  );
+  const avisoEn = (sitio: string) => (ancla === sitio ? aviso : null);
+
+  const contarPersonas = (grupos: { personas: unknown[] }[]) =>
+    grupos.reduce((total, grupo) => total + grupo.personas.length, 0);
+  const conCuenta = (titulo: string, cuantas: number) =>
+    cuantas > 0 ? t("panel.mesas.indiceConCuenta", { titulo, cuantas }) : titulo;
+  const indice = [
+    {
+      ancla: ANCLA_SIN_MESA,
+      rotulo: conCuenta(t("panel.mesas.sinMesaTitulo"), contarPersonas(confirmadosSinMesa)),
+    },
+    {
+      ancla: ANCLA_SIN_RESPUESTA,
+      rotulo: conCuenta(
+        t("panel.mesas.sinRespuestaTitulo"),
+        contarPersonas(sinRespuestaSinMesa),
+      ),
+    },
+    { ancla: ANCLA_PLANO, rotulo: t("panel.mesas.planoTitulo") },
+    { ancla: ANCLA_REPARTO, rotulo: t("panel.mesas.repartoTitulo") },
+    ...(puedeEditar ? [{ ancla: ANCLA_NUEVA, rotulo: t("panel.mesas.nuevaTitulo") }] : []),
+  ];
+
+  // La mesa que se acaba de colocar o empujar: sus flechas van bajo el plano.
+  const enMovimiento =
+    (estado === "colocada" || estado === "movida") && mesaDelAviso?.posicionX !== null
+      ? mesaDelAviso
+      : undefined;
 
   return (
     <>
@@ -184,17 +264,33 @@ export default async function PaginaMesas({ searchParams }: Parametros) {
         </p>
       </header>
 
-      <AvisoMesas
-        estado={soloTexto(consulta.estado)}
-        detalle={{
-          mesa: mesaDelAviso?.nombre ?? "",
-          caben: soloTexto(consulta.caben),
-          habria: soloTexto(consulta.habria),
-          cuantos: soloTexto(consulta.cuantos),
-        }}
-      />
+      {/*
+        UN ÍNDICE PORQUE LA PANTALLA ES LARGUÍSIMA. En un móvil, con las dos
+        bolsas llenas, el plano quedaba a decenas de miles de píxeles de la
+        cabecera. Las bolsas siguen arriba —mientras quede alguien, el reparto
+        no está hecho—, pero el resto se alcanza de un toque.
+      */}
+      <nav aria-label={t("panel.mesas.indice")} className="mt-elemento print:hidden">
+        <ul className="flex flex-wrap gap-x-interno gap-y-linea text-pequeno">
+          {indice.map((entrada) => (
+            <li key={entrada.ancla}>
+              <a
+                href={`#${entrada.ancla}`}
+                className="inline-flex min-h-control-compacto items-center underline decoration-borde-fuerte underline-offset-4"
+              >
+                {entrada.rotulo}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {ancla ? null : aviso}
 
       <SinSentar
+        id={ANCLA_SIN_MESA}
+        aviso={avisoEn(ANCLA_SIN_MESA)}
+        todos={comensales}
         titulo={t("panel.mesas.sinMesaTitulo")}
         ayuda={t("panel.mesas.sinMesaAyuda")}
         vacio={t("panel.mesas.sinMesaVacio")}
@@ -211,6 +307,9 @@ export default async function PaginaMesas({ searchParams }: Parametros) {
         que significaría un fallo de lectura.
       */}
       <SinSentar
+        id={ANCLA_SIN_RESPUESTA}
+        aviso={avisoEn(ANCLA_SIN_RESPUESTA)}
+        todos={comensales}
         titulo={t("panel.mesas.sinRespuestaTitulo")}
         ayuda={t("panel.mesas.sinRespuestaAyuda")}
         vacio={t("panel.mesas.sinRespuestaVacio")}
@@ -220,9 +319,15 @@ export default async function PaginaMesas({ searchParams }: Parametros) {
         puedeEditar={puedeEditar}
       />
 
-      <Plano mesas={colocadas} sinColocar={sinColocar} sentadosPorMesa={sentadosPorMesa} />
+      <Plano
+        mesas={colocadas}
+        sinColocar={sinColocar}
+        sentadosPorMesa={sentadosPorMesa}
+        aviso={avisoEn(ANCLA_PLANO)}
+        enMovimiento={puedeEditar ? enMovimiento : undefined}
+      />
 
-      <div className="mt-bloque">
+      <div id={ANCLA_REPARTO} className="mt-bloque scroll-mt-elemento">
         <div className="flex flex-wrap items-baseline justify-between gap-interno border-b border-borde pb-interno-compacto">
           <Titulo3 como="h2">{t("panel.mesas.repartoTitulo")}</Titulo3>
 
@@ -258,11 +363,11 @@ export default async function PaginaMesas({ searchParams }: Parametros) {
                 mesas={mesas}
                 sentadosPorMesa={sentadosPorMesa}
                 puedeEditar={puedeEditar}
+                aviso={avisoEn(anclaDe(mesa))}
                 confirmandoBorrado={
-                  soloTexto(consulta.estado) === "confirmar-borrado" &&
-                  mesaDelAviso?.id === mesa.id
+                  estado === "confirmar-borrado" && mesaDelAviso?.id === mesa.id
                 }
-                datosAbiertos={mesaDelAviso?.id === mesa.id}
+                datosAbiertos={ancla === anclaDe(mesa) && ESTADOS_DE_SUS_DATOS.has(estado)}
               />
             ))}
           </div>
@@ -271,7 +376,7 @@ export default async function PaginaMesas({ searchParams }: Parametros) {
         <AlergiasSinMesa alergias={alergiasPorMesa.get(null) ?? []} />
       </div>
 
-      {puedeEditar ? <FormularioNuevaMesa /> : null}
+      {puedeEditar ? <FormularioNuevaMesa aviso={avisoEn(ANCLA_NUEVA)} /> : null}
     </>
   );
 }
@@ -281,6 +386,9 @@ export default async function PaginaMesas({ searchParams }: Parametros) {
 /* -------------------------------------------------------------------------- */
 
 function SinSentar({
+  id,
+  aviso,
+  todos,
   titulo,
   ayuda,
   vacio,
@@ -289,6 +397,11 @@ function SinSentar({
   sentadosPorMesa,
   puedeEditar,
 }: {
+  /** El ancla de la bolsa: a ella vuelven sus formularios. */
+  id: string;
+  aviso: ReactNode;
+  /** Toda la gente, para decir quién más se mueve al sentar a un grupo. */
+  todos: Comensal[];
   titulo: string;
   ayuda: string;
   vacio: string;
@@ -299,8 +412,30 @@ function SinSentar({
 }) {
   const personas = grupos.reduce((total, grupo) => total + grupo.personas.length, 0);
 
+  /*
+    SENTAR AL GRUPO ENTERO MUEVE A TODO EL GRUPO, también a quien ya estaba en
+    otra mesa. La fila enseñaba «1 persona» y movía a tres: se nombra a los que
+    cambian de sitio, con la mesa de la que salen.
+  */
+  const nombreDeMesa = new Map(mesas.map((mesa) => [mesa.id, mesa.nombre]));
+  const seMuevenDe = (grupoId: string) =>
+    todos
+      .filter(
+        (persona) =>
+          persona.grupoId === grupoId && persona.mesaId && persona.estado !== ESTADO_RECHAZADO,
+      )
+      .map((persona) =>
+        t("panel.mesas.seMueveDe", {
+          quien: persona.nombreCompleto,
+          mesa: nombreDeMesa.get(persona.mesaId!) ?? "",
+        }),
+      );
+
   return (
-    <section className="mt-bloque rounded-tarjeta border border-borde-fuerte p-interno">
+    <section
+      id={id}
+      className="mt-bloque scroll-mt-elemento rounded-tarjeta border border-borde-fuerte p-interno"
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-interno">
         <Titulo3 como="h2">{titulo}</Titulo3>
         {personas > 0 ? (
@@ -313,6 +448,8 @@ function SinSentar({
       </div>
 
       <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">{ayuda}</Cuerpo>
+
+      {aviso}
 
       {grupos.length === 0 ? (
         <p className="mt-elemento rounded-campo bg-exito-fondo p-interno text-pequeno text-exito-tinta">
@@ -350,22 +487,33 @@ function SinSentar({
                 facilísimo dejarse a la abuela en otra mesa.
               */}
                 {puedeEditar && mesas.length > 0 ? (
-                  <form
-                    action={sentarGrupo}
-                    className="grid items-center gap-interno-compacto print:hidden sm:grid-cols-[minmax(0,1fr)_auto]"
-                  >
-                    <input type="hidden" name="grupo_id" value={grupo.id} />
-                    <SelectorDeMesa
-                      etiqueta={t("panel.mesas.campoMesaGrupo", { grupo: grupo.nombre })}
-                      mesas={mesas}
-                      sentadosPorMesa={sentadosPorMesa}
-                    />
-                    <BotonEnvio jerarquia="secundario">
-                      {t("panel.mesas.sentarGrupo")}
-                    </BotonEnvio>
-                  </form>
+                  <div className="@container print:hidden">
+                    <form
+                      action={sentarGrupo}
+                      className="grid items-center gap-interno-compacto formulario-en-linea:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <input type="hidden" name="grupo_id" value={grupo.id} />
+                      <input type="hidden" name="ancla" value={id} />
+                      <SelectorDeMesa
+                        etiqueta={t("panel.mesas.campoMesaGrupo", { grupo: grupo.nombre })}
+                        mesas={mesas}
+                        sentadosPorMesa={sentadosPorMesa}
+                      />
+                      <BotonEnvio jerarquia="secundario">
+                        {t("panel.mesas.sentarGrupo")}
+                      </BotonEnvio>
+                    </form>
+                  </div>
                 ) : null}
               </div>
+
+              {puedeEditar && seMuevenDe(grupo.id).length > 0 ? (
+                <p className="mt-pila text-pequeno text-tinta-suave print:hidden">
+                  {t("panel.mesas.tambienSeMueven", {
+                    quienes: listaDeNombres.format(seMuevenDe(grupo.id)),
+                  })}
+                </p>
+              ) : null}
 
               <ul className="mt-interno-compacto grid">
                 {grupo.personas.map((persona) => (
@@ -391,6 +539,7 @@ function SinSentar({
                         className="flex items-center gap-interno-compacto print:hidden"
                       >
                         <input type="hidden" name="invitado_id" value={persona.id} />
+                        <input type="hidden" name="ancla" value={id} />
                         <SelectorDeMesa
                           etiqueta={t("panel.mesas.campoMesaDe", {
                             quien: persona.nombreCompleto,
@@ -499,13 +648,18 @@ function Plano({
   mesas,
   sinColocar,
   sentadosPorMesa,
+  aviso,
+  enMovimiento,
 }: {
   mesas: Mesa[];
   sinColocar: Mesa[];
   sentadosPorMesa: Map<string, Comensal[]>;
+  aviso: ReactNode;
+  /** La mesa que se acaba de colocar o empujar: sus flechas van debajo. */
+  enMovimiento: Mesa | undefined;
 }) {
   return (
-    <section className="mt-bloque">
+    <section id={ANCLA_PLANO} className="mt-bloque scroll-mt-elemento">
       <Titulo3 como="h2">{t("panel.mesas.planoTitulo")}</Titulo3>
       <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.mesas.planoAyuda")}
@@ -518,7 +672,9 @@ function Plano({
         de desplazamiento horizontal en el móvil. Recortado, medio rótulo
         asomando dice justo lo que pasa: esa mesa está pegada a la pared.
       */}
-      <div className="relative mt-elemento aspect-mapa w-full overflow-hidden rounded-tarjeta border border-borde-fuerte bg-superficie-hundida">
+      {aviso}
+
+      <div className="relative mt-elemento aspect-plano w-full max-w-plano overflow-hidden rounded-tarjeta border border-borde-fuerte bg-superficie-hundida">
         {/*
           LA PISTA DE BAILE ES UNA REFERENCIA FIJA, no una mesa: no se mueve, no
           se guarda y no se puede tocar. Está para que el plano signifique algo
@@ -551,6 +707,20 @@ function Plano({
           </ul>
         )}
       </div>
+
+      {/*
+        LAS FLECHAS DE LA MESA QUE SE ESTÁ MOVIENDO, JUNTO AL PLANO. Vivían sólo
+        en su bloque, a miles de píxeles: cada empujón volvía a la cabecera y
+        nunca se veían a la vez la mesa y el botón que la mueve.
+      */}
+      {enMovimiento ? (
+        <div className="mt-elemento print:hidden">
+          <Empujar
+            mesa={enMovimiento}
+            rotulo={t("panel.mesas.seguirMoviendo", { mesa: enMovimiento.nombre })}
+          />
+        </div>
+      ) : null}
 
       {sinColocar.length > 0 ? (
         <div className="mt-elemento rounded-campo border border-borde p-interno print:hidden">
@@ -644,6 +814,7 @@ function BloqueMesa({
   mesas,
   sentadosPorMesa,
   puedeEditar,
+  aviso,
   confirmandoBorrado,
   datosAbiertos,
 }: {
@@ -653,6 +824,8 @@ function BloqueMesa({
   mesas: Mesa[];
   sentadosPorMesa: Map<string, Comensal[]>;
   puedeEditar: boolean;
+  /** El aviso de la acción que acaba de volver a esta mesa. */
+  aviso: ReactNode;
   confirmandoBorrado: boolean;
   datosAbiertos: boolean;
 }) {
@@ -663,7 +836,7 @@ function BloqueMesa({
     // dos hojas. Media mesa al final de una página es media mesa que nadie lee.
     <section
       id={anclaDe(mesa)}
-      className="@container break-inside-avoid rounded-tarjeta border border-borde p-interno"
+      className="@container scroll-mt-elemento break-inside-avoid rounded-tarjeta border border-borde p-interno"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-interno border-b border-borde pb-interno-compacto">
         <Titulo3>{mesa.nombre}</Titulo3>
@@ -691,6 +864,8 @@ function BloqueMesa({
       {mesa.notas ? (
         <p className="mt-pila max-w-texto text-pequeno text-tinta-suave">{mesa.notas}</p>
       ) : null}
+
+      {aviso}
 
       {sentados.length === 0 ? (
         <Cuerpo className="mt-elemento text-pequeno text-tinta-suave">
@@ -732,22 +907,27 @@ function BloqueMesa({
               {/* Cambiar de mesa y levantarse salen del mismo desplegable: son
                   la misma decisión, y separarlas obligaría a dos viajes. */}
               {puedeEditar ? (
-                <form
-                  action={sentarInvitado}
-                  className="flex items-center gap-interno-compacto print:hidden"
-                >
-                  <input type="hidden" name="invitado_id" value={persona.id} />
-                  <SelectorDeMesa
-                    etiqueta={t("panel.mesas.campoMesaDe", { quien: persona.nombreCompleto })}
-                    mesas={mesas}
-                    sentadosPorMesa={sentadosPorMesa}
-                    actual={mesa.id}
-                    conSinMesa
-                  />
-                  {/* «Sentar» sería raro sobre alguien que ya está sentado: lo
-                      que se hace aquí es cambiarle de sitio o levantarle. */}
-                  <BotonEnvio jerarquia="terciario">{t("panel.mesas.mover")}</BotonEnvio>
-                </form>
+                <div className="@container print:hidden">
+                  <form
+                    action={sentarInvitado}
+                    className="grid items-center gap-interno-compacto formulario-en-linea:grid-cols-[minmax(0,1fr)_auto]"
+                  >
+                    <input type="hidden" name="invitado_id" value={persona.id} />
+                    <input type="hidden" name="ancla" value={anclaDe(mesa)} />
+                    <SelectorDeMesa
+                      etiqueta={t("panel.mesas.campoMesaDe", { quien: persona.nombreCompleto })}
+                      mesas={mesas}
+                      sentadosPorMesa={sentadosPorMesa}
+                      actual={mesa.id}
+                      conSinMesa
+                    />
+                    {/* «Sentar» sería raro sobre alguien que ya está sentado: lo
+                        que se hace aquí es cambiarle de sitio o levantarle. */}
+                    <BotonEnvio jerarquia="terciario" className="justify-self-start">
+                      {t("panel.mesas.mover")}
+                    </BotonEnvio>
+                  </form>
+                </div>
               ) : null}
             </li>
           ))}
@@ -950,7 +1130,7 @@ function FormularioMesa({
 }
 
 /** Las cuatro flechas. Cada una es un formulario: funcionan sin JavaScript. */
-function Empujar({ mesa }: { mesa: Mesa }) {
+function Empujar({ mesa, rotulo }: { mesa: Mesa; rotulo?: string }) {
   const sentidos = [
     {
       sentido: "arriba",
@@ -976,7 +1156,7 @@ function Empujar({ mesa }: { mesa: Mesa }) {
 
   return (
     <div>
-      <Rotulo className="text-tinta-suave">{t("panel.mesas.moverTitulo")}</Rotulo>
+      <Rotulo className="text-tinta-suave">{rotulo ?? t("panel.mesas.moverTitulo")}</Rotulo>
       <div className="mt-interno-compacto flex flex-wrap gap-interno-compacto">
         {sentidos.map((flecha) => (
           <form key={flecha.sentido} action={empujarMesa}>
@@ -997,13 +1177,18 @@ function Empujar({ mesa }: { mesa: Mesa }) {
   );
 }
 
-function FormularioNuevaMesa() {
+function FormularioNuevaMesa({ aviso }: { aviso: ReactNode }) {
   return (
-    <section className="mt-bloque rounded-tarjeta border border-borde p-interno print:hidden">
+    <section
+      id={ANCLA_NUEVA}
+      className="mt-bloque scroll-mt-elemento rounded-tarjeta border border-borde p-interno print:hidden"
+    >
       <Titulo3 como="h2">{t("panel.mesas.nuevaTitulo")}</Titulo3>
       <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.mesas.nuevaAyuda")}
       </Cuerpo>
+
+      {aviso}
 
       <form action={crearMesa} className="mt-elemento grid gap-interno sm:grid-cols-2">
         <CampoTexto

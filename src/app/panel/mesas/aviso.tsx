@@ -20,6 +20,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   colocada: { clave: "panel.mesas.avisoColocada", error: false },
   movida: { clave: "panel.mesas.avisoMovida", error: false },
   sentado: { clave: "panel.mesas.avisoSentado", error: false },
+  "sentado-no-viene": { clave: "panel.mesas.avisoSentadoNoViene", error: false },
   levantado: { clave: "panel.mesas.avisoLevantado", error: false },
   nombre: { clave: "panel.mesas.errorNombre", error: true },
   "nombre-repetido": { clave: "panel.mesas.errorNombreRepetido", error: true },
@@ -88,6 +89,26 @@ export function AvisoMesas({ estado, detalle }: { estado: string; detalle: Detal
     );
   }
 
+  if (estado === "presidencia-repetida") {
+    return (
+      <Recuadro error>
+        {detalle.mesa
+          ? t("panel.mesas.errorPresidenciaRepetida", { mesa: detalle.mesa })
+          : t("panel.mesas.errorPresidenciaRepetidaSinNombre")}
+      </Recuadro>
+    );
+  }
+
+  if (estado === "grupo-sentado") {
+    return (
+      <Recuadro>
+        {detalle.mesa && detalle.cuantos
+          ? t("panel.mesas.avisoGrupoSentado", { cuantos: detalle.cuantos, mesa: detalle.mesa })
+          : t("panel.mesas.avisoSentado")}
+      </Recuadro>
+    );
+  }
+
   if (estado === "confirmar-borrado") {
     return (
       <Recuadro error>
@@ -109,13 +130,27 @@ export function AvisoMesas({ estado, detalle }: { estado: string; detalle: Detal
     —y falta la respuesta— y en rojo como «no se ha guardado», que sería
     mentira: se ha guardado. El ámbar es exactamente lo que ha pasado.
   */
-  if (estado === "sentado-sin-confirmar") {
+  if (
+    estado === "sentado-sin-confirmar" ||
+    estado === "grupo-sentado-sin-confirmar" ||
+    estado === "editada-pasada"
+  ) {
     return (
       <p
         role="status"
         className="mt-elemento rounded-campo bg-aviso-fondo p-interno text-pequeno text-aviso-tinta print:hidden"
       >
-        {t("panel.mesas.avisoSentadoSinConfirmar")}
+        {estado === "editada-pasada"
+          ? detalle.mesa && detalle.caben && detalle.habria
+            ? t("panel.mesas.avisoEditadaPasada", {
+                mesa: detalle.mesa,
+                caben: detalle.caben,
+                habria: detalle.habria,
+              })
+            : t("panel.mesas.avisoEditada")
+          : estado === "grupo-sentado-sin-confirmar"
+            ? t("panel.mesas.avisoGrupoSentadoSinConfirmar", { cuantos: detalle.cuantos || "" })
+            : t("panel.mesas.avisoSentadoSinConfirmar")}
       </p>
     );
   }
