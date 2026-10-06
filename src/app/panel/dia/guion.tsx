@@ -55,6 +55,7 @@ export function Guion({
 }) {
   const cola = useSyncExternalStore(suscribirse, instantanea, instantaneaDelServidor);
   const [sinPermiso, setSinPermiso] = useState(false);
+  const [noExiste, setNoExiste] = useState(false);
 
   /**
    * LO QUE EL SERVIDOR YA HA ACEPTADO EN ESTA SESIÓN.
@@ -91,6 +92,7 @@ export function Guion({
     // la marca nueva se queda pendiente y la manda el siguiente intento.
     const resueltos: [string, string | null][] = [];
     let denegado = false;
+    let desaparecido = false;
 
     for (const [id, marca] of Object.entries(pendientes)) {
       try {
@@ -103,6 +105,11 @@ export function Guion({
         } else if (resultado.motivo === "sin-permiso") {
           denegado = true;
           resueltos.push([id, marca]);
+        } else if (resultado.motivo === "no-existe") {
+          // Alguien lo quitó del guion mientras esto esperaba en la cola: no
+          // hay nada que mandar, ni ahora ni luego.
+          desaparecido = true;
+          resueltos.push([id, marca]);
         }
       } catch {
         // Sin red. Se queda en la cola para el próximo intento.
@@ -110,6 +117,7 @@ export function Guion({
     }
 
     if (denegado) setSinPermiso(true);
+    if (desaparecido) setNoExiste(true);
     soltar(resueltos);
   }, []);
 
@@ -142,6 +150,7 @@ export function Guion({
     const marca = estabaHecho ? null : new Date().toISOString();
     apuntar(punto.id, marca);
     setSinPermiso(false);
+    setNoExiste(false);
 
     // 2 · Y ahora se manda sólo esto, no la cola entera: mandar aquí lo de
     //     antes duplicaría los intentos con el reintento de `online`.
@@ -221,6 +230,15 @@ export function Guion({
           className="mt-elemento rounded-campo bg-error-fondo p-interno text-pequeno text-error-tinta"
         >
           {t("panel.dia.guion.sinPermiso")}
+        </p>
+      ) : null}
+
+      {noExiste ? (
+        <p
+          role="status"
+          className="mt-elemento rounded-campo bg-aviso-fondo p-interno text-pequeno text-aviso-tinta"
+        >
+          {t("panel.dia.guion.noExiste")}
         </p>
       ) : null}
 

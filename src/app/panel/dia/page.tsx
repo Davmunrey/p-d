@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo2 } from "@/components/ui/tipografia";
 import {
   RUTA_ACCESO,
   RUTA_AGENDA_DIA,
   RUTA_BUSCAR_DIA,
   RUTA_EXPORTAR_DIA,
+  RUTA_GUION_DIA,
   RUTA_RECUENTO,
 } from "@/config/constants";
 import { obtenerGuion } from "@/lib/bbdd/dia";
@@ -34,12 +36,23 @@ export default async function PaginaDia() {
   if (!acceso) redirect(RUTA_ACCESO);
 
   const guion = await obtenerGuion();
+  const puedeEditar = acceso.rol !== "lector";
 
   return (
     <>
       <div className="max-w-texto">
         <Titulo2 como="h1">{t("panel.dia.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.dia.entradilla")}</Cuerpo>
+        {/*
+          ESCRIBIR EL GUION VA APARTE Y SE LLEGA DESDE AQUÍ. Es un enlace y no un
+          atajo más: los cuatro de abajo son lo que se busca con prisa ese día,
+          y esto se hace sentado, semanas antes.
+        */}
+        {puedeEditar ? (
+          <EnlaceSuave href={RUTA_GUION_DIA} className="mt-pila">
+            {t("panel.dia.guion.escribir")}
+          </EnlaceSuave>
+        ) : null}
       </div>
 
       <Atajos />
@@ -49,7 +62,7 @@ export default async function PaginaDia() {
           {t("panel.dia.guion.vacio")}
         </Cuerpo>
       ) : (
-        <Guion puntos={guion} puedeEditar={acceso.rol !== "lector"} />
+        <Guion puntos={guion} puedeEditar={puedeEditar} />
       )}
     </>
   );

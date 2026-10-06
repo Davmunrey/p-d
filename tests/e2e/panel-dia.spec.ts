@@ -8,6 +8,7 @@ import {
   RUTA_BUSCAR_DIA,
   RUTA_DIA,
   RUTA_EXPORTAR_DIA,
+  RUTA_GUION_DIA,
   RUTA_PANEL,
   RUTA_RECUENTO,
 } from "../../src/config/constants";
@@ -316,6 +317,126 @@ test.describe("El día de la boda", () => {
       "data-hecho",
       "si",
     );
+  });
+
+  /**
+   * CAMINO FELIZ · #67 — el guion se escribe desde el panel.
+   *
+   * La lista de control se entregó sabiendo marcar y sin saber escribir: decía
+   * «se escribe punto a punto» y no había dónde. Se recorre el ciclo entero
+   * desde la pantalla y se comprueba cada paso en la base.
+   */
+  test("el guion se escribe desde el panel: se añade, se corrige y se quita", async ({
+    page,
+  }) => {
+    await limpiar();
+    const titulo = `${MARCA} Brindis ${Date.now()}`;
+    const escribir = copy.panel.dia.escribir;
+
+    await entrar(page);
+    await page.goto(RUTA_DIA);
+    await page.getByRole("link", { name: copy.panel.dia.guion.escribir }).click();
+    await expect(page).toHaveURL(new RegExp(RUTA_GUION_DIA));
+
+    const alta = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: escribir.nuevoTitulo }) });
+    await alta.getByLabel(escribir.campoHora, { exact: true }).fill("al acabar el cóctel");
+    await alta.getByLabel(escribir.campoTitulo, { exact: true }).fill(titulo);
+    await alta.getByLabel(escribir.campoResponsable, { exact: true }).fill("(DES) El padrino");
+    await alta.getByRole("button", { name: escribir.anadir }).click();
+    await esperarEstado(page, "creado");
+
+    const leer = () =>
+      conBase(
+        (sql) => sql<{ hora: string; responsable: string | null }[]>`
+          select hora, responsable from public.guion_dia where titulo = ${titulo}
+        `,
+      );
+    const [creado] = await leer();
+    expect(creado, "el punto tenía que estar en la base").toBeDefined();
+    expect(creado.hora).toBe("al acabar el cóctel");
+    expect(creado.responsable).toBe("(DES) El padrino");
+
+    // Y aparece en la lista de control, que es donde se usa.
+    await page.goto(RUTA_DIA);
+    await expect(page.locator("li").filter({ hasText: titulo })).toBeVisible();
+
+    // Se corrige la hora.
+    await page.goto(RUTA_GUION_DIA);
+    const fila = page.locator("li").filter({ hasText: titulo });
+    await fila.locator("summary").click();
+    await fila.getByLabel(escribir.campoHora, { exact: true }).fill("23:30");
+    await fila.getByRole("button", { name: escribir.guardar }).click();
+    await esperarEstado(page, "editado");
+    expect((await leer())[0].hora).toBe("23:30");
+
+    // Y se quita.
+    await page
+      .locator("li")
+      .filter({ hasText: titulo })
+      .getByRole("button", { name: escribir.borrarEste.replace("{titulo}", titulo) })
+      .click();
+    await esperarEstado(page, "borrado");
+    expect(await leer(), "quitarlo lo quita de la base").toHaveLength(0);
+  });
+
+  /**
+   * CASO DE ERROR · un punto sin hora no se guarda, y se dice qué falta.
+   */
+  test("un punto sin hora se explica y no se apunta", async ({ page }) => {
+    const titulo = `${MARCA} Sin hora ${Date.now()}`;
+    const escribir = copy.panel.dia.escribir;
+
+    await entrar(page);
+    await page.goto(RUTA_GUION_DIA);
+
+    const alta = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: escribir.nuevoTitulo }) });
+    // Sin el `required` del campo, para que decida el servidor.
+    const hora = alta.getByLabel(escribir.campoHora, { exact: true });
+    await hora.evaluate((campo) => campo.removeAttribute("required"));
+    await hora.fill("   ");
+    await alta.getByLabel(escribir.campoTitulo, { exact: true }).fill(titulo);
+    await alta.getByRole("button", { name: escribir.anadir }).click();
+    await esperarEstado(page, "hora");
+
+    await expect(page.getByText(escribir.avisos.hora)).toBeVisible();
+    const filas = await conBase(
+      (sql) => sql`select 1 from public.guion_dia where titulo = ${titulo}`,
+    );
+    expect(filas, "no se apunta nada").toHaveLength(0);
+  });
+
+  /**
+   * CASO DE ERROR · marcar un punto que alguien acaba de quitar.
+   *
+   * Desde que el guion se escribe en el panel, un punto puede desaparecer con
+   * la lista de control abierta en otro móvil. Marcarlo decía «esta cuenta
+   * sólo puede mirar», que es falso y manda a buscar un problema de permisos.
+   */
+  test("marcar un punto que ya no está lo dice, sin culpar al permiso", async ({ page }) => {
+    const sembrado = await sembrar(Date.now() + 9);
+
+    await entrar(page);
+    await page.goto(RUTA_DIA);
+    await page.waitForLoadState("networkidle");
+
+    const punto = page.locator("li").filter({ hasText: sembrado.primerPunto });
+    await conBase(
+      (sql) => sql`delete from public.guion_dia where titulo = ${sembrado.primerPunto}`,
+    );
+    await punto
+      .getByRole("button", {
+        name: copy.panel.dia.guion.marcarEste.replace("{titulo}", sembrado.primerPunto),
+      })
+      .click();
+
+    await expect(page.getByText(copy.panel.dia.guion.noExiste)).toBeVisible();
+    await expect(page.getByText(copy.panel.dia.guion.sinPermiso)).toHaveCount(0);
+    // Y no se queda en la cola reintentando algo que no va a llegar nunca.
+    await expect(page.locator("[data-sin-mandar]")).toBeHidden();
   });
 
   /**

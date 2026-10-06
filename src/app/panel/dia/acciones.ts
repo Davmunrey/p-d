@@ -9,6 +9,7 @@ import {
   RUTA_ACCESO,
   RUTA_RECUENTO,
 } from "@/config/constants";
+import { accesoActual } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 import { type EstadoDia, type ResultadoDeMarcar } from "./estado";
@@ -57,6 +58,18 @@ export async function marcarPuntoDelGuion(
 ): Promise<ResultadoDeMarcar> {
   if (!id) return { ok: false, motivo: "error" };
 
+  /*
+    EL ROL SE MIRA ANTES, para que el cero de abajo signifique una sola cosa.
+    Desde que el guion se escribe en el panel, un punto se puede quitar
+    mientras un móvil lo tiene marcado en la cola: eso no es «esta cuenta sólo
+    puede mirar», es que el punto ya no está.
+  */
+  const acceso = await accesoActual();
+  // Sin respuesta no se sabe quién es —un corte, una sesión caducada—, y eso
+  // no es «no puedes»: la marca se queda en la cola y se reintenta.
+  if (!acceso) return { ok: false, motivo: "error" };
+  if (acceso.rol === "lector") return { ok: false, motivo: "sin-permiso" };
+
   const supabase = await cliente();
 
   /*
@@ -76,8 +89,7 @@ export async function marcarPuntoDelGuion(
     return { ok: false, motivo: "error" };
   }
 
-  // Cero filas y sin error es RLS callando: un lector no marca nada.
-  if (!data?.length) return { ok: false, motivo: "sin-permiso" };
+  if (!data?.length) return { ok: false, motivo: "no-existe" };
 
   return { ok: true };
 }

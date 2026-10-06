@@ -489,6 +489,13 @@ export const RUTA_RECUENTO = "/panel/dia/recuento";
 export const RUTA_EXPORTAR_DIA = "/panel/dia/exportar";
 
 /**
+ * Donde se escribe el guion, sentado y antes de la boda. Va aparte de
+ * `RUTA_DIA` porque esa pantalla se usa de pie, y un formulario de cinco campos
+ * por cada punto es justo lo que no tiene que estorbar al marcar.
+ */
+export const RUTA_GUION_DIA = "/panel/dia/guion";
+
+/**
  * La comparativa de presupuestos dentro de una categoría. Cuelga de
  * proveedores porque compara proveedores; la categoría llega por query.
  */
@@ -749,6 +756,10 @@ export const LARGOS_DE_CAMPO = {
   "documentos_boda.titulo": 160,
   "documentos_proveedor.nombre": 200,
   "grupos_invitacion.nombre": 120,
+  "guion_dia.hora": 40,
+  "guion_dia.notas": 1000,
+  "guion_dia.responsable": 120,
+  "guion_dia.titulo": 160,
   "invitados.alergias": 500,
   "invitados.apellidos": 120,
   "invitados.nombre": 80,

@@ -41,5 +41,5 @@ export function esEstadoDia(valor: string): valor is EstadoDia {
 export interface ResultadoDeMarcar {
   ok: boolean;
   /** Sólo cuando `ok` es falso y el motivo se puede contar. */
-  motivo?: "sin-permiso" | "error";
+  motivo?: "sin-permiso" | "no-existe" | "error";
 }
