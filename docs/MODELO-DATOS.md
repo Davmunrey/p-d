@@ -27,7 +27,7 @@ Cada una tiene su reverso exacto en
 [`supabase/migrations/rollback/`](../supabase/migrations/rollback/), con el mismo
 nombre. Se ejecutan en orden **inverso**.
 
-En números: **38 tablas, 15 vistas, 20 enumerados, 56 funciones, 74 políticas RLS.**
+En números: **38 tablas, 15 vistas, 20 enumerados, 58 funciones, 74 políticas RLS.**
 
 Esos cinco números no se escriben a mano: los cuenta la suite de seguridad contra
 el catálogo de la base recién migrada, y si el documento dice otra cosa, el CI se
