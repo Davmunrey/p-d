@@ -74,10 +74,7 @@ export async function obtenerGuion(): Promise<PuntoDelGuion[]> {
     .order("orden", { ascending: true })
     .order("hora", { ascending: true });
 
-  if (error) {
-    console.error("No se pudo leer el guion del día:", error);
-    return [];
-  }
+  if (error) throw new Error(`No se pudo leer el guion del día: ${error.message}`);
 
   return ((data as FilaGuion[] | null) ?? []).map((fila) => ({
     id: fila.id,

@@ -139,10 +139,7 @@ export async function obtenerPagos(): Promise<Pago[]> {
     .order("concepto")
     .order("id");
 
-  if (error) {
-    console.error("No se pudieron leer los pagos:", error);
-    return [];
-  }
+  if (error) throw new Error(`No se pudieron leer los pagos: ${error.message}`);
 
   return ((data as unknown as FilaPago[] | null) ?? []).map(aPago);
 }
@@ -197,10 +194,7 @@ export async function obtenerGastosParaPagar(): Promise<GastoParaPagar[]> {
     )
     .order("concepto");
 
-  if (error) {
-    console.error("No se pudieron leer los gastos para pagar:", error);
-    return [];
-  }
+  if (error) throw new Error(`No se pudieron leer los gastos para pagar: ${error.message}`);
 
   return ((data as unknown as FilaGastoPagable[] | null) ?? []).map((fila) => {
     const real = fila.importe_real === null ? null : aImporte(fila.importe_real);

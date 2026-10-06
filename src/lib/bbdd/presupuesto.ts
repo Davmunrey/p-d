@@ -70,10 +70,8 @@ export async function obtenerCategoriasPresupuesto(): Promise<CategoriaPresupues
     .order("orden")
     .order("nombre");
 
-  if (error) {
-    console.error("No se pudieron leer las categorías de presupuesto:", error);
-    return [];
-  }
+  if (error)
+    throw new Error(`No se pudieron leer las categorías de presupuesto: ${error.message}`);
 
   return (
     (data as
@@ -114,10 +112,7 @@ export async function obtenerResumenPresupuesto(): Promise<ResumenCategoria[]> {
     .order("orden")
     .order("categoria");
 
-  if (error) {
-    console.error("No se pudo leer el resumen del presupuesto:", error);
-    return [];
-  }
+  if (error) throw new Error(`No se pudo leer el resumen del presupuesto: ${error.message}`);
 
   return (
     (data as
@@ -242,10 +237,7 @@ export async function obtenerGastos(): Promise<Gasto[]> {
     )
     .order("concepto");
 
-  if (error) {
-    console.error("No se pudieron leer los gastos:", error);
-    return [];
-  }
+  if (error) throw new Error(`No se pudieron leer los gastos: ${error.message}`);
 
   return ((data as unknown as FilaGasto[] | null) ?? []).map((fila) => ({
     id: fila.id,

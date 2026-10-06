@@ -227,10 +227,8 @@ export async function obtenerCategoriasProveedor(): Promise<CategoriaProveedor[]
     .order("orden")
     .order("nombre");
 
-  if (error) {
-    console.error("No se pudieron leer las categorías de proveedor:", error);
-    return [];
-  }
+  if (error)
+    throw new Error(`No se pudieron leer las categorías de proveedor: ${error.message}`);
 
   return (data as FilaCategoria[] | null) ?? [];
 }
@@ -244,10 +242,7 @@ export async function obtenerProveedores(): Promise<Proveedor[]> {
     .select(COLUMNAS_PROVEEDOR)
     .order("nombre");
 
-  if (error) {
-    console.error("No se pudieron leer los proveedores:", error);
-    return [];
-  }
+  if (error) throw new Error(`No se pudieron leer los proveedores: ${error.message}`);
 
   return ((data as FilaProveedor[] | null) ?? []).map(aProveedor);
 }
@@ -280,10 +275,7 @@ export async function obtenerFichaProveedor(id: string): Promise<FichaProveedor 
     .eq("id", id)
     .maybeSingle();
 
-  if (error) {
-    console.error("No se pudo leer el proveedor:", error);
-    return null;
-  }
+  if (error) throw new Error(`No se pudo leer el proveedor: ${error.message}`);
   if (!data) return null;
 
   const fila = data as FilaProveedor & {
@@ -388,10 +380,7 @@ export async function obtenerCategoriasSinCerrar(): Promise<CategoriaSinCerrar[]
     .from("v_categorias_sin_contratar")
     .select("id, nombre, candidatos");
 
-  if (error) {
-    console.error("No se pudieron leer las categorías sin cerrar:", error);
-    return [];
-  }
+  if (error) throw new Error(`No se pudieron leer las categorías sin cerrar: ${error.message}`);
 
   return (data as CategoriaSinCerrar[] | null) ?? [];
 }
@@ -483,10 +472,8 @@ export async function obtenerDocumentosProveedor(
     .eq("proveedor_id", proveedorId)
     .order("creado_en", { ascending: false });
 
-  if (error) {
-    console.error("No se pudieron leer los documentos del proveedor:", error);
-    return [];
-  }
+  if (error)
+    throw new Error(`No se pudieron leer los documentos del proveedor: ${error.message}`);
 
   return ((data as unknown as FilaDocumento[] | null) ?? []).map((fila) => {
     // PostgREST devuelve la relación como objeto o como lista de uno según cómo
@@ -611,10 +598,8 @@ export async function obtenerServiciosProveedor(
     .eq("proveedor_id", proveedorId)
     .order("nombre");
 
-  if (error) {
-    console.error("No se pudieron leer los servicios del proveedor:", error);
-    return [];
-  }
+  if (error)
+    throw new Error(`No se pudieron leer los servicios del proveedor: ${error.message}`);
 
   return ((data as FilaServicio[] | null) ?? []).map((fila) => ({
     id: fila.id,
@@ -651,10 +636,7 @@ export async function obtenerCategoria(id: string): Promise<CategoriaProveedor |
     .eq("id", id)
     .maybeSingle();
 
-  if (error) {
-    console.error("No se pudo leer la categoría:", error);
-    return null;
-  }
+  if (error) throw new Error(`No se pudo leer la categoría: ${error.message}`);
 
   return (data as FilaCategoria | null) ?? null;
 }
@@ -683,10 +665,8 @@ export async function obtenerComparativa(categoriaId: string): Promise<Proveedor
     .eq("categoria_id", categoriaId)
     .order("nombre");
 
-  if (error) {
-    console.error("No se pudo leer la comparativa de la categoría:", error);
-    return [];
-  }
+  if (error)
+    throw new Error(`No se pudo leer la comparativa de la categoría: ${error.message}`);
 
   const filas =
     (data as unknown as (FilaProveedor & { servicios: { nombre: string }[] })[] | null) ?? [];

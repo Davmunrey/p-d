@@ -166,10 +166,7 @@ export async function obtenerTareas(): Promise<Tarea[]> {
     .order("fecha_limite", { ascending: true, nullsFirst: false })
     .order("creado_en", { ascending: true });
 
-  if (error) {
-    console.error("No se pudieron leer las tareas:", error);
-    return [];
-  }
+  if (error) throw new Error(`No se pudieron leer las tareas: ${error.message}`);
 
   return (data as FilaTarea[]).map(aTarea);
 }
@@ -191,10 +188,7 @@ export async function obtenerResponsables(): Promise<Responsable[]> {
     .eq("activo", true)
     .order("nombre_completo", { ascending: true });
 
-  if (error) {
-    console.error("No se pudieron leer los responsables:", error);
-    return [];
-  }
+  if (error) throw new Error(`No se pudieron leer los responsables: ${error.message}`);
 
   return (data as { id: string; nombre_completo: string }[]).map((fila) => ({
     id: fila.id,
@@ -222,10 +216,8 @@ export async function obtenerGruposPlantilla(): Promise<GrupoPlantilla[]> {
     .select("grupo")
     .order("orden", { ascending: true, nullsFirst: false });
 
-  if (error) {
-    console.error("No se pudieron leer los grupos de la plantilla:", error);
-    return [];
-  }
+  if (error)
+    throw new Error(`No se pudieron leer los grupos de la plantilla: ${error.message}`);
 
   const cuenta = new Map<string, number>();
   for (const fila of data as { grupo: string }[]) {

@@ -128,10 +128,7 @@ export async function obtenerDocumentos(): Promise<DocumentoBoda[]> {
        fecha_boda, caduca_antes_de_la_boda`,
   );
 
-  if (error) {
-    console.error("No se pudieron leer los documentos de la boda:", error);
-    return [];
-  }
+  if (error) throw new Error(`No se pudieron leer los documentos de la boda: ${error.message}`);
 
   return ((data as FilaDocumento[] | null) ?? []).map(aDocumento);
 }

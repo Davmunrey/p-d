@@ -416,6 +416,29 @@ test.describe("Los pagos y sus vencimientos", () => {
   });
 
   /**
+   * CASO DE ERROR · si los pagos no se pueden leer, no se dice que no hay.
+   *
+   * «Todavía no hay ningún pago apuntado» es lo que pintaba la pantalla ante
+   * una lectura caída, porque el lector devolvía una lista vacía. Con los
+   * vencimientos de la boda, eso es lo único que esta pantalla no puede decir
+   * sin saberlo. Se simula quitándole a `authenticated` la vista que lee, y se
+   * devuelve al acabar.
+   */
+  test("si los pagos no se pueden leer, no dice que no hay ninguno", async ({ page }) => {
+    await entrar(page);
+
+    try {
+      await conBase((sql) => sql`revoke select on public.v_pagos from authenticated`);
+      await page.goto(RUTA_PAGOS);
+
+      await expect(page.getByRole("heading", { name: copy.panel.errorTitulo })).toBeVisible();
+      await expect(page.getByText(pagos.vacio)).toHaveCount(0);
+    } finally {
+      await conBase((sql) => sql`grant select on public.v_pagos to authenticated`);
+    }
+  });
+
+  /**
    * UN 31 DE FEBRERO SE DICE COMO TAL, NO COMO UNA AVERÍA.
    *
    * La acción mira la forma de la fecha y el calendario lo pone la base, que
