@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
-import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO } from "@/config/constants";
+import { LARGOS_DE_CAMPO, LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO } from "@/config/constants";
 import { accesoActual, type RolPanel } from "@/lib/sesion";
 import { t } from "@/lib/copy";
 import { avisoDe } from "@/lib/avisos";
@@ -24,6 +24,12 @@ export const dynamic = "force-dynamic";
 const AVISOS: Record<string, { texto: string; error: boolean }> = {
   guardado: { texto: t("panel.cuenta.guardado"), error: false },
   corto: { texto: t("panel.cuenta.nombreCorto"), error: true },
+  largo: {
+    texto: t("panel.cuenta.nombreLargo", {
+      largo: String(LARGOS_DE_CAMPO["perfiles.nombre_completo"]),
+    }),
+    error: true,
+  },
   error: { texto: t("panel.cuenta.errorGuardar"), error: true },
 };
 
@@ -69,6 +75,7 @@ export default async function PaginaCuenta({
           etiqueta={t("panel.cuenta.nombre")}
           defaultValue={acceso.nombre ?? ""}
           minLength={LONGITUD_MINIMA_NOMBRE}
+          maxLength={LARGOS_DE_CAMPO["perfiles.nombre_completo"]}
           required
           autoComplete="name"
         />

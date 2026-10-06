@@ -177,6 +177,45 @@ test.describe("Las categorías del presupuesto", () => {
   });
 
   /**
+   * EDITAR UNA CATEGORÍA CAMBIA LO QUE SE VE, Y SÓLO ESO.
+   *
+   * La categoría tiene `descripcion` en la base, pero esta pantalla no la enseña
+   * ni la pide. La acción la mandaba vacía en cada «Guardar» y la borraba.
+   */
+  test("editar una categoría guarda el cambio y no borra su descripción", async ({ page }) => {
+    const nombre = `${MARCA} Con nota ${Date.now()}`;
+    const descripcion = `${MARCA} Incluye el ramo y los centros`;
+    const [sembrada] = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        insert into public.categorias_presupuesto (nombre, descripcion, importe_previsto, orden)
+        values (${nombre}, ${descripcion}, 100, 90)
+        returning id
+      `,
+    );
+
+    await entrar(page);
+    await page.goto(RUTA_PRESUPUESTO);
+
+    const fila = seccion(page, copy.panel.presupuesto.editarTitulo)
+      .locator("li")
+      .filter({ has: page.locator(`input[name="id"][value="${sembrada.id}"]`) });
+    await fila.getByLabel(copy.panel.presupuesto.campoPrevisto, { exact: true }).fill("300");
+    await fila.getByRole("button", { name: copy.panel.presupuesto.guardar }).click();
+    await esperarEstado(page, "categoria-editada");
+
+    const [guardada] = await conBase(
+      (sql) => sql<{ importe_previsto: string; descripcion: string | null }[]>`
+        select importe_previsto, descripcion
+          from public.categorias_presupuesto where id = ${sembrada.id}
+      `,
+    );
+    expect(Number(guardada.importe_previsto)).toBe(300);
+    expect(guardada.descripcion, "lo que la pantalla no enseña sigue como estaba").toBe(
+      descripcion,
+    );
+  });
+
+  /**
    * CASO DE ERROR · Un importe que no es un número no se guarda en silencio.
    */
   test("un importe que no se entiende se rechaza y se dice", async ({ page }) => {

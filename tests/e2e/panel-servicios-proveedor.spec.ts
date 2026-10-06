@@ -374,6 +374,13 @@ test.describe("Los servicios de un proveedor", () => {
     expect(Number(creado.precio_unitario)).toBe(1250.5);
     expect(creado.por_invitado).toBe(false);
 
+    // Una descripción que la ficha no enseña ni pide: guardar no puede borrarla.
+    const descripcion = `${MARCA} Incluye copa de bienvenida`;
+    await conBase(
+      (sql) =>
+        sql`update public.servicios set descripcion = ${descripcion} where id = ${creado.id}`,
+    );
+
     /*
       EDITAR A «POR INVITADO» CON BASE «NIÑOS», que es como se modela el menú
       infantil: otro servicio con su propia tarifa, no un descuento del de
@@ -391,13 +398,21 @@ test.describe("Los servicios de un proveedor", () => {
 
     const [editado] = await conBase(
       (sql) => sql<
-        { por_invitado: boolean; base_calculo: string; minimo_garantizado: string }[]
+        {
+          por_invitado: boolean;
+          base_calculo: string;
+          minimo_garantizado: string;
+          descripcion: string | null;
+        }[]
       >`
-        select por_invitado, base_calculo::text as base_calculo, minimo_garantizado
+        select por_invitado, base_calculo::text as base_calculo, minimo_garantizado, descripcion
           from public.servicios where id = ${creado.id}
       `,
     );
     expect(editado.por_invitado).toBe(true);
+    expect(editado.descripcion, "lo que el formulario no enseña sigue como estaba").toBe(
+      descripcion,
+    );
     expect(editado.base_calculo).toBe("ninos");
     expect(Number(editado.minimo_garantizado)).toBe(500);
 

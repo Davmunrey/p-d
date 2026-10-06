@@ -723,6 +723,7 @@ export const LARGOS_DE_CAMPO = {
   "mesas.notas": 1000,
   "pagos.notas": 2000,
   "pagos.paga_detalle": 120,
+  "perfiles.nombre_completo": 120,
   "partidas_presupuesto.concepto": 160,
   "partidas_presupuesto.descripcion": 2000,
   "proveedores.motivo_descarte": 1000,

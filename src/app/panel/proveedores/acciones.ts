@@ -783,9 +783,13 @@ export async function borrarDocumento(datos: FormData): Promise<void> {
 /*  BODA-74 · Servicios: lo que incluye cada proveedor, y cuánto cuesta hoy   */
 /* -------------------------------------------------------------------------- */
 
+/*
+  SIN `descripcion`: la columna existe, pero la ficha no la enseña ni la pide.
+  Escribirla desde aquí la mandaba vacía en cada «Guardar» y borraba la que
+  hubiera, sin que nadie la hubiera visto.
+*/
 interface ValoresServicio {
   nombre: string;
-  descripcion: string | null;
   precio_unitario: number;
   cantidad: number;
   por_invitado: boolean;
@@ -837,7 +841,6 @@ function camposServicio(
     ok: true,
     valores: {
       nombre,
-      descripcion: opcional(datos, "descripcion"),
       // La columna es `not null default 0`: sin precio escrito, el servicio
       // está apuntado pero todavía no cuesta nada, que es un estado real.
       precio_unitario: precio ?? 0,

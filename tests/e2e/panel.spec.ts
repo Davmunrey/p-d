@@ -90,6 +90,27 @@ test.describe("Dentro del panel", () => {
     await expect(campo).toHaveValue(original);
   });
 
+  test("un nombre más largo de lo que cabe se explica y no se guarda", async ({ page }) => {
+    await page.goto(RUTA_CUENTA);
+    const campo = page.getByLabel(copy.panel.cuenta.nombre);
+    const original = await campo.inputValue();
+
+    // El `maxlength` del campo lo pararía antes; se quita para que llegue al
+    // servidor, que es quien tiene que saber decir que no cabe.
+    const tope = Number(await campo.getAttribute("maxlength"));
+    expect(tope, "el campo tiene que llevar su tope").toBeGreaterThan(0);
+    await campo.evaluate((input) => input.removeAttribute("maxlength"));
+    await campo.fill("N".repeat(tope + 1));
+    await page.getByRole("button", { name: copy.panel.cuenta.guardar }).click();
+
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+      copy.panel.cuenta.nombreLargo.replace("{largo}", String(tope)),
+    );
+
+    await page.goto(RUTA_CUENTA);
+    await expect(campo).toHaveValue(original);
+  });
+
   test("los módulos sin terminar no están en el menú", async ({ page }) => {
     // Un menú que enseña ocho módulos cuando funcionan dos no es una promesa:
     // es una trampa.

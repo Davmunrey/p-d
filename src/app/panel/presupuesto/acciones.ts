@@ -28,10 +28,6 @@ function texto(datos: FormData, campo: string): string {
   return String(datos.get(campo) ?? "").trim();
 }
 
-function opcional(datos: FormData, campo: string): string | null {
-  return texto(datos, campo) || null;
-}
-
 /**
  * Un importe escrito por una persona → un número, o `undefined` si no se puede.
  *
@@ -111,7 +107,6 @@ export async function crearCategoria(datos: FormData): Promise<void> {
     .from("categorias_presupuesto")
     .insert({
       nombre,
-      descripcion: opcional(datos, "descripcion"),
       importe_previsto: previsto,
       orden: posicion,
     })
@@ -136,12 +131,16 @@ export async function editarCategoria(datos: FormData): Promise<void> {
   const posicion = orden(datos);
   if (posicion === undefined) volver("orden");
 
+  /*
+    LA DESCRIPCIÓN NO SE TOCA. La categoría la tiene en la base, pero esta
+    pantalla no la enseña ni la pide: mandarla vacía en cada guardado borraba
+    la que hubiera, sin que nadie la hubiera visto para echarla de menos.
+  */
   const supabase = await cliente();
   const { data, error } = await supabase
     .from("categorias_presupuesto")
     .update({
       nombre,
-      descripcion: opcional(datos, "descripcion"),
       importe_previsto: previsto,
       orden: posicion,
     })
