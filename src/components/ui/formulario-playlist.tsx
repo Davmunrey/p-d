@@ -4,7 +4,7 @@ import { useActionState } from "react";
 
 import { anadirCancion } from "@/app/acciones-playlist";
 import { ESTADO_INICIAL } from "@/app/estado-playlist";
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
 import { LIMITE_TEXTO_CANCION } from "@/config/constants";
 import { t } from "@/lib/copy";
@@ -28,7 +28,7 @@ import { t } from "@/lib/copy";
  * para el error: quien no ve la pantalla necesita saber las dos cosas.
  */
 export function FormularioPlaylist() {
-  const [estado, enviar, enviando] = useActionState(anadirCancion, ESTADO_INICIAL);
+  const [estado, enviar] = useActionState(anadirCancion, ESTADO_INICIAL);
 
   return (
     /*
@@ -63,9 +63,9 @@ export function FormularioPlaylist() {
         enterKeyHint="done"
       />
 
-      <Boton type="submit" tamano="grande" disabled={enviando}>
-        {enviando ? t("playlist.anadiendo") : t("playlist.anadir")}
-      </Boton>
+      <BotonEnvio tamano="grande" rotuloPendiente={t("playlist.anadiendo")}>
+        {t("playlist.anadir")}
+      </BotonEnvio>
 
       {estado.fase === "apuntada" ? (
         <p role="status" className="basis-full text-center text-pequeno text-tinta-suave">

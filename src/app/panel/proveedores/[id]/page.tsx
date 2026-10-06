@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
-import { Boton } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -1130,13 +1129,12 @@ function Servicio({
           <form action={borrarServicio} className="mt-interno-compacto">
             <input type="hidden" name="proveedor_id" value={proveedorId} />
             <input type="hidden" name="id" value={servicio.id} />
-            <Boton
-              type="submit"
+            <BotonEnvio
               jerarquia="terciario"
               aria-label={t("panel.proveedores.borrarServicioDe", { nombre: servicio.nombre })}
             >
               {t("panel.proveedores.borrarServicio")}
-            </Boton>
+            </BotonEnvio>
           </form>
         </>
       ) : null}
@@ -1315,30 +1313,28 @@ function Documento({
               permiso de cinco minutos. El nombre del papel va en el nombre
               accesible porque con cinco documentos hay cinco «Descargar».
             */}
-            <Boton
-              type="submit"
+            <BotonEnvio
               jerarquia="secundario"
               aria-label={t("panel.proveedores.descargarDocumentoDe", {
                 nombre: documento.nombre,
               })}
             >
               {t("panel.proveedores.descargarDocumento")}
-            </Boton>
+            </BotonEnvio>
           </form>
 
           {puedeEditar ? (
             <form action={borrarDocumento}>
               <input type="hidden" name="proveedor_id" value={proveedorId} />
               <input type="hidden" name="id" value={documento.id} />
-              <Boton
-                type="submit"
+              <BotonEnvio
                 jerarquia="terciario"
                 aria-label={t("panel.proveedores.borrarDocumentoDe", {
                   nombre: documento.nombre,
                 })}
               >
                 {t("panel.proveedores.borrarDocumento")}
-              </Boton>
+              </BotonEnvio>
             </form>
           ) : null}
         </div>

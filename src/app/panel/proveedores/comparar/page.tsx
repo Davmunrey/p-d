@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import {
@@ -332,15 +332,14 @@ function Tabla({
                         botones idénticos en una fila, «Marcar elegido» a secas
                         obliga a quien escucha a recordar en qué columna está.
                       */}
-                      <Boton
-                        type="submit"
+                      <BotonEnvio
                         jerarquia="secundario"
                         aria-label={t("panel.proveedores.elegirA", {
                           nombre: candidato.nombre,
                         })}
                       >
                         {t("panel.proveedores.elegir")}
-                      </Boton>
+                      </BotonEnvio>
                     </form>
                   )}
                 </Celda>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { Boton, BotonEnlace } from "@/components/ui/boton";
+import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Constelacion } from "@/components/ui/constelacion";
@@ -703,9 +703,7 @@ function RespuestaEnviada({
         {cerrado ? null : (
           <form action={reabrir}>
             <input type="hidden" name="token" value={token} />
-            <Boton type="submit" jerarquia="secundario">
-              {t("rsvp.editarRespuesta")}
-            </Boton>
+            <BotonEnvio jerarquia="secundario">{t("rsvp.editarRespuesta")}</BotonEnvio>
           </form>
         )}
         <BotonEnlace href="/" jerarquia="terciario">

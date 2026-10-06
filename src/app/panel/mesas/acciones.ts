@@ -105,8 +105,8 @@ function anclaDelFormulario(datos: FormData): string | undefined {
  * CERO FILAS NO ES SIEMPRE «NO PODÉIS»: con la mesa borrada desde el otro
  * móvil, a la propietaria le salía «sólo un editor puede tocar las mesas».
  */
-async function ceroFilas(): Promise<EstadoMesas> {
-  return (await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe";
+async function ceroFilas(siNoEsPermiso: EstadoMesas = "no-existe"): Promise<EstadoMesas> {
+  return (await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : siNoEsPermiso;
 }
 
 /**
@@ -464,7 +464,8 @@ export async function sentarInvitado(datos: FormData): Promise<void> {
       .select("id");
 
     if (error) volver(motivo(error), undefined, ancla);
-    if (!data?.length) volver("sin-permiso", undefined, ancla);
+    // Sin filas y con permiso, a esa persona la han quitado mientras tanto.
+    if (!data?.length) volver(await ceroFilas("invitado"), undefined, ancla);
 
     volver("levantado", undefined, ancla);
   }
@@ -497,7 +498,7 @@ export async function sentarInvitado(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error), undefined, ancla);
-  if (!data?.length) volver("sin-permiso", undefined, ancla);
+  if (!data?.length) volver(await ceroFilas("invitado"), undefined, ancla);
 
   /*
     SENTAR A QUIEN NO HA CONTESTADO SE PERMITE. El reparto se empieza antes de
@@ -564,7 +565,7 @@ export async function sentarGrupo(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error), undefined, ancla);
-  if (!data?.length) volver("sin-permiso", undefined, ancla);
+  if (!data?.length) volver(await ceroFilas("grupo"), undefined, ancla);
 
   // Con la cifra: mueve a todo el grupo, también a quien ya estaba en otra
   // mesa, y el aviso tiene que decir a cuántos ha sentado.
