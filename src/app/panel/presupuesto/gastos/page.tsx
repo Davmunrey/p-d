@@ -12,6 +12,7 @@ import {
   LARGOS_DE_CAMPO,
   RUTA_ACCESO,
   RUTA_GASTOS,
+  RUTA_PAGOS,
   RUTA_PRESUPUESTO,
 } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
@@ -292,7 +293,12 @@ function Categoria({
               className="scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
             >
               {puedeEditar && editando === gasto.id ? (
-                <Edicion gasto={gasto} categorias={categorias} proveedores={proveedores} />
+                <Edicion
+                  gasto={gasto}
+                  categorias={categorias}
+                  proveedores={proveedores}
+                  euros={euros}
+                />
               ) : (
                 <Fila
                   gasto={gasto}
@@ -349,8 +355,16 @@ function Fila({
           <span className="mt-linea block text-pequeno text-tinta-suave">
             {gasto.proveedor ?? t("panel.presupuesto.gastos.sinProveedor")}
             {/* Pagada lleva su palabra y no sólo un color: un punto verde no lo
-              lee ni un daltónico ni un lector de pantalla. */}
-            {gasto.pagada ? ` · ${t("panel.presupuesto.gastos.pagada")}` : ""}
+              lee ni un daltónico ni un lector de pantalla. Con pagos
+              apuntados lo dicen ellos, con la cifra; sin pagos, la casilla. */}
+            {gasto.conPagos && euros
+              ? ` · ${t("panel.presupuesto.gastos.pagadoDe", {
+                  pagado: euros(gasto.pagado),
+                  total: euros(gasto.importeReal ?? gasto.importeEstimado),
+                })}`
+              : gasto.pagada
+                ? ` · ${t("panel.presupuesto.gastos.pagada")}`
+                : ""}
           </span>
         </div>
 
@@ -416,10 +430,12 @@ function Edicion({
   gasto,
   categorias,
   proveedores,
+  euros,
 }: {
   gasto: Gasto;
   categorias: CategoriaPresupuesto[];
   proveedores: Proveedor[];
+  euros: ((valor: number) => string) | null;
 }) {
   return (
     <>
@@ -475,16 +491,38 @@ function Edicion({
           ))}
         </CampoSeleccion>
 
-        <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno text-pequeno text-tinta transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
-          <input
-            type="checkbox"
-            name="pagada"
-            value="si"
-            defaultChecked={gasto.pagada}
-            className="casilla-marca transicion-color"
-          />
-          {t("panel.presupuesto.gastos.campoPagada")}
-        </label>
+        {/*
+          LA CASILLA SÓLO DONDE CUENTA. Con pagos apuntados, lo pagado lo dicen
+          los pagos —así lo suma la base—, y una casilla marcada encima decía
+          «pagada» mientras el calendario seguía pidiendo el resto. Se dice la
+          cifra y se manda a los pagos, que es donde se cambia.
+        */}
+        {gasto.conPagos ? (
+          <p className="flex min-h-control flex-wrap items-center gap-x-interno gap-y-linea text-pequeno text-tinta-suave">
+            {euros
+              ? t("panel.presupuesto.gastos.pagadaPorPagos", {
+                  pagado: euros(gasto.pagado),
+                  total: euros(gasto.importeReal ?? gasto.importeEstimado),
+                })
+              : t("panel.presupuesto.gastos.pagadaPorPagosSinCifra")}
+            <EnlaceSuave href={RUTA_PAGOS}>
+              {t("panel.presupuesto.gastos.verPagos")}
+            </EnlaceSuave>
+          </p>
+        ) : (
+          <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno text-pequeno text-tinta transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
+            {/* Dice que la casilla iba en el formulario: sin ella, no se toca. */}
+            <input type="hidden" name="con_casilla_pagada" value="si" />
+            <input
+              type="checkbox"
+              name="pagada"
+              value="si"
+              defaultChecked={gasto.pagada}
+              className="casilla-marca transicion-color"
+            />
+            {t("panel.presupuesto.gastos.campoPagada")}
+          </label>
+        )}
 
         <CampoTextoLargo
           etiqueta={t("panel.presupuesto.gastos.campoDescripcion")}

@@ -546,4 +546,74 @@ test.describe("Los gastos del presupuesto", () => {
     );
     expect(quedan, "confirmado, se borra").toHaveLength(0);
   });
+
+  /**
+   * «YA ESTÁ PAGADA» CUENTA COMO PAGADO, Y CON PAGOS MANDAN ELLOS. La casilla
+   * sólo pintaba una palabra: las invitaciones, 310 € pagados de una vez y
+   * marcadas, seguían sumando cero en «Pagado» y la portada las daba por
+   * pagar. Y en un gasto con pagos apuntados decía «pagada» mientras el
+   * calendario seguía pidiendo el resto.
+   */
+  test("la casilla «Ya está pagada» cuenta, y con pagos apuntados mandan ellos", async ({
+    page,
+  }) => {
+    const categoria = await crearCategoria("Pagada");
+    const { sinPagos, conPagos } = await conBase(async (sql) => {
+      const [suelto] = await sql<{ id: string }[]>`
+        insert into public.partidas_presupuesto (categoria_id, concepto, importe_estimado)
+        values (${categoria.id}, ${`${MARCA} Invitaciones`}, 310)
+        returning id
+      `;
+      const [plazos] = await sql<{ id: string }[]>`
+        insert into public.partidas_presupuesto
+          (categoria_id, concepto, importe_estimado, pagada)
+        values (${categoria.id}, ${`${MARCA} Catering a plazos`}, 2000, true)
+        returning id
+      `;
+      await sql`
+        insert into public.pagos (partida_id, importe, fecha_vencimiento, pagado_en)
+        values (${plazos.id}, 500, current_date, current_date)
+      `;
+      return { sinPagos: suelto.id, conPagos: plazos.id };
+    });
+
+    /** Lo pagado de la categoría, como lo suma la base. */
+    const pagadoDeLaCategoria = async () => {
+      const [fila] = await conBase(
+        (sql) => sql<{ pagado: string }[]>`
+          select pagado from public.v_resumen_presupuesto where categoria_id = ${categoria.id}
+        `,
+      );
+      return Number(fila.pagado);
+    };
+
+    // De partida: la casilla de plazos está marcada, pero mandan sus pagos.
+    expect(await pagadoDeLaCategoria(), "con pagos, la casilla no suma").toBe(500);
+
+    await entrar(page);
+    await page.goto(RUTA_GASTOS);
+
+    // CAMINO FELIZ · marcar las invitaciones las suma enteras.
+    const fila = await abrirEdicion(page, sinPagos);
+    await fila.getByLabel(gastos.campoPagada, { exact: true }).check();
+    await fila.getByRole("button", { name: gastos.guardar }).click();
+    await esperarEstado(page, "gasto-editado");
+    expect(await pagadoDeLaCategoria(), "310 de la casilla y 500 de los pagos").toBe(810);
+
+    // CASO DE ERROR · en el gasto con pagos no hay casilla que contradiga al
+    // calendario: lo dice la cifra, y guardar no toca la marca.
+    const conPlazos = await abrirEdicion(page, conPagos);
+    await expect(conPlazos.getByLabel(gastos.campoPagada, { exact: true })).toHaveCount(0);
+    await expect(conPlazos).toContainText(gastos.pagadaPorPagos.split(":")[0]!);
+    await conPlazos.getByRole("button", { name: gastos.guardar }).click();
+    await esperarEstado(page, "gasto-editado");
+
+    const [marca] = await conBase(
+      (sql) => sql<{ pagada: boolean }[]>`
+        select pagada from public.partidas_presupuesto where id = ${conPagos}
+      `,
+    );
+    expect(marca.pagada, "guardar sin casilla no la cambia").toBe(true);
+    expect(await pagadoDeLaCategoria()).toBe(810);
+  });
 });

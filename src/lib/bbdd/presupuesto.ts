@@ -193,7 +193,12 @@ export interface Gasto {
   importeEstimado: number;
   /** `null` mientras no se ha cerrado. Distinto de un acuerdo por cero euros. */
   importeReal: number | null;
+  /** La casilla «Ya está pagada». Sólo cuenta si el gasto no tiene pagos apuntados. */
   pagada: boolean;
+  /** Si tiene pagos apuntados: entonces lo pagado lo dicen ellos, no la casilla. */
+  conPagos: boolean;
+  /** Lo que suman sus pagos ya hechos. */
+  pagado: number;
 }
 
 /**
@@ -221,6 +226,7 @@ interface FilaGasto {
   pagada: boolean;
   categorias_presupuesto: { nombre: string } | null;
   proveedores: { nombre: string } | null;
+  pagos: { importe: string | number; pagado_en: string | null }[] | null;
 }
 
 /**
@@ -240,7 +246,7 @@ export async function obtenerGastos(): Promise<Gasto[]> {
   const { data, error } = await supabase
     .from("partidas_presupuesto")
     .select(
-      "id, categoria_id, proveedor_id, concepto, descripcion, importe_estimado, importe_real, pagada, categorias_presupuesto(nombre), proveedores(nombre)",
+      "id, categoria_id, proveedor_id, concepto, descripcion, importe_estimado, importe_real, pagada, categorias_presupuesto(nombre), proveedores(nombre), pagos(importe, pagado_en)",
     )
     .order("concepto");
 
@@ -257,6 +263,18 @@ export async function obtenerGastos(): Promise<Gasto[]> {
     importeEstimado: aImporte(fila.importe_estimado),
     importeReal: aImporteOpcional(fila.importe_real),
     pagada: fila.pagada,
+    /*
+      LOS PAGOS VIENEN EN LA MISMA CONSULTA, embebidos: la casilla «Ya está
+      pagada» sólo cuenta en un gasto sin pagos —lo dice `v_resumen_presupuesto`
+      desde 20261006120000—, y la ficha tiene que saber cuál de los dos manda.
+    */
+    conPagos: (fila.pagos ?? []).length > 0,
+    pagado:
+      Math.round(
+        (fila.pagos ?? [])
+          .filter((pago) => pago.pagado_en !== null)
+          .reduce((suma, pago) => suma + aImporte(pago.importe), 0) * 100,
+      ) / 100,
   }));
 }
 

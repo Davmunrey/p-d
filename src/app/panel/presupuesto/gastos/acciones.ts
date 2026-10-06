@@ -214,8 +214,11 @@ export async function editarGasto(datos: FormData): Promise<void> {
       importe_estimado: cantidades.estimado,
       importe_real: cantidades.real,
       // La casilla no viaja cuando está sin marcar: en HTML un `checkbox`
-      // apagado no manda nada. Por eso se lee la presencia, no el valor.
-      pagada: datos.get("pagada") !== null,
+      // apagado no manda nada. Por eso se lee la presencia, no el valor. Y
+      // sólo si la ficha la ofrecía: con pagos no sale, y no se toca.
+      ...(datos.get("con_casilla_pagada") !== null
+        ? { pagada: datos.get("pagada") !== null }
+        : {}),
     })
     .eq("id", id)
     .select("id");

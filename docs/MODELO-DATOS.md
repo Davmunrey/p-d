@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**58**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**59**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -546,6 +546,13 @@ Las vistas **materializadas** están prohibidas sobre estas tablas: no admiten
 | `v_servicios_importe`      | colaboradores | Importe real, resolviendo el precio por invitado     |
 | `v_resumen_presupuesto`    | colaboradores | Previsto vs estimado vs real vs pagado, y desviación |
 | `v_proximos_pagos`         | colaboradores | Qué hay que pagar y cuándo                           |
+
+En `v_resumen_presupuesto`, **`pagado` es lo que suman los pagos hechos de cada
+partida; una partida sin ningún pago apuntado y marcada como `pagada` cuenta
+entera** —su acordado o, mientras no lo haya, su estimado—, que es lo que el
+comentario de la columna prometía desde el principio. Hasta
+`20261006120000_pagada_cuenta_como_pagado` la casilla sólo pintaba una palabra
+y los 310 € de las invitaciones, pagados de una vez, seguían «por pagar».
 
 `v_servicios_importe` existe para que la fórmula del coste por invitado viva en
 la base de datos y no replicada en TypeScript: si mañana se decide contar a los
