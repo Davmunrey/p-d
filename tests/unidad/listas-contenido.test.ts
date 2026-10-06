@@ -330,8 +330,12 @@ describe("a qué sección de la web va cada lista", () => {
       const origen = ORIGEN_DE_LA_SECCION[seccionDeLista(clave, variante)];
       if (origen.clase === "sin-hacer" || origen.donde.pantalla !== "contenido") continue;
 
+      // Y a su pestaña: la víspera abría la del día, y lo que se escribía
+      // allí iba al programa de la boda.
+      const pestana =
+        variante && variante !== variantePorDefecto(clave) ? `?variante=${variante}` : "";
       expect(origen.donde.ruta, `${clave} → ${variante ?? "sin variante"}`).toBe(
-        rutaDeLista(clave),
+        `${rutaDeLista(clave)}${pestana}`,
       );
     }
   });
@@ -351,6 +355,9 @@ describe("a qué sección de la web va cada lista", () => {
     expect(origen.campo).toBe("latitud_ceremonia");
     expect(origen.donde.pantalla).toBe("ajustes");
     expect(LISTAS_DE_CONTENIDO.transporte.tabla).toBe("rutas_llegada");
+    // Y las rutas tienen su propio enlace aparte: sin él, no había forma de
+    // llegar a su lista navegando.
+    expect(origen.ademas?.ruta).toBe(rutaDeLista("transporte"));
   });
 });
 

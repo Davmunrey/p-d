@@ -6,7 +6,7 @@ import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { RUTA_ACCESO } from "@/config/constants";
 import { ORIGEN_DE_LA_SECCION, type Donde } from "@/config/contenido-landing";
-import { type Seccion } from "@/config/secciones";
+import { esAncla, type Seccion } from "@/config/secciones";
 import { obtenerEstadoDeLasSecciones, type EstadoDeSeccion } from "@/lib/bbdd/contenido";
 import { t, type ClaveCopy } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
@@ -64,6 +64,30 @@ export default async function PaginaContenido({ searchParams }: Parametros) {
   const secciones = await obtenerEstadoDeLasSecciones();
   const puedeEditar = acceso.rol !== "lector";
 
+  /*
+    ENCENDER NO ES QUE SE VEA. «Ya se ve en la web» salía al encender la
+    galería vacía o una sección sin hacer, con la fila diciendo debajo que no
+    aparece. Si la que se acaba de encender no tiene con qué pintarse, el acuse
+    lo dice.
+  */
+  const encendida = secciones?.find((fila) => fila.seccion === consulta.seccion);
+  const aviso =
+    estado === "mostrada" && encendida && encendida.llena === false
+      ? t("panel.contenido.avisoMostradaSinContenido", {
+          seccion: t(`navegacion.secciones.${encendida.seccion}`),
+        })
+      : estado
+        ? AVISOS[estado]
+        : "";
+
+  /*
+    SÓLO SE ORDENAN LAS QUE VAN EN LA PÁGINA. «Reservad la fecha» es una página
+    aparte: su sitio en la lista no cambia nada en la web, y sus flechas decían
+    «Orden cambiado» sin mover nada. La primera y la última se cuentan entre las
+    que sí se pintan una detrás de otra.
+  */
+  const ordenables = (secciones ?? []).filter((fila) => esAncla(fila.seccion));
+
   return (
     <div className="grid gap-bloque">
       <header className="max-w-texto">
@@ -80,7 +104,7 @@ export default async function PaginaContenido({ searchParams }: Parametros) {
               : "bg-exito-fondo text-exito-tinta"
           }`}
         >
-          {AVISOS[estado]}
+          {aviso}
         </p>
       ) : null}
 
@@ -104,17 +128,27 @@ export default async function PaginaContenido({ searchParams }: Parametros) {
         <h2 id={ID_LISTA} className="sr-only">
           {t("panel.contenido.listaTitulo")}
         </h2>
-        <ol aria-labelledby={ID_LISTA} className="grid gap-interno">
-          {secciones.map((fila, indice) => (
-            <Fila
-              key={fila.seccion}
-              fila={fila}
-              puedeEditar={puedeEditar}
-              esLaPrimera={indice === 0}
-              esLaUltima={indice === secciones.length - 1}
-            />
-          ))}
-        </ol>
+        {secciones === null ? (
+          <p
+            role="alert"
+            className="rounded-campo bg-error-fondo p-interno text-pequeno text-error-tinta"
+          >
+            {t("panel.contenido.errorLeer")}
+          </p>
+        ) : (
+          <ol aria-labelledby={ID_LISTA} className="grid gap-interno">
+            {secciones.map((fila) => (
+              <Fila
+                key={fila.seccion}
+                fila={fila}
+                puedeEditar={puedeEditar}
+                seOrdena={esAncla(fila.seccion)}
+                esLaPrimera={ordenables[0]?.seccion === fila.seccion}
+                esLaUltima={ordenables.at(-1)?.seccion === fila.seccion}
+              />
+            ))}
+          </ol>
+        )}
       </section>
     </div>
   );
@@ -123,11 +157,14 @@ export default async function PaginaContenido({ searchParams }: Parametros) {
 function Fila({
   fila,
   puedeEditar,
+  seOrdena,
   esLaPrimera,
   esLaUltima,
 }: {
   fila: EstadoDeSeccion;
   puedeEditar: boolean;
+  /** Va en la página, una detrás de otra: tiene sentido subirla o bajarla. */
+  seOrdena: boolean;
   esLaPrimera: boolean;
   esLaUltima: boolean;
 }) {
@@ -143,7 +180,7 @@ function Fila({
 
   return (
     <li
-      className={`grid gap-interno rounded-tarjeta border p-interno sm:grid-cols-[1fr_auto] sm:items-center ${
+      className={`grid gap-interno rounded-tarjeta border p-interno lg:grid-cols-[1fr_auto] lg:items-center ${
         saleEnLaWeb ? "border-borde" : "border-borde-fuerte bg-superficie-tenue"
       }`}
     >
@@ -162,7 +199,7 @@ function Fila({
       </div>
 
       {puedeEditar ? (
-        <div className="flex flex-wrap gap-interno-compacto sm:justify-end">
+        <div className="flex flex-wrap gap-interno-compacto lg:justify-end">
           <form action={alternarVisible}>
             <input type="hidden" name="seccion" value={fila.seccion} />
             {/* Viaja el valor que se quiere dejar puesto, no el actual. */}
@@ -179,11 +216,20 @@ function Fila({
             lee como «esto está roto», y la función de la base ya devuelve sin
             hacer nada si alguien lo manda igualmente.
           */}
-          {!esLaPrimera ? (
-            <Mover seccion={fila.seccion} nombre={nombre} direccion="subir" />
-          ) : null}
-          {!esLaUltima ? (
-            <Mover seccion={fila.seccion} nombre={nombre} direccion="bajar" />
+          {/*
+            Las dos flechas, juntas en su propio grupo: sueltas en la misma fila
+            que «Ocultar», en el móvil la ↓ caía sola a la línea de abajo, en
+            diagonal con su pareja.
+          */}
+          {seOrdena && !(esLaPrimera && esLaUltima) ? (
+            <div className="flex gap-interno-compacto">
+              {!esLaPrimera ? (
+                <Mover seccion={fila.seccion} nombre={nombre} direccion="subir" />
+              ) : null}
+              {!esLaUltima ? (
+                <Mover seccion={fila.seccion} nombre={nombre} direccion="bajar" />
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}
@@ -322,14 +368,21 @@ function DondeSeLlena({ seccion }: { seccion: Seccion }) {
   };
 
   const rotulo = t(ROTULOS[donde.pantalla]);
+  const ademas = origen.clase === "campo" ? origen.ademas : undefined;
 
   return (
-    <Link
-      href={donde.ruta}
-      prefetch={false}
-      className="inline-flex min-h-control-compacto items-center justify-self-start text-etiqueta uppercase tracking-etiqueta text-tinta-suave underline decoration-borde-fuerte underline-offset-4 transicion-color hover:text-tinta"
-    >
-      {t("panel.contenido.seLlenaEn", { donde: rotulo })}
-    </Link>
+    <div className="flex flex-wrap gap-x-elemento">
+      <Link href={donde.ruta} prefetch={false} className={CLASES_DONDE}>
+        {t("panel.contenido.seLlenaEn", { donde: rotulo })}
+      </Link>
+      {ademas ? (
+        <Link href={ademas.ruta} prefetch={false} className={CLASES_DONDE}>
+          {t(ademas.rotulo)}
+        </Link>
+      ) : null}
+    </div>
   );
 }
+
+const CLASES_DONDE =
+  "inline-flex min-h-control-compacto items-center justify-self-start text-etiqueta uppercase tracking-etiqueta text-tinta-suave underline decoration-borde-fuerte underline-offset-4 transicion-color hover:text-tinta";

@@ -626,4 +626,93 @@ test.describe("Las listas de contenido de la web", () => {
       ),
     ).toHaveCount(0);
   });
+
+  /** Un consejo de prueba escrito directamente en la base, publicado y al final. */
+  function crearConsejo(titulo: string, texto: string): Promise<string> {
+    return conBase(async (sql) => {
+      const [fila] = await sql<{ id: string }[]>`
+        insert into public.consejos_vestimenta (titulo, texto, orden)
+        values (${titulo}, ${texto},
+                (select coalesce(max(orden), 0) + 1 from public.consejos_vestimenta))
+        returning id
+      `;
+      return fila.id;
+    });
+  }
+
+  /**
+   * CASO DE ERROR · editar con un obligatorio en blanco. El error salía bajo el
+   * campo VACÍO del formulario de alta, y la ficha editada volvía cerrada con
+   * lo cambiado perdido. Tiene que volver a su ficha, abierta y a la vista.
+   */
+  test("un error al editar se dice en su ficha, abierta, y no en el alta", async ({ page }) => {
+    const titulo = `${MARCA} Editar en blanco`;
+    const texto = `${MARCA} Lo que ya estaba escrito.`;
+    const id = await crearConsejo(titulo, texto);
+
+    await entrar(page);
+    await page.goto(RUTA_DRESSCODE);
+
+    const ficha = fichaDe(page, DRESSCODE.titulo, titulo);
+    await ficha.locator("summary").click();
+    await ficha.getByLabel(DRESSCODE.texto).fill("   ");
+    await botonDe(ficha, comun.guardar, titulo).click();
+
+    await esperarEstado(page, "falta", RUTA_DRESSCODE);
+
+    const error = comun.errorFalta.replace("{campo}", DRESSCODE.texto);
+    await expect(ficha.locator("details")).toHaveAttribute("open", "");
+    await expect(ficha.getByText(error)).toBeVisible();
+    await expect(formularioDeAlta(page).getByText(error)).toHaveCount(0);
+
+    const [guardado] = await conBase(
+      (sql) => sql<{ texto: string }[]>`
+        select texto from public.consejos_vestimenta where id = ${id}
+      `,
+    );
+    expect(guardado.texto, "un error de validación no escribe nada").toBe(texto);
+  });
+
+  test("en el móvil, pedir borrar la última ficha deja la pregunta a la vista", async ({
+    page,
+  }) => {
+    const titulo = `${MARCA} La de abajo`;
+    await crearConsejo(titulo, `${MARCA} Para borrar desde el móvil.`);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await entrar(page);
+    await page.goto(RUTA_DRESSCODE);
+
+    await botonDe(fichaDe(page, DRESSCODE.titulo, titulo), comun.borrar, titulo).click();
+    await esperarEstado(page, "confirmar-borrado", RUTA_DRESSCODE);
+
+    // La página vuelve a cargarse, y tiene que llegar a la ficha, no arriba.
+    await expect(page.getByRole("button", { name: comun.borrarMejorRetirar })).toBeInViewport();
+  });
+
+  test("con la sección apagada, añadir no dice que ya está en la web", async ({ page }) => {
+    const titulo = `${MARCA} Con la sección apagada`;
+    await encenderSeccion("dresscode", false);
+    try {
+      await entrar(page);
+      await page.goto(RUTA_DRESSCODE);
+
+      const alta = formularioDeAlta(page);
+      await alta.getByLabel(DRESSCODE.tituloConsejo).fill(titulo);
+      await alta.getByLabel(DRESSCODE.texto).fill(`${MARCA} Se guarda, pero no se ve.`);
+      await alta.getByRole("button", { name: comun.anadir, exact: true }).click();
+      await esperarEstado(page, "creada", RUTA_DRESSCODE);
+
+      // Dos `status` en pantalla: el acuse y el aviso de la sección apagada.
+      await expect(
+        page.getByRole("status").filter({ hasText: comun.avisoCreadaApagada }),
+      ).toBeVisible();
+      await expect(page.getByText(comun.avisoCreada, { exact: true })).toHaveCount(0);
+      const ficha = fichaDe(page, DRESSCODE.titulo, titulo);
+      await expect(ficha).toContainText(comun.publicada);
+      await expect(ficha.getByText(comun.enLaWeb, { exact: true })).toHaveCount(0);
+    } finally {
+      await encenderSeccion("dresscode", true);
+    }
+  });
 });

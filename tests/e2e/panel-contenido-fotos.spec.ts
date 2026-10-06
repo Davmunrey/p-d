@@ -223,6 +223,11 @@ test.describe("Las listas de contenido con foto", () => {
     expect(hotel, "el hotel tiene que estar en la base").toBeTruthy();
     expect(hotel.medio_id, "y con la foto que se eligió, no con otra").toBe(publicada);
 
+    // En la lista, la ficha dice qué foto lleva por su texto, no por su uuid.
+    const ficha = fichaDe(page, HOTELES.titulo, nombre);
+    await expect(ficha).toContainText(comun.resumenFoto.replace("{foto}", PUBLICADA));
+    await expect(ficha).not.toContainText(publicada);
+
     await page.goto("/");
     const tarjeta = page
       .locator("#alojamiento li")
@@ -382,5 +387,18 @@ test.describe("Las listas de contenido con foto", () => {
       `,
     );
     expect(guardado.url_reserva, "el enlace llega entero a la base").toBe(enlace);
+
+    /*
+      Y NO ENSANCHA LA PANTALLA. Trescientos caracteres sin un espacio en el
+      resumen de la ficha estiraban la lista entera en el móvil, y con el
+      `overflow-x: clip` de la página no salía barra: se cortaba todo por la
+      derecha, formulario de alta incluido.
+    */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(RUTA_HOTELES);
+    const lista = page.getByRole("list", { name: HOTELES.titulo });
+    await expect(lista).toBeVisible();
+    const ancho = await lista.evaluate((nodo) => nodo.getBoundingClientRect().width);
+    expect(ancho, "la lista se sale de la pantalla").toBeLessThanOrEqual(390);
   });
 });

@@ -33,8 +33,11 @@ import type { EstadoContenido } from "./estado";
  * entradas en el historial y el botón de atrás va felicitando por cosas que ya
  * pasaron.
  */
-function volver(estado: EstadoContenido): never {
-  redirect(`${RUTA_CONTENIDO}?estado=${estado}`, RedirectType.replace);
+function volver(estado: EstadoContenido, seccion?: string): never {
+  // La sección viaja con el acuse para que la pantalla diga de cuál habla y,
+  // al encender una vacía, que no va a salir todavía.
+  const deCual = seccion ? `&seccion=${encodeURIComponent(seccion)}` : "";
+  redirect(`${RUTA_CONTENIDO}?estado=${estado}${deCual}`, RedirectType.replace);
 }
 
 async function cliente() {
@@ -130,7 +133,7 @@ export async function alternarVisible(datos: FormData): Promise<void> {
   }
 
   refrescarLaWeb();
-  volver(visible ? "mostrada" : "ocultada");
+  volver(visible ? "mostrada" : "ocultada", seccion);
 }
 
 /**

@@ -60,7 +60,18 @@ export type Condicion = { columna: string; igual: string } | { columna: string; 
 
 export type Origen =
   | { clase: "lista"; tabla: string; filtro?: readonly Condicion[]; donde: Donde }
-  | { clase: "campo"; tabla: string; campo: string; donde: Donde }
+  | {
+      clase: "campo";
+      tabla: string;
+      campo: string;
+      donde: Donde;
+      /**
+       * Otra pantalla donde se escribe parte de la sección, aunque no sea lo
+       * que decide si sale. Con su propio rótulo: dos enlaces que dijeran los
+       * dos «Se llena en…» no dirían cuál es cuál.
+       */
+      ademas?: { ruta: string; rotulo: ClaveCopy };
+    }
   | { clase: "sola"; donde: Donde }
   | { clase: "sin-hacer" };
 
@@ -74,9 +85,9 @@ const EN_MEDIOS: Donde = { pantalla: "medios", ruta: RUTA_MEDIOS };
  * `rutaDeLista()` —definida más abajo— hace lo mismo para la pantalla. Un día
  * que cambie el prefijo, cambia en un sitio.
  */
-const enContenido = (clave: string): Donde => ({
+const enContenido = (clave: string, variante?: string): Donde => ({
   pantalla: "contenido",
-  ruta: `${RUTA_CONTENIDO}/${clave}`,
+  ruta: `${RUTA_CONTENIDO}/${clave}${variante ? `?variante=${variante}` : ""}`,
 });
 
 /**
@@ -137,8 +148,9 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
     clase: "lista",
     tabla: "hitos_programa",
     filtro: [{ columna: "momento", igual: "preboda" }],
-    // La misma pantalla que el programa, en su otra pestaña.
-    donde: enContenido("programa"),
+    // La misma pantalla que el programa, abierta ya en su otra pestaña: sin la
+    // variante, «Se llena en Contenido» llevaba a la del día de la boda.
+    donde: enContenido("programa", "preboda"),
   },
   programa: {
     clase: "lista",
@@ -167,6 +179,15 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
       aparecer nada, así que el enlace lleva a lo que de verdad falta.
     */
     donde: EN_AJUSTES,
+    /*
+      Y LAS RUTAS, APARTE. Sin este segundo enlace, la lista de rutas y la nota
+      del autobús existían pero ninguna pantalla del panel llevaba a ellas: sólo
+      se llegaba tecleando la dirección.
+    */
+    ademas: {
+      ruta: `${RUTA_CONTENIDO}/transporte`,
+      rotulo: "panel.contenido.rutasEnContenido",
+    },
   },
 
   alojamiento: { clase: "lista", tabla: "alojamientos", donde: enContenido("alojamientos") },

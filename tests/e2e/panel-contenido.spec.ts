@@ -2,8 +2,14 @@ import { expect, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_ACCESO, RUTA_CONTENIDO, RUTA_PANEL } from "../../src/config/constants";
-import { SECCIONES } from "../../src/config/secciones";
+import {
+  RUTA_ACCESO,
+  RUTA_AJUSTES,
+  RUTA_CONTENIDO,
+  RUTA_PANEL,
+} from "../../src/config/constants";
+import { CLAVES_LISTA, rutaDeLista } from "../../src/config/contenido-landing";
+import { SECCIONES, esAncla, type Seccion } from "../../src/config/secciones";
 import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles/rastro";
 
 /**
@@ -261,7 +267,9 @@ test.describe("El contenido de la web", () => {
     await entrar(page);
     await page.goto(RUTA_CONTENIDO);
 
-    const filas = await leerSecciones();
+    // Entre las que van en la página: las que son una página aparte no se
+    // ordenan, y tienen su propio test.
+    const filas = (await leerSecciones()).filter((fila) => esAncla(fila.seccion as Seccion));
     const primera = fichaDe(page, nombreDe(filas[0].seccion));
     const ultima = fichaDe(page, nombreDe(filas[filas.length - 1].seccion));
 
@@ -307,5 +315,146 @@ test.describe("El contenido de la web", () => {
     await expect(fichaDe(page, copy.navegacion.secciones.ubicaciones)).toContainText(
       copy.panel.contenido.sinHacer,
     );
+  });
+
+  /**
+   * UNA LISTA SIN ENLACE ES UNA LISTA QUE NO EXISTE. La de «Cómo llegar» —las
+   * rutas y la nota del autobús— estuvo hecha y cableada sin que ninguna
+   * pantalla llevara a ella: la fila de su sección apunta a Ajustes, porque
+   * son las coordenadas las que deciden si sale, y sólo se llegaba tecleando
+   * la dirección. Este barrido es el que lo habría cantado.
+   */
+  test("cada lista de contenido tiene un enlace que lleva a ella", async ({ page }) => {
+    await entrar(page);
+    await page.goto(RUTA_CONTENIDO);
+    await expect(laLista(page).getByRole("listitem").first()).toBeVisible();
+
+    const destinos = await laLista(page)
+      .getByRole("link")
+      .evaluateAll((enlaces) =>
+        enlaces.map((enlace) => new URL((enlace as HTMLAnchorElement).href).pathname),
+      );
+    for (const clave of CLAVES_LISTA) {
+      expect(destinos, `ningún enlace lleva a la lista «${clave}»`).toContain(
+        rutaDeLista(clave),
+      );
+    }
+  });
+
+  test("«Cómo llegar» lleva a Ajustes y, aparte, a sus rutas", async ({ page }) => {
+    await entrar(page);
+    await page.goto(RUTA_CONTENIDO);
+
+    const ficha = fichaDe(page, copy.navegacion.secciones.transporte);
+    await expect(
+      ficha.getByRole("link", {
+        name: copy.panel.contenido.seLlenaEn.replace(
+          "{donde}",
+          copy.panel.contenido.dondeAjustes,
+        ),
+      }),
+    ).toHaveAttribute("href", RUTA_AJUSTES);
+
+    await ficha.getByRole("link", { name: copy.panel.contenido.rutasEnContenido }).click();
+    await expect(page).toHaveURL(new RegExp(`${rutaDeLista("transporte")}$`));
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: copy.panel.contenido.listas.transporte.titulo,
+      }),
+    ).toBeVisible();
+  });
+
+  /**
+   * CASO DE ERROR · la víspera y el día son la misma pantalla en dos pestañas.
+   * El enlace de la víspera abría la del día, y quien entraba a escribir la
+   * preboda lo hacía, sin darse cuenta, en el programa de la boda.
+   */
+  test("la víspera se llena en su pestaña, no en la del día", async ({ page }) => {
+    await entrar(page);
+    await page.goto(RUTA_CONTENIDO);
+
+    await fichaDe(page, copy.navegacion.secciones.preboda)
+      .getByRole("link", {
+        name: copy.panel.contenido.seLlenaEn.replace(
+          "{donde}",
+          copy.panel.contenido.dondeContenido,
+        ),
+      })
+      .click();
+
+    const pestanas = page.getByRole("navigation", {
+      name: copy.panel.contenido.listas.programa.titulo,
+    });
+    await expect(
+      pestanas.getByRole("link", { name: copy.panel.contenido.listas.programa.preboda }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      pestanas.getByRole("link", { name: copy.panel.contenido.listas.programa.boda }),
+    ).not.toHaveAttribute("aria-current", "page");
+  });
+
+  /**
+   * «Reservad la fecha» es una página aparte: su sitio en la lista no cambia
+   * nada en la web. Sus flechas decían «Orden cambiado» sin mover nada.
+   */
+  test("una sección que es una página aparte no ofrece flechas", async ({ page }) => {
+    await entrar(page);
+    await page.goto(RUTA_CONTENIDO);
+
+    const aparte = SECCIONES.filter((seccion) => !esAncla(seccion));
+    expect(aparte.length).toBeGreaterThan(0);
+    for (const seccion of aparte) {
+      const ficha = fichaDe(page, nombreDe(seccion));
+      await expect(ficha).toBeVisible();
+      await expect(
+        ficha.getByRole("button", { name: copy.panel.contenido.subirOrden }),
+      ).toHaveCount(0);
+      await expect(
+        ficha.getByRole("button", { name: copy.panel.contenido.bajarOrden }),
+      ).toHaveCount(0);
+      // Y se sigue pudiendo encender y apagar.
+      await expect(
+        ficha.getByRole("button", {
+          name: new RegExp(`${copy.panel.contenido.ocultar}|${copy.panel.contenido.mostrar}`),
+        }),
+      ).toHaveCount(1);
+    }
+  });
+
+  /**
+   * CASO DE ERROR · encender una sección que no tiene con qué pintarse no
+   * puede acabar en «Ya se ve en la web». `ubicaciones` está encendida de
+   * fábrica y no existe (BODA-26): se apaga y se enciende, y se deja como
+   * estaba pase lo que pase.
+   */
+  test("encender una sección que no puede salir no dice que ya se ve", async ({ page }) => {
+    const [{ visible: antes }] = await conBase(
+      (sql) => sql<{ visible: boolean }[]>`
+        select visible from public.secciones_landing where seccion = 'ubicaciones'
+      `,
+    );
+    try {
+      await conBase(
+        (sql) =>
+          sql`update public.secciones_landing set visible = false where seccion = 'ubicaciones'`,
+      );
+      await entrar(page);
+      await page.goto(RUTA_CONTENIDO);
+
+      const nombre = copy.navegacion.secciones.ubicaciones;
+      await fichaDe(page, nombre)
+        .getByRole("button", { name: new RegExp(copy.panel.contenido.mostrar) })
+        .click();
+
+      await expect(page.getByRole("status")).toHaveText(
+        copy.panel.contenido.avisoMostradaSinContenido.replace("{seccion}", nombre),
+      );
+    } finally {
+      await conBase(
+        (sql) =>
+          sql`update public.secciones_landing set visible = ${antes} where seccion = 'ubicaciones'`,
+      );
+    }
   });
 });

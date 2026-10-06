@@ -53,3 +53,12 @@ export function esEstadoLista(valor: string): valor is EstadoLista {
     ] as string[]
   ).includes(valor);
 }
+
+/**
+ * El `id` del elemento de una ficha, que es también el ancla a la que vuelven
+ * sus acciones. Uno para las dos cosas: si se llamaran distinto, el salto se
+ * quedaría en el aire sin que nada fallase.
+ */
+export function anclaDeFicha(id: string): string {
+  return `ficha-${id}`;
+}

@@ -53,7 +53,7 @@ interface FilaSeccion {
   orden: number;
 }
 
-export async function obtenerEstadoDeLasSecciones(): Promise<EstadoDeSeccion[]> {
+export async function obtenerEstadoDeLasSecciones(): Promise<EstadoDeSeccion[] | null> {
   const supabase = await clienteServidor();
 
   const { data, error } = await supabase
@@ -61,9 +61,14 @@ export async function obtenerEstadoDeLasSecciones(): Promise<EstadoDeSeccion[]> 
     .select("seccion, visible, orden")
     .order("orden");
 
+  /*
+    `null` Y NO UNA LISTA VACÍA. Con `[]` la pantalla se quedaba con el título y
+    una lista en blanco, sin forma de distinguir «no hay secciones» de «no se
+    han podido leer». La pantalla lo dice.
+  */
   if (error) {
     console.error("No se pudieron leer las secciones de la landing:", error.message);
-    return [];
+    return null;
   }
 
   const filas = (data ?? []) as FilaSeccion[];

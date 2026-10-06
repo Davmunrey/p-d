@@ -35,7 +35,7 @@ import {
   moverFicha,
   pedirBorrado,
 } from "./acciones";
-import { ESTADOS_DE_ERROR, esEstadoLista, type EstadoLista } from "./estado";
+import { ESTADOS_DE_ERROR, anclaDeFicha, esEstadoLista, type EstadoLista } from "./estado";
 
 /**
  * BODA-129 · UNA LISTA DE CONTENIDO DE LA LANDING
@@ -76,6 +76,16 @@ const AVISOS: Record<EstadoLista, string> = {
   "no-encontrada": t("panel.contenido.listas.comun.errorNoEncontrada"),
   "sin-permiso": t("panel.contenido.listas.comun.errorSinPermiso"),
   error: t("panel.contenido.listas.comun.errorGuardar"),
+};
+
+/**
+ * CON LA SECCIÓN APAGADA, «YA EN LA WEB» ES MENTIRA. Estos dos acuses decían
+ * que lo añadido se veía justo encima del aviso de que la sección está oculta;
+ * así dicen lo que de verdad ha pasado.
+ */
+const AVISOS_CON_LA_SECCION_APAGADA: Partial<Record<EstadoLista, string>> = {
+  creada: t("panel.contenido.listas.comun.avisoCreadaApagada"),
+  publicada: t("panel.contenido.listas.comun.avisoPublicadaApagada"),
 };
 
 interface Parametros {
@@ -132,6 +142,10 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
   const puedeEditar = acceso.rol !== "lector";
   const nombreSeccion = t(`navegacion.secciones.${seccion}`);
   const publicadas = filas.filter((fila) => fila.publicado).length;
+  const aviso = estado
+    ? ((visible === false ? AVISOS_CON_LA_SECCION_APAGADA[estado] : undefined) ??
+      AVISOS[estado])
+    : "";
 
   return (
     <div className="grid gap-bloque">
@@ -153,7 +167,7 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
         <Conmutador clave={clave} lista={lista} variante={variante} />
       ) : null}
 
-      {estado && AVISOS[estado] ? (
+      {estado && aviso ? (
         <p
           role={ESTADOS_DE_ERROR.includes(estado) ? "alert" : "status"}
           className={`rounded-campo p-interno text-pequeno ${
@@ -162,7 +176,7 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
               : "bg-exito-fondo text-exito-tinta"
           }`}
         >
-          {AVISOS[estado]}
+          {aviso}
         </p>
       ) : null}
 
@@ -219,10 +233,12 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
         ) : (
           <>
             <Etiqueta className="mb-elemento block">
-              {t("panel.contenido.listas.comun.cuantas", {
-                cuantas: publicadas,
-                total: filas.length,
-              })}
+              {t(
+                visible === false
+                  ? "panel.contenido.listas.comun.cuantasApagada"
+                  : "panel.contenido.listas.comun.cuantas",
+                { cuantas: publicadas, total: filas.length },
+              )}
             </Etiqueta>
 
             {/* `ol` porque el orden ES el dato: es el que ve un invitado. */}
@@ -240,6 +256,7 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
                   estado={estado}
                   campoConFallo={campoConFallo}
                   senalada={fichaSenalada === fila.id}
+                  seccionApagada={visible === false}
                   fotosPorCampo={fotosPorCampo}
                   urlBase={urlBase}
                 />
@@ -606,6 +623,7 @@ function Ficha({
   estado,
   campoConFallo,
   senalada,
+  seccionApagada,
   fotosPorCampo,
   urlBase,
 }: {
@@ -619,6 +637,8 @@ function Ficha({
   estado: EstadoLista | null;
   campoConFallo: string;
   senalada: boolean;
+  /** Publicada no es «en la web» si la sección entera está oculta. */
+  seccionApagada: boolean;
   fotosPorCampo: FotosPorCampo;
   urlBase: string | undefined;
 }) {
@@ -639,7 +659,8 @@ function Ficha({
   const nombre = fila.valores[lista.columnaNombre] || titulo;
 
   const confirmando = senalada && estado === "confirmar-borrado";
-  const conFallo = senalada && (estado === "falta" || estado === "largo");
+  const conFallo =
+    senalada && (estado === "falta" || estado === "largo" || estado === "enlace");
 
   const ocultos = (
     <>
@@ -651,7 +672,8 @@ function Ficha({
 
   return (
     <li
-      className={`grid gap-interno rounded-tarjeta border p-interno ${
+      id={anclaDeFicha(fila.id)}
+      className={`grid min-w-0 scroll-mt-elemento gap-interno rounded-tarjeta border p-interno ${
         fila.publicado ? "border-borde" : "border-borde-fuerte bg-superficie-tenue"
       }`}
     >
@@ -659,19 +681,35 @@ function Ficha({
         <Titulo3 como="h3">{titulo}</Titulo3>
         <EtiquetaEstado variante={fila.publicado ? "marca" : "contorno"} tamano="versalita">
           {fila.publicado
-            ? t("panel.contenido.listas.comun.enLaWeb")
+            ? t(
+                seccionApagada
+                  ? "panel.contenido.listas.comun.publicada"
+                  : "panel.contenido.listas.comun.enLaWeb",
+              )
             : t("panel.contenido.listas.comun.retirada")}
         </EtiquetaEstado>
       </div>
 
-      {/* El resto de campos, para reconocer la ficha sin abrirla. */}
-      {lista.campos.slice(1).map((campo) =>
-        fila.valores[campo.columna] ? (
-          <Cuerpo key={campo.columna} className="text-pequeno text-tinta-suave text-pretty">
-            {fila.valores[campo.columna]}
+      {/*
+        El resto de campos, para reconocer la ficha sin abrirla. Con
+        `wrap-anywhere` porque un enlace de reserva con su código de grupo son
+        trescientos caracteres sin un espacio, y sin poder partirse ensanchaba
+        la pantalla entera en el móvil.
+      */}
+      {lista.campos.slice(1).map((campo) => {
+        const valor = fila.valores[campo.columna];
+        if (!valor) return null;
+        return (
+          <Cuerpo
+            key={campo.columna}
+            className="text-pequeno text-tinta-suave text-pretty wrap-anywhere"
+          >
+            {campo.clase === "foto"
+              ? fotoDelResumen(valor, fotosPorCampo[campo.columna] ?? [])
+              : valor}
           </Cuerpo>
-        ) : null,
-      )}
+        );
+      })}
 
       {puedeEditar ? (
         <>
@@ -682,7 +720,12 @@ function Ficha({
             haya que acordarse de cuál de las dieciocho se estaba editando.
           */}
           <details open={conFallo} className="border-t border-borde pt-interno">
-            <summary className="inline-flex min-h-control-compacto cursor-pointer items-center text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta">
+            {/*
+              Subrayado y en minúscula, como «Corregir datos» en invitados o el
+              guion del día: en versalita gris era igual que los rótulos de los
+              campos que tiene debajo y no se leía como algo que se pulsa.
+            */}
+            <summary className="inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-suave underline decoration-borde-fuerte underline-offset-4 transicion-color hover:text-tinta hover:decoration-borde-marca">
               {t("panel.contenido.listas.comun.editarFicha")}
               <DeQueFicha nombre={nombre} />
             </summary>
@@ -723,6 +766,19 @@ function Ficha({
       ) : null}
     </li>
   );
+}
+
+/**
+ * LA FOTO DE UNA FICHA, POR SU TEXTO ALTERNATIVO Y NO POR SU IDENTIFICADOR. El
+ * resumen pintaba el uuid del medio tal cual, una línea de letras y números que
+ * no dice nada. Si la foto ya no está entre las publicadas, se dice: la landing
+ * no la pinta, y la ficha saldría sin imagen sin que nadie supiera por qué.
+ */
+function fotoDelResumen(id: string, fotos: readonly FotoElegible[]): string {
+  const foto = fotos.find((candidata) => candidata.id === id);
+  return foto
+    ? t("panel.contenido.listas.comun.resumenFoto", { foto: foto.textoAlternativo })
+    : t("panel.contenido.listas.comun.resumenFotoRetirada");
 }
 
 /**

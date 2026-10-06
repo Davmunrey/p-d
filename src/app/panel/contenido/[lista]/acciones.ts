@@ -16,7 +16,7 @@ import { obtenerFilasDeLista } from "@/lib/bbdd/contenido";
 import { accesoActual } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
-import type { EstadoLista } from "./estado";
+import { anclaDeFicha, type EstadoLista } from "./estado";
 import { esDireccion, permutarConElVecino } from "./reordenar";
 
 /**
@@ -53,7 +53,14 @@ function volver(
     sitio al que volver. Encadenando tres altas, el botón de atrás iría
     felicitando por fichas que ya se guardaron.
   */
-  redirect(`${rutaDeLista(clave)}?${parametros}`, RedirectType.replace);
+  /*
+    CON FICHA, SE LLEGA A ELLA. La pregunta de borrar y el error de una edición
+    se pintan dentro de su ficha, y la página se recarga desde arriba: en el
+    móvil, con la ficha a seis mil píxeles, parecía que el botón no había hecho
+    nada. El ancla la trae a la vista, también sin JavaScript.
+  */
+  const ancla = extra.ficha ? `#${anclaDeFicha(extra.ficha)}` : "";
+  redirect(`${rutaDeLista(clave)}?${parametros}${ancla}`, RedirectType.replace);
 }
 
 /**
@@ -119,11 +126,18 @@ function motivo(error: { code?: string; message?: string }): EstadoLista {
  * de acciones del panel, y aquí además importa: `btrim(campo) <> ''` rechaza la
  * cadena vacía, así que guardarla reventaría justo lo que se quería permitir.
  */
+/**
+ * Los valores del formulario, ya validados. Con `ficha`, el error vuelve a esa
+ * ficha y no al formulario de alta: al editar un hotel, «el enlace tiene que
+ * ser una dirección web» salía bajo el campo VACÍO de «Añadir», y la ficha
+ * editada volvía cerrada con lo cambiado perdido.
+ */
 function camposValidados(
   clave: ClaveLista,
   lista: ListaDeContenido,
   datos: FormData,
   variante: string | undefined,
+  ficha?: string,
 ): Record<string, string | null> {
   const valores: Record<string, string | null> = {};
 
@@ -142,17 +156,17 @@ function camposValidados(
     */
     if (campo.clase === "foto") {
       if (escrito && !esIdentificador(escrito)) {
-        volver(clave, "error", { variante, campo: campo.columna });
+        volver(clave, "error", { variante, campo: campo.columna, ficha });
       }
       valores[campo.columna] = escrito || null;
       continue;
     }
 
     if (campo.obligatorio && !escrito) {
-      volver(clave, "falta", { variante, campo: campo.columna });
+      volver(clave, "falta", { variante, campo: campo.columna, ficha });
     }
     if (escrito.length > campo.largo) {
-      volver(clave, "largo", { variante, campo: campo.columna });
+      volver(clave, "largo", { variante, campo: campo.columna, ficha });
     }
 
     /*
@@ -161,7 +175,7 @@ function camposValidados(
       con «alojamientos_url_valida» donde hacía falta una frase.
     */
     if (campo.clase === "enlace" && escrito && !/^https?:\/\//i.test(escrito)) {
-      volver(clave, "enlace", { variante, campo: campo.columna });
+      volver(clave, "enlace", { variante, campo: campo.columna, ficha });
     }
 
     valores[campo.columna] = escrito || null;
@@ -244,7 +258,7 @@ export async function guardarFicha(datos: FormData): Promise<void> {
   if (!esIdentificador(id)) volver(clave, "no-encontrada", { variante });
   await cortarSiEsLector(clave, variante);
 
-  const valores = camposValidados(clave, lista, datos, variante);
+  const valores = camposValidados(clave, lista, datos, variante, id);
 
   try {
     const supabase = await cliente();
