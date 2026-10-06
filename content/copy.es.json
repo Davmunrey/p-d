@@ -526,6 +526,7 @@
       "grupoCeremonia": "Ceremonia",
       "grupoBanquete": "Banquete",
       "grupoContacto": "Contacto y confirmaciones",
+      "grupoPortada": "Textos de la portada",
       "nombreNovia": "Nombre de la novia",
       "nombreNovio": "Nombre del novio",
       "hashtag": "Hashtag",
@@ -550,7 +551,7 @@
       "correoAyuda": "El que ven los invitados en el pie de la web.",
       "limiteRsvp": "Fecha límite para confirmar",
       "limiteRsvpAyuda": "Tiene que ser anterior a la ceremonia.",
-      "zonaHoraria": "Las horas se guardan en",
+      "zonaHoraria": "Las horas se escriben en {zona}.",
       "guardar": "Guardar cambios",
       "guardado": "Ajustes guardados. La web ya los muestra.",
       "soloLectura": "Tus permisos son de sólo lectura: puedes ver estos datos, pero no cambiarlos.",
@@ -565,6 +566,8 @@
       "errorCorreo": "Ese correo no tiene buena pinta.",
       "errorSinPermiso": "No se ha guardado nada: tus permisos no alcanzan para cambiar los ajustes de la boda.",
       "errorGuardar": "No hemos podido guardar los ajustes. Inténtalo de nuevo.",
+      "errorCambiado": "Alguien ha guardado otros cambios mientras teníais los ajustes abiertos, y lo vuestro no se ha guardado. Lo que veis es lo que habíais escrito: si volvéis a guardar, sustituye a lo suyo.",
+      "verLoQueHay": "Ver lo que hay ahora, sin lo vuestro",
       "ciudad": "Ciudad de la boda",
       "ciudadAyuda": "La que nombra la portada («Nos casamos en León») y las frases que la citan. Vacía, la portada enseña la dirección.",
       "avisosPrograma": "Avisos al pie del programa",
@@ -580,9 +583,10 @@
       "titularCuentaAyuda": "Opcional. Tal y como lo tiene el banco.",
       "guardarRegalos": "Guardar la cuenta",
       "regalosGuardado": "Cuenta guardada.",
-      "errorIban": "Ese IBAN no tiene buena pinta. Empieza por dos letras y dos cifras, como «ES91…».",
+      "errorIban": "Ese IBAN no cuadra: o falta una cifra, o alguna está cambiada. Copiadlo otra vez del banco, con espacios o sin ellos.",
       "errorSoloPropietario": "La cuenta bancaria sólo la puede cambiar un propietario.",
-      "regalosSoloPropietario": "La cuenta bancaria sólo la cambia un propietario. Podéis verla, no tocarla."
+      "regalosSoloPropietario": "La cuenta bancaria sólo la cambia un propietario. Podéis verla, no tocarla.",
+      "regalosSoloEditores": "La cuenta para los regalos sólo la ven los propietarios y los editores."
     },
     "invitados": {
       "titulo": "Invitados",

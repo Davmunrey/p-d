@@ -1,7 +1,9 @@
 import { expect, test } from "./utiles/origen-propio";
+import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_AJUSTES, RUTA_PANEL } from "../../src/config/constants";
+import { anclaDeCampo } from "../../src/app/panel/ajustes/estado";
 
 /**
  * BODA-44 · Ajustes de la boda
@@ -16,6 +18,33 @@ import { RUTA_ACCESO, RUTA_AJUSTES, RUTA_PANEL } from "../../src/config/constant
 
 const CORREO_CON_ACCESO = process.env.CORREO_CON_ACCESO;
 const CONTRASENA = process.env.CONTRASENA_PRUEBAS;
+const cadena = process.env.DATABASE_URL;
+
+async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T> {
+  const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+  try {
+    return await trabajo(sql);
+  } finally {
+    await sql.end();
+  }
+}
+
+/**
+ * EL ROL DE LA CUENTA DE PRUEBAS, CAMBIADO POR SQL. `proteger_privilegios_perfil`
+ * no deja cambiar un rol sin un propietario detrás; la excepción de arranque
+ * vive sólo dentro de la transacción que la pone, que es lo que se hace aquí.
+ */
+async function ponerRol(rol: "lector" | "propietario") {
+  await conBase((sql) =>
+    sql.begin(async (tx) => {
+      await tx`select set_config('boda.arranque_en_curso', 'si', true)`;
+      await tx`
+        update public.perfiles set rol = ${rol}
+         where lower(correo_electronico) = lower(${CORREO_CON_ACCESO!})
+      `;
+    }),
+  );
+}
 
 /**
  * Marca de agua para no confundir lo que escribe el test con el seed.
@@ -154,8 +183,9 @@ test.describe("Ajustes de la boda", () => {
 
     await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorLimiteTarde);
 
-    // Y lo que importa: no se ha guardado.
-    await page.reload();
+    // Y lo que importa: no se ha guardado. Sin el aviso en la URL, que con él
+    // la pantalla enseña lo que se escribió y no lo que hay.
+    await page.goto(RUTA_AJUSTES);
     await expect(page.getByLabel(copy.panel.ajustes.limiteRsvp)).toHaveValue(antes);
   });
 
@@ -182,7 +212,7 @@ test.describe("Ajustes de la boda", () => {
     // Y no el genérico, que es lo que salía antes.
     await expect(avisoDe(page)).not.toContainText(copy.panel.ajustes.errorGuardar);
 
-    await page.reload();
+    await page.goto(RUTA_AJUSTES);
     await expect(page.getByLabel(copy.panel.ajustes.limiteRsvp)).toHaveValue(antes);
   });
 
@@ -229,7 +259,11 @@ test.describe("Ajustes de la boda", () => {
   });
 
   test("un hashtag sin almohadilla se rechaza", async ({ page }) => {
-    await page.getByLabel(copy.panel.ajustes.hashtag).fill("PalomaYDavid");
+    const hashtag = page.getByLabel(copy.panel.ajustes.hashtag);
+    // El navegador ya lo frena por el `pattern`; sin él, decide la acción.
+    await expect(hashtag).toHaveAttribute("pattern", /^#/);
+    await hashtag.evaluate((input) => input.removeAttribute("pattern"));
+    await hashtag.fill("PalomaYDavid");
     await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
 
     await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorHashtag);
@@ -323,7 +357,7 @@ test.describe("Ajustes de la boda", () => {
     // EN MINÚSCULAS Y CON ESPACIOS, que es como se copia de la app del banco.
     // La restricción de la tabla no lo acepta así, y quien lo pega no tiene por
     // qué saberlo: lo arregla la acción, no la persona.
-    await iban.fill("es76 2100 0418 4502 0005 1332");
+    await iban.fill("es60 0049 1500 0512 3456 7892");
     await titular.fill(titularNuevo);
     await page.getByRole("button", { name: copy.panel.ajustes.guardarRegalos }).click();
 
@@ -335,14 +369,14 @@ test.describe("Ajustes de la boda", () => {
     await expect(
       page.getByLabel(copy.panel.ajustes.iban, { exact: true }),
       "se guarda como lo pide el banco, no como se tecleó",
-    ).toHaveValue("ES7621000418450200051332");
+    ).toHaveValue("ES6000491500051234567892");
 
     // Y en la web, detrás de su botón: el número no viaja en el HTML (BODA-28).
     await page.goto("/");
     const seccion = page.locator("#regalos");
     await seccion.getByRole("button", { name: copy.regalos.revelar }).click();
     await expect(seccion.getByLabel(copy.regalos.etiquetaCuenta)).toHaveValue(
-      "ES76 2100 0418 4502 0005 1332",
+      "ES60 0049 1500 0512 3456 7892",
     );
     await expect(seccion.getByText(titularNuevo)).toBeVisible();
 
@@ -389,5 +423,214 @@ test.describe("Ajustes de la boda", () => {
     await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorAvisos);
     await page.goto(RUTA_AJUSTES);
     await expect(page.getByLabel(copy.panel.ajustes.avisosPrograma)).toHaveValue(antes);
+  });
+  /**
+   * CASO DE ERROR · Un IBAN con la forma buena y una cifra cambiada.
+   *
+   * La forma sola lo dejaba pasar, y salía en la web con su botón de copiar:
+   * el banco de cada invitado rechazaría la transferencia. El error va junto
+   * al campo, y lo escrito sigue ahí para corregir la cifra.
+   */
+  test("un IBAN con una cifra cambiada se rechaza junto a su campo", async ({ page }) => {
+    const iban = page.getByLabel(copy.panel.ajustes.iban, { exact: true });
+    const antes = await iban.inputValue();
+    const malo = "ES91 2100 0418 4502 0005 1333";
+
+    await iban.fill(malo);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardarRegalos }).click();
+
+    const bloque = page.locator(`#${anclaDeCampo("iban_regalos")}`);
+    await expect(bloque.getByRole("alert")).toHaveText(copy.panel.ajustes.errorIban);
+    await expect(iban).toHaveAttribute("aria-invalid", "true");
+    await expect(iban, "lo escrito sigue ahí para corregirlo").toHaveValue(malo);
+    await expect(page).toHaveURL(new RegExp(`#${anclaDeCampo("iban_regalos")}$`));
+
+    await page.goto(RUTA_AJUSTES);
+    await expect(page.getByLabel(copy.panel.ajustes.iban, { exact: true })).toHaveValue(antes);
+  });
+
+  /**
+   * CAMINO FELIZ · Un error no deshace lo demás que se había escrito.
+   *
+   * Se cambiaba el lugar, se ponía mal la fecha límite y, al volver con el
+   * aviso, el lugar había vuelto a lo de antes: los veinte campos se
+   * repintaban con la base. Ahora vuelve lo escrito, el error está en su campo
+   * y, al corregirlo, se guarda todo junto. CASO DE ERROR · nada se ha escrito
+   * en la base mientras tanto.
+   */
+  test("un error en un campo no deshace lo escrito en los demás", async ({ page }) => {
+    const lugar = page.getByLabel(copy.panel.ajustes.lugarCeremonia, { exact: true });
+    const limite = page.getByLabel(copy.panel.ajustes.limiteRsvp);
+    const lugarOriginal = await lugar.inputValue();
+    const limiteOriginal = await limite.inputValue();
+    const ceremonia = await page.getByLabel(copy.panel.ajustes.fechaCeremonia).inputValue();
+    const lugarNuevo = `${MARCA} Ermita de prueba ${Date.now()}`;
+
+    await lugar.fill(lugarNuevo);
+    await limite.fill(ceremonia.replace(/^(\d{4})/, (anio) => String(Number(anio) + 1)));
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+
+    const bloque = page.locator(`#${anclaDeCampo("fecha_limite_rsvp")}`);
+    await expect(bloque.getByRole("alert")).toHaveText(copy.panel.ajustes.errorLimiteTarde);
+    await expect(page.getByLabel(copy.panel.ajustes.limiteRsvp)).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    await expect(
+      page.getByLabel(copy.panel.ajustes.lugarCeremonia, { exact: true }),
+      "el lugar que se había escrito sigue ahí",
+    ).toHaveValue(lugarNuevo);
+
+    // En la base, nada todavía.
+    const enLaBase = await conBase(
+      async (sql) =>
+        (
+          await sql<{ lugar: string | null }[]>`
+          select lugar_ceremonia as lugar from public.configuracion_boda
+        `
+        )[0].lugar,
+    );
+    expect(enLaBase ?? "").toBe(lugarOriginal);
+
+    // Se corrige la fecha y se guarda: entra también el lugar.
+    await page.getByLabel(copy.panel.ajustes.limiteRsvp).fill(limiteOriginal);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+    await expect(page.locator("main").getByRole("status")).toContainText(
+      copy.panel.ajustes.guardado,
+    );
+    await expect(
+      page.getByLabel(copy.panel.ajustes.lugarCeremonia, { exact: true }),
+    ).toHaveValue(lugarNuevo);
+
+    // Como estaba.
+    await page
+      .getByLabel(copy.panel.ajustes.lugarCeremonia, { exact: true })
+      .fill(lugarOriginal);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+    await expect(page.locator("main").getByRole("status")).toContainText(
+      copy.panel.ajustes.guardado,
+    );
+  });
+
+  /**
+   * CASO DE ERROR · Dos personas con Ajustes abierto.
+   *
+   * Quien guardaba el último deshacía en silencio lo del otro, porque el
+   * formulario manda los veinte campos. Ahora la segunda pestaña no escribe:
+   * lo dice, conserva lo suyo y ofrece ver lo que hay. CAMINO FELIZ · lo de la
+   * primera queda en la base.
+   */
+  test("quien guarda con la pantalla vieja no pisa lo que otro acaba de guardar", async ({
+    page,
+    context,
+  }) => {
+    const otra = await context.newPage();
+    await otra.goto(RUTA_AJUSTES);
+
+    const hashtag = page.getByLabel(copy.panel.ajustes.hashtag);
+    const ciudad = otra.getByLabel(copy.panel.ajustes.ciudad);
+    const hashtagOriginal = await hashtag.inputValue();
+    const ciudadOriginal = await ciudad.inputValue();
+    const hashtagNuevo = `#DES${Date.now()}`;
+
+    try {
+      // La primera guarda.
+      await hashtag.fill(hashtagNuevo);
+      await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+      await expect(page.locator("main").getByRole("status")).toContainText(
+        copy.panel.ajustes.guardado,
+      );
+
+      // La segunda, con la pantalla de antes, también quiere guardar.
+      await ciudad.fill("(DES) Ponferrada");
+      await otra.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+      await expect(otra.locator("main").getByRole("alert")).toContainText(
+        copy.panel.ajustes.errorCambiado,
+      );
+      await expect(
+        otra.getByLabel(copy.panel.ajustes.ciudad),
+        "lo suyo, sin perder",
+      ).toHaveValue("(DES) Ponferrada");
+
+      const fila = await conBase(
+        async (sql) =>
+          (
+            await sql<{ hashtag: string | null; ciudad: string | null }[]>`
+            select hashtag, ciudad_ceremonia as ciudad from public.configuracion_boda
+          `
+          )[0],
+      );
+      expect(fila.hashtag, "lo de la primera sigue en la base").toBe(hashtagNuevo);
+      expect(fila.ciudad ?? "", "y lo de la segunda no ha entrado").toBe(ciudadOriginal);
+
+      // «Ver lo que hay ahora» enseña lo de la primera.
+      await otra.getByRole("link", { name: copy.panel.ajustes.verLoQueHay }).click();
+      await expect(otra.getByLabel(copy.panel.ajustes.hashtag)).toHaveValue(hashtagNuevo);
+    } finally {
+      await otra.close();
+      await conBase(
+        (sql) => sql`update public.configuracion_boda set hashtag = ${hashtagOriginal || null}`,
+      );
+    }
+  });
+
+  /**
+   * CASO DE ERROR · Si la configuración no se puede leer, no se pinta vacía.
+   *
+   * Un formulario en blanco invitaba a rellenar lo obligatorio y guardar, y eso
+   * borraba el lugar, las coordenadas, el paisaje y los avisos. Sale la
+   * pantalla de avería del panel, con su «Reintentar».
+   */
+  test("si la configuración no se puede leer, sale la avería y no un formulario vacío", async ({
+    page,
+  }) => {
+    // Las lecturas son del servidor, no del navegador: se corta la base.
+    await conBase((sql) => sql`revoke select on public.configuracion_boda from authenticated`);
+    try {
+      await page.goto(RUTA_AJUSTES);
+      await expect(page.getByRole("heading", { name: copy.panel.errorTitulo })).toBeVisible();
+      await expect(page.getByLabel(copy.panel.ajustes.nombreNovia)).toHaveCount(0);
+    } finally {
+      await conBase((sql) => sql`grant select on public.configuracion_boda to authenticated`);
+    }
+  });
+
+  /**
+   * CASO DE ERROR · Al lector no se le enseña una cuenta vacía.
+   *
+   * No puede leer la cuenta, así que veía los campos en blanco con «Sin cuenta
+   * escrita, la sección de Regalos no aparece» y deducía que no había regalos.
+   * CAMINO FELIZ · los campos deshabilitados se ven deshabilitados.
+   */
+  test("un lector no ve el formulario de la cuenta, y los campos se ven apagados", async ({
+    page,
+  }) => {
+    await ponerRol("lector");
+    try {
+      await page.goto(RUTA_AJUSTES);
+      await expect(page.getByText(copy.panel.ajustes.regalosSoloEditores)).toBeVisible();
+      await expect(page.getByLabel(copy.panel.ajustes.iban, { exact: true })).toHaveCount(0);
+      await expect(page.getByText(copy.panel.ajustes.regalosAyuda)).toHaveCount(0);
+
+      const nombre = page.getByLabel(copy.panel.ajustes.nombreNovia);
+      await expect(nombre).toBeDisabled();
+      // Hundido y sin borde: no se pinta igual que un campo que se puede tocar.
+      const [apagado, encendido] = await nombre.evaluate((campo) => {
+        // Sin la transición de color: si no, se mide el primer fotograma.
+        campo.style.transition = "none";
+        const medir = () => {
+          const calculado = getComputedStyle(campo);
+          return `${calculado.backgroundColor}|${calculado.borderTopColor}|${calculado.color}`;
+        };
+        const antes = medir();
+        campo.removeAttribute("disabled");
+        const despues = medir();
+        campo.setAttribute("disabled", "");
+        return [antes, despues];
+      });
+      expect(apagado, "deshabilitado tiene que verse distinto").not.toBe(encendido);
+    } finally {
+      await ponerRol("propietario");
+    }
   });
 });

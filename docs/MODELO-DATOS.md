@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**59**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**60**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -27,7 +27,7 @@ Cada una tiene su reverso exacto en
 [`supabase/migrations/rollback/`](../supabase/migrations/rollback/), con el mismo
 nombre. Se ejecutan en orden **inverso**.
 
-En números: **38 tablas, 15 vistas, 20 enumerados, 58 funciones, 74 políticas RLS.**
+En números: **38 tablas, 15 vistas, 20 enumerados, 59 funciones, 74 políticas RLS.**
 
 Esos cinco números no se escriben a mano: los cuenta la suite de seguridad contra
 el catálogo de la base recién migrada, y si el documento dice otra cosa, el CI se
@@ -251,6 +251,13 @@ ceremonia y **no** la cuenta corriente, y con un solo botón de guardar o se le
 niega todo lo demás o se le cuela el número de cuenta. Ese «no» es el silencio
 de RLS —cero filas y ningún error—, así que la acción cuenta las filas tocadas
 para poder decirlo.
+
+**El IBAN tiene que cuadrar, no sólo parecerlo.** Desde
+`20261006130000_iban_con_digitos_de_control`, el `CHECK` llama a
+`es_iban_valido()`: forma, módulo 97 de la ISO 13616 y 24 caracteres si es
+español. Con la forma sola, una cifra mal tecleada salía en la web con su botón
+de copiar. Va `not valid` para que un IBAN antiguo que no cuadre no tumbe el
+despliegue: vale para todo lo que se escriba desde entonces.
 
 #### `secciones_landing`
 

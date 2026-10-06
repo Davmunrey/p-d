@@ -1211,6 +1211,16 @@ begin
   end;
   perform pg_temp.comprobar('un IBAN con mala pinta no entra ni por SQL', v_filas = 1);
 
+  -- Ni uno con la forma buena y una cifra cambiada: los dígitos de control no
+  -- cuadran (20261006130000). Con la forma sola, entraba y salía en la web.
+  begin
+    update public.configuracion_privada set iban_regalos = 'ES9121000418450200051333';
+    v_filas := 0;
+  exception when check_violation then
+    v_filas := 1;
+  end;
+  perform pg_temp.comprobar('un IBAN con una cifra cambiada tampoco entra', v_filas = 1);
+
   update public.configuracion_privada set iban_regalos = v_original;
 
   perform set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);

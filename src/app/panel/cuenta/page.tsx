@@ -7,6 +7,7 @@ import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import { LARGOS_DE_CAMPO, LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO } from "@/config/constants";
 import { accesoActual, type RolPanel } from "@/lib/sesion";
 import { t } from "@/lib/copy";
+import { AvisoPanel } from "@/components/panel/aviso-panel";
 import { avisoDe } from "@/lib/avisos";
 
 import { guardarNombre } from "./acciones";
@@ -61,17 +62,7 @@ export default async function PaginaCuenta({
         <Cuerpo className="mt-pila">{t("panel.cuenta.descripcion")}</Cuerpo>
       </div>
 
-      {aviso ? (
-        <p
-          // El que sale bien se anuncia como `status` y el que sale mal como
-          // `alert`: el primero no debe interrumpir lo que esté leyendo un
-          // lector de pantalla, y el segundo sí.
-          role={aviso.error ? "alert" : "status"}
-          className={`text-pequeno ${aviso.error ? "text-error-tinta" : "text-tinta-marca"}`}
-        >
-          {aviso.texto}
-        </p>
-      ) : null}
+      {aviso ? <AvisoPanel error={aviso.error}>{aviso.texto}</AvisoPanel> : null}
 
       <form action={guardarNombre} className="grid gap-elemento">
         <CampoTexto

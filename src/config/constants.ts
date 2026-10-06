@@ -207,6 +207,21 @@ export const MARCA_RSVP_ENVIADO = { parametro: "enviado", valor: "1" } as const;
 export const MINUTOS_BORRADOR_RSVP = 180;
 
 /**
+ * Cuánto vive lo escrito en Ajustes cuando el servidor lo rechaza.
+ *
+ * Sólo tiene que aguantar la vuelta del error y el rato de corregir el campo
+ * que falla. Más tiempo y volver a la pantalla al día siguiente con el mismo
+ * aviso en la URL enseñaría lo que se escribió ayer en vez de lo que hay.
+ */
+export const MINUTOS_BORRADOR_AJUSTES = 30;
+
+/**
+ * Lo que mide un IBAN español, ni un carácter más ni uno menos. El módulo 97
+ * caza casi todas las cifras de menos; ésta, todas las de una cuenta de aquí.
+ */
+export const LARGO_IBAN_ESPANOL = 24;
+
+/**
  * Cuánto cabe en cada trozo de la cookie del borrador del RSVP.
  *
  * Los navegadores tiran una cookie de más de 4096 bytes SIN DECIR NADA, y un

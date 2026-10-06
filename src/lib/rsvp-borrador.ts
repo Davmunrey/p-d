@@ -111,7 +111,7 @@ export async function leerBorrador(token: string): Promise<Borrador> {
  * detrás de Vercel llega `https` y la cookie va protegida; en local y en CI
  * llega `http` y no se marca, que es lo correcto para un `http` de verdad.
  */
-async function servidoPorHttps(): Promise<boolean> {
+export async function servidoPorHttps(): Promise<boolean> {
   return (await headers()).get("x-forwarded-proto") === "https";
 }
 

@@ -52,9 +52,14 @@ interface Envoltura {
  * borde el anillo marino de tres píxeles del catálogo. El primero se ve desde
  * el otro lado de la habitación; el segundo es el que hace que el campo parezca
  * encendido.
+ *
+ * Y UN CAMPO DESHABILITADO SE VE DESHABILITADO: hundido, sin borde y con la
+ * tinta suave, como el botón con `accion-desactivada`. Se pintaba igual que uno
+ * editable, y un lector en Ajustes tocaba veintidós cajas blancas sin que
+ * saliera el teclado ni nada que dijera por qué.
  */
 const CLASES_CONTROL =
-  "w-full border bg-superficie text-cuerpo text-tinta transicion-color placeholder:text-tinta-tenue focus-visible:border-marca focus-visible:shadow-anillo-campo";
+  "w-full border bg-superficie text-cuerpo text-tinta transicion-color placeholder:text-tinta-tenue focus-visible:border-marca focus-visible:shadow-anillo-campo disabled:cursor-not-allowed disabled:border-transparent disabled:bg-superficie-hundida disabled:text-tinta-suave";
 
 /**
  * Dos formas, y sólo dos: la caja de siempre y la píldora que la entrega usa

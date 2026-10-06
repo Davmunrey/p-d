@@ -1,23 +1,35 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { AvisoPanel } from "@/components/panel/aviso-panel";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
-import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
+import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
+  IDIOMA,
   LARGOS_DE_CAMPO,
   LONGITUD_MINIMA_FRASE_PAISAJE,
   LONGITUD_MINIMA_NOMBRE,
   RUTA_ACCESO,
+  RUTA_AJUSTES,
   TOPE_AVISOS_PROGRAMA,
 } from "@/config/constants";
+import { leerBorradorAjustes, type BorradorAjustes } from "@/lib/ajustes-borrador";
+import { avisoDe } from "@/lib/avisos";
+import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
-import { t } from "@/lib/copy";
 import { localDesdeInstante } from "@/lib/zona-horaria";
-import { avisoDe } from "@/lib/avisos";
 
 import { guardarAjustes, guardarRegalos } from "./acciones";
+import {
+  anclaDeCampo,
+  esCampoAjustes,
+  ESTADOS_DE_EXITO,
+  type CampoAjustes,
+  type EstadoAjustes,
+} from "./estado";
 
 /** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
 export const metadata: Metadata = { title: t("panel.ajustes.titulo") };
@@ -40,7 +52,7 @@ export const metadata: Metadata = { title: t("panel.ajustes.titulo") };
  */
 export const dynamic = "force-dynamic";
 
-const AVISOS: Record<string, { texto: string; error: boolean }> = {
+const AVISOS: Record<EstadoAjustes, { texto: string; error: boolean }> = {
   guardado: { texto: t("panel.ajustes.guardado"), error: false },
   "regalos-guardado": { texto: t("panel.ajustes.regalosGuardado"), error: false },
   iban: { texto: t("panel.ajustes.errorIban"), error: true },
@@ -57,6 +69,7 @@ const AVISOS: Record<string, { texto: string; error: boolean }> = {
   avisos: { texto: t("panel.ajustes.errorAvisos"), error: true },
   largo: { texto: t("panel.ajustes.errorLargo"), error: true },
   "paisaje-corto": { texto: t("panel.ajustes.errorPaisajeCorto"), error: true },
+  cambiado: { texto: t("panel.ajustes.errorCambiado"), error: true },
   "sin-permiso": { texto: t("panel.ajustes.errorSinPermiso"), error: true },
   error: { texto: t("panel.ajustes.errorGuardar"), error: true },
 };
@@ -83,6 +96,7 @@ interface Configuracion {
   direccion_banquete: string | null;
   latitud_banquete: number | null;
   longitud_banquete: number | null;
+  actualizado_en: string;
 }
 
 interface CuentaRegalos {
@@ -93,6 +107,35 @@ interface CuentaRegalos {
 /** Una coordenada vacía se enseña vacía, no como «null» ni como «0». */
 function comoTexto(valor: number | null): string {
   return valor === null || valor === undefined ? "" : String(valor);
+}
+
+/**
+ * «hora de Europa central» y no «Europe/Madrid»: el identificador de la base
+ * está en inglés y no le dice nada a quien escribe la hora de su boda.
+ */
+function nombreDeLaZona(zona: string): string {
+  try {
+    return (
+      new Intl.DateTimeFormat(IDIOMA, { timeZone: zona, timeZoneName: "longGeneric" })
+        .formatToParts(new Date())
+        .find((parte) => parte.type === "timeZoneName")?.value ?? zona
+    );
+  } catch {
+    return zona;
+  }
+}
+
+/**
+ * EL BLOQUE DE UN CAMPO, CON SU ANCLA. Cuando el servidor rechaza un campo, la
+ * URL lleva `#campo-…` y la página baja hasta él; el margen de la cabecera
+ * evita que quede tapado.
+ */
+function Ancla({ campo, children }: { campo: CampoAjustes; children: React.ReactNode }) {
+  return (
+    <div id={anclaDeCampo(campo)} className="scroll-mt-cabecera">
+      {children}
+    </div>
+  );
 }
 
 function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
@@ -108,16 +151,29 @@ function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode
 export default async function PaginaAjustes({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string }>;
+  searchParams: Promise<{ estado?: string; campo?: string }>;
 }) {
   const acceso = await accesoActual();
   if (!acceso) redirect(RUTA_ACCESO);
 
-  const { estado } = await searchParams;
+  const { estado, campo } = await searchParams;
   const aviso = avisoDe(AVISOS, estado) ?? null;
 
+  /*
+    CON UN ERROR, LO ESCRITO GANA A LA BASE. La acción guarda lo enviado antes
+    de volver (`ajustes-borrador.ts`): sin esto, corregir la fecha límite
+    deshacía el lugar y el paisaje que se habían cambiado en el mismo envío.
+  */
+  const conError = Boolean(aviso) && !ESTADOS_DE_EXITO.includes(estado as EstadoAjustes);
+  const borrador = conError ? await leerBorradorAjustes() : null;
+
+  // El error de un campo va junto al campo, no arriba del todo.
+  const campoConError = aviso?.error && esCampoAjustes(campo) ? campo : null;
+  const errorDe = (nombre: CampoAjustes) =>
+    campoConError === nombre ? aviso?.texto : undefined;
+
   const supabase = await clienteServidor();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("configuracion_boda")
     .select(
       "nombre_novia, nombre_novio, hashtag, correo_contacto, fecha_hora_ceremonia, " +
@@ -125,25 +181,39 @@ export default async function PaginaAjustes({
         "direccion_ceremonia, latitud_ceremonia, longitud_ceremonia, lugar_banquete, " +
         "direccion_banquete, latitud_banquete, longitud_banquete, " +
         "paisaje_intro, paisaje_titulo, paisaje_cierre, " +
-        "ciudad_ceremonia, avisos_programa",
+        "ciudad_ceremonia, avisos_programa, actualizado_en",
     )
     .maybeSingle<Configuracion>();
 
   /*
+    SI NO SE PUEDE LEER, SE DICE, en vez de pintar el formulario vacío. Un corte
+    de un segundo enseñaba los nombres y las fechas en blanco; quien lo veía
+    creía perdidos los datos, rellenaba lo obligatorio, guardaba, y borraba el
+    lugar, las coordenadas, el paisaje y los avisos. Así sale la pantalla de
+    avería con «Reintentar», como en el resto del panel.
+  */
+  if (error) throw new Error(`No se pudo leer la configuración de la boda: ${error.message}`);
+  if (!data) throw new Error("No hay configuración de la boda que enseñar.");
+
+  /*
     La cuenta se lee aparte porque vive en otra tabla y con otro permiso: leer
     `configuracion_privada` ya exige `puede_editar()`, así que a un lector le
-    llegan cero filas y el bloque sale vacío. Es correcto — no tiene por qué ver
-    un número de cuenta.
+    llegan cero filas. Un error, en cambio, no es «sin cuenta».
   */
-  const { data: privada } = await supabase
-    .from("configuracion_privada")
-    .select("iban_regalos, titular_cuenta")
-    .maybeSingle<CuentaRegalos>();
-
-  const cuenta = privada ?? null;
-
   const soloLectura = acceso.rol === "lector";
-  const zona = data?.zona_horaria ?? "";
+  let cuenta: CuentaRegalos | null = null;
+  if (!soloLectura) {
+    const { data: privada, error: errorPrivada } = await supabase
+      .from("configuracion_privada")
+      .select("iban_regalos, titular_cuenta")
+      .maybeSingle<CuentaRegalos>();
+    if (errorPrivada) {
+      throw new Error(`No se pudo leer la cuenta de los regalos: ${errorPrivada.message}`);
+    }
+    cuenta = privada ?? null;
+  }
+
+  const zona = data.zona_horaria;
 
   // Las horas viajan a la base como instantes y se enseñan en la zona de la
   // boda. Sin esto, una ceremonia a las 13:00 de junio saldría aquí a las 11:00,
@@ -151,20 +221,38 @@ export default async function PaginaAjustes({
   const enLocal = (valor: string | null | undefined) =>
     valor ? localDesdeInstante(new Date(valor), zona) : "";
 
+  /** Lo escrito si se vuelve con un error; si no, lo que hay en la base. */
+  const valor = (nombre: CampoAjustes, deLaBase: string) => borrador?.[nombre] ?? deLaBase;
+
+  /** Lo común a todos los campos: nombre, valor, error y si se puede tocar. */
+  const comun = (nombre: CampoAjustes, deLaBase: string) => ({
+    name: nombre,
+    defaultValue: valor(nombre, deLaBase),
+    error: errorDe(nombre),
+    disabled: soloLectura,
+  });
+
   return (
     <div className="grid max-w-estrecho gap-elemento">
       <div>
         <Titulo2 como="h1">{t("panel.ajustes.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.ajustes.descripcion")}</Cuerpo>
+        {/* Una vez y arriba: vale para las tres fechas de la pantalla. */}
+        <Cuerpo className="mt-pila text-pequeno text-tinta-suave">
+          {t("panel.ajustes.zonaHoraria", { zona: nombreDeLaZona(zona) })}
+        </Cuerpo>
       </div>
 
-      {aviso ? (
-        <p
-          role={aviso.error ? "alert" : "status"}
-          className={`text-pequeno ${aviso.error ? "text-error-tinta" : "text-tinta-marca"}`}
-        >
+      {aviso && !campoConError ? (
+        <AvisoPanel error={aviso.error}>
           {aviso.texto}
-        </p>
+          {estado === "cambiado" ? (
+            <>
+              {" "}
+              <EnlaceSuave href={RUTA_AJUSTES}>{t("panel.ajustes.verLoQueHay")}</EnlaceSuave>
+            </>
+          ) : null}
+        </AvisoPanel>
       ) : null}
 
       {soloLectura ? (
@@ -173,87 +261,152 @@ export default async function PaginaAjustes({
         </p>
       ) : null}
 
-      <form action={guardarAjustes} className="grid gap-bloque">
+      {/*
+        LA CLAVE CAMBIA CON LO QUE SE PINTA. Los campos no son controlados, y
+        React no vuelve a aplicar un `defaultValue` nuevo a un campo que ya
+        existe: tras «Ver lo que hay ahora» o tras guardar, el formulario se
+        quedaba enseñando lo de antes. Con otra versión o al pasar del borrador
+        a la base, se monta de nuevo.
+      */}
+      <form
+        key={`${data.actualizado_en}:${borrador ? "borrador" : "base"}`}
+        action={guardarAjustes}
+        className="grid gap-bloque"
+      >
+        {/*
+          LA VERSIÓN QUE SE PINTÓ, y siempre la de la base, nunca la del
+          borrador: con dos personas guardando, la acción no escribe sobre una
+          fila que ya es otra.
+        */}
+        <input type="hidden" name="actualizado_en" value={data.actualizado_en} />
+
         <Grupo titulo={t("panel.ajustes.grupoPareja")}>
           <div className="grid gap-elemento sm:grid-cols-2">
-            <CampoTexto
-              name="nombre_novia"
-              etiqueta={t("panel.ajustes.nombreNovia")}
-              defaultValue={data?.nombre_novia ?? ""}
-              maxLength={LARGOS_DE_CAMPO["configuracion_boda.nombre_novia"]}
-              minLength={LONGITUD_MINIMA_NOMBRE}
-              required
-              disabled={soloLectura}
-            />
-            <CampoTexto
-              name="nombre_novio"
-              etiqueta={t("panel.ajustes.nombreNovio")}
-              defaultValue={data?.nombre_novio ?? ""}
-              maxLength={LARGOS_DE_CAMPO["configuracion_boda.nombre_novio"]}
-              minLength={LONGITUD_MINIMA_NOMBRE}
-              required
-              disabled={soloLectura}
-            />
+            <Ancla campo="nombre_novia">
+              <CampoTexto
+                {...comun("nombre_novia", data.nombre_novia)}
+                etiqueta={t("panel.ajustes.nombreNovia")}
+                maxLength={LARGOS_DE_CAMPO["configuracion_boda.nombre_novia"]}
+                minLength={LONGITUD_MINIMA_NOMBRE}
+                required
+              />
+            </Ancla>
+            <Ancla campo="nombre_novio">
+              <CampoTexto
+                {...comun("nombre_novio", data.nombre_novio)}
+                etiqueta={t("panel.ajustes.nombreNovio")}
+                maxLength={LARGOS_DE_CAMPO["configuracion_boda.nombre_novio"]}
+                minLength={LONGITUD_MINIMA_NOMBRE}
+                required
+              />
+            </Ancla>
           </div>
-          <CampoTexto
-            name="hashtag"
-            etiqueta={t("panel.ajustes.hashtag")}
-            ayuda={t("panel.ajustes.hashtagAyuda")}
-            defaultValue={data?.hashtag ?? ""}
-            disabled={soloLectura}
-          />
+          <Ancla campo="hashtag">
+            <CampoTexto
+              {...comun("hashtag", data.hashtag ?? "")}
+              etiqueta={t("panel.ajustes.hashtag")}
+              ayuda={t("panel.ajustes.hashtagAyuda")}
+              // El navegador lo frena antes de enviar; la acción, si no.
+              pattern="#[\p{L}\p{N}_]{1,60}"
+            />
+          </Ancla>
         </Grupo>
 
+        {/*
+          LA CEREMONIA, CON SUS COORDENADAS DETRÁS DE LA DIRECCIÓN, como el
+          banquete. Los avisos y el paisaje se metían en medio: para poner el
+          punto del mapa había que bajar mil píxeles desde la dirección.
+        */}
         <Grupo titulo={t("panel.ajustes.grupoCeremonia")}>
-          <CampoTexto
-            name="fecha_hora_ceremonia"
-            type="datetime-local"
-            etiqueta={t("panel.ajustes.fechaCeremonia")}
-            ayuda={`${t("panel.ajustes.zonaHoraria")} ${zona}`}
-            defaultValue={enLocal(data?.fecha_hora_ceremonia)}
-            required
-            disabled={soloLectura}
-          />
-          <CampoTexto
-            name="lugar_ceremonia"
-            etiqueta={t("panel.ajustes.lugarCeremonia")}
-            defaultValue={data?.lugar_ceremonia ?? ""}
-            maxLength={LARGOS_DE_CAMPO["configuracion_boda.lugar_ceremonia"]}
-            disabled={soloLectura}
-          />
-          <CampoTexto
-            name="direccion_ceremonia"
-            etiqueta={t("panel.ajustes.direccionCeremonia")}
-            defaultValue={data?.direccion_ceremonia ?? ""}
-            maxLength={LARGOS_DE_CAMPO["configuracion_boda.direccion_ceremonia"]}
-            disabled={soloLectura}
-          />
+          <Ancla campo="fecha_hora_ceremonia">
+            <CampoTexto
+              {...comun("fecha_hora_ceremonia", enLocal(data.fecha_hora_ceremonia))}
+              type="datetime-local"
+              etiqueta={t("panel.ajustes.fechaCeremonia")}
+              required
+            />
+          </Ancla>
+          <Ancla campo="lugar_ceremonia">
+            <CampoTexto
+              {...comun("lugar_ceremonia", data.lugar_ceremonia ?? "")}
+              etiqueta={t("panel.ajustes.lugarCeremonia")}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.lugar_ceremonia"]}
+            />
+          </Ancla>
+          <Ancla campo="direccion_ceremonia">
+            <CampoTexto
+              {...comun("direccion_ceremonia", data.direccion_ceremonia ?? "")}
+              etiqueta={t("panel.ajustes.direccionCeremonia")}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.direccion_ceremonia"]}
+            />
+          </Ancla>
           {/*
             LA CIUDAD VA APARTE DE LA DIRECCIÓN: la entrega dice «Nos casamos en
             León» en la portada y «tres hoteles de León» en el alojamiento, y de
             una dirección postal no se saca «León» sin adivinar.
           */}
-          <CampoTexto
-            name="ciudad_ceremonia"
-            etiqueta={t("panel.ajustes.ciudad")}
-            ayuda={t("panel.ajustes.ciudadAyuda")}
-            defaultValue={data?.ciudad_ceremonia ?? ""}
-            maxLength={LARGOS_DE_CAMPO["configuracion_boda.ciudad_ceremonia"]}
-            disabled={soloLectura}
+          <Ancla campo="ciudad_ceremonia">
+            <CampoTexto
+              {...comun("ciudad_ceremonia", data.ciudad_ceremonia ?? "")}
+              etiqueta={t("panel.ajustes.ciudad")}
+              ayuda={t("panel.ajustes.ciudadAyuda")}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.ciudad_ceremonia"]}
+            />
+          </Ancla>
+          <Coordenadas
+            latitud={comun("latitud_ceremonia", comoTexto(data.latitud_ceremonia))}
+            longitud={comun("longitud_ceremonia", comoTexto(data.longitud_ceremonia))}
           />
+        </Grupo>
+
+        <Grupo titulo={t("panel.ajustes.grupoBanquete")}>
+          <Ancla campo="fecha_hora_banquete">
+            <CampoTexto
+              {...comun("fecha_hora_banquete", enLocal(data.fecha_hora_banquete))}
+              type="datetime-local"
+              etiqueta={t("panel.ajustes.fechaBanquete")}
+              ayuda={t("panel.ajustes.fechaBanqueteAyuda")}
+            />
+          </Ancla>
+          <Ancla campo="lugar_banquete">
+            <CampoTexto
+              {...comun("lugar_banquete", data.lugar_banquete ?? "")}
+              etiqueta={t("panel.ajustes.lugarBanquete")}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.lugar_banquete"]}
+            />
+          </Ancla>
+          <Ancla campo="direccion_banquete">
+            <CampoTexto
+              {...comun("direccion_banquete", data.direccion_banquete ?? "")}
+              etiqueta={t("panel.ajustes.direccionBanquete")}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.direccion_banquete"]}
+            />
+          </Ancla>
+          <Coordenadas
+            latitud={comun("latitud_banquete", comoTexto(data.latitud_banquete))}
+            longitud={comun("longitud_banquete", comoTexto(data.longitud_banquete))}
+          />
+        </Grupo>
+
+        {/*
+          LOS TEXTOS DE LA PORTADA, EN SU GRUPO. Quien busca la frase del
+          paisaje no la espera dentro de «Ceremonia», y metida allí separaba la
+          dirección de sus coordenadas.
+        */}
+        <Grupo titulo={t("panel.ajustes.grupoPortada")}>
           {/*
             LOS AVISOS DEL PROGRAMA SON CONTENIDO DE ESTA BODA —«césped y grava:
             cuidado con los tacones»— y no rótulos de la interfaz: por eso se
             editan aquí y no viven en el fichero de copys. Uno por línea.
           */}
-          <CampoTextoLargo
-            name="avisos_programa"
-            etiqueta={t("panel.ajustes.avisosPrograma")}
-            ayuda={t("panel.ajustes.avisosProgramaAyuda")}
-            defaultValue={(data?.avisos_programa ?? []).join("\n")}
-            rows={TOPE_AVISOS_PROGRAMA}
-            disabled={soloLectura}
-          />
+          <Ancla campo="avisos_programa">
+            <CampoTextoLargo
+              {...comun("avisos_programa", (data.avisos_programa ?? []).join("\n"))}
+              etiqueta={t("panel.ajustes.avisosPrograma")}
+              ayuda={t("panel.ajustes.avisosProgramaAyuda")}
+              rows={TOPE_AVISOS_PROGRAMA}
+            />
+          </Ancla>
           {/*
             LA FRASE DEL PAISAJE VIVE AQUÍ, entre los datos de la boda, y no en
             un módulo de contenido aparte: nombra tres ciudades concretas, que
@@ -265,115 +418,56 @@ export default async function PaginaAjustes({
             sección no se pinta — y eso se dice en la ayuda, porque si no el
             único modo de averiguarlo es borrarlo y recargar la web.
           */}
-          <CampoTexto
-            name="paisaje_intro"
-            etiqueta={t("panel.ajustes.paisajeIntro")}
-            ayuda={t("panel.ajustes.paisajeIntroAyuda")}
-            defaultValue={data?.paisaje_intro ?? ""}
-            maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_intro"]}
-            minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
-            disabled={soloLectura}
-          />
-          <CampoTexto
-            name="paisaje_titulo"
-            etiqueta={t("panel.ajustes.paisajeTitulo")}
-            ayuda={t("panel.ajustes.paisajeTituloAyuda")}
-            defaultValue={data?.paisaje_titulo ?? ""}
-            maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_titulo"]}
-            minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
-            disabled={soloLectura}
-          />
-          <CampoTexto
-            name="paisaje_cierre"
-            etiqueta={t("panel.ajustes.paisajeCierre")}
-            ayuda={t("panel.ajustes.paisajeCierreAyuda")}
-            defaultValue={data?.paisaje_cierre ?? ""}
-            maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_cierre"]}
-            minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
-            disabled={soloLectura}
-          />
-          <div className="grid gap-elemento sm:grid-cols-2">
+          <Ancla campo="paisaje_intro">
             <CampoTexto
-              name="latitud_ceremonia"
-              inputMode="decimal"
-              etiqueta={t("panel.ajustes.latitud")}
-              ayuda={t("panel.ajustes.coordenadasAyuda")}
-              defaultValue={comoTexto(data?.latitud_ceremonia ?? null)}
-              disabled={soloLectura}
+              {...comun("paisaje_intro", data.paisaje_intro ?? "")}
+              etiqueta={t("panel.ajustes.paisajeIntro")}
+              ayuda={t("panel.ajustes.paisajeIntroAyuda")}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_intro"]}
+              minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
             />
+          </Ancla>
+          <Ancla campo="paisaje_titulo">
             <CampoTexto
-              name="longitud_ceremonia"
-              inputMode="decimal"
-              etiqueta={t("panel.ajustes.longitud")}
-              defaultValue={comoTexto(data?.longitud_ceremonia ?? null)}
-              disabled={soloLectura}
+              {...comun("paisaje_titulo", data.paisaje_titulo ?? "")}
+              etiqueta={t("panel.ajustes.paisajeTitulo")}
+              ayuda={t("panel.ajustes.paisajeTituloAyuda")}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_titulo"]}
+              minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
             />
-          </div>
-        </Grupo>
-
-        <Grupo titulo={t("panel.ajustes.grupoBanquete")}>
-          <CampoTexto
-            name="fecha_hora_banquete"
-            type="datetime-local"
-            etiqueta={t("panel.ajustes.fechaBanquete")}
-            ayuda={t("panel.ajustes.fechaBanqueteAyuda")}
-            defaultValue={enLocal(data?.fecha_hora_banquete)}
-            disabled={soloLectura}
-          />
-          <CampoTexto
-            name="lugar_banquete"
-            etiqueta={t("panel.ajustes.lugarBanquete")}
-            defaultValue={data?.lugar_banquete ?? ""}
-            maxLength={LARGOS_DE_CAMPO["configuracion_boda.lugar_banquete"]}
-            disabled={soloLectura}
-          />
-          <CampoTexto
-            name="direccion_banquete"
-            etiqueta={t("panel.ajustes.direccionBanquete")}
-            defaultValue={data?.direccion_banquete ?? ""}
-            maxLength={LARGOS_DE_CAMPO["configuracion_boda.direccion_banquete"]}
-            disabled={soloLectura}
-          />
-          <div className="grid gap-elemento sm:grid-cols-2">
+          </Ancla>
+          <Ancla campo="paisaje_cierre">
             <CampoTexto
-              name="latitud_banquete"
-              inputMode="decimal"
-              etiqueta={t("panel.ajustes.latitud")}
-              ayuda={t("panel.ajustes.coordenadasAyuda")}
-              defaultValue={comoTexto(data?.latitud_banquete ?? null)}
-              disabled={soloLectura}
+              {...comun("paisaje_cierre", data.paisaje_cierre ?? "")}
+              etiqueta={t("panel.ajustes.paisajeCierre")}
+              ayuda={t("panel.ajustes.paisajeCierreAyuda")}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_cierre"]}
+              minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
             />
-            <CampoTexto
-              name="longitud_banquete"
-              inputMode="decimal"
-              etiqueta={t("panel.ajustes.longitud")}
-              defaultValue={comoTexto(data?.longitud_banquete ?? null)}
-              disabled={soloLectura}
-            />
-          </div>
+          </Ancla>
         </Grupo>
 
         <Grupo titulo={t("panel.ajustes.grupoContacto")}>
-          <CampoTexto
-            name="correo_contacto"
-            type="email"
-            etiqueta={t("panel.ajustes.correo")}
-            ayuda={t("panel.ajustes.correoAyuda")}
-            defaultValue={data?.correo_contacto ?? ""}
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            disabled={soloLectura}
-          />
-          <CampoTexto
-            name="fecha_limite_rsvp"
-            type="datetime-local"
-            etiqueta={t("panel.ajustes.limiteRsvp")}
-            ayuda={t("panel.ajustes.limiteRsvpAyuda")}
-            defaultValue={enLocal(data?.fecha_limite_rsvp)}
-            required
-            disabled={soloLectura}
-          />
+          <Ancla campo="correo_contacto">
+            <CampoTexto
+              {...comun("correo_contacto", data.correo_contacto ?? "")}
+              type="email"
+              etiqueta={t("panel.ajustes.correo")}
+              ayuda={t("panel.ajustes.correoAyuda")}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+          </Ancla>
+          <Ancla campo="fecha_limite_rsvp">
+            <CampoTexto
+              {...comun("fecha_limite_rsvp", enLocal(data.fecha_limite_rsvp))}
+              type="datetime-local"
+              etiqueta={t("panel.ajustes.limiteRsvp")}
+              ayuda={t("panel.ajustes.limiteRsvpAyuda")}
+              required
+            />
+          </Ancla>
         </Grupo>
 
         {soloLectura ? null : (
@@ -391,12 +485,45 @@ export default async function PaginaAjustes({
         ceremonia y no cambia la cuenta corriente; con un solo botón de guardar,
         o se le niega todo o se le cuela el IBAN.
       */}
-      <Regalos cuenta={cuenta} soloPropietario={acceso.rol !== "propietario"} />
+      <Regalos
+        key={borrador ? "borrador" : "base"}
+        cuenta={cuenta}
+        lector={soloLectura}
+        soloPropietario={acceso.rol !== "propietario"}
+        borrador={borrador}
+        errorDe={errorDe}
+      />
+    </div>
+  );
+}
 
-      <div>
-        <Etiqueta>{t("panel.ajustes.zonaHoraria")}</Etiqueta>
-        <Cuerpo className="mt-linea">{zona}</Cuerpo>
-      </div>
+/** Latitud y longitud, en una fila desde tableta y cada una con su ancla. */
+function Coordenadas({
+  latitud,
+  longitud,
+}: {
+  latitud: { name: CampoAjustes; defaultValue: string; error?: string; disabled: boolean };
+  longitud: { name: CampoAjustes; defaultValue: string; error?: string; disabled: boolean };
+}) {
+  return (
+    <div className="grid gap-elemento sm:grid-cols-2">
+      <Ancla campo={latitud.name}>
+        <CampoTexto
+          {...latitud}
+          inputMode="decimal"
+          etiqueta={t("panel.ajustes.latitud")}
+          ayuda={t("panel.ajustes.coordenadasAyuda")}
+          pattern="-?[0-9]+([.,][0-9]+)?"
+        />
+      </Ancla>
+      <Ancla campo={longitud.name}>
+        <CampoTexto
+          {...longitud}
+          inputMode="decimal"
+          etiqueta={t("panel.ajustes.longitud")}
+          pattern="-?[0-9]+([.,][0-9]+)?"
+        />
+      </Ancla>
     </div>
   );
 }
@@ -414,11 +541,34 @@ export default async function PaginaAjustes({
  */
 function Regalos({
   cuenta,
+  lector,
   soloPropietario,
+  borrador,
+  errorDe,
 }: {
   cuenta: CuentaRegalos | null;
+  lector: boolean;
   soloPropietario: boolean;
+  borrador: BorradorAjustes | null;
+  errorDe: (campo: CampoAjustes) => string | undefined;
 }) {
+  /*
+    AL LECTOR NO SE LE ENSEÑA EL FORMULARIO. No puede leer la cuenta —la base
+    le da cero filas—, así que veía los campos vacíos junto a «Sin cuenta
+    escrita, la sección de Regalos no aparece» y «Podéis verla», y deducía que
+    no había regalos cuando la sección estaba encendida.
+  */
+  if (lector) {
+    return (
+      <section className="grid gap-elemento border-t border-borde pt-elemento">
+        <Titulo3 como="h2">{t("panel.ajustes.grupoRegalos")}</Titulo3>
+        <Cuerpo className="text-pequeno text-tinta-suave">
+          {t("panel.ajustes.regalosSoloEditores")}
+        </Cuerpo>
+      </section>
+    );
+  }
+
   return (
     <form action={guardarRegalos} className="grid gap-bloque">
       <Grupo titulo={t("panel.ajustes.grupoRegalos")}>
@@ -432,24 +582,30 @@ function Regalos({
           </p>
         ) : null}
 
-        <CampoTexto
-          name="iban_regalos"
-          etiqueta={t("panel.ajustes.iban")}
-          ayuda={t("panel.ajustes.ibanAyuda")}
-          defaultValue={cuenta?.iban_regalos ?? ""}
-          autoCapitalize="characters"
-          autoCorrect="off"
-          spellCheck={false}
-          disabled={soloPropietario}
-        />
+        <Ancla campo="iban_regalos">
+          <CampoTexto
+            name="iban_regalos"
+            etiqueta={t("panel.ajustes.iban")}
+            ayuda={t("panel.ajustes.ibanAyuda")}
+            defaultValue={borrador?.iban_regalos ?? cuenta?.iban_regalos ?? ""}
+            error={errorDe("iban_regalos")}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            disabled={soloPropietario}
+          />
+        </Ancla>
 
-        <CampoTexto
-          name="titular_cuenta"
-          etiqueta={t("panel.ajustes.titularCuenta")}
-          ayuda={t("panel.ajustes.titularCuentaAyuda")}
-          defaultValue={cuenta?.titular_cuenta ?? ""}
-          disabled={soloPropietario}
-        />
+        <Ancla campo="titular_cuenta">
+          <CampoTexto
+            name="titular_cuenta"
+            etiqueta={t("panel.ajustes.titularCuenta")}
+            ayuda={t("panel.ajustes.titularCuentaAyuda")}
+            defaultValue={borrador?.titular_cuenta ?? cuenta?.titular_cuenta ?? ""}
+            error={errorDe("titular_cuenta")}
+            disabled={soloPropietario}
+          />
+        </Ancla>
 
         {soloPropietario ? null : (
           <div>
