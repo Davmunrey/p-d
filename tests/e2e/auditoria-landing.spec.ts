@@ -38,6 +38,34 @@ test.describe("«Confirmar» en la barra", () => {
   });
 });
 
+test.describe("el degradado del final de la tira", () => {
+  const tira = (page: import("@playwright/test").Page) => menu(page).locator("ul");
+  const degradado = (page: import("@playwright/test").Page) =>
+    menu(page).locator(".desvanecer-final");
+
+  test("no vela la última sección cuando la tira cabe entera", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    const cabe = await tira(page).evaluate((ul) => ul.scrollWidth <= ul.clientWidth + 1);
+    test.skip(!cabe, "Con tantas secciones que no caben ni en escritorio, el degradado toca.");
+
+    await expect(degradado(page)).toHaveCount(0);
+  });
+
+  test("en el móvil avisa de que hay más, y deja de hacerlo al llegar al final", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    const desborda = await tira(page).evaluate((ul) => ul.scrollWidth > ul.clientWidth + 1);
+    test.skip(!desborda, "Con una sola sección la tira cabe hasta en el móvil.");
+
+    await expect(degradado(page)).toHaveCount(1);
+    await tira(page).evaluate((ul) => ul.scrollTo({ left: ul.scrollWidth }));
+    await expect(degradado(page)).toHaveCount(0);
+  });
+});
+
 test("las rutas de «Cómo llegar» alinean su texto, sea cual sea la duración", async ({
   page,
 }) => {

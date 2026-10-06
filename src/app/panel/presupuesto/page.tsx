@@ -20,7 +20,7 @@ import {
   type ResumenCategoria,
 } from "@/lib/bbdd/presupuesto";
 import { t } from "@/lib/copy";
-import { formateadorDeImporte } from "@/lib/importe";
+import { formateadorDeImporte, importeParaCampo } from "@/lib/importe";
 import { accesoActual } from "@/lib/sesion";
 
 import { borrarCategoria, crearCategoria, editarCategoria } from "./acciones";
@@ -77,12 +77,21 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
   */
   const euros = moneda ? formateadorDeImporte(moneda) : null;
 
+  /*
+    EL TOTAL LLEVA LAS CUATRO CIFRAS. Se quedaba en previsto y «va costando», y
+    las dos columnas que más se miran —cuánto se ha pagado ya y cuánto queda de
+    margen— acababan en blanco justo en la fila que resume. La diferencia total
+    es la suma de las de cada categoría: lo que sobra en unas compensa lo que
+    falta en otras, que es la pregunta de «¿nos llega?».
+  */
   const totales = resumen.reduce(
     (suma, fila) => ({
       previsto: suma.previsto + fila.importePrevisto,
       real: suma.real + loQueVaCostando(fila),
+      pagado: suma.pagado + fila.pagado,
+      desviacion: suma.desviacion + fila.desviacion,
     }),
-    { previsto: 0, real: 0 },
+    { previsto: 0, real: 0, pagado: 0, desviacion: 0 },
   );
 
   const aDecidir = estado === "decidir-gastos" ? soloTexto(consulta.categoria) : "";
@@ -139,7 +148,7 @@ function Tabla({
   euros,
 }: {
   resumen: ResumenCategoria[];
-  totales: { previsto: number; real: number };
+  totales: { previsto: number; real: number; pagado: number; desviacion: number };
   euros: ((valor: number) => string) | null;
 }) {
   const importe = (valor: number) => (euros ? euros(valor) : "");
@@ -182,23 +191,13 @@ function Tabla({
                 <td className="py-linea pr-interno text-right tabular-nums text-tinta-suave">
                   {importe(fila.pagado)}
                 </td>
-                {/*
-                  PASARSE NO SE MARCA SÓLO CON COLOR. El signo ya lo dice —la
-                  desviación negativa es lo que sobra— y además lleva su
-                  palabra, porque un rojo no lo lee ni un daltónico ni un lector
-                  de pantalla ni nadie con el sol de junio en la pantalla.
-                */}
                 <td
                   className={`py-linea text-right tabular-nums ${
                     fila.desviacion < 0 ? "text-error" : "text-tinta-suave"
                   }`}
                 >
                   {importe(fila.desviacion)}
-                  {fila.desviacion < 0 ? (
-                    <span className="ml-interno-compacto text-etiqueta uppercase tracking-etiqueta">
-                      {t("panel.presupuesto.pasado")}
-                    </span>
-                  ) : null}
+                  <DeMas desviacion={fila.desviacion} />
                 </td>
               </tr>
             ))}
@@ -214,7 +213,17 @@ function Tabla({
               <td className="py-interno-compacto pr-interno text-right tabular-nums text-tinta">
                 {importe(totales.real)}
               </td>
-              <td colSpan={2} />
+              <td className="py-interno-compacto pr-interno text-right tabular-nums text-tinta">
+                {importe(totales.pagado)}
+              </td>
+              <td
+                className={`py-interno-compacto text-right tabular-nums ${
+                  totales.desviacion < 0 ? "text-error" : "text-tinta"
+                }`}
+              >
+                {importe(totales.desviacion)}
+                <DeMas desviacion={totales.desviacion} />
+              </td>
             </tr>
           </tfoot>
         </table>
@@ -282,6 +291,36 @@ function DecidirGastos({
  * al lector de pantalla si es la única forma, y aquí lo que se ordena son ocho
  * filas que se colocan una vez y no se vuelven a tocar.
  */
+/**
+ * PASARSE NO SE MARCA SÓLO CON COLOR. El signo ya lo dice —la desviación
+ * negativa es lo que sobra— y además lleva su palabra, porque un rojo no lo lee
+ * ni un daltónico ni un lector de pantalla ni nadie con el sol de junio en la
+ * pantalla. Va entera a la línea de abajo si no cabe: partida, «DE» y «MÁS»
+ * quedaban cada una en su renglón.
+ */
+function DeMas({ desviacion }: { desviacion: number }) {
+  if (desviacion >= 0) return null;
+  return (
+    <span className="ml-interno-compacto inline-block whitespace-nowrap text-etiqueta uppercase tracking-etiqueta">
+      {t("panel.presupuesto.pasado")}
+    </span>
+  );
+}
+
+/*
+  EL NOMBRE SE QUEDA EL SITIO, EL ORDEN SÓLO EL QUE NECESITA. Con
+  `2fr_1fr_auto_auto`, la columna `auto` del orden tomaba el ancho natural de un
+  campo numérico —unos 170 px— y en la tableta, con el lateral abierto, al
+  nombre le tocaban 60: se leía «(DES» y nada más. El orden son dos cifras y
+  tiene su token; nombre y previsto se reparten el resto. Y hasta escritorio el
+  nombre va en su propia fila: junto al botón, ni repartiendo bien le cabía.
+*/
+const FILA_CATEGORIA =
+  "grid gap-interno sm:grid-cols-[minmax(0,1fr)_var(--spacing-campo-corto)_auto] sm:items-end lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_var(--spacing-campo-corto)_auto]";
+
+/** En tableta el nombre va solo en su fila; en escritorio, en la de todos. */
+const CAMPO_NOMBRE = "sm:col-span-full lg:col-span-1";
+
 function Edicion({ categorias }: { categorias: CategoriaPresupuesto[] }) {
   if (categorias.length === 0) return null;
 
@@ -295,13 +334,11 @@ function Edicion({ categorias }: { categorias: CategoriaPresupuesto[] }) {
       <ul className="mt-elemento grid gap-interno">
         {categorias.map((categoria) => (
           <li key={categoria.id} className="rounded-tarjeta border border-borde p-interno">
-            <form
-              action={editarCategoria}
-              className="grid gap-interno sm:grid-cols-[2fr_1fr_auto_auto] sm:items-end"
-            >
+            <form action={editarCategoria} className={FILA_CATEGORIA}>
               <input type="hidden" name="id" value={categoria.id} />
               <CampoTexto
                 etiqueta={t("panel.presupuesto.campoNombre")}
+                className={CAMPO_NOMBRE}
                 name="nombre"
                 type="text"
                 required
@@ -313,7 +350,7 @@ function Edicion({ categorias }: { categorias: CategoriaPresupuesto[] }) {
                 name="importe_previsto"
                 type="text"
                 inputMode="decimal"
-                defaultValue={String(categoria.importePrevisto)}
+                defaultValue={importeParaCampo(categoria.importePrevisto)}
               />
               <CampoTexto
                 etiqueta={t("panel.presupuesto.campoOrden")}
@@ -346,19 +383,19 @@ function Alta() {
         {t("panel.presupuesto.nuevaAyuda")}
       </Cuerpo>
 
-      <form
-        action={crearCategoria}
-        className="mt-elemento grid gap-interno sm:grid-cols-[2fr_1fr_auto_auto] sm:items-end"
-      >
+      <form action={crearCategoria} className={`mt-elemento ${FILA_CATEGORIA}`}>
         <CampoTexto
           etiqueta={t("panel.presupuesto.campoNombre")}
+          className={CAMPO_NOMBRE}
           name="nombre"
           type="text"
           required
           maxLength={LARGOS_DE_CAMPO["categorias_presupuesto.nombre"]}
         />
         {/* La ayuda del importe va bajo la fila: colgada del campo, lo subía
-            por encima de los otros dos y del botón. */}
+            por encima de los otros dos y del botón. En el móvil, donde no hay
+            fila, el orden y el botón bajan detrás de ella para que la ayuda
+            quede pegada al importe y no debajo de «Crear». */}
         <CampoTexto
           etiqueta={t("panel.presupuesto.campoPrevisto")}
           aria-describedby="ayuda-previsto-nueva"
@@ -368,12 +405,13 @@ function Alta() {
         />
         <CampoTexto
           etiqueta={t("panel.presupuesto.campoOrden")}
+          className="max-sm:order-1"
           name="orden"
           type="number"
           min={0}
         />
-        <BotonEnvio>{t("panel.presupuesto.crear")}</BotonEnvio>
-        <p id="ayuda-previsto-nueva" className="text-pequeno text-tinta-suave sm:col-span-4">
+        <BotonEnvio className="max-sm:order-1">{t("panel.presupuesto.crear")}</BotonEnvio>
+        <p id="ayuda-previsto-nueva" className="text-pequeno text-tinta-suave sm:col-span-full">
           {t("panel.presupuesto.campoPrevistoAyuda")}
         </p>
       </form>

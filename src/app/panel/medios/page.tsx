@@ -315,10 +315,15 @@ function Ficha({
               «editar»: es lo que más se escribe mal con prisa y lo único de esta
               ficha que se corrige de verdad. Esconderlo garantiza que nadie lo
               arregle.
+
+              CAMPO Y BOTÓN EN FILA SÓLO EN ESCRITORIO. En la tableta, junto a
+              la miniatura, al campo le quedaban 115 px: el texto se cortaba a
+              la tercera palabra y el rótulo partía en dos líneas. Debajo, el
+              campo tiene el ancho de la ficha y el texto se lee entero.
             */}
             <form
               action={guardarAlternativo}
-              className="grid items-end gap-interno-compacto sm:grid-cols-[1fr_auto]"
+              className="grid items-end gap-interno-compacto lg:grid-cols-[minmax(0,1fr)_auto]"
             >
               <input type="hidden" name="medio_id" value={medio.id} />
               <CampoTexto
@@ -329,7 +334,7 @@ function Ficha({
                 maxLength={LARGOS_DE_CAMPO["medios.texto_alternativo"]}
                 required
               />
-              <BotonEnvio jerarquia="secundario">
+              <BotonEnvio jerarquia="secundario" className="justify-self-start">
                 {t("panel.medios.guardarAlternativo")}
               </BotonEnvio>
             </form>

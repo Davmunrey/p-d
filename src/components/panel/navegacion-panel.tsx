@@ -50,7 +50,11 @@ function etiquetaDe(clave: ClaveModulo): string {
   return t(`panel.modulos.${clave}`);
 }
 
-export function NavegacionPanel() {
+/**
+ * `marca` son los nombres de los novios, leídos de la base por el layout: aquí
+ * no se escriben, que es un componente de cliente y la base no llega.
+ */
+export function NavegacionPanel({ marca }: { marca: string }) {
   const ruta = usePathname();
   const activo = moduloActivo(ruta);
   const tira = useRef<HTMLUListElement>(null);
@@ -81,7 +85,7 @@ export function NavegacionPanel() {
           prefetch={false}
           className="px-interno-compacto font-titulo text-titulo-3 leading-titulo-corto text-tinta-marca transicion-color hover:text-tinta"
         >
-          {t("meta.titulo")}
+          {marca}
         </Link>
 
         <ul className="grid gap-linea">

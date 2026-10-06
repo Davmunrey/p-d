@@ -415,6 +415,13 @@
   /* Ancho mínimo de una cifra grande, para que la cuenta atrás no baile. */
   --size-cifra: 5.5rem;
 
+  /*
+   * Ancho de un campo que sólo lleva un número corto —el orden de una lista,
+   * dos o tres cifras—: cabe con su relleno y las flechas del navegador, y no
+   * le quita sitio al nombre que va al lado.
+   */
+  --size-campo-corto: 6rem;
+
   /**
    * Lado de una casilla o un radio del RSVP. Los nativos miden 13 px, que en un
    * móvil se falla más de lo que se acierta. Aquí se agrandan sin sustituirlos

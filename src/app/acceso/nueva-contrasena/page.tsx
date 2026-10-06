@@ -5,6 +5,7 @@ import { Boton } from "@/components/ui/boton";
 import { CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import { LONGITUD_MINIMA_CONTRASENA, RUTA_ACCESO } from "@/config/constants";
+import { nombresDeLaBoda } from "@/lib/bbdd/landing";
 import { hayAutenticacion, clienteServidor } from "@/lib/supabase/servidor";
 import { t } from "@/lib/copy";
 
@@ -39,10 +40,12 @@ export default async function PaginaNuevaContrasena({
 
   const { estado } = await searchParams;
 
+  const nombres = await nombresDeLaBoda();
+
   return (
     <main className="grid min-h-dvh place-items-center px-margen py-elemento">
       <div className="mx-auto w-full max-w-texto">
-        <Etiqueta>{t("meta.titulo")}</Etiqueta>
+        <Etiqueta>{nombres ?? t("meta.titulo")}</Etiqueta>
         <Titulo2 como="h1" className="mt-pila">
           {t("acceso.nuevaTitulo")}
         </Titulo2>

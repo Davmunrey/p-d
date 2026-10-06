@@ -6,6 +6,7 @@ import { CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import { PARAMETRO_VOLVER, RUTA_PANEL, RUTA_RECUPERAR } from "@/config/constants";
 import { accesoActual } from "@/lib/sesion";
+import { nombresDeLaBoda } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 
 import { entrar } from "./acciones";
@@ -58,14 +59,20 @@ export default async function PaginaAcceso({
   // acepta o se descarta en `entrar()`, que es quien puede: aquí solo se pasa.
   const volver = parametros[PARAMETRO_VOLVER];
 
+  const nombres = await nombresDeLaBoda();
+
   return (
     <main className="grid min-h-dvh place-items-center px-margen py-elemento">
       <div className="mx-auto w-full max-w-texto">
-        <Etiqueta>{t("meta.titulo")}</Etiqueta>
+        <Etiqueta>{nombres ?? t("meta.titulo")}</Etiqueta>
         <Titulo2 como="h1" className="mt-pila">
           {t("acceso.titulo")}
         </Titulo2>
-        <Cuerpo className="mt-pila">{t("acceso.descripcion")}</Cuerpo>
+        <Cuerpo className="mt-pila">
+          {nombres
+            ? t("acceso.descripcion", { novios: nombres })
+            : t("acceso.descripcionSinNombres")}
+        </Cuerpo>
 
         {mensaje ? (
           <p role="alert" className="mt-elemento text-pequeno text-error-tinta">

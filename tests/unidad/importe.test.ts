@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { IMPORTE_MAXIMO } from "@/config/constants";
-import { leerImporte } from "@/lib/importe";
+import { importeParaCampo, leerImporte } from "@/lib/importe";
 
 /**
  * CÓMO SE LEE UN IMPORTE TECLEADO
@@ -105,5 +105,27 @@ describe("leerImporte", () => {
   it("rechaza los negativos: un gasto no devuelve dinero", () => {
     expect(leerImporte("-300")).toBeUndefined();
     expect(leerImporte("-0,01")).toBeUndefined();
+  });
+});
+
+describe("importeParaCampo", () => {
+  it("escribe la coma del castellano y los dos decimales, no «1250.5»", () => {
+    expect(importeParaCampo(1250.5)).toBe("1250,50");
+    expect(importeParaCampo(0.05)).toBe("0,05");
+  });
+
+  it("sin punto de millar: es un campo que se edita", () => {
+    expect(importeParaCampo(12000.5)).toBe("12000,50");
+    expect(importeParaCampo(20000)).toBe("20000");
+  });
+
+  it("sin importe, el campo queda vacío y no dice «0»", () => {
+    expect(importeParaCampo(null)).toBe("");
+  });
+
+  it("lo que escribe, leerImporte lo lee igual: guardar sin tocar no cambia nada", () => {
+    for (const importe of [0, 1, 0.05, 99.99, 1250.5, 12000.5, 450, IMPORTE_MAXIMO]) {
+      expect(leerImporte(importeParaCampo(importe))).toBe(importe);
+    }
   });
 });

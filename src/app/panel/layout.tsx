@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { NavegacionPanel } from "@/components/panel/navegacion-panel";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { ID_CONTENIDO, RUTA_ACCESO } from "@/config/constants";
+import { nombresDeLaBoda } from "@/lib/bbdd/landing";
 import { accesoActual } from "@/lib/sesion";
 import { t } from "@/lib/copy";
 
@@ -30,7 +31,10 @@ export const metadata: Metadata = {
 };
 
 export default async function LayoutPanel({ children }: { children: ReactNode }) {
-  const acceso = await accesoActual();
+  // Los nombres de la cabecera lateral salen de la base, a la vez que se
+  // comprueba el acceso: si los novios los corrigen en Ajustes, el panel
+  // también lo dice al momento. Son datos públicos, los mismos de la portada.
+  const [acceso, nombres] = await Promise.all([accesoActual(), nombresDeLaBoda()]);
 
   // Ni sesión, ni perfil, ni perfil activo: los tres acaban en la puerta, y sin
   // un mensaje que distinga cuál de los tres era.
@@ -45,7 +49,7 @@ export default async function LayoutPanel({ children }: { children: ReactNode })
         {t("panel.saltarAlContenido")}
       </a>
 
-      <NavegacionPanel />
+      <NavegacionPanel marca={nombres ?? t("meta.titulo")} />
 
       {/*
         El hueco lo deja el contenido, no la navegación: está fija, así que no

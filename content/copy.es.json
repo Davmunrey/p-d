@@ -15,7 +15,7 @@
     "reintentar": "Probar otra vez"
   },
   "meta": {
-    "titulo": "Paloma y David",
+    "titulo": "Nuestra boda",
     "descripcion": "Nos casamos. Aquí tenéis todo lo que necesitáis saber."
   },
   "navegacion": {
@@ -318,7 +318,8 @@
   },
   "acceso": {
     "titulo": "Entrar",
-    "descripcion": "El panel es solo para Paloma y David.",
+    "descripcion": "El panel es solo para {novios}.",
+    "descripcionSinNombres": "El panel es solo para los novios.",
     "correo": "Correo electrónico",
     "contrasena": "Contraseña",
     "entrar": "Entrar",

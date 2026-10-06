@@ -72,7 +72,10 @@ test.describe("Ajustes de la boda", () => {
   /**
    * CAMINO FELIZ. Cambiar los nombres en el panel los cambia en la portada.
    */
-  test("cambiar los nombres los cambia en la portada de la landing", async ({ page }) => {
+  test("cambiar los nombres los cambia en la portada de la landing", async ({
+    page,
+    browser,
+  }) => {
     const novia = page.getByLabel(copy.panel.ajustes.nombreNovia);
     const novio = page.getByLabel(copy.panel.ajustes.nombreNovio);
 
@@ -95,6 +98,26 @@ test.describe("Ajustes de la boda", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 }).first()).toContainText(nuevaNovia);
     await expect(page.getByText(nuevoNovio).first()).toBeVisible();
+
+    // Y en todo lo demás que lleva los nombres, que antes salía del copy: la
+    // tarjeta al compartir cualquier página —también la de cada invitación—,
+    // la cabecera del panel y la puerta de entrada.
+    const nombres = `${nuevaNovia} ${copy.portada.conjuncion} ${nuevoNovio}`;
+    await page.goto(RUTA_AJUSTES);
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", nombres);
+    // El lateral sólo se pinta en escritorio; en el móvil está, oculto.
+    await expect(
+      page
+        .getByRole("navigation", { name: copy.panel.navegacion, includeHidden: true })
+        .getByRole("link", { name: nombres, includeHidden: true }),
+    ).toHaveCount(1);
+    const anonimo = await browser.newContext({ locale: "es-ES" });
+    const puerta = await anonimo.newPage();
+    await puerta.goto("/acceso");
+    await expect(
+      puerta.getByText(copy.acceso.descripcion.replace("{novios}", nombres)),
+    ).toBeVisible();
+    await anonimo.close();
 
     await page.goto(RUTA_AJUSTES);
     await page.getByLabel(copy.panel.ajustes.nombreNovia).fill(noviaOriginal);

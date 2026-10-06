@@ -144,9 +144,19 @@ function Punto({
   const corregir = t("panel.dia.escribir.editarEste", { titulo: punto.titulo });
   return (
     <li className="rounded-campo border border-borde p-elemento">
-      <div className="flex flex-wrap items-baseline gap-x-elemento gap-y-linea">
-        <span className="text-cuerpo tabular-nums text-tinta">{punto.hora}</span>
-        <span className="text-cuerpo text-tinta">{punto.titulo}</span>
+      {/*
+        LA HORA ENCIMA DEL TÍTULO, SIEMPRE. En la misma línea, cada punto caía
+        como le venía: «15:00 Entrada al banquete» en una fila y, al lado, «al
+        acabar la ceremonia» empujando el título a la siguiente. Apiladas, la
+        lista se lee igual en todos y como en «El día de la boda».
+      */}
+      <div className="flex flex-wrap items-start justify-between gap-x-elemento gap-y-linea">
+        <div className="min-w-0">
+          <span className="block text-cuerpo-grande tabular-nums text-tinta-marca">
+            {punto.hora}
+          </span>
+          <span className="mt-linea block text-cuerpo text-tinta">{punto.titulo}</span>
+        </div>
         {punto.hechoEn ? (
           <EtiquetaEstado variante="contorno" tamano="versalita">
             {t("panel.dia.escribir.hecho")}

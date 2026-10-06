@@ -371,6 +371,7 @@
   --ancho-columna-llegar: var(--size-columna-llegar);
   --ancho-foto-tira: var(--size-foto-tira);
   --ancho-cifra: var(--size-cifra);
+  --ancho-campo-corto: var(--size-campo-corto);
   --lado-casilla: var(--size-casilla);
   --alto-barra-grafica: var(--size-barra-grafica);
   --alto-barra-grafica-par: var(--size-barra-grafica-par);

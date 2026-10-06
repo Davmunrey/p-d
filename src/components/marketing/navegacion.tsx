@@ -47,6 +47,7 @@ export function Navegacion({
   const cabecera = useRef<HTMLElement>(null);
   const tira = useRef<HTMLUListElement>(null);
   const anclaActiva = useAnclaVisible(enlaces, cabecera);
+  const quedaTira = useQuedaPorLaDerecha(tira);
 
   const confirmar = enlaces.find((enlace) => enlace.seccion === "rsvp");
   const secciones = enlaces.filter((enlace) => enlace !== confirmar);
@@ -125,6 +126,12 @@ export function Navegacion({
           Y el corte se desvanece en lugar de tajarse a media palabra: un rótulo
           partido en seco parece un fallo, mientras que un degradado dice «esto
           sigue» sin escribirlo. También de la entrega.
+
+          PERO SOLO CUANDO SIGUE. Puesto siempre, en escritorio —donde la tira
+          cabe entera— borraba media «R» de «Cómo llegar» sin que hubiera nada
+          detrás, y al llegar al final de la tira en el móvil seguía velando la
+          última sección. Un degradado que dice «hay más» cuando no lo hay es
+          justo el fallo que venía a evitar.
         */}
         {/*
           CONFIRMAR VA FUERA DE LA TIRA, como en la entrega. Dentro de la tira
@@ -135,7 +142,7 @@ export function Navegacion({
           pantalla lo encuentra donde siempre, el último.
         */}
         <nav aria-label={etiqueta} className="ml-auto flex min-w-0 items-center gap-tira-nav">
-          <div className="desvanecer-final min-w-0">
+          <div className={quedaTira ? "desvanecer-final min-w-0" : "min-w-0"}>
             <ul
               ref={tira}
               className="flex h-cabecera items-stretch justify-start gap-tira-nav overflow-x-auto"
@@ -197,6 +204,41 @@ export function Navegacion({
       </div>
     </header>
   );
+}
+
+/**
+ * Si a la tira le queda contenido por la derecha: desborda y no se ha
+ * deslizado hasta el final. Se vuelve a medir al deslizarla y cuando cambia su
+ * ancho —girar el móvil, cambiar el tamaño de la ventana—.
+ *
+ * Antes de hidratar se supone que sí queda, que es lo que pasa en el móvil:
+ * ahí es donde importa que el corte no se lea como un fallo desde el primer
+ * fotograma. En escritorio el degradado desaparece al hidratar.
+ */
+function useQuedaPorLaDerecha(tira: React.RefObject<HTMLElement | null>): boolean {
+  const [queda, setQueda] = useState(true);
+
+  useEffect(() => {
+    const elemento = tira.current;
+    if (!elemento) return;
+
+    // Un píxel de holgura: el ancho de desplazamiento se redondea y, con
+    // zoom, el final exacto puede quedarse a medio píxel.
+    const medir = () =>
+      setQueda(elemento.scrollLeft + elemento.clientWidth < elemento.scrollWidth - 1);
+    medir();
+
+    elemento.addEventListener("scroll", medir, { passive: true });
+    const observador = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(medir);
+    observador?.observe(elemento);
+
+    return () => {
+      elemento.removeEventListener("scroll", medir);
+      observador?.disconnect();
+    };
+  }, [tira]);
+
+  return queda;
 }
 
 /**

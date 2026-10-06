@@ -25,7 +25,7 @@ import {
 } from "@/lib/bbdd/presupuesto";
 import { obtenerProveedores, type Proveedor } from "@/lib/bbdd/proveedores";
 import { t } from "@/lib/copy";
-import { formateadorDeImporte } from "@/lib/importe";
+import { formateadorDeImporte, importeParaCampo } from "@/lib/importe";
 import { accesoActual } from "@/lib/sesion";
 
 import { borrarGasto, crearGasto, editarGasto } from "./acciones";
@@ -389,14 +389,14 @@ function Edicion({
           name="importe_estimado"
           type="text"
           inputMode="decimal"
-          defaultValue={String(gasto.importeEstimado)}
+          defaultValue={importeParaCampo(gasto.importeEstimado)}
         />
         <CampoTexto
           etiqueta={t("panel.presupuesto.gastos.campoAcordado")}
           name="importe_real"
           type="text"
           inputMode="decimal"
-          defaultValue={gasto.importeReal === null ? "" : String(gasto.importeReal)}
+          defaultValue={importeParaCampo(gasto.importeReal)}
         />
 
         <CampoSeleccion

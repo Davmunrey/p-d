@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Image from "next/image";
 import { Fragment, type ReactNode } from "react";
 
@@ -25,7 +24,7 @@ import {
   Titulo1,
   Titulo3,
 } from "@/components/ui/tipografia";
-import { BUCKET_MEDIOS, IDIOMA_OG, ID_CONTENIDO } from "@/config/constants";
+import { BUCKET_MEDIOS, ID_CONTENIDO } from "@/config/constants";
 import { anclaDe, esAncla, vaEnElMenu, type Seccion } from "@/config/secciones";
 import {
   obtenerAlojamientos,
@@ -99,32 +98,6 @@ import { invitacionRecordada } from "@/lib/invitacion-recordada";
  * cambio en el panel.
  */
 export const dynamic = "force-dynamic";
-
-/**
- * EL TÍTULO Y LA TARJETA AL COMPARTIR, CON LOS NOMBRES DE LA BASE.
- *
- * Salían del copy, escritos a mano: si los novios corregían cómo se escriben
- * sus nombres en Ajustes, la portada cambiaba y la pestaña y la vista previa de
- * WhatsApp seguían con los de antes. Los datos de la boda viven en la base
- * (regla 1). Si la base no contesta, se queda lo del layout: un título de más
- * vale menos que tumbar la petición.
- */
-export async function generateMetadata(): Promise<Metadata> {
-  const configuracion = await obtenerConfiguracion().catch(() => null);
-  if (!configuracion) return {};
-
-  const nombres = `${configuracion.nombreNovia} ${t("portada.conjuncion")} ${configuracion.nombreNovio}`;
-  return {
-    title: nombres,
-    openGraph: {
-      title: nombres,
-      description: t("meta.descripcion"),
-      type: "website",
-      locale: IDIOMA_OG,
-      siteName: nombres,
-    },
-  };
-}
 
 export default async function PaginaInicio() {
   /*

@@ -26,7 +26,7 @@ import {
   type Pago,
 } from "@/lib/bbdd/pagos";
 import { t } from "@/lib/copy";
-import { formateadorDeImporte } from "@/lib/importe";
+import { formateadorDeImporte, importeParaCampo } from "@/lib/importe";
 import { accesoActual } from "@/lib/sesion";
 
 import { borrarPago, crearPago, editarPago, marcarPagado } from "./acciones";
@@ -470,7 +470,7 @@ function Edicion({ pago, gastos }: { pago: Pago; gastos: GastoParaPagar[] }) {
           type="text"
           inputMode="decimal"
           required
-          defaultValue={String(pago.importe)}
+          defaultValue={importeParaCampo(pago.importe)}
         />
 
         <CampoTexto

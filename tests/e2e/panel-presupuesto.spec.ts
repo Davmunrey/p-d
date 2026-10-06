@@ -3,6 +3,7 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_PANEL, RUTA_PRESUPUESTO } from "../../src/config/constants";
+import { formateadorDeImporte } from "../../src/lib/importe";
 
 /**
  * BODA-60 · Categorías de presupuesto
@@ -58,6 +59,34 @@ async function entrar(pagina: Page) {
   await pagina.getByLabel(copy.acceso.contrasena, { exact: true }).fill(CONTRASENA!);
   await pagina.getByRole("button", { name: copy.acceso.entrar }).click();
   await expect(pagina).toHaveURL(new RegExp(RUTA_PANEL));
+}
+
+/**
+ * Las cifras se piden al mismo módulo que las escribe en la pantalla, con la
+ * moneda de la boda: escritas a mano, este proyecto ya tropezó dos veces con
+ * el punto de millar.
+ */
+async function comoSeEscribenLosImportes(): Promise<(importe: number) => string> {
+  const [configuracion] = await conBase(
+    (sql) => sql<{ moneda: string }[]>`select moneda from public.configuracion_boda limit 1`,
+  );
+  return formateadorDeImporte(configuracion.moneda);
+}
+
+/** Lo pagado y la diferencia de todas las categorías, sumados por la base. */
+async function sumasDeLaBase(): Promise<{ pagado: number; desviacion: number }> {
+  const [suma] = await conBase(
+    (sql) => sql<{ pagado: string; desviacion: string }[]>`
+      select coalesce(sum(pagado), 0) as pagado, coalesce(sum(desviacion), 0) as desviacion
+      from public.v_resumen_presupuesto
+    `,
+  );
+  return { pagado: Number(suma.pagado), desviacion: Number(suma.desviacion) };
+}
+
+/** Las cuatro cifras de la fila del total: previsto, va costando, pagado y diferencia. */
+async function celdasDelTotal(pagina: Page): Promise<string[]> {
+  return (await pagina.locator("tfoot td").allTextContents()).map((celda) => celda.trim());
 }
 
 /** Las secciones se localizan por su título, nunca por su posición. */
@@ -167,6 +196,15 @@ test.describe("Las categorías del presupuesto", () => {
     await expect(fila).toHaveCount(1);
     await expect(fila).toContainText("1250,50");
 
+    // Y al corregirla, su campo lo escribe como la tabla: con la coma del
+    // castellano, no «1250.5».
+    const ficha = page
+      .locator("li")
+      .filter({ has: page.locator(`input[name="nombre"][value="${nombre}"]`) });
+    await expect(
+      ficha.getByLabel(copy.panel.presupuesto.campoPrevisto, { exact: true }),
+    ).toHaveValue("1250,50");
+
     // Y guardado como número, no como el texto que se tecleó.
     const [guardada] = await conBase(
       (sql) => sql<{ id: string; importe_previsto: string }[]>`
@@ -174,6 +212,72 @@ test.describe("Las categorías del presupuesto", () => {
       `,
     );
     expect(Number(guardada.importe_previsto)).toBe(1250.5);
+  });
+
+  /**
+   * LA FILA DEL TOTAL LLEVA LAS CUATRO CIFRAS. Lo pagado y la diferencia
+   * salían en blanco justo donde se resume. Se compara con lo que suma la base,
+   * y como los demás tests escriben a la vez, se relee hasta que cuadran.
+   */
+  test("el total suma lo pagado y la diferencia, como la base", async ({ page }) => {
+    await entrar(page);
+    await page.goto(RUTA_PRESUPUESTO);
+    const formato = await comoSeEscribenLosImportes();
+
+    await expect(async () => {
+      const suma = await sumasDeLaBase();
+      await page.reload();
+      const celdas = await celdasDelTotal(page);
+      expect(celdas[2]).toBe(formato(suma.pagado));
+      expect(celdas[3]).toBe(
+        suma.desviacion < 0
+          ? `${formato(suma.desviacion)}${copy.panel.presupuesto.pasado}`
+          : formato(suma.desviacion),
+      );
+    }).toPass({ timeout: 60_000 });
+  });
+
+  /**
+   * CASO DE ERROR · PASARSE EN EL TOTAL TAMBIÉN SE DICE CON PALABRAS, no sólo
+   * en rojo: una categoría sin previsión con un gasto mayor que todo el margen
+   * que queda deja la diferencia total en negativo.
+   */
+  test("un total por encima de lo previsto lleva su «de más»", async ({ page }) => {
+    const nombre = `${MARCA} Total ${Date.now()}`;
+    const margen = (await sumasDeLaBase()).desviacion;
+    const exceso = Math.max(margen, 0) + 1000;
+
+    await conBase(async (sql) => {
+      const [categoria] = await sql<{ id: string }[]>`
+        insert into public.categorias_presupuesto (nombre, importe_previsto, orden)
+        values (${nombre}, 0, 90)
+        returning id
+      `;
+      await sql`
+        insert into public.partidas_presupuesto (categoria_id, concepto, importe_estimado)
+        values (${categoria.id}, ${`${MARCA} Exceso`}, ${exceso})
+      `;
+    });
+
+    try {
+      await entrar(page);
+      await page.goto(RUTA_PRESUPUESTO);
+      await expect(async () => {
+        await page.reload();
+        const celdas = await celdasDelTotal(page);
+        expect(celdas[3]).toContain(copy.panel.presupuesto.pasado);
+      }).toPass({ timeout: 60_000 });
+      await expect(page.locator("tfoot td").last()).toHaveClass(/text-error/);
+    } finally {
+      await conBase(async (sql) => {
+        await sql`
+          delete from public.partidas_presupuesto where categoria_id in (
+            select id from public.categorias_presupuesto where nombre = ${nombre}
+          )
+        `;
+        await sql`delete from public.categorias_presupuesto where nombre = ${nombre}`;
+      });
+    }
   });
 
   /**

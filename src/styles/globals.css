@@ -329,6 +329,7 @@
   --spacing-control-compacto: var(--alto-control-compacto);
   --spacing-campo: var(--alto-campo);
   --spacing-cifra: var(--ancho-cifra);
+  --spacing-campo-corto: var(--ancho-campo-corto);
   --spacing-casilla: var(--lado-casilla);
   --spacing-barra-grafica: var(--alto-barra-grafica);
   --spacing-barra-grafica-par: var(--alto-barra-grafica-par);

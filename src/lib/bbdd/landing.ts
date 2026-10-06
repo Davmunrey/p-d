@@ -1,7 +1,10 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { LIMITE_CANCIONES_PORTADA } from "@/config/constants";
 import { esSeccionConocida, type Seccion } from "@/config/secciones";
+import { t } from "@/lib/copy";
 
 import { leerComoAnonimo } from "./cliente";
 
@@ -163,8 +166,13 @@ export async function obtenerSecciones(): Promise<Seccion[]> {
 /**
  * Configuración de la boda. Devuelve `null` si todavía no se ha configurado,
  * para que la landing pueda decirlo en lugar de romperse.
+ *
+ * Con `cache`, una sola consulta por petición aunque la pidan el layout (para
+ * el título), los metadatos de la página y la página misma.
  */
-export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> {
+export const obtenerConfiguracion = cache(leerConfiguracion);
+
+async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
   const filas = await leerComoAnonimo(
     (tx) => tx<
       {
@@ -219,6 +227,21 @@ export async function obtenerConfiguracion(): Promise<ConfiguracionBoda | null> 
     correoContacto: fila.correo_contacto,
     hashtag: fila.hashtag,
   };
+}
+
+/**
+ * «Paloma y David», como se escribe en el título de la web, la puerta del panel
+ * y su cabecera: de la base, que es donde los novios lo cambian desde Ajustes.
+ *
+ * NO LANZA. Lo usan el layout raíz y la puerta del panel, y ninguno de los dos
+ * puede caerse porque la base tarde: con `null`, quien lo pinta pone un rótulo
+ * sin nombres —nunca unos escritos de memoria, que dejarían de ser los suyos el
+ * día que los cambien—.
+ */
+export async function nombresDeLaBoda(): Promise<string | null> {
+  const configuracion = await obtenerConfiguracion().catch(() => null);
+  if (!configuracion) return null;
+  return `${configuracion.nombreNovia} ${t("portada.conjuncion")} ${configuracion.nombreNovio}`;
 }
 
 /**

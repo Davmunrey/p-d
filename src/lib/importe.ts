@@ -41,6 +41,31 @@ export function formateadorDeImporte(moneda: string): (importe: number) => strin
 }
 
 /**
+ * UN IMPORTE GUARDADO → LO QUE LLEVA SU CAMPO AL CORREGIRLO.
+ *
+ * Con `String(1250.5)` el campo decía «1250.5»: con punto decimal, a la
+ * inglesa, en una pantalla que dos líneas más arriba escribe «1250,50 €». Quien
+ * lo corrige ve un número que no reconoce —¿mil doscientos cincuenta y medio, o
+ * uno con veinticinco?— y lo vuelve a teclear entero.
+ *
+ * Aquí se escribe como en la tabla, con la coma del idioma y sus dos decimales
+ * cuando los hay, pero SIN PUNTO DE MILLAR: es un campo que se edita, y un
+ * punto en medio de «12.000» es una cifra más que borrar. `leerImporte` lo lee
+ * de vuelta igual.
+ */
+export function importeParaCampo(importe: number | null): string {
+  if (importe === null) return "";
+  if (Number.isInteger(importe)) return String(importe);
+  return FORMATO_DE_CAMPO.format(importe);
+}
+
+const FORMATO_DE_CAMPO = new Intl.NumberFormat(IDIOMA, {
+  useGrouping: false,
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/**
  * Un céntimo, escrito como lo escribe una persona: `12.000,50`, `12000.50`,
  * `12.000,50 €`. Nada de eso es un número todavía.
  */

@@ -52,7 +52,7 @@ import {
   subirDocumento,
 } from "../acciones";
 import { AvisoProveedores } from "../aviso";
-import { formateadorDeImporte } from "@/lib/importe";
+import { formateadorDeImporte, importeParaCampo } from "@/lib/importe";
 
 import {
   nombreDeLaBase,
@@ -857,7 +857,7 @@ function CamposServicio({ servicio }: { servicio?: ServicioProveedor }) {
         name="precio_unitario"
         type="text"
         inputMode="decimal"
-        defaultValue={servicio ? String(servicio.precioUnitario) : ""}
+        defaultValue={servicio ? importeParaCampo(servicio.precioUnitario) : ""}
       />
       <CampoTexto
         etiqueta={t("panel.proveedores.campoCantidad")}

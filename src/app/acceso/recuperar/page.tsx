@@ -4,6 +4,7 @@ import { Boton, BotonEnlace } from "@/components/ui/boton";
 import { CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import { RUTA_ACCESO } from "@/config/constants";
+import { nombresDeLaBoda } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 
 import { pedirRecuperacion } from "../acciones";
@@ -33,10 +34,12 @@ export default async function PaginaRecuperar({
   const { estado } = await searchParams;
   const enviado = estado === "enviado";
 
+  const nombres = await nombresDeLaBoda();
+
   return (
     <main className="grid min-h-dvh place-items-center px-margen py-elemento">
       <div className="mx-auto w-full max-w-texto">
-        <Etiqueta>{t("meta.titulo")}</Etiqueta>
+        <Etiqueta>{nombres ?? t("meta.titulo")}</Etiqueta>
         <Titulo2 como="h1" className="mt-pila">
           {t("acceso.recuperarTitulo")}
         </Titulo2>
