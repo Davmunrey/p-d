@@ -1,4 +1,4 @@
-import { IDIOMA } from "@/config/constants";
+import { IDIOMA, IMPORTE_MAXIMO } from "@/config/constants";
 
 /**
  * CÓMO SE ESCRIBE UN IMPORTE
@@ -80,5 +80,5 @@ export function leerImporte(bruto: string): number | null | undefined {
   if (!IMPORTE_ESCRITO.test(limpio)) return undefined;
 
   const numero = Number(limpio);
-  return Number.isFinite(numero) ? numero : undefined;
+  return Number.isFinite(numero) && numero <= IMPORTE_MAXIMO ? numero : undefined;
 }

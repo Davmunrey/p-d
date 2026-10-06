@@ -5,12 +5,16 @@ import { redirect } from "next/navigation";
 
 import {
   BUCKET_DOCUMENTOS,
+  ENTERO_MAXIMO_BASE,
   LARGOS_DE_CAMPO,
   LONGITUD_MINIMA_MOTIVO_DESCARTE,
   LONGITUD_MINIMA_NOMBRE,
+  ORDEN_AL_FINAL,
   RUTA_ACCESO,
   RUTA_PROVEEDORES,
   SEGUNDOS_URL_FIRMADA,
+  VALORACION_MAXIMA,
+  VALORACION_MINIMA,
 } from "@/config/constants";
 import {
   BASE_SERVICIO_NEUTRA,
@@ -160,7 +164,7 @@ export async function crearCategoria(datos: FormData): Promise<void> {
       descripcion: opcional(datos, "descripcion"),
       // Al final de la lista: quien la crea la coloca después si quiere, y una
       // categoría nueva que aparece la primera desordena lo que ya estaba.
-      orden: Number(texto(datos, "orden") || "99"),
+      orden: ORDEN_AL_FINAL,
     })
     .select("id");
 
@@ -240,7 +244,9 @@ function camposProveedor(datos: FormData):
   const valoracion = valoracionBruta ? Number(valoracionBruta) : null;
   if (
     valoracion !== null &&
-    (!Number.isInteger(valoracion) || valoracion < 1 || valoracion > 5)
+    (!Number.isInteger(valoracion) ||
+      valoracion < VALORACION_MINIMA ||
+      valoracion > VALORACION_MAXIMA)
   ) {
     return { ok: false, estado: "valoracion" };
   }
@@ -823,7 +829,7 @@ function camposServicio(
   if (precio === undefined) return { ok: false, estado: "servicio-precio" };
 
   const cantidad = Number(texto(datos, "cantidad") || "1");
-  if (!Number.isInteger(cantidad) || cantidad < 1) {
+  if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > ENTERO_MAXIMO_BASE) {
     return { ok: false, estado: "servicio-cantidad" };
   }
 

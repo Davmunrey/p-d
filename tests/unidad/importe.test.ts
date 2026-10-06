@@ -1,5 +1,9 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
+import { IMPORTE_MAXIMO } from "@/config/constants";
 import { leerImporte } from "@/lib/importe";
 
 /**
@@ -68,6 +72,34 @@ describe("leerImporte", () => {
     expect(leerImporte("8e3")).toBeUndefined();
     expect(leerImporte("--50")).toBeUndefined();
     expect(leerImporte("50-")).toBeUndefined();
+  });
+
+  it("rechaza lo que no cabe en la columna, que es numeric(12, 2)", () => {
+    expect(leerImporte("9.999.999.999,99")).toBe(IMPORTE_MAXIMO);
+    expect(leerImporte("10.000.000.000")).toBeUndefined();
+    expect(leerImporte("86000000000")).toBeUndefined();
+  });
+
+  it("IMPORTE_MAXIMO dice lo mismo que las migraciones", () => {
+    // Todas las columnas de dinero, como las declaran sus migraciones. Si una
+    // cambia de tamaño y la constante no, esto se pone rojo.
+    const migraciones = join(__dirname, "..", "..", "supabase", "migrations");
+    const declaraciones = readdirSync(migraciones)
+      .filter((nombre) => nombre.endsWith(".sql"))
+      .flatMap((nombre) => [
+        ...readFileSync(join(migraciones, nombre), "utf8").matchAll(
+          /\b(?:importe\w*|precio_unitario|minimo_garantizado)\s+numeric\s*\((\d+),\s*(\d+)\)/gi,
+        ),
+      ]);
+    expect(declaraciones.length).toBeGreaterThanOrEqual(9);
+    for (const [, precision, escala] of declaraciones) {
+      // Se compara escrito, no calculado: 1e10 - 0.01 en coma flotante no
+      // tiene por qué dar exactamente el literal.
+      const enteras = Number(precision) - Number(escala);
+      expect(IMPORTE_MAXIMO.toFixed(Number(escala))).toBe(
+        `${"9".repeat(enteras)}.${"9".repeat(Number(escala))}`,
+      );
+    }
   });
 
   it("rechaza los negativos: un gasto no devuelve dinero", () => {

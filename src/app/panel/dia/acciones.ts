@@ -2,7 +2,13 @@
 
 import { redirect } from "next/navigation";
 
-import { LARGOS_DE_CAMPO, MENUS_RSVP, RUTA_ACCESO, RUTA_RECUENTO } from "@/config/constants";
+import {
+  AJUSTE_MAXIMO_RECUENTO,
+  LARGOS_DE_CAMPO,
+  MENUS_RSVP,
+  RUTA_ACCESO,
+  RUTA_RECUENTO,
+} from "@/config/constants";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 import { type EstadoDia, type ResultadoDeMarcar } from "./estado";
@@ -106,7 +112,7 @@ export async function corregirRecuento(datos: FormData): Promise<void> {
     se distingue a simple vista.
   */
   const ajuste = Number(escrito.replace("−", "-"));
-  if (!Number.isInteger(ajuste) || ajuste < -500 || ajuste > 500) {
+  if (!Number.isInteger(ajuste) || Math.abs(ajuste) > AJUSTE_MAXIMO_RECUENTO) {
     volver("ajuste-invalido");
   }
 

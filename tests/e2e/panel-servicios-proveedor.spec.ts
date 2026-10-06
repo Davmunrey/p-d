@@ -341,6 +341,59 @@ test.describe("Los servicios de un proveedor", () => {
   });
 
   /**
+   * CASO DE ERROR · un número que no cabe en su columna.
+   *
+   * El precio es `numeric(12, 2)` y la cantidad `integer`. Un cero de más en
+   * cualquiera de los dos llegaba a la base, que contestaba 22003, y la ficha
+   * decía «no se ha podido guardar»: reintentar no iba a servir de nada.
+   */
+  test("un precio o una cantidad que no caben se explican y no apuntan nada", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const proveedorId = await crearProveedor(`${MARCA} Desbordado ${sello}`);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${proveedorId}`);
+
+    const alta = seccion(page, copy.panel.proveedores.nuevoServicioTitulo);
+    const nombre = alta.getByLabel(copy.panel.proveedores.campoServicioNombre, { exact: true });
+    const precio = alta.getByLabel(copy.panel.proveedores.campoPrecioUnitario, { exact: true });
+
+    await nombre.fill(`${MARCA} Carpa ${sello}`);
+    await precio.fill("10.000.000.000");
+    await alta.getByRole("button", { name: copy.panel.proveedores.anadirServicio }).click();
+    await esperarEstado(page, "servicio-precio");
+    await expect(page.getByText(copy.panel.proveedores.errorServicioPrecio)).toBeVisible();
+
+    // La cantidad lleva su `max` en el campo; se quita para que decida el servidor.
+    const altaOtraVez = seccion(page, copy.panel.proveedores.nuevoServicioTitulo);
+    await altaOtraVez
+      .getByLabel(copy.panel.proveedores.campoServicioNombre, { exact: true })
+      .fill(`${MARCA} Carpa ${sello}`);
+    await altaOtraVez
+      .getByLabel(copy.panel.proveedores.campoPrecioUnitario, { exact: true })
+      .fill("450");
+    const cantidad = altaOtraVez.getByLabel(copy.panel.proveedores.campoCantidad, {
+      exact: true,
+    });
+    await cantidad.evaluate((campo) => campo.removeAttribute("max"));
+    await cantidad.fill("99999999999");
+    await altaOtraVez
+      .getByRole("button", { name: copy.panel.proveedores.anadirServicio })
+      .click();
+    await esperarEstado(page, "servicio-cantidad");
+    await expect(page.getByText(copy.panel.proveedores.errorServicioCantidad)).toBeVisible();
+
+    const filas = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        select id from public.servicios where proveedor_id = ${proveedorId}
+      `,
+    );
+    expect(filas, "un rechazo no escribe nada en la base").toHaveLength(0);
+  });
+
+  /**
    * CAMINO FELIZ · el CRUD entero desde la pantalla, sin JavaScript de por medio.
    */
   test("un servicio se crea, se edita y se quita desde la ficha", async ({ page }) => {

@@ -8,12 +8,15 @@ import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
-  LARGOS_DE_CAMPO,
+  ENTERO_MAXIMO_BASE,
   IDIOMA,
+  LARGOS_DE_CAMPO,
   PESO_MAXIMO_DOCUMENTO_MB,
   RUTA_ACCESO,
   RUTA_PROVEEDORES,
   TIPOS_DOCUMENTO_ADMITIDOS,
+  VALORACION_MAXIMA,
+  VALORACION_MINIMA,
   ZONA_HORARIA,
 } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
@@ -489,7 +492,10 @@ function Edicion({
           defaultValue={proveedor.valoracion === null ? "" : String(proveedor.valoracion)}
         >
           <option value="">{t("panel.proveedores.sinValorar")}</option>
-          {[1, 2, 3, 4, 5].map((nota) => (
+          {Array.from(
+            { length: VALORACION_MAXIMA - VALORACION_MINIMA + 1 },
+            (_, indice) => VALORACION_MINIMA + indice,
+          ).map((nota) => (
             <option key={nota} value={nota}>
               {String(nota)}
             </option>
@@ -854,6 +860,7 @@ function CamposServicio({ servicio }: { servicio?: ServicioProveedor }) {
         name="cantidad"
         type="number"
         min={1}
+        max={ENTERO_MAXIMO_BASE}
         step={1}
         defaultValue={servicio ? String(servicio.cantidad) : "1"}
       />

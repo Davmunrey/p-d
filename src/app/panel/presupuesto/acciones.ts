@@ -2,7 +2,13 @@
 
 import { redirect } from "next/navigation";
 
-import { LONGITUD_MINIMA_NOMBRE, RUTA_ACCESO, RUTA_PRESUPUESTO } from "@/config/constants";
+import {
+  LONGITUD_MINIMA_NOMBRE,
+  ORDEN_AL_FINAL,
+  ORDEN_MAXIMO,
+  RUTA_ACCESO,
+  RUTA_PRESUPUESTO,
+} from "@/config/constants";
 import { contarGastosDeCategoria } from "@/lib/bbdd/presupuesto";
 import { leerImporte } from "@/lib/importe";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
@@ -86,9 +92,9 @@ function motivo(error: { code?: string; message?: string }): EstadoPresupuesto {
  */
 function orden(datos: FormData): number | undefined {
   const bruto = texto(datos, "orden");
-  if (!bruto) return 99;
+  if (!bruto) return ORDEN_AL_FINAL;
   const numero = Number(bruto);
-  if (!Number.isInteger(numero) || numero < 0 || numero > 32767) return undefined;
+  if (!Number.isInteger(numero) || numero < 0 || numero > ORDEN_MAXIMO) return undefined;
   return numero;
 }
 

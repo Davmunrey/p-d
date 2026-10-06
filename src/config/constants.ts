@@ -669,6 +669,40 @@ export const FORMA_CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
 export const LONGITUD_MINIMA_MOTIVO_DESCARTE = 3;
 
 /**
+ * El mayor importe que cabe en la base. Todas las columnas de dinero son
+ * `numeric(12, 2)`: diez cifras enteras y dos decimales. Una cifra de más es un
+ * dedo que se ha ido, y la base la devolvía como 22003 —«no hemos podido
+ * guardar»— en lugar de como lo que es: un importe que no se entiende.
+ */
+export const IMPORTE_MAXIMO = 9_999_999_999.99;
+
+/**
+ * Lo más alto que cabe en un `integer` de Postgres. `servicios.cantidad` lo es,
+ * y una cantidad con un cero de más que se saliera devolvía 22003 —«no hemos
+ * podido guardar»— en vez de «esa cantidad no vale».
+ */
+export const ENTERO_MAXIMO_BASE = 2_147_483_647;
+
+/**
+ * El orden de una categoría es `smallint`: más allá de esto la base no lo
+ * guarda. Y 99 es «al final», lo que se pone cuando nadie dice dónde.
+ */
+export const ORDEN_MAXIMO = 32_767;
+export const ORDEN_AL_FINAL = 99;
+
+/**
+ * La nota de un proveedor, de una a cinco, como dice `proveedores_valoracion_rango`.
+ */
+export const VALORACION_MINIMA = 1;
+export const VALORACION_MAXIMA = 5;
+
+/**
+ * Lo que se puede corregir a mano el recuento de un menú, en los dos sentidos,
+ * según `correcciones_recuento_ajuste_rango` (entre -500 y 500).
+ */
+export const AJUSTE_MAXIMO_RECUENTO = 500;
+
+/**
  * LO LARGO QUE PUEDE SER CADA CAMPO DE TEXTO, SEGÚN LA BASE
  *
  * Todos estos números ya existían: los escribe la base en un `check` de la
