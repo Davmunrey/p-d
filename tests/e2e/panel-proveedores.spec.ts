@@ -189,6 +189,29 @@ async function esperarEstado(pagina: Page, esperado: string) {
   await pagina.waitForLoadState("networkidle");
 }
 
+/**
+ * EL GASTO QUE SOBREVIVE AL PROVEEDOR, TAMBIÉN FUERA AL ACABAR. El test del
+ * borrado demuestra que un gasto es contabilidad y se queda; en una base que no
+ * se tira, esa categoría de prueba salía después en la portada del panel.
+ */
+test.afterAll(async () => {
+  if (!cadena) return;
+  await conBase(async (sql) => {
+    const como = `${MARCA}%`;
+    await sql`
+      delete from public.pagos where partida_id in (
+        select p.id from public.partidas_presupuesto as p
+        join public.categorias_presupuesto as c on c.id = p.categoria_id
+        where c.nombre like ${como})
+    `;
+    await sql`
+      delete from public.partidas_presupuesto where categoria_id in (
+        select id from public.categorias_presupuesto where nombre like ${como})
+    `;
+    await sql`delete from public.categorias_presupuesto where nombre like ${como}`;
+  });
+});
+
 test.describe("El módulo de proveedores", () => {
   /*
     CADA PASO DE ESTAS PANTALLAS ES UN VIAJE COMPLETO: escribir en la base,

@@ -214,6 +214,34 @@ async function pendienteDe(categoriaId: string): Promise<number> {
   return Number(fila.pendiente);
 }
 
+/**
+ * LO SEMBRADO SE VA TAMBIÉN AL ACABAR. Cada montaje limpia lo de su sufijo
+ * antes de sembrar, pero el último de cada uno se quedaba: en una base que no
+ * se tira, la portada del panel acababa avisando de quince categorías de
+ * prueba «a punto de pasarse».
+ *
+ * En el orden que impone la base: pagos, gastos y por último la categoría.
+ */
+async function limpiar() {
+  if (!cadena) return;
+  await conBase(async (sql) => {
+    const como = `${MARCA}%`;
+    await sql`
+      delete from public.pagos where partida_id in (
+        select p.id from public.partidas_presupuesto as p
+        join public.categorias_presupuesto as c on c.id = p.categoria_id
+        where c.nombre like ${como})
+    `;
+    await sql`
+      delete from public.partidas_presupuesto where categoria_id in (
+        select id from public.categorias_presupuesto where nombre like ${como})
+    `;
+    await sql`delete from public.categorias_presupuesto where nombre like ${como}`;
+  });
+}
+
+test.afterAll(limpiar);
+
 test.describe("Los pagos y sus vencimientos", () => {
   test.slow();
 

@@ -508,7 +508,7 @@
       "descripcion": "Tu nombre es el que ve la otra persona en el panel.",
       "nombre": "Nombre",
       "guardar": "Guardar",
-      "guardado": "Nombre actualizado",
+      "guardado": "Nombre actualizado.",
       "errorGuardar": "No hemos podido guardar el nombre. Inténtalo de nuevo.",
       "nombreCorto": "Escribe un nombre de al menos dos caracteres.",
       "nombreLargo": "Ese nombre es demasiado largo: caben {largo} caracteres como mucho.",
