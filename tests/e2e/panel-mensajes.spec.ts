@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "./utiles/origen-propio";
+import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import {
@@ -25,6 +26,19 @@ const CORREO_CON_ACCESO = process.env.CORREO_CON_ACCESO;
 const CONTRASENA = process.env.CONTRASENA_PRUEBAS;
 
 const MARCA = "(DES) E2E Mensajes";
+
+async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T> {
+  const sql = postgres(process.env.DATABASE_URL!, {
+    max: 1,
+    prepare: false,
+    onnotice: () => {},
+  });
+  try {
+    return await trabajo(sql);
+  } finally {
+    await sql.end();
+  }
+}
 
 async function entrar(pagina: Page) {
   await pagina.goto(RUTA_ACCESO);
@@ -153,6 +167,37 @@ test.describe("Bandeja de mensajes", () => {
 
     const despues = await request.get("/");
     expect(await despues.text()).toContain(texto);
+  });
+
+  /**
+   * CASO DE ERROR · la canción se fue mientras la bandeja estaba abierta.
+   *
+   * Pasa de verdad: el invitado corrige su canción al cambiar la respuesta y
+   * la vieja se retira. Pulsar sobre ella decía «sólo un editor puede», que es
+   * falso para quien lo es y le hace buscar un problema de permisos que no hay.
+   */
+  test("moderar una canción que ya no está lo dice, sin culpar al permiso", async ({
+    page,
+  }) => {
+    const texto = `${MARCA} Se va ${Date.now()}`;
+    const [cancion] = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        insert into public.canciones_sugeridas (texto) values (${texto}) returning id
+      `,
+    );
+
+    await entrar(page);
+    await page.goto(RUTA_MENSAJES);
+    const fila = page.locator("li").filter({ hasText: texto }).first();
+    await expect(fila).toBeVisible();
+
+    await conBase(
+      (sql) => sql`delete from public.canciones_sugeridas where id = ${cancion.id}`,
+    );
+    await fila.getByRole("button", { name: copy.panel.mensajes.ocultar }).click();
+
+    await expect(page.getByText(copy.panel.mensajes.errorNoExiste)).toBeVisible();
+    await expect(page.getByText(copy.panel.mensajes.errorSinPermiso)).toHaveCount(0);
   });
 
   test("se llega desde el menú del panel", async ({ page }) => {

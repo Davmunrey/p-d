@@ -592,6 +592,7 @@
       "oculta": "No se ve en la web",
       "cancionOcultada": "Canción retirada de la web. No se ha borrado.",
       "cancionMostrada": "Canción devuelta a la web.",
+      "errorNoExiste": "Eso ya no está: el invitado cambió su respuesta después de que abrierais esta página. Lo que veis ahora es lo vigente.",
       "errorSinPermiso": "Sólo un editor puede moderar la playlist o marcar mensajes.",
       "errorGuardar": "No hemos podido guardar. Inténtalo de nuevo.",
       "marcado": "Mensaje actualizado."

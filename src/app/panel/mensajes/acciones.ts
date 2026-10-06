@@ -18,7 +18,8 @@ import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
  * cuando prohíbe —devuelve cero filas tocadas— cada operación mira el recuento.
  */
 
-type Estado = "marcado" | "cancion-ocultada" | "cancion-mostrada" | "sin-permiso" | "error";
+type Estado =
+  "marcado" | "cancion-ocultada" | "cancion-mostrada" | "no-existe" | "sin-permiso" | "error";
 
 /*
   NO SE REVALIDA LA RUTA A LA QUE SE VA A REDIRIGIR.
@@ -85,6 +86,9 @@ export async function marcarLeido(datos: FormData): Promise<void> {
       );
 
   if (error) {
+    // La confirmación se fue con su invitación mientras la bandeja seguía
+    // abierta: no hay nada que marcar, y reintentar no lo va a arreglar.
+    if (error.code === "23503") volver("no-existe");
     console.error("No se pudo marcar el mensaje:", error);
     volver("error");
   }
@@ -109,6 +113,17 @@ export async function moderarCancion(datos: FormData): Promise<void> {
   const aprobar = texto(datos, "aprobar") === "1";
   if (!cancionId) volver("error");
 
+  /*
+    EL ROL SE MIRA ANTES, por lo mismo que al marcar un mensaje: el cero de
+    abajo tenía que significar una sola cosa. Una canción desaparece de verdad
+    —el invitado la corrige al cambiar su respuesta y la vieja se retira—, y
+    pulsar sobre ella desde la bandeja abierta decía «sólo un editor puede»
+    a quien lo es.
+  */
+  const acceso = await accesoActual();
+  if (!acceso) redirect(RUTA_ACCESO);
+  if (acceso.rol === "lector") volver("sin-permiso");
+
   const supabase = await cliente();
   const { error, count } = await supabase
     .from("canciones_sugeridas")
@@ -119,7 +134,7 @@ export async function moderarCancion(datos: FormData): Promise<void> {
     console.error("No se pudo moderar la canción:", error);
     volver("error");
   }
-  if (count === 0) volver("sin-permiso");
+  if (count === 0) volver("no-existe");
 
   // La landing la lee en cada visita, pero se revalida igual por si algún día
   // deja de ser dinámica: el olvido se paga con una canción retirada que sigue
