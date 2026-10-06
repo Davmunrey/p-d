@@ -47,18 +47,22 @@ async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T
 }
 
 /**
- * Un grupo sin contestar, con la invitación ya mandada.
+ * Un grupo sin contestar, con la invitación ya mandada salvo que se diga.
  *
  * La fecha de envío se pone a mano porque sin ella el grupo sale en la lista
- * como «todavía no se le ha mandado nada» y no ofrece el botón de recordar,
- * que es justo lo que estos tests quieren ejercer.
+ * de «sin mandar todavía» y no ofrece el botón de recordar, que es justo lo
+ * que casi todos estos tests quieren ejercer.
  */
-async function crearPendiente(sufijo: string): Promise<{ id: string; nombre: string }> {
+async function crearPendiente(
+  sufijo: string,
+  mandada = true,
+): Promise<{ id: string; nombre: string }> {
   const nombre = `${MARCA} ${sufijo}`;
   return conBase(async (sql) => {
     const [grupo] = await sql<{ id: string }[]>`
       insert into public.grupos_invitacion (nombre, huella_token, invitacion_enviada_en)
-      values (${nombre}, public.huella_token(${`tok-pend-${sufijo}`}), now() - interval '7 days')
+      values (${nombre}, public.huella_token(${`tok-pend-${sufijo}`}),
+              ${mandada ? sql`now() - interval '7 days'` : null})
       returning id
     `;
     await sql`
@@ -162,6 +166,38 @@ test.describe("Quién no ha contestado", () => {
     expect(fila2.recordatorio_enviado_en).toBeNull();
   });
 
+  /**
+   * DOS LISTAS: LAS QUE ESPERAN RESPUESTA Y LAS QUE NI SE HAN MANDADO. Antes
+   * iban mezcladas y cada tarjeta sin mandar repetía la misma explicación; con
+   * la lista entera, ciento veinte veces.
+   */
+  test("las que no se han mandado van aparte, y la razón se dice una vez", async ({ page }) => {
+    const sello = Date.now();
+    const mandada = await crearPendiente(`mandada-${sello}`);
+    const una = await crearPendiente(`sin-mandar-1-${sello}`, false);
+    const otra = await crearPendiente(`sin-mandar-2-${sello}`, false);
+
+    await page.goto(RUTA_PENDIENTES);
+
+    const seccion = (titulo: string) =>
+      page.locator("section").filter({
+        has: page.getByRole("heading", { name: titulo.split(" {")[0].split(" (")[0] }),
+      });
+    const esperando = seccion(copy.panel.pendientes.esperandoTitulo);
+    const sinMandar = seccion(copy.panel.pendientes.sinMandarTitulo);
+
+    await expect(esperando.getByRole("link", { name: mandada.nombre })).toBeVisible();
+    await expect(sinMandar.getByRole("link", { name: una.nombre })).toBeVisible();
+    await expect(sinMandar.getByRole("link", { name: otra.nombre })).toBeVisible();
+
+    // A quien no tiene la invitación no se le ofrece recordar...
+    await expect(
+      sinMandar.getByRole("button", { name: copy.panel.pendientes.recordarBoton }),
+    ).toHaveCount(0);
+    // ...y el porqué sale una sola vez, no una por tarjeta.
+    await expect(page.getByText(copy.panel.pendientes.sinEnlaceAviso)).toHaveCount(1);
+  });
+
   test("recordar anota la fecha y abre WhatsApp con el mensaje", async ({ page }) => {
     const grupo = await crearPendiente(`recuerda-${Date.now()}`);
 
@@ -195,6 +231,7 @@ test.describe("Quién no ha contestado", () => {
    */
   test("con el plazo cerrado no hay botón, y se explica por qué", async ({ page }) => {
     await crearPendiente(`plazo-${Date.now()}`);
+    await crearPendiente(`plazo-sin-mandar-${Date.now()}`, false);
 
     const [original] = await conBase(
       (sql) => sql<{ fecha_limite_rsvp: Date | null }[]>`
@@ -214,6 +251,8 @@ test.describe("Quién no ha contestado", () => {
       await expect(
         page.getByRole("button", { name: copy.panel.pendientes.recordarBoton }),
       ).toHaveCount(0);
+      // Ni el consejo de mandar antes la invitación: a estas alturas se llama.
+      await expect(page.getByText(copy.panel.pendientes.sinEnlaceAviso)).toHaveCount(0);
     } finally {
       await conBase(
         (sql) => sql`

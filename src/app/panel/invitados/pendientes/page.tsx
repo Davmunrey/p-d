@@ -7,7 +7,7 @@ import { BotonEnvio } from "@/components/ui/boton-envio";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_ACCESO, RUTA_INVITADOS, ZONA_HORARIA } from "@/config/constants";
 import { obtenerConfiguracion } from "@/lib/bbdd/landing";
-import { obtenerPendientes } from "@/lib/bbdd/invitados";
+import { obtenerPendientes, type GrupoPendiente } from "@/lib/bbdd/invitados";
 import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 import { avisoDe } from "@/lib/avisos";
@@ -52,6 +52,34 @@ const AVISOS: Record<string, { clave: Parameters<typeof t>[0]; error: boolean }>
   error: { clave: "panel.invitados.errorGuardar", error: true },
 };
 
+/** «2 personas · Recordado el 3 de octubre», o sólo las personas si no se le ha escrito. */
+function datosDelGrupo(grupo: GrupoPendiente): string {
+  const personas =
+    grupo.personas === 1
+      ? t("panel.pendientes.personasUna")
+      : t("panel.pendientes.personasCuenta", { personas: grupo.personas });
+  if (!grupo.ultimoContacto) return personas;
+
+  const contacto = grupo.recordatorioEnviadoEn
+    ? t("panel.pendientes.recordadoEn", {
+        fecha: formatoFecha.format(grupo.recordatorioEnviadoEn),
+      })
+    : t("panel.pendientes.contactadoEn", { fecha: formatoFecha.format(grupo.ultimoContacto) });
+  return `${personas} · ${contacto}`;
+}
+
+/** El nombre de la invitación, que lleva a su ficha. */
+function NombreDelGrupo({ grupo }: { grupo: GrupoPendiente }) {
+  return (
+    <Link
+      href={`${RUTA_INVITADOS}/${grupo.id}`}
+      className="inline-flex min-h-control-compacto items-center font-titulo text-titulo-3 text-tinta transicion-color hover:text-tinta-marca"
+    >
+      {grupo.nombre}
+    </Link>
+  );
+}
+
 interface Parametros {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
@@ -70,6 +98,8 @@ export default async function PaginaPendientes({ searchParams }: Parametros) {
   ]);
 
   const puedeEditar = acceso.rol !== "lector";
+  const esperando = pendientes.filter((grupo) => grupo.invitacionEnviadaEn);
+  const sinMandar = pendientes.filter((grupo) => !grupo.invitacionEnviadaEn);
   const plazoCerrado = Boolean(
     configuracion?.fechaLimiteRsvp && configuracion.fechaLimiteRsvp < new Date(),
   );
@@ -108,79 +138,89 @@ export default async function PaginaPendientes({ searchParams }: Parametros) {
 
       {pendientes.length === 0 ? (
         <Cuerpo className="mt-bloque">{t("panel.pendientes.vacio")}</Cuerpo>
-      ) : (
-        <ul className="mt-bloque grid gap-interno">
-          {pendientes.map((grupo) => (
-            <li
-              key={grupo.id}
-              className="grid gap-interno rounded-tarjeta border border-borde p-interno"
-            >
-              <div>
-                <Link
-                  href={`${RUTA_INVITADOS}/${grupo.id}`}
-                  className="inline-flex min-h-control-compacto items-center font-titulo text-titulo-3 text-tinta transicion-color hover:text-tinta-marca"
-                >
-                  {grupo.nombre}
-                </Link>
-                <span className="mt-linea block text-pequeno text-tinta-suave">
-                  {grupo.personas === 1
-                    ? t("panel.pendientes.personasUna")
-                    : t("panel.pendientes.personasCuenta", { personas: grupo.personas })}
-                  {" · "}
-                  {grupo.ultimoContacto
-                    ? grupo.recordatorioEnviadoEn
-                      ? t("panel.pendientes.recordadoEn", {
-                          fecha: formatoFecha.format(grupo.recordatorioEnviadoEn),
-                        })
-                      : t("panel.pendientes.contactadoEn", {
-                          fecha: formatoFecha.format(grupo.ultimoContacto),
-                        })
-                    : t("panel.pendientes.sinContacto")}
-                </span>
-              </div>
+      ) : null}
 
-              {/*
-                A quien no se le ha mandado nada todavía no se le recuerda: no
-                tiene enlace que mirar. Se le manda la invitación desde su
-                ficha, que es donde vive el enlace en claro.
-              */}
-              {!grupo.invitacionEnviadaEn ? (
+      {/*
+        DOS LISTAS, PORQUE SON DOS TRABAJOS. A quien ya tiene la invitación se le
+        recuerda desde aquí; a quien no, primero hay que mandársela, y eso se
+        hace en su ficha. Mezclados, cada tarjeta sin mandar repetía la misma
+        explicación y un segundo enlace a la ficha —ciento veinte veces con la
+        lista entera—, y no había forma de saber cuántas faltaban por mandar.
+      */}
+      {esperando.length > 0 ? (
+        <section className="mt-bloque">
+          <Titulo3 como="h2">
+            {t("panel.pendientes.esperandoTitulo", { cuantas: esperando.length })}
+          </Titulo3>
+          <ul className="mt-elemento grid gap-interno">
+            {esperando.map((grupo) => (
+              <li
+                key={grupo.id}
+                className="grid gap-interno rounded-tarjeta border border-borde p-interno"
+              >
                 <div>
-                  <Cuerpo className="max-w-texto text-pequeno text-tinta-suave">
-                    {t("panel.pendientes.sinEnlaceAviso")}
-                  </Cuerpo>
-                  <Link
-                    href={`${RUTA_INVITADOS}/${grupo.id}`}
-                    className="mt-pila inline-flex min-h-control-compacto items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
-                  >
-                    {t("panel.pendientes.verFicha")}
-                  </Link>
+                  <NombreDelGrupo grupo={grupo} />
+                  <span className="mt-linea block text-pequeno text-tinta-suave">
+                    {datosDelGrupo(grupo)}
+                  </span>
                 </div>
-              ) : puedeEditar && !plazoCerrado ? (
-                <form action={recordarPorWhatsApp} className="grid gap-interno-compacto">
-                  <input type="hidden" name="grupo_id" value={grupo.id} />
-                  <label htmlFor={`mensaje-${grupo.id}`} className="sr-only">
-                    {t("panel.pendientes.mensaje")}
-                  </label>
-                  <textarea
-                    id={`mensaje-${grupo.id}`}
-                    name="mensaje"
-                    rows={2}
-                    required
-                    defaultValue={t("panel.pendientes.plantillaRecordatorio")}
-                    className="w-full rounded-campo border border-borde bg-superficie p-interno text-pequeno text-tinta"
-                  />
-                  <div>
-                    <BotonEnvio jerarquia="secundario">
-                      {t("panel.pendientes.recordarBoton")}
-                    </BotonEnvio>
-                  </div>
-                </form>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      )}
+
+                {puedeEditar && !plazoCerrado ? (
+                  <form action={recordarPorWhatsApp} className="grid gap-interno-compacto">
+                    <input type="hidden" name="grupo_id" value={grupo.id} />
+                    <label htmlFor={`mensaje-${grupo.id}`} className="sr-only">
+                      {t("panel.pendientes.mensaje")}
+                    </label>
+                    <textarea
+                      id={`mensaje-${grupo.id}`}
+                      name="mensaje"
+                      rows={2}
+                      required
+                      defaultValue={t("panel.pendientes.plantillaRecordatorio")}
+                      className="w-full rounded-campo border border-borde bg-superficie p-interno text-pequeno text-tinta"
+                    />
+                    <div>
+                      <BotonEnvio jerarquia="secundario">
+                        {t("panel.pendientes.recordarBoton")}
+                      </BotonEnvio>
+                    </div>
+                  </form>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/*
+        A quien no se le ha mandado nada todavía no se le recuerda: no tiene
+        enlace que mirar. Se le manda la invitación desde su ficha, que es donde
+        vive el enlace en claro, y eso se dice UNA vez, encima de la lista. Con
+        el plazo cerrado no se dice: a esas alturas se llama.
+      */}
+      {sinMandar.length > 0 ? (
+        <section className="mt-bloque">
+          <Titulo3 como="h2">
+            {t("panel.pendientes.sinMandarTitulo", { cuantas: sinMandar.length })}
+          </Titulo3>
+          {!plazoCerrado ? (
+            <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
+              {t("panel.pendientes.sinEnlaceAviso")}
+            </Cuerpo>
+          ) : null}
+          <ul className="mt-elemento divide-y divide-borde border-y border-borde">
+            {sinMandar.map((grupo) => (
+              <li
+                key={grupo.id}
+                className="flex flex-wrap items-baseline justify-between gap-x-interno py-linea"
+              >
+                <NombreDelGrupo grupo={grupo} />
+                <span className="text-pequeno text-tinta-suave">{datosDelGrupo(grupo)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {!puedeEditar ? (
         <Etiqueta className="mt-bloque block">{t("panel.invitados.errorSinPermiso")}</Etiqueta>
