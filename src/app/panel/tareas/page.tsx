@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { redirect } from "next/navigation";
@@ -39,6 +40,9 @@ import {
 } from "./acciones";
 import { AvisoTareas } from "./aviso";
 import { comoDia, nombreDeLaPrioridad, nombreDelEstado, nombreDelGrupo } from "./formato";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.tareas.titulo") };
 
 /**
  * BODA-80/81/82 · TAREAS

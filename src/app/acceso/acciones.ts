@@ -211,7 +211,18 @@ export async function guardarContrasena(datos: FormData) {
 
     if (error) {
       console.warn("No se pudo cambiar la contraseña:", error.message);
-      redirect(`${RUTA_NUEVA_CONTRASENA}?estado=error`);
+      /*
+        CADA RECHAZO CON SU FRASE. Todo acababa en «No hemos podido entrar»,
+        que habla de entrar en una pantalla de cambiar la contraseña, y para la
+        repetida invitaba a reintentar algo que va a fallar siempre.
+      */
+      const estado =
+        error.code === "same_password"
+          ? "repetida"
+          : error.code === "weak_password"
+            ? "debil"
+            : "error";
+      redirect(`${RUTA_NUEVA_CONTRASENA}?estado=${estado}`);
     }
   } catch (error) {
     if (typeof error === "object" && error !== null && "digest" in error) throw error;

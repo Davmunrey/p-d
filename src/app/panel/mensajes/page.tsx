@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -26,6 +27,9 @@ import { normalizar } from "@/lib/texto";
 import { avisoDe } from "@/lib/avisos";
 
 import { destacarMensaje, marcarLeido, moderarCancion } from "./acciones";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.mensajes.titulo") };
 
 /**
  * BODA-112/113 · LO QUE ESCRIBEN LOS INVITADOS

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -60,6 +61,9 @@ import {
   nombreDelTipoDocumento,
   pesoDelDocumento,
 } from "../formato";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.modulos.proveedores") };
 
 /** Cuándo se subió un papel. El día y la hora: dos versiones del mismo contrato
  *  suben el mismo día, y sin la hora no se sabe cuál es la buena. */

@@ -152,7 +152,7 @@ function Resultado({ invitado }: { invitado: InvitadoDelDia }) {
           <div className="flex flex-wrap gap-interno-compacto">
             <dt className="text-tinta-suave">{t("panel.dia.buscar.menu")}</dt>
             <dd className="text-tinta">
-              {t(`rsvp.menus.${invitado.tipoMenu}` as "rsvp.menus.estandar")}
+              {t(`panel.menus.${invitado.tipoMenu}` as "panel.menus.estandar")}
               {invitado.esNino ? ` · ${t("panel.dia.buscar.nino")}` : ""}
             </dd>
           </div>

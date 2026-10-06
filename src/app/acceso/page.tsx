@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { Boton, BotonEnlace } from "@/components/ui/boton";
+import { BotonEnlace } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import { PARAMETRO_VOLVER, RUTA_PANEL, RUTA_RECUPERAR } from "@/config/constants";
@@ -102,7 +103,7 @@ export default async function PaginaAcceso({
             required
           />
           <div className="flex flex-wrap items-center gap-elemento">
-            <Boton type="submit">{t("acceso.entrar")}</Boton>
+            <BotonEnvio rotuloPendiente={t("acceso.entrando")}>{t("acceso.entrar")}</BotonEnvio>
             {/*
               Un enlace que parezca un enlace y se pueda tocar: con el estilo de
               los rótulos de los campos medía 18 px de alto y, en el móvil, caía

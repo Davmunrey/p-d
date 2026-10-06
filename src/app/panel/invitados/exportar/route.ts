@@ -97,7 +97,7 @@ export async function GET(peticion: NextRequest) {
               // Sólo de quien viene. El menú de quien no viene no es un dato
               // para la cocina: es ruido que acabaría contándose.
               return persona.estado === "confirmado"
-                ? t(`rsvp.menus.${persona.tipoMenu}` as "rsvp.menus.estandar")
+                ? t(`panel.menus.${persona.tipoMenu}` as "panel.menus.estandar")
                 : "";
             case "alergias":
               return persona.alergias ?? "";

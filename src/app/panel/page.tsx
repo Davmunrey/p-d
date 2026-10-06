@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { AvisoDesvios } from "@/components/panel/aviso-desvios";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
@@ -26,6 +27,9 @@ import { ESTADO_HECHA, estaVencida, obtenerTareas, type Tarea } from "@/lib/bbdd
 import { t } from "@/lib/copy";
 import { formateadorDeImporte } from "@/lib/importe";
 
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.resumen.titulo") };
+
 /**
  * BODA-43 · RESUMEN — la portada del panel
  *
@@ -53,6 +57,9 @@ export const dynamic = "force-dynamic";
 const formatoNumero = new Intl.NumberFormat(IDIOMA);
 
 /** Días que faltan, contados por fecha y no restando milisegundos. */
+/** La lectura de la configuración falló: distinto de que no haya. */
+const SIN_LEER = "sin-leer" as const;
+
 function diasHasta(fecha: Date): number {
   const enZona = (instante: Date) =>
     new Date(
@@ -71,7 +78,12 @@ function diasHasta(fecha: Date): number {
 
 export default async function PaginaResumen() {
   const [configuracion, resumen, presupuesto, moneda, pagos, tareas] = await Promise.all([
-    obtenerConfiguracion().catch(() => null),
+    /*
+      «NO SE PUDO LEER» NO ES «NO HAY». La fecha es obligatoria en la base, así
+      que un `null` aquí sólo podía ser una lectura fallida, y la portada decía
+      «Sin fecha todavía» de una boda que la tiene.
+    */
+    obtenerConfiguracion().catch(() => SIN_LEER),
     obtenerResumen(),
     obtenerResumenPresupuesto(),
     obtenerMonedaBoda(),
@@ -82,7 +94,10 @@ export default async function PaginaResumen() {
   const desvios = desviosDe(presupuesto);
   const euros = moneda ? formateadorDeImporte(moneda) : null;
 
-  const dias = configuracion ? diasHasta(configuracion.fechaCeremonia) : null;
+  const dias =
+    configuracion && configuracion !== SIN_LEER
+      ? diasHasta(configuracion.fechaCeremonia)
+      : null;
 
   return (
     <div className="grid gap-bloque">
@@ -90,15 +105,17 @@ export default async function PaginaResumen() {
         <Titulo2 como="h1">{t("panel.resumen.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.resumen.descripcion")}</Cuerpo>
         <p className="mt-pila font-titulo text-titulo-3 text-tinta-marca">
-          {dias === null
-            ? t("panel.resumen.sinFecha")
-            : dias === 1
-              ? t("panel.resumen.faltaUno")
-              : dias > 0
-                ? t("panel.resumen.faltan", { dias: formatoNumero.format(dias) })
-                : dias === 0
-                  ? t("panel.resumen.esHoy")
-                  : t("panel.resumen.yaFue")}
+          {configuracion === SIN_LEER
+            ? t("panel.resumen.fechaSinLeer")
+            : dias === null
+              ? t("panel.resumen.sinFecha")
+              : dias === 1
+                ? t("panel.resumen.faltaUno")
+                : dias > 0
+                  ? t("panel.resumen.faltan", { dias: formatoNumero.format(dias) })
+                  : dias === 0
+                    ? t("panel.resumen.esHoy")
+                    : t("panel.resumen.yaFue")}
         </p>
       </header>
 
@@ -194,9 +211,14 @@ function contestados(resumen: ResumenBoda): number {
   return resumen.invitados.confirmados + resumen.invitados.rechazados;
 }
 
+/*
+  HACIA ABAJO, NUNCA HACIA ARRIBA: con 199 de 200, redondeando decía «el
+  100 %» justo cuando los novios miran si falta alguien.
+*/
 const formatoPorcentaje = new Intl.NumberFormat(IDIOMA, {
   style: "percent",
   maximumFractionDigits: 0,
+  roundingMode: "floor",
 });
 
 function Bloque({
@@ -271,7 +293,7 @@ function Menus({ menus }: { menus: ResumenBoda["menus"] }) {
           {menus.map((menu) => (
             <div key={menu.tipoMenu} className="rounded-tarjeta border border-borde p-interno">
               <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
-                {t(`rsvp.menus.${menu.tipoMenu}` as "rsvp.menus.estandar")}
+                {t(`panel.menus.${menu.tipoMenu}` as "panel.menus.estandar")}
               </dt>
               {/*
                 La nota de alergias vive DENTRO del dd, no como tercer hijo del
@@ -316,7 +338,22 @@ function Presupuesto({
   resumen: ResumenCategoria[];
   euros: ((importe: number) => string) | null;
 }) {
-  if (!euros) return null;
+  /*
+    Sin moneda no se pueden escribir los importes, pero el bloque no desaparece:
+    callado, quedaba el aviso de «Ojo al presupuesto» encima y ninguna cifra ni
+    enlace debajo. Se dice, y se deja la puerta al presupuesto.
+  */
+  if (!euros) {
+    return (
+      <section>
+        <Titulo3 como="h2">{t("panel.resumen.bloquePresupuesto")}</Titulo3>
+        <Cuerpo className="mt-pila max-w-texto">{t("panel.resumen.importesSinLeer")}</Cuerpo>
+        <EnlaceSuave href={RUTA_PRESUPUESTO} className="mt-pila">
+          {t("panel.resumen.desvios.verPresupuesto")}
+        </EnlaceSuave>
+      </section>
+    );
+  }
 
   if (resumen.length === 0) {
     return (

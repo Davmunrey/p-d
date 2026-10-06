@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { BotonEnvio } from "@/components/ui/boton-envio";
@@ -17,6 +18,9 @@ import { localDesdeInstante } from "@/lib/zona-horaria";
 import { avisoDe } from "@/lib/avisos";
 
 import { guardarAjustes, guardarRegalos } from "./acciones";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.ajustes.titulo") };
 
 /**
  * BODA-44 · AJUSTES DE LA BODA

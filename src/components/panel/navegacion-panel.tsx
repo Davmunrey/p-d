@@ -113,10 +113,16 @@ export function NavegacionPanel({ marca }: { marca: string }) {
           rótulos, que no se parten, se montaban unos encima de otros y no se
           leía ninguno. El degradado del final dice «hay más» sin escribirlo,
           como en la barra de la portada.
+
+          Y CON AIRE ARRIBA Y ABAJO: una tira que se desplaza en horizontal
+          recorta también en vertical, y los enlaces medían lo mismo que ella.
+          El anillo de foco salía cortado —un paréntesis en vez de un recuadro—.
+          Con el relleno, el anillo cabe entero y el enlace sigue midiendo más
+          que el mínimo táctil.
         */}
         <ul
           ref={tira}
-          className="desvanecer-final flex h-barra-movil items-stretch gap-linea overflow-x-auto px-interno-compacto"
+          className="desvanecer-final flex h-barra-movil items-stretch gap-linea overflow-x-auto px-interno-compacto py-interno-compacto"
         >
           {MODULOS_ENTREGADOS.map((modulo) => (
             <li key={modulo.clave} className="flex shrink-0">

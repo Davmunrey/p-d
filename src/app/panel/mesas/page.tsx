@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import type { ReactNode } from "react";
@@ -45,6 +46,9 @@ import {
   sentarInvitado,
 } from "./acciones";
 import { AvisoMesas } from "./aviso";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.mesas.titulo") };
 
 /**
  * BODA-83 (#59) y BODA-84 (#60) · EL PLANO DE LA SALA Y EL REPARTO
@@ -94,7 +98,7 @@ function nombreDeLaForma(forma: FormaMesa): string {
 }
 
 function nombreDelMenu(tipo: string): string {
-  return t(`rsvp.menus.${tipo}` as "rsvp.menus.estandar");
+  return t(`panel.menus.${tipo}` as "panel.menus.estandar");
 }
 
 /** Cuánta gente hay sentada en cada mesa, para pintar «3 de 8» sin recontar. */

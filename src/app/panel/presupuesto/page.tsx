@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
@@ -27,6 +28,9 @@ import { accesoActual } from "@/lib/sesion";
 
 import { borrarCategoria, crearCategoria, editarCategoria } from "./acciones";
 import { AvisoPresupuesto } from "./aviso";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.presupuesto.titulo") };
 
 /**
  * BODA-60 · CATEGORÍAS DE PRESUPUESTO

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -13,6 +14,9 @@ import { accesoActual } from "@/lib/sesion";
 
 import { alternarVisible, moverSeccion } from "./acciones";
 import { ESTADOS_DE_ERROR, esEstadoContenido, type EstadoContenido } from "./estado";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.contenido.titulo") };
 
 /**
  * BODA-128 · QUÉ SE VE EN LA WEB, Y QUÉ LE FALTA PARA VERSE

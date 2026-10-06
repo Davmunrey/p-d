@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
@@ -26,6 +27,9 @@ import { AvisoDia } from "../aviso";
 import { corregirRecuento } from "../acciones";
 
 import { CopiarRecuento } from "./copiar";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.dia.recuento.titulo") };
 
 /**
  * BODA-103 (#70) · EL RECUENTO EN VIVO PARA EL CATERING
@@ -69,7 +73,7 @@ const formatoMomento = new Intl.DateTimeFormat(IDIOMA, {
 });
 
 const nombreDelMenu = (tipoMenu: string) =>
-  t(`rsvp.menus.${tipoMenu}` as "rsvp.menus.estandar");
+  t(`panel.menus.${tipoMenu}` as "panel.menus.estandar");
 
 export default async function PaginaRecuento({ searchParams }: Parametros) {
   const acceso = await accesoActual();

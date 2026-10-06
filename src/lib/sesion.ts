@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 /**
@@ -51,7 +53,16 @@ export interface Acceso {
  * Nunca lanza. Un fallo al preguntar se trata como «no hay acceso», que es lo
  * seguro: ante la duda, fuera.
  */
-export async function accesoActual(): Promise<Acceso | null> {
+export const accesoActual = cache(leerAcceso);
+
+/*
+  CON `cache()`, UNA VEZ POR PETICIÓN. El layout del panel y la página la
+  llamaban cada uno, y cada llamada es un `getUser()` contra Auth más una
+  lectura del perfil: dos viajes de red de más en cada carga, que en el móvil
+  se notan. Fuera de un render —en una acción— `cache` no memoiza, así que una
+  acción que cambia la sesión sigue leyéndola de nuevo.
+*/
+async function leerAcceso(): Promise<Acceso | null> {
   if (!hayAutenticacion) return null;
 
   try {

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { BotonEnvio } from "@/components/ui/boton-envio";
@@ -13,6 +14,9 @@ import { accesoActual } from "@/lib/sesion";
 
 import { borrarPunto, crearPunto, editarPunto } from "./acciones";
 import { type EstadoGuion } from "./estado";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.dia.escribir.titulo") };
 
 /**
  * BODA-100 (#67) · DONDE SE ESCRIBE EL GUION

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
@@ -7,6 +8,9 @@ import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 
 import { FormularioImportacion } from "./formulario";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.importar.titulo") };
 
 /**
  * BODA-53 · IMPORTAR INVITADOS DESDE CSV

@@ -77,9 +77,40 @@ describe("el resumen del panel", () => {
   it("si no se puede leer la fecha, lo dice en vez de inventar una cuenta atrás", async () => {
     configuracion.mockRejectedValue(new Error("sin configuración"));
     const html = await pintar();
-    expect(html).toContain(copy.panel.resumen.sinFecha);
+    // Y no dice que no la hay: la fecha es obligatoria, lo que falló es leerla.
+    expect(html).toContain(copy.panel.resumen.fechaSinLeer);
+    expect(html).not.toContain(copy.panel.resumen.sinFecha);
     // Y lo demás sigue: no saber la fecha no deja el panel en blanco.
     expect(html).toContain(copy.panel.resumen.bloqueInvitados);
+  });
+
+  it("sin configuración todavía, dice que no hay fecha", async () => {
+    configuracion.mockResolvedValue(null);
+    const html = await pintar();
+    expect(html).toContain(copy.panel.resumen.sinFecha);
+  });
+
+  it("si no se puede leer la moneda, el presupuesto lo dice y no desaparece", async () => {
+    moneda.mockResolvedValue(null);
+    const html = await pintar();
+    expect(html).toContain(copy.panel.resumen.bloquePresupuesto);
+    expect(html).toContain(copy.panel.resumen.importesSinLeer);
+  });
+
+  it("con uno sin contestar no dice que han contestado todos", async () => {
+    resumen.mockResolvedValue({
+      invitados: {
+        ...INVITADOS,
+        personas: 200,
+        confirmados: 199,
+        rechazados: 0,
+        pendientes: 1,
+      },
+      menus: [],
+    });
+    const html = await pintar();
+    expect(html).toMatch(/199 de 200: el 99\s%/);
+    expect(html).not.toMatch(/el 100\s%/);
   });
 
   it("sin invitados lo dice, enlaza a darlos de alta y no pinta ceros", async () => {

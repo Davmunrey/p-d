@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -21,6 +22,9 @@ import { accesoActual } from "@/lib/sesion";
 
 import { crearInvitacion } from "./acciones";
 import { AvisoEstado } from "./aviso";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.invitados.titulo") };
 
 /**
  * BODA-50 · LAS INVITACIONES

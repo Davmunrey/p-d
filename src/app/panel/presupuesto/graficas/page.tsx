@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
@@ -20,6 +21,9 @@ import {
 } from "@/lib/graficas";
 import { formateadorDeImporte } from "@/lib/importe";
 import { accesoActual } from "@/lib/sesion";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.presupuesto.graficas.titulo") };
 
 /**
  * «54,1 %» y no «54.1 %». `toFixed` escribe el decimal con punto, que en

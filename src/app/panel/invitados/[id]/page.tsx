@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { BotonEnvio } from "@/components/ui/boton-envio";
@@ -25,6 +26,9 @@ import {
   repartirPorWhatsApp,
 } from "../acciones";
 import { AvisoEstado } from "../aviso";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.modulos.invitados") };
 
 /**
  * BODA-51/52 · UNA INVITACIÓN

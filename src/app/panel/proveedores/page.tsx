@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -31,6 +32,9 @@ import { AvisoProveedores } from "./aviso";
 import { formateadorDeImporte } from "@/lib/importe";
 
 import { nombreDelEstado } from "./formato";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.proveedores.titulo") };
 
 /**
  * BODA-70 · PROVEEDORES

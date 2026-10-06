@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
@@ -23,6 +24,9 @@ import { AvisoProveedores } from "../aviso";
 import { nombreDelEstado } from "../formato";
 
 import { elegirProveedor } from "./acciones";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.modulos.proveedores") };
 
 /**
  * BODA-73 · COMPARAR LOS PRESUPUESTOS DE UNA CATEGORÍA

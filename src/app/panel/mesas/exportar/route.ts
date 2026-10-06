@@ -65,7 +65,7 @@ function filaDe(persona: Comensal, mesa: Mesa | null): (string | number)[] {
       significa nada: es el valor por defecto de la tabla, no una elección.
     */
     persona.estado === ESTADO_CONFIRMADO
-      ? t(`rsvp.menus.${persona.tipoMenu}` as "rsvp.menus.estandar")
+      ? t(`panel.menus.${persona.tipoMenu}` as "panel.menus.estandar")
       : "",
     persona.alergias ?? "",
   ];

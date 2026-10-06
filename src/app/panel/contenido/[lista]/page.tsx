@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -36,6 +37,18 @@ import {
   pedirBorrado,
 } from "./acciones";
 import { ESTADOS_DE_ERROR, anclaDeFicha, esEstadoLista, type EstadoLista } from "./estado";
+
+/** El título de la pestaña es el de la lista: «Dress code · Panel», no «Panel» a secas. */
+export async function generateMetadata({
+  params,
+}: Pick<Parametros, "params">): Promise<Metadata> {
+  const { lista } = await params;
+  return {
+    title: esClaveLista(lista)
+      ? t(LISTAS_DE_CONTENIDO[lista].titulo)
+      : t("panel.modulos.contenido"),
+  };
+}
 
 /**
  * BODA-129 · UNA LISTA DE CONTENIDO DE LA LANDING

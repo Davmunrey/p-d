@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -30,6 +31,9 @@ import { accesoActual } from "@/lib/sesion";
 
 import { borrarGasto, crearGasto, editarGasto } from "./acciones";
 import { AvisoGastos } from "./aviso";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.presupuesto.gastos.titulo") };
 
 /**
  * BODA-61 · LOS GASTOS, UNO A UNO

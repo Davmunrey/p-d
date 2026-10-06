@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { BotonEnlace } from "@/components/ui/boton";
@@ -32,6 +33,9 @@ import {
   marcarConseguido,
 } from "./acciones";
 import { AvisoDocumentos } from "./aviso";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.documentos.titulo") };
 
 /**
  * BODA-105 · LOS PAPELES DE LA BODA CIVIL

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -16,6 +17,9 @@ import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 
 import { Guion } from "./guion";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.dia.titulo") };
 
 /**
  * BODA-100 (#67) · EL GUION DE LA JORNADA

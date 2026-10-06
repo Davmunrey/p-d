@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
@@ -31,6 +32,9 @@ import { accesoActual } from "@/lib/sesion";
 
 import { borrarPago, crearPago, editarPago, marcarPagado } from "./acciones";
 import { AvisoPagos } from "./aviso";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.presupuesto.pagos.titulo") };
 
 /**
  * BODA-62 · QUÉ HAY QUE PAGAR Y CUÁNDO

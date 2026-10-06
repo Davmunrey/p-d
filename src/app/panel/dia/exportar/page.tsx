@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
@@ -16,6 +17,9 @@ import {
 } from "@/lib/bbdd/dia";
 import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.dia.exportar.titulo") };
 
 /**
  * BODA-104 (#71) · LLEVÁRSELO EN PAPEL
@@ -157,7 +161,7 @@ export default async function PaginaExportarDelDia() {
                         la columna, no algo que haya pedido.
                       */}
                       {invitado.respuesta === "viene"
-                        ? t(`rsvp.menus.${invitado.tipoMenu}` as "rsvp.menus.estandar")
+                        ? t(`panel.menus.${invitado.tipoMenu}` as "panel.menus.estandar")
                         : ""}
                     </td>
                     <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">

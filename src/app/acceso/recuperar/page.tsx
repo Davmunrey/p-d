@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
-import { Boton, BotonEnlace } from "@/components/ui/boton";
+import { BotonEnlace } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import { RUTA_ACCESO } from "@/config/constants";
@@ -78,7 +79,9 @@ export default async function PaginaRecuperar({
                 spellCheck={false}
               />
               <div>
-                <Boton type="submit">{t("acceso.recuperarEnviar")}</Boton>
+                <BotonEnvio rotuloPendiente={t("acceso.enviando")}>
+                  {t("acceso.recuperarEnviar")}
+                </BotonEnvio>
               </div>
             </form>
           </>

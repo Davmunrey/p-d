@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -12,6 +13,9 @@ import { accesoActual } from "@/lib/sesion";
 import { avisoDe } from "@/lib/avisos";
 
 import { recordarPorWhatsApp } from "../acciones";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.pendientes.titulo") };
 
 /**
  * BODA-111 · QUIÉN NO HA CONTESTADO

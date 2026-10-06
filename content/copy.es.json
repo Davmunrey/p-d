@@ -391,6 +391,7 @@
     "correo": "Correo electrónico",
     "contrasena": "Contraseña",
     "entrar": "Entrar",
+    "entrando": "Entrando…",
     "errorCredenciales": "El correo o la contraseña no son correctos.",
     "errorSinAcceso": "Esta cuenta existe, pero todavía no tiene acceso al panel.",
     "errorGenerico": "No hemos podido entrar. Inténtalo de nuevo en un momento.",
@@ -401,19 +402,29 @@
     "recuperarTitulo": "Recuperar la contraseña",
     "recuperarDescripcion": "Escribe tu correo y te mandamos un enlace para poner una nueva.",
     "recuperarEnviar": "Enviarme el enlace",
+    "enviando": "Enviando…",
     "recuperarEnviado": "Si ese correo tiene acceso, ya está en camino",
     "recuperarEnviadoTexto": "Abre el enlace desde este mismo dispositivo. Caduca en una hora.",
     "recuperarError": "No hemos podido pedir el enlace. Inténtalo de nuevo en un momento.",
     "nuevaTitulo": "Nueva contraseña",
     "nuevaDescripcion": "Elige una contraseña nueva para entrar al panel.",
     "nuevaContrasena": "Contraseña nueva",
-    "nuevaAyuda": "Al menos 12 caracteres.",
+    "nuevaAyuda": "Al menos {minimo} caracteres.",
     "nuevaGuardar": "Guardar y entrar",
-    "nuevaCorta": "La contraseña es demasiado corta.",
+    "guardando": "Guardando…",
+    "nuevaCorta": "La contraseña es demasiado corta: tiene que tener al menos {minimo} caracteres.",
+    "nuevaRepetida": "Esa es la contraseña que ya tenías: elige otra.",
+    "nuevaDebil": "Esa contraseña es demasiado fácil de adivinar. Prueba con una más larga o con más variedad.",
+    "nuevaError": "No hemos podido guardar la contraseña. Inténtalo de nuevo en un momento.",
     "errorEnlace": "Ese enlace ya no vale. Pide uno nuevo y entra desde el último que recibas."
   },
   "panel": {
     "titulo": "Panel",
+    "noEncontrado": {
+      "titulo": "Esto no está en el panel",
+      "texto": "Puede que se borrara desde otra pestaña o que el enlace sea viejo. Desde el resumen se llega a todo.",
+      "volver": "Ir al resumen del panel"
+    },
     "navegacion": "Secciones del panel",
     "saltarAlContenido": "Saltar al contenido",
     "sesionDe": "Has entrado como",
@@ -438,6 +449,14 @@
       "dia": "Día de la boda",
       "contenido": "Contenido"
     },
+    "menus": {
+      "estandar": "Sin preferencia",
+      "vegetariano": "Vegetariano",
+      "vegano": "Vegano",
+      "infantil": "Infantil",
+      "sin_gluten": "Sin gluten",
+      "otro": "Otro (ver alergias)"
+    },
     "resumen": {
       "titulo": "Resumen",
       "descripcion": "Cómo va la boda, de un vistazo. Los números salen de las respuestas de los invitados y se actualizan solos.",
@@ -446,6 +465,7 @@
       "esHoy": "Es hoy",
       "yaFue": "Ya pasó",
       "sinFecha": "Sin fecha todavía",
+      "fechaSinLeer": "No hemos podido leer la fecha de la boda. Recargad en un momento.",
       "desvios": {
         "titulo": "Ojo al presupuesto",
         "ayuda": "Estas categorías se han pasado de lo previsto o están a punto. Los contratos se firman con semanas de antelación: verlo ahora todavía sirve de algo.",
@@ -474,6 +494,7 @@
       "pagado": "Pagado",
       "quedaPorPagar": "Queda por pagar",
       "sinPresupuesto": "Todavía no hay presupuesto. En cuanto apuntéis la primera categoría, aquí saldrá lo que va costando y lo que queda por pagar.",
+      "importesSinLeer": "No hemos podido leer la moneda de la boda, así que aquí no salen los importes. En el presupuesto están todos.",
       "bloqueProximo": "Lo que se os echa encima",
       "proximosPagos": "Próximos pagos",
       "sinPagos": "No hay ningún pago pendiente.",

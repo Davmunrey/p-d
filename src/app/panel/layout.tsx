@@ -25,8 +25,14 @@ import { cerrarSesion } from "../acceso/acciones";
  */
 export const dynamic = "force-dynamic";
 
+/*
+  CADA PANTALLA CON SU TÍTULO, Y «PANEL» DETRÁS. Con «Panel» en todas, el
+  anunciador de rutas de Next —que sólo habla cuando cambia el título— se
+  quedaba callado al pasar de Invitados a Presupuesto, y con varias pestañas
+  abiertas no se distinguía cuál era cuál.
+*/
 export const metadata: Metadata = {
-  title: t("panel.titulo"),
+  title: { template: `%s · ${t("panel.titulo")}`, default: t("panel.titulo") },
   robots: { index: false, follow: false },
 };
 

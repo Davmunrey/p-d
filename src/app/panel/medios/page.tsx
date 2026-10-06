@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
@@ -37,6 +38,9 @@ import {
   subirMedio,
 } from "./acciones";
 import { ESTADOS_DE_ERROR, esEstadoMedios, type EstadoMedios } from "./estado";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.medios.titulo") };
 
 /**
  * BODA-29 · EL GESTOR DE FOTOS Y VÍDEOS

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { Boton } from "@/components/ui/boton";
+import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import { LONGITUD_MINIMA_CONTRASENA, RUTA_ACCESO } from "@/config/constants";
 import { nombresDeLaBoda } from "@/lib/bbdd/landing";
 import { hayAutenticacion, clienteServidor } from "@/lib/supabase/servidor";
-import { t } from "@/lib/copy";
+import { avisoDe } from "@/lib/avisos";
+import { t, type ClaveCopy } from "@/lib/copy";
 
 import { guardarContrasena } from "../acciones";
 
@@ -25,6 +26,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** Los avisos que esta pantalla sabe dar. Un `?estado=` inventado no pinta nada. */
+const AVISOS: Record<string, ClaveCopy> = {
+  corta: "acceso.nuevaCorta",
+  repetida: "acceso.nuevaRepetida",
+  debil: "acceso.nuevaDebil",
+  error: "acceso.nuevaError",
+};
+
 export default async function PaginaNuevaContrasena({
   searchParams,
 }: {
@@ -39,6 +48,7 @@ export default async function PaginaNuevaContrasena({
   if (!data.user) redirect(`${RUTA_ACCESO}?estado=enlace-invalido`);
 
   const { estado } = await searchParams;
+  const aviso = avisoDe(AVISOS, estado);
 
   const nombres = await nombresDeLaBoda();
 
@@ -51,9 +61,9 @@ export default async function PaginaNuevaContrasena({
         </Titulo2>
         <Cuerpo className="mt-pila">{t("acceso.nuevaDescripcion")}</Cuerpo>
 
-        {estado ? (
+        {aviso ? (
           <p role="alert" className="mt-elemento text-pequeno text-error-tinta">
-            {estado === "corta" ? t("acceso.nuevaCorta") : t("acceso.errorGenerico")}
+            {t(aviso, { minimo: LONGITUD_MINIMA_CONTRASENA })}
           </p>
         ) : null}
 
@@ -62,13 +72,16 @@ export default async function PaginaNuevaContrasena({
             name="contrasena"
             type="password"
             etiqueta={t("acceso.nuevaContrasena")}
-            ayuda={t("acceso.nuevaAyuda")}
+            ayuda={t("acceso.nuevaAyuda", { minimo: LONGITUD_MINIMA_CONTRASENA })}
             autoComplete="new-password"
             minLength={LONGITUD_MINIMA_CONTRASENA}
             required
           />
           <div>
-            <Boton type="submit">{t("acceso.nuevaGuardar")}</Boton>
+            {/* Un doble toque mandaba dos cambios, y el segundo volvía como «repetida». */}
+            <BotonEnvio rotuloPendiente={t("acceso.guardando")}>
+              {t("acceso.nuevaGuardar")}
+            </BotonEnvio>
           </div>
         </form>
       </div>

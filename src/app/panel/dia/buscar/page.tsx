@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
@@ -8,6 +9,9 @@ import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 
 import { Buscador } from "./buscador";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.dia.buscar.titulo") };
 
 /**
  * BODA-102 (#69) · EL BUSCADOR DE INVITADOS

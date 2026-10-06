@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { BotonEnvio } from "@/components/ui/boton-envio";
@@ -9,6 +10,9 @@ import { t } from "@/lib/copy";
 import { avisoDe } from "@/lib/avisos";
 
 import { guardarNombre } from "./acciones";
+
+/** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
+export const metadata: Metadata = { title: t("panel.cuenta.titulo") };
 
 /**
  * MI CUENTA
