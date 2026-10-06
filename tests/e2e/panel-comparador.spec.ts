@@ -327,6 +327,34 @@ test.describe("La comparativa de una categoría", () => {
    * tiene forma de identificador, así que además comprueba que no se le manda a
    * PostgreSQL para que conteste con un error de sintaxis.
    */
+  /**
+   * CASO DE ERROR · elegir a un candidato que se borró mientras se comparaba.
+   *
+   * Cero filas al escribir decía «vuestro perfil no puede hacer cambios» a
+   * quien sí puede. Para quien escribe, es que ese proveedor ya no está.
+   */
+  test("elegir a un candidato que se borró mientras tanto dice que ya no existe", async ({
+    page,
+  }) => {
+    const sembrado = await sembrar(Date.now());
+
+    await entrar(page);
+    await page.goto(`${RUTA_COMPARADOR}?categoria=${sembrado.categoriaId}`);
+    const elegir = page.getByRole("button", {
+      name: copy.panel.proveedores.elegirA.replace("{nombre}", sembrado.calla),
+    });
+    await expect(elegir).toBeVisible();
+
+    // En otra pestaña, alguien lo borra.
+    await conBase(
+      (sql) => sql`delete from public.proveedores where nombre = ${sembrado.calla}`,
+    );
+
+    await elegir.click();
+    await esperarEstado(page, "no-existe");
+    await expect(page.getByText(copy.panel.proveedores.errorNoExiste)).toBeVisible();
+  });
+
   test("una categoría que no existe lo dice claro", async ({ page }) => {
     await entrar(page);
     await page.goto(`${RUTA_COMPARADOR}?categoria=inexistente`);

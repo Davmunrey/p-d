@@ -76,6 +76,7 @@ const AVISOS: Record<EstadoMedios, string> = {
   "sin-poster": t("panel.medios.errorSinPoster"),
   "sin-configurar": t("panel.medios.errorSinConfigurar"),
   "sin-permiso": t("panel.medios.errorSinPermiso"),
+  "no-existe": t("panel.medios.errorNoExiste"),
   error: t("panel.medios.errorGuardar"),
 };
 

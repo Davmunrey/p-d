@@ -6,7 +6,7 @@ import { BUCKET_MEDIOS, LARGOS_DE_CAMPO, RUTA_ACCESO, RUTA_MEDIOS } from "@/conf
 import { SECCIONES, type Seccion } from "@/config/secciones";
 import { medirImagen } from "@/lib/dimensiones";
 import { admitirFichero, componerRuta, identificadorDeRuta } from "@/lib/medios";
-import { accesoActual } from "@/lib/sesion";
+import { accesoActual, ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteDeServicio, haySubidaDeMedios } from "@/lib/supabase/servicio";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
@@ -299,8 +299,10 @@ export async function alternarPublicado(datos: FormData): Promise<void> {
     .select("id")
     .maybeSingle();
 
-  // Cero filas y sin error: RLS ha dicho que no. Ver la cabecera del fichero.
-  if (error || !data) volver(error ? motivo(error) : "sin-permiso");
+  // Cero filas y sin error: o RLS ha dicho que no, o la foto ya no está. El
+  // rol desempata. Ver la cabecera del fichero.
+  if (error) volver(motivo(error));
+  if (!data) volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
 
   volver(publicar ? "publicado" : "despublicado");
 }
@@ -357,7 +359,8 @@ export async function borrarMedio(datos: FormData): Promise<void> {
     .select("ruta_almacenamiento, poster_ruta")
     .maybeSingle();
 
-  if (error || !data) volver(error ? motivo(error) : "sin-permiso");
+  if (error) volver(motivo(error));
+  if (!data) volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
 
   if (haySubidaDeMedios) {
     const rutas = [data.ruta_almacenamiento, data.poster_ruta].filter((ruta): ruta is string =>
@@ -404,7 +407,8 @@ export async function guardarAlternativo(datos: FormData): Promise<void> {
     .select("id")
     .maybeSingle();
 
-  if (error || !data) volver(error ? motivo(error) : "sin-permiso");
+  if (error) volver(motivo(error));
+  if (!data) volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
 
   volver("alternativo-guardado");
 }

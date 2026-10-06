@@ -375,6 +375,45 @@ test.describe("El gestor de fotos y vídeos", () => {
   );
 
   /**
+   * CASO DE ERROR · UNA FOTO QUE SE BORRÓ EN OTRA PESTAÑA.
+   *
+   * Publicarla devolvía cero filas y la pantalla decía «sólo un editor puede
+   * tocar las fotos de la web» a quien sí lo es. Ahora dice lo que pasó. No
+   * sube nada a Storage: la fila se pone y se quita por SQL.
+   */
+  test("publicar una foto que se borró mientras tanto dice que ya no existe", async ({
+    page,
+  }) => {
+    const alternativo = `${MARCA} fantasma ${Date.now()}`;
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    try {
+      await sql`
+        insert into public.medios
+          (ruta_almacenamiento, texto_alternativo, seccion, tipo, publicado)
+        values
+          (${`galeria/e2e-fantasma-${Date.now()}.jpg`}, ${sql.json({ es: alternativo })},
+           'galeria', 'imagen', false)
+      `;
+
+      await entrar(page);
+      await page.goto(RUTA_MEDIOS);
+      const ficha = fichaDe(page, alternativo);
+      await expect(ficha).toHaveCount(1);
+
+      // En otra pestaña, alguien la borra.
+      await sql`delete from public.medios where texto_alternativo->>'es' = ${alternativo}`;
+
+      await ficha
+        .getByRole("button", { name: copy.panel.medios.publicar, exact: true })
+        .click();
+      await esperarEstado(page, "no-existe");
+      await expect(page.getByText(copy.panel.medios.errorNoExiste)).toBeVisible();
+    } finally {
+      await sql.end();
+    }
+  });
+
+  /**
    * EL CAMINO FELIZ, Y LO QUE DE VERDAD IMPORTA DENTRO DE ÉL: que subir NO es
    * publicar. Una foto que apareciera en la web nada más subirla convertiría el
    * gestor en una trampa — se sube para mirarla, y la ven ciento veinte

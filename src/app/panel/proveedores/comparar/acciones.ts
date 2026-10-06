@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { RUTA_ACCESO, RUTA_COMPARADOR, RUTA_PROVEEDORES } from "@/config/constants";
 import { obtenerContratadosDeCategoria } from "@/lib/bbdd/proveedores";
+import { ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 import { type EstadoProveedores } from "../estado";
@@ -88,11 +89,14 @@ export async function elegirProveedor(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) {
-    // Cero filas y sin error es RLS callando: un lector no contrata a nadie.
     console.error("No se pudo marcar el proveedor elegido:", error);
     volver("error", categoriaId);
   }
-  if (!data?.length) volver("sin-permiso", categoriaId);
+  // Cero filas y sin error: o RLS callando —un lector no contrata a nadie— o un
+  // proveedor que se borró mientras se miraba la tabla. El rol desempata.
+  if (!data?.length) {
+    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe", categoriaId);
+  }
 
   // La lista de proveedores y el resumen de «qué falta por cerrar» acaban de
   // cambiar, y no es la ruta a la que se redirige: revalidarla no compite.

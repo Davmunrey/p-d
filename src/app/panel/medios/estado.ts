@@ -25,6 +25,7 @@ export type EstadoMedios =
   | "sin-poster"
   | "sin-configurar"
   | "sin-permiso"
+  | "no-existe"
   | "error";
 
 /** Cuáles se cuentan como un fallo. Decide el color del aviso y su `role`. */
@@ -36,6 +37,7 @@ export const ESTADOS_DE_ERROR: readonly EstadoMedios[] = [
   "sin-poster",
   "sin-configurar",
   "sin-permiso",
+  "no-existe",
   "error",
 ];
 

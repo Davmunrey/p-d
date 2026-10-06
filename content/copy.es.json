@@ -1217,6 +1217,7 @@
       "errorSinPoster": "Un vídeo necesita su fotograma: sin él, quien pide no ver movimiento se queda con un hueco.",
       "errorSinConfigurar": "Falta configurar la clave de servicio de Supabase. Sin ella no se puede subir nada.",
       "errorSinPermiso": "Sólo un editor puede tocar las fotos de la web.",
+      "errorNoExiste": "Esa foto o vídeo ya no existe. Puede que la haya borrado alguien mientras mirabas.",
       "errorGuardar": "No hemos podido guardar. Inténtalo de nuevo."
     },
     "contenido": {
