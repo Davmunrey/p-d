@@ -290,7 +290,7 @@ test.describe("Los pagos y sus vencimientos", () => {
     const alta = seccion(page, pagos.nuevaTitulo);
     await alta
       .getByLabel(pagos.campoGasto, { exact: true })
-      .selectOption({ label: `${montaje.categoria} · ${montaje.concepto}` });
+      .selectOption({ label: montaje.concepto });
     await alta.getByLabel(pagos.campoImporte, { exact: true }).fill("700");
     await alta.getByLabel(pagos.campoVencimiento, { exact: true }).fill("2027-06-12");
     await alta.getByRole("button", { name: pagos.crear }).click();
@@ -474,7 +474,7 @@ test.describe("Los pagos y sus vencimientos", () => {
     const alta = seccion(page, pagos.nuevaTitulo);
     await alta
       .getByLabel(pagos.campoGasto, { exact: true })
-      .selectOption({ label: `${montaje.categoria} · ${montaje.concepto}` });
+      .selectOption({ label: montaje.concepto });
     await alta.getByLabel(pagos.campoImporte, { exact: true }).fill("100");
     /*
       EL VALOR SE ESCRIBE EN EL ELEMENTO, SIN PASAR POR REACT. Tras cada evento
@@ -591,7 +591,7 @@ test.describe("Los pagos y sus vencimientos", () => {
     const alta = seccion(page, pagos.nuevaTitulo);
     await alta
       .getByLabel(pagos.campoGasto, { exact: true })
-      .selectOption({ label: `${montaje.categoria} · ${montaje.concepto}` });
+      .selectOption({ label: montaje.concepto });
     await alta.getByLabel(pagos.campoImporte, { exact: true }).fill("120");
     await alta.getByLabel(pagos.campoVencimiento, { exact: true }).fill("2027-05-02");
     await alta
@@ -606,7 +606,7 @@ test.describe("Los pagos y sus vencimientos", () => {
     const segundo = seccion(page, pagos.nuevaTitulo);
     await segundo
       .getByLabel(pagos.campoGasto, { exact: true })
-      .selectOption({ label: `${montaje.categoria} · ${montaje.concepto}` });
+      .selectOption({ label: montaje.concepto });
     await segundo.getByLabel(pagos.campoImporte, { exact: true }).fill("120");
     await segundo.getByLabel(pagos.campoVencimiento, { exact: true }).fill("2027-05-02");
     await segundo
@@ -624,5 +624,139 @@ test.describe("Los pagos y sus vencimientos", () => {
     );
     expect(guardado.paga).toBe("otros");
     expect(guardado.paga_detalle).toBe("Los padrinos");
+  });
+
+  /**
+   * BORRAR UN PAGO PREGUNTA ANTES. «Borrar» está justo debajo de «Marcar
+   * pagado», y un toque de más en el móvil se llevaba el pago con sus notas
+   * sin vuelta atrás. El primer toque no borra; la confirmación, sí.
+   */
+  test("borrar un pago pregunta antes, y sólo la confirmación lo borra", async ({ page }) => {
+    const montaje = await montar("Borrar");
+    const pago = await apuntar(montaje.gastoId, 250, 30);
+
+    await entrar(page);
+    await page.goto(RUTA_PAGOS);
+
+    const fila = filaDe(page, pago);
+    await expect(fila).toBeVisible();
+    await fila.getByRole("button", { name: pagos.borrar, exact: true }).click();
+    await esperarEstado(page, "confirmar-borrado");
+
+    // La pregunta sale en el propio pago, y el pago sigue ahí.
+    await expect(filaDe(page, pago)).toContainText(pagos.avisoConfirmarBorrado);
+    const [sigue] = await conBase(
+      (sql) => sql<{ id: string }[]>`select id from public.pagos where id = ${pago}`,
+    );
+    expect(sigue?.id, "el primer toque no puede borrar nada").toBe(pago);
+
+    await filaDe(page, pago).getByRole("button", { name: pagos.confirmarBorrado }).click();
+    await esperarEstado(page, "pago-borrado");
+
+    const quedan = await conBase(
+      (sql) => sql<{ id: string }[]>`select id from public.pagos where id = ${pago}`,
+    );
+    expect(quedan, "confirmado, se borra").toHaveLength(0);
+  });
+
+  /**
+   * LA FECHA DE PAGO SE PUEDE CORREGIR. «Marcar pagado» apunta hoy, y la señal
+   * pagada en marzo y apuntada en octubre salía en la gráfica en octubre, sin
+   * forma de cambiarlo.
+   *
+   * CASO DE ERROR · un día que todavía no ha llegado no es un pago hecho: se
+   * explica y no se guarda.
+   */
+  test("la fecha de pago se corrige al editar, y una futura se rechaza", async ({ page }) => {
+    const montaje = await montar("FechaPago");
+    const pago = await apuntar(montaje.gastoId, 500, 5);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PAGOS}?editar=${pago}`);
+
+    const fila = filaDe(page, pago);
+    await fila.getByLabel(pagos.campoPagadoEn, { exact: true }).fill("2026-03-10");
+    await fila.getByRole("button", { name: pagos.guardar }).click();
+    await esperarEstado(page, "pago-editado");
+
+    const [guardado] = await conBase(
+      (sql) => sql<{ pagado_en: string | null }[]>`
+        select pagado_en::text from public.pagos where id = ${pago}
+      `,
+    );
+    expect(guardado.pagado_en, "se guarda el día que se escribió").toBe("2026-03-10");
+    await expect(filaDe(page, pago)).toContainText(`${pagos.pagadoEl} 10 de marzo de 2026`);
+
+    await page.goto(`${RUTA_PAGOS}?editar=${pago}`);
+    await filaDe(page, pago)
+      .getByLabel(pagos.campoPagadoEn, { exact: true })
+      .fill("2099-01-01");
+    await filaDe(page, pago).getByRole("button", { name: pagos.guardar }).click();
+    await esperarEstado(page, "fecha-pago");
+
+    await expect(filaDe(page, pago)).toContainText(pagos.errorFechaPago);
+    const [sinCambio] = await conBase(
+      (sql) => sql<{ pagado_en: string | null }[]>`
+        select pagado_en::text from public.pagos where id = ${pago}
+      `,
+    );
+    expect(sinCambio.pagado_en, "una fecha futura no se guarda").toBe("2026-03-10");
+  });
+
+  /**
+   * EL ALTA NO ELIGE EL GASTO POR VOSOTROS. El primero de la lista venía
+   * marcado, y un pago apuntado sin tocar ese campo se colgaba de un gasto que
+   * nadie había elegido. Ahora empieza vacío; y si llega vacío al servidor —sin
+   * el `required` del navegador— se explica junto al alta, que está al final.
+   */
+  test("el alta empieza sin gasto elegido, y sin elegirlo se explica junto a ella", async ({
+    page,
+  }) => {
+    await montar("SinGasto");
+
+    await entrar(page);
+    await page.goto(RUTA_PAGOS);
+
+    // «Queda por pagar» es la cifra de la portada, y aquí no es la misma.
+    await expect(
+      page.getByRole("term").filter({ hasText: copy.panel.resumen.quedaPorPagar }),
+    ).toHaveCount(0);
+
+    const alta = seccion(page, pagos.nuevaTitulo);
+    const gasto = alta.getByLabel(pagos.campoGasto, { exact: true });
+    await expect(gasto, "ningún gasto viene elegido").toHaveValue("");
+
+    await gasto.evaluate((campo) => campo.removeAttribute("required"));
+    await alta.getByLabel(pagos.campoImporte, { exact: true }).fill("80");
+    await alta.getByLabel(pagos.campoVencimiento, { exact: true }).fill("2027-04-04");
+    await alta.getByRole("button", { name: pagos.crear }).click();
+    await esperarEstado(page, "gasto");
+
+    await expect(page).toHaveURL(/#nuevo-pago$/);
+    await expect(seccion(page, pagos.nuevaTitulo)).toContainText(pagos.errorGasto);
+  });
+
+  /**
+   * CERO FILAS NO ES «NO PODÉIS». Con el pago borrado desde el otro móvil, a
+   * quien sí puede editar le salía «vuestro perfil no puede hacer cambios
+   * aquí» —o un «no cabe» sobre un pago que ya no existía—.
+   */
+  test("guardar un pago que otro ya borró dice que no está, no que no podéis", async ({
+    page,
+  }) => {
+    const montaje = await montar("YaNoEsta");
+    const pago = await apuntar(montaje.gastoId, 150, 12);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PAGOS}?editar=${pago}`);
+    const guardar = filaDe(page, pago).getByRole("button", { name: pagos.guardar });
+    await expect(guardar).toBeEnabled();
+
+    await conBase((sql) => sql`delete from public.pagos where id = ${pago}`);
+    await guardar.click();
+    await esperarEstado(page, "no-existe");
+
+    await expect(page.getByText(pagos.errorNoExiste)).toBeVisible();
+    await expect(page.getByText(pagos.errorSinPermiso)).toHaveCount(0);
   });
 });

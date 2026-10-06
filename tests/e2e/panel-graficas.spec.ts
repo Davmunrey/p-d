@@ -2,6 +2,7 @@ import { expect, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
+import { formateadorDeImporte } from "../../src/lib/importe";
 import {
   IDIOMA,
   RUTA_ACCESO,
@@ -182,12 +183,19 @@ test.describe("Las gráficas del presupuesto", () => {
       Calcularlo aquí a mano sería escribir la misma cuenta dos veces y creerse
       las dos.
     */
+    /*
+      EL TOTAL ES LO QUE VA COSTANDO, no sólo lo acordado: lo estimado de las
+      partidas sin cerrar también entra en el reparto. Se suma con la misma
+      cuenta que la pantalla —previsto menos desviación, categoría a categoría,
+      sólo lo que es más que cero—, leída de la vista.
+    */
     const totalReal = await conBase(async (sql) =>
       Number(
         (
           await sql<{ total: string }[]>`
-              select coalesce(sum(importe_real), 0) as total
-                from public.partidas_presupuesto
+              select coalesce(sum(importe_previsto - desviacion), 0) as total
+                from public.v_resumen_presupuesto
+               where importe_previsto - desviacion > 0
             `
         )[0].total,
       ),
@@ -441,5 +449,92 @@ test.describe("Las gráficas del presupuesto", () => {
     const holgada = comparativa.getByRole("row").filter({ hasText: sembrado.pequena });
     await expect(holgada).not.toContainText(copy.panel.presupuesto.pasado);
     await expect(holgada.getByRole("cell").last()).not.toContainText("-");
+  });
+
+  /**
+   * LO ESTIMADO TAMBIÉN SE ESTÁ GASTANDO. El reparto sumaba sólo lo acordado y
+   * lo llamaba «Gastado»: una categoría con el catering todavía estimado en
+   * 900 € no salía, mientras la tabla de debajo decía que iba costando eso.
+   *
+   * Con su propio prefijo, y no con la marca del spec: `sembrar` limpia todo
+   * lo de la marca, y esta categoría tiene que sobrevivir a eso.
+   */
+  test("una categoría sólo estimada sale en el reparto con lo que va costando", async ({
+    page,
+  }) => {
+    const nombre = `(DES) E2E Reparto estimado ${Date.now()}`;
+    const [{ moneda }] = await conBase(
+      (sql) => sql<{ moneda: string }[]>`select moneda from public.configuracion_boda limit 1`,
+    );
+    const categoriaId = await conBase(async (sql) => {
+      const [categoria] = await sql<{ id: string }[]>`
+        insert into public.categorias_presupuesto (nombre, importe_previsto, orden)
+        values (${nombre}, 500, 93)
+        returning id
+      `;
+      await sql`
+        insert into public.partidas_presupuesto (categoria_id, concepto, importe_estimado)
+        values (${categoria.id}, ${`${nombre} concepto`}, 900)
+      `;
+      return categoria.id;
+    });
+
+    try {
+      await entrar(page);
+      await page.goto(RUTA_GRAFICAS);
+
+      const suya = fila(
+        seccion(page, copy.panel.presupuesto.graficas.repartoTitulo),
+        nombre,
+        page,
+      );
+      await expect(suya, "sin nada acordado, lo estimado cuenta igual").toBeVisible();
+      await expect(suya).toContainText(formateadorDeImporte(moneda)(900));
+    } finally {
+      await conBase(async (sql) => {
+        await sql`delete from public.partidas_presupuesto where categoria_id = ${categoriaId}`;
+        await sql`delete from public.categorias_presupuesto where id = ${categoriaId}`;
+      });
+    }
+  });
+
+  /**
+   * EN EL MÓVIL, LAS TABLAS SE DESPLAZAN Y SE NOTA. La comparativa medía 531 px
+   * en un hueco de 362, la columna «Diferencia» quedaba fuera sin que nada lo
+   * dijera, y el rótulo, centrado sobre la tabla entera, se leía «LA MISMA
+   * INFORMACIÓN, EN UNA». Ahora el rótulo va fuera y entero, la región se
+   * alcanza con el tabulador —sin ratón no habría forma de desplazarla— y la
+   * categoría se queda fija al desplazar.
+   */
+  test("en el móvil cada tabla se lee entera: rótulo, teclado y categoría fija", async ({
+    page,
+  }) => {
+    await sembrar(Date.now() + 5);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await entrar(page);
+    await page.goto(RUTA_GRAFICAS);
+
+    const regiones = page.getByRole("region", {
+      name: copy.panel.presupuesto.graficas.laTabla,
+    });
+    await expect(regiones.first()).toBeVisible();
+    const cuantas = await regiones.count();
+    expect(cuantas, "cada gráfica trae su tabla").toBeGreaterThan(0);
+
+    for (let i = 0; i < cuantas; i += 1) {
+      const region = regiones.nth(i);
+      await expect(region, "se llega con el tabulador").toHaveAttribute("tabindex", "0");
+
+      const desborda = await region.evaluate((nodo) => nodo.scrollWidth > nodo.clientWidth);
+      if (!desborda) continue;
+      const primera = region.locator("tbody tr th").first();
+      await expect(primera).toHaveCSS("position", "sticky");
+    }
+
+    // El rótulo cabe en la pantalla: no se corta a media frase.
+    const rotulo = page.getByText(copy.panel.presupuesto.graficas.laTabla).first();
+    const caja = await rotulo.boundingBox();
+    expect(caja, "el rótulo tiene que pintarse").not.toBeNull();
+    expect(caja!.x + caja!.width).toBeLessThanOrEqual(390);
   });
 });

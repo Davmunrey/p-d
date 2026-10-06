@@ -440,8 +440,23 @@ test.describe("Las categorías del presupuesto", () => {
     );
     expect(sigue?.id, "el primer envío no puede borrar nada").toBe(origenId);
 
+    // La decisión dice de qué categoría se trata y cuántos gastos tiene, sale
+    // en su propia tarjeta y no trae ningún destino elegido.
+    const decision = page.locator(`#categoria-${origenId} section`);
+    await expect(
+      decision.getByRole("heading", {
+        name: copy.panel.presupuesto.decidirTituloUno.replace("{categoria}", conGastos),
+      }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`#categoria-${origenId}$`));
+    await expect(
+      decision.getByLabel(copy.panel.presupuesto.campoDestino, { exact: true }),
+    ).toHaveValue("");
+    await expect(
+      decision.getByRole("link", { name: copy.panel.presupuesto.dejarla }),
+    ).toBeVisible();
+
     // Se elige destino y ahora sí.
-    const decision = seccion(page, copy.panel.presupuesto.decidirTitulo);
     await decision
       .getByLabel(copy.panel.presupuesto.campoDestino, { exact: true })
       .selectOption({ label: destino });
@@ -467,6 +482,60 @@ test.describe("Las categorías del presupuesto", () => {
     expect(gasto, "el gasto ocurrió y tiene que seguir contando").toBeDefined();
     expect(gasto.categoria_id).toBe(destinoId);
     expect(Number(gasto.importe_estimado)).toBe(450);
+  });
+
+  /**
+   * SIN GASTOS, BORRAR UNA CATEGORÍA TAMBIÉN PREGUNTA. Un toque en «Borrar» se
+   * llevaba la categoría con su previsto sin vuelta atrás. El primer toque
+   * pregunta en la propia tarjeta; «No, dejarla» sale sin tocar nada; y sólo
+   * la confirmación borra.
+   */
+  test("una categoría vacía no se borra de un toque, y se puede dejar como estaba", async ({
+    page,
+  }) => {
+    const nombre = `${MARCA} Vacía ${Date.now()}`;
+    const [{ id }] = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        insert into public.categorias_presupuesto (nombre, importe_previsto, orden)
+        values (${nombre}, 700, 92)
+        returning id
+      `,
+    );
+
+    await entrar(page);
+    await page.goto(RUTA_PRESUPUESTO);
+
+    const suya = () => page.locator(`#categoria-${id}`);
+    await suya()
+      .getByRole("button", { name: copy.panel.presupuesto.borrar, exact: true })
+      .click();
+    await esperarEstado(page, "confirmar-borrado");
+    await expect(suya()).toContainText(copy.panel.presupuesto.avisoConfirmarBorrado);
+
+    // «No, dejarla»: sale sin borrar.
+    await suya().getByRole("link", { name: copy.panel.presupuesto.dejarla }).click();
+    await expect(page).not.toHaveURL(/estado=/);
+    await expect(suya().getByText(copy.panel.presupuesto.avisoConfirmarBorrado)).toHaveCount(0);
+    const sigue = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        select id from public.categorias_presupuesto where id = ${id}
+      `,
+    );
+    expect(sigue, "ni el primer toque ni «dejarla» borran nada").toHaveLength(1);
+
+    await suya()
+      .getByRole("button", { name: copy.panel.presupuesto.borrar, exact: true })
+      .click();
+    await esperarEstado(page, "confirmar-borrado");
+    await suya().getByRole("button", { name: copy.panel.presupuesto.confirmarBorrado }).click();
+    await esperarEstado(page, "categoria-borrada");
+
+    const quedan = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        select id from public.categorias_presupuesto where id = ${id}
+      `,
+    );
+    expect(quedan, "confirmado, se borra").toHaveLength(0);
   });
 });
 

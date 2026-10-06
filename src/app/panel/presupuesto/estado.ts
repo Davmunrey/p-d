@@ -10,6 +10,7 @@ export type EstadoPresupuesto =
   | "categoria-editada"
   | "categoria-borrada"
   | "gastos-movidos"
+  | "confirmar-borrado"
   | "nombre"
   | "nombre-repetido"
   | "importe"
@@ -19,3 +20,14 @@ export type EstadoPresupuesto =
   | "no-existe"
   | "sin-permiso"
   | "error";
+
+/** El sitio de cada categoría en la lista de ajuste: a él vuelve lo que se hace sobre ella. */
+export function anclaDeCategoria(id: string): string {
+  return `categoria-${id}`;
+}
+
+/** El alta de una categoría, al final de la pantalla: sus errores se pintan junto a ella. */
+export const ANCLA_ALTA_CATEGORIA = "nueva-categoria";
+
+/** Lo que dice en la URL que un aviso viene del alta y no de una categoría concreta. */
+export const DESDE_EL_ALTA = { desde: "alta" } as const;

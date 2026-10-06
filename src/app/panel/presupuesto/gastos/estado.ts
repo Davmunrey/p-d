@@ -9,6 +9,7 @@ export type EstadoGastos =
   | "gasto-creado"
   | "gasto-editado"
   | "gasto-borrado"
+  | "confirmar-borrado"
   | "concepto"
   | "categoria"
   | "importe"
@@ -19,3 +20,14 @@ export type EstadoGastos =
   | "referencia-rota"
   | "sin-permiso"
   | "error";
+
+/** El sitio de cada gasto en la pantalla: a él vuelve lo que se hace sobre él. */
+export function anclaDeGasto(id: string): string {
+  return `gasto-${id}`;
+}
+
+/** El alta de un gasto, al final de la pantalla: sus errores se pintan junto a ella. */
+export const ANCLA_ALTA_GASTO = "nuevo-gasto";
+
+/** Lo que dice en la URL que un aviso viene del alta y no de un gasto concreto. */
+export const DESDE_EL_ALTA = { desde: "alta" } as const;

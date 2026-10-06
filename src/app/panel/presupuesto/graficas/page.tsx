@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
+import { TablaDesplazable } from "@/components/ui/tabla-desplazable";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import { IDIOMA, RUTA_ACCESO, RUTA_PRESUPUESTO } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
@@ -82,7 +83,9 @@ export default async function PaginaGraficas() {
   ]);
 
   const euros = moneda ? formateadorDeImporte(moneda) : null;
-  const reparto = repartoPorCategoria(resumen);
+  const reparto = repartoPorCategoria(
+    resumen.map((fila) => ({ categoria: fila.categoria, importe: loQueVaCostando(fila) })),
+  );
   const meses = evolucionMensual(pagos);
   const comparables = resumen.filter(
     (fila) => fila.importePrevisto > 0 || loQueVaCostando(fila) > 0,
@@ -202,41 +205,36 @@ function Reparto({ reparto, euros }: { reparto: ParteDelGasto[]; euros: Euros })
 
 function TablaReparto({ reparto, euros }: { reparto: ParteDelGasto[]; euros: Euros }) {
   return (
-    <div className="mt-elemento overflow-x-auto">
-      <table className="w-full border-collapse text-left">
-        <caption className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
-          {t("panel.presupuesto.graficas.laTabla")}
-        </caption>
-        <thead>
-          <tr>
-            {[
-              t("panel.presupuesto.graficas.columnaCategoria"),
-              t("panel.presupuesto.graficas.columnaImporte"),
-              t("panel.presupuesto.graficas.columnaParte"),
-            ].map((titulo) => (
-              <th key={titulo} scope="col" className={CABECERA}>
-                {titulo}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {reparto.map((parte) => (
-            <tr key={parte.categoria}>
-              <th scope="row" className={FILA}>
-                {parte.categoria}
-              </th>
-              <td className={CIFRA}>{escribir(euros, parte.importe)}</td>
-              <td className={CIFRA}>
-                {t("panel.presupuesto.graficas.porcentaje", {
-                  numero: formatoPorcentaje.format(parte.porcentaje),
-                })}
-              </td>
-            </tr>
+    <TablaDesplazable rotulo={t("panel.presupuesto.graficas.laTabla")}>
+      <thead>
+        <tr>
+          {[
+            t("panel.presupuesto.graficas.columnaCategoria"),
+            t("panel.presupuesto.graficas.columnaImporte"),
+            t("panel.presupuesto.graficas.columnaParte"),
+          ].map((titulo) => (
+            <th key={titulo} scope="col" className={CABECERA}>
+              {titulo}
+            </th>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </tr>
+      </thead>
+      <tbody>
+        {reparto.map((parte) => (
+          <tr key={parte.categoria}>
+            <th scope="row" className={FILA}>
+              {parte.categoria}
+            </th>
+            <td className={CIFRA}>{escribir(euros, parte.importe)}</td>
+            <td className={CIFRA}>
+              {t("panel.presupuesto.graficas.porcentaje", {
+                numero: formatoPorcentaje.format(parte.porcentaje),
+              })}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </TablaDesplazable>
   );
 }
 
@@ -299,37 +297,32 @@ function Evolucion({ meses, euros }: { meses: MesDelGasto[]; euros: Euros }) {
             ))}
           </ul>
 
-          <div className="mt-elemento overflow-x-auto">
-            <table className="w-full border-collapse text-left">
-              <caption className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
-                {t("panel.presupuesto.graficas.laTabla")}
-              </caption>
-              <thead>
-                <tr>
-                  {[
-                    t("panel.presupuesto.graficas.columnaMes"),
-                    t("panel.presupuesto.graficas.columnaPagado"),
-                    t("panel.presupuesto.graficas.columnaAcumulado"),
-                  ].map((titulo) => (
-                    <th key={titulo} scope="col" className={CABECERA}>
-                      {titulo}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {meses.map((mes) => (
-                  <tr key={mes.clave}>
-                    <th scope="row" className={FILA}>
-                      {mes.etiqueta}
-                    </th>
-                    <td className={CIFRA}>{escribir(euros, mes.importe)}</td>
-                    <td className={CIFRA}>{escribir(euros, mes.acumulado)}</td>
-                  </tr>
+          <TablaDesplazable rotulo={t("panel.presupuesto.graficas.laTabla")}>
+            <thead>
+              <tr>
+                {[
+                  t("panel.presupuesto.graficas.columnaMes"),
+                  t("panel.presupuesto.graficas.columnaPagado"),
+                  t("panel.presupuesto.graficas.columnaAcumulado"),
+                ].map((titulo) => (
+                  <th key={titulo} scope="col" className={CABECERA}>
+                    {titulo}
+                  </th>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </tr>
+            </thead>
+            <tbody>
+              {meses.map((mes) => (
+                <tr key={mes.clave}>
+                  <th scope="row" className={FILA}>
+                    {mes.etiqueta}
+                  </th>
+                  <td className={CIFRA}>{escribir(euros, mes.importe)}</td>
+                  <td className={CIFRA}>{escribir(euros, mes.acumulado)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </TablaDesplazable>
         </>
       )}
     </Seccion>
@@ -407,34 +400,30 @@ function Comparativa({ categorias, euros }: { categorias: ResumenCategoria[]; eu
             })}
           </ul>
 
-          <div className="mt-elemento overflow-x-auto">
-            <table className="w-full border-collapse text-left">
-              <caption className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
-                {t("panel.presupuesto.graficas.laTabla")}
-              </caption>
-              <thead>
-                <tr>
-                  {[
-                    t("panel.presupuesto.graficas.columnaCategoria"),
-                    t("panel.presupuesto.graficas.columnaPrevisto"),
-                    t("panel.presupuesto.graficas.columnaReal"),
-                    t("panel.presupuesto.graficas.columnaDesviacion"),
-                  ].map((titulo) => (
-                    <th key={titulo} scope="col" className={CABECERA}>
-                      {titulo}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {categorias.map((fila) => (
-                  <tr key={fila.categoriaId}>
-                    <th scope="row" className={FILA}>
-                      {fila.categoria}
-                    </th>
-                    <td className={CIFRA}>{escribir(euros, fila.importePrevisto)}</td>
-                    <td className={CIFRA}>{escribir(euros, loQueVaCostando(fila))}</td>
-                    {/*
+          <TablaDesplazable rotulo={t("panel.presupuesto.graficas.laTabla")}>
+            <thead>
+              <tr>
+                {[
+                  t("panel.presupuesto.graficas.columnaCategoria"),
+                  t("panel.presupuesto.graficas.columnaPrevisto"),
+                  t("panel.presupuesto.graficas.columnaReal"),
+                  t("panel.presupuesto.graficas.columnaDesviacion"),
+                ].map((titulo) => (
+                  <th key={titulo} scope="col" className={CABECERA}>
+                    {titulo}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {categorias.map((fila) => (
+                <tr key={fila.categoriaId}>
+                  <th scope="row" className={FILA}>
+                    {fila.categoria}
+                  </th>
+                  <td className={CIFRA}>{escribir(euros, fila.importePrevisto)}</td>
+                  <td className={CIFRA}>{escribir(euros, loQueVaCostando(fila))}</td>
+                  {/*
                       LA MISMA DIFERENCIA Y EL MISMO SIGNO QUE LA TABLA DEL
                       PRESUPUESTO: lo que queda es positivo y lo que se pasa,
                       negativo y con su palabra. Aquí se calculaba al revés —
@@ -442,19 +431,23 @@ function Comparativa({ categorias, euros }: { categorias: ResumenCategoria[]; eu
                       misma categoría salía en positivo en una pantalla y en
                       negativo en la otra.
                     */}
-                    <td className={`${CIFRA} ${fila.desviacion < 0 ? "text-error-tinta" : ""}`}>
+                  <td
+                    className={`${CIFRA_SUELTA} ${fila.desviacion < 0 ? "text-error-tinta" : ""}`}
+                  >
+                    {/* La cifra entera; «de más» baja de renglón si no cabe. */}
+                    <span className="whitespace-nowrap">
                       {escribir(euros, fila.desviacion)}
-                      {fila.desviacion < 0 ? (
-                        <span className="ml-interno-compacto text-etiqueta uppercase tracking-etiqueta">
-                          {t("panel.presupuesto.pasado")}
-                        </span>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </span>
+                    {fila.desviacion < 0 ? (
+                      <span className="ml-interno-compacto inline-block whitespace-nowrap text-etiqueta uppercase tracking-etiqueta">
+                        {t("panel.presupuesto.pasado")}
+                      </span>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </TablaDesplazable>
         </>
       )}
     </Seccion>
@@ -488,9 +481,15 @@ function Leyenda({ series }: { series: [clase: string, nombre: string][] }) {
   );
 }
 
+/*
+  EN EL MÓVIL, CELDAS MÁS JUNTAS Y CIFRAS ENTERAS. Con el relleno de escritorio
+  la comparativa medía 531 px en un hueco de 362; y una cifra partida en dos
+  renglones —«15.450,» arriba y «00 €» abajo— no se lee como una cifra.
+*/
 const CABECERA =
-  "border-b border-borde-fuerte px-interno py-interno-compacto text-etiqueta uppercase tracking-etiqueta text-tinta-suave";
+  "border-b border-borde-fuerte px-interno-compacto py-interno-compacto align-bottom text-etiqueta uppercase tracking-etiqueta text-tinta-suave sm:px-interno";
 const FILA =
-  "border-b border-borde px-interno py-interno-compacto text-left align-top text-cuerpo text-tinta";
-const CIFRA =
-  "border-b border-borde px-interno py-interno-compacto align-top text-cuerpo tabular-nums text-tinta";
+  "border-b border-borde px-interno-compacto py-interno-compacto text-left align-top text-cuerpo text-tinta sm:px-interno";
+const CIFRA_SUELTA =
+  "border-b border-borde px-interno-compacto py-interno-compacto align-top text-cuerpo tabular-nums text-tinta sm:px-interno";
+const CIFRA = `${CIFRA_SUELTA} whitespace-nowrap`;

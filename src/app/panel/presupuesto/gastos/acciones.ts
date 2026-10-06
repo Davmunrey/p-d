@@ -10,9 +10,10 @@ import {
   RUTA_PRESUPUESTO,
 } from "@/config/constants";
 import { leerImporte } from "@/lib/importe";
+import { ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
-import { type EstadoGastos } from "./estado";
+import { ANCLA_ALTA_GASTO, anclaDeGasto, DESDE_EL_ALTA, type EstadoGastos } from "./estado";
 
 /**
  * BODA-61 · LOS GASTOS, UNO A UNO
@@ -47,9 +48,15 @@ function opcional(datos: FormData, campo: string): string | null {
   a leer entera de la base. Se revalida sólo lo que NO se va a visitar: el
   resumen del presupuesto, que sí cambia y se mira desde otra ruta.
 */
-function volver(estado: EstadoGastos): never {
+function volver(estado: EstadoGastos, extra?: Record<string, string>, ancla?: string): never {
   revalidatePath(RUTA_PRESUPUESTO);
-  redirect(`${RUTA_GASTOS}?estado=${estado}`);
+  redirect(destino(estado, extra, ancla));
+}
+
+/** La lista de gastos con el resultado en la URL y, si lo hay, el gasto al que volver. */
+function destino(estado: EstadoGastos, extra?: Record<string, string>, ancla?: string): string {
+  const parametros = new URLSearchParams({ estado, ...extra });
+  return `${RUTA_GASTOS}?${parametros.toString()}${ancla ? `#${ancla}` : ""}`;
 }
 
 /**
@@ -61,9 +68,17 @@ function volver(estado: EstadoGastos): never {
  * es trabajo que se nota en una pantalla con cuarenta gastos, y además miente
  * sobre lo que ha pasado.
  */
-function rechazar(estado: EstadoGastos, extra?: Record<string, string>): never {
-  const parametros = new URLSearchParams({ estado, ...extra });
-  redirect(`${RUTA_GASTOS}?${parametros.toString()}`);
+function rechazar(estado: EstadoGastos, extra?: Record<string, string>, ancla?: string): never {
+  redirect(destino(estado, extra, ancla));
+}
+
+/**
+ * CERO FILAS NO ES SIEMPRE «NO PODÉIS». Con el gasto borrado desde el otro
+ * móvil, a quien sí puede editar le salía «vuestro perfil no puede hacer
+ * cambios aquí». Se mira quién pregunta para decir cuál de las dos es.
+ */
+async function ceroFilas(): Promise<EstadoGastos> {
+  return (await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe";
 }
 
 async function cliente() {
@@ -132,14 +147,18 @@ function proveedor(datos: FormData): string | null {
 }
 
 export async function crearGasto(datos: FormData): Promise<void> {
+  // Los errores del alta vuelven al alta, que está al final de la pantalla.
+  const alAlta: (estado: EstadoGastos) => never = (estado) =>
+    rechazar(estado, DESDE_EL_ALTA, ANCLA_ALTA_GASTO);
+
   const categoriaId = texto(datos, "categoria_id");
-  if (!categoriaId) rechazar("categoria");
+  if (!categoriaId) alAlta("categoria");
 
   const concepto = texto(datos, "concepto");
-  if (concepto.length < LONGITUD_MINIMA_NOMBRE) rechazar("concepto");
+  if (concepto.length < LONGITUD_MINIMA_NOMBRE) alAlta("concepto");
 
   const cantidades = importes(datos);
-  if (!cantidades) rechazar("importe");
+  if (!cantidades) alAlta("importe");
 
   const supabase = await cliente();
   const { data, error } = await supabase
@@ -154,29 +173,36 @@ export async function crearGasto(datos: FormData): Promise<void> {
     })
     .select("id");
 
-  if (error) rechazar(motivo(error));
-  if (!data?.length) rechazar("sin-permiso");
+  if (error) alAlta(motivo(error));
+  if (!data?.length) alAlta("sin-permiso");
 
-  volver("gasto-creado");
+  const nuevo = data[0]!.id as string;
+  volver("gasto-creado", { gasto: nuevo }, anclaDeGasto(nuevo));
 }
 
 export async function editarGasto(datos: FormData): Promise<void> {
   const id = texto(datos, "id");
   if (!id) rechazar("no-existe");
 
+  // Los errores vuelven al gasto abierto, que es donde están los campos.
+  const alGasto: (estado: EstadoGastos, extra?: Record<string, string>) => never = (
+    estado,
+    extra,
+  ) => rechazar(estado, { editar: id, ...extra }, anclaDeGasto(id));
+
   const categoriaId = texto(datos, "categoria_id");
-  if (!categoriaId) rechazar("categoria");
+  if (!categoriaId) alGasto("categoria");
 
   const concepto = texto(datos, "concepto");
-  if (concepto.length < LONGITUD_MINIMA_NOMBRE) rechazar("concepto");
+  if (concepto.length < LONGITUD_MINIMA_NOMBRE) alGasto("concepto");
 
   const cantidades = importes(datos);
-  if (!cantidades) rechazar("importe");
+  if (!cantidades) alGasto("importe");
 
   const supabase = await cliente();
 
   const apuntado = await loQueSeQuedaFuera(supabase, id, cantidades);
-  if (apuntado !== null) rechazar("por-debajo-de-pagos", { apuntado: String(apuntado) });
+  if (apuntado !== null) alGasto("por-debajo-de-pagos", { apuntado: String(apuntado) });
 
   const { data, error } = await supabase
     .from("partidas_presupuesto")
@@ -194,10 +220,10 @@ export async function editarGasto(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) rechazar(motivo(error));
-  if (!data?.length) rechazar("sin-permiso");
+  if (error) alGasto(motivo(error));
+  if (!data?.length) rechazar(await ceroFilas());
 
-  volver("gasto-editado");
+  volver("gasto-editado", { gasto: id }, anclaDeGasto(id));
 }
 
 /**
@@ -253,14 +279,32 @@ export async function borrarGasto(datos: FormData): Promise<void> {
   if (!id) rechazar("no-existe");
 
   const supabase = await cliente();
+
+  /*
+    Y SIN PAGOS, BORRAR PREGUNTA ANTES. «Borrar» está en la propia fila, y un
+    toque de más se llevaba el gasto con su descripción sin vuelta atrás. Con
+    pagos no hay nada que preguntar —no se puede—, así que eso se dice ya en el
+    primer toque en vez de confirmar algo que luego se niega. Contarlos aquí no
+    sustituye a la clave ajena: si alguien apunta un pago entre medias, el
+    borrado de abajo sigue fallando con 23503.
+  */
+  if (texto(datos, "confirmar") !== "si") {
+    const { count } = await supabase
+      .from("pagos")
+      .select("id", { count: "exact", head: true })
+      .eq("partida_id", id);
+    if (count) rechazar("tiene-pagos", { gasto: id }, anclaDeGasto(id));
+    rechazar("confirmar-borrado", { gasto: id }, anclaDeGasto(id));
+  }
+
   const { data, error } = await supabase
     .from("partidas_presupuesto")
     .delete()
     .eq("id", id)
     .select("id");
 
-  if (error) rechazar(motivo(error));
-  if (!data?.length) rechazar("sin-permiso");
+  if (error) rechazar(motivo(error), { gasto: id }, anclaDeGasto(id));
+  if (!data?.length) rechazar(await ceroFilas());
 
   volver("gasto-borrado");
 }

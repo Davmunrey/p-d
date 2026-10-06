@@ -28,6 +28,12 @@ export interface ParteDelGasto {
 /**
  * El reparto del gasto por categoría, de la que más se lleva a la que menos.
  *
+ * LO QUE VA COSTANDO, NO SÓLO LO ACORDADO. Se le pasaba `real` —la suma de lo
+ * ya cerrado— y una categoría con el catering todavía estimado en 9.000 € no
+ * salía en el reparto, mientras la tabla de la misma pantalla decía que iba
+ * costando 15.000. Quien llama pasa `loQueVaCostando`, el mismo criterio que
+ * la comparativa y que el presupuesto.
+ *
  * ORDENADO POR IMPORTE Y NO POR EL ORDEN DEL PRESUPUESTO. Son dos preguntas
  * distintas: la pantalla del presupuesto lista las categorías como se
  * organizan, y aquí se pregunta «¿en qué se nos va el dinero?», que se contesta
@@ -38,18 +44,21 @@ export interface ParteDelGasto {
  * la gráfica hasta que hay que desplazarse para ver las que sí importan.
  */
 export function repartoPorCategoria(
-  categorias: { categoria: string; real: number }[],
+  categorias: { categoria: string; importe: number }[],
 ): ParteDelGasto[] {
-  const total = categorias.reduce((suma, fila) => suma + fila.real, 0);
+  const total = categorias.reduce(
+    (suma, fila) => suma + (fila.importe > 0 ? fila.importe : 0),
+    0,
+  );
 
   return categorias
-    .filter((fila) => fila.real > 0)
+    .filter((fila) => fila.importe > 0)
     .map((fila) => ({
       categoria: fila.categoria,
-      importe: fila.real,
+      importe: fila.importe,
       // Sin total no hay porcentaje que valga: dividir daría `NaN` y el `<svg>`
       // pintaría una barra de anchura «NaN», que es un fallo mudo.
-      porcentaje: total > 0 ? (fila.real / total) * 100 : 0,
+      porcentaje: total > 0 ? (fila.importe / total) * 100 : 0,
     }))
     .sort((a, b) => b.importe - a.importe);
 }

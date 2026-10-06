@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { BotonEnvio } from "@/components/ui/boton-envio";
@@ -11,6 +12,7 @@ import {
   RUTA_GASTOS,
   RUTA_GRAFICAS,
   RUTA_PAGOS,
+  RUTA_PRESUPUESTO,
 } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
@@ -28,6 +30,7 @@ import { accesoActual } from "@/lib/sesion";
 
 import { borrarCategoria, crearCategoria, editarCategoria } from "./acciones";
 import { AvisoPresupuesto } from "./aviso";
+import { ANCLA_ALTA_CATEGORIA, anclaDeCategoria, DESDE_EL_ALTA } from "./estado";
 
 /** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
 export const metadata: Metadata = { title: t("panel.presupuesto.titulo") };
@@ -91,7 +94,28 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
   */
   const totales = totalesDelPresupuesto(resumen);
 
-  const aDecidir = estado === "decidir-gastos" ? soloTexto(consulta.categoria) : "";
+  /*
+    EL AVISO VA DONDE SE HIZO LA ACCIÓN: en la categoría que se tocó, con la
+    decisión o la confirmación dentro, o en el alta, que está al final. Antes
+    salía todo en la cabecera, y la decisión de a dónde van los gastos no decía
+    ni de qué categoría se trataba.
+  */
+  const deLaCategoria = soloTexto(consulta.categoria);
+  const existe = categorias.some((categoria) => categoria.id === deLaCategoria);
+  const enUnaCategoria = puedeEditar && existe ? deLaCategoria : "";
+  const enElAlta = soloTexto(consulta.desde) === DESDE_EL_ALTA.desde && puedeEditar;
+  // Preguntar por algo que ya no está sería preguntar al vacío: se dice que no está.
+  const preguntaSinCategoria =
+    deLaCategoria && !existe && (estado === "decidir-gastos" || estado === "confirmar-borrado");
+  const aviso = <AvisoPresupuesto estado={preguntaSinCategoria ? "no-existe" : estado} />;
+  const cuantosCrudo = Number(soloTexto(consulta.cuantos));
+  const pregunta = {
+    categoria: enUnaCategoria,
+    decidir: estado === "decidir-gastos" || estado === "destino",
+    confirmar: estado === "confirmar-borrado",
+    cuantos: Number.isInteger(cuantosCrudo) && cuantosCrudo > 0 ? cuantosCrudo : null,
+    aviso,
+  };
 
   return (
     <>
@@ -107,14 +131,7 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
         </div>
       </header>
 
-      <AvisoPresupuesto estado={estado} />
-
-      {aDecidir && puedeEditar ? (
-        <DecidirGastos
-          categoriaId={aDecidir}
-          categorias={categorias.filter((categoria) => categoria.id !== aDecidir)}
-        />
-      ) : null}
+      {enUnaCategoria || enElAlta ? null : aviso}
 
       {resumen.length === 0 ? (
         <Cuerpo className="mt-bloque max-w-texto">{t("panel.presupuesto.vacio")}</Cuerpo>
@@ -124,8 +141,8 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
 
       {puedeEditar ? (
         <>
-          <Edicion categorias={categorias} />
-          <Alta />
+          <Edicion categorias={categorias} pregunta={pregunta} />
+          <Alta aviso={enElAlta ? aviso : null} />
         </>
       ) : null}
     </>
@@ -139,6 +156,9 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
  * dentro de su contenedor. Duplicar la tabla en tarjetas para pantallas
  * pequeñas duplica también el sitio donde una cifra puede quedarse vieja.
  */
+/** El título del resumen nombra también su tabla y la región que se desplaza. */
+const ID_RESUMEN = "resumen-presupuesto";
+
 function Tabla({
   resumen,
   totales,
@@ -151,11 +171,24 @@ function Tabla({
   const importe = (valor: number) => (euros ? euros(valor) : "");
 
   return (
-    <section className="mt-bloque">
-      <Titulo3 como="h2">{t("panel.presupuesto.resumenTitulo")}</Titulo3>
+    <section className="mt-bloque" aria-labelledby={ID_RESUMEN}>
+      <Titulo3 como="h2" id={ID_RESUMEN}>
+        {t("panel.presupuesto.resumenTitulo")}
+      </Titulo3>
 
-      <div className="mt-elemento overflow-x-auto">
-        <table className="w-full border-collapse text-pequeno">
+      {/*
+        SE DESPLAZA, Y SE NOTA: una sombra en el borde que tiene más y la
+        categoría quieta a la izquierda (`tabla-desplazable`). A 390 px la tabla
+        se pasaba 66 px y cortaba «Diferencia» sin que nada lo dijera. Con el
+        tabulador se llega a la región para poder desplazarla sin ratón.
+      */}
+      <div
+        role="region"
+        aria-labelledby={ID_RESUMEN}
+        tabIndex={0}
+        className="tabla-desplazable mt-elemento rounded-campo"
+      >
+        <table aria-labelledby={ID_RESUMEN} className="w-full border-collapse text-pequeno">
           <thead>
             <tr className="border-b border-borde text-left">
               <th className="py-linea pr-interno font-normal text-tinta-suave">
@@ -238,20 +271,36 @@ function Tabla({
  * dónde se quedan.
  */
 function DecidirGastos({
-  categoriaId,
-  categorias,
+  categoria,
+  cuantos,
+  destinos,
 }: {
-  categoriaId: string;
-  categorias: CategoriaPresupuesto[];
+  categoria: CategoriaPresupuesto;
+  /** Cuántos gastos tiene, si la acción pudo contarlos. */
+  cuantos: number | null;
+  destinos: CategoriaPresupuesto[];
 }) {
+  /*
+    LA PREGUNTA DICE DE QUÉ CATEGORÍA Y CUÁNTOS GASTOS. Volvía arriba con «esta
+    categoría tiene gastos dentro» y la primera de la lista ya elegida: si el
+    toque había caído en la tarjeta equivocada, «Mover y borrar» se llevaba
+    otra categoría sin que nada lo dijera.
+  */
+  const titulo =
+    cuantos === null
+      ? t("panel.presupuesto.decidirTituloSinCifra", { categoria: categoria.nombre })
+      : cuantos === 1
+        ? t("panel.presupuesto.decidirTituloUno", { categoria: categoria.nombre })
+        : t("panel.presupuesto.decidirTitulo", { categoria: categoria.nombre, cuantos });
+
   return (
     <section className="mt-elemento rounded-tarjeta border border-error bg-error-fondo p-interno">
-      <Titulo3 como="h2">{t("panel.presupuesto.decidirTitulo")}</Titulo3>
+      <Titulo3 como="h3">{titulo}</Titulo3>
       <Cuerpo className="mt-pila max-w-texto text-pequeno">
         {t("panel.presupuesto.decidirAyuda")}
       </Cuerpo>
 
-      {categorias.length === 0 ? (
+      {destinos.length === 0 ? (
         // Sin otra categoría a la que moverlos no hay decisión que ofrecer, y
         // un desplegable vacío sería una trampa: se pulsa y no puede pasar nada.
         <Cuerpo className="mt-elemento max-w-texto text-pequeno">
@@ -262,21 +311,31 @@ function DecidirGastos({
           action={borrarCategoria}
           className="mt-elemento grid gap-interno sm:grid-cols-[1fr_auto] sm:items-end"
         >
-          <input type="hidden" name="id" value={categoriaId} />
+          <input type="hidden" name="id" value={categoria.id} />
           <CampoSeleccion
             etiqueta={t("panel.presupuesto.campoDestino")}
             name="destino"
             required
+            defaultValue=""
           >
-            {categorias.map((categoria) => (
-              <option key={categoria.id} value={categoria.id}>
-                {categoria.nombre}
+            <option value="">{t("panel.presupuesto.elegirDestino")}</option>
+            {destinos.map((destino) => (
+              <option key={destino.id} value={destino.id}>
+                {destino.nombre}
               </option>
             ))}
           </CampoSeleccion>
           <BotonEnvio>{t("panel.presupuesto.moverYBorrar")}</BotonEnvio>
         </form>
       )}
+
+      {/* Y la salida, para quien pulsó «Borrar» en la tarjeta que no era. */}
+      <EnlaceSuave
+        href={`${RUTA_PRESUPUESTO}#${anclaDeCategoria(categoria.id)}`}
+        className="mt-elemento"
+      >
+        {t("panel.presupuesto.dejarla")}
+      </EnlaceSuave>
     </section>
   );
 }
@@ -318,7 +377,22 @@ const FILA_CATEGORIA =
 /** En tableta el nombre va solo en su fila; en escritorio, en la de todos. */
 const CAMPO_NOMBRE = "sm:col-span-full lg:col-span-1";
 
-function Edicion({ categorias }: { categorias: CategoriaPresupuesto[] }) {
+/** Lo que la última acción dejó pendiente en una categoría: su aviso, y si se pregunta algo. */
+interface Pregunta {
+  categoria: string;
+  decidir: boolean;
+  confirmar: boolean;
+  cuantos: number | null;
+  aviso: ReactNode;
+}
+
+function Edicion({
+  categorias,
+  pregunta,
+}: {
+  categorias: CategoriaPresupuesto[];
+  pregunta: Pregunta;
+}) {
   if (categorias.length === 0) return null;
 
   return (
@@ -329,56 +403,97 @@ function Edicion({ categorias }: { categorias: CategoriaPresupuesto[] }) {
       </Cuerpo>
 
       <ul className="mt-elemento grid gap-interno">
-        {categorias.map((categoria) => (
-          <li key={categoria.id} className="rounded-tarjeta border border-borde p-interno">
-            <form action={editarCategoria} className={FILA_CATEGORIA}>
-              <input type="hidden" name="id" value={categoria.id} />
-              <CampoTexto
-                etiqueta={t("panel.presupuesto.campoNombre")}
-                className={CAMPO_NOMBRE}
-                name="nombre"
-                type="text"
-                required
-                maxLength={LARGOS_DE_CAMPO["categorias_presupuesto.nombre"]}
-                defaultValue={categoria.nombre}
-              />
-              <CampoTexto
-                etiqueta={t("panel.presupuesto.campoPrevisto")}
-                name="importe_previsto"
-                type="text"
-                inputMode="decimal"
-                defaultValue={importeParaCampo(categoria.importePrevisto)}
-              />
-              <CampoTexto
-                etiqueta={t("panel.presupuesto.campoOrden")}
-                name="orden"
-                type="number"
-                min={0}
-                defaultValue={String(categoria.orden)}
-              />
-              <BotonEnvio jerarquia="secundario">{t("panel.presupuesto.guardar")}</BotonEnvio>
-            </form>
+        {categorias.map((categoria) => {
+          const suya = pregunta.categoria === categoria.id;
+          const confirmando = suya && pregunta.confirmar;
+          return (
+            <li
+              key={categoria.id}
+              id={anclaDeCategoria(categoria.id)}
+              className="scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
+            >
+              <form action={editarCategoria} className={FILA_CATEGORIA}>
+                <input type="hidden" name="id" value={categoria.id} />
+                <CampoTexto
+                  etiqueta={t("panel.presupuesto.campoNombre")}
+                  className={CAMPO_NOMBRE}
+                  name="nombre"
+                  type="text"
+                  required
+                  maxLength={LARGOS_DE_CAMPO["categorias_presupuesto.nombre"]}
+                  defaultValue={categoria.nombre}
+                />
+                <CampoTexto
+                  etiqueta={t("panel.presupuesto.campoPrevisto")}
+                  name="importe_previsto"
+                  type="text"
+                  inputMode="decimal"
+                  defaultValue={importeParaCampo(categoria.importePrevisto)}
+                />
+                <CampoTexto
+                  etiqueta={t("panel.presupuesto.campoOrden")}
+                  name="orden"
+                  type="number"
+                  min={0}
+                  defaultValue={String(categoria.orden)}
+                />
+                <BotonEnvio jerarquia="secundario">{t("panel.presupuesto.guardar")}</BotonEnvio>
+              </form>
 
-            <form action={borrarCategoria} className="mt-interno-compacto">
-              <input type="hidden" name="id" value={categoria.id} />
-              <BotonEnvio jerarquia="terciario">{t("panel.presupuesto.borrar")}</BotonEnvio>
-            </form>
-          </li>
-        ))}
+              <form action={borrarCategoria} className="mt-interno-compacto">
+                <input type="hidden" name="id" value={categoria.id} />
+                {/* El segundo paso del borrado: el mismo formulario, confirmado. */}
+                {confirmando ? <input type="hidden" name="confirmar" value="si" /> : null}
+                <BotonEnvio jerarquia={confirmando ? "secundario" : "terciario"}>
+                  {confirmando
+                    ? t("panel.presupuesto.confirmarBorrado")
+                    : t("panel.presupuesto.borrar")}
+                </BotonEnvio>
+              </form>
+
+              {suya ? pregunta.aviso : null}
+
+              {confirmando ? (
+                <p
+                  role="alert"
+                  className="mt-elemento flex flex-wrap items-baseline gap-x-interno gap-y-linea rounded-campo bg-error-fondo p-interno text-pequeno text-error-tinta"
+                >
+                  {t("panel.presupuesto.avisoConfirmarBorrado")}
+                  <EnlaceSuave href={`${RUTA_PRESUPUESTO}#${anclaDeCategoria(categoria.id)}`}>
+                    {t("panel.presupuesto.dejarla")}
+                  </EnlaceSuave>
+                </p>
+              ) : null}
+
+              {suya && pregunta.decidir ? (
+                <DecidirGastos
+                  categoria={categoria}
+                  cuantos={pregunta.cuantos}
+                  destinos={categorias.filter((otra) => otra.id !== categoria.id)}
+                />
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
 }
 
-function Alta() {
+function Alta({ aviso }: { aviso: ReactNode }) {
   return (
-    <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
+    <section
+      id={ANCLA_ALTA_CATEGORIA}
+      className="mt-bloque scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
+    >
       <Titulo3 como="h2">{t("panel.presupuesto.nuevaTitulo")}</Titulo3>
       {/* Una frase entera se lee en minúscula: en versalita espaciada era un
           rótulo de cuarenta palabras que costaba seguir. */}
       <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.presupuesto.nuevaAyuda")}
       </Cuerpo>
+
+      {aviso}
 
       <form action={crearCategoria} className={`mt-elemento ${FILA_CATEGORIA}`}>
         <CampoTexto

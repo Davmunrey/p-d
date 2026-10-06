@@ -13,9 +13,9 @@ import { evolucionMensual, proporcion, repartoPorCategoria } from "../../src/lib
 describe("el reparto del gasto por categoría", () => {
   it("reparte el cien por cien entre las categorías con gasto", () => {
     const reparto = repartoPorCategoria([
-      { categoria: "Catering", real: 6000 },
-      { categoria: "Fotografía", real: 3000 },
-      { categoria: "Flores", real: 1000 },
+      { categoria: "Catering", importe: 6000 },
+      { categoria: "Fotografía", importe: 3000 },
+      { categoria: "Flores", importe: 1000 },
     ]);
 
     expect(reparto.map((parte) => parte.porcentaje)).toEqual([60, 30, 10]);
@@ -24,9 +24,9 @@ describe("el reparto del gasto por categoría", () => {
 
   it("ordena de la que más se lleva a la que menos, no como venían", () => {
     const reparto = repartoPorCategoria([
-      { categoria: "Flores", real: 1000 },
-      { categoria: "Catering", real: 6000 },
-      { categoria: "Fotografía", real: 3000 },
+      { categoria: "Flores", importe: 1000 },
+      { categoria: "Catering", importe: 6000 },
+      { categoria: "Fotografía", importe: 3000 },
     ]);
 
     expect(reparto.map((parte) => parte.categoria)).toEqual([
@@ -38,8 +38,8 @@ describe("el reparto del gasto por categoría", () => {
 
   it("deja fuera las categorías sin gasto", () => {
     const reparto = repartoPorCategoria([
-      { categoria: "Catering", real: 6000 },
-      { categoria: "Sin tocar", real: 0 },
+      { categoria: "Catering", importe: 6000 },
+      { categoria: "Sin tocar", importe: 0 },
     ]);
 
     expect(reparto.map((parte) => parte.categoria)).toEqual(["Catering"]);
@@ -51,7 +51,7 @@ describe("el reparto del gasto por categoría", () => {
    * error, sin aviso y sin que nadie se entere hasta que falta media gráfica.
    */
   it("con todo a cero no divide por cero", () => {
-    expect(repartoPorCategoria([{ categoria: "Nada", real: 0 }])).toEqual([]);
+    expect(repartoPorCategoria([{ categoria: "Nada", importe: 0 }])).toEqual([]);
     expect(repartoPorCategoria([])).toEqual([]);
   });
 });

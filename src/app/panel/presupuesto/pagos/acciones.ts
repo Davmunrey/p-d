@@ -14,10 +14,11 @@ import {
 import { obtenerDiasDeLaBoda } from "@/lib/bbdd/ajustes";
 import { esMetodoPago, esPagador, obtenerGastosParaPagar } from "@/lib/bbdd/pagos";
 import { leerImporte } from "@/lib/importe";
+import { ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 import { diaDelCalendario } from "@/lib/zona-horaria";
 
-import { type EstadoPagos } from "./estado";
+import { ANCLA_ALTA_PAGO, anclaDePago, DESDE_EL_ALTA, type EstadoPagos } from "./estado";
 
 /**
  * BODA-62 · APUNTAR, COBRAR Y DESHACER
@@ -51,11 +52,16 @@ function opcional(datos: FormData, campo: string): string | null {
   entera. Se revalida sólo lo que NO se va a visitar y sí cambia: el resumen del
   presupuesto y la lista de gastos, que enseñan lo pagado y lo pendiente.
 */
-function volver(estado: EstadoPagos, extra?: Record<string, string>): never {
+function volver(estado: EstadoPagos, extra?: Record<string, string>, ancla?: string): never {
   revalidatePath(RUTA_PRESUPUESTO);
   revalidatePath(RUTA_GASTOS);
+  redirect(destino(estado, extra, ancla));
+}
+
+/** La pantalla de pagos con el resultado en la URL y, si lo hay, el pago al que volver. */
+function destino(estado: EstadoPagos, extra?: Record<string, string>, ancla?: string): string {
   const parametros = new URLSearchParams({ estado, ...extra });
-  redirect(`${RUTA_PAGOS}?${parametros.toString()}`);
+  return `${RUTA_PAGOS}?${parametros.toString()}${ancla ? `#${ancla}` : ""}`;
 }
 
 /**
@@ -65,9 +71,17 @@ function volver(estado: EstadoPagos, extra?: Record<string, string>): never {
  * permiso»: ninguno ha escrito, así que revalidar media aplicación para no haber
  * cambiado nada es trabajo que se nota — y además miente sobre lo que ha pasado.
  */
-function rechazar(estado: EstadoPagos, extra?: Record<string, string>): never {
-  const parametros = new URLSearchParams({ estado, ...extra });
-  redirect(`${RUTA_PAGOS}?${parametros.toString()}`);
+function rechazar(estado: EstadoPagos, extra?: Record<string, string>, ancla?: string): never {
+  redirect(destino(estado, extra, ancla));
+}
+
+/**
+ * CERO FILAS NO ES SIEMPRE «NO PODÉIS». Con el pago borrado desde el otro
+ * móvil, a quien sí puede editar le salía «vuestro perfil no puede hacer
+ * cambios aquí». Se mira quién pregunta para decir cuál de las dos es.
+ */
+async function ceroFilas(): Promise<EstadoPagos> {
+  return (await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe";
 }
 
 async function cliente() {
@@ -108,6 +122,35 @@ const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 function fecha(datos: FormData, campo: string): string | undefined {
   const escrita = texto(datos, campo);
   return FECHA.test(escrita) ? escrita : undefined;
+}
+
+/**
+ * EL DÍA EN QUE SE PAGÓ, QUE ES OPCIONAL Y NO ES EL DE HOY.
+ *
+ * «Marcar pagado» apuntaba siempre la fecha del día en que se pulsaba, y no
+ * había forma de corregirla: la señal del fotógrafo, pagada en marzo y
+ * apuntada en octubre, salía en la gráfica en octubre. Vacía es «todavía no se
+ * ha pagado»; `null` si no vale.
+ *
+ * AQUÍ SÍ SE MIRA EL CALENDARIO, al revés que el vencimiento: los dos días van
+ * en la misma escritura, y si la base contesta «esa fecha no existe» no dice
+ * cuál de las dos. Se comprueba ésta con la vuelta de `Date` —que no inventa
+ * reglas, sólo no admite un 31 de febrero— para poder señalar el campo bueno.
+ */
+function fechaDePago(datos: FormData): string | null | undefined {
+  const escrita = texto(datos, "pagado_en");
+  if (!escrita) return null;
+  if (!FECHA.test(escrita)) return undefined;
+  const leida = new Date(`${escrita}T12:00:00Z`);
+  return Number.isNaN(leida.getTime()) || leida.toISOString().slice(0, 10) !== escrita
+    ? undefined
+    : escrita;
+}
+
+/** Hoy en la zona de la boda: lo que separa «ya pagado» de «pagado mañana». */
+async function hoyEnLaBoda(): Promise<string> {
+  const dias = await obtenerDiasDeLaBoda();
+  return dias?.hoy ?? diaDelCalendario(new Date(), ZONA_HORARIA);
 }
 
 /**
@@ -193,6 +236,7 @@ function leerPago(datos: FormData):
       gastoId: string;
       importe: number;
       vencimiento: string;
+      pagadoEn: string | null;
       paga: string | null;
       detalle: string | null;
       metodo: string | null;
@@ -210,6 +254,9 @@ function leerPago(datos: FormData):
   const vencimiento = fecha(datos, "fecha_vencimiento");
   if (!vencimiento) return { fallo: "fecha" };
 
+  const pagadoEn = fechaDePago(datos);
+  if (pagadoEn === undefined) return { fallo: "fecha-pago" };
+
   const quien = pagador(datos);
   if (!quien) return { fallo: "pagador" };
 
@@ -217,6 +264,7 @@ function leerPago(datos: FormData):
     gastoId,
     importe,
     vencimiento,
+    pagadoEn,
     paga: quien.paga,
     detalle: quien.detalle,
     // Fuera de la lista, `null`: la columna es un enumerado y meterle cualquier
@@ -232,11 +280,22 @@ function metodo(datos: FormData): string | null {
 }
 
 export async function crearPago(datos: FormData): Promise<void> {
+  /*
+    LOS ERRORES DEL ALTA VUELVEN AL ALTA, que está al final de la pantalla:
+    el aviso salía en la cabecera, lejos del botón que se acababa de pulsar.
+  */
+  const alAlta: (estado: EstadoPagos, extra?: Record<string, string>) => never = (
+    estado,
+    extra,
+  ) => rechazar(estado, { ...DESDE_EL_ALTA, ...extra }, ANCLA_ALTA_PAGO);
+
   const leido = leerPago(datos);
-  if ("fallo" in leido) rechazar(leido.fallo);
+  if ("fallo" in leido) alAlta(leido.fallo);
+  // Pagado «mañana» no es pagado: es un vencimiento, y para eso está su campo.
+  if (leido.pagadoEn && leido.pagadoEn > (await hoyEnLaBoda())) alAlta("fecha-pago");
 
   const holgura = await loQueNoCabe(leido.gastoId, leido.importe);
-  if (holgura !== null) rechazar("no-cabe", { queda: String(holgura) });
+  if (holgura !== null) alAlta("no-cabe", { queda: String(holgura) });
 
   const supabase = await cliente();
   const { data, error } = await supabase
@@ -245,6 +304,7 @@ export async function crearPago(datos: FormData): Promise<void> {
       partida_id: leido.gastoId,
       importe: leido.importe,
       fecha_vencimiento: leido.vencimiento,
+      pagado_en: leido.pagadoEn,
       paga: leido.paga,
       paga_detalle: leido.detalle,
       metodo: leido.metodo,
@@ -252,10 +312,12 @@ export async function crearPago(datos: FormData): Promise<void> {
     })
     .select("id");
 
-  if (error) rechazar(motivo(error));
-  if (!data?.length) rechazar("sin-permiso");
+  if (error) alAlta(motivo(error));
+  if (!data?.length) alAlta("sin-permiso");
 
-  volver("pago-creado");
+  // Al pago recién apuntado, que es donde está «Marcar pagado».
+  const nuevo = data[0]!.id as string;
+  volver("pago-creado", { pago: nuevo }, anclaDePago(nuevo));
 }
 
 export async function editarPago(datos: FormData): Promise<void> {
@@ -263,7 +325,10 @@ export async function editarPago(datos: FormData): Promise<void> {
   if (!id) rechazar("no-existe");
 
   const leido = leerPago(datos);
-  if ("fallo" in leido) rechazar(leido.fallo);
+  if ("fallo" in leido) rechazar(leido.fallo, { editar: id }, anclaDePago(id));
+  if (leido.pagadoEn && leido.pagadoEn > (await hoyEnLaBoda())) {
+    rechazar("fecha-pago", { editar: id }, anclaDePago(id));
+  }
 
   /*
     SI NO CAMBIA EL DINERO NO HAY NADA QUE CABER. Cambiar la fecha o las notas
@@ -271,13 +336,21 @@ export async function editarPago(datos: FormData): Promise<void> {
     pago no se podía tocar. La base hace lo mismo desde 20261005120000.
   */
   const anterior = await importeDe(id);
+  /*
+    SIN PAGO QUE LEER, NO HAY NADA QUE GUARDAR. Borrado desde el otro móvil, se
+    comparaba contra el gasto como si fuera nuevo y podía contestar «no cabe»
+    sobre un pago que ya no existía.
+  */
+  if (anterior === null) rechazar(await ceroFilas());
   const mismoDinero =
     anterior !== null &&
     anterior.partidaId === leido.gastoId &&
     anterior.importe === leido.importe;
   if (!mismoDinero) {
     const holgura = await loQueNoCabe(leido.gastoId, leido.importe, id);
-    if (holgura !== null) rechazar("no-cabe", { queda: String(holgura) });
+    if (holgura !== null) {
+      rechazar("no-cabe", { queda: String(holgura), editar: id }, anclaDePago(id));
+    }
   }
 
   const supabase = await cliente();
@@ -287,6 +360,9 @@ export async function editarPago(datos: FormData): Promise<void> {
       partida_id: leido.gastoId,
       importe: leido.importe,
       fecha_vencimiento: leido.vencimiento,
+      pagado_en: leido.pagadoEn,
+      // Sin pago no hay justificante: lo exige `pagos_justificante_solo_si_pagado`.
+      ...(leido.pagadoEn ? {} : { justificante_ruta: null }),
       paga: leido.paga,
       paga_detalle: leido.detalle,
       metodo: leido.metodo,
@@ -295,10 +371,10 @@ export async function editarPago(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) rechazar(motivo(error));
-  if (!data?.length) rechazar("sin-permiso");
+  if (error) rechazar(motivo(error), { editar: id }, anclaDePago(id));
+  if (!data?.length) rechazar(await ceroFilas());
 
-  volver("pago-editado");
+  volver("pago-editado", { pago: id }, anclaDePago(id));
 }
 
 /**
@@ -327,8 +403,7 @@ export async function marcarPagado(datos: FormData): Promise<void> {
     la víspera. Si no se puede leer la configuración se usa la zona de la
     landing, que es la de esta boda: peor que eso es no dejar marcar el pago.
   */
-  const dias = await obtenerDiasDeLaBoda();
-  const hoy = dias?.hoy ?? diaDelCalendario(new Date(), ZONA_HORARIA);
+  const hoy = await hoyEnLaBoda();
 
   const supabase = await cliente();
   let consulta = supabase
@@ -348,7 +423,7 @@ export async function marcarPagado(datos: FormData): Promise<void> {
   if (hecho) consulta = consulta.is("pagado_en", null);
   const { data, error } = await consulta.select("id");
 
-  if (error) rechazar(motivo(error));
+  if (error) rechazar(motivo(error), { pago: id }, anclaDePago(id));
   if (!data?.length) {
     // Cero filas: o ya estaba pagado —y entonces lo pedido ya es verdad—, o
     // no existe, o RLS no deja. Se distingue leyendo, sin escribir nada.
@@ -357,22 +432,33 @@ export async function marcarPagado(datos: FormData): Promise<void> {
       .select("pagado_en")
       .eq("id", id)
       .maybeSingle();
-    if (hecho && actual?.pagado_en) volver("marcado-pagado");
+    if (hecho && actual?.pagado_en) volver("marcado-pagado", { pago: id }, anclaDePago(id));
     rechazar(actual ? "sin-permiso" : "no-existe");
   }
 
-  volver(hecho ? "marcado-pagado" : "marcado-pendiente");
+  volver(hecho ? "marcado-pagado" : "marcado-pendiente", { pago: id }, anclaDePago(id));
 }
 
+/**
+ * BORRAR PREGUNTA ANTES, como en el resto del panel. Un pago es contabilidad:
+ * con «Borrar» justo debajo de «Marcar pagado», un toque de más en el móvil
+ * se llevaba un pago de 3.000 € con sus notas sin vuelta atrás. El primer
+ * envío no borra: vuelve al pago con la pregunta y el botón que ya trae la
+ * confirmación dentro. Dos pasos, los dos por `POST`.
+ */
 export async function borrarPago(datos: FormData): Promise<void> {
   const id = texto(datos, "id");
   if (!id) rechazar("no-existe");
 
+  if (texto(datos, "confirmar") !== "si") {
+    rechazar("confirmar-borrado", { pago: id }, anclaDePago(id));
+  }
+
   const supabase = await cliente();
   const { data, error } = await supabase.from("pagos").delete().eq("id", id).select("id");
 
-  if (error) rechazar(motivo(error));
-  if (!data?.length) rechazar("sin-permiso");
+  if (error) rechazar(motivo(error), { pago: id }, anclaDePago(id));
+  if (!data?.length) rechazar(await ceroFilas());
 
   volver("pago-borrado");
 }

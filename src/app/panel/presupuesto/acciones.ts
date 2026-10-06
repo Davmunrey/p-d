@@ -11,9 +11,15 @@ import {
 } from "@/config/constants";
 import { contarGastosDeCategoria } from "@/lib/bbdd/presupuesto";
 import { leerImporte } from "@/lib/importe";
+import { ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
-import { type EstadoPresupuesto } from "./estado";
+import {
+  ANCLA_ALTA_CATEGORIA,
+  anclaDeCategoria,
+  DESDE_EL_ALTA,
+  type EstadoPresupuesto,
+} from "./estado";
 
 /**
  * BODA-60 · LAS CATEGORÍAS DEL PRESUPUESTO
@@ -61,9 +67,32 @@ function importe(datos: FormData, campo: string): number | undefined {
   son `force-dynamic`, así que la redirección ya las vuelve a leer de la base
   entera. Se revalida sólo lo que NO se va a visitar.
 */
-function volver(estado: EstadoPresupuesto, extra?: Record<string, string>): never {
+function volver(
+  estado: EstadoPresupuesto,
+  extra?: Record<string, string>,
+  /** El sitio de la pantalla al que se vuelve, y donde se pinta el aviso. */
+  ancla?: string,
+): never {
   const parametros = new URLSearchParams({ estado, ...extra });
-  redirect(`${RUTA_PRESUPUESTO}?${parametros.toString()}`);
+  redirect(`${RUTA_PRESUPUESTO}?${parametros.toString()}${ancla ? `#${ancla}` : ""}`);
+}
+
+/** Volver a una categoría de la lista de ajuste, con su aviso al lado. */
+function aLaCategoria(
+  id: string,
+  estado: EstadoPresupuesto,
+  extra?: Record<string, string>,
+): never {
+  volver(estado, { categoria: id, ...extra }, anclaDeCategoria(id));
+}
+
+/**
+ * CERO FILAS NO ES SIEMPRE «NO PODÉIS». Con la categoría borrada desde el otro
+ * móvil, a quien sí puede editar le salía «vuestro perfil no puede hacer
+ * cambios aquí». Se mira quién pregunta para decir cuál de las dos es.
+ */
+async function ceroFilas(): Promise<EstadoPresupuesto> {
+  return (await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe";
 }
 
 async function cliente() {
@@ -99,14 +128,18 @@ function orden(datos: FormData): number | undefined {
 }
 
 export async function crearCategoria(datos: FormData): Promise<void> {
+  // Los errores del alta vuelven al alta, que está al final de la pantalla.
+  const alAlta: (estado: EstadoPresupuesto) => never = (estado) =>
+    volver(estado, DESDE_EL_ALTA, ANCLA_ALTA_CATEGORIA);
+
   const nombre = texto(datos, "nombre");
-  if (nombre.length < LONGITUD_MINIMA_NOMBRE) volver("nombre");
+  if (nombre.length < LONGITUD_MINIMA_NOMBRE) alAlta("nombre");
 
   const previsto = importe(datos, "importe_previsto");
-  if (previsto === undefined) volver("importe");
+  if (previsto === undefined) alAlta("importe");
 
   const posicion = orden(datos);
-  if (posicion === undefined) volver("orden");
+  if (posicion === undefined) alAlta("orden");
 
   const supabase = await cliente();
   const { data, error } = await supabase
@@ -118,10 +151,10 @@ export async function crearCategoria(datos: FormData): Promise<void> {
     })
     .select("id");
 
-  if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (error) alAlta(motivo(error));
+  if (!data?.length) alAlta("sin-permiso");
 
-  volver("categoria-creada");
+  aLaCategoria(data[0]!.id as string, "categoria-creada");
 }
 
 export async function editarCategoria(datos: FormData): Promise<void> {
@@ -129,13 +162,13 @@ export async function editarCategoria(datos: FormData): Promise<void> {
   if (!id) volver("no-existe");
 
   const nombre = texto(datos, "nombre");
-  if (nombre.length < LONGITUD_MINIMA_NOMBRE) volver("nombre");
+  if (nombre.length < LONGITUD_MINIMA_NOMBRE) aLaCategoria(id, "nombre");
 
   const previsto = importe(datos, "importe_previsto");
-  if (previsto === undefined) volver("importe");
+  if (previsto === undefined) aLaCategoria(id, "importe");
 
   const posicion = orden(datos);
-  if (posicion === undefined) volver("orden");
+  if (posicion === undefined) aLaCategoria(id, "orden");
 
   /*
     LA DESCRIPCIÓN NO SE TOCA. La categoría la tiene en la base, pero esta
@@ -153,10 +186,10 @@ export async function editarCategoria(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (error) aLaCategoria(id, motivo(error));
+  if (!data?.length) volver(await ceroFilas());
 
-  volver("categoria-editada");
+  aLaCategoria(id, "categoria-editada");
 }
 
 /**
@@ -181,12 +214,13 @@ export async function borrarCategoria(datos: FormData): Promise<void> {
 
   // `-1` es «no se pudo contar». Seguir adelante a ciegas sería ofrecer un
   // borrado directo sobre una categoría que quizá tiene cuarenta gastos.
-  if (cuantos < 0) volver("error");
+  if (cuantos < 0) aLaCategoria(id, "error");
 
   if (cuantos > 0) {
+    // La decisión se pinta en la propia categoría, con su nombre y la cifra.
     const destino = texto(datos, "destino");
-    if (!destino) volver("decidir-gastos", { categoria: id });
-    if (destino === id) volver("destino", { categoria: id });
+    if (!destino) aLaCategoria(id, "decidir-gastos", { cuantos: String(cuantos) });
+    if (destino === id) aLaCategoria(id, "destino", { cuantos: String(cuantos) });
 
     const { data: movidos, error: fallo } = await supabase
       .from("partidas_presupuesto")
@@ -194,11 +228,18 @@ export async function borrarCategoria(datos: FormData): Promise<void> {
       .eq("categoria_id", id)
       .select("id");
 
-    if (fallo) volver(motivo(fallo));
+    if (fallo) aLaCategoria(id, motivo(fallo));
     // Cero filas movidas con gastos que contar es RLS callando: un lector no
     // reasigna gastos. Si se siguiera, el borrado fallaría después con un
     // error de clave ajena que no explica nada.
-    if (!movidos?.length) volver("sin-permiso");
+    if (!movidos?.length) volver(await ceroFilas());
+  } else if (texto(datos, "confirmar") !== "si") {
+    /*
+      SIN GASTOS, BORRAR PREGUNTA ANTES. Un toque en «Borrar» se llevaba la
+      categoría con su previsto sin vuelta atrás. El primer envío vuelve a la
+      categoría con la pregunta y el botón que ya trae la confirmación.
+    */
+    aLaCategoria(id, "confirmar-borrado");
   }
 
   const { data, error } = await supabase
@@ -207,8 +248,8 @@ export async function borrarCategoria(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (error) aLaCategoria(id, motivo(error));
+  if (!data?.length) volver(await ceroFilas());
 
   volver(cuantos > 0 ? "gastos-movidos" : "categoria-borrada");
 }

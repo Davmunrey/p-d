@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
@@ -32,6 +33,7 @@ import { accesoActual } from "@/lib/sesion";
 
 import { borrarPago, crearPago, editarPago, marcarPagado } from "./acciones";
 import { AvisoPagos } from "./aviso";
+import { ANCLA_ALTA_PAGO, anclaDePago, DESDE_EL_ALTA } from "./estado";
 
 /** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
 export const metadata: Metadata = { title: t("panel.presupuesto.pagos.titulo") };
@@ -132,6 +134,20 @@ export default async function PaginaPagos({ searchParams }: Parametros) {
   const queda =
     quedaCrudo && euros && Number.isFinite(Number(quedaCrudo)) ? euros(Number(quedaCrudo)) : "";
 
+  /*
+    EL AVISO VA DONDE SE HIZO LA ACCIÓN: en el pago que se tocó o en el alta,
+    que está al final. Arriba sólo si no se sabe, o si el pago ya no está.
+  */
+  const delPago = soloTexto(consulta.pago) || editando;
+  const enUnPago = pagos.some((pago) => pago.id === delPago) ? delPago : "";
+  // Preguntar si se borra algo que ya no está sería preguntar al vacío.
+  const yaNoEsta = estado === "confirmar-borrado" && Boolean(delPago) && !enUnPago;
+  const aviso = <AvisoPagos estado={yaNoEsta ? "no-existe" : estado} queda={queda} />;
+  const enElAlta =
+    soloTexto(consulta.desde) === DESDE_EL_ALTA.desde && puedeEditar && gastos.length > 0;
+  const confirmando = estado === "confirmar-borrado" ? enUnPago : "";
+  const contexto = { gastos, puedeEditar, editando, euros, enUnPago, aviso, confirmando };
+
   return (
     <>
       <header className="max-w-texto">
@@ -143,7 +159,7 @@ export default async function PaginaPagos({ searchParams }: Parametros) {
         </div>
       </header>
 
-      <AvisoPagos estado={estado} queda={queda} />
+      {enUnPago || enElAlta ? null : aviso}
 
       <Totales totales={totales} euros={euros} />
 
@@ -157,13 +173,7 @@ export default async function PaginaPagos({ searchParams }: Parametros) {
               <Cuerpo className="mt-pila max-w-texto text-pequeno">
                 {t("panel.presupuesto.pagos.vencidosAyuda")}
               </Cuerpo>
-              <Lista
-                pagos={vencidos}
-                gastos={gastos}
-                puedeEditar={puedeEditar}
-                editando={editando}
-                euros={euros}
-              />
+              <Lista pagos={vencidos} {...contexto} />
             </section>
           ) : null}
 
@@ -172,13 +182,7 @@ export default async function PaginaPagos({ searchParams }: Parametros) {
               <Titulo3 como="h2" className="border-b border-borde pb-linea">
                 {mayusculaInicial(formatoMes.format(comoDia(`${mes}-01`)))}
               </Titulo3>
-              <Lista
-                pagos={delMes}
-                gastos={gastos}
-                puedeEditar={puedeEditar}
-                editando={editando}
-                euros={euros}
-              />
+              <Lista pagos={delMes} {...contexto} />
             </section>
           ))}
 
@@ -187,19 +191,13 @@ export default async function PaginaPagos({ searchParams }: Parametros) {
               <Titulo3 como="h2" className="border-b border-borde pb-linea">
                 {t("panel.presupuesto.pagos.pagadosTitulo")}
               </Titulo3>
-              <Lista
-                pagos={pagados}
-                gastos={gastos}
-                puedeEditar={puedeEditar}
-                editando={editando}
-                euros={euros}
-              />
+              <Lista pagos={pagados} {...contexto} />
             </section>
           ) : null}
         </>
       )}
 
-      {puedeEditar ? <Alta gastos={gastos} /> : null}
+      {puedeEditar ? <Alta gastos={gastos} aviso={enElAlta ? aviso : null} /> : null}
     </>
   );
 }
@@ -278,26 +276,40 @@ function Lista({
   puedeEditar,
   editando,
   euros,
+  enUnPago,
+  aviso,
+  confirmando,
 }: {
   pagos: Pago[];
   gastos: GastoParaPagar[];
   puedeEditar: boolean;
   editando: string;
   euros: ((valor: number) => string) | null;
+  /** El pago al que vuelve la última acción: su aviso se pinta en él. */
+  enUnPago: string;
+  aviso: ReactNode;
+  /** El pago cuyo borrado se está preguntando. */
+  confirmando: string;
 }) {
   return (
     <ul className="mt-elemento grid gap-interno">
       {pagos.map((pago) => (
         <li
           key={pago.id}
-          id={`pago-${pago.id}`}
-          className="rounded-tarjeta border border-borde bg-superficie p-interno"
+          id={anclaDePago(pago.id)}
+          className="scroll-mt-elemento rounded-tarjeta border border-borde bg-superficie p-interno"
         >
           {puedeEditar && editando === pago.id ? (
             <Edicion pago={pago} gastos={gastos} />
           ) : (
-            <Fila pago={pago} puedeEditar={puedeEditar} euros={euros} />
+            <Fila
+              pago={pago}
+              puedeEditar={puedeEditar}
+              euros={euros}
+              confirmando={confirmando === pago.id}
+            />
           )}
+          {enUnPago === pago.id ? aviso : null}
         </li>
       ))}
     </ul>
@@ -319,90 +331,139 @@ function Fila({
   pago,
   puedeEditar,
   euros,
+  confirmando,
 }: {
   pago: Pago;
   puedeEditar: boolean;
   euros: ((valor: number) => string) | null;
+  confirmando: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-baseline justify-between gap-interno">
-      <div>
-        <span className="text-cuerpo text-tinta">{pago.concepto}</span>
-        <span className="mt-linea block text-pequeno text-tinta-suave">
-          {pago.categoria}
-          {pago.proveedor ? ` · ${pago.proveedor}` : ""} · {quienPaga(pago)}
-        </span>
-      </div>
-
-      <div className="flex flex-wrap items-baseline gap-interno">
-        <div className="text-right">
-          <span className="block text-cuerpo tabular-nums text-tinta">
-            {euros ? euros(pago.importe) : ""}
-          </span>
+    <>
+      <div className="flex flex-wrap items-baseline justify-between gap-interno">
+        <div>
+          <span className="text-cuerpo text-tinta">{pago.concepto}</span>
           <span className="mt-linea block text-pequeno text-tinta-suave">
-            {pago.pagadoEn
-              ? `${t("panel.presupuesto.pagos.pagadoEl")} ${formatoDia.format(comoDia(pago.pagadoEn))}`
-              : formatoDia.format(comoDia(pago.fechaVencimiento))}
-            {/*
+            {pago.categoria}
+            {pago.proveedor ? ` · ${pago.proveedor}` : ""} · {quienPaga(pago)}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-baseline gap-interno">
+          <div className="text-right">
+            <span className="block text-cuerpo tabular-nums text-tinta">
+              {euros ? euros(pago.importe) : ""}
+            </span>
+            <span className="mt-linea block text-pequeno text-tinta-suave">
+              {pago.pagadoEn
+                ? `${t("panel.presupuesto.pagos.pagadoEl")} ${formatoDia.format(comoDia(pago.pagadoEn))}`
+                : formatoDia.format(comoDia(pago.fechaVencimiento))}
+              {/*
               LA PALABRA, NO SÓLO EL COLOR. El recuadro rojo de la sección ya lo
               sugiere, pero quien llega a esta fila desde un lector de pantalla
               no ve recuadros, y quien la lee al sol tampoco.
             */}
-            {pago.vencido ? (
-              <span className="ml-interno-compacto text-etiqueta uppercase tracking-etiqueta text-error">
-                {t("panel.presupuesto.pagos.vencido")}
-              </span>
-            ) : null}
-          </span>
-        </div>
+              {pago.vencido ? (
+                <span className="ml-interno-compacto text-etiqueta uppercase tracking-etiqueta text-error">
+                  {t("panel.presupuesto.pagos.vencido")}
+                </span>
+              ) : null}
+            </span>
+          </div>
 
-        {puedeEditar ? (
-          <div className="flex flex-wrap items-baseline gap-interno">
-            <form action={marcarPagado}>
-              <input type="hidden" name="id" value={pago.id} />
-              {/*
+          {puedeEditar ? (
+            <div className="flex flex-wrap items-baseline gap-interno">
+              <form action={marcarPagado}>
+                <input type="hidden" name="id" value={pago.id} />
+                {/*
                 El mismo formulario para marcar y para deshacer: un campo oculto
                 dice cuál de las dos. Dos acciones distintas para escribir y
                 borrar la misma columna acabarían discrepando en qué más se
                 limpia al deshacer.
               */}
-              {pago.pagadoEn ? <input type="hidden" name="deshacer" value="si" /> : null}
-              <BotonEnvio jerarquia={pago.pagadoEn ? "terciario" : "secundario"}>
-                {pago.pagadoEn
-                  ? t("panel.presupuesto.pagos.deshacerPago")
-                  : t("panel.presupuesto.pagos.marcarPagado")}
-              </BotonEnvio>
-            </form>
+                {pago.pagadoEn ? <input type="hidden" name="deshacer" value="si" /> : null}
+                <BotonEnvio jerarquia={pago.pagadoEn ? "terciario" : "secundario"}>
+                  {pago.pagadoEn
+                    ? t("panel.presupuesto.pagos.deshacerPago")
+                    : t("panel.presupuesto.pagos.marcarPagado")}
+                </BotonEnvio>
+              </form>
 
-            <BotonEnlace
-              href={`${RUTA_PAGOS}?editar=${pago.id}#pago-${pago.id}`}
-              jerarquia="terciario"
-            >
-              {t("panel.presupuesto.pagos.editar")}
-            </BotonEnlace>
+              <BotonEnlace
+                href={`${RUTA_PAGOS}?editar=${pago.id}#pago-${pago.id}`}
+                jerarquia="terciario"
+              >
+                {t("panel.presupuesto.pagos.editar")}
+              </BotonEnlace>
 
-            <form action={borrarPago}>
-              <input type="hidden" name="id" value={pago.id} />
-              <BotonEnvio jerarquia="terciario">
-                {t("panel.presupuesto.pagos.borrar")}
-              </BotonEnvio>
-            </form>
-          </div>
-        ) : null}
+              <form action={borrarPago}>
+                <input type="hidden" name="id" value={pago.id} />
+                {/*
+                El segundo paso del borrado: el mismo formulario, ahora con la
+                confirmación dentro. No hay dos caminos que puedan discrepar.
+              */}
+                {confirmando ? <input type="hidden" name="confirmar" value="si" /> : null}
+                <BotonEnvio jerarquia={confirmando ? "secundario" : "terciario"}>
+                  {confirmando
+                    ? t("panel.presupuesto.pagos.confirmarBorrado")
+                    : t("panel.presupuesto.pagos.borrar")}
+                </BotonEnvio>
+              </form>
+            </div>
+          ) : null}
+        </div>
       </div>
-    </div>
+
+      {/*
+      LA PREGUNTA VA EN EL PAGO, JUNTO AL BOTÓN QUE LA CONTESTA, y con su
+      salida: quien pulsó «Borrar» sin querer tiene que poder irse sin tocarlo.
+    */}
+      {puedeEditar && confirmando ? (
+        <p
+          role="alert"
+          className="mt-elemento flex flex-wrap items-baseline gap-x-interno gap-y-linea rounded-campo bg-error-fondo p-interno text-pequeno text-error-tinta"
+        >
+          {t("panel.presupuesto.pagos.avisoConfirmarBorrado")}
+          <Enlace href={`${RUTA_PAGOS}#${anclaDePago(pago.id)}`}>
+            {t("panel.presupuesto.pagos.noBorrar")}
+          </Enlace>
+        </p>
+      ) : null}
+    </>
   );
 }
 
-/** Las opciones del desplegable de gastos, con su categoría delante. */
+/**
+ * LAS OPCIONES DEL DESPLEGABLE DE GASTOS, AGRUPADAS POR SU CATEGORÍA.
+ *
+ * Venían por orden de concepto con la categoría delante —«Fotografía · …,
+ * Banquete · …, Fotografía · …»—, y lo primero que se lee no era lo que
+ * ordenaba. Cada categoría es un `optgroup` y dentro van por concepto.
+ */
 function OpcionesDeGasto({ gastos }: { gastos: GastoParaPagar[] }) {
+  const porCategoria = new Map<string, GastoParaPagar[]>();
+  const ordenados = [...gastos].sort(
+    (uno, otro) =>
+      uno.categoria.localeCompare(otro.categoria, IDIOMA) ||
+      uno.concepto.localeCompare(otro.concepto, IDIOMA),
+  );
+  for (const gasto of ordenados) {
+    porCategoria.set(gasto.categoria, [...(porCategoria.get(gasto.categoria) ?? []), gasto]);
+  }
+
   return (
     <>
-      {gastos.map((gasto) => (
-        <option key={gasto.id} value={gasto.id}>
-          {gasto.categoria ? `${gasto.categoria} · ` : ""}
-          {gasto.concepto}
-        </option>
+      {[...porCategoria].map(([categoria, suyos]) => (
+        <optgroup
+          key={categoria}
+          label={categoria || t("panel.presupuesto.pagos.sinCategoria")}
+        >
+          {suyos.map((gasto) => (
+            <option key={gasto.id} value={gasto.id}>
+              {gasto.concepto}
+            </option>
+          ))}
+        </optgroup>
       ))}
     </>
   );
@@ -485,6 +546,14 @@ function Edicion({ pago, gastos }: { pago: Pago; gastos: GastoParaPagar[] }) {
           defaultValue={pago.fechaVencimiento}
         />
 
+        <CampoTexto
+          etiqueta={t("panel.presupuesto.pagos.campoPagadoEn")}
+          ayuda={t("panel.presupuesto.pagos.campoPagadoEnAyuda")}
+          name="pagado_en"
+          type="date"
+          defaultValue={pago.pagadoEn ?? ""}
+        />
+
         <CampoSeleccion
           etiqueta={t("panel.presupuesto.pagos.campoMetodo")}
           name="metodo"
@@ -519,7 +588,7 @@ function Edicion({ pago, gastos }: { pago: Pago; gastos: GastoParaPagar[] }) {
   );
 }
 
-function Alta({ gastos }: { gastos: GastoParaPagar[] }) {
+function Alta({ gastos, aviso }: { gastos: GastoParaPagar[]; aviso: ReactNode }) {
   if (gastos.length === 0) {
     return (
       <Cuerpo className="mt-bloque max-w-texto">
@@ -529,16 +598,28 @@ function Alta({ gastos }: { gastos: GastoParaPagar[] }) {
   }
 
   return (
-    <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
+    <section
+      id={ANCLA_ALTA_PAGO}
+      className="mt-bloque scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
+    >
       <Titulo3 como="h2">{t("panel.presupuesto.pagos.nuevaTitulo")}</Titulo3>
       <Etiqueta className="mt-pila block">{t("panel.presupuesto.pagos.nuevaAyuda")}</Etiqueta>
 
+      {aviso}
+
       <form action={crearPago} className="mt-elemento grid gap-interno sm:grid-cols-2">
+        {/*
+          SIN NINGÚN GASTO ELEGIDO DE ANTEMANO. El primero de la lista venía
+          marcado, y un pago apuntado sin tocar este campo se colgaba de un
+          gasto que nadie había elegido.
+        */}
         <CampoSeleccion
           etiqueta={t("panel.presupuesto.pagos.campoGasto")}
           name="gasto_id"
           required
+          defaultValue=""
         >
+          <option value="">{t("panel.presupuesto.pagos.elegirGasto")}</option>
           <OpcionesDeGasto gastos={gastos} />
         </CampoSeleccion>
 
@@ -557,6 +638,13 @@ function Alta({ gastos }: { gastos: GastoParaPagar[] }) {
           name="fecha_vencimiento"
           type="date"
           required
+        />
+
+        <CampoTexto
+          etiqueta={t("panel.presupuesto.pagos.campoPagadoEnAlta")}
+          ayuda={t("panel.presupuesto.pagos.campoPagadoEnAltaAyuda")}
+          name="pagado_en"
+          type="date"
         />
 
         <CampoSeleccion etiqueta={t("panel.presupuesto.pagos.campoMetodo")} name="metodo">

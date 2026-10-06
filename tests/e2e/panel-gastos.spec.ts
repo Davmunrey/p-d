@@ -494,4 +494,56 @@ test.describe("Los gastos del presupuesto", () => {
     );
     expect(Number(ajustado.importe_estimado)).toBe(1200);
   });
+
+  /**
+   * SIN PAGOS, BORRAR PREGUNTA ANTES. «Borrar» está en la propia fila, y un
+   * toque de más se llevaba el gasto con su descripción. El primer toque no
+   * borra; la confirmación, sí. Y el alta no elige la categoría por nadie.
+   */
+  test("borrar un gasto sin pagos pregunta antes, y sólo la confirmación lo borra", async ({
+    page,
+  }) => {
+    const categoria = await crearCategoria("Confirmar");
+    const partidaId = await conBase(async (sql) => {
+      const [partida] = await sql<{ id: string }[]>`
+        insert into public.partidas_presupuesto (categoria_id, concepto, importe_estimado)
+        values (${categoria.id}, ${`${MARCA} Para borrar`}, 300)
+        returning id
+      `;
+      return partida.id;
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_GASTOS);
+
+    await expect(
+      seccion(page, gastos.nuevaTitulo).getByLabel(gastos.campoCategoria, { exact: true }),
+      "ninguna categoría viene elegida en el alta",
+    ).toHaveValue("");
+
+    await filaDe(page, partidaId)
+      .getByRole("button", { name: gastos.borrar, exact: true })
+      .click();
+    await esperarEstado(page, "confirmar-borrado");
+
+    await expect(filaDe(page, partidaId)).toContainText(gastos.avisoConfirmarBorrado);
+    const sigue = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        select id from public.partidas_presupuesto where id = ${partidaId}
+      `,
+    );
+    expect(sigue, "el primer toque no puede borrar nada").toHaveLength(1);
+
+    await filaDe(page, partidaId)
+      .getByRole("button", { name: gastos.confirmarBorrado })
+      .click();
+    await esperarEstado(page, "gasto-borrado");
+
+    const quedan = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        select id from public.partidas_presupuesto where id = ${partidaId}
+      `,
+    );
+    expect(quedan, "confirmado, se borra").toHaveLength(0);
+  });
 });

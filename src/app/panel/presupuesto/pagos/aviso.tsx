@@ -15,6 +15,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   gasto: { clave: "panel.presupuesto.pagos.errorGasto", error: true },
   importe: { clave: "panel.presupuesto.pagos.errorImporte", error: true },
   fecha: { clave: "panel.presupuesto.pagos.errorFecha", error: true },
+  "fecha-pago": { clave: "panel.presupuesto.pagos.errorFechaPago", error: true },
   pagador: { clave: "panel.presupuesto.pagos.errorPagador", error: true },
   "no-existe": { clave: "panel.presupuesto.pagos.errorNoExiste", error: true },
   "sin-permiso": { clave: "panel.presupuesto.pagos.errorSinPermiso", error: true },

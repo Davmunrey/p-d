@@ -520,6 +520,41 @@
   grid-template-columns: minmax(0, var(--ancho-rotulo-grafica)) minmax(0, 1fr);
 }
 
+/*
+  UNA TABLA QUE NO CABE SE DESPLAZA, Y SE NOTA QUE SE DESPLAZA.
+
+  El panel decide no duplicar sus tablas en tarjetas para el móvil —dos
+  maquetaciones son dos sitios donde una cifra se queda vieja—, así que en un
+  móvil se desplazan en horizontal. Pero nada lo decía: la columna «Diferencia»,
+  la única que dice «de más», quedaba fuera de la vista. Ahora el borde que
+  tiene más contenido lleva una sombra —las dos capas `local` la tapan cuando
+  ya se ha llegado al final— y la primera columna se queda quieta, para saber
+  de qué fila es la cifra que se está leyendo.
+*/
+@utility tabla-desplazable {
+  overflow-x: auto;
+  background:
+    linear-gradient(to right, var(--fondo) 40%, transparent) left center / var(--spacing-bloque)
+      100% no-repeat local,
+    linear-gradient(to left, var(--fondo) 40%, transparent) right center / var(--spacing-bloque)
+      100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--velo-suave), transparent) left center /
+      var(--spacing-interno-compacto) 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--velo-suave), transparent) right center /
+      var(--spacing-interno-compacto) 100% no-repeat scroll;
+
+  /* Sólo donde se desplaza de verdad, en el móvil. El filete marca dónde acaba
+     lo fijo: sin él, las cifras que pasan por debajo asomaban cortadas. */
+  @variant max-sm {
+    & :is(th, td):first-child {
+      position: sticky;
+      left: 0;
+      background-color: var(--fondo);
+      box-shadow: inset calc(-1 * var(--grosor-filete)) 0 0 var(--borde);
+    }
+  }
+}
+
 @utility rejilla-tarjetas {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-tarjeta-minima)), 1fr));

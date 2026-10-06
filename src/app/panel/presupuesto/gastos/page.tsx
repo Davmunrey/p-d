@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
@@ -31,6 +32,7 @@ import { accesoActual } from "@/lib/sesion";
 
 import { borrarGasto, crearGasto, editarGasto } from "./acciones";
 import { AvisoGastos } from "./aviso";
+import { ANCLA_ALTA_GASTO, anclaDeGasto, DESDE_EL_ALTA } from "./estado";
 
 /** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
 export const metadata: Metadata = { title: t("panel.presupuesto.gastos.titulo") };
@@ -116,6 +118,19 @@ export default async function PaginaGastos({ searchParams }: Parametros) {
       ? euros(Number(apuntadoCrudo))
       : "";
 
+  /*
+    EL AVISO VA DONDE SE HIZO LA ACCIÓN: en el gasto que se tocó o en el alta,
+    que está al final. Arriba sólo si no se sabe, o si el gasto ya no está.
+  */
+  const delGasto = soloTexto(consulta.gasto) || editando;
+  const enUnGasto = gastos.some((gasto) => gasto.id === delGasto) ? delGasto : "";
+  // Preguntar si se borra algo que ya no está sería preguntar al vacío.
+  const yaNoEsta = estado === "confirmar-borrado" && Boolean(delGasto) && !enUnGasto;
+  const aviso = <AvisoGastos estado={yaNoEsta ? "no-existe" : estado} apuntado={apuntado} />;
+  const enElAlta =
+    soloTexto(consulta.desde) === DESDE_EL_ALTA.desde && puedeEditar && categorias.length > 0;
+  const confirmando = estado === "confirmar-borrado" ? enUnGasto : "";
+
   return (
     <>
       <header className="max-w-texto">
@@ -126,7 +141,7 @@ export default async function PaginaGastos({ searchParams }: Parametros) {
         </EnlaceSuave>
       </header>
 
-      <AvisoGastos estado={estado} apuntado={apuntado} />
+      {enUnGasto || enElAlta ? null : aviso}
 
       <Totales totales={totales} euros={euros} />
 
@@ -160,12 +175,21 @@ export default async function PaginaGastos({ searchParams }: Parametros) {
                   puedeEditar={puedeEditar}
                   editando={editando}
                   euros={euros}
+                  enUnGasto={enUnGasto}
+                  aviso={aviso}
+                  confirmando={confirmando}
                 />
               ))}
             </div>
           )}
 
-          {puedeEditar ? <Alta categorias={categorias} proveedores={proveedores} /> : null}
+          {puedeEditar ? (
+            <Alta
+              categorias={categorias}
+              proveedores={proveedores}
+              aviso={enElAlta ? aviso : null}
+            />
+          ) : null}
         </>
       )}
     </>
@@ -227,6 +251,9 @@ function Categoria({
   puedeEditar,
   editando,
   euros,
+  enUnGasto,
+  aviso,
+  confirmando,
 }: {
   fila: ResumenCategoria;
   gastos: Gasto[];
@@ -235,6 +262,11 @@ function Categoria({
   puedeEditar: boolean;
   editando: string;
   euros: ((valor: number) => string) | null;
+  /** El gasto al que vuelve la última acción: su aviso se pinta en él. */
+  enUnGasto: string;
+  aviso: ReactNode;
+  /** El gasto cuyo borrado se está preguntando. */
+  confirmando: string;
 }) {
   return (
     <section>
@@ -256,14 +288,20 @@ function Categoria({
           {gastos.map((gasto) => (
             <li
               key={gasto.id}
-              id={`gasto-${gasto.id}`}
-              className="rounded-tarjeta border border-borde p-interno"
+              id={anclaDeGasto(gasto.id)}
+              className="scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
             >
               {puedeEditar && editando === gasto.id ? (
                 <Edicion gasto={gasto} categorias={categorias} proveedores={proveedores} />
               ) : (
-                <Fila gasto={gasto} puedeEditar={puedeEditar} euros={euros} />
+                <Fila
+                  gasto={gasto}
+                  puedeEditar={puedeEditar}
+                  euros={euros}
+                  confirmando={confirmando === gasto.id}
+                />
               )}
+              {enUnGasto === gasto.id ? aviso : null}
             </li>
           ))}
         </ul>
@@ -293,60 +331,81 @@ function Fila({
   gasto,
   puedeEditar,
   euros,
+  confirmando,
 }: {
   gasto: Gasto;
   puedeEditar: boolean;
   euros: ((valor: number) => string) | null;
+  confirmando: boolean;
 }) {
   const importe = (valor: number | null) =>
     valor === null ? t("panel.presupuesto.gastos.sinCerrar") : euros ? euros(valor) : "";
 
   return (
-    <div className="flex flex-wrap items-baseline justify-between gap-interno">
-      <div>
-        <span className="text-cuerpo text-tinta">{gasto.concepto}</span>
-        <span className="mt-linea block text-pequeno text-tinta-suave">
-          {gasto.proveedor ?? t("panel.presupuesto.gastos.sinProveedor")}
-          {/* Pagada lleva su palabra y no sólo un color: un punto verde no lo
+    <>
+      <div className="flex flex-wrap items-baseline justify-between gap-interno">
+        <div>
+          <span className="text-cuerpo text-tinta">{gasto.concepto}</span>
+          <span className="mt-linea block text-pequeno text-tinta-suave">
+            {gasto.proveedor ?? t("panel.presupuesto.gastos.sinProveedor")}
+            {/* Pagada lleva su palabra y no sólo un color: un punto verde no lo
               lee ni un daltónico ni un lector de pantalla. */}
-          {gasto.pagada ? ` · ${t("panel.presupuesto.gastos.pagada")}` : ""}
-        </span>
-      </div>
-
-      <div className="flex flex-wrap items-baseline gap-interno">
-        <div className="text-right">
-          <span className="block text-cuerpo tabular-nums text-tinta">
-            {importe(gasto.importeReal)}
-          </span>
-          <span className="mt-linea block text-pequeno tabular-nums text-tinta-suave">
-            {t("panel.presupuesto.gastos.columnaEstimado")} {importe(gasto.importeEstimado)}
+            {gasto.pagada ? ` · ${t("panel.presupuesto.gastos.pagada")}` : ""}
           </span>
         </div>
 
-        {puedeEditar ? (
-          <div className="flex items-baseline gap-interno">
-            {/*
+        <div className="flex flex-wrap items-baseline gap-interno">
+          <div className="text-right">
+            <span className="block text-cuerpo tabular-nums text-tinta">
+              {importe(gasto.importeReal)}
+            </span>
+            <span className="mt-linea block text-pequeno tabular-nums text-tinta-suave">
+              {t("panel.presupuesto.gastos.columnaEstimado")} {importe(gasto.importeEstimado)}
+            </span>
+          </div>
+
+          {puedeEditar ? (
+            <div className="flex items-baseline gap-interno">
+              {/*
               UN ENLACE Y NO UN BOTÓN: abrir la edición es ir a otra dirección
               —la misma lista con este gasto abierto— y eso se puede compartir,
               abrir en otra pestaña y deshacer con el botón de atrás. El ancla
               devuelve la vista al gasto en vez de al principio de la página.
             */}
-            <BotonEnlace
-              href={`${RUTA_GASTOS}?editar=${gasto.id}#gasto-${gasto.id}`}
-              jerarquia="terciario"
-            >
-              {t("panel.presupuesto.gastos.editar")}
-            </BotonEnlace>
-            <form action={borrarGasto}>
-              <input type="hidden" name="id" value={gasto.id} />
-              <BotonEnvio jerarquia="terciario">
-                {t("panel.presupuesto.gastos.borrar")}
-              </BotonEnvio>
-            </form>
-          </div>
-        ) : null}
+              <BotonEnlace
+                href={`${RUTA_GASTOS}?editar=${gasto.id}#gasto-${gasto.id}`}
+                jerarquia="terciario"
+              >
+                {t("panel.presupuesto.gastos.editar")}
+              </BotonEnlace>
+              <form action={borrarGasto}>
+                <input type="hidden" name="id" value={gasto.id} />
+                {/* El segundo paso del borrado: el mismo formulario, confirmado. */}
+                {confirmando ? <input type="hidden" name="confirmar" value="si" /> : null}
+                <BotonEnvio jerarquia={confirmando ? "secundario" : "terciario"}>
+                  {confirmando
+                    ? t("panel.presupuesto.gastos.confirmarBorrado")
+                    : t("panel.presupuesto.gastos.borrar")}
+                </BotonEnvio>
+              </form>
+            </div>
+          ) : null}
+        </div>
       </div>
-    </div>
+
+      {/* La pregunta, junto al botón que la contesta y con su salida. */}
+      {puedeEditar && confirmando ? (
+        <p
+          role="alert"
+          className="mt-elemento flex flex-wrap items-baseline gap-x-interno gap-y-linea rounded-campo bg-error-fondo p-interno text-pequeno text-error-tinta"
+        >
+          {t("panel.presupuesto.gastos.avisoConfirmarBorrado")}
+          <EnlaceSuave href={`${RUTA_GASTOS}#${anclaDeGasto(gasto.id)}`}>
+            {t("panel.presupuesto.gastos.noBorrar")}
+          </EnlaceSuave>
+        </p>
+      ) : null}
+    </>
   );
 }
 
@@ -465,14 +524,21 @@ function Edicion({
 function Alta({
   categorias,
   proveedores,
+  aviso,
 }: {
   categorias: CategoriaPresupuesto[];
   proveedores: Proveedor[];
+  aviso: ReactNode;
 }) {
   return (
-    <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
+    <section
+      id={ANCLA_ALTA_GASTO}
+      className="mt-bloque scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
+    >
       <Titulo3 como="h2">{t("panel.presupuesto.gastos.nuevaTitulo")}</Titulo3>
       <Etiqueta className="mt-pila block">{t("panel.presupuesto.gastos.nuevaAyuda")}</Etiqueta>
+
+      {aviso}
 
       <form action={crearGasto} className="mt-elemento grid gap-interno sm:grid-cols-2">
         <CampoTexto
@@ -482,11 +548,14 @@ function Alta({
           required
           maxLength={LARGOS_DE_CAMPO["partidas_presupuesto.concepto"]}
         />
+        {/* Sin categoría elegida de antemano: venía marcada la primera. */}
         <CampoSeleccion
           etiqueta={t("panel.presupuesto.gastos.campoCategoria")}
           name="categoria_id"
           required
+          defaultValue=""
         >
+          <option value="">{t("panel.presupuesto.gastos.elegirCategoria")}</option>
           {categorias.map((categoria) => (
             <option key={categoria.id} value={categoria.id}>
               {categoria.nombre}
