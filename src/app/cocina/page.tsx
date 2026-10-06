@@ -628,7 +628,12 @@ export default async function PaginaCocina() {
               key={clave}
               className="rejilla-dato items-baseline gap-interno border-b border-borde py-pila"
             >
-              <span className="font-titulo text-titulo-3 text-borde-fuerte">
+              {/*
+                En la tinta tenue y no en el gris de los bordes: a 27 px es texto
+                grande, y el gris no llegaba ni al 3:1. Y oculto al lector: la
+                lista ya es ordenada, el número lo diría dos veces.
+              */}
+              <span aria-hidden="true" className="font-titulo text-titulo-3 text-tinta-tenue">
                 {String(indice + 1).padStart(2, "0")}
               </span>
               <Cuerpo>{t(clave as ClaveCopy)}</Cuerpo>

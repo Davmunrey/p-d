@@ -16,10 +16,19 @@ import { CLAVES_LISTA, rutaDeLista } from "../../../src/config/contenido-landing
  * cada spec decide qué hace con ellas, pero decidiéndolo.
  */
 export const RUTAS_CON_PARAMETRO_CONOCIDAS = [
+  /*
+    La que recoge cualquier dirección del panel que no existe. Se audita
+    resuelta a una dirección inventada: es la 404 del panel, y una pantalla
+    de error también tiene que leerse y tocarse bien.
+  */
+  "/panel/[...resto]",
   "/panel/contenido/[lista]",
   "/panel/invitados/[id]",
   "/panel/proveedores/[id]",
 ];
+
+/** A qué se resuelve la ruta comodín para auditarla. */
+const DIRECCION_QUE_NO_EXISTE = "esta-pantalla-no-existe";
 
 export function descubrirRutasDelPanel(): { estaticas: string[]; conParametro: string[] } {
   const raiz = join(__dirname, "..", "..", "..", "src", "app");
@@ -38,6 +47,9 @@ export function descubrirRutasDelPanel(): { estaticas: string[]; conParametro: s
     estaticas: [
       ...todas.filter((ruta) => !ruta.includes("[")),
       ...CLAVES_LISTA.map((clave) => rutaDeLista(clave)),
+      ...todas
+        .filter((ruta) => /\[\.\.\.[^\]]+\]$/.test(ruta))
+        .map((ruta) => ruta.replace(/\[\.\.\.[^\]]+\]$/, DIRECCION_QUE_NO_EXISTE)),
     ],
     conParametro: todas.filter((ruta) => ruta.includes("[")),
   };
