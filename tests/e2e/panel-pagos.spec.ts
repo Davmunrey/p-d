@@ -451,6 +451,13 @@ test.describe("Los pagos y sus vencimientos", () => {
 
     await entrar(page);
     await page.goto(RUTA_PAGOS);
+    /*
+      HIDRATADA ANTES DE TOCAR EL TIPO. Al hidratar un `<input>`, React le
+      vuelve a poner el `type` de sus propiedades: si llegaba después del
+      cambio, el campo volvía a ser de fecha, el 31 de febrero se quedaba en
+      nada y el `required` paraba el envío sin que saliera ninguna petición.
+    */
+    await page.waitForLoadState("networkidle");
 
     const alta = seccion(page, pagos.nuevaTitulo);
     await alta
@@ -460,6 +467,9 @@ test.describe("Los pagos y sus vencimientos", () => {
     const vencimiento = alta.getByLabel(pagos.campoVencimiento, { exact: true });
     await vencimiento.evaluate((campo) => campo.setAttribute("type", "text"));
     await vencimiento.fill("2027-02-31");
+    await expect(vencimiento, "la fecha imposible tiene que llegar escrita").toHaveValue(
+      "2027-02-31",
+    );
     await alta.getByRole("button", { name: pagos.crear }).click();
 
     await esperarEstado(page, "fecha");
