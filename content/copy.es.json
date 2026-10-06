@@ -676,6 +676,7 @@
       "buscar": "Buscar en los mensajes",
       "buscarAyuda": "Por texto del mensaje o por el nombre del grupo.",
       "sinResultados": "Ningún mensaje coincide con la búsqueda.",
+      "sinDestacados": "Todavía no habéis destacado ningún mensaje.",
       "nuevo": "Nuevo",
       "marcarLeido": "Marcar como leído",
       "marcarNoLeido": "Marcar como no leído",
@@ -697,6 +698,8 @@
       "exportarPlaylistAyuda": "Sólo las que se ven en la web, en el orden en que llegaron, una por línea.",
       "nombreFicheroPlaylist": "playlist-{fecha}.txt",
       "errorNoExiste": "Eso ya no está: el invitado cambió su respuesta después de que abrierais esta página. Lo que veis ahora es lo vigente.",
+      "errorMensajeCambiado": "El invitado ha cambiado su mensaje mientras teníais la bandeja abierta. Lo que veis ahora es el de ahora: volved a pulsar si sigue haciendo falta.",
+      "errorMensajeNoExiste": "Ese mensaje ya no está: se borró su invitación.",
       "errorSinPermiso": "Sólo un editor puede moderar la playlist o marcar mensajes.",
       "errorGuardar": "No hemos podido guardar. Inténtalo de nuevo.",
       "marcado": "Mensaje actualizado.",
@@ -705,7 +708,8 @@
       "destacado": "Destacado",
       "avisoDestacado": "Mensaje destacado: se queda a la vista aunque lo marquéis como leído.",
       "avisoSinDestacar": "Ya no está destacado.",
-      "soloDestacados": "Sólo los destacados"
+      "verSoloDestacados": "Ver sólo los destacados",
+      "verTodos": "Ver todos los mensajes"
     },
     "mesas": {
       "titulo": "Mesas",

@@ -312,7 +312,7 @@ test.describe("Bandeja de mensajes", () => {
     await conBase((sql) => sql`delete from public.grupos_invitacion where nombre = ${grupo}`);
     await entrada.getByRole("button", { name: copy.panel.mensajes.destacar }).click();
 
-    await expect(page.getByText(copy.panel.mensajes.errorNoExiste)).toBeVisible();
+    await expect(page.getByText(copy.panel.mensajes.errorMensajeNoExiste)).toBeVisible();
     await expect(page.getByText(copy.panel.mensajes.errorSinPermiso)).toHaveCount(0);
   });
 
@@ -333,6 +333,14 @@ test.describe("Bandeja de mensajes", () => {
     await conBase(async (sql) => {
       const [g] = await sql<{ id: string }[]>`
         insert into public.grupos_invitacion (nombre) values (${grupo}) returning id
+      `;
+      // Otra familia pide la primera con otras mayúsculas: en el fichero, una vez.
+      const [otro] = await sql<{ id: string }[]>`
+        insert into public.grupos_invitacion (nombre) values (${`${MARCA} Otra familia ${sello}`}) returning id
+      `;
+      await sql`
+        insert into public.canciones_sugeridas (texto, grupo_id, creado_en, aprobada)
+        values (${primera.toUpperCase()}, ${otro.id}, now() - interval '1 minute', true)
       `;
       // Diez del mismo grupo: el tope. Las tres que se miran, las primeras.
       await sql`
@@ -358,6 +366,10 @@ test.describe("Bandeja de mensajes", () => {
       expect(lineas).toContain(primera);
       expect(lineas.indexOf(primera)).toBeLessThan(lineas.indexOf(segunda));
       expect(lineas).not.toContain(oculta);
+      expect(
+        lineas.filter((linea) => linea.toLowerCase() === primera.toLowerCase()),
+        "la misma canción pedida por dos familias sale una vez",
+      ).toEqual([primera]);
 
       // Y en la pantalla, cuántas lleva el grupo: las diez, ocultas incluidas,
       // que es como las cuenta la base.
@@ -372,8 +384,8 @@ test.describe("Bandeja de mensajes", () => {
       await expect(fila).toContainText(copy.panel.mensajes.enElTope);
     } finally {
       await conBase(async (sql) => {
-        await sql`delete from public.canciones_sugeridas where texto like ${`${MARCA}%${sello}`}`;
-        await sql`delete from public.grupos_invitacion where nombre = ${grupo}`;
+        await sql`delete from public.canciones_sugeridas where texto ilike ${`${MARCA}%${sello}`}`;
+        await sql`delete from public.grupos_invitacion where nombre like ${`${MARCA}%${sello}`}`;
       });
     }
   });
@@ -394,5 +406,168 @@ test.describe("Bandeja de mensajes", () => {
     const menu = page.getByRole("navigation", { name: copy.panel.navegacion }).first();
     await menu.getByRole("link", { name: copy.panel.modulos.mensajes }).click();
     await expect(page).toHaveURL(new RegExp(RUTA_MENSAJES));
+  });
+
+  /** Un grupo con una persona y su respuesta con mensaje. Devuelve los ids. */
+  async function grupoConMensaje(grupo: string, mensaje: string) {
+    return conBase(async (sql) => {
+      const [g] = await sql<{ id: string }[]>`
+        insert into public.grupos_invitacion (nombre) values (${grupo}) returning id
+      `;
+      const [persona] = await sql<{ id: string }[]>`
+        insert into public.invitados (grupo_id, nombre) values (${g.id}, '(DES) Persona') returning id
+      `;
+      await responder(persona.id, mensaje);
+      return { grupoId: g.id, personaId: persona.id };
+    });
+  }
+
+  /** Una respuesta nueva de la misma persona: la anterior deja de ser la vigente. */
+  function responder(personaId: string, mensaje: string) {
+    return conBase(
+      (sql) => sql`
+        insert into public.confirmaciones
+          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento, mensaje)
+        values (${personaId}, 'confirmado', 'publico', true, false, ${mensaje})
+      `,
+    );
+  }
+
+  /**
+   * BODA-112 · CAMBIAR LA RESPUESTA NO DEVUELVE EL MENSAJE A «NUEVO».
+   *
+   * Responder otra vez inserta otra confirmación con el mismo mensaje —el
+   * formulario lo trae ya escrito— y las marcas iban atadas a la fila vieja:
+   * «la abuela es celíaca» volvía arriba como nuevo y sin su destacado.
+   */
+  test("cambiar la respuesta con el mismo mensaje no le quita el leído ni el destacado", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const grupo = `${MARCA} Responden dos veces ${sello}`;
+    const mensaje = `(DES) La abuela es celíaca ${sello}`;
+    const { personaId } = await grupoConMensaje(grupo, mensaje);
+
+    try {
+      await entrar(page);
+      await page.goto(RUTA_MENSAJES);
+      const tarjeta = () => page.locator("li").filter({ hasText: mensaje });
+      await tarjeta().getByRole("button", { name: copy.panel.mensajes.marcarLeido }).click();
+      await expect(page.getByText(copy.panel.mensajes.marcado)).toBeVisible();
+      await tarjeta().getByRole("button", { name: copy.panel.mensajes.destacar }).click();
+      await expect(page.getByText(copy.panel.mensajes.avisoDestacado)).toBeVisible();
+
+      // Semanas después pide autobús, sin tocar el mensaje.
+      await responder(personaId, mensaje);
+      await page.goto(RUTA_MENSAJES);
+
+      await expect(tarjeta()).toHaveCount(1);
+      await expect(
+        tarjeta().getByText(copy.panel.mensajes.destacado, { exact: true }),
+      ).toBeVisible();
+      await expect(tarjeta().getByText(copy.panel.mensajes.nuevo, { exact: true })).toHaveCount(
+        0,
+      );
+
+      // Y quitar el destacado lo quita de verdad, también de la fila vieja.
+      await tarjeta()
+        .getByRole("button", { name: copy.panel.mensajes.quitarDestacado })
+        .click();
+      await expect(page.getByText(copy.panel.mensajes.avisoSinDestacar)).toBeVisible();
+      await expect(
+        tarjeta().getByText(copy.panel.mensajes.destacado, { exact: true }),
+      ).toHaveCount(0);
+
+      // Si lo reescribe, sí es otro mensaje: sale como nuevo.
+      const otro = `${mensaje}, y el primo también`;
+      await responder(personaId, otro);
+      await page.goto(RUTA_MENSAJES);
+      await expect(
+        page
+          .locator("li")
+          .filter({ hasText: otro })
+          .getByText(copy.panel.mensajes.nuevo, { exact: true }),
+      ).toBeVisible();
+    } finally {
+      await conBase((sql) => sql`delete from public.grupos_invitacion where nombre = ${grupo}`);
+    }
+  });
+
+  /**
+   * CASO DE ERROR · destacar la tarjeta de un mensaje que el invitado acaba de
+   * reescribir no puede decir «hecho»: la marca caería en una fila que ya no se
+   * enseña.
+   */
+  test("destacar un mensaje que el invitado acaba de reescribir lo dice", async ({ page }) => {
+    const sello = Date.now();
+    const grupo = `${MARCA} Reescriben ${sello}`;
+    const antes = `(DES) Llegamos a las ocho ${sello}`;
+    const { personaId } = await grupoConMensaje(grupo, antes);
+
+    try {
+      await entrar(page);
+      await page.goto(RUTA_MENSAJES);
+      const tarjeta = page.locator("li").filter({ hasText: antes });
+      await expect(tarjeta).toBeVisible();
+
+      await responder(personaId, `(DES) Llegamos a las nueve ${sello}`);
+      await tarjeta.getByRole("button", { name: copy.panel.mensajes.destacar }).click();
+
+      await expect(page.getByText(copy.panel.mensajes.errorMensajeCambiado)).toBeVisible();
+      await expect(page.getByText(copy.panel.mensajes.avisoDestacado)).toHaveCount(0);
+    } finally {
+      await conBase((sql) => sql`delete from public.grupos_invitacion where nombre = ${grupo}`);
+    }
+  });
+
+  /**
+   * Repasar los destacados la semana antes de la boda: cada clic devolvía la
+   * bandeja entera, con el buscador vacío. El filtro se pone de un toque y
+   * sobrevive a las acciones.
+   */
+  test("el filtro de destacados se pone de un toque y no se pierde al marcar", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const grupo = `${MARCA} Filtro ${sello}`;
+    const practico = `(DES) Vamos con silla de ruedas ${sello}`;
+    const { personaId } = await grupoConMensaje(grupo, practico);
+
+    try {
+      await entrar(page);
+      await page.goto(`${RUTA_MENSAJES}?buscar=${encodeURIComponent(String(sello))}`);
+      const tarjeta = () => page.locator("li").filter({ hasText: practico });
+      await tarjeta().getByRole("button", { name: copy.panel.mensajes.destacar }).click();
+      await expect(page.getByText(copy.panel.mensajes.avisoDestacado)).toBeVisible();
+      await expect(page).toHaveURL(new RegExp(`buscar=${sello}`));
+
+      await page.getByRole("link", { name: copy.panel.mensajes.verSoloDestacados }).click();
+      await expect(page).toHaveURL(/destacados=1/);
+      await expect(page).toHaveURL(new RegExp(`buscar=${sello}`));
+      await expect(tarjeta()).toBeVisible();
+
+      await tarjeta().getByRole("button", { name: copy.panel.mensajes.marcarLeido }).click();
+      await expect(page.getByText(copy.panel.mensajes.marcado)).toBeVisible();
+      await expect(page).toHaveURL(/destacados=1/);
+      await expect(page).toHaveURL(new RegExp(`buscar=${sello}`));
+      await expect(
+        page.getByRole("link", { name: copy.panel.mensajes.verTodos }),
+      ).toBeVisible();
+      expect(personaId).toBeTruthy();
+    } finally {
+      await conBase((sql) => sql`delete from public.grupos_invitacion where nombre = ${grupo}`);
+    }
+  });
+
+  test("sin ningún destacado, el filtro lo dice en vez de hablar de una búsqueda", async ({
+    page,
+  }) => {
+    const hay = await conBase((sql) => sql`select 1 from public.mensajes_destacados limit 1`);
+    test.skip(hay.length > 0, "Hay destacados de otros tests: este caso necesita ninguno.");
+
+    await entrar(page);
+    await page.goto(`${RUTA_MENSAJES}?destacados=1`);
+    await expect(page.getByText(copy.panel.mensajes.sinDestacados)).toBeVisible();
+    await expect(page.getByText(copy.panel.mensajes.sinResultados)).toHaveCount(0);
   });
 });

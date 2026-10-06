@@ -9,6 +9,7 @@ import {
   IDIOMA,
   RUTA_ACCESO,
   RUTA_INVITADOS,
+  RUTA_MENSAJES,
   RUTA_PLAYLIST_EXPORTAR,
   TOPE_CANCIONES_POR_GRUPO,
   ZONA_HORARIA,
@@ -56,6 +57,8 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   "cancion-ocultada": { clave: "panel.mensajes.cancionOcultada", error: false },
   "cancion-mostrada": { clave: "panel.mensajes.cancionMostrada", error: false },
   "no-existe": { clave: "panel.mensajes.errorNoExiste", error: true },
+  "mensaje-cambiado": { clave: "panel.mensajes.errorMensajeCambiado", error: true },
+  "mensaje-no-existe": { clave: "panel.mensajes.errorMensajeNoExiste", error: true },
   "sin-permiso": { clave: "panel.mensajes.errorSinPermiso", error: true },
   error: { clave: "panel.mensajes.errorGuardar", error: true },
 };
@@ -89,6 +92,16 @@ export default async function PaginaMensajes({ searchParams }: Parametros) {
     );
 
   const sinLeer = mensajes.filter((mensaje) => !mensaje.leido).length;
+
+  /*
+    El filtro de destacados es un enlace y no una casilla: la casilla no hacía
+    nada al marcarla —había que subir y pulsar «Buscar» sin buscar nada—. Un
+    toque, y la búsqueda escrita se conserva.
+  */
+  const conDestacados = new URLSearchParams();
+  if (busqueda) conDestacados.set("buscar", busqueda);
+  if (!soloDestacados) conDestacados.set("destacados", "1");
+  const alternarDestacados = `${RUTA_MENSAJES}${conDestacados.size ? `?${conDestacados}` : ""}`;
   const aviso = avisoDe(AVISOS, soloTexto(consulta.estado));
 
   return (
@@ -144,31 +157,40 @@ export default async function PaginaMensajes({ searchParams }: Parametros) {
               >
                 {t("panel.mensajes.buscarAyuda")}
               </p>
-              {/*
-                LOS DESTACADOS, DE UN TOQUE: es lo que se busca la semana antes
-                de la boda —«¿quién dijo que llegaba tarde?»— y no se recuerda
-                con qué palabras lo escribió.
-              */}
-              <label className="flex min-h-control-compacto cursor-pointer items-center gap-interno-compacto sm:col-span-2">
-                <input
-                  type="checkbox"
-                  name="destacados"
-                  value="1"
-                  defaultChecked={soloDestacados}
-                  className="casilla-marca transicion-color"
-                />
-                <span className="text-pequeno text-tinta">
-                  {t("panel.mensajes.soloDestacados")}
-                </span>
-              </label>
+              {/* Buscar no puede quitar el filtro que ya está puesto. */}
+              {soloDestacados ? <input type="hidden" name="destacados" value="1" /> : null}
             </form>
 
+            {/*
+              LOS DESTACADOS, DE UN TOQUE: es lo que se busca la semana antes de
+              la boda —«¿quién dijo que llegaba tarde?»— y no se recuerda con qué
+              palabras lo escribió.
+            */}
+            <Link
+              href={alternarDestacados}
+              prefetch={false}
+              className="mt-interno inline-flex min-h-control-compacto items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
+            >
+              {soloDestacados
+                ? t("panel.mensajes.verTodos")
+                : t("panel.mensajes.verSoloDestacados")}
+            </Link>
+
             {visibles.length === 0 ? (
-              <Cuerpo className="mt-elemento">{t("panel.mensajes.sinResultados")}</Cuerpo>
+              <Cuerpo className="mt-elemento">
+                {soloDestacados && !busqueda
+                  ? t("panel.mensajes.sinDestacados")
+                  : t("panel.mensajes.sinResultados")}
+              </Cuerpo>
             ) : (
               <ul className="mt-elemento grid gap-interno">
                 {visibles.map((mensaje) => (
-                  <Mensaje key={mensaje.id} mensaje={mensaje} puedeEditar={puedeEditar} />
+                  <Mensaje
+                    key={mensaje.id}
+                    mensaje={mensaje}
+                    puedeEditar={puedeEditar}
+                    filtro={<Filtro busqueda={busqueda} soloDestacados={soloDestacados} />}
+                  />
                 ))}
               </ul>
             )}
@@ -265,7 +287,25 @@ function PorGrupo({ canciones }: { canciones: CancionSugerida[] }) {
   );
 }
 
-function Mensaje({ mensaje, puedeEditar }: { mensaje: MensajeInvitado; puedeEditar: boolean }) {
+/** La búsqueda y el filtro de ahora, para que vuelvan con el acuse de cada acción. */
+function Filtro({ busqueda, soloDestacados }: { busqueda: string; soloDestacados: boolean }) {
+  return (
+    <>
+      {busqueda ? <input type="hidden" name="buscar" value={busqueda} /> : null}
+      {soloDestacados ? <input type="hidden" name="destacados" value="1" /> : null}
+    </>
+  );
+}
+
+function Mensaje({
+  mensaje,
+  puedeEditar,
+  filtro,
+}: {
+  mensaje: MensajeInvitado;
+  puedeEditar: boolean;
+  filtro: React.ReactNode;
+}) {
   return (
     <li
       className={`grid gap-pila rounded-tarjeta border p-interno ${
@@ -307,6 +347,7 @@ function Mensaje({ mensaje, puedeEditar }: { mensaje: MensajeInvitado; puedeEdit
           <form action={marcarLeido}>
             <input type="hidden" name="confirmacion_id" value={mensaje.id} />
             <input type="hidden" name="leido" value={mensaje.leido ? "1" : "0"} />
+            {filtro}
             <BotonEnvio jerarquia="terciario">
               {mensaje.leido
                 ? t("panel.mensajes.marcarNoLeido")
@@ -319,6 +360,7 @@ function Mensaje({ mensaje, puedeEditar }: { mensaje: MensajeInvitado; puedeEdit
           <form action={destacarMensaje}>
             <input type="hidden" name="confirmacion_id" value={mensaje.id} />
             <input type="hidden" name="destacado" value={mensaje.destacado ? "1" : "0"} />
+            {filtro}
             <BotonEnvio jerarquia="terciario">
               {mensaje.destacado
                 ? t("panel.mensajes.quitarDestacado")

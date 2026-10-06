@@ -4,6 +4,7 @@ import { RUTA_ACCESO, ZONA_HORARIA } from "@/config/constants";
 import { obtenerCancionesTodas } from "@/lib/bbdd/mensajes";
 import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
+import { normalizar } from "@/lib/texto";
 
 /**
  * BODA-113 · LA LISTA FINAL, PARA EL DJ
@@ -39,7 +40,21 @@ export async function GET(peticion: NextRequest) {
     .filter((cancion) => cancion.aprobada)
     .sort((a, b) => a.pedidaEn.getTime() - b.pedidaEn.getTime());
 
-  const cuerpo = canciones.map((cancion) => cancion.texto).join("\r\n");
+  /*
+    SIN REPETIDAS. La base sólo impide repetir dentro de un mismo grupo, así que
+    dos familias que piden «Bailando» —una con mayúsculas y otra sin— dejaban
+    la canción dos veces en el fichero. Se queda la primera, que es la que
+    llegó antes.
+  */
+  const vistas = new Set<string>();
+  const sinRepetir = canciones.filter((cancion) => {
+    const clave = normalizar(cancion.texto).replace(/\s+/g, " ").trim();
+    if (vistas.has(clave)) return false;
+    vistas.add(clave);
+    return true;
+  });
+
+  const cuerpo = sinRepetir.map((cancion) => cancion.texto).join("\r\n");
   const nombre = t("panel.mensajes.nombreFicheroPlaylist", {
     fecha: formatoFechaFichero.format(new Date()),
   });

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { RUTA_ACCESO, RUTA_MENSAJES } from "@/config/constants";
+import { filasDelMismoMensaje } from "@/lib/bbdd/mensajes";
 import { accesoActual } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
@@ -25,6 +26,8 @@ type Estado =
   | "cancion-ocultada"
   | "cancion-mostrada"
   | "no-existe"
+  | "mensaje-cambiado"
+  | "mensaje-no-existe"
   | "sin-permiso"
   | "error";
 
@@ -41,11 +44,36 @@ type Estado =
   redirección ya las vuelve a leer de la base enteras. Se revalida sólo lo que
   NO se va a visitar.
 */
-function volver(estado: Estado): never {
-  redirect(`${RUTA_MENSAJES}?estado=${estado}`);
+const texto = (datos: FormData, campo: string) => String(datos.get(campo) ?? "").trim();
+
+function volver(estado: Estado, datos?: FormData): never {
+  /*
+    LA BÚSQUEDA Y EL FILTRO VUELVEN CON EL ACUSE. Sin ellos, repasar los
+    destacados la semana antes de la boda obligaba a filtrar otra vez después
+    de cada clic: la bandeja volvía entera y con el buscador vacío.
+  */
+  const parametros = new URLSearchParams({ estado });
+  const buscar = datos ? texto(datos, "buscar") : "";
+  if (buscar) parametros.set("buscar", buscar);
+  if (datos && texto(datos, "destacados") === "1") parametros.set("destacados", "1");
+  redirect(`${RUTA_MENSAJES}?${parametros}`);
 }
 
-const texto = (datos: FormData, campo: string) => String(datos.get(campo) ?? "").trim();
+/**
+ * Las filas sobre las que se marca un mensaje, o vuelve diciendo por qué no.
+ *
+ * Si el invitado lo ha reescrito mientras la bandeja estaba abierta, la tarjeta
+ * que se pulsó ya no es la que se enseña: decir «hecho» sobre ella era mentir,
+ * porque al repintar el mensaje de ahora salía sin la marca.
+ */
+async function filasOVolver(confirmacionId: string, datos: FormData): Promise<string[]> {
+  const filas = await filasDelMismoMensaje(confirmacionId);
+  if (!filas) volver("error", datos);
+  if (filas.estado !== "vigente") {
+    volver(filas.estado === "cambiado" ? "mensaje-cambiado" : "mensaje-no-existe", datos);
+  }
+  return filas.ids;
+}
 
 async function cliente() {
   if (!hayAutenticacion) redirect(RUTA_ACCESO);
@@ -62,7 +90,7 @@ async function cliente() {
 export async function marcarLeido(datos: FormData): Promise<void> {
   const confirmacionId = texto(datos, "confirmacion_id");
   const leidoAhora = texto(datos, "leido") === "1";
-  if (!confirmacionId) volver("error");
+  if (!confirmacionId) volver("error", datos);
 
   const acceso = await accesoActual();
   if (!acceso) redirect(RUTA_ACCESO);
@@ -75,15 +103,18 @@ export async function marcarLeido(datos: FormData): Promise<void> {
     ya se cumple. Preguntando el rol antes, el cero del `delete` puede
     significar lo único que le queda por significar.
   */
-  if (acceso.rol === "lector") volver("sin-permiso");
+  if (acceso.rol === "lector") volver("sin-permiso", datos);
 
+  // Desmarcar quita la marca de todas las filas con este mismo mensaje: la
+  // marca se hereda por el texto, y dejar una vieja lo dejaría leído.
+  const filas = await filasOVolver(confirmacionId, datos);
   const supabase = await cliente();
 
   const { error, count } = leidoAhora
     ? await supabase
         .from("mensajes_leidos")
         .delete({ count: "exact" })
-        .eq("confirmacion_id", confirmacionId)
+        .in("confirmacion_id", filas)
     : await supabase.from("mensajes_leidos").upsert(
         {
           confirmacion_id: confirmacionId,
@@ -95,15 +126,15 @@ export async function marcarLeido(datos: FormData): Promise<void> {
   if (error) {
     // La confirmación se fue con su invitación mientras la bandeja seguía
     // abierta: no hay nada que marcar, y reintentar no lo va a arreglar.
-    if (error.code === "23503") volver("no-existe");
+    if (error.code === "23503") volver("mensaje-no-existe", datos);
     console.error("No se pudo marcar el mensaje:", error);
-    volver("error");
+    volver("error", datos);
   }
   // Marcar como leído con cero filas sigue siendo «no te dejó»; desmarcar con
   // cero filas es que ya estaba desmarcado, que es exactamente lo que se pedía.
-  if (count === 0 && !leidoAhora) volver("sin-permiso");
+  if (count === 0 && !leidoAhora) volver("sin-permiso", datos);
 
-  volver("marcado");
+  volver("marcado", datos);
 }
 
 /**
@@ -117,18 +148,19 @@ export async function marcarLeido(datos: FormData): Promise<void> {
 export async function destacarMensaje(datos: FormData): Promise<void> {
   const confirmacionId = texto(datos, "confirmacion_id");
   const destacadoAhora = texto(datos, "destacado") === "1";
-  if (!confirmacionId) volver("error");
+  if (!confirmacionId) volver("error", datos);
 
   const acceso = await accesoActual();
   if (!acceso) redirect(RUTA_ACCESO);
-  if (acceso.rol === "lector") volver("sin-permiso");
+  if (acceso.rol === "lector") volver("sin-permiso", datos);
 
+  const filas = await filasOVolver(confirmacionId, datos);
   const supabase = await cliente();
   const { error, count } = destacadoAhora
     ? await supabase
         .from("mensajes_destacados")
         .delete({ count: "exact" })
-        .eq("confirmacion_id", confirmacionId)
+        .in("confirmacion_id", filas)
     : await supabase
         .from("mensajes_destacados")
         .upsert(
@@ -138,13 +170,13 @@ export async function destacarMensaje(datos: FormData): Promise<void> {
 
   if (error) {
     // El mensaje se fue con su invitación mientras la bandeja seguía abierta.
-    if (error.code === "23503") volver("no-existe");
+    if (error.code === "23503") volver("mensaje-no-existe", datos);
     console.error("No se pudo destacar el mensaje:", error);
-    volver("error");
+    volver("error", datos);
   }
-  if (count === 0 && !destacadoAhora) volver("sin-permiso");
+  if (count === 0 && !destacadoAhora) volver("sin-permiso", datos);
 
-  volver(destacadoAhora ? "sin-destacar" : "destacado");
+  volver(destacadoAhora ? "sin-destacar" : "destacado", datos);
 }
 
 /**
@@ -159,7 +191,7 @@ export async function destacarMensaje(datos: FormData): Promise<void> {
 export async function moderarCancion(datos: FormData): Promise<void> {
   const cancionId = texto(datos, "cancion_id");
   const aprobar = texto(datos, "aprobar") === "1";
-  if (!cancionId) volver("error");
+  if (!cancionId) volver("error", datos);
 
   /*
     EL ROL SE MIRA ANTES, por lo mismo que al marcar un mensaje: el cero de
@@ -170,7 +202,7 @@ export async function moderarCancion(datos: FormData): Promise<void> {
   */
   const acceso = await accesoActual();
   if (!acceso) redirect(RUTA_ACCESO);
-  if (acceso.rol === "lector") volver("sin-permiso");
+  if (acceso.rol === "lector") volver("sin-permiso", datos);
 
   const supabase = await cliente();
   const { error, count } = await supabase
@@ -180,13 +212,13 @@ export async function moderarCancion(datos: FormData): Promise<void> {
 
   if (error) {
     console.error("No se pudo moderar la canción:", error);
-    volver("error");
+    volver("error", datos);
   }
-  if (count === 0) volver("no-existe");
+  if (count === 0) volver("no-existe", datos);
 
   // La landing la lee en cada visita, pero se revalida igual por si algún día
   // deja de ser dinámica: el olvido se paga con una canción retirada que sigue
   // viéndose.
   revalidatePath("/");
-  volver(aprobar ? "cancion-mostrada" : "cancion-ocultada");
+  volver(aprobar ? "cancion-mostrada" : "cancion-ocultada", datos);
 }
