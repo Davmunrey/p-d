@@ -515,6 +515,17 @@
       "nuevaAyuda": "El nombre es el que verán al abrir su enlace: «Familia Fernández», «Los del máster».",
       "nombreGrupo": "Nombre de la invitación",
       "lado": "De parte de",
+      "filtrarAcompanantes": "Acompañantes",
+      "acompanantesTodas": "Todas",
+      "acompanantesCon": "Pueden traer acompañante",
+      "acompanantesSin": "Sin acompañante",
+      "ordenar": "Ordenar por",
+      "ordenes": {
+        "nombre": "Nombre",
+        "sinContestar": "Más por contestar",
+        "personas": "Más personas",
+        "envio": "Sin enviar primero"
+      },
       "lados": {
         "novia": "La novia",
         "novio": "El novio",

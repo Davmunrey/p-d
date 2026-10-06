@@ -442,6 +442,76 @@ test.describe("Exportar invitados", () => {
    * 500 al traducir el rótulo. Lo que no es una columna se ignora, y sin
    * ninguna válida se llevan todas: es lo que hace el formulario.
    */
+  /**
+   * BODA-50 · filtrar por lado y por acompañantes, y ordenar. Y la descarga
+   * trae lo mismo y en el mismo orden: el filtro y el orden viajan con ella.
+   */
+  test("filtrar por lado y ordenar por personas, en la lista y en el fichero", async ({
+    page,
+  }) => {
+    await entrar(page);
+    const marca = `${MARCA} orden ${Date.now()}`;
+    const pequena = `${marca} A`;
+    const grande = `${marca} B`;
+    await conBase(async (sql) => {
+      const [a] = await sql<{ id: string }[]>`
+        insert into public.grupos_invitacion (nombre, lado)
+        values (${pequena}, 'novia') returning id
+      `;
+      await sql`insert into public.invitados (grupo_id, nombre) values (${a.id}, '(DES) Sola')`;
+      const [b] = await sql<{ id: string }[]>`
+        insert into public.grupos_invitacion (nombre, lado, maximo_acompanantes)
+        values (${grande}, 'novio', 1) returning id
+      `;
+      for (const nombre of ["(DES) Uno", "(DES) Dos", "(DES) Tres"]) {
+        await sql`insert into public.invitados (grupo_id, nombre) values (${b.id}, ${nombre})`;
+      }
+    });
+
+    const buscar = `buscar=${encodeURIComponent(marca)}`;
+    const enlaces = page.getByRole("link", { name: marca });
+
+    // Por nombre, A va antes; por personas, la grande primero.
+    await page.goto(`${RUTA_INVITADOS}?${buscar}`);
+    await expect(enlaces).toHaveCount(2);
+    await expect(enlaces.first()).toContainText(pequena);
+    await page.goto(`${RUTA_INVITADOS}?${buscar}&orden=personas`);
+    await expect(enlaces.first()).toContainText(grande);
+
+    // Por lado y por acompañantes, cada filtro deja sólo la suya.
+    await page.goto(`${RUTA_INVITADOS}?${buscar}&lado_filtro=novio`);
+    await expect(enlaces).toHaveCount(1);
+    await expect(enlaces).toContainText(grande);
+    await page.goto(`${RUTA_INVITADOS}?${buscar}&acompanantes=sin`);
+    await expect(enlaces).toHaveCount(1);
+    await expect(enlaces).toContainText(pequena);
+
+    // El fichero, con los mismos filtros: sólo la gente del novio.
+    const fichero = await page.request.get(
+      `${RUTA_INVITADOS}/exportar?${buscar}&lado_filtro=novio&orden=personas`,
+    );
+    const filas = (await fichero.text()).trim().split("\r\n");
+    expect(filas).toHaveLength(4);
+    expect(filas.slice(1).join("\n")).not.toContain("(DES) Sola");
+
+    await conBase(
+      (sql) => sql`delete from public.grupos_invitacion where nombre like ${`${marca}%`}`,
+    );
+  });
+
+  /**
+   * CASO DE ERROR · un orden o un lado inventados en la URL no rompen la lista:
+   * caen a los de siempre.
+   */
+  test("un orden inventado en la URL cae al de siempre", async ({ page }) => {
+    await entrar(page);
+    const respuesta = await page.goto(`${RUTA_INVITADOS}?orden=constructor&lado_filtro=suegra`);
+    expect(respuesta?.status()).toBe(200);
+    await expect(page.getByLabel(copy.panel.invitados.ordenar)).toHaveValue("nombre");
+    // «De parte de» también es el rótulo del alta: se busca el del filtro.
+    await expect(page.locator('select[name="lado_filtro"]')).toHaveValue("todos");
+  });
+
   test("una columna inventada en la URL se ignora en vez de romper la descarga", async ({
     page,
   }) => {

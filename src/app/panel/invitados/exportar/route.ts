@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { RUTA_ACCESO, ZONA_HORARIA } from "@/config/constants";
 import { obtenerGruposConGente } from "@/lib/bbdd/invitados";
-import { esEstadoFiltro, filtrarGrupos, type EstadoFiltro } from "@/lib/filtro-invitados";
+import { filtrarGrupos, leerFiltros, ordenarGrupos } from "@/lib/filtro-invitados";
 import { t } from "@/lib/copy";
 import { celda } from "@/lib/csv";
 import { accesoActual } from "@/lib/sesion";
@@ -56,9 +56,7 @@ export async function GET(peticion: NextRequest) {
   if (!acceso) return NextResponse.redirect(new URL(RUTA_ACCESO, peticion.url));
 
   const parametros = peticion.nextUrl.searchParams;
-  const busqueda = parametros.get("buscar") ?? "";
-  const estadoBruto = parametros.get("estado_filtro") ?? "todos";
-  const estado: EstadoFiltro = esEstadoFiltro(estadoBruto) ? estadoBruto : "todos";
+  const filtros = leerFiltros((clave) => parametros.get(clave));
 
   // Sin selección se llevan todas: quien no elige, quiere el listado completo.
   // `Object.hasOwn` y no `in`: `in` mira también la cadena de prototipos, así
@@ -70,7 +68,7 @@ export async function GET(peticion: NextRequest) {
   const columnas = pedidas.length > 0 ? pedidas : TODAS;
 
   const grupos = await obtenerGruposConGente();
-  const visibles = filtrarGrupos(grupos, { busqueda, estado });
+  const visibles = ordenarGrupos(filtrarGrupos(grupos, filtros), filtros.orden);
 
   const filas: string[][] = [columnas.map((columna) => t(COLUMNAS[columna]))];
 

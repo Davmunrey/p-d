@@ -15,7 +15,7 @@ import {
   ZONA_HORARIA,
 } from "@/config/constants";
 import { obtenerGrupos } from "@/lib/bbdd/invitados";
-import { esEstadoFiltro, filtrarGrupos, type EstadoFiltro } from "@/lib/filtro-invitados";
+import { filtrarGrupos, leerFiltros, ordenarGrupos } from "@/lib/filtro-invitados";
 import { t, type ClaveCopy } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 
@@ -75,15 +75,15 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
   if (!acceso) redirect(RUTA_ACCESO);
 
   const consulta = await searchParams;
-  const busqueda = soloTexto(consulta.buscar);
-  const filtroBruto = soloTexto(consulta.estado_filtro);
-  const filtro: EstadoFiltro = esEstadoFiltro(filtroBruto) ? filtroBruto : "todos";
+  // Los MISMOS filtros y el mismo orden que la exportación. Ver
+  // `lib/filtro-invitados.ts`.
+  const filtros = leerFiltros((clave) => soloTexto(consulta[clave]) || null);
+  const { busqueda } = filtros;
 
   const grupos = await obtenerGrupos();
   const puedeEditar = acceso.rol !== "lector";
 
-  // El MISMO filtro que usa la exportación. Ver `lib/filtro-invitados.ts`.
-  const visibles = filtrarGrupos(grupos, { busqueda, estado: filtro });
+  const visibles = ordenarGrupos(filtrarGrupos(grupos, filtros), filtros.orden);
 
   return (
     <>
@@ -118,30 +118,69 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
       {/*
         LA AYUDA DEL BUSCADOR VA DEBAJO DE LA FILA, no del campo: colgada del
         campo lo subía por encima del desplegable y del botón, y la fila salía
-        torcida. Sigue unida al campo por `aria-describedby`.
+        torcida. Sigue unida al campo por `aria-describedby`. Hasta escritorio,
+        donde no hay fila, los desplegables y el botón bajan tras ella para que
+        quede pegada al buscador; y van de dos en dos, que cinco campos uno
+        debajo de otro empujaban la lista una pantalla entera.
       */}
       <form
         method="get"
-        className="mt-bloque grid items-end gap-interno sm:grid-cols-[1fr_auto_auto]"
+        className="mt-bloque grid grid-cols-2 items-end gap-interno lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto]"
       >
         <CampoTexto
           etiqueta={t("panel.invitados.buscar")}
           aria-describedby="ayuda-buscar-invitados"
+          className="col-span-2 lg:col-span-1"
           name="buscar"
           type="search"
           defaultValue={busqueda}
         />
         <CampoSeleccion
           etiqueta={t("panel.invitados.filtrarEstado")}
+          className="max-lg:order-1"
           name="estado_filtro"
-          defaultValue={filtro}
+          defaultValue={filtros.estado}
         >
           <option value="todos">{t("panel.invitados.todos")}</option>
           <option value="sin-contestar">{t("panel.invitados.sinContestar")}</option>
           <option value="contestado">{t("panel.invitados.contestado")}</option>
         </CampoSeleccion>
-        <BotonEnvio jerarquia="secundario">{t("panel.invitados.buscar")}</BotonEnvio>
-        <p id="ayuda-buscar-invitados" className="text-pequeno text-tinta-suave sm:col-span-3">
+        <CampoSeleccion
+          etiqueta={t("panel.invitados.lado")}
+          className="max-lg:order-1"
+          name="lado_filtro"
+          defaultValue={filtros.lado}
+        >
+          <option value="todos">{t("panel.invitados.todos")}</option>
+          <option value="novia">{t("panel.invitados.lados.novia")}</option>
+          <option value="novio">{t("panel.invitados.lados.novio")}</option>
+          <option value="ambos">{t("panel.invitados.lados.ambos")}</option>
+        </CampoSeleccion>
+        <CampoSeleccion
+          etiqueta={t("panel.invitados.filtrarAcompanantes")}
+          className="max-lg:order-1"
+          name="acompanantes"
+          defaultValue={filtros.acompanantes}
+        >
+          <option value="todas">{t("panel.invitados.acompanantesTodas")}</option>
+          <option value="con">{t("panel.invitados.acompanantesCon")}</option>
+          <option value="sin">{t("panel.invitados.acompanantesSin")}</option>
+        </CampoSeleccion>
+        <CampoSeleccion
+          etiqueta={t("panel.invitados.ordenar")}
+          className="max-lg:order-1"
+          name="orden"
+          defaultValue={filtros.orden}
+        >
+          <option value="nombre">{t("panel.invitados.ordenes.nombre")}</option>
+          <option value="sin-contestar">{t("panel.invitados.ordenes.sinContestar")}</option>
+          <option value="personas">{t("panel.invitados.ordenes.personas")}</option>
+          <option value="envio">{t("panel.invitados.ordenes.envio")}</option>
+        </CampoSeleccion>
+        <BotonEnvio jerarquia="secundario" className="col-span-2 max-lg:order-1 lg:col-span-1">
+          {t("panel.invitados.buscar")}
+        </BotonEnvio>
+        <p id="ayuda-buscar-invitados" className="col-span-full text-pequeno text-tinta-suave">
           {t("panel.invitados.buscarAyuda")}
         </p>
       </form>
@@ -194,7 +233,7 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
       {/*
         LA DESCARGA SE LLEVA EL FILTRO PUESTO.
 
-        Los tres valores viajan como campos ocultos, así que el fichero
+        Los filtros y el orden viajan como campos ocultos, así que el fichero
         contiene exactamente las filas que se están viendo. Es un `GET` a una
         ruta y no una acción de servidor porque el resultado es un fichero: hay
         que poner cabeceras para que el navegador lo descargue en vez de
@@ -210,7 +249,10 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
 
           <form method="get" action={`${RUTA_INVITADOS}/exportar`} className="mt-elemento">
             <input type="hidden" name="buscar" value={busqueda} />
-            <input type="hidden" name="estado_filtro" value={filtro} />
+            <input type="hidden" name="estado_filtro" value={filtros.estado} />
+            <input type="hidden" name="lado_filtro" value={filtros.lado} />
+            <input type="hidden" name="acompanantes" value={filtros.acompanantes} />
+            <input type="hidden" name="orden" value={filtros.orden} />
 
             <fieldset className="border-0 p-0">
               <legend className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
