@@ -259,6 +259,18 @@ export const RUTA_CUENTA = "/panel/cuenta";
 export const RUTA_AJUSTES = "/panel/ajustes";
 export const RUTA_INVITADOS = "/panel/invitados";
 export const RUTA_MENSAJES = "/panel/mensajes";
+
+/** La lista de canciones para el DJ, en texto: una por línea. */
+export const RUTA_PLAYLIST_EXPORTAR = "/panel/mensajes/playlist";
+
+/**
+ * Cuántas canciones puede pedir cada grupo. LO IMPONE LA BASE —`sugerir_cancion()`
+ * contesta `CAN03` al llegar aquí— y este número sólo lo enseña el panel junto a
+ * lo que lleva pedido cada grupo. Un test comprueba que los dos dicen lo mismo:
+ * si alguien sube el tope en una migración, el panel no puede seguir diciendo
+ * «10 de 10» a quien todavía puede pedir más.
+ */
+export const TOPE_CANCIONES_POR_GRUPO = 10;
 export const RUTA_MEDIOS = "/panel/medios";
 export const RUTA_PROVEEDORES = "/panel/proveedores";
 

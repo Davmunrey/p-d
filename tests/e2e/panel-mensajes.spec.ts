@@ -7,6 +7,8 @@ import {
   RUTA_INVITADOS,
   RUTA_MENSAJES,
   RUTA_PANEL,
+  RUTA_PLAYLIST_EXPORTAR,
+  TOPE_CANCIONES_POR_GRUPO,
 } from "../../src/config/constants";
 
 /**
@@ -198,6 +200,78 @@ test.describe("Bandeja de mensajes", () => {
 
     await expect(page.getByText(copy.panel.mensajes.errorNoExiste)).toBeVisible();
     await expect(page.getByText(copy.panel.mensajes.errorSinPermiso)).toHaveCount(0);
+  });
+
+  /**
+   * BODA-113 · LA LISTA PARA EL DJ y la cuenta por grupo contra el tope.
+   *
+   * El fichero lleva sólo lo que se ve en la web y en el orden en que llegó:
+   * una canción oculta no puede volver a sonar por la puerta de atrás.
+   */
+  test("la lista para el DJ trae lo que se ve, en orden, y se cuenta cada grupo", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const grupo = `${MARCA} Melómanos ${sello}`;
+    const primera = `${MARCA} Primera ${sello}`;
+    const segunda = `${MARCA} Segunda ${sello}`;
+    const oculta = `${MARCA} Oculta ${sello}`;
+    await conBase(async (sql) => {
+      const [g] = await sql<{ id: string }[]>`
+        insert into public.grupos_invitacion (nombre) values (${grupo}) returning id
+      `;
+      // Diez del mismo grupo: el tope. Las tres que se miran, las primeras.
+      await sql`
+        insert into public.canciones_sugeridas (texto, grupo_id, creado_en, aprobada)
+        values (${primera}, ${g.id}, now() - interval '3 minutes', true),
+               (${segunda}, ${g.id}, now() - interval '2 minutes', true),
+               (${oculta}, ${g.id}, now() - interval '1 minute', false)
+      `;
+      for (let i = 0; i < TOPE_CANCIONES_POR_GRUPO - 3; i += 1) {
+        await sql`
+          insert into public.canciones_sugeridas (texto, grupo_id)
+          values (${`${MARCA} Relleno ${i} ${sello}`}, ${g.id})
+        `;
+      }
+    });
+
+    try {
+      await entrar(page);
+      const fichero = await page.request.get(RUTA_PLAYLIST_EXPORTAR);
+      expect(fichero.status()).toBe(200);
+      expect(fichero.headers()["content-disposition"]).toContain("attachment");
+      const lineas = (await fichero.text()).split("\r\n");
+      expect(lineas).toContain(primera);
+      expect(lineas.indexOf(primera)).toBeLessThan(lineas.indexOf(segunda));
+      expect(lineas).not.toContain(oculta);
+
+      // Y en la pantalla, cuántas lleva el grupo: las diez, ocultas incluidas,
+      // que es como las cuenta la base.
+      await page.goto(RUTA_MENSAJES);
+      await page.getByText(copy.panel.mensajes.porGrupoTitulo).click();
+      const fila = page.locator("details li").filter({ hasText: grupo });
+      await expect(fila).toContainText(
+        copy.panel.mensajes.porGrupoFila
+          .replace("{cuantas}", String(TOPE_CANCIONES_POR_GRUPO))
+          .replace("{tope}", String(TOPE_CANCIONES_POR_GRUPO)),
+      );
+      await expect(fila).toContainText(copy.panel.mensajes.enElTope);
+    } finally {
+      await conBase(async (sql) => {
+        await sql`delete from public.canciones_sugeridas where texto like ${`${MARCA}%${sello}`}`;
+        await sql`delete from public.grupos_invitacion where nombre = ${grupo}`;
+      });
+    }
+  });
+
+  /** CASO DE ERROR · sin sesión, la lista no se descarga. */
+  test("sin sesión, la lista para el DJ no se descarga", async ({ browser }) => {
+    const contexto = await browser.newContext({ locale: "es-ES" });
+    const respuesta = await contexto.request.get(RUTA_PLAYLIST_EXPORTAR, { maxRedirects: 0 });
+    expect(respuesta.status()).toBeGreaterThanOrEqual(300);
+    expect(respuesta.status()).toBeLessThan(400);
+    expect(respuesta.headers()["location"]).toContain(RUTA_ACCESO);
+    await contexto.close();
   });
 
   test("se llega desde el menú del panel", async ({ page }) => {

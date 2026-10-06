@@ -27,6 +27,8 @@ export interface CancionSugerida {
   id: string;
   texto: string;
   pedidaEn: Date;
+  /** Para contar contra el tope por grupo: dos grupos pueden llamarse igual. */
+  grupoId: string | null;
   grupoNombre: string | null;
   /** `false` la retira de la landing. Lo filtra RLS, no el frontend. */
   aprobada: boolean;
@@ -103,7 +105,7 @@ export async function obtenerCancionesTodas(): Promise<CancionSugerida[]> {
 
   const { data, error } = await supabase
     .from("canciones_sugeridas")
-    .select("id, texto, creado_en, aprobada, grupos_invitacion ( nombre )")
+    .select("id, texto, creado_en, aprobada, grupo_id, grupos_invitacion ( nombre )")
     .order("creado_en", { ascending: false });
 
   if (error) throw new Error(`No se pudieron leer las canciones: ${error.message}`);
@@ -114,12 +116,14 @@ export async function obtenerCancionesTodas(): Promise<CancionSugerida[]> {
       texto: string;
       creado_en: string;
       aprobada: boolean;
+      grupo_id: string | null;
       grupos_invitacion: { nombre: string } | null;
     }[]
   ).map((fila) => ({
     id: fila.id,
     texto: fila.texto,
     pedidaEn: new Date(fila.creado_en),
+    grupoId: fila.grupo_id,
     grupoNombre: fila.grupos_invitacion?.nombre ?? null,
     aprobada: fila.aprobada,
   }));
