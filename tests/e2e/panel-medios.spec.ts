@@ -249,7 +249,18 @@ async function formularioDe(pagina: Page, seccion: string) {
     .locator("details")
     .filter({ has: pagina.locator(`input[name="seccion"][value="${seccion}"]`) });
 
-  await bloque.locator("summary").click();
+  /*
+    SE ABRE SÓLO SI ESTÁ CERRADO. Pulsar el `summary` alterna, no abre: tras
+    una subida correcta la prop `open` sigue en `false` y React no toca el DOM,
+    así que el bloque que se abrió para la primera foto puede seguir abierto
+    —depende de si la navegación repinta o conserva el árbol—, y el clic de la
+    segunda lo cerraba. En CI salió como un `fill` esperando a un campo
+    invisible hasta agotar los cuarenta y cinco segundos.
+  */
+  if (!(await bloque.evaluate((detalles) => (detalles as HTMLDetailsElement).open))) {
+    await bloque.locator("summary").click();
+  }
+  await expect(bloque).toHaveAttribute("open", "");
   return bloque.locator("form");
 }
 
