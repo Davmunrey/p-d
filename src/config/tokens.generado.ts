@@ -46,3 +46,156 @@ export const ESCALA_OG = {
   "huecoPie": 36,
   "filete": 2
 } as const;
+
+/**
+ * Los colores de la capa semántica, agrupados por los rótulos de sección de
+ * `semantic.css`. Los enseña `/cocina`, uno por ficha.
+ */
+export const GRUPOS_COLOR = [
+  {
+    "id": "superficies",
+    "tokens": [
+      "fondo",
+      "superficie",
+      "superficie-elevada",
+      "superficie-hundida",
+      "superficie-tenue",
+      "superficie-inversa",
+      "superficie-cabecera"
+    ]
+  },
+  {
+    "id": "texto",
+    "tokens": [
+      "tinta",
+      "tinta-suave",
+      "tinta-tenue",
+      "tinta-inversa",
+      "tinta-sobre-foto",
+      "tinta-sobre-foto-tenue",
+      "tinta-marca",
+      "tinta-sobre-marca",
+      "tinta-sobre-accion",
+      "tinta-sobre-acento"
+    ]
+  },
+  {
+    "id": "marca",
+    "tokens": [
+      "marca",
+      "marca-hover",
+      "marca-activo",
+      "marca-tenue"
+    ]
+  },
+  {
+    "id": "accion",
+    "tokens": [
+      "accion",
+      "accion-hover",
+      "accion-activa"
+    ]
+  },
+  {
+    "id": "acento",
+    "tokens": [
+      "acento",
+      "acento-hover"
+    ]
+  },
+  {
+    "id": "constelaciones",
+    "tokens": [
+      "constelacion-estrella",
+      "constelacion-trazo"
+    ]
+  },
+  {
+    "id": "bordes",
+    "tokens": [
+      "borde",
+      "borde-fuerte",
+      "borde-tenue",
+      "borde-filete",
+      "borde-marca"
+    ]
+  },
+  {
+    "id": "estado",
+    "tokens": [
+      "exito",
+      "exito-fondo",
+      "exito-tinta",
+      "aviso",
+      "aviso-fondo",
+      "nota-fondo",
+      "nota-tinta",
+      "nota-tinta-fuerte",
+      "etiqueta-marca-tinta",
+      "aviso-tinta",
+      "error",
+      "error-fondo",
+      "error-tinta",
+      "serie-previsto",
+      "serie-real",
+      "serie-exceso",
+      "foco",
+      "anillo-campo",
+      "accion-desactivada",
+      "tinta-desactivada"
+    ]
+  },
+  {
+    "id": "superposiciones",
+    "tokens": [
+      "velo",
+      "velo-suave",
+      "velo-fuerte",
+      "velo-foto"
+    ]
+  },
+  {
+    "id": "saveTheDate",
+    "tokens": [
+      "papel-sobre-arriba",
+      "papel-sobre-abajo",
+      "papel-dorso-arriba",
+      "papel-dorso-abajo",
+      "papel-solapa-arriba",
+      "papel-solapa-abajo",
+      "papel-tarjeta-arriba",
+      "papel-tarjeta-abajo",
+      "papel-foto",
+      "hueco-foto-naipe",
+      "borde-sobre",
+      "borde-naipe",
+      "trama-sobre",
+      "brillo-papel",
+      "brillo-papel-final",
+      "tinta-remite",
+      "tinta-pista",
+      "tinta-sello",
+      "sello-brillo",
+      "sello-medio",
+      "sello-fondo",
+      "anillo-sello",
+      "anillo-sello-final",
+      "estrella-clara-1",
+      "estrella-clara-2",
+      "velo-cielo-centro",
+      "velo-cielo-medio",
+      "velo-cielo-borde"
+    ]
+  },
+  {
+    "id": "elPaisaje",
+    "tokens": [
+      "velo-escena-lejos-arriba",
+      "velo-escena-lejos-abajo",
+      "velo-escena-cerca-arriba",
+      "velo-escena-cerca-abajo",
+      "tinta-sobre-foto-fria",
+      "acento-sobre-foto"
+    ]
+  }
+] as const;

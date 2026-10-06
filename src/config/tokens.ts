@@ -9,72 +9,37 @@
  * nunca queda desactualizada.
  */
 
-export interface GrupoTokens {
-  readonly id: string;
-  readonly claveCopy:
-    "grupoSuperficies" | "grupoTinta" | "grupoMarca" | "grupoBordes" | "grupoEstado";
-  readonly tokens: readonly string[];
-}
+/*
+ * Los colores no están aquí: salen del propio `semantic.css`, agrupados por
+ * sus rótulos de sección, en `GRUPOS_COLOR` de `tokens.generado.ts`. Una lista
+ * escrita a mano se quedó corta una vez y nadie lo vio.
+ */
 
-export const GRUPOS_COLOR: readonly GrupoTokens[] = [
-  {
-    id: "superficies",
-    claveCopy: "grupoSuperficies",
-    tokens: [
-      "fondo",
-      "superficie",
-      "superficie-elevada",
-      "superficie-hundida",
-      "superficie-tenue",
-      "superficie-inversa",
-    ],
-  },
-  {
-    id: "tinta",
-    claveCopy: "grupoTinta",
-    tokens: ["tinta", "tinta-suave", "tinta-tenue", "tinta-inversa", "tinta-marca"],
-  },
-  {
-    id: "marca",
-    claveCopy: "grupoMarca",
-    tokens: [
-      "marca",
-      "marca-hover",
-      "marca-activo",
-      "marca-tenue",
-      "accion",
-      "accion-hover",
-      "acento",
-      "acento-hover",
-    ],
-  },
-  {
-    id: "bordes",
-    claveCopy: "grupoBordes",
-    tokens: ["borde", "borde-fuerte", "borde-tenue", "borde-marca"],
-  },
-  {
-    id: "estado",
-    claveCopy: "grupoEstado",
-    tokens: ["exito", "aviso", "error", "foco"],
-  },
-] as const;
-
-export const TOKENS_TIPOGRAFIA: readonly string[] = [
+/**
+ * La escala tipográfica, en el orden del catálogo. Cada nombre tiene en
+ * `/cocina` su muestra pintada con el componente que lo usa de verdad, y el
+ * tipo obliga: un token nuevo sin muestra no compila.
+ */
+export const TOKENS_TIPOGRAFIA = [
   "texto-display",
   "texto-titulo-1",
   "texto-titulo-2",
   "texto-titulo-3",
   "texto-cita",
+  "texto-conector",
+  "texto-cifra",
   "texto-cuerpo-grande",
   "texto-cuerpo",
   "texto-etiqueta",
   "texto-pequeno",
+  "texto-diminuto",
   "texto-boton",
   "texto-hito",
   "texto-hora",
   "texto-dato",
 ] as const;
+
+export type TokenTipografia = (typeof TOKENS_TIPOGRAFIA)[number];
 
 export const TOKENS_ESPACIADO: readonly string[] = [
   "espacio-linea",
@@ -102,9 +67,27 @@ export const TOKENS_SOMBRA: readonly string[] = [
   "sombra-modal",
 ] as const;
 
-export const ANIMACIONES: readonly string[] = [
-  "animacion-aparecer",
-  "animacion-subir",
-  "animacion-bajar",
-  "animacion-acercar",
+/**
+ * LAS TABLAS DE MOVIMIENTO DEL CATÁLOGO, con los tokens que de verdad mueven la
+ * web. Las duraciones y las curvas salen de las transiciones semánticas —que
+ * son duración y curva juntas—, de la más corta a la más larga.
+ */
+export const TOKENS_DURACION = [
+  "transicion-color",
+  "transicion-transformacion",
+  "transicion-muelle",
+  "transicion-aparicion",
+  "transicion-fundido-portada",
+  "transicion-cinematica",
+  "transicion-escena",
+] as const;
+
+/** Las dos curvas del sistema: la de todo lo que entra y la del muelle. */
+export const TOKENS_CURVA = ["transicion-aparicion", "transicion-muelle"] as const;
+
+/** Cuánto recorre lo que entra: la distancia, y las dos escalas de partida. */
+export const TOKENS_RECORRIDO = [
+  { token: "recorrido-reveal", como: "longitud" },
+  { token: "escala-reveal", como: "numero" },
+  { token: "escala-pop", como: "numero" },
 ] as const;

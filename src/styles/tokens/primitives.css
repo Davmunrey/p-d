@@ -456,6 +456,11 @@
   --size-columna-token: 16rem;
   --size-barra-muestra: 1rem;
 
+  /* Lo mínimo que mide una ficha del catálogo —un color, una constelación—
+     antes de que la rejilla pase a una columna menos: lo que mide en la
+     entrega. */
+  --size-ficha-catalogo: 8.125rem;
+
   /**
    * El hueco de una constelación cuando acompaña a un texto. Es cuadrado: el
    * lienzo del mapa lo es, y darle otra proporción deformaría el cielo.

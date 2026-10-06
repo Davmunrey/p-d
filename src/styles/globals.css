@@ -519,6 +519,16 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-consejo-minimo)), 1fr));
 }
 
+/**
+ * Las fichas de `/cocina` —un color, una constelación—: tantas por fila como
+ * quepan a su ancho mínimo. `auto-fill` y no `auto-fit`, para que un grupo de
+ * dos colores no estire sus fichas al ancho de la página.
+ */
+@utility rejilla-fichas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--ancho-ficha-catalogo)), 1fr));
+}
+
 /** La tira de fotos: tantos huecos 4/3 por fila como quepan a 260 px. */
 @utility rejilla-tira {
   display: grid;

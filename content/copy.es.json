@@ -237,21 +237,62 @@
     "lugarYCiudad": "{lugar}, {ciudad}"
   },
   "cocina": {
-    "titulo": "Sistema de diseño",
-    "descripcion": "Todos los tokens del proyecto, en un solo sitio. Si un valor no aparece aquí, no debería existir en el código.",
+    "titulo": "Sistema de marca",
+    "descripcion": "Identidad, tokens, movimiento y componentes de la boda, leídos en vivo de la propia web. Si un valor no aparece aquí, no debería existir en ninguna pieza.",
+    "principios": {
+      "sobrio": {
+        "titulo": "Sobrio",
+        "texto": "Dos tintas, dos tipografías, mucho aire. Si dudamos, quitamos."
+      },
+      "calido": {
+        "titulo": "Cálido",
+        "texto": "La caligrafía y el bronce son el guiño; aparecen poco y por eso funcionan."
+      },
+      "util": {
+        "titulo": "Útil",
+        "texto": "Primero la información que un invitado necesita; después, la belleza."
+      }
+    },
+    "navegacion": "Secciones del sistema de marca",
     "seccionColor": "Color",
     "seccionTipografia": "Tipografía",
     "seccionEspaciado": "Espaciado",
     "seccionForma": "Forma y sombra",
     "seccionMovimiento": "Movimiento",
     "seccionComponentes": "Componentes",
-    "grupoSuperficies": "Superficies",
-    "grupoTinta": "Texto",
-    "grupoMarca": "Marca, acción y acento",
-    "grupoBordes": "Bordes",
-    "grupoEstado": "Estado",
-    "avisoMovimiento": "Con «movimiento reducido» activado en el sistema, estas animaciones se reducen a una aparición corta.",
+    "gruposColor": {
+      "superficies": "Superficies",
+      "texto": "Texto",
+      "marca": "Marca",
+      "accion": "Acción",
+      "acento": "Acento",
+      "constelaciones": "Estrellas y trazo de las constelaciones",
+      "bordes": "Bordes",
+      "estado": "Estado, avisos y gráficas",
+      "superposiciones": "Velos",
+      "saveTheDate": "Save the Date: sobre, sello y naipes",
+      "elPaisaje": "El paisaje"
+    },
     "muestraTipografica": "Nos casamos",
+    "muestraFamilia": "Aa",
+    "muestraConector": "y",
+    "muestraCifra": "26",
+    "muestraHora": "12:30",
+    "cursiva": "cursiva",
+    "familias": {
+      "titulo": {
+        "nombre": "Cormorant Infant",
+        "uso": "Titulares, nombres, cifras grandes y cursivas de enlace. Pesos 300 y 400; cursiva 300."
+      },
+      "cuerpo": {
+        "nombre": "Jost",
+        "uso": "Cuerpo, versalitas, botones y formularios. Pesos 300, 400 y 500."
+      },
+      "conector": {
+        "nombre": "Italianno",
+        "uso": "Sólo para el conector «y» y el ampersand del monograma. Nunca en frases ni en mayúsculas."
+      }
+    },
     "botonPrimario": "Primario",
     "botonSecundario": "Secundario",
     "botonTerciario": "Terciario",
@@ -314,7 +355,34 @@
     "hemisferioNorte": "Hemisferio norte",
     "hemisferioNorteNota": "El cielo que habrá sobre la finca esa noche.",
     "hemisferioSur": "Hemisferio sur",
-    "hemisferioSurNota": "El del viaje de novios, al otro lado del ecuador."
+    "hemisferioSurNota": "El del viaje de novios, al otro lado del ecuador.",
+    "movimiento": {
+      "entradilla": "Todo entra desde abajo y nada rebota salvo lo pequeño. La web se lee mientras se mueve: si una animación obliga a esperar, sobra.",
+      "duraciones": "Duraciones",
+      "curvas": "Curvas",
+      "recorridos": "Recorridos",
+      "accesibilidad": "Accesibilidad",
+      "accesibilidadTexto": "Con «reducir movimiento» activado en el sistema no hay desplazamientos, ni bucles, ni retardos: todo aparece a la vez con un fundido mínimo. Ninguna información depende del movimiento.",
+      "notaMuelle": "El muelle, sólo en sellos, tarjetas y etiquetas.",
+      "usos": {
+        "transicion-color": "Color y foco, al pasar",
+        "transicion-transformacion": "Una tarjeta que se levanta",
+        "transicion-muelle": "El sello que salta",
+        "transicion-aparicion": "Entrada de un bloque",
+        "transicion-fundido-portada": "Fundido de la portada",
+        "transicion-cinematica": "Un titular que sube",
+        "transicion-escena": "Acercamiento de una escena"
+      },
+      "curvasUsos": {
+        "transicion-aparicion": "Salida",
+        "transicion-muelle": "Muelle"
+      },
+      "recorridosUsos": {
+        "recorrido-reveal": "Desplazamiento al entrar",
+        "escala-reveal": "Escala de partida",
+        "escala-pop": "Escala de partida del sello"
+      }
+    }
   },
   "acceso": {
     "titulo": "Entrar",

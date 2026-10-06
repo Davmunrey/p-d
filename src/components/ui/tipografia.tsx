@@ -257,10 +257,13 @@ export function Etiqueta({
 /**
  * Cursiva serif: las frases que respiran, nunca para información esencial.
  *
- * Va en el acento, como manda la escala tipográfica de la entrega
- * (`--texto-cita · color acento`). Es de los pocos sitios donde el bronce
- * aparece, y por eso la cita se lee como una voz distinta y no como un párrafo
- * más en cursiva.
+ * Va en el acento y en el peso ligero, como manda la escala tipográfica de la
+ * entrega (`--texto-cita · Cormorant Infant italic 300 · color acento`). Es de
+ * los pocos sitios donde el bronce aparece, y por eso la cita se lee como una
+ * voz distinta y no como un párrafo más en cursiva.
+ *
+ * El peso va escrito porque un `<p>` hereda el del cuerpo (400), y la cursiva
+ * salía un punto más gruesa que la del catálogo sin que nadie lo hubiera pedido.
  */
 export function Cita({
   children,
@@ -270,7 +273,9 @@ export function Cita({
   className?: string;
 }) {
   return (
-    <p className={`font-titulo text-cita italic leading-cita text-acento ${className}`}>
+    <p
+      className={`font-titulo peso-titulo text-cita italic leading-cita text-acento ${className}`}
+    >
       {children}
     </p>
   );

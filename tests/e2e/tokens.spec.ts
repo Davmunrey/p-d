@@ -1,6 +1,7 @@
 import { expect, test } from "./utiles/origen-propio";
 
 import copy from "../../content/copy.es.json";
+import { GRUPOS_COLOR } from "../../src/config/tokens.generado";
 
 /**
  * BODA-02 · Sistema de design tokens
@@ -59,14 +60,12 @@ test.describe("Sistema de diseño", () => {
   });
 
   test("se muestran todos los grupos de tokens de color", async ({ page }) => {
-    for (const grupo of [
-      copy.cocina.grupoSuperficies,
-      copy.cocina.grupoTinta,
-      copy.cocina.grupoMarca,
-      copy.cocina.grupoBordes,
-      copy.cocina.grupoEstado,
-    ]) {
-      await expect(page.getByRole("heading", { name: grupo })).toBeVisible();
+    // Los grupos son los rótulos de sección de `semantic.css`, leídos por el
+    // generador: cada uno tiene que salir con su nombre del copy.
+    for (const grupo of GRUPOS_COLOR) {
+      await expect(
+        page.getByRole("heading", { name: copy.cocina.gruposColor[grupo.id], exact: true }),
+      ).toBeVisible();
     }
   });
 });

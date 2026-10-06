@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { PALETAS } from "@/config/tokens.generado";
+import copy from "@/../content/copy.es.json";
+import { GRUPOS_COLOR, PALETAS } from "@/config/tokens.generado";
 
 /**
  * BODA-32 · Los tokens generados no pueden quedarse atrás
@@ -73,5 +74,35 @@ describe("tokens.generado.ts", () => {
     );
 
     expect((claro + 0.05) / (oscuro + 0.05)).toBeGreaterThanOrEqual(3);
+  });
+
+  /**
+   * BODA-124 · El catálogo de `/cocina` enseña un color por ficha, y los saca
+   * de aquí. Se cuentan los colores del `:root` por otro camino —sin rótulos,
+   * sólo las declaraciones— y tienen que estar todos, una vez cada uno.
+   */
+  it("GRUPOS_COLOR tiene todos los colores de la capa semántica, una vez cada uno", () => {
+    const css = readFileSync(
+      join(RAIZ, "src", "styles", "tokens", "semantic.css"),
+      "utf8",
+    ).replace(/\/\*[\s\S]*?\*\//g, "");
+    const inicio = css.indexOf(":root");
+    const raiz = css.slice(inicio, css.indexOf("}", inicio));
+    const enElCss = [...raiz.matchAll(/--([\w-]+)\s*:\s*var\(--color-[\w-]+\)/g)].map(
+      ([, token]) => token,
+    );
+    const enLosGrupos = GRUPOS_COLOR.flatMap((grupo) => [...grupo.tokens]);
+
+    expect(enLosGrupos.length).toBe(new Set(enLosGrupos).size);
+    expect([...enLosGrupos].sort()).toEqual([...enElCss].sort());
+  });
+
+  it("cada grupo de color tiene su nombre en el copy", () => {
+    for (const grupo of GRUPOS_COLOR) {
+      expect(
+        copy.cocina.gruposColor[grupo.id],
+        `falta cocina.gruposColor.${grupo.id}`,
+      ).toBeTruthy();
+    }
   });
 });

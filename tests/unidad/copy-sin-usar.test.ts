@@ -70,8 +70,8 @@ const PREFIJOS_AL_VUELO = [
  * golpe (`cocina.pruebaMovimiento` estaba muerta y en verde). Para esos, la
  * hoja tiene que aparecer escrita en el código: `"grupoSuperficies"`.
  */
-function cubiertaPorPrefijo(ruta: string): boolean {
-  return PREFIJOS_AL_VUELO.some((prefijo) => {
+function cubiertaPorPrefijo(ruta: string, prefijos: readonly string[]): boolean {
+  return prefijos.some((prefijo) => {
     if (!ruta.startsWith(prefijo)) return false;
     const niveles = prefijo.split(".").filter(Boolean).length;
     if (niveles >= 2) return true;
@@ -80,11 +80,11 @@ function cubiertaPorPrefijo(ruta: string): boolean {
   });
 }
 
-function usada(ruta: string): boolean {
+function usada(ruta: string, prefijos: readonly string[] = PREFIJOS_AL_VUELO): boolean {
   for (const comilla of ['"', "'", "`"]) {
     if (FUENTE.includes(`${comilla}${ruta}${comilla}`)) return true;
   }
-  return cubiertaPorPrefijo(ruta);
+  return cubiertaPorPrefijo(ruta, prefijos);
 }
 
 describe("las claves de copy", () => {
@@ -114,9 +114,15 @@ describe("las claves de copy", () => {
   });
 
   it("y una huérfana debajo de un prefijo de primer nivel", () => {
-    // `cocina.` sale del código como prefijo al vuelo; una clave inventada
-    // debajo tiene que seguir saliendo como huérfana.
-    expect(PREFIJOS_AL_VUELO).toContain("cocina.");
-    expect(usada(["cocina", "claveQueNadieEscribe"].join("."))).toBe(false);
+    /*
+      Hoy ningún código compone una clave desde un bloque entero —`/cocina` lo
+      hacía hasta BODA-124—, así que el prefijo se pone a mano: lo que se prueba
+      es la regla, y tiene que seguir valiendo el día que vuelva a aparecer uno.
+      Una clave inventada debajo de `cocina.` sale como huérfana; una real cuya
+      hoja está escrita en el código, no.
+    */
+    const conPrimerNivel = [...PREFIJOS_AL_VUELO, "cocina."];
+    expect(usada(["cocina", "claveQueNadieEscribe"].join("."), conPrimerNivel)).toBe(false);
+    expect(usada(["cocina", "titulo"].join("."), conPrimerNivel)).toBe(true);
   });
 });

@@ -79,12 +79,65 @@ function bloqueDe(css, selector) {
   return css.slice(abre + 1, cierra);
 }
 
+/**
+ * LOS GRUPOS DE COLOR DE `/cocina`, LEÍDOS DEL CSS Y NO ESCRITOS A MANO.
+ *
+ * El catálogo llevaba su propia lista de colores y se quedó corto sin que nadie
+ * lo viera: enseñaba 27 de los 47 de la capa semántica. Una página que dice «si
+ * un valor no aparece aquí, no debería existir» no puede depender de que alguien
+ * se acuerde de copiar un nombre.
+ *
+ * Así que los grupos salen de los rótulos de sección que `semantic.css` ya
+ * lleva (`/* --- Superficies --- *\/`) y entra en cada uno todo token del `:root`
+ * que apunte a un primitivo de color. El rótulo da el `id`; el nombre que se lee
+ * vive en el copy (`cocina.gruposColor.<id>`), y si falta, el typecheck lo dice.
+ */
+const MARCA_GRUPO = "@@grupo:";
+
+function idDeGrupo(rotulo) {
+  return rotulo
+    .split(/[(:]/)[0]
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .map((palabra, i) => (i === 0 ? palabra : palabra[0].toUpperCase() + palabra.slice(1)))
+    .join("");
+}
+
+function gruposDeColor(cssConComentarios) {
+  const marcado = cssConComentarios.replace(
+    /\/\*\s*---\s*([^*]+?)\s*-{3,}\s*\*\//g,
+    (_, rotulo) => `${MARCA_GRUPO}${idDeGrupo(rotulo)};`,
+  );
+  const raiz = bloqueDe(sinComentarios(marcado), ":root");
+
+  const grupos = [];
+  for (const linea of raiz.split(";").map((trozo) => trozo.trim())) {
+    if (linea.startsWith(MARCA_GRUPO)) {
+      grupos.push({ id: linea.slice(MARCA_GRUPO.length), tokens: [] });
+      continue;
+    }
+    const declaracion = linea.match(/^--([\w-]+)\s*:\s*var\(--color-[\w-]+\)$/);
+    if (!declaracion) continue;
+    const grupo = grupos.at(-1);
+    if (!grupo) {
+      throw new Error(`--${declaracion[1]} es un color sin rótulo de sección encima.`);
+    }
+    grupo.tokens.push(declaracion[1]);
+  }
+  return grupos.filter((grupo) => grupo.tokens.length > 0);
+}
+
 const primitivos = declaracionesDe(
   sinComentarios(readFileSync(join(RAIZ, "src/styles/tokens/primitives.css"), "utf8")),
 );
-const semanticoCss = sinComentarios(
-  readFileSync(join(RAIZ, "src/styles/tokens/semantic.css"), "utf8"),
+const semanticoConComentarios = readFileSync(
+  join(RAIZ, "src/styles/tokens/semantic.css"),
+  "utf8",
 );
+const semanticoCss = sinComentarios(semanticoConComentarios);
 
 const claro = declaracionesDe(bloqueDe(semanticoCss, ":root"));
 
@@ -142,6 +195,12 @@ export const PALETAS = ${JSON.stringify(paletas, null, 2)} as const;
 export type Paleta = keyof typeof PALETAS;
 
 export const ESCALA_OG = ${JSON.stringify(escalaOg, null, 2)} as const;
+
+/**
+ * Los colores de la capa semántica, agrupados por los rótulos de sección de
+ * \`semantic.css\`. Los enseña \`/cocina\`, uno por ficha.
+ */
+export const GRUPOS_COLOR = ${JSON.stringify(gruposDeColor(semanticoConComentarios), null, 2)} as const;
 `;
 
 writeFileSync(SALIDA, contenido, "utf8");
