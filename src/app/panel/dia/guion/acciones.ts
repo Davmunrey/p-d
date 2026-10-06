@@ -2,13 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import {
-  LARGOS_DE_CAMPO,
-  ORDEN_AL_FINAL,
-  ORDEN_MAXIMO,
-  RUTA_ACCESO,
-  RUTA_GUION_DIA,
-} from "@/config/constants";
+import { LARGOS_DE_CAMPO, ORDEN_MAXIMO, RUTA_ACCESO, RUTA_GUION_DIA } from "@/config/constants";
 import { esIdentificador } from "@/lib/identificador";
 import { accesoActual } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
@@ -64,7 +58,8 @@ interface ValoresPunto {
   titulo: string;
   responsable: string | null;
   notas: string | null;
-  orden: number;
+  /** `null` es «al final»: lo resuelve `alFinal()` al escribir. */
+  orden: number | null;
 }
 
 /**
@@ -75,6 +70,8 @@ interface ValoresPunto {
  *
  * EL ORDEN VACÍO ES «AL FINAL». La pantalla lo propone relleno con el siguiente
  * número; quien lo borra está diciendo que le da igual dónde, no que es cero.
+ * Se devuelve `null` y lo resuelve `alFinal()` contra la base: un 99 fijo caía
+ * entre el 90 y el 100 de un guion numerado de diez en diez, a media tarde.
  */
 function camposPunto(
   datos: FormData,
@@ -98,12 +95,23 @@ function camposPunto(
   }
 
   const ordenEscrito = texto(datos, "orden");
-  const orden = ordenEscrito ? Number(ordenEscrito) : ORDEN_AL_FINAL;
-  if (!Number.isInteger(orden) || orden < 0 || orden > ORDEN_MAXIMO) {
+  const orden = ordenEscrito ? Number(ordenEscrito) : null;
+  if (orden !== null && (!Number.isInteger(orden) || orden < 0 || orden > ORDEN_MAXIMO)) {
     return { ok: false, estado: "orden" };
   }
 
   return { ok: true, valores: { hora, titulo, responsable, notas, orden } };
+}
+
+/** El orden de «al final»: uno más que el último del guion, sin pasar del tope. */
+async function alFinal(supabase: Awaited<ReturnType<typeof cliente>>): Promise<number> {
+  const { data } = await supabase
+    .from("guion_dia")
+    .select("orden")
+    .order("orden", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ orden: number }>();
+  return Math.min((data?.orden ?? -1) + 1, ORDEN_MAXIMO);
 }
 
 export async function crearPunto(datos: FormData): Promise<void> {
@@ -111,7 +119,11 @@ export async function crearPunto(datos: FormData): Promise<void> {
   if (!campos.ok) volver(campos.estado);
 
   const supabase = await cliente();
-  const { data, error } = await supabase.from("guion_dia").insert(campos.valores).select("id");
+  const orden = campos.valores.orden ?? (await alFinal(supabase));
+  const { data, error } = await supabase
+    .from("guion_dia")
+    .insert({ ...campos.valores, orden })
+    .select("id");
 
   if (error) volver(motivo(error));
   if (!data?.length) volver("sin-permiso");
@@ -132,9 +144,10 @@ export async function editarPunto(datos: FormData): Promise<void> {
     deshace: la marca dice cuándo pasó, y eso no cambia por arreglar un typo.
   */
   const supabase = await cliente();
+  const orden = campos.valores.orden ?? (await alFinal(supabase));
   const { data, error } = await supabase
     .from("guion_dia")
-    .update(campos.valores)
+    .update({ ...campos.valores, orden })
     .eq("id", id)
     .select("id");
 

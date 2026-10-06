@@ -3,6 +3,8 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import {
+  AJUSTE_MAXIMO_RECUENTO,
+  CLAVE_ALMACEN_DIA,
   RUTA_ACCESO,
   RUTA_AGENDA_DIA,
   RUTA_BUSCAR_DIA,
@@ -506,10 +508,6 @@ test.describe("El día de la boda", () => {
   });
 
   /**
-   * CAMINO FELIZ · #68 — los teléfonos son enlaces `tel:` con el número de la
-   * base. CASO DE ERROR · un proveedor descartado no aparece.
-   */
-  /**
    * CASO DE ERROR · Deshacer con la marca anterior todavía en vuelo.
    *
    * Conexión lenta: se marca, y antes de que conteste el servidor se deshace.
@@ -580,6 +578,10 @@ test.describe("El día de la boda", () => {
     await expect(page.locator("[data-sin-mandar]")).toBeHidden();
   });
 
+  /**
+   * CAMINO FELIZ · #68 — los teléfonos son enlaces `tel:` con el número de la
+   * base. CASO DE ERROR · un proveedor descartado no aparece.
+   */
   test("la agenda enseña a los contratados con enlace de llamada y esconde a los descartados", async ({
     page,
   }) => {
@@ -596,7 +598,15 @@ test.describe("El día de la boda", () => {
       el «+» y las cifras: es la conversión que hace `paraLlamar`, y es lo que
       decide si al pulsar se llama o no se llama.
     */
-    const llamar = page.getByRole("link", {
+    /*
+      SE BUSCA DENTRO DE SU FICHA. Otro proveedor puede tener también una
+      «Rocío» —en los datos de demostración la hay—, y el enlace que importa es
+      el de este.
+    */
+    const ficha = page.locator("article", {
+      has: page.getByRole("heading", { name: sembrado.contratado }),
+    });
+    const llamar = ficha.getByRole("link", {
       name: copy.panel.dia.agenda.llamarA.replace("{nombre}", "Rocío"),
     });
     await expect(llamar).toHaveAttribute(
@@ -622,7 +632,18 @@ test.describe("El día de la boda", () => {
     );
 
     // El contacto del día va marcado: es a quien hay que llamar.
-    await expect(page.getByText(copy.panel.dia.agenda.contactoDelDia)).toBeVisible();
+    await expect(ficha.getByText(copy.panel.dia.agenda.contactoDelDia)).toBeVisible();
+
+    /*
+      Y VA EL PRIMERO, por delante del teléfono de la ficha. Con prisa se pulsa
+      el primer número, y ese tiene que ser el de quien está allí, no el de la
+      oficina.
+    */
+    await expect(ficha.locator('a[href^="tel:"]').first()).toHaveAttribute(
+      "href",
+      `tel:${sembrado.telefonoDelDia.replace(/[^\d+]/g, "")}`,
+    );
+    await expect(ficha.locator('a[href^="tel:"]')).toHaveCount(2);
 
     // CASO DE ERROR: el descartado no está por ninguna parte.
     await expect(page.getByText(sembrado.descartado)).toHaveCount(0);
@@ -889,7 +910,14 @@ test.describe("El día de la boda", () => {
     await page.getByRole("button", { name: copy.panel.dia.recuento.guardar }).click();
     await esperarEstado(page, "ajuste-invalido");
 
-    await expect(page.getByText(copy.panel.dia.avisos.ajusteInvalido)).toBeVisible();
+    await expect(
+      page.getByText(
+        copy.panel.dia.avisos.ajusteInvalido.replaceAll(
+          "{maximo}",
+          String(AJUSTE_MAXIMO_RECUENTO),
+        ),
+      ),
+    ).toBeVisible();
   });
 
   /**
@@ -1001,5 +1029,329 @@ test.describe("El día de la boda", () => {
     const fichaCallada = page.locator("article").filter({ hasText: callada.apellidos });
     await expect(fichaCallada).toContainText(copy.panel.dia.buscar.sinConfirmar);
     await expect(fichaCallada).not.toContainText(copy.panel.dia.buscar.noViene);
+  });
+  /** Lo que la base tiene apuntado como hecho para un punto del guion. */
+  const hechoEnDe = (titulo: string) =>
+    conBase(
+      async (sql) =>
+        (
+          await sql<{ hecho_en: string | null }[]>`
+            select hecho_en from public.guion_dia where titulo = ${titulo}
+          `
+        )[0]?.hecho_en ?? null,
+    );
+
+  /**
+   * CAMINO FELIZ · Lo marcado sin cobertura en otra visita se manda al abrir.
+   *
+   * El móvil se bloquea en el aparcamiento con una marca sin mandar y se abre
+   * otra vez en la finca, con red. El navegador no dispara `online` —para él
+   * nunca dejó de haberla—, y la cola sólo se mandaba con ese evento: la marca
+   * se quedaba en el móvil hasta que alguien tocaba otro punto.
+   *
+   * CASO DE ERROR · en la misma cola va un punto que ya no existe: se dice, se
+   * suelta y no se queda «sin mandar» para siempre.
+   */
+  test("lo que quedó sin mandar se manda al abrir la pantalla, sin esperar a la red", async ({
+    page,
+  }) => {
+    const sembrado = await sembrar(Date.now() + 11);
+    const id = await conBase(
+      async (sql) =>
+        (
+          await sql<{ id: string }[]>`
+            select id from public.guion_dia where titulo = ${sembrado.segundoPunto}
+          `
+        )[0].id,
+    );
+    const quitado = "00000000-0000-4000-8000-000000000000";
+
+    await entrar(page);
+    // Lo que dejó la visita anterior, tal cual lo guarda la pantalla.
+    await page.evaluate(([clave, cola]) => window.localStorage.setItem(clave, cola), [
+      CLAVE_ALMACEN_DIA,
+      JSON.stringify({ [id]: new Date().toISOString(), [quitado]: new Date().toISOString() }),
+    ] as const);
+    await page.goto(RUTA_DIA);
+
+    const punto = page.locator("li").filter({ hasText: sembrado.segundoPunto });
+    await expect(punto).toHaveAttribute("data-hecho", "si");
+    await expect
+      .poll(() => hechoEnDe(sembrado.segundoPunto), { timeout: 20_000 })
+      .not.toBeNull();
+
+    await expect(page.getByText(copy.panel.dia.guion.noExiste)).toBeVisible();
+    await expect(page.locator("[data-sin-mandar]")).toBeHidden();
+    await expect
+      .poll(() =>
+        page.evaluate((clave) => window.localStorage.getItem(clave), CLAVE_ALMACEN_DIA),
+      )
+      .toBe("{}");
+  });
+
+  /**
+   * CAMINO FELIZ · Volver atrás desde «Teléfonos» no deshace lo marcado.
+   *
+   * El navegador vuelve con la página que tenía guardada, de antes de marcar.
+   * Lo aceptado vivía en el componente y se perdía al desmontarlo: el punto
+   * salía sin hacer aunque en la base estaba hecho.
+   */
+  test("volver atrás desde la agenda no deshace lo marcado", async ({ page }) => {
+    const sembrado = await sembrar(Date.now() + 12);
+
+    await entrar(page);
+    await page.goto(RUTA_DIA);
+    await page.waitForLoadState("networkidle");
+
+    const punto = page.locator("li").filter({ hasText: sembrado.primerPunto });
+    await punto
+      .getByRole("button", {
+        name: copy.panel.dia.guion.marcarEste.replace("{titulo}", sembrado.primerPunto),
+      })
+      .click();
+    await expect
+      .poll(() => hechoEnDe(sembrado.primerPunto), { timeout: 20_000 })
+      .not.toBeNull();
+    // Hasta que la cola no está vacía, la marca sigue pintándose desde ella.
+    await expect
+      .poll(() =>
+        page.evaluate((clave) => window.localStorage.getItem(clave), CLAVE_ALMACEN_DIA),
+      )
+      .toBe("{}");
+
+    await page.getByRole("link", { name: copy.panel.dia.atajos.agenda }).click();
+    await expect(page).toHaveURL(new RegExp(RUTA_AGENDA_DIA));
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`${RUTA_DIA}$`));
+
+    await expect(page.locator("li").filter({ hasText: sembrado.primerPunto })).toHaveAttribute(
+      "data-hecho",
+      "si",
+    );
+  });
+
+  /**
+   * CASO DE ERROR · Con buena red pero un servidor lento, no se grita «sin
+   * conexión». El aviso amarillo salía en cada toque mientras la petición iba
+   * de camino, e invitaba a pulsar «Mandar ahora» y duplicarla.
+   */
+  test("mientras se guarda con red no dice que no hay conexión", async ({ page }) => {
+    const sembrado = await sembrar(Date.now() + 13);
+
+    await entrar(page);
+    await page.goto(RUTA_DIA);
+    await page.waitForLoadState("networkidle");
+
+    await page.route(`**${RUTA_DIA}**`, async (ruta) => {
+      if (ruta.request().method() !== "POST") return ruta.continue();
+      await new Promise((listo) => setTimeout(listo, 2_000));
+      return ruta.continue();
+    });
+
+    const punto = page.locator("li").filter({ hasText: sembrado.segundoPunto });
+    await punto
+      .getByRole("button", {
+        name: copy.panel.dia.guion.marcarEste.replace("{titulo}", sembrado.segundoPunto),
+      })
+      .click();
+
+    await expect(punto).toHaveAttribute("data-hecho", "si");
+    await expect(page.getByText(copy.panel.dia.guion.guardando)).toBeVisible();
+    await expect(page.locator("[data-sin-mandar]")).toHaveCount(0);
+
+    await expect
+      .poll(() => hechoEnDe(sembrado.segundoPunto), { timeout: 20_000 })
+      .not.toBeNull();
+    await expect(page.getByText(copy.panel.dia.guion.guardando)).toBeHidden();
+    await page.unroute(`**${RUTA_DIA}**`);
+  });
+
+  /**
+   * CAMINO FELIZ · Un punto sin orden va al final del guion de verdad.
+   *
+   * Vacío era un 99 fijo, y en un guion numerado de diez en diez el punto nuevo
+   * caía entre el 90 y el 100: a media tarde. CASO DE ERROR · un orden negativo
+   * no se guarda.
+   */
+  test("un punto sin orden va detrás del último, y uno negativo no entra", async ({ page }) => {
+    const sembrado = await sembrar(Date.now() + 14);
+    const titulo = `${MARCA} Al final ${sembrado.sello}`;
+    const escribir = copy.panel.dia.escribir;
+
+    await entrar(page);
+    await page.goto(RUTA_GUION_DIA);
+
+    const alta = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: escribir.nuevoTitulo }) });
+    await alta.getByLabel(escribir.campoHora, { exact: true }).fill("de madrugada");
+    await alta.getByLabel(escribir.campoTitulo, { exact: true }).fill(titulo);
+    await alta.getByLabel(escribir.campoOrden, { exact: true }).fill("");
+    await alta.getByRole("button", { name: escribir.anadir }).click();
+    await esperarEstado(page, "creado");
+
+    const { orden, maximo } = await conBase(async (sql) => {
+      const [suyo] = await sql<{ orden: number }[]>`
+        select orden from public.guion_dia where titulo = ${titulo}
+      `;
+      const [otros] = await sql<{ maximo: number }[]>`
+        select max(orden) as maximo from public.guion_dia where titulo <> ${titulo}
+      `;
+      return { orden: suyo.orden, maximo: otros.maximo };
+    });
+    expect(orden, "vacío es «detrás del último», no un número fijo").toBe(maximo + 1);
+
+    /*
+      CASO DE ERROR: el servidor no se cree un orden que el campo no deja
+      escribir. Se apaga la validación del navegador —que ya lo para— para que
+      decida la acción, que es la que de verdad protege la base.
+    */
+    const otro = `${MARCA} Orden raro ${sembrado.sello}`;
+    const campoOrden = alta.getByLabel(escribir.campoOrden, { exact: true });
+    await alta.getByLabel(escribir.campoHora, { exact: true }).fill("23:00");
+    await alta.getByLabel(escribir.campoTitulo, { exact: true }).fill(otro);
+    await campoOrden.fill("-5");
+    await campoOrden.evaluate((campo) =>
+      (campo as HTMLInputElement).form?.setAttribute("novalidate", ""),
+    );
+    await alta.getByRole("button", { name: escribir.anadir }).click();
+    await esperarEstado(page, "orden");
+    expect(
+      await conBase((sql) => sql`select 1 from public.guion_dia where titulo = ${otro}`),
+    ).toHaveLength(0);
+  });
+
+  /**
+   * CASO DE ERROR · Una corrección no deja un menú por debajo de cero.
+   *
+   * Elegir «Infantil» por error y escribir −2 se guardaba: la tabla decía
+   * «Infantil · −2» y el mensaje del catering pedía menos dos menús.
+   */
+  test("una corrección que deja un menú por debajo de cero no se guarda", async ({ page }) => {
+    await sembrar(Date.now() + 15);
+    const confirmados = await conBase(async (sql) =>
+      Number(
+        (
+          await sql<{ confirmados: string }[]>`
+            select confirmados from public.v_recuento_catering where tipo_menu = 'sin_gluten'
+          `
+        )[0]?.confirmados ?? 0,
+      ),
+    );
+
+    await entrar(page);
+    await page.goto(RUTA_RECUENTO);
+    await page
+      .getByLabel(copy.panel.dia.recuento.campoMenu, { exact: true })
+      .selectOption("sin_gluten");
+    await page
+      .getByLabel(copy.panel.dia.recuento.campoAjuste, { exact: true })
+      .fill(String(-(confirmados + 1)));
+    await page
+      .getByLabel(copy.panel.dia.recuento.campoNota, { exact: true })
+      .fill(`${MARCA} de más`);
+    await page.getByRole("button", { name: copy.panel.dia.recuento.guardar }).click();
+    await esperarEstado(page, "ajuste-bajo-cero");
+
+    await expect(page.getByText(copy.panel.dia.avisos.ajusteBajoCero)).toBeVisible();
+    expect(
+      await conBase(
+        (sql) =>
+          sql`select 1 from public.correcciones_recuento where nota = ${`${MARCA} de más`}`,
+      ),
+      "no se guarda nada",
+    ).toHaveLength(0);
+  });
+
+  /**
+   * CAMINO FELIZ · Con una corrección, las cifras sueltas y el mensaje del
+   * catering la dicen, y el desplegable enseña la que ya tiene cada menú.
+   *
+   * «44 adultos y 1 niño» con 47 menús encargados era lo que salía: las
+   * tarjetas cuentan confirmaciones y el total lleva la corrección.
+   */
+  test("la corrección se dice junto a adultos y niños y en el mensaje del catering", async ({
+    page,
+  }) => {
+    await sembrar(Date.now() + 16);
+    await conBase(
+      (sql) => sql`
+        insert into public.correcciones_recuento (tipo_menu, ajuste, nota)
+        values ('vegetariano', 2, ${`${MARCA} dos más`})
+        on conflict (tipo_menu) do update set ajuste = excluded.ajuste, nota = excluded.nota
+      `,
+    );
+
+    try {
+      await entrar(page);
+      await page.goto(RUTA_RECUENTO);
+
+      const linea = copy.panel.dia.recuento.correccionTotal.replace("{ajuste}", "+2");
+      await expect(page.getByText(linea, { exact: true })).toBeVisible();
+      expect(await page.locator("#recuento-pegable").inputValue()).toContain(linea);
+
+      await expect(
+        page.getByLabel(copy.panel.dia.recuento.campoMenu, { exact: true }).locator("option", {
+          hasText: copy.panel.dia.recuento.opcionConCorreccion
+            .replace("{menu}", copy.panel.menus.vegetariano)
+            .replace("{ajuste}", "+2"),
+        }),
+      ).toHaveCount(1);
+    } finally {
+      await conBase(
+        (sql) => sql`delete from public.correcciones_recuento where tipo_menu = 'vegetariano'`,
+      );
+    }
+
+    // CASO DE ERROR: sin corrección no se dice nada de ella.
+    await page.reload();
+    await expect(page.getByText(copy.panel.dia.recuento.correccionTotalAyuda)).toHaveCount(0);
+  });
+
+  /**
+   * CAMINO FELIZ · La hoja se imprime sin el menú del panel encima.
+   *
+   * Imprimir sacaba la barra lateral en la primera hoja y la de pestañas al
+   * pie, y la tabla se quedaba con medio folio. CASO DE ERROR · el botón de
+   * imprimir no se imprime a sí mismo.
+   */
+  test("la hoja impresa no lleva la navegación del panel ni su propio botón", async ({
+    page,
+  }) => {
+    await sembrar(Date.now() + 17);
+
+    await entrar(page);
+    await page.goto(RUTA_EXPORTAR_DIA);
+    const imprimir = page.getByRole("button", { name: copy.panel.dia.exportar.imprimir });
+    await expect(imprimir).toBeVisible();
+
+    await page.emulateMedia({ media: "print" });
+    await expect(page.getByRole("navigation")).toHaveCount(0);
+    await expect(imprimir).toBeHidden();
+    await expect(page.locator("main table").first()).toBeVisible();
+  });
+
+  /**
+   * CASO DE ERROR · La región que anuncia el buscador no lee la lista entera.
+   *
+   * La lista de fichas vivía dentro del `aria-live`: con cada letra el lector
+   * de pantalla volvía a leer todos los resultados. Lo que se anuncia es el
+   * número; las fichas se recorren aparte.
+   */
+  test("el buscador anuncia cuántos hay, no las fichas enteras", async ({ page }) => {
+    const sembrado = await sembrar(Date.now() + 18);
+
+    await entrar(page);
+    await page.goto(RUTA_BUSCAR_DIA);
+    await page.getByLabel(copy.panel.dia.buscar.campo, { exact: true }).fill("gonzalez ibanez");
+
+    await expect(
+      page.locator("article").filter({ hasText: sembrado.invitado.apellidos }),
+    ).toBeVisible();
+    // El de la pantalla: el anunciador de rutas de Next también es `aria-live`.
+    const anuncio = page.locator("main [aria-live]");
+    await expect(anuncio).toHaveCount(1);
+    await expect(anuncio).not.toBeEmpty();
+    await expect(anuncio.locator("article")).toHaveCount(0);
   });
 });

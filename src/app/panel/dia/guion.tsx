@@ -3,19 +3,44 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { Titulo3 } from "@/components/ui/tipografia";
+import { INTERVALO_REINTENTO_GUION_MS, PLAZO_MARCA_GUION_MS } from "@/config/constants";
 import type { PuntoDelGuion } from "@/lib/bbdd/dia";
 import { t } from "@/lib/copy";
 
 import { marcarPuntoDelGuion } from "./acciones";
 import {
+  aceptadasDelServidor,
+  aceptar,
   apuntar,
+  empezarEnvio,
+  envioDelServidor,
   instantanea,
+  instantaneaDeAceptadas,
+  instantaneaDelEnvio,
   instantaneaDelServidor,
   marcaVigente,
   soltar,
   suscribirse,
-  type ColaDeMarcas,
+  suscribirseAlEnvio,
+  terminarEnvio,
 } from "./cola";
+
+/** Una promesa que se da por fallida si no contesta a tiempo. */
+function conPlazo<T>(promesa: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolver, rechazar) => {
+    const reloj = window.setTimeout(() => rechazar(new Error("sin respuesta")), ms);
+    promesa.then(
+      (valor) => {
+        window.clearTimeout(reloj);
+        resolver(valor);
+      },
+      (motivo: unknown) => {
+        window.clearTimeout(reloj);
+        rechazar(motivo);
+      },
+    );
+  });
+}
 
 /**
  * BODA-100 (#67) · LA LISTA DE CONTROL QUE AGUANTA UNA FINCA SIN COBERTURA
@@ -32,8 +57,9 @@ import {
  *      a todo: a que no haya red, a que el móvil se bloquee, a cerrar la
  *      pestaña.
  *   2. Se intenta mandar al servidor. Si sale bien, la marca sale de la cola.
- *   3. Si no sale bien, se queda, y se reintenta cuando vuelve la conexión — el
- *      navegador avisa con el evento `online`.
+ *   3. Si no sale bien, se queda, y se reintenta solo: al abrir la pantalla,
+ *      al volver a ella, cuando el navegador avisa de que vuelve la red y,
+ *      por si no avisa —con una raya de cobertura cree que la hay—, cada poco.
  *
  * LO QUE MANDA ES EL SERVIDOR, SALVO LO QUE ESTÁ EN LA COLA. Al recargar, la
  * lista llega de la base con sus marcas y encima se aplican las pendientes, que
@@ -57,82 +83,107 @@ export function Guion({
   const [sinPermiso, setSinPermiso] = useState(false);
   const [noExiste, setNoExiste] = useState(false);
 
-  /**
-   * LO QUE EL SERVIDOR YA HA ACEPTADO EN ESTA SESIÓN.
-   *
-   * Hace falta una tercera capa porque las otras dos no cubren el hueco de en
-   * medio. La cola guarda lo que está SIN MANDAR y las propiedades traen lo que
-   * había EN LA BASE cuando se pintó la pantalla; entre una cosa y otra está lo
-   * que se acaba de mandar con éxito, que ya no es pendiente y todavía no
-   * aparece en unas propiedades que nadie ha vuelto a pedir.
-   *
-   * Sin esta capa la marca se BORRABA SOLA justo al confirmarla el servidor:
-   * salía de la cola y la pantalla caía de vuelta al valor viejo. Marcabas
-   * «Ceremonia», se marcaba, y medio segundo después se desmarcaba. El día de
-   * la boda, con el móvil en una mano.
-   *
-   * No se arregla revalidando la ruta en la acción, que sería lo obvio: esta
-   * pantalla está hecha para funcionar con la red yendo y viniendo, y pedirle
-   * al servidor que repinte en cada marca es justo lo que no puede depender de
-   * que haya cobertura.
-   */
-  const [confirmadas, setConfirmadas] = useState<ColaDeMarcas>({});
+  /*
+    LO QUE EL SERVIDOR YA HA ACEPTADO, y cómo va el envío. Viven en `cola.ts`,
+    fuera del componente: volver atrás desde «Teléfonos» lo monta de nuevo con
+    la carga que el navegador guardaba, y lo aceptado en un `useState` se
+    perdía con él (ver `cola.ts`).
+  */
+  const confirmadas = useSyncExternalStore(
+    suscribirseAlEnvio,
+    instantaneaDeAceptadas,
+    aceptadasDelServidor,
+  );
+  const envio = useSyncExternalStore(suscribirseAlEnvio, instantaneaDelEnvio, envioDelServidor);
 
   /**
-   * Manda lo que se le dé y saca de la cola lo que se haya podido mandar.
+   * MANDA LA COLA ENTERA, UN ENVÍO A LA VEZ.
+   *
+   * Si ya hay uno en camino no se lanza otro: el que va vuelve a leer la cola
+   * al acabar cada vuelta y se lleva lo marcado mientras tanto. Así el toque,
+   * el reloj y el `online` no mandan lo mismo dos veces ni se apilan detrás de
+   * una petición colgada —las acciones de servidor salen de una en una—, y
+   * cada marca tiene un plazo: pasado, se da por fallida y se queda en la cola.
    *
    * «NO PUEDES» NO SE REINTENTA. Un lector nunca va a poder marcar, así que
    * dejarlo en la cola sería reintentar para siempre y —peor— dejar la pantalla
    * diciendo que hay algo sin mandar cuando lo que hay es algo que no se va a
    * mandar nunca. Se suelta y se dice por qué.
    */
-  const mandar = useCallback(async (pendientes: ColaDeMarcas) => {
-    // Pares id + marca, no ids: la cola sólo suelta lo que SIGUE siendo lo que
-    // se mandó. Si el punto se volvió a tocar mientras esto estaba en vuelo,
-    // la marca nueva se queda pendiente y la manda el siguiente intento.
-    const resueltos: [string, string | null][] = [];
-    let denegado = false;
-    let desaparecido = false;
+  const mandarLaCola = useCallback(async () => {
+    if (!empezarEnvio()) return;
 
-    for (const [id, marca] of Object.entries(pendientes)) {
-      try {
-        const resultado = await marcarPuntoDelGuion(id, marca !== null);
-        if (resultado.ok) {
-          // Se recuerda lo aceptado ANTES de soltarlo de la cola, para que la
-          // pantalla no se quede un instante sin ninguna de las dos capas.
-          setConfirmadas((previas) => ({ ...previas, [id]: marca }));
-          resueltos.push([id, marca]);
-        } else if (resultado.motivo === "sin-permiso") {
-          denegado = true;
-          resueltos.push([id, marca]);
-        } else if (resultado.motivo === "no-existe") {
-          // Alguien lo quitó del guion mientras esto esperaba en la cola: no
-          // hay nada que mandar, ni ahora ni luego.
-          desaparecido = true;
-          resueltos.push([id, marca]);
+    const fallaron = new Set<string>();
+    // Pares id + marca: lo intentado en esta vuelta no se repite en ella.
+    const intentados = new Set<string>();
+
+    try {
+      for (;;) {
+        const nuevos = Object.entries(instantanea()).filter(
+          ([id, marca]) => !intentados.has(`${id}|${marca}`),
+        );
+        if (nuevos.length === 0) break;
+
+        for (const [id, marca] of nuevos) {
+          intentados.add(`${id}|${marca}`);
+          try {
+            const resultado = await conPlazo(
+              marcarPuntoDelGuion(id, marca !== null),
+              PLAZO_MARCA_GUION_MS,
+            );
+            fallaron.delete(id);
+            if (resultado.ok) {
+              // Se recuerda lo aceptado ANTES de soltarlo de la cola, para que
+              // la pantalla no se quede un instante sin ninguna de las dos.
+              aceptar(id, marca);
+            } else if (resultado.motivo === "sin-permiso") {
+              setSinPermiso(true);
+            } else if (resultado.motivo === "no-existe") {
+              // Alguien lo quitó del guion mientras esperaba: no hay nada que
+              // mandar, ni ahora ni luego.
+              setNoExiste(true);
+            }
+            // La cola sólo suelta el par si SIGUE siendo lo que se mandó: si
+            // el punto se volvió a tocar, la marca nueva se queda pendiente.
+            soltar([[id, marca]]);
+          } catch {
+            // Sin red, o sin respuesta a tiempo. Se queda para el siguiente.
+            fallaron.add(id);
+          }
         }
-      } catch {
-        // Sin red. Se queda en la cola para el próximo intento.
       }
+    } finally {
+      terminarEnvio([...fallaron]);
     }
-
-    if (denegado) setSinPermiso(true);
-    if (desaparecido) setNoExiste(true);
-    soltar(resueltos);
   }, []);
 
   /*
-    AL VOLVER LA CONEXIÓN, SOLO. Es el caso que describe el ticket: se marca en
-    el aparcamiento sin cobertura y se sincroniza al entrar en la finca.
-
-    `instantanea()` se lee dentro del manejador y no se captura de fuera: así el
-    efecto no depende de la cola y no hay que resuscribirse en cada marca.
+    SE MANDA SOLO, Y NO SÓLO AL VOLVER LA RED. Al abrir la pantalla con algo
+    pendiente de antes —el móvil se bloqueó en el aparcamiento y se vuelve a
+    abrir en la finca—, al volver a la pestaña, cuando el navegador avisa de
+    que hay red, y cada poco mientras quede algo: con una raya de cobertura el
+    navegador cree que hay red, y si la señal mejora no avisa de nada.
   */
   useEffect(() => {
-    const alVolver = () => void mandar(instantanea());
-    window.addEventListener("online", alVolver);
-    return () => window.removeEventListener("online", alVolver);
-  }, [mandar]);
+    const intentar = () => {
+      if (Object.keys(instantanea()).length > 0) void mandarLaCola();
+    };
+    const alVerse = () => {
+      if (document.visibilityState === "visible") intentar();
+    };
+
+    intentar();
+    window.addEventListener("online", intentar);
+    window.addEventListener("pageshow", intentar);
+    document.addEventListener("visibilitychange", alVerse);
+    const reloj = window.setInterval(intentar, INTERVALO_REINTENTO_GUION_MS);
+    return () => {
+      window.removeEventListener("online", intentar);
+      window.removeEventListener("pageshow", intentar);
+      document.removeEventListener("visibilitychange", alVerse);
+      window.clearInterval(reloj);
+    };
+  }, [mandarLaCola]);
 
   const alternar = async (punto: PuntoDelGuion) => {
     const estabaHecho = (punto.id in cola ? cola[punto.id] : punto.hechoEn) !== null;
@@ -152,9 +203,8 @@ export function Guion({
     setSinPermiso(false);
     setNoExiste(false);
 
-    // 2 · Y ahora se manda sólo esto, no la cola entera: mandar aquí lo de
-    //     antes duplicaría los intentos con el reintento de `online`.
-    await mandar({ [punto.id]: marca });
+    // 2 · Y se manda. Si ya hay un envío en camino, él se lo lleva al acabar.
+    await mandarLaCola();
   };
 
   /*
@@ -170,6 +220,10 @@ export function Guion({
   }));
 
   const sinMandar = conSusMarcas.filter((punto) => punto.sinMandar).length;
+  // «Sin conexión» sólo si algo de lo pendiente falló de verdad al mandarlo.
+  const algoFallo = conSusMarcas.some(
+    (punto) => punto.sinMandar && envio.fallaron.includes(punto.id),
+  );
   const tocaAhora = conSusMarcas.find((punto) => !punto.hechoEn) ?? null;
 
   return (
@@ -206,7 +260,7 @@ export function Guion({
         )}
       </p>
 
-      {sinMandar > 0 ? (
+      {sinMandar > 0 && algoFallo ? (
         <p
           role="status"
           data-sin-mandar={sinMandar}
@@ -214,13 +268,21 @@ export function Guion({
         >
           {t("panel.dia.guion.sinConexion")}{" "}
           <strong>{t("panel.dia.guion.pendientes", { numero: sinMandar })}</strong>{" "}
+          {/* Mientras va un envío, pulsar sólo lo pondría en la fila. */}
           <button
             type="button"
-            className="min-h-control-compacto underline"
-            onClick={() => void mandar(instantanea())}
+            disabled={envio.enCurso}
+            className="min-h-control-compacto underline disabled:no-underline disabled:opacity-60"
+            onClick={() => void mandarLaCola()}
           >
-            {t("panel.dia.guion.reintentar")}
+            {envio.enCurso ? t("panel.dia.guion.guardando") : t("panel.dia.guion.reintentar")}
           </button>
+        </p>
+      ) : sinMandar > 0 ? (
+        // En camino y sin haber fallado: con buena red esto dura un segundo, y
+        // un «sin conexión» amarillo en cada toque mentía.
+        <p role="status" className="mt-elemento text-pequeno text-tinta-suave">
+          {t("panel.dia.guion.guardando")}
         </p>
       ) : null}
 

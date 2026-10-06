@@ -585,6 +585,22 @@ export const SEGUNDOS_URL_FIRMADA = 300;
 export const CLAVE_ALMACEN_DIA = "boda-guion-dia";
 
 /**
+ * Cada cuánto se reintenta mandar lo que el guion tiene sin mandar. El evento
+ * `online` sólo salta al pasar de «sin red» a «con red»; con una raya de
+ * cobertura el navegador cree que hay red, y si la señal mejora no avisa de
+ * nada. Sin este reintento, lo marcado en el aparcamiento se quedaba «sin
+ * mandar» hasta que alguien pulsara algo.
+ */
+export const INTERVALO_REINTENTO_GUION_MS = 15_000;
+
+/**
+ * Cuánto se espera a que el servidor conteste una marca antes de darla por
+ * fallida y dejarla en la cola. Las acciones de servidor salen de una en una:
+ * una colgada sin plazo dejaba en espera todas las demás.
+ */
+export const PLAZO_MARCA_GUION_MS = 10_000;
+
+/**
  * A partir de cuántos días una tarea deja de estar «en su fecha» y pasa a
  * «vence pronto».
  *

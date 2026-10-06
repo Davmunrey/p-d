@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { BotonImprimir } from "@/components/ui/boton-imprimir";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
-import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
+import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   IDIOMA,
   RUTA_ACCESO,
@@ -77,17 +78,22 @@ export default async function PaginaExportarDelDia() {
         LOS CONTROLES NO SE IMPRIMEN. `print:hidden` es el mismo mecanismo que
         usa el plano de mesas: la hoja que sale de la impresora es la lista, no
         los botones para llegar a ella.
+
+        EL TÍTULO SÍ. Se escondía con todo lo demás y la hoja empezaba por
+        «Generado el…»: un papel suelto en la mesa del catering sin decir qué es.
       */}
-      <div className="max-w-texto print:hidden">
-        <EnlaceSuave href={RUTA_DIA} discreto>
-          {t("panel.dia.volver")}
-        </EnlaceSuave>
+      <div className="max-w-texto">
+        <div className="print:hidden">
+          <EnlaceSuave href={RUTA_DIA} discreto>
+            {t("panel.dia.volver")}
+          </EnlaceSuave>
+        </div>
         <Titulo2 como="h1" className="mt-pila">
           {t("panel.dia.exportar.titulo")}
         </Titulo2>
-        <Cuerpo className="mt-pila">{t("panel.dia.exportar.entradilla")}</Cuerpo>
+        <Cuerpo className="mt-pila print:hidden">{t("panel.dia.exportar.entradilla")}</Cuerpo>
 
-        <div className="mt-bloque grid gap-elemento sm:grid-cols-2">
+        <div className="mt-bloque grid gap-elemento sm:grid-cols-2 print:hidden">
           <div>
             <a
               href={RUTA_MESAS_EXPORTAR}
@@ -101,7 +107,8 @@ export default async function PaginaExportarDelDia() {
           </div>
 
           <div>
-            <Etiqueta>{t("panel.dia.exportar.imprimir")}</Etiqueta>
+            {/* Un botón y no un rótulo: en el móvil, imprimir estaba escondido. */}
+            <BotonImprimir>{t("panel.dia.exportar.imprimir")}</BotonImprimir>
             <p className="mt-pila text-pequeno text-tinta-suave">
               {t("panel.dia.exportar.imprimirAyuda")}
             </p>
@@ -119,18 +126,27 @@ export default async function PaginaExportarDelDia() {
           <Titulo3 como="h2">{mesa}</Titulo3>
 
           <div className="mt-elemento overflow-x-auto">
-            <table className="w-full border-collapse text-left">
+            {/*
+              `table-fixed` CON LA MITAD PARA EL NOMBRE. Cada mesa repartía las
+              columnas según su contenido, así que en el papel el menú bailaba
+              de una tabla a la siguiente; y en el móvil el nombre se partía en
+              dos renglones para dejar sitio a una columna de alergias vacía.
+            */}
+            <table className="w-full table-fixed border-collapse text-left">
               <thead>
                 <tr>
                   {[
-                    t("panel.dia.buscar.campo"),
-                    t("panel.dia.buscar.menu"),
-                    t("panel.dia.buscar.alergias"),
-                  ].map((titulo) => (
+                    {
+                      titulo: t("panel.dia.exportar.columnaNombre"),
+                      ancho: "w-columna-nombre",
+                    },
+                    { titulo: t("panel.dia.buscar.menu"), ancho: "w-columna-dato" },
+                    { titulo: t("panel.dia.buscar.alergias"), ancho: "w-columna-dato" },
+                  ].map(({ titulo, ancho }) => (
                     <th
                       key={titulo}
                       scope="col"
-                      className="border-b border-borde-fuerte px-interno py-interno-compacto text-etiqueta uppercase tracking-etiqueta text-tinta-suave"
+                      className={`${ancho} border-b border-borde-fuerte px-interno py-interno-compacto text-etiqueta uppercase tracking-etiqueta text-tinta-suave`}
                     >
                       {titulo}
                     </th>
@@ -140,7 +156,7 @@ export default async function PaginaExportarDelDia() {
               <tbody>
                 {gente.map((invitado) => (
                   <tr key={invitado.id}>
-                    <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">
+                    <td className="border-b border-borde px-interno py-interno-compacto align-top break-words text-cuerpo text-tinta">
                       {[invitado.nombre, invitado.apellidos].filter(Boolean).join(" ")}
                       {invitado.esNino ? (
                         <span className="text-tinta-suave">
@@ -154,7 +170,7 @@ export default async function PaginaExportarDelDia() {
                         </span>
                       ) : null}
                     </td>
-                    <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">
+                    <td className="border-b border-borde px-interno py-interno-compacto align-top break-words text-cuerpo text-tinta">
                       {/*
                         El menú sólo de quien viene, como en la hoja de cálculo:
                         el de quien no ha contestado es el valor por defecto de
@@ -164,7 +180,7 @@ export default async function PaginaExportarDelDia() {
                         ? t(`panel.menus.${invitado.tipoMenu}` as "panel.menus.estandar")
                         : ""}
                     </td>
-                    <td className="border-b border-borde px-interno py-interno-compacto align-top text-cuerpo text-tinta">
+                    <td className="border-b border-borde px-interno py-interno-compacto align-top break-words text-cuerpo text-tinta">
                       {invitado.alergias ?? ""}
                     </td>
                   </tr>
@@ -239,7 +255,8 @@ function agruparPorMesa(invitados: InvitadoDelDia[]): [string, InvitadoDelDia[]]
   return [...mesas.entries()].sort(([a], [b]) => {
     if (a === sinMesa) return 1;
     if (b === sinMesa) return -1;
-    return a.localeCompare(b, IDIOMA);
+    // «Mesa 2» antes que «Mesa 10»: en el orden en que se montan, no como texto.
+    return a.localeCompare(b, IDIOMA, { numeric: true });
   });
 }
 

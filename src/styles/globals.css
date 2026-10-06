@@ -337,6 +337,8 @@
   /* Un solo token da `size-miniatura`: el hueco es cuadrado por definición. */
   --spacing-miniatura: var(--lado-miniatura);
   --spacing-columna-token: var(--ancho-columna-token);
+  --spacing-columna-nombre: var(--ancho-columna-nombre);
+  --spacing-columna-dato: var(--ancho-columna-dato);
   --spacing-barra-muestra: var(--alto-barra-muestra);
 
   /* Un solo token da `size-constelacion`: el hueco es cuadrado por definición. */

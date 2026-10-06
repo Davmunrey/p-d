@@ -55,13 +55,19 @@ export function CopiarRecuento({ texto }: { texto: string }) {
         de cuando copiar falla, y además deja ver exactamente qué se va a mandar
         antes de mandarlo — que en un mensaje con cifras no sobra nunca.
       */}
+      {/*
+        `field-sizing-content` LO HACE TAN ALTO COMO EL TEXTO. Las filas cuentan
+        renglones, pero en el móvil las líneas largas se parten, y la última
+        —«Sin contestar», la que evita encargar de más— quedaba debajo del
+        borde. `rows` se queda para el navegador que no lo entiende.
+      */}
       <textarea
         id="recuento-pegable"
         readOnly
         rows={texto.split("\n").length}
         value={texto}
         aria-label={t("panel.dia.recuento.pegable")}
-        className="mt-elemento w-full resize-y rounded-campo border border-borde bg-superficie-hundida p-interno text-pequeno text-tinta"
+        className="mt-elemento w-full resize-y field-sizing-content rounded-campo border border-borde bg-superficie-hundida p-interno text-pequeno text-tinta"
       />
     </div>
   );

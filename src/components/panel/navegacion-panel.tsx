@@ -78,7 +78,7 @@ export function NavegacionPanel({ marca }: { marca: string }) {
       {/* Lateral, en escritorio */}
       <nav
         aria-label={t("panel.navegacion")}
-        className="fixed inset-y-0 left-0 capa-lateral hidden w-lateral flex-col gap-elemento overflow-y-auto overscroll-contain border-r border-borde bg-superficie px-interno py-elemento md:flex"
+        className="fixed inset-y-0 left-0 capa-lateral hidden w-lateral flex-col gap-elemento overflow-y-auto overscroll-contain border-r border-borde bg-superficie px-interno py-elemento md:flex print:hidden"
       >
         <Link
           href="/"
@@ -104,7 +104,7 @@ export function NavegacionPanel({ marca }: { marca: string }) {
       {/* Barra inferior, en móvil */}
       <nav
         aria-label={t("panel.navegacion")}
-        className="fixed inset-x-0 bottom-0 capa-lateral border-t border-borde bg-superficie barra-inferior md:hidden"
+        className="fixed inset-x-0 bottom-0 capa-lateral border-t border-borde bg-superficie barra-inferior md:hidden print:hidden"
       >
         {/*
           SE DESPLAZA DE VERDAD EN HORIZONTAL. Cada destino mide lo que mide su

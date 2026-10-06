@@ -73,9 +73,19 @@ function FichaDeProveedor({ proveedor }: { proveedor: ProveedorEnLaAgenda }) {
     pequeños no tienen a nadie apuntado en `contactos_proveedor`: su número está
     en la ficha y ya. Tratarlos como un caso aparte dejaría media agenda con
     aspecto de vacía.
+
+    PERO EL «DEL DÍA» VA PRIMERO. La ficha iba siempre delante, y con prisa se
+    llamaba a la oficina en vez de al conductor. Y si el contacto ya tiene el
+    número de la ficha, la ficha no se repite.
   */
+  const delDia = proveedor.contactos.filter((contacto) => contacto.esDelDia);
+  const resto = proveedor.contactos.filter((contacto) => !contacto.esDelDia);
+  const fichaRepetida = proveedor.contactos.some(
+    (contacto) => contacto.telefono === proveedor.telefono,
+  );
   const lineas = [
-    ...(proveedor.telefono
+    ...delDia,
+    ...(proveedor.telefono && !fichaRepetida
       ? [
           {
             id: `${proveedor.id}-ficha`,
@@ -87,7 +97,7 @@ function FichaDeProveedor({ proveedor }: { proveedor: ProveedorEnLaAgenda }) {
           },
         ]
       : []),
-    ...proveedor.contactos,
+    ...resto,
   ];
 
   return (

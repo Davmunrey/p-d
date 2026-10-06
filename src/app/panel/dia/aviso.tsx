@@ -1,3 +1,4 @@
+import { AJUSTE_MAXIMO_RECUENTO } from "@/config/constants";
 import { t, type ClaveCopy } from "@/lib/copy";
 import { avisoDe } from "@/lib/avisos";
 
@@ -11,6 +12,7 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   "sin-permiso": { clave: "panel.dia.avisos.sinPermiso", error: true },
   "menu-invalido": { clave: "panel.dia.avisos.menuInvalido", error: true },
   "ajuste-invalido": { clave: "panel.dia.avisos.ajusteInvalido", error: true },
+  "ajuste-bajo-cero": { clave: "panel.dia.avisos.ajusteBajoCero", error: true },
   "nota-larga": { clave: "panel.dia.avisos.notaLarga", error: true },
   error: { clave: "panel.dia.avisos.error", error: true },
 };
@@ -26,7 +28,8 @@ export function AvisoDia({ estado }: { estado: string }) {
         aviso.error ? "bg-error-fondo text-error-tinta" : "bg-exito-fondo text-exito-tinta"
       }`}
     >
-      {t(aviso.clave)}
+      {/* El tope sale de la constante: escrito en el texto, mentiría el día que cambie. */}
+      {t(aviso.clave, { maximo: AJUSTE_MAXIMO_RECUENTO })}
     </p>
   );
 }

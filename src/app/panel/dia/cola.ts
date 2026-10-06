@@ -115,10 +115,14 @@ export function suscribirse(alCambiar: () => void): () => void {
   };
 }
 
+function avisar(): void {
+  for (const oyente of oyentes) oyente();
+}
+
 function fijar(cola: ColaDeMarcas): void {
   memoria = cola;
   escribirEnElAlmacen(cola);
-  for (const oyente of oyentes) oyente();
+  avisar();
 }
 
 /** Apunta una marca como pendiente de mandar. */
@@ -179,4 +183,80 @@ export function marcaVigente(
   if (id in cola) return cola[id];
   if (id in confirmadas) return confirmadas[id];
   return delServidor;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Lo que el servidor ya aceptó, y cómo va el envío                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * LO ACEPTADO VIVE AQUÍ, EN LA PESTAÑA, Y NO EN EL COMPONENTE.
+ *
+ * Es la capa de en medio de `marcaVigente`. Estaba en un `useState`, y volver
+ * atrás desde «Teléfonos» monta la pantalla otra vez con la carga que el
+ * navegador tenía guardada —de antes de marcar— sin pedirla de nuevo: lo
+ * aceptado se perdía con el componente, la marca ya había salido de la cola, y
+ * «Ceremonia» volvía a salir sin hacer aunque en la base estaba hecha. Aquí
+ * dura lo que dura la pestaña, que es lo que dura esa carga guardada.
+ */
+let aceptadas: ColaDeMarcas = VACIA;
+
+export interface EstadoDelEnvio {
+  /** Hay un envío en camino. */
+  enCurso: boolean;
+  /**
+   * Los puntos cuyo último intento falló: los únicos de los que se puede decir
+   * «sin conexión». Lo que está en camino no ha fallado todavía, y decirlo en
+   * cada toque con buena red invitaba a pulsar «Mandar ahora» y duplicarlo.
+   */
+  fallaron: readonly string[];
+}
+
+const SIN_ENVIO: EstadoDelEnvio = { enCurso: false, fallaron: [] };
+let envio: EstadoDelEnvio = SIN_ENVIO;
+
+export function instantaneaDeAceptadas(): ColaDeMarcas {
+  return aceptadas;
+}
+
+export function aceptadasDelServidor(): ColaDeMarcas {
+  return VACIA;
+}
+
+export function instantaneaDelEnvio(): EstadoDelEnvio {
+  return envio;
+}
+
+export function envioDelServidor(): EstadoDelEnvio {
+  return SIN_ENVIO;
+}
+
+/** Para lo aceptado y el envío, que no viajan entre pestañas: sólo avisos de aquí. */
+export function suscribirseAlEnvio(alCambiar: () => void): () => void {
+  oyentes.add(alCambiar);
+  return () => {
+    oyentes.delete(alCambiar);
+  };
+}
+
+export function aceptar(id: string, marca: string | null): void {
+  aceptadas = { ...aceptadas, [id]: marca };
+  avisar();
+}
+
+/**
+ * EMPIEZA UN ENVÍO SI NO HAY OTRO EN CAMINO. `false` es «ya hay uno»: quien
+ * lo lleva vuelve a leer la cola al acabar y se lleva también lo nuevo, así
+ * que el reloj, el `online` y el toque nunca mandan lo mismo dos veces.
+ */
+export function empezarEnvio(): boolean {
+  if (envio.enCurso) return false;
+  envio = { ...envio, enCurso: true };
+  avisar();
+  return true;
+}
+
+export function terminarEnvio(fallaron: readonly string[]): void {
+  envio = { enCurso: false, fallaron };
+  avisar();
 }

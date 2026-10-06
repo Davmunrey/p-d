@@ -61,9 +61,14 @@ export default async function LayoutPanel({ children }: { children: ReactNode })
         El hueco lo deja el contenido, no la navegación: está fija, así que no
         empuja nada. Abajo en móvil —donde vive la barra— y a la izquierda en
         escritorio.
+
+        EN PAPEL NO HAY NI NAVEGACIÓN NI SESIÓN. El lateral es `fixed`, y fijo
+        en una hoja impresa se repite en cada página: la lista de mesas que se
+        da a la finca salía en dos tercios del ancho, con el menú del panel y
+        «Cerrar sesión» en todas las hojas.
       */}
-      <div className="hueco-barra-inferior md:pb-0 md:pl-lateral">
-        <header className="flex flex-wrap items-center justify-between gap-interno border-b border-borde px-interno py-interno-compacto">
+      <div className="hueco-barra-inferior md:pb-0 md:pl-lateral print:pb-0 print:pl-0">
+        <header className="flex flex-wrap items-center justify-between gap-interno border-b border-borde px-interno py-interno-compacto print:hidden">
           <p className="text-pequeno text-tinta-suave">
             {t("panel.sesionDe")}{" "}
             <strong className="font-normal text-tinta">{acceso.nombre ?? acceso.correo}</strong>

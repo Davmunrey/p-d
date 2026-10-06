@@ -400,6 +400,8 @@
   --hueco-casilla: var(--space-linea);
   --lado-miniatura: var(--size-miniatura);
   --ancho-columna-token: var(--size-columna-token);
+  --ancho-columna-nombre: var(--size-mitad);
+  --ancho-columna-dato: var(--size-cuarto);
   --alto-barra-muestra: var(--size-barra-muestra);
   --ancho-ficha-catalogo: var(--size-ficha-catalogo);
   --lado-constelacion: var(--size-constelacion);

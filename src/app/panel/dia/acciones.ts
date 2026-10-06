@@ -136,6 +136,23 @@ export async function corregirRecuento(datos: FormData): Promise<void> {
   if (nota && nota.length > LARGOS_DE_CAMPO["correcciones_recuento.nota"]) volver("nota-larga");
 
   const supabase = await cliente();
+
+  /*
+    NINGÚN MENÚ POR DEBAJO DE CERO. Elegir «Infantil» por error y escribir −2
+    se guardaba: la tabla decía «Infantil · −2», el total bajaba dos y el
+    mensaje del catering pedía menos dos menús infantiles. La base sólo limita
+    el rango de la corrección, no lo que deja; lo que hay se lee en la vista.
+  */
+  if (ajuste < 0) {
+    const { data: linea } = await supabase
+      .from("v_recuento_catering")
+      .select("confirmados")
+      .eq("tipo_menu", tipoMenu)
+      .maybeSingle<{ confirmados: number | string | null }>();
+    const confirmados = Number(linea?.confirmados ?? 0);
+    if (confirmados + ajuste < 0) volver("ajuste-bajo-cero");
+  }
+
   const { data, error } = await supabase
     .from("correcciones_recuento")
     .upsert({ tipo_menu: tipoMenu, ajuste, nota }, { onConflict: "tipo_menu" })

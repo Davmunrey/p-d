@@ -74,37 +74,47 @@ export function Buscador({ invitados }: { invitados: InvitadoDelDia[] }) {
         />
       </div>
 
-      <div aria-live="polite" className="mt-bloque">
-        {!escrito ? (
-          <p className="max-w-texto text-pequeno text-tinta-suave">
-            {t("panel.dia.buscar.escribeAlgo")}
-          </p>
-        ) : encontrados.length === 0 ? (
-          /*
-            EL CASO DE ERROR DEL TICKET, y se dice con el nombre buscado dentro:
-            «nadie se llama así» a secas deja la duda de si la pantalla ha
-            entendido lo que se ha escrito.
-          */
-          <p className="max-w-texto text-cuerpo text-tinta">
-            {t("panel.dia.buscar.sinResultados", { texto: escrito })}
-          </p>
-        ) : (
-          <>
-            <p className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
-              {t("panel.dia.buscar.resultados", {
-                numero: encontrados.length,
-                total: invitados.length,
-              })}
-            </p>
-            <ul className="mt-elemento grid gap-interno">
-              {encontrados.map((invitado) => (
-                <li key={invitado.id}>
-                  <Resultado invitado={invitado} />
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
+      {/*
+        SÓLO LA LÍNEA DE ESTADO ES VIVA, no la lista, y es siempre la misma: un
+        elemento que aparece y desaparece no siempre se anuncia. Con la lista
+        dentro, al escribir «a» un lector de pantalla leía las noventa fichas
+        de golpe —nombre, mesa, menú y alergias de cada una— y otra vez con
+        cada letra, así que nunca se llegaba a oír la que interesaba.
+
+        Sin resultados se dice con el nombre buscado dentro —el caso de error
+        del ticket—: «nadie se llama así» a secas deja la duda de si la
+        pantalla ha entendido lo que se ha escrito.
+      */}
+      <div className="mt-bloque">
+        <p
+          aria-live="polite"
+          className={
+            !escrito
+              ? "max-w-texto text-pequeno text-tinta-suave"
+              : encontrados.length === 0
+                ? "max-w-texto text-cuerpo text-tinta"
+                : "text-etiqueta uppercase tracking-etiqueta text-tinta-suave"
+          }
+        >
+          {!escrito
+            ? t("panel.dia.buscar.escribeAlgo")
+            : encontrados.length === 0
+              ? t("panel.dia.buscar.sinResultados", { texto: escrito })
+              : t("panel.dia.buscar.resultados", {
+                  numero: encontrados.length,
+                  total: invitados.length,
+                })}
+        </p>
+
+        {escrito && encontrados.length > 0 ? (
+          <ul className="mt-elemento grid gap-interno">
+            {encontrados.map((invitado) => (
+              <li key={invitado.id}>
+                <Resultado invitado={invitado} />
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
     </>
   );

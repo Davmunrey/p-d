@@ -75,6 +75,10 @@ const formatoMomento = new Intl.DateTimeFormat(IDIOMA, {
 const nombreDelMenu = (tipoMenu: string) =>
   t(`panel.menus.${tipoMenu}` as "panel.menus.estandar");
 
+/** «+2», «−2»: el signo siempre, porque «2» y «+2» se leen distinto. */
+const conSigno = (numero: number) =>
+  numero > 0 ? `+${numero}` : numero < 0 ? `−${Math.abs(numero)}` : "0";
+
 export default async function PaginaRecuento({ searchParams }: Parametros) {
   const acceso = await accesoActual();
   if (!acceso) redirect(RUTA_ACCESO);
@@ -89,6 +93,7 @@ export default async function PaginaRecuento({ searchParams }: Parametros) {
 
   const puedeEditar = acceso.rol !== "lector";
   const totalMenus = lineas.reduce((suma, linea) => suma + linea.total, 0);
+  const totalAjustes = lineas.reduce((suma, linea) => suma + linea.ajuste, 0);
 
   return (
     <>
@@ -111,8 +116,10 @@ export default async function PaginaRecuento({ searchParams }: Parametros) {
       ) : (
         <>
           <TablaDelRecuento lineas={lineas} totalMenus={totalMenus} />
-          <Cabezas cabezas={cabezas} />
-          <CopiarRecuento texto={mensajeParaElCatering({ lineas, cabezas, totalMenus })} />
+          <Cabezas cabezas={cabezas} totalAjustes={totalAjustes} />
+          <CopiarRecuento
+            texto={mensajeParaElCatering({ lineas, cabezas, totalMenus, totalAjustes })}
+          />
         </>
       )}
 
@@ -123,7 +130,9 @@ export default async function PaginaRecuento({ searchParams }: Parametros) {
         La vista hace un `full join` para que esa línea aparezca; la pantalla
         tiene que dejar escribirla.
       */}
-      {puedeEditar ? <Corregir menuInicial={lineas[0]?.tipoMenu ?? MENUS_RSVP[0]} /> : null}
+      {puedeEditar ? (
+        <Corregir menuInicial={lineas[0]?.tipoMenu ?? MENUS_RSVP[0]} lineas={lineas} />
+      ) : null}
 
       <Alergias alergias={alergias} />
     </>
@@ -235,47 +244,75 @@ function TablaDelRecuento({
 
 function Cabezas({
   cabezas,
+  totalAjustes,
 }: {
   cabezas: { ninos: number; adultos: number; sinContestar: number };
+  totalAjustes: number;
 }) {
   return (
-    <dl className="mt-bloque grid grid-cols-2 gap-interno sm:grid-cols-3">
-      {[
-        { clave: "panel.dia.recuento.adultos", valor: cabezas.adultos },
-        { clave: "panel.dia.recuento.ninos", valor: cabezas.ninos },
-        { clave: "panel.dia.recuento.sinContestar", valor: cabezas.sinContestar },
-      ].map((dato) => (
-        // «Sin contestar» lleva una frase debajo: en el móvil ocupa la fila
-        // entera, porque en un tercio de pantalla salía una palabra por línea.
-        <div
-          key={dato.clave}
-          className={`rounded-campo border border-borde p-elemento ${
-            dato.clave === "panel.dia.recuento.sinContestar" ? "col-span-2 sm:col-span-1" : ""
-          }`}
-        >
-          <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
-            {t(dato.clave as "panel.dia.recuento.adultos")}
-          </dt>
-          <dd className="mt-pila text-titulo-2 tabular-nums text-tinta">{dato.valor}</dd>
+    <>
+      <dl className="mt-bloque grid grid-cols-2 gap-interno sm:grid-cols-3">
+        {[
+          { clave: "panel.dia.recuento.adultos", valor: cabezas.adultos },
+          { clave: "panel.dia.recuento.ninos", valor: cabezas.ninos },
+          { clave: "panel.dia.recuento.sinContestar", valor: cabezas.sinContestar },
+        ].map((dato) => (
+          // «Sin contestar» lleva una frase debajo: en el móvil ocupa la fila
+          // entera, porque en un tercio de pantalla salía una palabra por línea.
+          <div
+            key={dato.clave}
+            className={`rounded-campo border border-borde p-elemento ${
+              dato.clave === "panel.dia.recuento.sinContestar" ? "col-span-2 sm:col-span-1" : ""
+            }`}
+          >
+            <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
+              {t(dato.clave as "panel.dia.recuento.adultos")}
+            </dt>
+            <dd className="mt-pila text-titulo-2 tabular-nums text-tinta">{dato.valor}</dd>
 
-          {/*
-            EL AVISO QUE EVITA EL ERROR CARO, y va pegado a la cifra que lo
-            necesita. Quien no ha contestado no está sumado a ningún menú; sin
-            esta línea, alguien suma los tres números de esta fila, se los canta
-            al catering y encarga comida de más.
-          */}
-          {dato.clave === "panel.dia.recuento.sinContestar" && dato.valor > 0 ? (
-            <dd className="mt-pila text-pequeno text-tinta-suave">
-              {t("panel.dia.recuento.sinContestarAviso")}
-            </dd>
-          ) : null}
-        </div>
-      ))}
-    </dl>
+            {/*
+              EL AVISO QUE EVITA EL ERROR CARO, y va pegado a la cifra que lo
+              necesita. Quien no ha contestado no está sumado a ningún menú; sin
+              esta línea, alguien suma los tres números de esta fila, se los canta
+              al catering y encarga comida de más.
+            */}
+            {dato.clave === "panel.dia.recuento.sinContestar" && dato.valor > 0 ? (
+              <dd className="mt-pila text-pequeno text-tinta-suave">
+                {t("panel.dia.recuento.sinContestarAviso")}
+              </dd>
+            ) : null}
+          </div>
+        ))}
+      </dl>
+
+      {/*
+        LA CORRECCIÓN, DICHA APARTE Y SIN REPARTIR. Adultos y niños cuentan
+        confirmaciones; la corrección sólo dice cuántos menús de más o de menos.
+        Repartirla sería inventar, y sin esta línea las tarjetas contradecían al
+        total: «44 adultos y 1 niño» con 47 menús encargados.
+      */}
+      {totalAjustes !== 0 ? (
+        <p className="mt-interno text-pequeno text-tinta-suave">
+          <strong className="text-tinta">
+            {t("panel.dia.recuento.correccionTotal", { ajuste: conSigno(totalAjustes) })}
+          </strong>{" "}
+          {t("panel.dia.recuento.correccionTotalAyuda")}
+        </p>
+      ) : null}
+    </>
   );
 }
 
-function Corregir({ menuInicial }: { menuInicial: string }) {
+function Corregir({
+  menuInicial,
+  lineas,
+}: {
+  menuInicial: string;
+  lineas: LineaDelRecuento[];
+}) {
+  // La corrección que ya tiene cada menú: el número que se escribe la sustituye.
+  const ajusteDe = new Map(lineas.map((linea) => [linea.tipoMenu, linea.ajuste]));
+
   return (
     <section className="mt-bloque max-w-texto" aria-labelledby="corregir-recuento">
       <Titulo3 como="h2" id="corregir-recuento">
@@ -292,9 +329,19 @@ function Corregir({ menuInicial }: { menuInicial: string }) {
           defaultValue={menuInicial}
           required
         >
+          {/*
+            CADA MENÚ DICE LA CORRECCIÓN QUE YA TIENE. Guardar sustituye la
+            corrección del menú, y sin verla se apuntaba −1 encima de un −2
+            creyendo sumar: el total subía uno y la nota de antes se perdía.
+          */}
           {MENUS_RSVP.map((menu) => (
             <option key={menu} value={menu}>
-              {nombreDelMenu(menu)}
+              {ajusteDe.get(menu)
+                ? t("panel.dia.recuento.opcionConCorreccion", {
+                    menu: nombreDelMenu(menu),
+                    ajuste: conSigno(ajusteDe.get(menu)!),
+                  })
+                : nombreDelMenu(menu)}
             </option>
           ))}
         </CampoSeleccion>
@@ -378,10 +425,12 @@ function mensajeParaElCatering({
   lineas,
   cabezas,
   totalMenus,
+  totalAjustes,
 }: {
   lineas: LineaDelRecuento[];
   cabezas: { ninos: number; adultos: number; sinContestar: number };
   totalMenus: number;
+  totalAjustes: number;
 }): string {
   const renglones = [
     `${t("panel.dia.recuento.titulo")} · ${formatoMomento.format(new Date())}`,
@@ -392,6 +441,15 @@ function mensajeParaElCatering({
     `${t("panel.dia.recuento.adultos")}: ${cabezas.adultos}`,
     `${t("panel.dia.recuento.ninos")}: ${cabezas.ninos}`,
   ];
+
+  // Con corrección, se dice: si no, adultos más niños no daban el total.
+  if (totalAjustes !== 0) {
+    renglones.push(
+      `${t("panel.dia.recuento.correccionTotal", { ajuste: conSigno(totalAjustes) })} — ${t(
+        "panel.dia.recuento.correccionTotalAyuda",
+      )}`,
+    );
+  }
 
   if (cabezas.sinContestar > 0) {
     renglones.push(

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { IDIOMA } from "@/config/constants";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 /**
@@ -461,18 +462,30 @@ export async function obtenerAlergiasPorMesa(): Promise<AlergiaEnLaMesa[]> {
 
   const { data, error } = await supabase
     .from("v_alergias_por_mesa")
-    .select("mesa, nombre, apellidos, tipo_menu, es_nino, alergias")
-    .order("mesa", { ascending: true, nullsFirst: false })
-    .order("apellidos", { ascending: true });
+    .select("mesa, nombre, apellidos, tipo_menu, es_nino, alergias");
 
   if (error) throw new Error(`No se pudieron leer las alergias por mesa: ${error.message}`);
 
-  return ((data as FilaAlergia[] | null) ?? []).map((fila) => ({
-    mesa: fila.mesa,
-    nombre: fila.nombre,
-    apellidos: fila.apellidos,
-    tipoMenu: fila.tipo_menu,
-    esNino: fila.es_nino,
-    alergias: fila.alergias,
-  }));
+  /*
+    EL ORDEN SE PONE AQUÍ Y NO EN SQL. La base ordena las mesas como texto
+    —«Mesa 1, Mesa 10, Mesa 2»—, y el catering las recorre en el orden en que
+    están montadas. Las que no tienen mesa, al final: son las que hay que
+    resolver, pero no las que se reparten primero.
+  */
+  const orden = new Intl.Collator(IDIOMA, { numeric: true });
+  return ((data as FilaAlergia[] | null) ?? [])
+    .map((fila) => ({
+      mesa: fila.mesa,
+      nombre: fila.nombre,
+      apellidos: fila.apellidos,
+      tipoMenu: fila.tipo_menu,
+      esNino: fila.es_nino,
+      alergias: fila.alergias,
+    }))
+    .sort(
+      (a, b) =>
+        Number(a.mesa === null) - Number(b.mesa === null) ||
+        orden.compare(a.mesa ?? "", b.mesa ?? "") ||
+        orden.compare(a.apellidos ?? "", b.apellidos ?? ""),
+    );
 }

@@ -454,6 +454,11 @@
    * qué es y dónde se cambia.
    */
   --size-columna-token: 16rem;
+
+  /* Partes de una tabla de ancho fijo: la hoja por mesas del día de la boda
+     da la mitad al nombre y un cuarto a cada dato. */
+  --size-mitad: 50%;
+  --size-cuarto: 25%;
   --size-barra-muestra: 1rem;
 
   /* Lo mínimo que mide una ficha del catálogo —un color, una constelación—
