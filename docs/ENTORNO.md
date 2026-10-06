@@ -410,8 +410,19 @@ psql -d boda_rescate \
   -c 'create extension pg_trgm with schema extensions' \
   -c 'create schema auth' \
   -c 'create table auth.users (id uuid primary key, email text)'
-pg_restore --no-owner --dbname=boda_rescate copias/boda-<fecha>.dump
+# En tres pasos: esquema y datos; las cuentas que nombran los perfiles; y al
+# final claves ajenas, índices y triggers. `auth.users` no viaja en la copia, y
+# de una sola vez la clave de `perfiles` hacia ella no se podía crear.
+pg_restore --no-owner --section=pre-data --section=data --dbname=boda_rescate copias/boda-<fecha>.dump
+psql -d boda_rescate -c "insert into auth.users (id)
+  select usuario_id from public.perfiles
+  union select usuario_id from public.registro_auditoria where usuario_id is not null
+  on conflict (id) do nothing"
+pg_restore --no-owner --section=post-data --dbname=boda_rescate copias/boda-<fecha>.dump
 ```
+
+El único error que se espera es `schema "public" already exists`: cualquier
+otro es que algo no ha vuelto.
 
 Los roles `anon`, `authenticated` y `service_role` tienen que existir en ese
 servidor para que los permisos se apliquen (`sudo ./scripts/preparar-bbdd.sh`

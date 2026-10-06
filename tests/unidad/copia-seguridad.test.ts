@@ -26,6 +26,13 @@ const RAIZ = join(__dirname, "..", "..");
 const cadena = process.env.DATABASE_URL;
 
 const BASE_RESTAURADA = "boda_restaurada_prueba";
+
+/** Las cuentas que la copia da por hechas, sacadas de la propia copia. */
+const CUENTAS_DE_LA_COPIA =
+  "insert into auth.users (id) " +
+  "select usuario_id from public.perfiles " +
+  "union select usuario_id from public.registro_auditoria where usuario_id is not null " +
+  "on conflict (id) do nothing";
 const DIRECTORIO = join(RAIZ, "copias-de-prueba");
 
 /** La misma conexión pero contra otra base, para restaurar sin tocar la real. */
@@ -51,8 +58,40 @@ afterAll(async () => {
   }
 });
 
+/**
+ * UNA CUENTA DEL PANEL EN LA BASE QUE SE COPIA, como la que hay en producción.
+ *
+ * Sin ella el test restauraba una base sin perfiles, y la de verdad siempre
+ * los tiene: los novios. Cada perfil apunta a `auth.users`, que no viaja en la
+ * copia, así que restaurar como decía la guía fallaba al crear esa clave
+ * ajena — con cualquier copia real, y el test en verde.
+ */
+const CUENTA_DE_PRUEBA = "00000000-0000-4000-8000-00000000c0de";
+
+async function enLaOriginal<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T> {
+  const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+  try {
+    return await trabajo(sql);
+  } finally {
+    await sql.end();
+  }
+}
+
 describe.skipIf(!cadena)("La copia de seguridad", () => {
+  afterAll(async () => {
+    await enLaOriginal((sql) => sql`delete from auth.users where id = ${CUENTA_DE_PRUEBA}`);
+  });
+
   it("se vuelca y se restaura, con sus filas y sus políticas RLS", async () => {
+    // 0. Una cuenta con su perfil: el alta en `auth.users` lo crea el trigger.
+    await enLaOriginal(
+      (sql) => sql`
+        insert into auth.users (id, email)
+        values (${CUENTA_DE_PRUEBA}, 'copia-de-prueba@ejemplo.test')
+        on conflict (id) do nothing
+      `,
+    );
+
     // 1. La copia.
     const { stdout } = await ejecutar("./scripts/copia-de-seguridad.sh", [], {
       cwd: RAIZ,
@@ -104,18 +143,26 @@ describe.skipIf(!cadena)("La copia de seguridad", () => {
     //    el test sólo contaba filas. Ahora sale en rojo con el error delante.
     //    Se acepta UNO, y con nombre: el volcado de un solo esquema trae su
     //    `create schema public`, y en cualquier base ese esquema ya existe.
+    //
+    //    EN TRES PASOS, como dice la guía de ENTORNO.md: esquema y datos; luego
+    //    las cuentas de `auth.users` que nombran los perfiles y la auditoría
+    //    —la copia no las lleva—; y al final claves ajenas, índices y triggers.
+    //    De una vez, la clave de `perfiles` hacia `auth.users` no se podía
+    //    crear y la base rescatada se quedaba sin ella.
     const restauracion = await ejecutar(
       "bash",
       [
         "-c",
-        `PATH="$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1):$PATH" ` +
-          `pg_restore --no-owner --dbname="${destino}" "${fichero}" 2>&1; true`,
+        `PATH="$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1):$PATH"; ` +
+          `pg_restore --no-owner --section=pre-data --section=data --dbname="${destino}" "${fichero}" 2>&1; ` +
+          `psql -X -q "${destino}" -c "${CUENTAS_DE_LA_COPIA}" 2>&1; ` +
+          `pg_restore --no-owner --section=post-data --dbname="${destino}" "${fichero}" 2>&1; true`,
       ],
       { cwd: RAIZ },
     );
     const errores = restauracion.stdout
       .split("\n")
-      .filter((linea) => linea.includes("error:"))
+      .filter((linea) => linea.includes("error:") || linea.includes("ERROR:"))
       .filter((linea) => !linea.includes('schema "public" already exists'));
     expect(errores, "pg_restore no puede dejar errores por el camino").toEqual([]);
 
@@ -126,6 +173,17 @@ describe.skipIf(!cadena)("La copia de seguridad", () => {
           select count(*)::int as cuantos from public.invitados
         `;
       expect(invitados.cuantos, "los invitados tienen que volver").toBeGreaterThan(0);
+
+      // Y el perfil, con su clave hacia la cuenta: era lo que se caía.
+      const [perfil] = await restaurada<{ cuantos: number; clave: boolean }[]>`
+          select
+            (select count(*)::int from public.perfiles where usuario_id = ${CUENTA_DE_PRUEBA})
+              as cuantos,
+            exists (select 1 from pg_constraint where conname = 'perfiles_usuario_id_fk')
+              as clave
+        `;
+      expect(perfil.cuantos, "los perfiles tienen que volver").toBe(1);
+      expect(perfil.clave, "y su clave hacia auth.users también").toBe(true);
 
       /*
           Y LAS PROTECCIONES. Sin esto, la copia devolvería la lista de
