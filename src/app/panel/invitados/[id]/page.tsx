@@ -2,24 +2,29 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { BotonEnvio } from "@/components/ui/boton-envio";
-import { CampoTexto } from "@/components/ui/campo";
+import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   IDIOMA,
   LARGOS_DE_CAMPO,
+  MAXIMO_ACOMPANANTES,
+  MENUS_RSVP,
   RUTA_ACCESO,
   RUTA_INVITADOS,
   RUTA_RSVP,
   ZONA_HORARIA,
 } from "@/config/constants";
-import { obtenerGrupo, type PersonaDelGrupo } from "@/lib/bbdd/invitados";
+import { obtenerGrupo, type DetalleGrupo, type PersonaDelGrupo } from "@/lib/bbdd/invitados";
 import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 import { urlDelSitio } from "@/lib/url-sitio";
 
 import {
   anadirPersona,
+  apuntarRespuesta,
+  borrarInvitacion,
+  editarInvitacion,
   editarPersona,
   emitirEnlace,
   quitarPersona,
@@ -118,6 +123,21 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
       </header>
 
       <AvisoEstado estado={soloTexto(consulta.estado)} />
+
+      {/*
+        CORREGIR Y BORRAR LA INVITACIÓN, plegados: son lo excepcional. Sin
+        ellos, una errata en el nombre que lee la familia se quedaba para
+        siempre y una invitación creada dos veces sólo se quitaba con SQL.
+        Borrar sólo se ofrece si nadie ha contestado.
+      */}
+      {puedeEditar ? (
+        <div className="mt-pila flex flex-wrap items-start gap-x-elemento">
+          <CorregirInvitacion grupo={grupo} token={token} />
+          {grupo.confirmados + grupo.rechazados === 0 ? (
+            <BorrarInvitacion grupoId={grupo.id} />
+          ) : null}
+        </div>
+      ) : null}
 
       {/*
         El enlace en claro, si la acción que acaba de correr lo ha devuelto.
@@ -304,6 +324,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
                 {puedeEditar ? (
                   <div className="flex flex-wrap items-start gap-x-elemento">
                     <EditarPersona grupoId={grupo.id} persona={persona} token={token} />
+                    <ApuntarRespuesta grupoId={grupo.id} persona={persona} token={token} />
                     {persona.estado === "pendiente" ? (
                       <QuitarPersona grupoId={grupo.id} persona={persona} token={token} />
                     ) : null}
@@ -348,6 +369,88 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
         ) : null}
       </section>
     </>
+  );
+}
+
+const CLASES_DESPLEGABLE =
+  "inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-suave underline decoration-borde-fuerte underline-offset-4 transicion-color hover:text-tinta hover:decoration-borde-marca";
+
+function CorregirInvitacion({ grupo, token }: { grupo: DetalleGrupo; token: string }) {
+  return (
+    <details>
+      <summary className={CLASES_DESPLEGABLE}>
+        {t("panel.invitados.corregirInvitacion")}
+      </summary>
+      <form action={editarInvitacion} className="mt-pila grid max-w-texto gap-interno">
+        <input type="hidden" name="grupo_id" value={grupo.id} />
+        {token ? <input type="hidden" name="token" value={token} /> : null}
+        <CampoTexto
+          etiqueta={t("panel.invitados.nombreGrupo")}
+          name="nombre"
+          required
+          autoComplete="off"
+          maxLength={LARGOS_DE_CAMPO["grupos_invitacion.nombre"]}
+          defaultValue={grupo.nombre}
+        />
+        <CampoSeleccion
+          etiqueta={t("panel.invitados.lado")}
+          name="lado"
+          defaultValue={grupo.lado}
+        >
+          <option value="novia">{t("panel.invitados.lados.novia")}</option>
+          <option value="novio">{t("panel.invitados.lados.novio")}</option>
+          <option value="ambos">{t("panel.invitados.lados.ambos")}</option>
+        </CampoSeleccion>
+        <CampoTexto
+          etiqueta={t("panel.invitados.maximoAcompanantes")}
+          ayuda={t("panel.invitados.maximoAcompanantesAyuda")}
+          name="maximo_acompanantes"
+          type="number"
+          min={0}
+          max={MAXIMO_ACOMPANANTES}
+          defaultValue={grupo.maximoAcompanantes}
+        />
+        <div>
+          <BotonEnvio jerarquia="secundario">
+            {t("panel.invitados.guardarInvitacion")}
+          </BotonEnvio>
+        </div>
+      </form>
+    </details>
+  );
+}
+
+function BorrarInvitacion({ grupoId }: { grupoId: string }) {
+  return (
+    <details>
+      <summary
+        className={`${CLASES_DESPLEGABLE} hover:text-error-tinta hover:decoration-error`}
+      >
+        {t("panel.invitados.borrarInvitacion")}
+      </summary>
+      <form action={borrarInvitacion} className="mt-pila grid max-w-texto gap-interno">
+        <input type="hidden" name="grupo_id" value={grupoId} />
+        <p className="text-pequeno text-tinta-suave">
+          {t("panel.invitados.borrarInvitacionAviso")}
+        </p>
+        <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-error has-checked:bg-error-fondo">
+          <input
+            type="checkbox"
+            name="confirmo_borrar"
+            required
+            className="casilla-marca transicion-color"
+          />
+          <span className="text-pequeno text-tinta">
+            {t("panel.invitados.borrarInvitacionConfirmar")}
+          </span>
+        </label>
+        <div>
+          <BotonEnvio jerarquia="secundario">
+            {t("panel.invitados.borrarInvitacionBoton")}
+          </BotonEnvio>
+        </div>
+      </form>
+    </details>
   );
 }
 
@@ -426,6 +529,101 @@ function EditarPersona({
         <CamposPersona persona={persona} />
         <div>
           <BotonEnvio jerarquia="secundario">{t("panel.invitados.guardarPersona")}</BotonEnvio>
+        </div>
+      </form>
+    </details>
+  );
+}
+
+/**
+ * LO QUE HA CONTESTADO POR TELÉFONO, apuntado a mano. Lo que ya tiene —su
+ * respuesta, su menú, sus alergias— sale puesto, para corregir sin reescribir.
+ * El menú infantil sólo se ofrece a quien es menor, como en su formulario.
+ */
+function ApuntarRespuesta({
+  grupoId,
+  persona,
+  token,
+}: {
+  grupoId: string;
+  persona: PersonaDelGrupo;
+  token: string;
+}) {
+  const nombre = [persona.nombre, persona.apellidos].filter(Boolean).join(" ");
+  const menus = MENUS_RSVP.filter((menu) => menu !== "infantil" || persona.esNino);
+  return (
+    <details className="mt-interno-compacto">
+      <summary
+        aria-label={t("panel.invitados.apuntarRespuestaDe", { persona: nombre })}
+        className={CLASES_DESPLEGABLE}
+      >
+        {t("panel.invitados.apuntarRespuesta")}
+      </summary>
+      <form action={apuntarRespuesta} className="mt-pila grid max-w-texto gap-interno">
+        <input type="hidden" name="grupo_id" value={grupoId} />
+        <input type="hidden" name="persona_id" value={persona.id} />
+        {token ? <input type="hidden" name="token" value={token} /> : null}
+        <p className="text-pequeno text-tinta-suave">{t("panel.invitados.apuntarAyuda")}</p>
+        <fieldset className="grid gap-interno-compacto">
+          <legend className="mb-interno-compacto text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
+            {t("panel.invitados.apuntarViene")}
+          </legend>
+          {(
+            [
+              ["confirmado", "rsvp.vieneSi"],
+              ["rechazado", "rsvp.vieneNo"],
+            ] as const
+          ).map(([valor, clave]) => (
+            <label
+              key={valor}
+              className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue"
+            >
+              <input
+                type="radio"
+                name="estado"
+                value={valor}
+                required
+                defaultChecked={persona.estado === valor}
+                className="casilla-marca transicion-color"
+              />
+              <span className="text-cuerpo text-tinta">{t(clave)}</span>
+            </label>
+          ))}
+        </fieldset>
+        <CampoSeleccion
+          etiqueta={t("rsvp.menuEtiqueta")}
+          name="tipo_menu"
+          defaultValue={
+            menus.includes(persona.tipoMenu as (typeof menus)[number])
+              ? persona.tipoMenu
+              : menus[0]
+          }
+        >
+          {menus.map((menu) => (
+            <option key={menu} value={menu}>
+              {t(`panel.menus.${menu}`)}
+            </option>
+          ))}
+        </CampoSeleccion>
+        <CampoTextoLargo
+          etiqueta={t("rsvp.alergias")}
+          name="alergias"
+          rows={2}
+          maxLength={LARGOS_DE_CAMPO["invitados.alergias"]}
+          defaultValue={persona.alergias ?? undefined}
+        />
+        <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
+          <input
+            type="checkbox"
+            name="necesita_autobus"
+            className="casilla-marca transicion-color"
+          />
+          <span className="text-cuerpo text-tinta">{t("rsvp.autobusPersona")}</span>
+        </label>
+        <div>
+          <BotonEnvio jerarquia="secundario">
+            {t("panel.invitados.guardarRespuesta")}
+          </BotonEnvio>
         </div>
       </form>
     </details>

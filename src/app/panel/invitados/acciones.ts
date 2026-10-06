@@ -7,13 +7,14 @@ import {
   LARGOS_DE_CAMPO,
   LONGITUD_MINIMA_NOMBRE,
   MAXIMO_ACOMPANANTES,
+  MENUS_RSVP,
   RUTA_ACCESO,
   RUTA_INVITADOS,
   RUTA_PENDIENTES,
   URL_WHATSAPP,
 } from "@/config/constants";
 import { esCorreoValido } from "@/lib/correo-valido";
-import { ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
+import { accesoActual, ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 /**
@@ -49,6 +50,14 @@ type Estado =
   | "quitar-con-respuesta"
   | "persona-no-existe"
   | "confirmar-emision"
+  | "invitacion-editada"
+  | "invitacion-borrada"
+  | "acompanantes-ocupados"
+  | "borrar-con-respuestas"
+  | "respuesta-apuntada"
+  | "respuesta-sin-estado"
+  | "menu-infantil"
+  | "alergias-largas"
   | "sin-permiso"
   | "error";
 
@@ -101,23 +110,11 @@ async function cliente() {
  * enseñarlo luego sería deshacer justo esa decisión.
  */
 export async function crearInvitacion(datos: FormData): Promise<void> {
-  const nombre = texto(datos, "nombre");
-  if (nombre.length < LONGITUD_MINIMA_NOMBRE) volver("nombre");
   // El tope de la base, dicho antes: si no, el CHECK lo rechaza y la pantalla
   // pide reintentar algo que no va a funcionar nunca.
-  if (nombre.length > LARGOS_DE_CAMPO["grupos_invitacion.nombre"]) volver("nombre-largo");
-
-  const ladoBruto = texto(datos, "lado");
-  const lado = (LADOS as readonly string[]).includes(ladoBruto) ? ladoBruto : "ambos";
-
-  const acompanantes = Number(texto(datos, "maximo_acompanantes") || "0");
-  if (
-    !Number.isInteger(acompanantes) ||
-    acompanantes < 0 ||
-    acompanantes > MAXIMO_ACOMPANANTES
-  ) {
-    volver("acompanantes");
-  }
+  const invitacion = datosInvitacion(datos);
+  if (!invitacion.ok) volver(invitacion.estado);
+  const { nombre, lado, acompanantes } = invitacion.valores;
 
   const supabase = await cliente();
   const { data, error } = await supabase.rpc("crear_grupo_invitacion", {
@@ -140,6 +137,135 @@ export async function crearInvitacion(datos: FormData): Promise<void> {
   redirect(
     `${RUTA_INVITADOS}/${creado.grupo_id}?estado=creada&token=${encodeURIComponent(creado.token)}`,
   );
+}
+
+/**
+ * Nombre, lado y tope de acompañantes de una invitación, comprobados como los
+ * comprueba la base. Lo comparten el alta y la corrección.
+ */
+function datosInvitacion(
+  datos: FormData,
+):
+  | { ok: false; estado: Estado }
+  | { ok: true; valores: { nombre: string; lado: string; acompanantes: number } } {
+  const nombre = texto(datos, "nombre");
+  if (nombre.length < LONGITUD_MINIMA_NOMBRE) return { ok: false, estado: "nombre" };
+  if (nombre.length > LARGOS_DE_CAMPO["grupos_invitacion.nombre"]) {
+    return { ok: false, estado: "nombre-largo" };
+  }
+  const ladoBruto = texto(datos, "lado");
+  const lado = (LADOS as readonly string[]).includes(ladoBruto) ? ladoBruto : "ambos";
+  const acompanantes = Number(texto(datos, "maximo_acompanantes") || "0");
+  if (
+    !Number.isInteger(acompanantes) ||
+    acompanantes < 0 ||
+    acompanantes > MAXIMO_ACOMPANANTES
+  ) {
+    return { ok: false, estado: "acompanantes" };
+  }
+  return { ok: true, valores: { nombre, lado, acompanantes } };
+}
+
+/**
+ * BODA-51 · CORREGIR UNA INVITACIÓN.
+ *
+ * El nombre es lo que lee la familia al abrir su enlace, y una errata se
+ * quedaba para siempre; las importadas nacían sin acompañantes y no había
+ * forma de darle un «+1» a nadie. Lo que no se toca es el enlace: corregir el
+ * nombre no lo anula.
+ */
+export async function editarInvitacion(datos: FormData): Promise<void> {
+  const grupoId = texto(datos, "grupo_id");
+  const token = texto(datos, "token");
+  if (!grupoId) volver("no-existe");
+
+  const invitacion = datosInvitacion(datos);
+  if (!invitacion.ok) volver(invitacion.estado, grupoId, token);
+  const { nombre, lado, acompanantes } = invitacion.valores;
+
+  const supabase = await cliente();
+
+  /*
+    EL TOPE NO BAJA POR DEBAJO DE LOS QUE YA HAY. La base sólo lo mira al
+    añadir a alguien; bajándolo aquí, el grupo se quedaría con más
+    acompañantes de los que admite y el siguiente cambio de la familia
+    fallaría sin que nadie supiera por qué.
+  */
+  const { count: apuntados, error: errorRecuento } = await supabase
+    .from("invitados")
+    .select("id", { count: "exact", head: true })
+    .eq("grupo_id", grupoId)
+    .eq("es_acompanante", true);
+  if (errorRecuento) volver("error", grupoId, token);
+  if ((apuntados ?? 0) > acompanantes) volver("acompanantes-ocupados", grupoId, token);
+
+  const { data, error } = await supabase
+    .from("grupos_invitacion")
+    .update({ nombre, lado, maximo_acompanantes: acompanantes })
+    .eq("id", grupoId)
+    .select("id");
+
+  if (error) {
+    if (error.message.includes("RSV06")) volver("sin-permiso", grupoId, token);
+    console.error("No se pudo corregir la invitación:", error);
+    volver("error", grupoId, token);
+  }
+  if (!data?.length) {
+    if (await ceroFilasEsFaltaDePermiso()) volver("sin-permiso", grupoId, token);
+    volver("no-existe");
+  }
+
+  revalidatePath(RUTA_INVITADOS);
+  volver("invitacion-editada", grupoId, token);
+}
+
+/**
+ * BORRAR UNA INVITACIÓN, sólo si nadie de ella ha contestado.
+ *
+ * Borrarla se lleva a su gente en cascada, y con la gente sus respuestas: el
+ * recuento de la cocina cambiaría solo y sin rastro. Una invitación creada dos
+ * veces o de prueba sí se borra; una con respuestas, no — si ya no vienen, lo
+ * que toca es que su respuesta diga «no».
+ */
+export async function borrarInvitacion(datos: FormData): Promise<void> {
+  const grupoId = texto(datos, "grupo_id");
+  if (!grupoId) volver("no-existe");
+  // La casilla es `required`; un formulario mandado a mano no lo es.
+  if (datos.get("confirmo_borrar") === null) volver("error", grupoId);
+
+  const supabase = await cliente();
+
+  const { data: respuestas, error: errorLectura } = await supabase
+    .from("confirmaciones")
+    .select("id, invitados!inner ( grupo_id )")
+    .eq("invitados.grupo_id", grupoId)
+    .eq("es_vigente", true)
+    .neq("estado", "pendiente")
+    .limit(1);
+  // Si no se puede saber, no se borra: lo borrado no vuelve.
+  if (errorLectura) {
+    console.error("No se pudo comprobar si la invitación tenía respuestas:", errorLectura);
+    volver("error", grupoId);
+  }
+  if (respuestas?.length) volver("borrar-con-respuestas", grupoId);
+
+  const { data, error } = await supabase
+    .from("grupos_invitacion")
+    .delete()
+    .eq("id", grupoId)
+    .select("id");
+
+  if (error) {
+    console.error("No se pudo borrar la invitación:", error);
+    volver("error", grupoId);
+  }
+  if (!data?.length) {
+    if (await ceroFilasEsFaltaDePermiso()) volver("sin-permiso", grupoId);
+    volver("no-existe");
+  }
+
+  revalidatePath(RUTA_INVITADOS);
+  volver("invitacion-borrada");
 }
 
 /** Emite un enlace nuevo. El anterior deja de valer en el acto. */
@@ -341,6 +467,102 @@ export async function quitarPersona(datos: FormData): Promise<void> {
   }
 
   volver("persona-quitada", grupoId, token);
+}
+
+/**
+ * APUNTAR LA RESPUESTA QUE LLEGA POR TELÉFONO.
+ *
+ * Pasado el plazo, la pantalla de pendientes manda llamar a quien falte; la
+ * tía llama y dice que vienen tres y uno es celíaco, y no había dónde
+ * apuntarlo. La base lo tenía previsto —el origen `panel`, «los novios a mano
+ * tras una llamada», que el plazo no frena— y ninguna pantalla lo usaba.
+ *
+ * Es una respuesta nueva, como cuando el invitado la cambia desde su enlace:
+ * el histórico es inmutable y la anterior deja de ser la vigente. Lo que ya
+ * había escrito —su mensaje— viaja con ella para no perderlo de la bandeja.
+ * El menú y las alergias viven en la persona, y se escriben antes: si lo
+ * segundo fallara, lo anotado seguiría siendo cierto.
+ */
+export async function apuntarRespuesta(datos: FormData): Promise<void> {
+  const grupoId = texto(datos, "grupo_id");
+  const personaId = texto(datos, "persona_id");
+  const token = texto(datos, "token");
+  if (!grupoId || !personaId) volver("no-existe");
+
+  const estado = texto(datos, "estado");
+  if (estado !== "confirmado" && estado !== "rechazado") {
+    volver("respuesta-sin-estado", grupoId, token);
+  }
+  const viene = estado === "confirmado";
+  const menu = texto(datos, "tipo_menu") || MENUS_RSVP[0];
+  const alergias = texto(datos, "alergias") || null;
+  if (viene && !(MENUS_RSVP as readonly string[]).includes(menu))
+    volver("error", grupoId, token);
+  if ((alergias?.length ?? 0) > LARGOS_DE_CAMPO["invitados.alergias"]) {
+    volver("alergias-largas", grupoId, token);
+  }
+
+  const acceso = await accesoActual();
+  if (!acceso) redirect(RUTA_ACCESO);
+  if (acceso.rol === "lector") volver("sin-permiso", grupoId, token);
+
+  const supabase = await cliente();
+
+  const { data: persona, error: errorPersona } = await supabase
+    .from("invitados")
+    .select("id, es_nino")
+    .eq("id", personaId)
+    .eq("grupo_id", grupoId)
+    .maybeSingle();
+  if (errorPersona) volver("error", grupoId, token);
+  if (!persona) volver("persona-no-existe", grupoId, token);
+  // La misma regla que la base (`invitados_menu_infantil_solo_ninos`), dicha antes.
+  if (viene && menu === "infantil" && !persona.es_nino) volver("menu-infantil", grupoId, token);
+
+  const { data: anterior } = await supabase
+    .from("confirmaciones")
+    .select("mensaje, cancion_solicitada")
+    .eq("invitado_id", personaId)
+    .eq("es_vigente", true)
+    .maybeSingle();
+
+  if (viene) {
+    const { data: escrita, error } = await supabase
+      .from("invitados")
+      .update({ tipo_menu: menu, alergias })
+      .eq("id", personaId)
+      .select("id");
+    if (error) {
+      console.error("No se pudo apuntar el menú:", error);
+      volver("error", grupoId, token);
+    }
+    if (!escrita?.length) volver("sin-permiso", grupoId, token);
+  }
+
+  const { error, count } = await supabase.from("confirmaciones").insert(
+    {
+      invitado_id: personaId,
+      estado,
+      origen: "panel",
+      registrado_por: acceso.perfilId,
+      respondido_en: new Date().toISOString(),
+      // Como en el formulario del invitado: el alojamiento no se pregunta.
+      necesita_autobus: viene ? datos.get("necesita_autobus") !== null : null,
+      necesita_alojamiento: viene ? false : null,
+      mensaje: anterior?.mensaje ?? null,
+      cancion_solicitada: anterior?.cancion_solicitada ?? null,
+    },
+    { count: "exact" },
+  );
+
+  if (error) {
+    console.error("No se pudo apuntar la respuesta:", error);
+    volver("error", grupoId, token);
+  }
+  if (count === 0) volver("sin-permiso", grupoId, token);
+
+  revalidatePath(RUTA_INVITADOS);
+  volver("respuesta-apuntada", grupoId, token);
 }
 
 /**

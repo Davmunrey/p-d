@@ -126,7 +126,9 @@ test.describe("Invitaciones", () => {
 
     // Y de vuelta al panel: la respuesta tiene que estar ahí.
     await page.reload();
-    await expect(page.getByText(copy.rsvp.vieneSi)).toBeVisible();
+    // La que se ve: «Sí, viene» es también una opción, plegada, del formulario
+    // con el que el panel apunta una respuesta por teléfono.
+    await expect(page.getByText(copy.rsvp.vieneSi).filter({ visible: true })).toBeVisible();
 
     /*
       También en la lista, en el recuento del grupo.
@@ -1087,6 +1089,237 @@ test.describe("La ficha de una invitación", () => {
     await page.getByLabel(copy.panel.invitados.emitirConfirmar).check();
     await page.getByRole("button", { name: copy.panel.invitados.emitirEnlace }).click();
     await expect(page).toHaveURL(/estado=enlace-emitido/);
+  });
+
+  test("corregir el nombre, el lado y los acompañantes no anula el enlace", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const id = await crear(page, `${MARCA} con errata ${sello}`);
+    await anadir(page, "(DES) Corregida");
+    const huella = () =>
+      conBase(
+        (sql) => sql<{ huella: string }[]>`
+          select encode(huella_token, 'hex') as huella from public.grupos_invitacion where id = ${id}
+        `,
+      );
+    const antes = await huella();
+
+    await page.getByText(copy.panel.invitados.corregirInvitacion, { exact: true }).click();
+    const formulario = page.locator("form").filter({
+      has: page.getByRole("button", { name: copy.panel.invitados.guardarInvitacion }),
+    });
+    await formulario
+      .getByLabel(copy.panel.invitados.nombreGrupo)
+      .fill(`${MARCA} sin errata ${sello}`);
+    await formulario.getByLabel(copy.panel.invitados.lado).selectOption("novio");
+    await formulario.getByLabel(copy.panel.invitados.maximoAcompanantes).fill("3");
+    await formulario
+      .getByRole("button", { name: copy.panel.invitados.guardarInvitacion })
+      .click();
+
+    await expect(page).toHaveURL(/estado=invitacion-editada/);
+    await expect(page.getByText(copy.panel.invitados.invitacionEditada)).toBeVisible();
+    const [fila] = await conBase(
+      (sql) => sql<{ nombre: string; lado: string; maximo_acompanantes: number }[]>`
+        select nombre, lado::text as lado, maximo_acompanantes
+          from public.grupos_invitacion where id = ${id}
+      `,
+    );
+    expect(fila).toEqual({
+      nombre: `${MARCA} sin errata ${sello}`,
+      lado: "novio",
+      maximo_acompanantes: 3,
+    });
+    expect(await huella()).toEqual(antes);
+  });
+
+  test("el tope de acompañantes no baja de los que ya están apuntados", async ({ page }) => {
+    const id = await crear(page, `${MARCA} con acompañante ${Date.now()}`, 2);
+    await conBase(
+      (sql) => sql`
+        insert into public.invitados (grupo_id, nombre, es_acompanante)
+        values (${id}, '(DES) Acompañante uno', true), (${id}, '(DES) Acompañante dos', true)
+      `,
+    );
+    await page.goto(`${RUTA_INVITADOS}/${id}`);
+
+    await page.getByText(copy.panel.invitados.corregirInvitacion, { exact: true }).click();
+    const formulario = page.locator("form").filter({
+      has: page.getByRole("button", { name: copy.panel.invitados.guardarInvitacion }),
+    });
+    await formulario.getByLabel(copy.panel.invitados.maximoAcompanantes).fill("1");
+    await formulario
+      .getByRole("button", { name: copy.panel.invitados.guardarInvitacion })
+      .click();
+
+    await expect(page).toHaveURL(/estado=acompanantes-ocupados/);
+    await expect(page.getByText(copy.panel.invitados.errorAcompanantesOcupados)).toBeVisible();
+    const [fila] = await conBase(
+      (sql) => sql<{ maximo: number }[]>`
+        select maximo_acompanantes as maximo from public.grupos_invitacion where id = ${id}
+      `,
+    );
+    expect(fila!.maximo).toBe(2);
+  });
+
+  test("una invitación sin respuestas se borra, confirmándolo, con su gente", async ({
+    page,
+  }) => {
+    const nombre = `${MARCA} duplicada ${Date.now()}`;
+    const id = await crear(page, nombre);
+    await anadir(page, "(DES) Duplicada");
+
+    await page.getByText(copy.panel.invitados.borrarInvitacion, { exact: true }).click();
+    await expect(
+      page.getByLabel(copy.panel.invitados.borrarInvitacionConfirmar),
+    ).toHaveAttribute("required", "");
+    await page.getByLabel(copy.panel.invitados.borrarInvitacionConfirmar).check();
+    await page
+      .getByRole("button", { name: copy.panel.invitados.borrarInvitacionBoton })
+      .click();
+
+    await expect(page).toHaveURL(new RegExp(`${RUTA_INVITADOS}\\?estado=invitacion-borrada`));
+    await expect(page.getByText(copy.panel.invitados.invitacionBorrada)).toBeVisible();
+    const quedan = await conBase(
+      (sql) => sql`
+        select 1 from public.grupos_invitacion where id = ${id}
+        union all select 1 from public.invitados where grupo_id = ${id}
+      `,
+    );
+    expect(quedan).toHaveLength(0);
+  });
+
+  /**
+   * CASO DE ERROR · alguien contesta mientras la ficha está abierta. La
+   * pantalla aún ofrece borrar, pero la acción mira la base en el momento:
+   * con una respuesta dentro, no se borra nada.
+   */
+  test("una invitación con respuestas no se borra, aunque la pantalla aún lo ofrezca", async ({
+    page,
+  }) => {
+    const id = await crear(page, `${MARCA} ya contestó ${Date.now()}`);
+    await anadir(page, "(DES) Contestó");
+
+    await page.getByText(copy.panel.invitados.borrarInvitacion, { exact: true }).click();
+    await conBase(async (sql) => {
+      const [persona] = await sql<{ id: string }[]>`
+        select id from public.invitados where grupo_id = ${id} limit 1
+      `;
+      await sql`
+        insert into public.confirmaciones
+          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
+        values (${persona!.id}, 'rechazado', 'publico', false, false)
+      `;
+    });
+    await page.getByLabel(copy.panel.invitados.borrarInvitacionConfirmar).check();
+    await page
+      .getByRole("button", { name: copy.panel.invitados.borrarInvitacionBoton })
+      .click();
+
+    await expect(page).toHaveURL(/estado=borrar-con-respuestas/);
+    await expect(page.getByText(copy.panel.invitados.errorBorrarConRespuestas)).toBeVisible();
+    // Y ahora que ha contestado, ya no se ofrece.
+    await expect(
+      page.getByText(copy.panel.invitados.borrarInvitacion, { exact: true }),
+    ).toHaveCount(0);
+    const sigue = await conBase(
+      (sql) => sql`select 1 from public.grupos_invitacion where id = ${id}`,
+    );
+    expect(sigue).toHaveLength(1);
+  });
+
+  /**
+   * LO QUE LLEGA POR TELÉFONO. La tía llama: viene, es celíaca y necesita el
+   * autobús. Se apunta en su ficha y cuenta como cualquier otra respuesta,
+   * con la marca de que la apuntó el panel.
+   */
+  test("una respuesta que llega por teléfono se apunta y cuenta", async ({ page }) => {
+    const id = await crear(page, `${MARCA} por teléfono ${Date.now()}`);
+    await anadir(page, "(DES) Tía Rosario");
+
+    await page
+      .getByLabel(
+        copy.panel.invitados.apuntarRespuestaDe.replace("{persona}", "(DES) Tía Rosario"),
+      )
+      .click();
+    const formulario = page.locator("form").filter({
+      has: page.getByRole("button", { name: copy.panel.invitados.guardarRespuesta }),
+    });
+    await formulario.getByLabel(copy.rsvp.vieneSi).check();
+    await formulario.getByLabel(copy.rsvp.menuEtiqueta).selectOption("sin_gluten");
+    await formulario.getByLabel(copy.rsvp.alergias).fill("(DES) Celíaca");
+    await formulario.getByLabel(copy.rsvp.autobusPersona).check();
+    // El menú infantil no se ofrece a una adulta.
+    await expect(formulario.locator('option[value="infantil"]')).toHaveCount(0);
+    await formulario
+      .getByRole("button", { name: copy.panel.invitados.guardarRespuesta })
+      .click();
+
+    await expect(page).toHaveURL(/estado=respuesta-apuntada/);
+    await expect(page.getByText(copy.panel.invitados.respuestaApuntada)).toBeVisible();
+    await expect(
+      page.locator("li").filter({ hasText: "(DES) Tía Rosario" }).first(),
+    ).toContainText(`${copy.rsvp.vieneSi} · ${copy.panel.menus.sin_gluten} · (DES) Celíaca`);
+
+    const [respuesta] = await conBase(
+      (sql) => sql<
+        {
+          estado: string;
+          origen: string;
+          con_autor: boolean;
+          autobus: boolean;
+          menu: string;
+          alergias: string;
+        }[]
+      >`
+        select c.estado::text as estado, c.origen::text as origen,
+               c.registrado_por is not null as con_autor, c.necesita_autobus as autobus,
+               i.tipo_menu::text as menu, i.alergias
+          from public.confirmaciones c
+          join public.invitados i on i.id = c.invitado_id
+         where i.grupo_id = ${id} and c.es_vigente
+      `,
+    );
+    expect(respuesta).toEqual({
+      estado: "confirmado",
+      origen: "panel",
+      con_autor: true,
+      autobus: true,
+      menu: "sin_gluten",
+      alergias: "(DES) Celíaca",
+    });
+  });
+
+  test("apuntar una respuesta sin decir si viene no escribe nada", async ({ page }) => {
+    const id = await crear(page, `${MARCA} sin decir ${Date.now()}`);
+    await anadir(page, "(DES) Indecisa");
+
+    await page
+      .getByLabel(
+        copy.panel.invitados.apuntarRespuestaDe.replace("{persona}", "(DES) Indecisa"),
+      )
+      .click();
+    const formulario = page.locator("form").filter({
+      has: page.getByRole("button", { name: copy.panel.invitados.guardarRespuesta }),
+    });
+    // Mandado a mano, sin el `required` de las dos opciones.
+    await formulario
+      .locator('input[name="estado"]')
+      .evaluateAll((nodos) => nodos.forEach((nodo) => nodo.removeAttribute("required")));
+    await formulario
+      .getByRole("button", { name: copy.panel.invitados.guardarRespuesta })
+      .click();
+
+    await expect(page).toHaveURL(/estado=respuesta-sin-estado/);
+    await expect(page.getByText(copy.panel.invitados.errorRespuestaSinEstado)).toBeVisible();
+    const respuestas = await conBase(
+      (sql) => sql`
+        select 1 from public.confirmaciones c join public.invitados i on i.id = c.invitado_id
+         where i.grupo_id = ${id} and c.origen = 'panel'
+      `,
+    );
+    expect(respuestas).toHaveLength(0);
   });
 });
 
