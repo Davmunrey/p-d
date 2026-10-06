@@ -275,9 +275,10 @@ test.describe("Accesibilidad de la parte pública", () => {
     await page.getByRole("button", { name: copy.rsvp.siguiente }).click();
     await expect(page).toHaveURL(/falta=/);
     // Filtrado por texto: el anunciador de rutas de Next también es `alert`.
+    // Uno por cada persona sin contestar, que aquí son las dos.
     await expect(
       page.getByRole("alert").filter({ hasText: copy.rsvp.errorSinRespuesta.split("{")[0] }),
-    ).toBeVisible();
+    ).toHaveCount(2);
     await page.waitForLoadState("networkidle");
     await auditar(page, "el paso de asistencia con un error de campo");
 

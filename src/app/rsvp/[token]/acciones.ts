@@ -31,7 +31,7 @@ import {
 import { sembrarDesdeLaBase } from "@/lib/rsvp-siembra";
 import { urlDelSitio } from "@/lib/url-sitio";
 
-import { anclaPersona } from "./ancla";
+import { anclaPersona, faltanEnLaUrl } from "./ancla";
 
 /**
  * EL AVANCE DEL RSVP
@@ -159,6 +159,12 @@ function incorporar(
   }
 }
 
+/** De vuelta al paso de asistencia, señalando a todos los que faltan. */
+function volverAContestar(base: string, faltan: { id: string }[]): string {
+  const ids = faltan.map((persona) => persona.id);
+  return `${base}?paso=asistencia&falta=${faltanEnLaUrl(ids)}#${anclaPersona(ids[0]!)}`;
+}
+
 export async function avanzar(datos: FormData): Promise<void> {
   const token = texto(datos, "token");
   const pasoActual = texto(datos, "paso");
@@ -238,12 +244,8 @@ export async function avanzar(datos: FormData): Promise<void> {
   if (pasoActual === "asistencia") {
     // Nadie puede quedarse sin contestar: en la base, «pendiente» y «no viene»
     // son cosas distintas, y aquí se sabría a quién falta pero no qué quiso.
-    const sinContestar = invitacion.personas.find((p) => !borrador.asistencia[p.id]);
-    if (sinContestar) {
-      redirect(
-        `${base}?paso=asistencia&falta=${encodeURIComponent(sinContestar.id)}#${anclaPersona(sinContestar.id)}`,
-      );
-    }
+    const sinContestar = invitacion.personas.filter((p) => !borrador.asistencia[p.id]);
+    if (sinContestar.length > 0) redirect(volverAContestar(base, sinContestar));
     redirect(`${base}?paso=${alguienViene ? "detalles" : "mensaje"}`);
   }
 
@@ -267,12 +269,8 @@ export async function avanzar(datos: FormData): Promise<void> {
     que hace el camino normal: contestar otra vez cuesta un minuto; deshacer una
     baja que nadie pidió no se puede, porque `confirmaciones` es un histórico.
   */
-  const faltaPorContestar = invitacion.personas.find((p) => !borrador.asistencia[p.id]);
-  if (faltaPorContestar) {
-    redirect(
-      `${base}?paso=asistencia&falta=${encodeURIComponent(faltaPorContestar.id)}#${anclaPersona(faltaPorContestar.id)}`,
-    );
-  }
+  const faltaPorContestar = invitacion.personas.filter((p) => !borrador.asistencia[p.id]);
+  if (faltaPorContestar.length > 0) redirect(volverAContestar(base, faltaPorContestar));
 
   // Último paso: se envía.
   const respuestas: RespuestaInvitado[] = invitacion.personas.map((persona, indice) => {

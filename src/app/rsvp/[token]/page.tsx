@@ -26,7 +26,7 @@ import { sembrarDesdeLaBase } from "@/lib/rsvp-siembra";
 
 import { avanzar, reabrir } from "./acciones";
 
-import { anclaPersona, avisoPersona } from "./ancla";
+import { anclaPersona, avisoPersona, faltanDeLaUrl } from "./ancla";
 
 /**
  * CONFIRMACIÓN DE ASISTENCIA
@@ -249,7 +249,7 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
           <PasoAsistencia
             personas={invitacion.personas}
             borrador={borrador}
-            faltaId={soloTexto(consulta.falta)}
+            faltan={faltanDeLaUrl(soloTexto(consulta.falta) ?? "")}
           />
         ) : null}
 
@@ -442,11 +442,11 @@ const nombreCompleto = (persona: PersonaInvitada) =>
 function PasoAsistencia({
   personas,
   borrador,
-  faltaId,
+  faltan,
 }: {
   personas: PersonaInvitada[];
   borrador: Borrador;
-  faltaId: string | undefined;
+  faltan: Set<string>;
 }) {
   return (
     /*
@@ -465,7 +465,7 @@ function PasoAsistencia({
 
       {personas.map((persona) => {
         const elegido = borrador.asistencia[persona.id];
-        const falta = faltaId === persona.id;
+        const falta = faltan.has(persona.id);
         return (
           <fieldset
             key={persona.id}

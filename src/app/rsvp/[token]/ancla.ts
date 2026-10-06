@@ -14,3 +14,20 @@ export function anclaPersona(personaId: string): string {
 export function avisoPersona(personaId: string): string {
   return `falta-${personaId}`;
 }
+
+/**
+ * A QUIÉN FALTA, TODOS DE UNA VEZ. Se señalaba sólo al primero: en una familia
+ * de cuatro que pulsaba «Siguiente» sin marcar a nadie, el aviso salía cuatro
+ * veces seguidas, una persona cada vez. Ahora viajan todos en `falta`, unidos
+ * por este separador —un identificador nunca lleva coma—, y el ancla lleva al
+ * primero.
+ */
+const SEPARADOR_FALTAN = ",";
+
+export function faltanEnLaUrl(personaIds: string[]): string {
+  return personaIds.map(encodeURIComponent).join(SEPARADOR_FALTAN);
+}
+
+export function faltanDeLaUrl(valor: string): Set<string> {
+  return new Set(valor.split(SEPARADOR_FALTAN).filter(Boolean));
+}

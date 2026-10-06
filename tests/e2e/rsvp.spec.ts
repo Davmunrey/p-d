@@ -288,7 +288,39 @@ test.describe("El recorrido del invitado", () => {
    * CASO DE ERROR. Nadie puede quedarse sin contestar: en la base, «pendiente»
    * y «no viene» son cosas distintas, y aquí se sabría a quién le falta pero no
    * qué quiso decir.
+   *
+   * Y se señala a TODOS los que faltan, no al primero: una familia que pulsaba
+   * «Siguiente» sin marcar a nadie se encontraba el aviso una vez por persona.
    */
+  test("sin contestar por alguien no se avanza, y se señala a todos los que faltan", async ({
+    browser,
+  }) => {
+    const token = await crearGrupo("e2e-faltan", ["(DES) Ana", "(DES) Bego", "(DES) Cris"]);
+    const contexto = await browser.newContext({
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenPropio(),
+    });
+    const pagina = await contexto.newPage();
+
+    // Sólo Bego. Van por orden alfabético: Ana, Bego, Cris.
+    await pagina.goto(`${RUTA_RSVP}/${token}`);
+    await pagina.locator('input[value="confirmado"]').nth(1).check();
+    await pagina.getByRole("button", { name: copy.rsvp.siguiente }).click();
+
+    await expect(pagina).toHaveURL(/paso=asistencia&falta=/);
+    const aviso = (nombre: string) => copy.rsvp.errorSinRespuesta.replace("{nombre}", nombre);
+    await expect(pagina.getByText(aviso("(DES) Ana"))).toBeVisible();
+    await expect(pagina.getByText(aviso("(DES) Cris"))).toBeVisible();
+    // A quien sí contestó no se le acusa de nada, y su respuesta sigue marcada.
+    await expect(pagina.getByText(aviso("(DES) Bego"))).toHaveCount(0);
+    await expect(pagina.locator('input[value="confirmado"]').nth(1)).toBeChecked();
+    // El ancla lleva al primero que falta.
+    expect(new URL(pagina.url()).hash).toMatch(/^#persona-/);
+
+    await contexto.close();
+  });
+
   /**
    * CASO DE ERROR · Volver a incluir a alguien no le borra la alergia que ya
    * tenía apuntada.
