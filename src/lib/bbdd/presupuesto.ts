@@ -1,6 +1,13 @@
 import "server-only";
 
-export { desviosDe, loQueVaCostando, type Desvio, type GradoDesvio } from "@/lib/desvios";
+export {
+  desviosDe,
+  loQueVaCostando,
+  totalesDelPresupuesto,
+  type Desvio,
+  type GradoDesvio,
+  type TotalesPresupuesto,
+} from "@/lib/desvios";
 
 import { clienteServidor } from "@/lib/supabase/servidor";
 

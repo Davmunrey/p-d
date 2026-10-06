@@ -1,17 +1,41 @@
 import { AvisoDesvios } from "@/components/panel/aviso-desvios";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
+import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { IDIOMA, RUTA_INVITADOS, ZONA_HORARIA } from "@/config/constants";
+import {
+  DIAS_VENCE_PRONTO,
+  IDIOMA,
+  LIMITE_PROXIMOS_PORTADA,
+  RUTA_INVITADOS,
+  RUTA_PAGOS,
+  RUTA_PRESUPUESTO,
+  RUTA_TAREAS,
+  ZONA_HORARIA,
+} from "@/config/constants";
+import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import { obtenerConfiguracion } from "@/lib/bbdd/landing";
-import { desviosDe, obtenerResumenPresupuesto } from "@/lib/bbdd/presupuesto";
+import { obtenerPagos, type Pago } from "@/lib/bbdd/pagos";
+import {
+  desviosDe,
+  obtenerResumenPresupuesto,
+  totalesDelPresupuesto,
+  type ResumenCategoria,
+} from "@/lib/bbdd/presupuesto";
 import { obtenerResumen, type ResumenBoda } from "@/lib/bbdd/resumen";
+import { ESTADO_HECHA, estaVencida, obtenerTareas, type Tarea } from "@/lib/bbdd/tareas";
 import { t } from "@/lib/copy";
+import { formateadorDeImporte } from "@/lib/importe";
 
 /**
  * BODA-43 · RESUMEN — la portada del panel
  *
- * Lo primero que se ve al entrar, así que enseña lo único que se mira todos
- * los días: cuánto falta y cuántos han dicho que sí.
+ * Lo primero que se ve al entrar, así que contesta de un vistazo a las tres
+ * preguntas del ticket: cuánta gente ha contestado, cuánto llevamos gastado y
+ * qué se nos echa encima.
+ *
+ * LAS DOS ÚLTIMAS FALTABAN. La portada se quedó en invitados, logística y
+ * cocina, y para saber cuánto quedaba por pagar o qué tarea vencía el jueves
+ * había que abrir dos módulos. Ahora están aquí, con un enlace a cada uno.
  *
  * LOS NÚMEROS SON DE VERDAD. Salen de `v_estadisticas_invitados` y
  * `v_menus_confirmados`, dos vistas que llevaban desde el primer día en la base
@@ -46,13 +70,17 @@ function diasHasta(fecha: Date): number {
 }
 
 export default async function PaginaResumen() {
-  const [configuracion, resumen, presupuesto] = await Promise.all([
+  const [configuracion, resumen, presupuesto, moneda, pagos, tareas] = await Promise.all([
     obtenerConfiguracion().catch(() => null),
     obtenerResumen(),
     obtenerResumenPresupuesto(),
+    obtenerMonedaBoda(),
+    obtenerPagos(),
+    obtenerTareas(),
   ]);
 
   const desvios = desviosDe(presupuesto);
+  const euros = moneda ? formateadorDeImporte(moneda) : null;
 
   const dias = configuracion ? diasHasta(configuracion.fechaCeremonia) : null;
 
@@ -82,16 +110,34 @@ export default async function PaginaResumen() {
       */}
       <AvisoDesvios desvios={desvios} />
 
+      {/*
+        Y LO QUE VENCE, JUSTO DETRÁS: es lo otro de la portada que pide hacer
+        algo. Los números van después.
+      */}
+      <Proximo pagos={pagos} tareas={tareas} euros={euros} />
+
       {resumen.invitados.personas === 0 ? (
-        <section>
-          <Cuerpo className="max-w-texto">{t("panel.resumen.sinInvitados")}</Cuerpo>
-          <EnlaceSuave href={RUTA_INVITADOS} className="mt-pila">
-            {t("panel.resumen.irAInvitados")}
-          </EnlaceSuave>
-        </section>
+        <>
+          <section>
+            <Cuerpo className="max-w-texto">{t("panel.resumen.sinInvitados")}</Cuerpo>
+            <EnlaceSuave href={RUTA_INVITADOS} className="mt-pila">
+              {t("panel.resumen.irAInvitados")}
+            </EnlaceSuave>
+          </section>
+          <Presupuesto resumen={presupuesto} euros={euros} />
+        </>
       ) : (
         <>
-          <Bloque titulo={t("panel.resumen.bloqueInvitados")}>
+          <Bloque
+            titulo={t("panel.resumen.bloqueInvitados")}
+            pie={t("panel.resumen.respuesta", {
+              contestados: formatoNumero.format(contestados(resumen)),
+              personas: formatoNumero.format(resumen.invitados.personas),
+              porcentaje: formatoPorcentaje.format(
+                contestados(resumen) / resumen.invitados.personas,
+              ),
+            })}
+          >
             <Cifra rotulo={t("panel.resumen.personas")} valor={resumen.invitados.personas} />
             <Cifra
               rotulo={t("panel.resumen.confirmados")}
@@ -107,6 +153,8 @@ export default async function PaginaResumen() {
               valor={resumen.invitados.rechazados}
             />
           </Bloque>
+
+          <Presupuesto resumen={presupuesto} euros={euros} />
 
           <Bloque titulo={t("panel.resumen.bloqueLogistica")}>
             {/*
@@ -141,7 +189,26 @@ export default async function PaginaResumen() {
   );
 }
 
-function Bloque({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+/** Quien ya ha dicho algo, sí o no: lo que falta por saber es el resto. */
+function contestados(resumen: ResumenBoda): number {
+  return resumen.invitados.confirmados + resumen.invitados.rechazados;
+}
+
+const formatoPorcentaje = new Intl.NumberFormat(IDIOMA, {
+  style: "percent",
+  maximumFractionDigits: 0,
+});
+
+function Bloque({
+  titulo,
+  pie,
+  children,
+}: {
+  titulo: string;
+  /** Una frase bajo las cifras, para lo que no es una cifra suelta. */
+  pie?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section>
       <Titulo3 como="h2">{titulo}</Titulo3>
@@ -151,6 +218,7 @@ function Bloque({ titulo, children }: { titulo: string; children: React.ReactNod
         enseñar dos cifras.
       */}
       <dl className="mt-pila grid grid-cols-2 gap-interno lg:grid-cols-4">{children}</dl>
+      {pie ? <Cuerpo className="mt-pila text-pequeno text-tinta-suave">{pie}</Cuerpo> : null}
     </section>
   );
 }
@@ -166,7 +234,8 @@ function Cifra({
   destacada = false,
 }: {
   rotulo: string;
-  valor: number;
+  /** Un número se escribe aquí; un importe llega ya escrito, con su moneda. */
+  valor: number | string;
   destacada?: boolean;
 }) {
   return (
@@ -181,11 +250,11 @@ function Cifra({
         altura de las de al lado.
       */}
       <dd
-        className={`mt-auto pt-linea font-titulo text-titulo-2 ${
-          destacada ? "text-tinta-marca" : "text-tinta"
-        }`}
+        className={`mt-auto pt-linea font-titulo ${
+          typeof valor === "string" ? "text-titulo-3" : "text-titulo-2"
+        } ${destacada ? "text-tinta-marca" : "text-tinta"}`}
       >
-        {formatoNumero.format(valor)}
+        {typeof valor === "string" ? valor : formatoNumero.format(valor)}
       </dd>
     </div>
   );
@@ -227,5 +296,189 @@ function Menus({ menus }: { menus: ResumenBoda["menus"] }) {
         </dl>
       )}
     </section>
+  );
+}
+
+/**
+ * CUÁNTO LLEVAMOS GASTADO, con las mismas cuatro cifras —y el mismo ayudante—
+ * que la fila del total del presupuesto: si las dos pantallas sumaran cada una
+ * a su manera, acabarían discrepando para la misma boda.
+ *
+ * SIN MONEDA NO HAY IMPORTES, como en el presupuesto: un «21.400» a secas
+ * invita a leerlo en euros. Y sin categorías se dice que no hay presupuesto,
+ * con el camino para empezarlo, en vez de cuatro ceros que parecen una boda
+ * gratis.
+ */
+function Presupuesto({
+  resumen,
+  euros,
+}: {
+  resumen: ResumenCategoria[];
+  euros: ((importe: number) => string) | null;
+}) {
+  if (!euros) return null;
+
+  if (resumen.length === 0) {
+    return (
+      <section>
+        <Titulo3 como="h2">{t("panel.resumen.bloquePresupuesto")}</Titulo3>
+        <Cuerpo className="mt-pila max-w-texto">{t("panel.resumen.sinPresupuesto")}</Cuerpo>
+        <EnlaceSuave href={RUTA_PRESUPUESTO} className="mt-pila">
+          {t("panel.resumen.desvios.verPresupuesto")}
+        </EnlaceSuave>
+      </section>
+    );
+  }
+
+  const totales = totalesDelPresupuesto(resumen);
+  return (
+    <section>
+      <Titulo3 como="h2">{t("panel.resumen.bloquePresupuesto")}</Titulo3>
+      <dl className="mt-pila grid grid-cols-2 gap-interno lg:grid-cols-4">
+        <Cifra rotulo={t("panel.resumen.previsto")} valor={euros(totales.previsto)} />
+        <Cifra rotulo={t("panel.resumen.vaCostando")} valor={euros(totales.vaCostando)} />
+        <Cifra rotulo={t("panel.resumen.pagado")} valor={euros(totales.pagado)} />
+        <Cifra
+          rotulo={t("panel.resumen.quedaPorPagar")}
+          valor={euros(totales.quedaPorPagar)}
+          destacada
+        />
+      </dl>
+      <EnlaceSuave href={RUTA_PRESUPUESTO} className="mt-pila">
+        {t("panel.resumen.desvios.verPresupuesto")}
+      </EnlaceSuave>
+    </section>
+  );
+}
+
+/*
+  Una fecha `YYYY-MM-DD` es un día del calendario, no un instante: se fija a
+  mediodía UTC para que ningún huso de Europa la mueva al día de al lado.
+*/
+const formatoDia = new Intl.DateTimeFormat(IDIOMA, {
+  day: "numeric",
+  month: "long",
+  timeZone: ZONA_HORARIA,
+});
+const elDia = (fecha: string) => formatoDia.format(new Date(`${fecha}T12:00:00Z`));
+
+/**
+ * QUÉ SE OS ECHA ENCIMA: los próximos pagos sin hacer y las tareas que vencen
+ * esta semana —o que ya vencieron, que son las primeras—.
+ *
+ * Unas pocas de cada, con lo que sobra contado: es una lista para mirar de un
+ * vistazo, y el calendario entero está a un enlace. Lo vencido va marcado con
+ * palabra y no sólo con color.
+ */
+function Proximo({
+  pagos,
+  tareas,
+  euros,
+}: {
+  pagos: Pago[];
+  tareas: Tarea[];
+  euros: ((importe: number) => string) | null;
+}) {
+  // Ya vienen del más próximo al más lejano, con los vencidos delante.
+  const pendientes = pagos.filter((pago) => pago.pagadoEn === null);
+  const deLaSemana = tareas
+    .filter((tarea) => tarea.estado !== ESTADO_HECHA && tarea.diasParaVencer !== null)
+    .filter((tarea) => tarea.diasParaVencer! <= DIAS_VENCE_PRONTO)
+    .sort((a, b) => a.diasParaVencer! - b.diasParaVencer!);
+
+  return (
+    <section>
+      <Titulo3 como="h2">{t("panel.resumen.bloqueProximo")}</Titulo3>
+      <div className="mt-pila grid gap-elemento lg:grid-cols-2">
+        <Lista
+          titulo={t("panel.resumen.proximosPagos")}
+          vacia={t("panel.resumen.sinPagos")}
+          sobran={pendientes.length - LIMITE_PROXIMOS_PORTADA}
+          enlace={{ href: RUTA_PAGOS, rotulo: t("panel.presupuesto.verPagos") }}
+        >
+          {pendientes.slice(0, LIMITE_PROXIMOS_PORTADA).map((pago) => (
+            <li key={pago.id} className="grid gap-linea py-interno-compacto">
+              <span className="flex flex-wrap items-baseline justify-between gap-interno-compacto">
+                <span className="text-cuerpo text-tinta">{pago.concepto}</span>
+                {euros ? (
+                  <span className="text-cuerpo tabular-nums text-tinta">
+                    {euros(pago.importe)}
+                  </span>
+                ) : null}
+              </span>
+              <span className="flex flex-wrap items-baseline gap-interno-compacto text-pequeno text-tinta-suave">
+                {elDia(pago.fechaVencimiento)}
+                {pago.vencido ? (
+                  <EtiquetaEstado variante="error-marcada" tamano="versalita-compacta">
+                    {t("panel.presupuesto.pagos.vencido")}
+                  </EtiquetaEstado>
+                ) : null}
+              </span>
+            </li>
+          ))}
+        </Lista>
+
+        <Lista
+          titulo={t("panel.resumen.tareasSemana")}
+          vacia={t("panel.resumen.sinTareas", { dias: DIAS_VENCE_PRONTO })}
+          sobran={deLaSemana.length - LIMITE_PROXIMOS_PORTADA}
+          enlace={{ href: RUTA_TAREAS, rotulo: t("panel.resumen.verTareas") }}
+        >
+          {deLaSemana.slice(0, LIMITE_PROXIMOS_PORTADA).map((tarea) => (
+            <li key={tarea.id} className="grid gap-linea py-interno-compacto">
+              <span className="text-cuerpo text-tinta">{tarea.titulo}</span>
+              <span className="flex flex-wrap items-baseline gap-interno-compacto text-pequeno text-tinta-suave">
+                {t("panel.tareas.para", { fecha: elDia(tarea.fechaLimite!) })}
+                {estaVencida(tarea) ? (
+                  <EtiquetaEstado variante="error-marcada" tamano="versalita-compacta">
+                    {t("panel.tareas.vencida")}
+                  </EtiquetaEstado>
+                ) : tarea.diasParaVencer === 0 ? (
+                  <EtiquetaEstado variante="aviso-marcada" tamano="versalita-compacta">
+                    {t("panel.tareas.venceHoy")}
+                  </EtiquetaEstado>
+                ) : null}
+              </span>
+            </li>
+          ))}
+        </Lista>
+      </div>
+    </section>
+  );
+}
+
+function Lista({
+  titulo,
+  vacia,
+  sobran,
+  enlace,
+  children,
+}: {
+  titulo: string;
+  vacia: string;
+  /** Cuántas quedan fuera de la lista; cero o menos es que caben todas. */
+  sobran: number;
+  enlace: { href: string; rotulo: string };
+  children: React.ReactNode[];
+}) {
+  return (
+    <div className="rounded-tarjeta border border-borde p-interno">
+      <h3 className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">{titulo}</h3>
+      {children.length === 0 ? (
+        <Cuerpo className="mt-linea text-pequeno text-tinta-suave">{vacia}</Cuerpo>
+      ) : (
+        <ul aria-label={titulo} className="mt-linea divide-y divide-borde">
+          {children}
+        </ul>
+      )}
+      {sobran > 0 ? (
+        <Cuerpo className="mt-linea text-pequeno text-tinta-suave">
+          {t("panel.resumen.yMas", { cuantos: formatoNumero.format(sobran) })}
+        </Cuerpo>
+      ) : null}
+      <EnlaceSuave href={enlace.href} className="mt-pila">
+        {enlace.rotulo}
+      </EnlaceSuave>
+    </div>
   );
 }

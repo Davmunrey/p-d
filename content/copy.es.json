@@ -398,7 +398,21 @@
       "conAlergias": "Con alergias: {cuantas}",
       "sinInvitados": "Todavía no hay invitados. En cuanto creéis la primera invitación, aquí aparecerán los números.",
       "irAInvitados": "Ir a invitados",
-      "sinMenus": "Nadie ha confirmado todavía, así que no hay menús que contar."
+      "sinMenus": "Nadie ha confirmado todavía, así que no hay menús que contar.",
+      "respuesta": "Han contestado {contestados} de {personas}: el {porcentaje}.",
+      "bloquePresupuesto": "Presupuesto",
+      "previsto": "Previsto",
+      "vaCostando": "Va costando",
+      "pagado": "Pagado",
+      "quedaPorPagar": "Queda por pagar",
+      "sinPresupuesto": "Todavía no hay presupuesto. En cuanto apuntéis la primera categoría, aquí saldrá lo que va costando y lo que queda por pagar.",
+      "bloqueProximo": "Lo que se os echa encima",
+      "proximosPagos": "Próximos pagos",
+      "sinPagos": "No hay ningún pago pendiente.",
+      "tareasSemana": "Tareas de esta semana",
+      "sinTareas": "Nada vence en los próximos {dias} días.",
+      "verTareas": "Ver todas las tareas",
+      "yMas": "Y {cuantos} más."
     },
     "cuenta": {
       "titulo": "Mi cuenta",

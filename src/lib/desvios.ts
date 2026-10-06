@@ -42,6 +42,43 @@ export function loQueVaCostando(fila: FilaDeCategoria): number {
 }
 
 /**
+ * LAS CUATRO CIFRAS DEL PRESUPUESTO ENTERO: lo previsto, lo que va costando, lo
+ * pagado y lo que queda por pagar.
+ *
+ * Las suman dos pantallas —la fila del total del presupuesto y la portada del
+ * panel— y tienen que decir lo mismo: en cuanto cada una sume a su manera, la
+ * portada dirá 47.000 y el presupuesto 46.500 para la misma boda.
+ *
+ * «QUEDA POR PAGAR» ES LO QUE VA COSTANDO MENOS LO PAGADO, y no la suma de los
+ * pagos apuntados como pendientes. Esa otra cifra sólo cuenta lo que alguien ha
+ * puesto ya en el calendario, y junto a «va costando 47.000» y «pagado 3.700»
+ * un «quedan 2.150» no cuadra con nada. Nunca baja de cero: un pago no puede
+ * salirse de su gasto, lo impide la base.
+ */
+export interface TotalesPresupuesto {
+  previsto: number;
+  vaCostando: number;
+  pagado: number;
+  quedaPorPagar: number;
+  desviacion: number;
+}
+
+export function totalesDelPresupuesto(
+  filas: (FilaDeCategoria & { pagado: number })[],
+): TotalesPresupuesto {
+  const suma = filas.reduce(
+    (total, fila) => ({
+      previsto: total.previsto + fila.importePrevisto,
+      vaCostando: total.vaCostando + loQueVaCostando(fila),
+      pagado: total.pagado + fila.pagado,
+      desviacion: total.desviacion + fila.desviacion,
+    }),
+    { previsto: 0, vaCostando: 0, pagado: 0, desviacion: 0 },
+  );
+  return { ...suma, quedaPorPagar: Math.max(suma.vaCostando - suma.pagado, 0) };
+}
+
+/**
  * DOS GRADOS Y NO UNO.
  *
  * «Superado» llega tarde por definición: el dinero ya está comprometido. El

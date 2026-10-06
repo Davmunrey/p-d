@@ -16,8 +16,10 @@ import {
   loQueVaCostando,
   obtenerCategoriasPresupuesto,
   obtenerResumenPresupuesto,
+  totalesDelPresupuesto,
   type CategoriaPresupuesto,
   type ResumenCategoria,
+  type TotalesPresupuesto,
 } from "@/lib/bbdd/presupuesto";
 import { t } from "@/lib/copy";
 import { formateadorDeImporte, importeParaCampo } from "@/lib/importe";
@@ -80,19 +82,10 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
   /*
     EL TOTAL LLEVA LAS CUATRO CIFRAS. Se quedaba en previsto y «va costando», y
     las dos columnas que más se miran —cuánto se ha pagado ya y cuánto queda de
-    margen— acababan en blanco justo en la fila que resume. La diferencia total
-    es la suma de las de cada categoría: lo que sobra en unas compensa lo que
-    falta en otras, que es la pregunta de «¿nos llega?».
+    margen— acababan en blanco justo en la fila que resume. Las suma el mismo
+    ayudante que la portada del panel, para que las dos digan lo mismo.
   */
-  const totales = resumen.reduce(
-    (suma, fila) => ({
-      previsto: suma.previsto + fila.importePrevisto,
-      real: suma.real + loQueVaCostando(fila),
-      pagado: suma.pagado + fila.pagado,
-      desviacion: suma.desviacion + fila.desviacion,
-    }),
-    { previsto: 0, real: 0, pagado: 0, desviacion: 0 },
-  );
+  const totales = totalesDelPresupuesto(resumen);
 
   const aDecidir = estado === "decidir-gastos" ? soloTexto(consulta.categoria) : "";
 
@@ -148,7 +141,7 @@ function Tabla({
   euros,
 }: {
   resumen: ResumenCategoria[];
-  totales: { previsto: number; real: number; pagado: number; desviacion: number };
+  totales: TotalesPresupuesto;
   euros: ((valor: number) => string) | null;
 }) {
   const importe = (valor: number) => (euros ? euros(valor) : "");
@@ -211,7 +204,7 @@ function Tabla({
                 {importe(totales.previsto)}
               </td>
               <td className="py-interno-compacto pr-interno text-right tabular-nums text-tinta">
-                {importe(totales.real)}
+                {importe(totales.vaCostando)}
               </td>
               <td className="py-interno-compacto pr-interno text-right tabular-nums text-tinta">
                 {importe(totales.pagado)}

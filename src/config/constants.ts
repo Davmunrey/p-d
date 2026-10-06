@@ -560,6 +560,13 @@ export const CLAVE_ALMACEN_DIA = "boda-guion-dia";
  */
 export const DIAS_VENCE_PRONTO = 7;
 
+/**
+ * Cuántos pagos y cuántas tareas enseña la portada del panel en «lo que se os
+ * echa encima». Cuatro: es una lista para mirar de un vistazo, no el calendario
+ * entero —para eso está su pantalla, a un enlace—. Lo que sobra se cuenta.
+ */
+export const LIMITE_PROXIMOS_PORTADA = 4;
+
 /** Descarga del reparto por mesa, para el catering y para la finca. */
 export const RUTA_MESAS_EXPORTAR = "/panel/mesas/exportar";
 
