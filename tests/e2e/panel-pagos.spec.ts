@@ -416,6 +416,38 @@ test.describe("Los pagos y sus vencimientos", () => {
   });
 
   /**
+   * UN 31 DE FEBRERO SE DICE COMO TAL, NO COMO UNA AVERÍA.
+   *
+   * La acción mira la forma de la fecha y el calendario lo pone la base, que
+   * contesta 22008. Esa respuesta acababa en «No se ha podido guardar». El
+   * campo es de tipo fecha y no deja escribirla; llega así desde un navegador
+   * sin selector de fechas, que es el caso que se simula.
+   */
+  test("una fecha que no existe se explica y no apunta el pago", async ({ page }) => {
+    const montaje = await montar("Febrero");
+
+    await entrar(page);
+    await page.goto(RUTA_PAGOS);
+
+    const alta = seccion(page, pagos.nuevaTitulo);
+    await alta
+      .getByLabel(pagos.campoGasto, { exact: true })
+      .selectOption({ label: `${montaje.categoria} · ${montaje.concepto}` });
+    await alta.getByLabel(pagos.campoImporte, { exact: true }).fill("100");
+    const vencimiento = alta.getByLabel(pagos.campoVencimiento, { exact: true });
+    await vencimiento.evaluate((campo) => campo.setAttribute("type", "text"));
+    await vencimiento.fill("2027-02-31");
+    await alta.getByRole("button", { name: pagos.crear }).click();
+
+    await esperarEstado(page, "fecha");
+    await expect(page.getByText(pagos.errorFecha)).toBeVisible();
+    const filas = await conBase(
+      (sql) => sql`select 1 from public.pagos where partida_id = ${montaje.gastoId}`,
+    );
+    expect(filas, "no se apunta nada").toHaveLength(0);
+  });
+
+  /**
    * LO VENCIDO SE DISTINGUE SIN EL COLOR.
    *
    * Es un criterio de aceptación del ticket y no un adorno: el recuadro rojo no

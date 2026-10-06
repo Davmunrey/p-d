@@ -421,6 +421,41 @@ test.describe("Los documentos de la boda civil", () => {
   });
 
   /**
+   * CASO DE ERROR · una caducidad que no está en el calendario.
+   *
+   * La acción mira la forma de la fecha y el calendario lo pone la base, que
+   * contesta 22008 a un 30 de febrero. Esa respuesta acababa en el aviso de
+   * avería. El campo es de tipo fecha y no deja escribirla: llega así desde un
+   * navegador sin selector de fechas, que es lo que se simula.
+   */
+  test("una caducidad que no existe se explica y no apunta el documento", async ({ page }) => {
+    const prefijo = `${MARCA} Febrero`;
+    const titulo = `${prefijo} ${Date.now()}`;
+    await limpiar(prefijo);
+
+    await entrar(page);
+    await page.goto(RUTA_DOCUMENTOS);
+
+    const alta = seccion(page, documentos.nuevoTitulo);
+    await alta.getByLabel(documentos.campoTitulo, { exact: true }).fill(titulo);
+    const caduca = alta.getByLabel(documentos.campoCaduca, { exact: true });
+    await caduca.evaluate((campo) => campo.setAttribute("type", "text"));
+    await caduca.fill("2027-02-30");
+
+    olvidarDestinos(page);
+    await alta.getByRole("button", { name: documentos.apuntar }).click();
+    await esperarEstado(page, "fecha");
+    await expect(page.getByText(documentos.errorFecha)).toBeVisible();
+
+    expect(
+      await guardado(titulo),
+      "con una fecha imposible no se escribe nada",
+    ).toBeUndefined();
+
+    await limpiar(prefijo);
+  });
+
+  /**
    * BLOQUEANTE (regla 4) · `anon` no puede leer los documentos de la boda.
    *
    * Es lo más privado que hay en esta base: el expediente lleva nombres, fechas

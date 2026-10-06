@@ -85,6 +85,10 @@ function motivo(error: { code?: string; message?: string }): EstadoPagos {
 
   if (error.message?.includes("pagos_detalle_solo_de_otros")) return "pagador";
 
+  // El calendario lo pone la base (ver `fecha`): un 31 de febrero vuelve como
+  // 22008, y eso es «esa fecha no existe», no una avería.
+  if (error.code === "22008" || error.code === "22007") return "fecha";
+
   console.error("Fallo escribiendo un pago:", error);
   return "error";
 }

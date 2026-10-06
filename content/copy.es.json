@@ -1076,7 +1076,7 @@
         "avisoPendiente": "Vuelve a estar pendiente.",
         "errorGasto": "Elegid a qué gasto pertenece.",
         "errorImporte": "Ese importe no se entiende. Escribid un número mayor que cero, con dos decimales como mucho.",
-        "errorFecha": "Hace falta la fecha de vencimiento: un pago sin fecha no se puede recordar.",
+        "errorFecha": "Hace falta una fecha de vencimiento que exista en el calendario: un pago sin fecha no se puede recordar.",
         "errorNoCabe": "Ese pago no cabe en su gasto: quedan {queda} por apuntar. Subid antes el importe del gasto.",
         "errorNoCabeSinCifra": "Ese pago no cabe en su gasto. Subid antes el importe del gasto.",
         "errorPagador": "Si paga «Otros», hace falta decir quién.",
