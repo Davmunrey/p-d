@@ -241,7 +241,7 @@ export async function guardarFicha(datos: FormData): Promise<void> {
   const variante = variantePedida(lista, datos);
   const id = String(datos.get("ficha") ?? "").trim();
 
-  if (!id) volver(clave, "no-encontrada", { variante });
+  if (!esIdentificador(id)) volver(clave, "no-encontrada", { variante });
   await cortarSiEsLector(clave, variante);
 
   const valores = camposValidados(clave, lista, datos, variante);
@@ -258,7 +258,9 @@ export async function guardarFicha(datos: FormData): Promise<void> {
       console.error(`No se pudo guardar en «${clave}»:`, error);
       volver(clave, motivo(error), { variante, ficha: id });
     }
-    if (!data?.length) volver(clave, "sin-permiso", { variante, ficha: id });
+    // Al lector ya se le ha cortado arriba: cero filas es una ficha que se
+    // borró en otra pestaña, como en `borrarFicha`.
+    if (!data?.length) volver(clave, "no-encontrada", { variante });
   } catch (error) {
     if (typeof error === "object" && error !== null && "digest" in error) throw error;
     console.error(`Fallo al guardar en «${clave}»:`, error);
@@ -275,7 +277,7 @@ export async function alternarPublicado(datos: FormData): Promise<void> {
   const variante = variantePedida(lista, datos);
   const id = String(datos.get("ficha") ?? "").trim();
 
-  if (!id) volver(clave, "no-encontrada", { variante });
+  if (!esIdentificador(id)) volver(clave, "no-encontrada", { variante });
   await cortarSiEsLector(clave, variante);
 
   // Llega el valor que se quiere dejar puesto, no el actual: así el formulario
@@ -294,7 +296,7 @@ export async function alternarPublicado(datos: FormData): Promise<void> {
       console.error(`No se pudo cambiar la publicación en «${clave}»:`, error);
       volver(clave, motivo(error), { variante });
     }
-    if (!data?.length) volver(clave, "sin-permiso", { variante });
+    if (!data?.length) volver(clave, "no-encontrada", { variante });
   } catch (error) {
     if (typeof error === "object" && error !== null && "digest" in error) throw error;
     console.error(`Fallo al cambiar la publicación en «${clave}»:`, error);
@@ -321,7 +323,7 @@ export async function pedirBorrado(datos: FormData): Promise<void> {
   const variante = variantePedida(lista, datos);
   const id = String(datos.get("ficha") ?? "").trim();
 
-  if (!id) volver(clave, "no-encontrada", { variante });
+  if (!esIdentificador(id)) volver(clave, "no-encontrada", { variante });
   await cortarSiEsLector(clave, variante);
 
   volver(clave, "confirmar-borrado", { variante, ficha: id });
@@ -333,7 +335,7 @@ export async function borrarFicha(datos: FormData): Promise<void> {
   const variante = variantePedida(lista, datos);
   const id = String(datos.get("ficha") ?? "").trim();
 
-  if (!id) volver(clave, "no-encontrada", { variante });
+  if (!esIdentificador(id)) volver(clave, "no-encontrada", { variante });
   await cortarSiEsLector(clave, variante);
 
   try {
@@ -380,7 +382,7 @@ export async function moverFicha(datos: FormData): Promise<void> {
   const id = String(datos.get("ficha") ?? "").trim();
   const direccion = String(datos.get("direccion") ?? "");
 
-  if (!id) volver(clave, "no-encontrada", { variante });
+  if (!esIdentificador(id)) volver(clave, "no-encontrada", { variante });
   if (!esDireccion(direccion)) volver(clave, "error", { variante });
   await cortarSiEsLector(clave, variante);
 
@@ -407,7 +409,7 @@ export async function moverFicha(datos: FormData): Promise<void> {
         console.error(`No se pudo reordenar «${clave}»:`, error);
         volver(clave, motivo(error), { variante });
       }
-      if (!data?.length) volver(clave, "sin-permiso", { variante });
+      if (!data?.length) volver(clave, "no-encontrada", { variante });
     }
   } catch (error) {
     if (typeof error === "object" && error !== null && "digest" in error) throw error;

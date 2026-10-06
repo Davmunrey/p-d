@@ -320,6 +320,37 @@ test.describe("El módulo de tareas", () => {
    * El escenario se monta por SQL: lo que se prueba es el tablero, no volver a
    * recorrer el alta que ya cubre el test de arriba.
    */
+  /**
+   * CASO DE ERROR · UNA TAREA QUE SE BORRÓ EN OTRA PESTAÑA.
+   *
+   * Cero filas al escribir decía siempre «vuestro perfil no puede hacer cambios
+   * aquí», también a quien lleva la boda. Si quien escribe puede escribir, cero
+   * filas sólo puede ser una tarea que ya no está, y eso es lo que se dice.
+   */
+  test("completar una tarea que se borró mientras tanto dice que ya no está", async ({
+    page,
+  }) => {
+    const titulo = `${MARCA} Fantasma ${Date.now()}`;
+    const [tarea] = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        insert into public.tareas (titulo) values (${titulo}) returning id
+      `,
+    );
+
+    await entrar(page);
+    await page.goto(RUTA_TAREAS);
+    await expect(tarjeta(page, tarea.id)).toContainText(titulo);
+
+    // En otra pestaña, alguien la borra.
+    await conBase((sql) => sql`delete from public.tareas where id = ${tarea.id}`);
+
+    await tarjeta(page, tarea.id)
+      .getByRole("button", { name: copy.panel.tareas.completar })
+      .click();
+    await esperarEstado(page, "no-existe");
+    await expect(page.getByText(copy.panel.tareas.errorNoExiste)).toBeVisible();
+  });
+
   test("en el tablero, una tarjeta cambia de columna sólo con el teclado", async ({ page }) => {
     const titulo = `${MARCA} Mover con el teclado ${Date.now()}`;
     const tablero = `${RUTA_TAREAS}?vista=tablero`;

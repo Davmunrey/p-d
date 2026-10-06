@@ -83,3 +83,20 @@ export async function accesoActual(): Promise<Acceso | null> {
     return null;
   }
 }
+
+/**
+ * CERO FILAS Y NINGÚN ERROR: ¿NO TE DEJA, O YA NO ESTÁ?
+ *
+ * RLS no da error al escribir lo que no se puede tocar: devuelve cero filas. Y
+ * una fila que se borró en otra pestaña devuelve exactamente lo mismo. Leído
+ * siempre como «sin permiso», a quien lleva la boda se le decía que no podía
+ * tocar una tarea que sencillamente ya no estaba. El rol desempata: a quien
+ * puede escribir, cero filas sólo le pasan con algo que ya no existe.
+ *
+ * Sólo se pregunta en ese caso, que es raro: el camino normal no paga la
+ * consulta de más.
+ */
+export async function ceroFilasEsFaltaDePermiso(): Promise<boolean> {
+  const acceso = await accesoActual();
+  return acceso === null || acceso.rol === "lector";
+}

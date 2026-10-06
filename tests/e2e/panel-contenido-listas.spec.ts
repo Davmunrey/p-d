@@ -350,6 +350,40 @@ test.describe("Las listas de contenido de la web", () => {
     await expect(fichaDe(page, DRESSCODE.titulo, titulo)).toHaveCount(0);
   });
 
+  /**
+   * CASO DE ERROR · UNA FICHA QUE SE BORRÓ EN OTRA PESTAÑA.
+   *
+   * Al lector se le corta antes de escribir, así que si la base no toca
+   * ninguna fila es que la ficha ya no está. Retirarla, guardarla o moverla
+   * decía «no tenéis permiso» —y quien lo leía era el dueño de la boda—; ahora
+   * dice lo que pasó, como ya hacía borrarla.
+   */
+  test("retirar una ficha que se borró mientras tanto dice que ya no existe", async ({
+    page,
+  }) => {
+    const titulo = `${MARCA} Fantasma`;
+    await conBase(
+      (sql) => sql`
+        insert into public.consejos_vestimenta (titulo, texto, orden)
+        values (${titulo}, ${`${MARCA} Se borra en otra pestaña.`}, 999)
+      `,
+    );
+
+    await entrar(page);
+    await page.goto(RUTA_DRESSCODE);
+    const ficha = fichaDe(page, DRESSCODE.titulo, titulo);
+    await expect(ficha).toHaveCount(1);
+
+    // En otra pestaña, alguien la borra.
+    await conBase(
+      (sql) => sql`delete from public.consejos_vestimenta where titulo = ${titulo}`,
+    );
+
+    await botonDe(ficha, comun.retirar, titulo).click();
+    await esperarEstado(page, "no-encontrada", RUTA_DRESSCODE);
+    await expect(avisoDe(page)).toHaveText(comun.errorNoEncontrada);
+  });
+
   test("al borrar se ofrece retirarla, que es lo que casi siempre se quería", async ({
     page,
   }) => {

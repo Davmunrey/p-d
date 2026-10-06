@@ -8,6 +8,7 @@ import {
   esEstadoDocumento,
   esTitularDocumento,
 } from "@/lib/bbdd/documentos";
+import { ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 import { type EstadoDocumentos } from "./estado";
@@ -202,7 +203,9 @@ export async function editarDocumento(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (!data?.length) {
+    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
+  }
 
   volver("editado");
 }
@@ -241,7 +244,9 @@ export async function marcarConseguido(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (!data?.length) {
+    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
+  }
 
   volver("conseguido");
 }
@@ -275,7 +280,9 @@ export async function borrarDocumento(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (!data?.length) {
+    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe");
+  }
 
   volver("borrado");
 }

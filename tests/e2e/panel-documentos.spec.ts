@@ -239,6 +239,32 @@ test.describe("Los documentos de la boda civil", () => {
    * vigilada. Un módulo que sacara el documento de la lista al conseguirlo
    * perdería justo el aviso para el que existe.
    */
+  /**
+   * CASO DE ERROR · UN PAPEL QUE SE BORRÓ EN OTRA PESTAÑA.
+   *
+   * Cero filas al escribir decía «vuestro perfil no puede hacer cambios aquí»
+   * también a quien sí puede. Para quien escribe, cero filas es que el
+   * documento ya no está, y eso es lo que se dice.
+   */
+  test("marcar conseguido un documento que se borró mientras tanto dice que ya no está", async ({
+    page,
+  }) => {
+    const titulo = `${MARCA} Fantasma ${Date.now()}`;
+    const id = await sembrar({ titulo, estado: "pendiente", obtenidoEn: null, caducaEn: null });
+
+    await entrar(page);
+    await page.goto(RUTA_DOCUMENTOS);
+    const fila = filaDe(page, id);
+    await expect(fila).toContainText(titulo);
+
+    // En otra pestaña, alguien lo borra.
+    await limpiar(titulo);
+
+    await fila.getByRole("button", { name: documentos.marcarConseguido }).click();
+    await esperarEstado(page, "no-existe");
+    await expect(page.getByText(documentos.errorNoExiste)).toBeVisible();
+  });
+
   test("un documento apuntado se marca conseguido y sale de lo que falta", async ({ page }) => {
     const prefijo = `${MARCA} Feliz`;
     const titulo = `${prefijo} ${Date.now()}`;

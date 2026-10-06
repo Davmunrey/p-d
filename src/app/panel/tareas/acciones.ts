@@ -13,6 +13,7 @@ import {
   obtenerTareas,
   PRIORIDAD_INICIAL_TAREA,
 } from "@/lib/bbdd/tareas";
+import { ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
 import { type EstadoTareas } from "./estado";
@@ -201,7 +202,9 @@ export async function editarTarea(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error), { vista });
-  if (!data?.length) volver("sin-permiso", { vista });
+  if (!data?.length) {
+    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe", { vista });
+  }
 
   volver("editada", { vista });
 }
@@ -232,7 +235,9 @@ export async function cambiarEstadoTarea(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error), { vista });
-  if (!data?.length) volver("sin-permiso", { vista });
+  if (!data?.length) {
+    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe", { vista });
+  }
 
   volver(nuevo === ESTADO_HECHA ? "completada" : "estado-cambiado", { vista });
 }
@@ -308,7 +313,9 @@ export async function borrarTarea(datos: FormData): Promise<void> {
   const { data, error } = await supabase.from("tareas").delete().eq("id", id).select("id");
 
   if (error) volver(motivo(error), { vista });
-  if (!data?.length) volver("sin-permiso", { vista });
+  if (!data?.length) {
+    volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe", { vista });
+  }
 
   volver("borrada", { vista });
 }
@@ -372,7 +379,9 @@ export async function moverTarea(datos: FormData): Promise<void> {
       .select("id");
 
     if (error) volver(motivo(error), { vista });
-    if (!data?.length) volver("sin-permiso", { vista });
+    if (!data?.length) {
+      volver((await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : "no-existe", { vista });
+    }
   }
 
   volver("movida", { vista });
