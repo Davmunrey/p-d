@@ -17,6 +17,10 @@ import Link from "next/link";
  * vale pulsar, no lo que se ve. El subrayado sigue pegado al texto porque la
  * altura la reparte el centrado, no un relleno que separaría la línea.
  *
+ * UNA DESCARGA VA EN UN `<a>` NORMAL, con `descarga`. La plantilla del CSV la
+ * sirve una ruta, no una pantalla: un `Link` intentaría navegar a ella dentro
+ * de la aplicación antes de rendirse y bajar el fichero.
+ *
  * NO SIRVE PARA UN ENLACE DENTRO DE UNA FRASE. Ahí no se debe forzar altura
  * —rompería el renglón— y la norma lo exime expresamente: un enlace en línea
  * dentro de un texto tiene como objetivo la línea, no un botón. Para eso se usa
@@ -27,6 +31,7 @@ export function EnlaceSuave({
   children,
   className = "",
   discreto = false,
+  descarga = false,
 }: {
   href: string;
   children: React.ReactNode;
@@ -34,20 +39,25 @@ export function EnlaceSuave({
   className?: string;
   /** Para el enlace secundario de una pareja, que no debe pesar igual. */
   discreto?: boolean;
+  /** Para un fichero que se baja, no una pantalla a la que se va. */
+  descarga?: boolean;
 }) {
-  return (
-    <Link
-      href={href}
-      className={[
-        "inline-flex min-h-control-compacto items-center text-pequeno underline underline-offset-4 transicion-color",
-        discreto
-          ? "text-tinta-suave decoration-borde hover:text-tinta"
-          : "text-tinta-marca decoration-borde-fuerte hover:decoration-borde-marca",
-        className,
-      ]
-        .join(" ")
-        .trim()}
-    >
+  const clases = [
+    "inline-flex min-h-control-compacto items-center text-pequeno underline underline-offset-4 transicion-color",
+    discreto
+      ? "text-tinta-suave decoration-borde hover:text-tinta"
+      : "text-tinta-marca decoration-borde-fuerte hover:decoration-borde-marca",
+    className,
+  ]
+    .join(" ")
+    .trim();
+
+  return descarga ? (
+    <a href={href} download className={clases}>
+      {children}
+    </a>
+  ) : (
+    <Link href={href} className={clases}>
       {children}
     </Link>
   );

@@ -4,12 +4,14 @@ import { redirect } from "next/navigation";
 
 import { RUTA_ACCESO, RUTA_INVITADOS } from "@/config/constants";
 import { obtenerGruposConGente } from "@/lib/bbdd/invitados";
-import { decodificar } from "@/lib/csv";
+import { decodificar, noEsTexto } from "@/lib/csv";
 import {
-  claveGrupo,
   clavePersona,
   leerImportacion,
-  type FilaImportada,
+  textosDelFichero,
+  type Contexto,
+  type Lado,
+  type Lectura,
 } from "@/lib/importacion-invitados";
 import { t } from "@/lib/copy";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
@@ -37,38 +39,77 @@ async function cliente() {
 }
 
 /**
- * Todo lo que ya está dado de alta, en forma de clave de duplicado.
+ * CUÁNDO DOS NOMBRES SON EL MISMO, SEGÚN LA BASE.
+ *
+ * Se le pregunta a `claves_de_importacion()` por todos los textos de una vez
+ * en vez de imitar su criterio aquí: la imitación acertaba con las tildes y
+ * fallaba con los doscientos signos más que traduce `unaccent` —«Col·lell»,
+ * «Øyvind», el apóstrofo del móvil—, y cada fallo era una invitación de más o
+ * una importación rechazada sin explicación.
+ */
+async function clavesDeLaBase(textos: string[]): Promise<(texto: string) => string> {
+  const supabase = await cliente();
+  const { data, error } = await supabase.rpc("claves_de_importacion", { p_textos: textos });
+  if (error || !Array.isArray(data) || data.length !== textos.length) {
+    throw new Error(
+      `No se pudieron calcular las claves de la importación: ${error?.message ?? "respuesta inesperada"}`,
+    );
+  }
+
+  const claves = new Map(textos.map((texto, posicion) => [texto, String(data[posicion])]));
+  return (texto) => {
+    const clave = claves.get(texto);
+    if (clave === undefined) throw new Error(`Texto sin clave de importación: «${texto}»`);
+    return clave;
+  };
+}
+
+/**
+ * Lo que hay en la base y hace falta para leer el fichero: quién está ya, de
+ * qué lado es cada invitación y cómo se comparan los nombres.
  *
  * Se lee con la sesión de quien importa, así que RLS decide qué ve. Si no
  * pudiera ver a nadie, no detectaría duplicados — pero tampoco podría importar,
  * porque la función exige `puede_editar()`.
  */
-async function personasExistentes(): Promise<Set<string>> {
+async function contextoDeLaBase(contenido: string): Promise<Contexto> {
   const grupos = await obtenerGruposConGente();
-  const claves = new Set<string>();
+
+  const textos = new Set(textosDelFichero(contenido));
   for (const grupo of grupos) {
+    textos.add(grupo.nombre.trim());
     for (const persona of grupo.gente) {
-      claves.add(clavePersona(grupo.nombre, persona.nombre, persona.apellidos));
+      textos.add(persona.nombre.trim());
+      textos.add((persona.apellidos ?? "").trim());
     }
   }
-  return claves;
+  const clave = await clavesDeLaBase([...textos]);
+
+  const yaExisten = new Set<string>();
+  const ladosExistentes = new Map<string, Lado>();
+  for (const grupo of grupos) {
+    const invitacion = clave(grupo.nombre.trim());
+    if (!ladosExistentes.has(invitacion)) ladosExistentes.set(invitacion, grupo.lado);
+    for (const persona of grupo.gente) {
+      yaExisten.add(clavePersona(grupo.nombre, persona.nombre, persona.apellidos, clave));
+    }
+  }
+
+  return { yaExisten, ladosExistentes, clave };
 }
 
-/**
- * Los nombres de grupo del fichero que todavía no existen en la base, con el
- * mismo criterio que la base usa al importar: sin mayúsculas ni acentos.
- */
-function gruposPorCrear(filas: FilaImportada[], existentes: string[]): string[] {
-  const yaHay = new Set(existentes.map(claveGrupo));
-  const nuevos: string[] = [];
-  for (const fila of filas) {
-    const clave = claveGrupo(fila.grupo);
-    if (!yaHay.has(clave)) {
-      yaHay.add(clave);
-      nuevos.push(fila.grupo);
-    }
-  }
-  return nuevos;
+/** La vista previa de una lectura, lista para pintar o para confirmar. */
+function previa(lectura: Lectura, contenido: string, serie: number): EstadoImportacion {
+  return {
+    fase: "previa",
+    filas: lectura.filas,
+    nuevas: lectura.nuevas,
+    invitaciones: lectura.invitaciones,
+    errores: lectura.errores,
+    columnasIgnoradas: lectura.columnasIgnoradas,
+    contenido,
+    serie,
+  };
 }
 
 /**
@@ -92,30 +133,23 @@ export async function analizarFichero(
     return { ...ESTADO_INICIAL, serie, aviso: t("panel.importar.errorSinFichero") };
   }
 
-  const contenido = decodificar(await fichero.arrayBuffer());
-
-  const grupos = await obtenerGruposConGente();
-  const existentes = new Set<string>();
-  for (const grupo of grupos) {
-    for (const persona of grupo.gente) {
-      existentes.add(clavePersona(grupo.nombre, persona.nombre, persona.apellidos));
-    }
+  // Un .xlsx tal cual no es un CSV, y decodificarlo daba «Faltan las columnas
+  // Grupo, Nombre» con cuatrocientos caracteres de basura como columnas.
+  const bytes = await fichero.arrayBuffer();
+  if (noEsTexto(bytes)) {
+    return { ...ESTADO_INICIAL, serie, aviso: t("panel.importar.errorNoEsCsv") };
   }
 
-  const lectura = leerImportacion(contenido, existentes);
+  const contenido = decodificar(bytes);
+  const lectura = leerImportacion(contenido, await contextoDeLaBase(contenido));
 
-  return {
-    fase: "previa",
-    filas: lectura.filas,
-    errores: lectura.errores,
-    columnasIgnoradas: lectura.columnasIgnoradas,
-    gruposNuevos: gruposPorCrear(
-      lectura.filas,
-      grupos.map((grupo) => grupo.nombre),
-    ),
-    contenido,
-    serie,
-  };
+  // Sólo la cabecera, o filas en blanco: sin esto la pantalla se quedaba igual,
+  // sin error, sin aviso y sin vista previa.
+  if (lectura.filas.length === 0 && lectura.errores.length === 0) {
+    return { ...ESTADO_INICIAL, serie, aviso: t("panel.importar.errorNadaQueImportar") };
+  }
+
+  return previa(lectura, contenido, serie);
 }
 
 /**
@@ -139,24 +173,10 @@ export async function importar(
     return { ...ESTADO_INICIAL, serie, aviso: t("panel.importar.errorSinFichero") };
   }
 
-  const lectura = leerImportacion(contenido, await personasExistentes());
+  const lectura = leerImportacion(contenido, await contextoDeLaBase(contenido));
 
   // NADA A MEDIAS: si sobrevivió un error, no se escribe una sola fila.
-  if (lectura.errores.length > 0) {
-    const grupos = await obtenerGruposConGente();
-    return {
-      fase: "previa",
-      filas: lectura.filas,
-      errores: lectura.errores,
-      columnasIgnoradas: lectura.columnasIgnoradas,
-      gruposNuevos: gruposPorCrear(
-        lectura.filas,
-        grupos.map((grupo) => grupo.nombre),
-      ),
-      contenido,
-      serie,
-    };
-  }
+  if (lectura.errores.length > 0) return previa(lectura, contenido, serie);
 
   if (lectura.filas.length === 0) {
     return { ...ESTADO_INICIAL, serie, aviso: t("panel.importar.errorNadaQueImportar") };
@@ -168,13 +188,7 @@ export async function importar(
   if (error) {
     console.error("No se pudo importar:", error);
     return {
-      fase: "previa",
-      filas: lectura.filas,
-      errores: [],
-      columnasIgnoradas: lectura.columnasIgnoradas,
-      gruposNuevos: [],
-      contenido,
-      serie,
+      ...previa(lectura, contenido, serie),
       aviso: error.message.includes("RSV06")
         ? t("panel.invitados.errorSinPermiso")
         : t("panel.importar.errorImportando"),

@@ -51,12 +51,9 @@ export default async function PaginaImportar() {
           {t("panel.importar.plantillaAyuda")}
         </Cuerpo>
         <p className="mt-elemento">
-          <a
-            href={`${RUTA_INVITADOS}/importar/plantilla`}
-            className="text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
-          >
+          <EnlaceSuave href={`${RUTA_INVITADOS}/importar/plantilla`} descarga>
             {t("panel.importar.plantilla")}
-          </a>
+          </EnlaceSuave>
         </p>
       </section>
 

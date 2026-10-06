@@ -57,16 +57,59 @@ function botonImportar(pagina: Page) {
   return pagina.getByRole("button", { name: copy.panel.importar.confirmar, exact: true });
 }
 
-async function subir(pagina: Page, contenido: string) {
+async function subir(pagina: Page, contenido: string | Buffer, nombre = "invitados.csv") {
   await pagina.getByLabel(copy.panel.importar.fichero).setInputFiles({
-    name: "invitados.csv",
+    name: nombre,
     mimeType: "text/csv",
-    buffer: Buffer.from(contenido, "utf8"),
+    buffer: typeof contenido === "string" ? Buffer.from(contenido, "utf8") : contenido,
   });
   await pagina.getByRole("button", { name: copy.panel.importar.analizar }).click();
 }
 
+/** Una invitación dada de alta por la base, con su gente, como si fuera de antes. */
+async function crearInvitacion(
+  nombre: string,
+  lado: "novia" | "novio" | "ambos",
+  gente: { nombre: string; apellidos: string | null }[] = [],
+) {
+  const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+  try {
+    const [grupo] = await sql<{ id: string }[]>`
+      insert into public.grupos_invitacion (nombre, lado, invitado_a, maximo_acompanantes, huella_token)
+      values (${nombre}, ${lado}::public.lado_invitacion,
+              array['ceremonia','banquete','fiesta']::public.evento_boda[], 0,
+              public.huella_token(${`desarrollo-importar-${nombre}-000000`}))
+      returning id
+    `;
+    for (const persona of gente) {
+      await sql`
+        insert into public.invitados (grupo_id, nombre, apellidos, es_nino)
+        values (${grupo.id}, ${persona.nombre}, ${persona.apellidos}, false)
+      `;
+    }
+  } finally {
+    await sql.end();
+  }
+}
+
+/** Una fila de errores por su número, tal y como la pinta la pantalla. */
+function errorEnFila(pagina: Page, linea: number) {
+  return pagina
+    .getByRole("listitem")
+    .filter({ hasText: copy.panel.importar.errorLinea.replace("{linea}", String(linea)) });
+}
+
 test.describe.configure({ mode: "serial" });
+
+test.afterAll(async () => {
+  if (!cadena) return;
+  const sql = postgres(cadena, { max: 1, prepare: false, onnotice: () => {} });
+  try {
+    await sql`delete from public.grupos_invitacion where nombre like ${`${MARCA}%`}`;
+  } finally {
+    await sql.end();
+  }
+});
 
 test.describe("Importar invitados", () => {
   test.skip(
@@ -155,7 +198,9 @@ test.describe("Importar invitados", () => {
       ].join("\n"),
     );
 
-    await expect(page.getByText(copy.panel.importar.erroresTituloUna)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: copy.panel.importar.erroresTituloUna }),
+    ).toBeVisible();
     await expect(
       page.getByText(copy.panel.importar.errorLinea.replace("{linea}", "3")),
     ).toBeVisible();
@@ -189,7 +234,9 @@ test.describe("Importar invitados", () => {
     await page.goto(`${RUTA_INVITADOS}/importar`);
     await subir(page, csv);
 
-    await expect(page.getByText(copy.panel.importar.erroresTituloUna)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: copy.panel.importar.erroresTituloUna }),
+    ).toBeVisible();
     await expect(botonImportar(page)).toHaveCount(0);
 
     // Y sigue habiendo una, no dos.
@@ -243,14 +290,18 @@ test.describe("Importar invitados", () => {
 
     // Confirmar falla: la revalidación la detecta y no importa nada.
     await botonImportar(page).click();
-    await expect(page.getByText(copy.panel.importar.erroresTituloUna)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: copy.panel.importar.erroresTituloUna }),
+    ).toBeVisible();
     await expect(botonImportar(page)).toHaveCount(0);
 
     // Y AHORA, SIN RECARGAR, otro fichero: tiene que verse ÉSTE.
     await subir(page, csvB);
     await expect(page.getByText(nueva)).toBeVisible();
     await expect(page.getByText(repetida)).toHaveCount(0);
-    await expect(page.getByText(copy.panel.importar.erroresTituloUna)).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: copy.panel.importar.erroresTituloUna }),
+    ).toHaveCount(0);
     await expect(botonImportar(page)).toBeVisible();
 
     await botonImportar(page).click();
@@ -296,7 +347,9 @@ test.describe("Importar invitados", () => {
       page.getByRole("heading", { name: copy.panel.importar.previaTitulo }),
     ).toBeVisible();
     await expect(page.getByText(copy.panel.importar.muestraNombre)).toBeVisible();
-    await expect(page.getByText(copy.panel.importar.erroresTituloUna)).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: copy.panel.importar.erroresTituloUna }),
+    ).toHaveCount(0);
     await expect(botonImportar(page)).toBeVisible();
   });
 
@@ -346,8 +399,159 @@ test.describe("Importar invitados", () => {
     // CASO DE ERROR · Ana otra vez, sin tildes y en mayúsculas: es la misma.
     await page.goto(`${RUTA_INVITADOS}/importar`);
     await subir(page, ["Grupo;Nombre", `${sinTilde.toUpperCase()};${ana}`].join("\n"));
-    await expect(page.getByText(copy.panel.importar.erroresTituloUna)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: copy.panel.importar.erroresTituloUna }),
+    ).toBeVisible();
     await expect(botonImportar(page)).toHaveCount(0);
     expect(await cuantasPersonas(ana)).toBe(1);
+  });
+});
+
+test.describe("Importar invitados con el criterio de la base", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  test.beforeEach(async ({ page }) => {
+    await entrar(page);
+    await page.goto(`${RUTA_INVITADOS}/importar`);
+  });
+
+  /**
+   * LA VISTA PREVIA LE PREGUNTA A LA BASE QUÉ ES «LO MISMO».
+   *
+   * Imitaba su criterio en JavaScript y acertaba con las tildes, no con lo
+   * demás de `unaccent`: daba «Familia Collell» por la «Família Col·lell» que
+   * ya existía —y la base creaba otra invitación— y daba «D’Angelo», con el
+   * apóstrofo del móvil, por alguien distinto de «D'Angelo» —y la base
+   * rechazaba la importación entera sin decir por qué—.
+   */
+  test("«Col·lell» no es «Collell», y el apóstrofo del móvil es el de siempre", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const catalana = `${MARCA} Família Col·lell ${sello}`;
+    const luca = `(DES) Luca ${sello}`;
+    const jordi = `(DES) Jordi ${sello}`;
+    await crearInvitacion(catalana, "ambos", [{ nombre: luca, apellidos: "D'Angelo" }]);
+
+    await subir(
+      page,
+      [
+        "Grupo;Nombre;Apellidos",
+        `${MARCA} Familia Collell ${sello};${jordi};`,
+        `${catalana};${luca};D’Angelo`,
+      ].join("\n"),
+    );
+
+    // Para la base, sin el punto volado es otra invitación: así lo dice la fila.
+    await expect(page.locator("tr").filter({ hasText: jordi })).toContainText(
+      copy.panel.importar.grupoNuevo,
+    );
+    // Y Luca ya está, se escriba el apóstrofo como se escriba.
+    await expect(errorEnFila(page, 3)).toContainText(luca);
+    await expect(botonImportar(page)).toHaveCount(0);
+  });
+
+  /**
+   * EL LADO ES DE LA INVITACIÓN. La vista previa enseñaba el lado de cada fila
+   * y la base guardaba el del grupo: Paco salía «El novio» en pantalla y
+   * entraba en una invitación de la novia sin que nadie se enterase.
+   */
+  test("una fila no cambia el lado de su invitación, y sin lado lo hereda", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const carmona = `${MARCA} Carmona ${sello}`;
+    const rocio = `(DES) Rocío ${sello}`;
+    await crearInvitacion(carmona, "novia");
+
+    // CASO DE ERROR · otro lado en una invitación que ya tiene el suyo.
+    await subir(
+      page,
+      [
+        "Grupo;Nombre;Lado",
+        `${carmona};${rocio};`,
+        `${carmona};(DES) Paco ${sello};El novio`,
+      ].join("\n"),
+    );
+    await expect(errorEnFila(page, 3)).toContainText(copy.panel.invitados.lados.novia);
+    await expect(errorEnFila(page, 3)).toContainText("El novio");
+    await expect(botonImportar(page)).toHaveCount(0);
+
+    // CAMINO FELIZ · sin lado, Rocío entra con el de su invitación.
+    await subir(page, ["Grupo;Nombre;Lado", `${carmona};${rocio};`].join("\n"));
+    await expect(page.locator("tr").filter({ hasText: rocio })).toContainText(
+      copy.panel.invitados.lados.novia,
+    );
+    await botonImportar(page).click();
+    await expect(page).toHaveURL(/estado=importados/);
+    expect(await cuantasPersonas(rocio)).toBe(1);
+  });
+
+  /**
+   * EL RESUMEN CUENTA COMO LA BASE, Y SE ANUNCIA. «3 personas en 1
+   * invitaciones» contaba por el nombre en minúsculas, y el resultado aparecía
+   * debajo sin que un lector de pantalla dijera nada.
+   */
+  test("una familia de tres es una invitación, y el resumen se anuncia", async ({ page }) => {
+    const sello = Date.now();
+    const familia = `${MARCA} Gorroño ${sello}`;
+    await subir(
+      page,
+      [
+        "Grupo;Nombre",
+        `${familia};(DES) Uno ${sello}`,
+        `${familia.toUpperCase()};(DES) Dos ${sello}`,
+        `${familia.replace("ñ", "n")};(DES) Tres ${sello}`,
+      ].join("\n"),
+    );
+
+    const resumen = copy.panel.importar.previaResumenUnaInvitacion.replace("{personas}", "3");
+    const previa = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: copy.panel.importar.previaTitulo }) });
+    await expect(previa.getByText(resumen, { exact: true })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: resumen })).toHaveCount(1);
+  });
+
+  /**
+   * CASOS DE ERROR · LO QUE NO SE PUEDE IMPORTAR SE DICE, Y DÓNDE.
+   */
+  test("una hoja sin exportar, un CSV sin filas y una fila en blanco en medio", async ({
+    page,
+  }) => {
+    // Un .xlsx tal cual: empieza por la firma de un ZIP.
+    await subir(
+      page,
+      Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x06, 0x00, 0x08, 0x00]),
+      "invitados.xlsx",
+    );
+    await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveText(
+      copy.panel.importar.errorNoEsCsv,
+    );
+    await expect(
+      page.getByText(copy.panel.importar.errorFaltanColumnas.split("{")[0]),
+    ).toHaveCount(0);
+
+    // La plantilla con la fila de muestra borrada: sólo la cabecera.
+    await subir(page, "Grupo;Nombre;Apellidos;Lado;Niño\r\n;;;;\r\n");
+    await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveText(
+      copy.panel.importar.errorNadaQueImportar,
+    );
+
+    // Una fila en blanco separando familias: el error es de la fila 4 de la hoja.
+    const sello = Date.now();
+    await subir(
+      page,
+      [
+        "Grupo;Nombre",
+        `${MARCA} A ${sello};(DES) Ana ${sello}`,
+        ";",
+        `${MARCA} B ${sello};`,
+      ].join("\n"),
+    );
+    await expect(errorEnFila(page, 4)).toContainText(copy.panel.importar.errorSinNombre);
   });
 });

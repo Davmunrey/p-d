@@ -16,8 +16,13 @@ export interface EstadoImportacion {
   filas: FilaImportada[];
   errores: ErrorDeFila[];
   columnasIgnoradas: string[];
-  /** Invitaciones que se van a crear, para poder decirlo antes de crearlas. */
-  gruposNuevos: string[];
+  /**
+   * Por cada fila, si va a una invitación que se crea al importar. Lo decide el
+   * servidor con el criterio de la base, no la pantalla comparando nombres.
+   */
+  nuevas: boolean[];
+  /** Cuántas invitaciones distintas tocan las filas, con ese mismo criterio. */
+  invitaciones: number;
   /** El CSV ya decodificado, que viaja al paso de confirmar. */
   contenido: string;
   /** Un fallo que no es de ninguna fila en concreto. */
@@ -35,7 +40,8 @@ export const ESTADO_INICIAL: EstadoImportacion = {
   filas: [],
   errores: [],
   columnasIgnoradas: [],
-  gruposNuevos: [],
+  nuevas: [],
+  invitaciones: 0,
   contenido: "",
   serie: 0,
 };

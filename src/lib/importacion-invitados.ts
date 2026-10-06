@@ -3,7 +3,7 @@ import {
   LONGITUD_MINIMA_NOMBRE,
   MAXIMO_FILAS_IMPORTACION,
 } from "@/config/constants";
-import { analizarCsv, celda as celdaCsv } from "@/lib/csv";
+import { analizarCsvConLineas, celda as celdaCsv } from "@/lib/csv";
 import { t, type ClaveCopy } from "@/lib/copy";
 
 /**
@@ -34,7 +34,7 @@ type Columna = keyof typeof COLUMNAS;
 
 const OBLIGATORIAS: Columna[] = ["grupo", "nombre"];
 
-type Lado = "novia" | "novio" | "ambos";
+export type Lado = "novia" | "novio" | "ambos";
 
 const LADOS: Record<string, Lado> = {
   novia: "novia",
@@ -54,12 +54,26 @@ const LADOS: Record<string, Lado> = {
   ),
 };
 
-/** Lo afirmativo que puede escribir alguien en una hoja de cálculo. */
-const AFIRMATIVOS = new Set(["si", "sí", "s", "x", "true", "1", "verdadero"]);
+/**
+ * Lo afirmativo y lo negativo que puede escribir alguien en una hoja de
+ * cálculo, ya sin tildes ni mayúsculas.
+ *
+ * LO DEMÁS ES UN ERROR, como en el lado. Antes cualquier cosa que no fuera un
+ * «sí» contaba como adulto: «Niña», «7» o «sí (6 años)» entraban sin aviso con
+ * `es_nino = false`, y ese niño ni podía llevar el menú infantil ni salía en
+ * el recuento del catering.
+ */
+const AFIRMATIVOS = new Set(["si", "s", "x", "true", "1", "verdadero"]);
+const NEGATIVOS = new Set(["", "no", "n", "0", "false", "falso"]);
 
 export interface FilaImportada {
   grupo: string;
-  lado: "novia" | "novio" | "ambos";
+  /**
+   * El lado de SU INVITACIÓN, no el que escribió la fila: en la base el lado
+   * es del grupo. Es el de la invitación si ya existe y, si es nueva, el
+   * primero que traiga el fichero para ella.
+   */
+  lado: Lado;
   nombre: string;
   apellidos: string | null;
   nino: boolean;
@@ -73,9 +87,26 @@ export interface ErrorDeFila {
 
 export interface Lectura {
   filas: FilaImportada[];
+  /** Por cada fila de `filas`, si va a una invitación que crea esta importación. */
+  nuevas: boolean[];
+  /** Cuántas invitaciones distintas tocan las filas, nuevas o no. */
+  invitaciones: number;
   errores: ErrorDeFila[];
   /** Rótulos que traía el fichero y no se entienden. Se ignoran, y se dice. */
   columnasIgnoradas: string[];
+}
+
+/** Lo que hay que saber de la base para leer un fichero. */
+export interface Contexto {
+  /** Las claves de persona (`clavePersona`) de quien ya está dado de alta. */
+  yaExisten?: Set<string>;
+  /** El lado de cada invitación que ya existe, por la clave de su nombre. */
+  ladosExistentes?: Map<string, Lado>;
+  /**
+   * Cuándo dos nombres son el mismo. En el servidor es la de la base
+   * (`clave_de_importacion()`); sin ella, la aproximación de `claveAproximada`.
+   */
+  clave?: (texto: string) => string;
 }
 
 /**
@@ -113,19 +144,37 @@ function situarColumnas(cabecera: string[]): {
 }
 
 /**
- * Cuándo dos nombres de invitación son la misma invitación: sin mayúsculas ni
- * acentos. Es el criterio de `importar_invitados()` en la base (con
- * `sin_acentos`), y tiene que serlo: si la vista previa y la base no coinciden,
- * la vista previa avisa de un duplicado en «Familia Perez» y la base crea
- * después otra invitación para el resto de la familia.
+ * CUÁNDO DOS NOMBRES SON EL MISMO, A OJO.
+ *
+ * El criterio de verdad es el de la base, `clave_de_importacion()`, y la
+ * vista previa le pregunta a ella (ver `importar/acciones.ts`): si la pantalla
+ * y la base no coinciden, la pantalla da a Marta por la «Familia Perez» que ya
+ * existe y la base le crea otra invitación con su propio enlace. Esta versión
+ * se le parece —sin tildes, sin mayúsculas, sin espacios en los bordes— pero
+ * no traduce los doscientos signos de `unaccent` (ß, ø, ’, l·l…), así que sólo
+ * vale para lo que no toca la base: los tests de este módulo.
  */
-export function claveGrupo(grupo: string): string {
-  return normalizar(grupo);
+export function claveAproximada(texto: string): string {
+  return normalizar(texto);
 }
 
-/** Una clave única de persona, para cazar duplicados sin distinguir formas. */
-export function clavePersona(grupo: string, nombre: string, apellidos: string | null): string {
-  return [claveGrupo(grupo), normalizar(nombre), normalizar(apellidos ?? "")].join("|");
+/** Todos los textos que `leerImportacion` va a necesitar en forma de clave. */
+export function textosDelFichero(contenido: string): string[] {
+  const textos = new Set([""]);
+  for (const fila of analizarCsvConLineas(contenido)) {
+    for (const celda of fila.celdas) textos.add(celda.trim());
+  }
+  return [...textos];
+}
+
+/** La clave de una persona: su invitación, su nombre y sus apellidos. */
+export function clavePersona(
+  grupo: string,
+  nombre: string,
+  apellidos: string | null,
+  clave: (texto: string) => string = claveAproximada,
+): string {
+  return [clave(grupo.trim()), clave(nombre.trim()), clave((apellidos ?? "").trim())].join("|");
 }
 
 /**
@@ -160,85 +209,83 @@ export function plantillaDeImportacion(): string {
   return [columnas, muestra].map((fila) => fila.map(celdaCsv).join(";")).join("\r\n");
 }
 
+/** Lo que devuelve una lectura que se para antes de llegar a las filas. */
+function sinFilas(error: ErrorDeFila, columnasIgnoradas: string[] = []): Lectura {
+  return { filas: [], nuevas: [], invitaciones: 0, errores: [error], columnasIgnoradas };
+}
+
 /**
  * Lee el contenido de un CSV y devuelve qué se daría de alta y qué falla.
  *
- * `yaExisten` son las claves de la gente que ya está en la base. Se pasa desde
- * fuera en lugar de consultarla aquí para que este módulo siga siendo una
- * función pura: así se prueba entero sin base de datos, que es lo que permite
- * tener test de los quince casos raros de un CSV.
+ * Lo que hace falta de la base —quién está ya, de qué lado es cada invitación
+ * y cómo compara nombres— se pasa desde fuera en lugar de consultarlo aquí,
+ * para que este módulo siga siendo una función pura: así se prueba entero sin
+ * base de datos, que es lo que permite tener test de los quince casos raros de
+ * un CSV.
  */
-export function leerImportacion(
-  contenido: string,
-  yaExisten: Set<string> = new Set(),
-): Lectura {
-  const filas = analizarCsv(contenido);
+export function leerImportacion(contenido: string, contexto: Contexto = {}): Lectura {
+  const {
+    yaExisten = new Set<string>(),
+    ladosExistentes = new Map<string, Lado>(),
+    clave = claveAproximada,
+  } = contexto;
+  const filas = analizarCsvConLineas(contenido);
   const errores: ErrorDeFila[] = [];
 
   if (filas.length === 0) {
-    return {
-      filas: [],
-      errores: [{ linea: 1, motivo: t("panel.importar.errorVacio") }],
-      columnasIgnoradas: [],
-    };
+    return sinFilas({ linea: 1, motivo: t("panel.importar.errorVacio") });
   }
 
-  const [cabecera, ...cuerpo] = filas;
+  const [{ celdas: cabecera, linea: lineaCabecera }, ...cuerpo] = filas;
   const { posiciones, ignoradas } = situarColumnas(cabecera);
 
   const faltan = OBLIGATORIAS.filter((columna) => posiciones[columna] < 0);
   if (faltan.length > 0) {
-    return {
-      filas: [],
-      errores: [
-        {
-          linea: 1,
-          motivo: t(
-            faltan.length === 1
-              ? "panel.importar.errorFaltaColumna"
-              : "panel.importar.errorFaltanColumnas",
-            {
-              columnas: faltan
-                .map((columna) => t(`panel.importar.columna.${columna}` as ClaveCopy))
-                .join(", "),
-            },
-          ),
-        },
-      ],
-      columnasIgnoradas: ignoradas,
-    };
+    return sinFilas(
+      {
+        linea: lineaCabecera,
+        motivo: t(
+          faltan.length === 1
+            ? "panel.importar.errorFaltaColumna"
+            : "panel.importar.errorFaltanColumnas",
+          {
+            columnas: faltan
+              .map((columna) => t(`panel.importar.columna.${columna}` as ClaveCopy))
+              .join(", "),
+          },
+        ),
+      },
+      ignoradas,
+    );
   }
 
   if (cuerpo.length > MAXIMO_FILAS_IMPORTACION) {
-    return {
-      filas: [],
-      errores: [
-        {
-          linea: 1,
-          motivo: t("panel.importar.errorDemasiadas", {
-            tope: MAXIMO_FILAS_IMPORTACION,
-            traidas: cuerpo.length,
-          }),
-        },
-      ],
-      columnasIgnoradas: ignoradas,
-    };
+    return sinFilas(
+      {
+        linea: lineaCabecera,
+        motivo: t("panel.importar.errorDemasiadas", {
+          tope: MAXIMO_FILAS_IMPORTACION,
+          traidas: cuerpo.length,
+        }),
+      },
+      ignoradas,
+    );
   }
 
   const celda = (fila: string[], columna: Columna): string =>
     posiciones[columna] >= 0 ? (fila[posiciones[columna]] ?? "").trim() : "";
 
-  const listas: FilaImportada[] = [];
+  const listas: { fila: FilaImportada; invitacion: string }[] = [];
   // Los duplicados se miran contra lo que ya hay Y contra lo que lleva el
   // propio fichero: una hoja compartida entre dos familias trae a la misma
   // persona dos veces con muchísima naturalidad.
   const vistas = new Set(yaExisten);
+  // El lado de cada invitación nueva: el de la primera fila que lo diga.
+  const ladosDelFichero = new Map<string, Lado>();
 
-  cuerpo.forEach((fila, indice) => {
-    // +2: la cabecera es la línea 1 y este índice empieza en cero. Quien abra
-    // el fichero para arreglarlo tiene que encontrar la fila donde se le dice.
-    const linea = indice + 2;
-
+  // `linea` es el número de la fila en la hoja, contando las vacías: quien
+  // abra el fichero para arreglarlo tiene que encontrarla donde se le dice.
+  cuerpo.forEach(({ celdas: fila, linea }) => {
     const grupo = celda(fila, "grupo");
     const nombre = celda(fila, "nombre");
     const apellidos = celda(fila, "apellidos") || null;
@@ -295,8 +342,43 @@ export function leerImportacion(
       return;
     }
 
-    const clave = clavePersona(grupo, nombre, apellidos);
-    if (vistas.has(clave)) {
+    const nino = normalizar(celda(fila, "nino"));
+    if (!AFIRMATIVOS.has(nino) && !NEGATIVOS.has(nino)) {
+      errores.push({
+        linea,
+        motivo: t("panel.importar.errorNino", {
+          valor: celda(fila, "nino"),
+          columna: t("panel.importar.columna.nino"),
+        }),
+      });
+      return;
+    }
+
+    /*
+      UNA INVITACIÓN TIENE UN SOLO LADO. En la base el lado es del grupo, no de
+      cada persona: la vista previa enseñaba «El novio» en una fila y la base
+      la metía, sin avisar, en una invitación de la novia. Si la fila dice un
+      lado distinto del de su invitación —la que ya existe o la que abrió otra
+      fila del fichero—, es un error; si no dice ninguno, hereda el suyo.
+    */
+    const invitacion = clave(grupo);
+    const ladoEscrito = ladoBruto === "" ? null : LADOS[ladoBruto];
+    const ladoDeLaInvitacion =
+      ladosExistentes.get(invitacion) ?? ladosDelFichero.get(invitacion);
+    if (ladoEscrito && ladoDeLaInvitacion && ladoEscrito !== ladoDeLaInvitacion) {
+      errores.push({
+        linea,
+        motivo: t("panel.importar.errorLadoDistinto", {
+          grupo,
+          lado: t(`panel.invitados.lados.${ladoDeLaInvitacion}`),
+          valor: celda(fila, "lado"),
+        }),
+      });
+      return;
+    }
+
+    const persona = clavePersona(grupo, nombre, apellidos, clave);
+    if (vistas.has(persona)) {
       errores.push({
         linea,
         motivo: t("panel.importar.errorDuplicado", {
@@ -306,16 +388,25 @@ export function leerImportacion(
       });
       return;
     }
-    vistas.add(clave);
+    vistas.add(persona);
+    if (ladoEscrito && !ladoDeLaInvitacion) ladosDelFichero.set(invitacion, ladoEscrito);
 
     listas.push({
-      grupo,
-      lado: ladoBruto === "" ? "ambos" : LADOS[ladoBruto],
-      nombre,
-      apellidos,
-      nino: AFIRMATIVOS.has(normalizar(celda(fila, "nino"))),
+      fila: { grupo, lado: "ambos", nombre, apellidos, nino: AFIRMATIVOS.has(nino) },
+      invitacion,
     });
   });
 
-  return { filas: listas, errores, columnasIgnoradas: ignoradas };
+  // El lado se pone al final: una fila sin lado puede ir antes que la que se
+  // lo da a su invitación nueva. Sin ninguno, «ambos», que es el de la base.
+  const ladoDe = (invitacion: string): Lado =>
+    ladosExistentes.get(invitacion) ?? ladosDelFichero.get(invitacion) ?? "ambos";
+
+  return {
+    filas: listas.map(({ fila, invitacion }) => ({ ...fila, lado: ladoDe(invitacion) })),
+    nuevas: listas.map(({ invitacion }) => !ladosExistentes.has(invitacion)),
+    invitaciones: new Set(listas.map(({ invitacion }) => invitacion)).size,
+    errores,
+    columnasIgnoradas: ignoradas,
+  };
 }

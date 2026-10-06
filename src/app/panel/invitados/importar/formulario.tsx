@@ -4,10 +4,9 @@ import { useActionState } from "react";
 
 import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
-import { Cuerpo, Etiqueta, Titulo3 } from "@/components/ui/tipografia";
+import { Cuerpo, Titulo3 } from "@/components/ui/tipografia";
 import { RUTA_INVITADOS } from "@/config/constants";
 import { t } from "@/lib/copy";
-import { claveGrupo } from "@/lib/importacion-invitados";
 
 import { analizarFichero, importar } from "./acciones";
 import { ESTADO_INICIAL, estadoVigente } from "./estado";
@@ -31,12 +30,19 @@ import { ESTADO_INICIAL, estadoVigente } from "./estado";
  * Aun así no se deja a nadie mirando una pantalla muerta: sin JavaScript, el
  * `<noscript>` dice qué pasa y ofrece la otra vía, que existe y funciona.
  */
-/** «1 persona en 1 invitación» y no «1 personas en 1 invitaciones». */
-function resumen(filas: { grupo: string }[]): string {
-  const grupos = new Set(filas.map((fila) => fila.grupo.toLowerCase())).size;
-  return filas.length === 1 && grupos === 1
-    ? t("panel.importar.previaResumenUna")
-    : t("panel.importar.previaResumen", { personas: filas.length, grupos });
+/**
+ * «1 persona en 1 invitación», «3 personas en 1 invitación» y no «3 personas en
+ * 1 invitaciones». Las invitaciones las cuenta el servidor con el criterio de
+ * la base: contarlas aquí por el nombre en minúsculas daba dos para «Familia
+ * Pérez» y «Familia Perez», que la base junta en una.
+ */
+function resumen(personas: number, invitaciones: number): string {
+  if (invitaciones === 1) {
+    return personas === 1
+      ? t("panel.importar.previaResumenUna")
+      : t("panel.importar.previaResumenUnaInvitacion", { personas });
+  }
+  return t("panel.importar.previaResumen", { personas, grupos: invitaciones });
 }
 
 export function FormularioImportacion() {
@@ -47,6 +53,12 @@ export function FormularioImportacion() {
   // `estadoVigente`, que es donde está explicado y probado.
   const estado = estadoVigente(analisis, envio);
   const hayErrores = estado.errores.length > 0;
+  const tituloErrores =
+    estado.errores.length === 1
+      ? t("panel.importar.erroresTituloUna")
+      : t("panel.importar.erroresTitulo", { cuantos: estado.errores.length });
+  const hayPrevia = estado.fase === "previa" && estado.filas.length > 0;
+  const resumenPrevia = resumen(estado.filas.length, estado.invitaciones);
 
   return (
     <>
@@ -79,6 +91,18 @@ export function FormularioImportacion() {
         </div>
       </form>
 
+      {/*
+        LO QUE HA SALIDO DEL ANÁLISIS, DICHO EN ALTO. Los errores y la vista
+        previa aparecen debajo sin mover el foco, y quien no ve la pantalla no
+        sabía si el análisis había terminado, ni si había algo que arreglar o un
+        botón de importar más abajo. El aviso suelto ya va en `role="alert"`.
+        La región existe siempre, vacía o no: un lector sólo anuncia los
+        cambios de una región que ya estaba.
+      */}
+      <p role="status" className="sr-only">
+        {hayErrores ? tituloErrores : hayPrevia ? resumenPrevia : ""}
+      </p>
+
       {estado.aviso ? (
         <p
           role="alert"
@@ -102,11 +126,7 @@ export function FormularioImportacion() {
       */}
       {hayErrores ? (
         <section className="mt-bloque rounded-tarjeta border border-borde bg-error-fondo p-interno">
-          <Titulo3 como="h2">
-            {estado.errores.length === 1
-              ? t("panel.importar.erroresTituloUna")
-              : t("panel.importar.erroresTitulo", { cuantos: estado.errores.length })}
-          </Titulo3>
+          <Titulo3 como="h2">{tituloErrores}</Titulo3>
           <Cuerpo className="mt-pila max-w-texto text-pequeno">
             {t("panel.importar.erroresAyuda")}
           </Cuerpo>
@@ -123,10 +143,10 @@ export function FormularioImportacion() {
         </section>
       ) : null}
 
-      {estado.fase === "previa" && estado.filas.length > 0 ? (
+      {hayPrevia ? (
         <section className="mt-bloque">
           <Titulo3 como="h2">{t("panel.importar.previaTitulo")}</Titulo3>
-          <Cuerpo className="mt-pila max-w-texto">{resumen(estado.filas)}</Cuerpo>
+          <Cuerpo className="mt-pila max-w-texto">{resumenPrevia}</Cuerpo>
 
           <div className="mt-elemento overflow-x-auto">
             <table className="w-full border-collapse text-pequeno">
@@ -154,11 +174,9 @@ export function FormularioImportacion() {
                   >
                     <td className="py-linea pr-interno text-tinta">
                       {fila.grupo}
-                      {/* Por su clave y no por cómo está escrito: «Familia Perez» y
-                          «familia pérez» son la misma invitación nueva. */}
-                      {estado.gruposNuevos.some(
-                        (nuevo) => claveGrupo(nuevo) === claveGrupo(fila.grupo),
-                      ) ? (
+                      {/* Lo decide el servidor con el criterio de la base:
+                          «Familia Perez» y «familia pérez» son la misma. */}
+                      {estado.nuevas[indice] ? (
                         <span className="ml-interno-compacto text-tinta-suave">
                           {t("panel.importar.grupoNuevo")}
                         </span>
@@ -185,9 +203,9 @@ export function FormularioImportacion() {
             no tenerlo, y la lista de arriba ya dice exactamente qué arreglar.
           */}
           {hayErrores ? (
-            <Etiqueta className="mt-elemento block">
-              {t("panel.importar.erroresAyuda")}
-            </Etiqueta>
+            <Cuerpo className="mt-elemento max-w-texto text-pequeno text-tinta-suave">
+              {t("panel.importar.previaSinBoton")}
+            </Cuerpo>
           ) : (
             <form action={enviar} className="mt-elemento flex flex-wrap gap-interno">
               <input type="hidden" name="contenido" value={estado.contenido} />
