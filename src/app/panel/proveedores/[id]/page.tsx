@@ -42,6 +42,7 @@ import { haySubidaDeMedios } from "@/lib/supabase/servicio";
 import {
   anadirContacto,
   borrarDocumento,
+  cambiarCategoria,
   borrarProveedor,
   borrarServicio,
   cambiarEstado,
@@ -153,6 +154,15 @@ export default async function PaginaProveedor({ params, searchParams }: Parametr
       ? await obtenerContratadosDeCategoria(proveedor.categoriaId, proveedor.id)
       : []) ?? [];
 
+  // El cambio de categoría que espera confirmación: a cuál, y quién está ya.
+  const categoriaPedida =
+    estado === "confirmar-categoria"
+      ? categorias.find((categoria) => categoria.id === soloTexto(consulta.categoria))
+      : undefined;
+  const contratadosEnLaPedida = categoriaPedida
+    ? ((await obtenerContratadosDeCategoria(categoriaPedida.id, proveedor.id)) ?? [])
+    : [];
+
   return (
     <>
       <div className="max-w-texto">
@@ -183,6 +193,14 @@ export default async function PaginaProveedor({ params, searchParams }: Parametr
 
       {estado === "confirmar-contratado" && puedeEditar ? (
         <ConfirmarContratado proveedor={proveedor} otros={contratados} />
+      ) : null}
+
+      {categoriaPedida && puedeEditar ? (
+        <ConfirmarCategoria
+          proveedor={proveedor}
+          categoria={categoriaPedida}
+          otros={contratadosEnLaPedida}
+        />
       ) : null}
 
       <Datos proveedor={proveedor} euros={euros} />
@@ -247,10 +265,36 @@ function Datos({
           ? euros(proveedor.importePresupuestado)
           : null,
     },
+    /*
+      SI EL PRESUPUESTO LLEVA IVA Y LA VALORACIÓN, también para quien sólo lee.
+      Vivían sólo en «Editar el proveedor», que a un lector no se le pinta: no
+      había forma de saber si los 14.500 € llevaban el IVA dentro.
+    */
+    {
+      etiqueta: t("panel.proveedores.campoIva"),
+      valor:
+        proveedor.importePresupuestado === null
+          ? null
+          : proveedor.ivaIncluido === null
+            ? t("panel.proveedores.ivaNoLoDice")
+            : proveedor.ivaIncluido
+              ? t("panel.proveedores.ivaSi")
+              : t("panel.proveedores.ivaNo"),
+    },
     {
       etiqueta: t("panel.proveedores.campoAcordado"),
       valor:
         euros && proveedor.importeAcordado !== null ? euros(proveedor.importeAcordado) : null,
+    },
+    {
+      etiqueta: t("panel.proveedores.campoValoracion"),
+      valor:
+        proveedor.valoracion === null
+          ? null
+          : t("panel.proveedores.valoracionDe", {
+              nota: proveedor.valoracion,
+              maximo: VALORACION_MAXIMA,
+            }),
     },
   ].filter((fila) => fila.valor);
 
@@ -412,25 +456,30 @@ function Contacto({
             <span className="text-pequeno text-tinta-suave"> · {contacto.papel}</span>
           ) : null}
         </p>
-        <p className="text-pequeno text-tinta-suave">
+        {/*
+          CADA VÍA ES UN OBJETIVO DE 44 PX, y separadas por aire y no por un «·».
+          Es el toque más importante del módulo —llamar a quien está el día de
+          la boda— y medían 19 px pegados el uno al otro: se abría el correo
+          queriendo llamar.
+        */}
+        <div className="flex flex-wrap gap-x-interno text-pequeno">
           {contacto.telefono ? (
             <a
               href={`tel:${contacto.telefono.replace(/\s/g, "")}`}
-              className="text-tinta-marca underline"
+              className="inline-flex min-h-control-compacto items-center text-tinta-marca underline wrap-anywhere"
             >
               {contacto.telefono}
             </a>
           ) : null}
-          {contacto.telefono && contacto.correoElectronico ? " · " : null}
           {contacto.correoElectronico ? (
             <a
               href={`mailto:${contacto.correoElectronico}`}
-              className="text-tinta-marca underline"
+              className="inline-flex min-h-control-compacto items-center text-tinta-marca underline wrap-anywhere"
             >
               {contacto.correoElectronico}
             </a>
           ) : null}
-        </p>
+        </div>
       </div>
 
       <div className="flex items-center gap-interno">
@@ -446,7 +495,10 @@ function Contacto({
           <form action={quitarContacto}>
             <input type="hidden" name="proveedor_id" value={proveedorId} />
             <input type="hidden" name="id" value={contacto.id} />
-            <BotonEnvio jerarquia="terciario">
+            <BotonEnvio
+              jerarquia="terciario"
+              aria-label={t("panel.proveedores.quitarContactoDe", { nombre: contacto.nombre })}
+            >
               {t("panel.proveedores.quitarContacto")}
             </BotonEnvio>
           </form>
@@ -537,11 +589,7 @@ function Edicion({
           name="importe_presupuestado"
           type="text"
           inputMode="decimal"
-          defaultValue={
-            proveedor.importePresupuestado === null
-              ? ""
-              : String(proveedor.importePresupuestado)
-          }
+          defaultValue={importeParaCampo(proveedor.importePresupuestado)}
         />
         {/*
           BODA-73 · TRES RESPUESTAS Y NO UNA CASILLA. La tercera —«el
@@ -567,9 +615,7 @@ function Edicion({
           name="importe_acordado"
           type="text"
           inputMode="decimal"
-          defaultValue={
-            proveedor.importeAcordado === null ? "" : String(proveedor.importeAcordado)
-          }
+          defaultValue={importeParaCampo(proveedor.importeAcordado)}
         />
 
         <div className="sm:col-span-2">
@@ -590,7 +636,38 @@ function Edicion({
   );
 }
 
+const cosas = new Intl.ListFormat(IDIOMA, { type: "conjunction" });
+
 function Borrado({ proveedor }: { proveedor: FichaProveedor }) {
+  /*
+    CON SERVICIOS O PAPELES NO SE OFRECE BORRAR. La base se niega —`on delete
+    restrict`— y antes se llegaba a ese «no» después de confirmar que los
+    gastos se quedarían sin proveedor: dos pasos y una pregunta para un borrado
+    que no podía ocurrir. Se dice qué hay que quitar antes.
+  */
+  const bloqueos = [
+    proveedor.servicios === 1
+      ? t("panel.proveedores.cosasServicioUno")
+      : proveedor.servicios > 1
+        ? t("panel.proveedores.cosasServicios", { cuantos: proveedor.servicios })
+        : null,
+    proveedor.documentos === 1
+      ? t("panel.proveedores.cosasPapelUno")
+      : proveedor.documentos > 1
+        ? t("panel.proveedores.cosasPapeles", { cuantos: proveedor.documentos })
+        : null,
+  ].filter((cosa): cosa is string => cosa !== null);
+
+  if (bloqueos.length > 0) {
+    return (
+      <section className="mt-elemento max-w-texto">
+        <Cuerpo className="text-pequeno text-tinta-suave">
+          {t("panel.proveedores.borrarBloqueado", { cosas: cosas.format(bloqueos) })}
+        </Cuerpo>
+      </section>
+    );
+  }
+
   return (
     <section className="mt-elemento">
       <form action={borrarProveedor} className="flex flex-wrap items-center gap-interno">
@@ -763,6 +840,57 @@ function ConfirmarContratado({
   );
 }
 
+/**
+ * Cambiar de categoría a un contratado, cuando en la nueva ya hay otro. Lo
+ * demás de la edición ya está guardado; esto es sólo la categoría.
+ */
+function ConfirmarCategoria({
+  proveedor,
+  categoria,
+  otros,
+}: {
+  proveedor: FichaProveedor;
+  categoria: { id: string; nombre: string };
+  otros: { id: string; nombre: string }[];
+}) {
+  return (
+    <section className="mt-elemento rounded-tarjeta border border-error bg-error-fondo p-interno">
+      <Titulo3 como="h2">
+        {t("panel.proveedores.confirmarCategoriaTitulo", { categoria: categoria.nombre })}
+      </Titulo3>
+      <Cuerpo className="mt-pila max-w-texto text-pequeno">
+        {t("panel.proveedores.confirmarContratadoAyuda")}
+      </Cuerpo>
+
+      <ul className="mt-elemento grid gap-linea">
+        {otros.map((otro) => (
+          <li key={otro.id} className="text-pequeno text-tinta">
+            <Link
+              href={`${RUTA_PROVEEDORES}/${otro.id}`}
+              className="inline-flex min-h-control-compacto items-center underline"
+            >
+              {otro.nombre}
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <form action={cambiarCategoria} className="mt-elemento flex flex-wrap gap-interno">
+        <input type="hidden" name="id" value={proveedor.id} />
+        <input type="hidden" name="categoria_id" value={categoria.id} />
+        <input type="hidden" name="confirmar" value="si" />
+        <BotonEnvio>{t("panel.proveedores.confirmarCategoria")}</BotonEnvio>
+        <Link
+          href={`${RUTA_PROVEEDORES}/${proveedor.id}`}
+          className="inline-flex min-h-control items-center text-pequeno text-tinta-marca underline"
+        >
+          {t("comun.cancelar")}
+        </Link>
+      </form>
+    </section>
+  );
+}
+
 /* -------------------------------------------------------------------------- */
 /*  BODA-74 · Lo que incluye, y cuánto cuesta hoy                             */
 /* -------------------------------------------------------------------------- */
@@ -891,11 +1019,7 @@ function CamposServicio({ servicio }: { servicio?: ServicioProveedor }) {
         name="minimo_garantizado"
         type="text"
         inputMode="decimal"
-        defaultValue={
-          servicio?.minimoGarantizado === null || servicio === undefined
-            ? ""
-            : String(servicio.minimoGarantizado)
-        }
+        defaultValue={servicio ? importeParaCampo(servicio.minimoGarantizado) : ""}
       />
 
       <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno text-pequeno text-tinta transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue sm:col-span-2">

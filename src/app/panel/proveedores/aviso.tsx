@@ -1,3 +1,4 @@
+import { VALORACION_MAXIMA, VALORACION_MINIMA } from "@/config/constants";
 import { t, type ClaveCopy } from "@/lib/copy";
 import { avisoDe } from "@/lib/avisos";
 
@@ -19,6 +20,13 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   "contacto-quitado": { clave: "panel.proveedores.avisoContactoQuitado", error: false },
   "categoria-creada": { clave: "panel.proveedores.avisoCategoriaCreada", error: false },
   "categoria-borrada": { clave: "panel.proveedores.avisoCategoriaBorrada", error: false },
+  "categoria-editada": { clave: "panel.proveedores.avisoCategoriaEditada", error: false },
+  "categoria-movida": { clave: "panel.proveedores.avisoCategoriaMovida", error: false },
+  "categoria-no-existe": { clave: "panel.proveedores.errorCategoriaNoExiste", error: true },
+  "categoria-en-uso": { clave: "panel.proveedores.errorCategoriaEnUso", error: true },
+  "confirmar-categoria": { clave: "panel.proveedores.avisoConfirmarCategoria", error: true },
+  "contacto-no-existe": { clave: "panel.proveedores.errorContactoNoExiste", error: true },
+  "servicio-no-existe": { clave: "panel.proveedores.errorServicioNoExiste", error: true },
   nombre: { clave: "panel.proveedores.errorNombre", error: true },
   "nombre-repetido": { clave: "panel.proveedores.errorNombreRepetido", error: true },
   categoria: { clave: "panel.proveedores.errorCategoria", error: true },
@@ -75,7 +83,7 @@ export function AvisoProveedores({ estado }: { estado: string }) {
         aviso.error ? "bg-error-fondo text-error-tinta" : "bg-exito-fondo text-exito-tinta"
       }`}
     >
-      {t(aviso.clave)}
+      {t(aviso.clave, { minimo: VALORACION_MINIMA, maximo: VALORACION_MAXIMA })}
     </p>
   );
 }

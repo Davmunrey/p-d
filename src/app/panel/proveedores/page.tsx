@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
@@ -18,17 +19,25 @@ import {
   ESTADOS_PROVEEDOR,
   obtenerCategoriasProveedor,
   obtenerCategoriasSinCerrar,
-  obtenerProveedores,
+  obtenerProveedoresConContactos,
   type CategoriaSinCerrar,
   type CategoriaProveedor,
   type Proveedor,
+  type ProveedorConContactos,
 } from "@/lib/bbdd/proveedores";
 import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 import { normalizar } from "@/lib/texto";
 
-import { borrarCategoria, crearCategoria, crearProveedor } from "./acciones";
+import {
+  borrarCategoria,
+  crearCategoria,
+  crearProveedor,
+  editarCategoria,
+  moverCategoria,
+} from "./acciones";
 import { AvisoProveedores } from "./aviso";
+import { anclaDeCategoria } from "./estado";
 import { formateadorDeImporte } from "@/lib/importe";
 
 import { nombreDelEstado } from "./formato";
@@ -62,8 +71,11 @@ interface Parametros {
 const soloTexto = (valor: string | string[] | undefined) =>
   typeof valor === "string" ? valor : "";
 
-/** Encuentra por nombre, por contacto y por lo apuntado en las notas. */
-function coincide(proveedor: Proveedor, busqueda: string): boolean {
+/**
+ * Encuentra por nombre, por contacto —también la gente de «Su gente»— y por lo
+ * apuntado en las notas.
+ */
+function coincide(proveedor: ProveedorConContactos, busqueda: string): boolean {
   if (!busqueda) return true;
   const aguja = normalizar(busqueda);
   return [
@@ -72,8 +84,12 @@ function coincide(proveedor: Proveedor, busqueda: string): boolean {
     proveedor.correoElectronico,
     proveedor.telefono,
     proveedor.notas,
+    ...proveedor.contactos,
   ].some((campo) => campo && normalizar(campo).includes(aguja));
 }
+
+/** El `id` del formulario de alta, a donde llevan los «Añadir uno en…». */
+const ANCLA_ALTA = "alta";
 
 export default async function PaginaProveedores({ searchParams }: Parametros) {
   const acceso = await accesoActual();
@@ -82,10 +98,11 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
   const consulta = await searchParams;
   const busqueda = soloTexto(consulta.buscar);
   const filtroEstado = soloTexto(consulta.estado_filtro);
+  const filtrando = Boolean(busqueda || filtroEstado);
 
   const [categorias, proveedores, moneda, sinCerrar] = await Promise.all([
     obtenerCategoriasProveedor(),
-    obtenerProveedores(),
+    obtenerProveedoresConContactos(),
     obtenerMonedaBoda(),
     obtenerCategoriasSinCerrar(),
   ]);
@@ -105,6 +122,24 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
       coincide(proveedor, busqueda) && (!filtroEstado || proveedor.estado === filtroEstado),
   );
 
+  /*
+    BUSCANDO, SÓLO LO QUE ENCAJA. Antes se pintaban las doce categorías y el
+    único resultado quedaba enterrado entre once «ninguno encaja», a dos mil
+    píxeles en el móvil. Se dice cuántos hay y cómo quitar el filtro.
+  */
+  const categoriasAPintar = filtrando
+    ? categorias.filter((categoria) =>
+        visibles.some((proveedor) => proveedor.categoriaId === categoria.id),
+      )
+    : categorias;
+
+  // La categoría con la que llega el alta desde «Añadir uno en…».
+  const categoriaDelAlta = categorias.some(
+    (categoria) => categoria.id === soloTexto(consulta.categoria),
+  )
+    ? soloTexto(consulta.categoria)
+    : undefined;
+
   return (
     <>
       <header className="max-w-texto">
@@ -114,7 +149,9 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
 
       <AvisoProveedores estado={soloTexto(consulta.estado)} />
 
-      {categorias.length > 0 ? <SinCerrar categorias={sinCerrar} /> : null}
+      {categorias.length > 0 ? (
+        <SinCerrar categorias={sinCerrar} puedeEditar={puedeEditar} />
+      ) : null}
 
       <form
         method="get"
@@ -150,16 +187,41 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
         </p>
       </form>
 
+      {filtrando ? (
+        <div
+          role="status"
+          className="mt-elemento flex flex-wrap items-center justify-between gap-interno"
+        >
+          <Cuerpo className="text-pequeno">
+            {visibles.length === 0
+              ? t("panel.proveedores.buscarNinguno")
+              : visibles.length === 1
+                ? t("panel.proveedores.buscarResultadoUno")
+                : t("panel.proveedores.buscarResultados", { cuantos: visibles.length })}
+          </Cuerpo>
+          <EnlaceSuave href={RUTA_PROVEEDORES}>
+            {t("panel.proveedores.quitarFiltro")}
+          </EnlaceSuave>
+        </div>
+      ) : null}
+
       {categorias.length === 0 ? (
         <Cuerpo className="mt-bloque max-w-texto">
           {t("panel.proveedores.sinCategorias")}
         </Cuerpo>
       ) : (
         <div className="mt-bloque grid gap-bloque">
-          {categorias.map((categoria) => (
+          {categoriasAPintar.map((categoria, indice) => (
             <SeccionCategoria
               key={categoria.id}
               categoria={categoria}
+              // Mover sólo tiene sentido viendo la lista entera.
+              puesto={
+                filtrando
+                  ? null
+                  : { primera: indice === 0, ultima: indice === categoriasAPintar.length - 1 }
+              }
+              abierta={soloTexto(consulta.abierta) === categoria.id}
               proveedores={visibles.filter(
                 (proveedor) => proveedor.categoriaId === categoria.id,
               )}
@@ -167,7 +229,7 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
                  decide si se puede borrar la categoría, y decirlo sobre la
                  lista filtrada ofrecería borrar una que sí tiene gente. */
               total={totales.get(categoria.id) ?? 0}
-              filtrando={Boolean(busqueda || filtroEstado)}
+              filtrando={filtrando}
               euros={euros}
               puedeEditar={puedeEditar}
             />
@@ -176,7 +238,7 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
       )}
 
       {puedeEditar && categorias.length > 0 ? (
-        <FormularioProveedor categorias={categorias} />
+        <FormularioProveedor categorias={categorias} categoriaElegida={categoriaDelAlta} />
       ) : null}
 
       {puedeEditar ? <FormularioCategoria /> : null}
@@ -186,6 +248,8 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
 
 function SeccionCategoria({
   categoria,
+  puesto,
+  abierta,
   proveedores,
   total,
   filtrando,
@@ -193,6 +257,10 @@ function SeccionCategoria({
   puedeEditar,
 }: {
   categoria: CategoriaProveedor;
+  /** Si su «Corregir» va abierto: se vuelve así de mover o de corregirla. */
+  abierta: boolean;
+  /** Dónde está en la lista, para ofrecer moverla; `null` si no se ofrece. */
+  puesto: { primera: boolean; ultima: boolean } | null;
   proveedores: Proveedor[];
   total: number;
   filtrando: boolean;
@@ -200,7 +268,7 @@ function SeccionCategoria({
   puedeEditar: boolean;
 }) {
   return (
-    <section>
+    <section id={anclaDeCategoria(categoria.id)} className="scroll-mt-elemento">
       <div className="flex flex-wrap items-baseline justify-between gap-interno border-b border-borde pb-interno-compacto">
         <Titulo3 como="h2">{categoria.nombre}</Titulo3>
         <div className="flex items-baseline gap-interno">
@@ -249,7 +317,12 @@ function SeccionCategoria({
           {puedeEditar && total === 0 ? (
             <form action={borrarCategoria}>
               <input type="hidden" name="id" value={categoria.id} />
-              <BotonEnvio jerarquia="terciario">
+              <BotonEnvio
+                jerarquia="terciario"
+                aria-label={t("panel.proveedores.borrarCategoriaDe", {
+                  categoria: categoria.nombre,
+                })}
+              >
                 {t("panel.proveedores.borrarCategoria")}
               </BotonEnvio>
             </form>
@@ -263,6 +336,10 @@ function SeccionCategoria({
         </Cuerpo>
       ) : null}
 
+      {puedeEditar ? (
+        <CorregirCategoria categoria={categoria} puesto={puesto} abierta={abierta} />
+      ) : null}
+
       {proveedores.length === 0 ? (
         <Cuerpo className="mt-elemento text-pequeno text-tinta-suave">
           {/*
@@ -272,7 +349,13 @@ function SeccionCategoria({
           */}
           {filtrando && total > 0
             ? t("panel.proveedores.sinResultados")
-            : t("panel.proveedores.categoriaVacia")}
+            : t("panel.proveedores.categoriaVacia")}{" "}
+          {/* Vacía, se ofrece llenarla: el alta llega con esta categoría puesta. */}
+          {puedeEditar && total === 0 ? (
+            <EnlaceSuave href={`${RUTA_PROVEEDORES}?categoria=${categoria.id}#${ANCLA_ALTA}`}>
+              {t("panel.proveedores.anadirEn", { categoria: categoria.nombre })}
+            </EnlaceSuave>
+          ) : null}
         </Cuerpo>
       ) : (
         <ul className="mt-elemento grid gap-interno-compacto">
@@ -306,8 +389,106 @@ function SeccionCategoria({
   );
 }
 
+/**
+ * CORREGIR Y MOVER UNA CATEGORÍA, plegado como corregir un servicio: es lo que
+ * se hace de vez en cuando, y suelto en cada cabecera serían doce juegos de
+ * botones encima de la lista. Tras mover se vuelve con el plegable abierto,
+ * para poder seguir moviendo sin buscarlo otra vez.
+ */
+function CorregirCategoria({
+  categoria,
+  puesto,
+  abierta,
+}: {
+  categoria: CategoriaProveedor;
+  puesto: { primera: boolean; ultima: boolean } | null;
+  abierta: boolean;
+}) {
+  return (
+    <details className="mt-pila" open={abierta}>
+      <summary
+        aria-label={t("panel.proveedores.corregirCategoriaDe", { categoria: categoria.nombre })}
+        className="inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
+      >
+        {t("panel.proveedores.corregirCategoria")}
+      </summary>
+
+      <form
+        action={editarCategoria}
+        className="mt-pila grid max-w-texto gap-interno sm:grid-cols-2 sm:items-end"
+      >
+        <input type="hidden" name="id" value={categoria.id} />
+        <CampoTexto
+          etiqueta={t("panel.proveedores.campoNombreCategoria")}
+          name="nombre"
+          type="text"
+          required
+          maxLength={LARGOS_DE_CAMPO["categorias_proveedor.nombre"]}
+          defaultValue={categoria.nombre}
+        />
+        <CampoTexto
+          etiqueta={t("panel.proveedores.campoDescripcionCategoria")}
+          name="descripcion"
+          type="text"
+          maxLength={LARGOS_DE_CAMPO["categorias_proveedor.descripcion"]}
+          defaultValue={categoria.descripcion ?? ""}
+        />
+        <div className="sm:col-span-2">
+          <BotonEnvio jerarquia="secundario">
+            {t("panel.proveedores.guardarCategoria")}
+          </BotonEnvio>
+        </div>
+      </form>
+
+      {/* Mover sólo tiene sentido viendo la lista entera: buscando, no se ofrece. */}
+      {puesto && !(puesto.primera && puesto.ultima) ? (
+        <div className="mt-elemento flex flex-wrap items-center gap-x-interno">
+          <span className="text-pequeno text-tinta-suave">
+            {t("panel.proveedores.moverCategoria")}
+          </span>
+          {!puesto.primera ? (
+            <form action={moverCategoria}>
+              <input type="hidden" name="id" value={categoria.id} />
+              <input type="hidden" name="hacia" value="arriba" />
+              <BotonEnvio
+                jerarquia="terciario"
+                aria-label={t("panel.proveedores.subirCategoriaDe", {
+                  categoria: categoria.nombre,
+                })}
+              >
+                {t("panel.proveedores.subirCategoria")}
+              </BotonEnvio>
+            </form>
+          ) : null}
+          {!puesto.ultima ? (
+            <form action={moverCategoria}>
+              <input type="hidden" name="id" value={categoria.id} />
+              <input type="hidden" name="hacia" value="abajo" />
+              <BotonEnvio
+                jerarquia="terciario"
+                aria-label={t("panel.proveedores.bajarCategoriaDe", {
+                  categoria: categoria.nombre,
+                })}
+              >
+                {t("panel.proveedores.bajarCategoria")}
+              </BotonEnvio>
+            </form>
+          ) : null}
+        </div>
+      ) : null}
+    </details>
+  );
+}
+
 /** Alta de proveedor. Sin `<details>`: el formulario está, y se ve que está. */
-function FormularioProveedor({ categorias }: { categorias: CategoriaProveedor[] }) {
+function FormularioProveedor({
+  categorias,
+  categoriaElegida,
+}: {
+  categorias: CategoriaProveedor[];
+  /** La de «Añadir uno en…»: sin ella, el desplegable proponía la primera. */
+  categoriaElegida: string | undefined;
+}) {
   /*
     NO HAY DESPLEGABLE DE ESTADO AQUÍ, y no es un olvido. Un proveedor que
     acabas de apuntar está, por definición, en «investigando». Ofrecer el
@@ -316,7 +497,10 @@ function FormularioProveedor({ categorias }: { categorias: CategoriaProveedor[] 
     una puerta de atrás no es un aviso.
   */
   return (
-    <section className="mt-bloque rounded-tarjeta border border-borde p-interno">
+    <section
+      id={ANCLA_ALTA}
+      className="mt-bloque scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
+    >
       <Titulo3 como="h2">{t("panel.proveedores.nuevoTitulo")}</Titulo3>
       <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
         {t("panel.proveedores.nuevoAyuda")}
@@ -334,6 +518,10 @@ function FormularioProveedor({ categorias }: { categorias: CategoriaProveedor[] 
           etiqueta={t("panel.proveedores.campoCategoria")}
           name="categoria_id"
           required
+          // `key` para que el navegador no conserve la elegida antes al llegar
+          // desde otro «Añadir uno en…».
+          key={categoriaElegida ?? ""}
+          defaultValue={categoriaElegida}
         >
           {categorias.map((categoria) => (
             <option key={categoria.id} value={categoria.id}>
@@ -433,7 +621,13 @@ function FormularioCategoria() {
  * Y CUANDO NO FALTA NADA LO DICE, en vez de desaparecer. Un bloque que se
  * esfuma no se distingue de un bloque que no ha cargado.
  */
-function SinCerrar({ categorias }: { categorias: CategoriaSinCerrar[] }) {
+function SinCerrar({
+  categorias,
+  puedeEditar,
+}: {
+  categorias: CategoriaSinCerrar[];
+  puedeEditar: boolean;
+}) {
   if (categorias.length === 0) {
     return (
       <p className="mt-elemento rounded-campo bg-exito-fondo p-interno text-pequeno text-exito-tinta">
@@ -458,7 +652,21 @@ function SinCerrar({ categorias }: { categorias: CategoriaSinCerrar[] }) {
             tamano="compacta"
             className="px-interno"
           >
-            {categoria.nombre}{" "}
+            {/*
+              CADA CHIP LLEVA A DONDE SE ARREGLA: la sin empezar, al alta con
+              su categoría puesta; la que tiene candidatos, a su sección. Antes
+              no llevaban a ninguna parte y había que bajar a buscarlo.
+            */}
+            <Link
+              href={
+                categoria.candidatos === 0 && puedeEditar
+                  ? `${RUTA_PROVEEDORES}?categoria=${categoria.id}#${ANCLA_ALTA}`
+                  : `#${anclaDeCategoria(categoria.id)}`
+              }
+              className="inline-flex min-h-control-compacto items-center underline decoration-borde-fuerte underline-offset-4"
+            >
+              {categoria.nombre}
+            </Link>{" "}
             <span className="text-tinta-suave">
               ·{" "}
               {categoria.candidatos === 0

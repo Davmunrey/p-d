@@ -247,6 +247,52 @@ export async function obtenerProveedores(): Promise<Proveedor[]> {
   return ((data as FilaProveedor[] | null) ?? []).map(aProveedor);
 }
 
+/** Un proveedor de la lista, con lo que se puede buscar de su gente. */
+export interface ProveedorConContactos extends Proveedor {
+  /** Nombre, papel, teléfono y correo de cada contacto de «Su gente». */
+  contactos: string[];
+}
+
+/**
+ * Todos los proveedores con su gente, para el buscador de la lista. Su ayuda
+ * promete buscar «por contacto», y el contacto que importa el día de la boda
+ * suele ser el de «Su gente» —la jefa de sala, el conductor—, no la persona
+ * que firmó el presupuesto.
+ */
+export async function obtenerProveedoresConContactos(): Promise<ProveedorConContactos[]> {
+  const supabase = await clienteServidor();
+
+  const { data, error } = await supabase
+    .from("proveedores")
+    .select(
+      `${COLUMNAS_PROVEEDOR},
+       contactos_proveedor ( nombre, papel, telefono, correo_electronico )`,
+    )
+    .order("nombre");
+
+  if (error) throw new Error(`No se pudieron leer los proveedores: ${error.message}`);
+
+  type FilaConContactos = FilaProveedor & {
+    contactos_proveedor:
+      | {
+          nombre: string;
+          papel: string | null;
+          telefono: string | null;
+          correo_electronico: string | null;
+        }[]
+      | null;
+  };
+
+  return ((data as FilaConContactos[] | null) ?? []).map((fila) => ({
+    ...aProveedor(fila),
+    contactos: (fila.contactos_proveedor ?? []).flatMap((contacto) =>
+      [contacto.nombre, contacto.papel, contacto.telefono, contacto.correo_electronico].filter(
+        (valor): valor is string => Boolean(valor),
+      ),
+    ),
+  }));
+}
+
 /**
  * La ficha completa, con lo que cuelga de ella.
  *
@@ -509,14 +555,14 @@ export async function obtenerDocumentosProveedor(
 export async function obtenerRutaDocumento(
   documentoId: string,
   proveedorId: string,
-): Promise<string | null | undefined> {
+): Promise<{ ruta: string; nombre: string } | null | undefined> {
   if (!esIdentificador(documentoId) || !esIdentificador(proveedorId)) return null;
 
   const supabase = await clienteServidor();
 
   const { data, error } = await supabase
     .from("documentos_proveedor")
-    .select("ruta_almacenamiento")
+    .select("ruta_almacenamiento, nombre")
     .eq("id", documentoId)
     // Y DEL PROVEEDOR QUE DICE LA URL: sin esto, el identificador de un
     // documento valdría desde la ficha de cualquier otro.
@@ -535,7 +581,8 @@ export async function obtenerRutaDocumento(
     return undefined;
   }
 
-  return (data as { ruta_almacenamiento: string } | null)?.ruta_almacenamiento ?? null;
+  const fila = data as { ruta_almacenamiento: string; nombre: string } | null;
+  return fila ? { ruta: fila.ruta_almacenamiento, nombre: fila.nombre } : null;
 }
 
 /* -------------------------------------------------------------------------- */

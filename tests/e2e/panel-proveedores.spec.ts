@@ -2,7 +2,12 @@ import { expect, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_ACCESO, RUTA_PANEL, RUTA_PROVEEDORES } from "../../src/config/constants";
+import {
+  RUTA_ACCESO,
+  RUTA_PANEL,
+  RUTA_PROVEEDORES,
+  VALORACION_MAXIMA,
+} from "../../src/config/constants";
 import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles/rastro";
 
 /**
@@ -140,7 +145,7 @@ async function esperarEstado(pagina: Page, esperado: string) {
   try {
     await expect
       .poll(() => ultimoDestino(pagina) ?? SIN_DESTINO, { timeout: 30_000 })
-      .toMatch(new RegExp(`estado=${esperado}(&|$)`));
+      .toMatch(new RegExp(`estado=${esperado}(&|#|$)`));
   } catch (fallo) {
     /*
       SI NO REDIRIGE, LO SIGUIENTE QUE HAY QUE SABER ES QUÉ SE VE.
@@ -757,5 +762,330 @@ test.describe("El embudo del proveedor", () => {
         .locator("li")
         .filter({ hasText: nombreCategoria }),
     ).toHaveCount(0);
+  });
+});
+
+test.describe("Proveedores: buscar, categorías y la ficha", () => {
+  test.slow();
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+  test.beforeEach(({ page }) => seguirLaPista(page));
+
+  // Lo que siembran estos tests, fuera al acabar: cada categoría de prueba que
+  // se queda sale en «Todavía sin cerrar» de todas las pasadas siguientes.
+  test.afterAll(async () => {
+    if (!cadena) return;
+    await conBase(async (sql) => {
+      const patron = `${MARCA}%`;
+      await sql`
+        delete from public.servicios where proveedor_id in (
+          select id from public.proveedores where nombre like ${patron})
+      `;
+      await sql`
+        delete from public.contactos_proveedor where proveedor_id in (
+          select id from public.proveedores where nombre like ${patron})
+      `;
+      await sql`
+        delete from public.proveedores p where p.nombre like ${patron}
+           and not exists (select 1 from public.documentos_proveedor d where d.proveedor_id = p.id)
+      `;
+      await sql`
+        delete from public.categorias_proveedor c where c.nombre like ${patron}
+           and not exists (select 1 from public.proveedores p where p.categoria_id = c.id)
+      `;
+    });
+  });
+
+  async function categoriaNueva(nombre: string): Promise<string> {
+    const [fila] = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        insert into public.categorias_proveedor (nombre, orden)
+        values (${nombre}, 50) returning id
+      `,
+    );
+    return fila.id;
+  }
+
+  async function proveedorEn(
+    categoriaId: string,
+    nombre: string,
+    extra: { estado?: string; valoracion?: number; presupuestado?: number } = {},
+  ): Promise<string> {
+    const [fila] = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        insert into public.proveedores
+          (categoria_id, nombre, estado, valoracion, importe_presupuestado)
+        values (${categoriaId}, ${nombre}, ${extra.estado ?? "investigando"}::public.estado_proveedor,
+                ${extra.valoracion ?? null}, ${extra.presupuestado ?? null})
+        returning id
+      `,
+    );
+    return fila.id;
+  }
+
+  /**
+   * #63 Y #64 · BUSCAR DEJA SÓLO LO QUE ENCAJA, Y BUSCA TAMBIÉN EN «SU GENTE».
+   * Antes el único resultado quedaba entre once categorías que decían
+   * «ninguno», y la jefa de sala apuntada en la ficha no se encontraba.
+   */
+  test("buscar encuentra por su gente, dice cuántos y deja quitar el filtro", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const nombre = `${MARCA} Finca ${sello}`;
+    const id = await proveedorEn(await categoriaNueva(`${MARCA} Lugar ${sello}`), nombre);
+    await conBase(
+      (sql) => sql`
+        insert into public.contactos_proveedor (proveedor_id, nombre, telefono)
+        values (${id}, ${`(DES) Marta Jefa ${sello}`}, '600111222')
+      `,
+    );
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}?buscar=${encodeURIComponent(`Marta Jefa ${sello}`)}`);
+    await expect(page.getByRole("link", { name: nombre })).toBeVisible();
+    await expect(page.getByText(copy.panel.proveedores.buscarResultadoUno)).toBeVisible();
+    await expect(page.getByText(copy.panel.proveedores.sinResultados)).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: copy.panel.proveedores.quitarFiltro }),
+    ).toBeVisible();
+
+    // CASO DE ERROR · nada encaja: una sola frase, no doce secciones vacías.
+    await page.goto(`${RUTA_PROVEEDORES}?buscar=nadie-se-llama-asi-${sello}`);
+    await expect(page.getByText(copy.panel.proveedores.buscarNinguno)).toBeVisible();
+    await expect(page.getByText(copy.panel.proveedores.categoriaVacia)).toHaveCount(0);
+  });
+
+  /**
+   * #67 · DESDE UNA CATEGORÍA VACÍA SE LLEGA AL ALTA CON ELLA ELEGIDA. El
+   * desplegable proponía la primera, y la finca acababa archivada en Catering.
+   */
+  test("«Añadir uno en…» lleva al alta con esa categoría elegida", async ({ page }) => {
+    const sello = Date.now();
+    const nombreCategoria = `${MARCA} Vacía ${sello}`;
+    const categoriaId = await categoriaNueva(nombreCategoria);
+
+    await entrar(page);
+    await page.goto(RUTA_PROVEEDORES);
+    await seccion(page, nombreCategoria)
+      .getByRole("link", {
+        name: copy.panel.proveedores.anadirEn.replace("{categoria}", nombreCategoria),
+      })
+      .click();
+
+    await expect(page).toHaveURL(new RegExp(`categoria=${categoriaId}`));
+    await expect(
+      seccion(page, copy.panel.proveedores.nuevoTitulo).getByLabel(
+        copy.panel.proveedores.campoCategoria,
+        { exact: true },
+      ),
+    ).toHaveValue(categoriaId);
+  });
+
+  /**
+   * #68 · UNA CATEGORÍA SE CORRIGE Y SE MUEVE. Antes no había ninguna acción
+   * que la tocara después de crearla.
+   */
+  test("una categoría se corrige, se mueve, y no puede llamarse como otra", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const mal = `${MARCA} Fotgrafía ${sello}`;
+    const bien = `${MARCA} Fotografía ${sello}`;
+    const otra = `${MARCA} Otra ${sello}`;
+    const id = await categoriaNueva(mal);
+    await categoriaNueva(otra);
+
+    await entrar(page);
+    await page.goto(RUTA_PROVEEDORES);
+
+    const suya = seccion(page, mal);
+    await suya.locator("summary").first().click();
+    await suya
+      .getByLabel(copy.panel.proveedores.campoNombreCategoria, { exact: true })
+      .fill(bien);
+    await suya.getByRole("button", { name: copy.panel.proveedores.guardarCategoria }).click();
+    await esperarEstado(page, "categoria-editada");
+    await expect(page.getByRole("heading", { name: bien })).toBeVisible();
+
+    // Mover: sube un puesto en el orden que ve todo el mundo.
+    const ordenadas = async () =>
+      (
+        await conBase(
+          (sql) => sql<{ id: string }[]>`
+            select id from public.categorias_proveedor order by orden, nombre
+          `,
+        )
+      ).map((fila) => fila.id);
+    const antes = (await ordenadas()).indexOf(id);
+    await seccion(page, bien).locator("summary").first().click();
+    await seccion(page, bien)
+      .getByRole("button", {
+        name: copy.panel.proveedores.subirCategoriaDe.replace("{categoria}", bien),
+      })
+      .click();
+    await esperarEstado(page, "categoria-movida");
+    expect((await ordenadas()).indexOf(id)).toBe(antes - 1);
+
+    // Y se vuelve con su «Corregir» abierto, para seguir moviendo.
+    const ahora = seccion(page, bien);
+    await expect(ahora.locator("details[open]")).toHaveCount(1);
+
+    // CASO DE ERROR · con el nombre de otra, se dice así.
+    await ahora
+      .getByLabel(copy.panel.proveedores.campoNombreCategoria, { exact: true })
+      .fill(otra);
+    await ahora.getByRole("button", { name: copy.panel.proveedores.guardarCategoria }).click();
+    await esperarEstado(page, "nombre-repetido");
+  });
+
+  /**
+   * #61 · CAMBIAR DE CATEGORÍA A UN CONTRATADO PREGUNTA, como contratarlo, y no
+   * pierde lo demás que se haya editado.
+   */
+  test("mover a un contratado donde ya hay otro pregunta, y guarda lo demás", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const origen = await categoriaNueva(`${MARCA} Otros ${sello}`);
+    const nombreDestino = `${MARCA} Música ${sello}`;
+    const destino = await categoriaNueva(nombreDestino);
+    await proveedorEn(destino, `${MARCA} DJ ${sello}`, { estado: "contratado" });
+    const grupo = await proveedorEn(origen, `${MARCA} Grupo ${sello}`, {
+      estado: "contratado",
+    });
+    const nota = `(DES) Tocan dos pases ${sello}`;
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${grupo}`);
+    const edicion = seccion(page, copy.panel.proveedores.editarTitulo);
+    await edicion
+      .getByLabel(copy.panel.proveedores.campoCategoria, { exact: true })
+      .selectOption(destino);
+    await edicion.getByLabel(copy.panel.proveedores.campoNotas, { exact: true }).fill(nota);
+    await edicion.getByRole("button", { name: copy.panel.proveedores.guardar }).click();
+    await esperarEstado(page, "confirmar-categoria");
+
+    const enLaBase = async () =>
+      (
+        await conBase(
+          (sql) => sql<{ categoria_id: string; notas: string | null }[]>`
+            select categoria_id, notas from public.proveedores where id = ${grupo}
+          `,
+        )
+      )[0];
+    // Lo demás, guardado; la categoría, esperando.
+    expect(await enLaBase()).toEqual({ categoria_id: origen, notas: nota });
+
+    await page.getByRole("button", { name: copy.panel.proveedores.confirmarCategoria }).click();
+    await esperarEstado(page, "editado");
+    expect((await enLaBase()).categoria_id).toBe(destino);
+  });
+
+  /**
+   * #66 · CON SERVICIOS NO SE OFRECE BORRAR: la base se niega, y se llegaba a
+   * ese «no» después de confirmar.
+   */
+  test("un proveedor con servicios no ofrece borrarse, y dice qué quitar antes", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const id = await proveedorEn(
+      await categoriaNueva(`${MARCA} Catering ${sello}`),
+      `${MARCA} Cocina ${sello}`,
+    );
+    await conBase(
+      (sql) => sql`
+        insert into public.servicios (proveedor_id, nombre) values (${id}, '(DES) Menú')
+      `,
+    );
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
+    await expect(
+      page.getByRole("button", { name: copy.panel.proveedores.borrar, exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText(
+        copy.panel.proveedores.borrarBloqueado.replace(
+          "{cosas}",
+          copy.panel.proveedores.cosasServicioUno,
+        ),
+      ),
+    ).toBeVisible();
+  });
+
+  /**
+   * #65 · QUITAR UN CONTACTO QUE YA NO ESTÁ dice eso, y no «vuestro perfil no
+   * puede hacer cambios aquí» a quien lleva la boda.
+   */
+  test("quitar un contacto que ya no está dice que ya no está", async ({ page }) => {
+    const sello = Date.now();
+    const id = await proveedorEn(
+      await categoriaNueva(`${MARCA} Flores ${sello}`),
+      `${MARCA} Floristería ${sello}`,
+    );
+    const persona = `(DES) Lucía ${sello}`;
+    await conBase(
+      (sql) => sql`
+        insert into public.contactos_proveedor (proveedor_id, nombre, telefono)
+        values (${id}, ${persona}, '600 111 222')
+      `,
+    );
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
+
+    // #62 · El teléfono se toca con el pulgar: mide lo que un control.
+    const telefono = page.getByRole("link", { name: "600 111 222" });
+    const caja = await telefono.boundingBox();
+    expect(caja?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+    await conBase(
+      (sql) => sql`delete from public.contactos_proveedor where nombre = ${persona}`,
+    );
+    await page
+      .getByRole("button", {
+        name: copy.panel.proveedores.quitarContactoDe.replace("{nombre}", persona),
+      })
+      .click();
+    await esperarEstado(page, "contacto-no-existe");
+    await expect(page.getByText(copy.panel.proveedores.errorContactoNoExiste)).toBeVisible();
+  });
+
+  /**
+   * #73 Y #69 · LA FICHA ENSEÑA LA VALORACIÓN Y EL IVA, y los importes vuelven
+   * al campo con coma, como se escriben.
+   */
+  test("sus datos dicen la valoración y el IVA, y el importe vuelve con coma", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const id = await proveedorEn(
+      await categoriaNueva(`${MARCA} Lugar IVA ${sello}`),
+      `${MARCA} Finca IVA ${sello}`,
+      { valoracion: 4, presupuestado: 8600.5 },
+    );
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
+    const datos = seccion(page, copy.panel.proveedores.datosTitulo);
+    await expect(
+      datos.getByText(
+        copy.panel.proveedores.valoracionDe
+          .replace("{nota}", "4")
+          .replace("{maximo}", String(VALORACION_MAXIMA)),
+      ),
+    ).toBeVisible();
+    await expect(datos.getByText(copy.panel.proveedores.ivaNoLoDice)).toBeVisible();
+
+    await expect(
+      seccion(page, copy.panel.proveedores.editarTitulo).getByLabel(
+        copy.panel.proveedores.campoPresupuestado,
+        { exact: true },
+      ),
+    ).toHaveValue("8600,50");
   });
 });

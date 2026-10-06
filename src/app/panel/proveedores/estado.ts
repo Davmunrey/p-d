@@ -17,6 +17,13 @@ export type EstadoProveedores =
   | "contacto-quitado"
   | "categoria-creada"
   | "categoria-borrada"
+  | "categoria-editada"
+  | "categoria-movida"
+  | "categoria-no-existe"
+  | "categoria-en-uso"
+  | "confirmar-categoria"
+  | "contacto-no-existe"
+  | "servicio-no-existe"
   | "nombre"
   | "nombre-repetido"
   | "telefono"
@@ -57,3 +64,8 @@ export type EstadoProveedores =
   | "referencia-rota"
   | "sin-permiso"
   | "error";
+
+/** El `id` de la sección de una categoría en la lista, que es también su ancla. */
+export function anclaDeCategoria(id: string): string {
+  return `categoria-${id}`;
+}

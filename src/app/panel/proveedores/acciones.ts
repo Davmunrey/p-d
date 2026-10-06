@@ -28,13 +28,13 @@ import {
 } from "@/lib/bbdd/proveedores";
 import { admitirDocumento, componerRutaDocumento, identificadorDeRuta } from "@/lib/documentos";
 import { leerImporte } from "@/lib/importe";
-import { accesoActual } from "@/lib/sesion";
+import { accesoActual, ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteDeServicio, haySubidaDeMedios } from "@/lib/supabase/servicio";
 import { esCorreoValido } from "@/lib/correo-valido";
 import { esTelefonoValido } from "@/lib/telefono";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
-import { type EstadoProveedores } from "./estado";
+import { anclaDeCategoria, type EstadoProveedores } from "./estado";
 
 /**
  * BODA-70 · LA AGENDA DE LA BODA, DESDE EL PANEL
@@ -102,10 +102,21 @@ function volver(
    * la URL, la pantalla enseña el nombre del papel que se va a perder.
    */
   extra?: Record<string, string>,
+  /** El `id` al que llevar la pantalla: la categoría que se acaba de tocar. */
+  ancla?: string,
 ): never {
   const base = proveedorId ? `${RUTA_PROVEEDORES}/${proveedorId}` : RUTA_PROVEEDORES;
   const consulta = new URLSearchParams({ estado, ...extra });
-  redirect(`${base}?${consulta.toString()}`);
+  redirect(`${base}?${consulta.toString()}${ancla ? `#${ancla}` : ""}`);
+}
+
+/**
+ * CERO FILAS NO ES SIEMPRE «NO PODÉIS». Para un editor significa que lo que se
+ * iba a tocar ya no está —lo quitó alguien en otra pestaña— y decirle «vuestro
+ * perfil no puede hacer cambios aquí» a quien lleva la boda era mentir.
+ */
+async function ceroFilas(noExiste: EstadoProveedores): Promise<EstadoProveedores> {
+  return (await ceroFilasEsFaltaDePermiso()) ? "sin-permiso" : noExiste;
 }
 
 async function cliente() {
@@ -188,10 +199,86 @@ export async function borrarCategoria(datos: FormData): Promise<void> {
 
   // `on delete restrict` desde `proveedores`: la base se niega, y es lo
   // correcto — borrar la categoría dejaría a sus proveedores sin clasificar.
+  // Con su propia frase: «en-uso» habla de servicios y papeles de un proveedor.
+  if (error?.code === "23503")
+    volver("categoria-en-uso", undefined, undefined, anclaDeCategoria(id));
   if (error) volver(motivo(error));
-  if (!data?.length) volver("sin-permiso");
+  if (!data?.length) volver(await ceroFilas("categoria-no-existe"));
 
   volver("categoria-borrada");
+}
+
+/**
+ * CORREGIR UNA CATEGORÍA: su nombre y su descripción. Antes no se podía, y una
+ * «Fotgrafía» con proveedores dentro se quedaba así: borrarla exigía sacar
+ * antes a cada proveedor editando su ficha entera.
+ */
+export async function editarCategoria(datos: FormData): Promise<void> {
+  const id = texto(datos, "id");
+  if (!id) volver("categoria-no-existe");
+
+  const nombre = texto(datos, "nombre");
+  if (nombre.length < LONGITUD_MINIMA_NOMBRE)
+    volver("nombre", undefined, undefined, anclaDeCategoria(id));
+
+  const supabase = await cliente();
+  const { data, error } = await supabase
+    .from("categorias_proveedor")
+    .update({ nombre, descripcion: opcional(datos, "descripcion") })
+    .eq("id", id)
+    .select("id");
+
+  if (error) volver(motivo(error), undefined, undefined, anclaDeCategoria(id));
+  if (!data?.length) volver(await ceroFilas("categoria-no-existe"));
+
+  volver("categoria-editada", undefined, undefined, anclaDeCategoria(id));
+}
+
+/**
+ * MOVER UNA CATEGORÍA UN PUESTO. Una categoría nueva entra al final, debajo de
+ * «Otros», y no había forma de subirla. Se renumera la lista entera y no se
+ * intercambian dos `orden`: hay categorías con el mismo número —el desempate es
+ * el nombre— y cambiar un 0 por otro 0 no movía nada.
+ */
+export async function moverCategoria(datos: FormData): Promise<void> {
+  const id = texto(datos, "id");
+  if (!id) volver("categoria-no-existe");
+  const haciaArriba = texto(datos, "hacia") === "arriba";
+
+  const supabase = await cliente();
+  const { data: lista, error: errorLectura } = await supabase
+    .from("categorias_proveedor")
+    .select("id, orden")
+    .order("orden")
+    .order("nombre");
+  if (errorLectura || !lista) {
+    console.error("No se pudieron leer las categorías para moverlas:", errorLectura);
+    volver("error");
+  }
+
+  const ordenadas = lista as { id: string; orden: number }[];
+  const desde = ordenadas.findIndex((categoria) => categoria.id === id);
+  if (desde === -1) volver(await ceroFilas("categoria-no-existe"));
+  const hasta = haciaArriba ? desde - 1 : desde + 1;
+  // En el borde no hay a dónde ir: la pantalla ya no ofrece el botón.
+  if (hasta < 0 || hasta >= ordenadas.length)
+    volver("categoria-movida", undefined, { abierta: id }, anclaDeCategoria(id));
+
+  const nuevas = [...ordenadas];
+  [nuevas[desde], nuevas[hasta]] = [nuevas[hasta]!, nuevas[desde]!];
+
+  for (const [puesto, categoria] of nuevas.entries()) {
+    if (categoria.orden === puesto) continue;
+    const { data, error } = await supabase
+      .from("categorias_proveedor")
+      .update({ orden: puesto })
+      .eq("id", categoria.id)
+      .select("id");
+    if (error) volver(motivo(error));
+    if (!data?.length) volver(await ceroFilas("categoria-no-existe"));
+  }
+
+  volver("categoria-movida", undefined, { abierta: id }, anclaDeCategoria(id));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -405,7 +492,7 @@ export async function cambiarEstado(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error), id);
-  if (!data?.length) volver("sin-permiso", id);
+  if (!data?.length) volver(await ceroFilas("no-existe"), id);
 
   revalidatePath(RUTA_PROVEEDORES);
   volver("estado-cambiado", id);
@@ -419,14 +506,65 @@ export async function editarProveedor(datos: FormData): Promise<void> {
   if (!campos.ok) volver(campos.estado, id);
 
   const supabase = await cliente();
+
+  /*
+    CAMBIAR DE CATEGORÍA A UN CONTRATADO TAMBIÉN PREGUNTA, como contratarlo.
+    Era la puerta de atrás del aviso: un grupo contratado en «Otros» pasaba a
+    «Música», donde ya estaba el DJ, sin que nadie lo dijera. Lo demás de la
+    edición se guarda igualmente —no se pierde lo escrito— y sólo la categoría
+    espera a que se confirme con `cambiarCategoria`.
+  */
+  const { data: actual, error: errorLectura } = await supabase
+    .from("proveedores")
+    .select("categoria_id, estado")
+    .eq("id", id)
+    .maybeSingle();
+  if (errorLectura) {
+    console.error("No se pudo leer el proveedor antes de editarlo:", errorLectura);
+    volver("error", id);
+  }
+  const ficha = actual as { categoria_id: string; estado: string } | null;
+  const nuevaCategoria = campos.valores.categoria_id;
+  let pendiente = false;
+  if (ficha && ficha.estado === "contratado" && ficha.categoria_id !== nuevaCategoria) {
+    const otros = await obtenerContratadosDeCategoria(nuevaCategoria, id);
+    if (otros === null) volver("error", id);
+    pendiente = otros.length > 0;
+  }
+
+  const valores = pendiente
+    ? { ...campos.valores, categoria_id: ficha!.categoria_id }
+    : campos.valores;
   const { data, error } = await supabase
     .from("proveedores")
-    .update(campos.valores)
+    .update(valores)
     .eq("id", id)
     .select("id");
 
   if (error) volver(motivo(error), id);
-  if (!data?.length) volver("sin-permiso", id);
+  if (!data?.length) volver(await ceroFilas("no-existe"), id);
+
+  revalidatePath(RUTA_PROVEEDORES);
+  if (pendiente) volver("confirmar-categoria", id, { categoria: nuevaCategoria });
+  volver("editado", id);
+}
+
+/** El segundo paso del cambio de categoría de un contratado, ya confirmado. */
+export async function cambiarCategoria(datos: FormData): Promise<void> {
+  const id = texto(datos, "id");
+  const categoriaId = texto(datos, "categoria_id");
+  if (!id) volver("no-existe");
+  if (!categoriaId || texto(datos, "confirmar") !== "si") volver("categoria", id);
+
+  const supabase = await cliente();
+  const { data, error } = await supabase
+    .from("proveedores")
+    .update({ categoria_id: categoriaId })
+    .eq("id", id)
+    .select("id");
+
+  if (error) volver(motivo(error), id);
+  if (!data?.length) volver(await ceroFilas("no-existe"), id);
 
   revalidatePath(RUTA_PROVEEDORES);
   volver("editado", id);
@@ -479,7 +617,7 @@ export async function borrarProveedor(datos: FormData): Promise<void> {
   const { data, error } = await supabase.from("proveedores").delete().eq("id", id).select("id");
 
   if (error) volver(motivo(error), id);
-  if (!data?.length) volver("sin-permiso", id);
+  if (!data?.length) volver(await ceroFilas("no-existe"), id);
 
   volver("borrado");
 }
@@ -536,7 +674,7 @@ export async function quitarContacto(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error), proveedorId);
-  if (!data?.length) volver("sin-permiso", proveedorId);
+  if (!data?.length) volver(await ceroFilas("contacto-no-existe"), proveedorId);
 
   volver("contacto-quitado", proveedorId);
 }
@@ -714,23 +852,42 @@ export async function descargarDocumento(datos: FormData): Promise<void> {
   // firmar, y «no existe» es exactamente lo que hay que contestar. Pero es el
   // DOCUMENTO el que no existe, no el proveedor que se está viendo; y si la
   // lectura falló, no se afirma ninguna de las dos cosas.
-  const ruta = await obtenerRutaDocumento(id, proveedorId);
+  const documento = await obtenerRutaDocumento(id, proveedorId);
   // Una lectura que falló no es «no se ha podido guardar»: aquí no se guarda.
-  if (ruta === undefined) volver("documento-no-leido", proveedorId);
-  if (!ruta) volver("documento-no-existe", proveedorId);
+  if (documento === undefined) volver("documento-no-leido", proveedorId);
+  if (!documento) volver("documento-no-existe", proveedorId);
 
+  /*
+    CON SU NOMBRE. La ruta es aleatoria —`k3j2h4g5f6d7.pdf`— y sin decirle a
+    Storage cómo se llama, el contrato se guardaba en el móvil con ese nombre y
+    en Descargas no se distinguía de la factura.
+  */
   const { data, error } = await clienteDeServicio()
     .storage.from(BUCKET_DOCUMENTOS)
-    .createSignedUrl(ruta, SEGUNDOS_URL_FIRMADA);
+    .createSignedUrl(documento.ruta, SEGUNDOS_URL_FIRMADA, {
+      download: nombreDeDescarga(documento.nombre, documento.ruta),
+    });
 
+  // Tampoco aquí se estaba guardando nada: lo que falló es abrirlo.
   if (error || !data?.signedUrl) {
     console.error("No se pudo firmar la descarga del documento:", error);
-    volver("error", proveedorId);
+    volver("documento-no-leido", proveedorId);
   }
 
   // Fuera del `try`/`catch` de arriba a propósito: `redirect` funciona lanzando,
   // y un `catch` alrededor se lo tragaría.
   redirect(data.signedUrl);
+}
+
+/**
+ * El nombre con que se guarda un documento al descargarlo: el que se le dio,
+ * con la extensión de verdad —la de la ruta— si no la lleva ya, y sin barras,
+ * que en un nombre de fichero abrirían carpetas.
+ */
+function nombreDeDescarga(nombre: string, ruta: string): string {
+  const extension = ruta.slice(ruta.lastIndexOf(".") + 1);
+  const limpio = nombre.replace(/[\\/]+/g, "-").trim();
+  return limpio.toLowerCase().endsWith(`.${extension}`) ? limpio : `${limpio}.${extension}`;
 }
 
 /**
@@ -765,7 +922,7 @@ export async function borrarDocumento(datos: FormData): Promise<void> {
     .maybeSingle();
 
   if (error) volver(motivo(error), proveedorId);
-  if (!data) volver("sin-permiso", proveedorId);
+  if (!data) volver(await ceroFilas("documento-no-existe"), proveedorId);
 
   // 2. Y AHORA EL OBJETO.
   if (haySubidaDeMedios) {
@@ -894,7 +1051,7 @@ export async function editarServicio(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error), proveedorId);
-  if (!data?.length) volver("sin-permiso", proveedorId);
+  if (!data?.length) volver(await ceroFilas("servicio-no-existe"), proveedorId);
 
   volver("servicio-editado", proveedorId);
 }
@@ -919,7 +1076,7 @@ export async function borrarServicio(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error), proveedorId);
-  if (!data?.length) volver("sin-permiso", proveedorId);
+  if (!data?.length) volver(await ceroFilas("servicio-no-existe"), proveedorId);
 
   volver("servicio-borrado", proveedorId);
 }

@@ -308,6 +308,18 @@ test.describe("Los papeles de un proveedor", () => {
     expect(Buffer.compare(await descarga.body(), contenido)).toBe(0);
 
     /*
+      Y CON SU NOMBRE. La ruta del bucket es aleatoria, y sin decirle a
+      Storage cómo se llama el papel, el móvil lo guardaba como «k3j2h4.pdf»:
+      en Descargas no se distinguía el contrato de la factura.
+    */
+    // Dos `decodeURIComponent`: según quién sirva, el nombre llega codificado
+    // una vez o dos, y lo que se comprueba es el nombre, no la codificación.
+    const disposicion = descarga.headers()["content-disposition"] ?? "";
+    expect(decodeURIComponent(decodeURIComponent(disposicion))).toContain(
+      `Contrato ${sello}.pdf`,
+    );
+
+    /*
       Y LA CERRADURA. El mismo objeto, pedido por la URL pública del bucket y
       sin sesión ninguna, no puede devolverse. Es la afirmación bloqueante del
       ticket: el bucket es privado, y eso es un `false` en una migración que no

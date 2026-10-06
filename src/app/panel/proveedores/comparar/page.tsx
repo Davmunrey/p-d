@@ -7,7 +7,12 @@ import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Boton } from "@/components/ui/boton";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
-import { PORCENTAJE_IVA, RUTA_ACCESO, RUTA_PROVEEDORES } from "@/config/constants";
+import {
+  PORCENTAJE_IVA,
+  RUTA_ACCESO,
+  RUTA_PROVEEDORES,
+  VALORACION_MAXIMA,
+} from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   obtenerCategoria,
@@ -227,7 +232,12 @@ function Tabla({
                   comparar con el de al lado dentro de dos segundos.
                 */}
                 {bases[indice].indeterminado ? (
-                  <EtiquetaEstado variante="aviso" tamano="compacta" className="mt-pila block">
+                  <EtiquetaEstado
+                    variante="aviso-marcada"
+                    tamano="compacta"
+                    forma="recuadro"
+                    className="mt-pila"
+                  >
                     {t("panel.proveedores.ivaNoLoDice")}
                   </EtiquetaEstado>
                 ) : null}
@@ -259,7 +269,10 @@ function Tabla({
               <Celda key={candidato.id}>
                 {candidato.valoracion === null
                   ? null
-                  : t("panel.proveedores.valoracionDe", { nota: candidato.valoracion })}
+                  : t("panel.proveedores.valoracionDe", {
+                      nota: candidato.valoracion,
+                      maximo: VALORACION_MAXIMA,
+                    })}
               </Celda>
             ))}
           </tr>

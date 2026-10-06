@@ -57,7 +57,18 @@ export type TamanoEtiqueta =
   donde el texto es libre y largo (las alergias de un invitado, el título de
   una canción), dos líneas pegadas la una a la otra.
 */
-const BASE = "inline-flex items-center gap-interno-compacto rounded-etiqueta";
+const BASE = "items-center gap-interno-compacto";
+
+/*
+  LA PÍLDORA ES PARA UNA O DOS PALABRAS. Con una frase entera en una columna
+  estrecha —«El presupuesto no lo dice» en la comparativa a 390 px— se parte en
+  tres líneas dentro de un óvalo y el texto pisa la curva. El recuadro lleva el
+  radio de un campo y ocupa su línea: se puede partir sin salirse.
+*/
+const FORMAS = {
+  pildora: "inline-flex rounded-etiqueta",
+  recuadro: "flex rounded-campo text-pretty",
+} as const;
 
 const VARIANTES: Record<VarianteEtiqueta, string> = {
   neutra: "bg-superficie-tenue text-tinta-marca",
@@ -106,6 +117,8 @@ interface Propiedades {
   children: ReactNode;
   /** Para colocarla en una fila o separarla: el hueco lo decide quien la usa. */
   className?: string;
+  /** `recuadro` para una frase que puede partirse en una columna estrecha. */
+  forma?: keyof typeof FORMAS;
 }
 
 export function EtiquetaEstado({
@@ -113,10 +126,13 @@ export function EtiquetaEstado({
   tamano = "normal",
   como: Caja = "span",
   className = "",
+  forma = "pildora",
   children,
 }: Propiedades) {
   return (
-    <Caja className={`${BASE} ${TAMANOS[tamano]} ${VARIANTES[variante]} ${className}`}>
+    <Caja
+      className={`${BASE} ${FORMAS[forma]} ${TAMANOS[tamano]} ${VARIANTES[variante]} ${className}`}
+    >
       {children}
     </Caja>
   );
