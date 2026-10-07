@@ -2,15 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { BotonImprimir } from "@/components/ui/boton-imprimir";
-import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import {
-  IDIOMA,
-  RUTA_ACCESO,
-  RUTA_DIA,
-  RUTA_MESAS_EXPORTAR,
-  ZONA_HORARIA,
-} from "@/config/constants";
+import { IDIOMA, RUTA_ACCESO, RUTA_MESAS_EXPORTAR, ZONA_HORARIA } from "@/config/constants";
 import {
   obtenerAgendaDelDia,
   obtenerInvitadosDelDia,
@@ -83,14 +76,7 @@ export default async function PaginaExportarDelDia() {
         «Generado el…»: un papel suelto en la mesa del catering sin decir qué es.
       */}
       <div className="max-w-texto">
-        <div className="print:hidden">
-          <EnlaceSuave href={RUTA_DIA} discreto>
-            {t("panel.dia.volver")}
-          </EnlaceSuave>
-        </div>
-        <Titulo2 como="h1" className="mt-pila">
-          {t("panel.dia.exportar.titulo")}
-        </Titulo2>
+        <Titulo2 como="h1">{t("panel.dia.exportar.titulo")}</Titulo2>
         <Cuerpo className="mt-pila print:hidden">{t("panel.dia.exportar.entradilla")}</Cuerpo>
 
         <div className="mt-bloque grid gap-elemento sm:grid-cols-2 print:hidden">

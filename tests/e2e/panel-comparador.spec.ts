@@ -364,8 +364,59 @@ test.describe("La comparativa de una categoría", () => {
     ).toBeVisible();
     await expect(page.getByText(copy.panel.proveedores.comparadorSinCategoria)).toBeVisible();
 
-    // Y con el camino de vuelta, que es lo único que se puede hacer desde aquí.
-    await expect(page.getByRole("link", { name: copy.panel.proveedores.volver })).toBeVisible();
+    // Y con el camino de vuelta: la pestaña de la lista, siempre arriba.
+    await expect(
+      page
+        .getByRole("navigation", {
+          name: copy.panel.pestanas.de.replace("{modulo}", copy.panel.modulos.proveedores),
+        })
+        .getByRole("link", { name: copy.panel.pestanas.proveedores }),
+    ).toBeVisible();
+  });
+
+  /**
+   * CAMINO FELIZ · La pestaña «Comparar», sin categoría, ofrece las que tienen
+   * algo que comparar. Antes contestaba «esa categoría no está» a quien sólo
+   * había pulsado la pestaña. CASO DE ERROR · una categoría con un solo
+   * candidato no se ofrece: su comparativa sería una tabla de una columna.
+   */
+  test("la pestaña Comparar ofrece las categorías con dos candidatos o más", async ({
+    page,
+  }) => {
+    const sello = Date.now();
+    const sembrado = await sembrar(sello);
+    const sola = `${MARCA} Sola ${sello}`;
+    await conBase(async (sql) => {
+      const [categoria] = await sql<{ id: string }[]>`
+        insert into public.categorias_proveedor (nombre, orden)
+        values (${sola}, 61) returning id
+      `;
+      await sql`
+        insert into public.proveedores (categoria_id, nombre)
+        values (${categoria.id}, ${`${MARCA} Único ${sello}`})
+      `;
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_PROVEEDORES);
+    await page
+      .getByRole("navigation", {
+        name: copy.panel.pestanas.de.replace("{modulo}", copy.panel.modulos.proveedores),
+      })
+      .getByRole("link", { name: copy.panel.pestanas.comparar })
+      .click();
+
+    await expect(
+      page.getByRole("heading", { name: copy.panel.proveedores.comparadorElegirTitulo }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: sola })).toHaveCount(0);
+
+    const categoria = page.getByRole("link", { name: `${MARCA} Categoría ${sello}` });
+    await expect(categoria).toContainText(
+      copy.panel.proveedores.comparadorCandidatos.replace("{cuantos}", "3"),
+    );
+    await categoria.click();
+    await expect(page).toHaveURL(new RegExp(`categoria=${sembrado.categoriaId}`));
   });
 
   /**

@@ -416,6 +416,8 @@
   --alto-cabecera: var(--size-cabecera);
   --ancho-lateral: var(--size-lateral);
   --alto-barra-movil: var(--size-barra-movil);
+  --lado-icono-barra: var(--size-icono-barra);
+  --alto-hoja-menu: var(--size-hoja-menu);
 
   /* --- Forma --------------------------------------------------------- */
   --radio-boton: var(--radius-redondo);
@@ -464,6 +466,9 @@
 
   /* --- Movimiento semántico ------------------------------------------ */
   --transicion-color: var(--duration-fast) var(--ease-salida);
+
+  /* La hoja del menú del móvil: navegación, no escena; corta. */
+  --transicion-hoja: var(--duration-fast) var(--ease-salida);
   --transicion-transformacion: var(--duration-normal) var(--ease-salida);
   --transicion-aparicion: var(--duration-slow) var(--ease-salida);
 

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
@@ -11,7 +10,6 @@ import {
   LARGOS_DE_CAMPO,
   MENUS_RSVP,
   RUTA_ACCESO,
-  RUTA_DIA,
   ZONA_HORARIA,
 } from "@/config/constants";
 import {
@@ -98,12 +96,7 @@ export default async function PaginaRecuento({ searchParams }: Parametros) {
   return (
     <>
       <div className="max-w-texto">
-        <EnlaceSuave href={RUTA_DIA} discreto>
-          {t("panel.dia.volver")}
-        </EnlaceSuave>
-        <Titulo2 como="h1" className="mt-pila">
-          {t("panel.dia.recuento.titulo")}
-        </Titulo2>
+        <Titulo2 como="h1">{t("panel.dia.recuento.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.dia.recuento.entradilla")}</Cuerpo>
       </div>
 

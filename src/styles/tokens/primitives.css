@@ -516,6 +516,19 @@
    */
   --size-barra-movil: 4rem;
 
+  /**
+   * El dibujo de cada destino de la barra del móvil: se reconoce de un
+   * vistazo y deja sitio a su rótulo debajo sin pasarse del alto de la barra.
+   */
+  --size-icono-barra: 1.375rem;
+
+  /**
+   * Lo más que sube la hoja del menú del móvil. Se queda corta a propósito:
+   * por arriba se sigue viendo la pantalla, y así se lee como una hoja encima
+   * de ella que se cierra, no como otra página a la que se ha ido.
+   */
+  --size-hoja-menu: 85dvh;
+
   /* ---------------------------------------------------------------------
    * Forma
    * ------------------------------------------------------------------- */

@@ -3,20 +3,23 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import {
   PORCENTAJE_IVA,
   RUTA_ACCESO,
+  RUTA_COMPARADOR,
   RUTA_PROVEEDORES,
   VALORACION_MAXIMA,
 } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
+  contarPorCategoria,
   obtenerCategoria,
+  obtenerCategoriasProveedor,
   obtenerComparativa,
+  obtenerProveedores,
   type CategoriaProveedor,
   type ProveedorComparado,
 } from "@/lib/bbdd/proveedores";
@@ -83,17 +86,7 @@ export default async function PaginaComparador({ searchParams }: Parametros) {
     una frase y el camino de vuelta, no una tabla vacía ni un error.
   */
   if (!categoria) {
-    return (
-      <>
-        <Titulo2 como="h1">{t("panel.proveedores.comparadorSinCategoriaTitulo")}</Titulo2>
-        <Cuerpo className="mt-pila max-w-texto">
-          {t("panel.proveedores.comparadorSinCategoria")}
-        </Cuerpo>
-        <div className="mt-elemento">
-          <EnlaceSuave href={RUTA_PROVEEDORES}>{t("panel.proveedores.volver")}</EnlaceSuave>
-        </div>
-      </>
-    );
+    return <ElegirCategoria noEsta={categoriaId !== ""} />;
   }
 
   const candidatos = await obtenerComparativa(categoria.id);
@@ -103,10 +96,7 @@ export default async function PaginaComparador({ searchParams }: Parametros) {
   return (
     <>
       <div className="max-w-texto">
-        <EnlaceSuave href={RUTA_PROVEEDORES} discreto>
-          {t("panel.proveedores.volver")}
-        </EnlaceSuave>
-        <Titulo2 como="h1" className="mt-pila">
+        <Titulo2 como="h1">
           {t("panel.proveedores.comparadorTitulo", { categoria: categoria.nombre })}
         </Titulo2>
         <Cuerpo className="mt-pila">
@@ -350,6 +340,65 @@ function Tabla({
       </table>
 
       <Etiqueta className="mt-elemento">{t("panel.proveedores.comparadorPie")}</Etiqueta>
+    </div>
+  );
+}
+
+/**
+ * SIN CATEGORÍA, SE ELIGE UNA. La pestaña «Comparar» llega aquí sin
+ * `?categoria=`, y contestar «esa categoría no está» a quien sólo ha pulsado
+ * la pestaña era culparle de algo que no ha hecho. Se ofrecen las categorías
+ * que tienen algo que comparar —dos candidatos o más, la misma regla que el
+ * enlace «Comparar» de la lista— con cuántos hay en cada una.
+ *
+ * Si la URL traía una categoría que ya no existe —un enlace guardado de una
+ * categoría borrada—, se dice primero, y debajo, la misma lista.
+ */
+async function ElegirCategoria({ noEsta }: { noEsta: boolean }) {
+  const [categorias, proveedores] = await Promise.all([
+    obtenerCategoriasProveedor(),
+    obtenerProveedores(),
+  ]);
+  const totales = contarPorCategoria(proveedores);
+  const comparables = categorias.filter((categoria) => (totales.get(categoria.id) ?? 0) > 1);
+
+  return (
+    <div className="max-w-texto">
+      <Titulo2 como="h1">
+        {noEsta
+          ? t("panel.proveedores.comparadorSinCategoriaTitulo")
+          : t("panel.proveedores.comparadorElegirTitulo")}
+      </Titulo2>
+      <Cuerpo className="mt-pila">
+        {noEsta
+          ? t("panel.proveedores.comparadorSinCategoria")
+          : t("panel.proveedores.comparadorElegirAyuda")}
+      </Cuerpo>
+
+      {comparables.length === 0 ? (
+        <Cuerpo className="mt-elemento text-pequeno text-tinta-suave">
+          {t("panel.proveedores.comparadorNadaQueComparar")}
+        </Cuerpo>
+      ) : (
+        <ul className="mt-elemento grid gap-linea">
+          {comparables.map((categoria) => (
+            <li key={categoria.id}>
+              <Link
+                href={`${RUTA_COMPARADOR}?categoria=${categoria.id}`}
+                prefetch={false}
+                className="flex min-h-control-compacto items-center justify-between gap-interno rounded-campo border border-borde px-interno text-cuerpo text-tinta transicion-color hover:border-borde-marca hover:bg-superficie-hundida"
+              >
+                {categoria.nombre}
+                <span className="text-pequeno tabular-nums text-tinta-suave">
+                  {t("panel.proveedores.comparadorCandidatos", {
+                    cuantos: totales.get(categoria.id) ?? 0,
+                  })}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

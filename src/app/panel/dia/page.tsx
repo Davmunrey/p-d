@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo2 } from "@/components/ui/tipografia";
 import {
   RUTA_ACCESO,
   RUTA_AGENDA_DIA,
   RUTA_BUSCAR_DIA,
   RUTA_EXPORTAR_DIA,
-  RUTA_GUION_DIA,
   RUTA_RECUENTO,
 } from "@/config/constants";
 import { obtenerGuion } from "@/lib/bbdd/dia";
@@ -48,15 +46,10 @@ export default async function PaginaDia() {
         <Titulo2 como="h1">{t("panel.dia.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.dia.entradilla")}</Cuerpo>
         {/*
-          ESCRIBIR EL GUION VA APARTE Y SE LLEGA DESDE AQUÍ. Es un enlace y no un
-          atajo más: los cuatro de abajo son lo que se busca con prisa ese día,
-          y esto se hace sentado, semanas antes.
+          ESCRIBIR EL GUION ES SU PESTAÑA, «Guion», junto a las demás del día:
+          se hace sentado, semanas antes, y no compite con los cuatro atajos de
+          abajo, que son lo que se busca con prisa ese día.
         */}
-        {puedeEditar ? (
-          <EnlaceSuave href={RUTA_GUION_DIA} className="mt-pila">
-            {t("panel.dia.guion.escribir")}
-          </EnlaceSuave>
-        ) : null}
       </div>
 
       <Atajos />

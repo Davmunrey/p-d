@@ -58,12 +58,6 @@ export default async function PaginaImportar() {
       </section>
 
       <FormularioImportacion />
-
-      <p className="mt-bloque">
-        <EnlaceSuave href={RUTA_INVITADOS} discreto>
-          {t("panel.importar.volver")}
-        </EnlaceSuave>
-      </p>
     </>
   );
 }

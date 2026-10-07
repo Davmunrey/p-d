@@ -3,10 +3,9 @@ import { redirect } from "next/navigation";
 
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
-import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { LARGOS_DE_CAMPO, ORDEN_MAXIMO, RUTA_ACCESO, RUTA_DIA } from "@/config/constants";
+import { LARGOS_DE_CAMPO, ORDEN_MAXIMO, RUTA_ACCESO } from "@/config/constants";
 import { avisoDe } from "@/lib/avisos";
 import { obtenerGuion, type PuntoDelGuion } from "@/lib/bbdd/dia";
 import { t, type ClaveCopy } from "@/lib/copy";
@@ -72,12 +71,7 @@ export default async function PaginaEscribirGuion({ searchParams }: Parametros) 
   return (
     <div className="grid gap-bloque">
       <header className="max-w-texto">
-        <EnlaceSuave href={RUTA_DIA} discreto>
-          {t("panel.dia.escribir.volver")}
-        </EnlaceSuave>
-        <Titulo2 como="h1" className="mt-pila">
-          {t("panel.dia.escribir.titulo")}
-        </Titulo2>
+        <Titulo2 como="h1">{t("panel.dia.escribir.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.dia.escribir.entradilla")}</Cuerpo>
       </header>
 

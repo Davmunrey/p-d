@@ -351,6 +351,8 @@
    * deja a su lado, y el alto de la barra de móvil y el que deja debajo. */
   --spacing-lateral: var(--ancho-lateral);
   --spacing-barra-movil: var(--alto-barra-movil);
+  --spacing-icono-barra: var(--lado-icono-barra);
+  --spacing-hoja-menu: var(--alto-hoja-menu);
 
   /* Forma */
   --radius-boton: var(--radio-boton);

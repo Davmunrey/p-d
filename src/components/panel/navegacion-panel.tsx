@@ -2,9 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
-import { MODULOS_ENTREGADOS, moduloActivo, type ClaveModulo } from "@/config/modulos";
+import { cerrarSesion } from "@/app/acceso/acciones";
+import { IconoPanel, type ClaveIcono } from "@/components/panel/iconos-panel";
+import { BotonEnvio } from "@/components/ui/boton-envio";
+import {
+  GRUPOS_DE_MODULOS,
+  MODULOS_EN_LA_BARRA,
+  MODULOS_ENTREGADOS,
+  modulosDe,
+  moduloActivo,
+  type ClaveModulo,
+  type LugarEnElMenu,
+} from "@/config/modulos";
 import { t } from "@/lib/copy";
 
 /**
@@ -12,93 +23,117 @@ import { t } from "@/lib/copy";
  *
  * DOS SITIOS MUY DISTINTOS. En el portátil se planifica: sesiones largas,
  * saltando entre módulos, y el lateral fijo permite hacerlo sin perder de
- * vista dónde está uno. En el móvil se consulta el día de la boda, con una
- * mano y a menudo de pie, así que los destinos bajan al alcance del pulgar en
- * lugar de esconderse tras un menú que hay que abrir.
+ * vista dónde está uno. En el móvil se consulta, con una mano y a menudo de
+ * pie, así que lo que más se mira baja al alcance del pulgar.
  *
- * Es la misma lista pintada dos veces con CSS, no dos componentes: un solo
- * sitio donde añadir un módulo, y ningún riesgo de que el móvil se quede atrás.
+ * EN GRUPOS, NO EN UNA COLUMNA DE TRECE. Los módulos se agrupan por la
+ * pregunta que contestan (ver `config/modulos.ts`), con el resumen suelto
+ * arriba y ajustes, la cuenta y la sesión al pie. El rótulo va en minúscula y
+ * a tamaño de lectura: la versalita espaciada de antes es la de una etiqueta,
+ * y trece seguidas se leían como un bloque gris.
  *
- * ES CLIENTE SÓLO POR `usePathname`. Los enlaces son enlaces y funcionan sin
- * JavaScript; el subrayado del activo también, porque Next resuelve la ruta al
- * renderizar en el servidor y llega ya puesto en el HTML.
+ * EN EL MÓVIL, CUATRO DESTINOS Y «MÁS». La barra era una tira de trece rótulos
+ * que había que arrastrar para encontrar cada uno. Ahora lleva fijos los
+ * cuatro que se miran con el móvil en la mano, con su icono, y el quinto hueco
+ * abre una hoja con el menú entero agrupado. Si el módulo abierto no está en la
+ * barra, «Más» se marca: siempre se ve en qué zona está uno.
+ *
+ * LA SESIÓN BAJA AL PIE DEL MENÚ. «Has entrado como… · Cerrar sesión» ocupaba
+ * una franja encima de cada pantalla —dos renglones en el móvil— para decir
+ * algo que se mira una vez al día. Ahora vive al final del lateral y de la
+ * hoja, y cada pantalla empieza por su título.
  *
  *
- * SIN PRECARGA, Y NO ES UN AJUSTE FINO: ES DEJAR DE PEDIR DIECIOCHO PÁGINAS
- * ENTERAS POR CADA VISITA.
+ * SIN PRECARGA, Y NO ES UN AJUSTE FINO: ES DEJAR DE PEDIR PÁGINAS ENTERAS POR
+ * CADA VISITA.
  *
  * Todas las rutas del panel son `force-dynamic` —leen de la base en cada
  * petición—, así que precargar un enlace del menú **no** es leer un fichero
- * estático: es renderizar esa pantalla entera en el servidor, con sus consultas,
- * para tirarla si no se pulsa. Y esta lista se pinta dos veces, la de escritorio
- * y la del móvil, así que cada enlace se precarga por duplicado: con nueve
- * módulos son dieciocho renderizados de más por cada pantalla que se abre. En
- * Vercel eso son dieciocho invocaciones que se pagan y que no las pide nadie.
- *
- * Se ve en el registro de CI: al abrir `/panel/medios` salen dos tandas enteras
- * de peticiones `_rsc` —una por cada copia del menú, con su propio identificador
- * de compilación— y **todas acaban abortadas**, porque nadie llegó a pulsar.
- *
- * Un panel privado que usan dos personas no gana nada con eso. Lo que sí puede
- * perder es la acción que se está enviando en ese momento: es la sospecha de
- * #126, donde la respuesta de una acción llega bien y el enrutador no la aplica
- * mientras tiene esa tanda de peticiones en vuelo.
+ * estático: es renderizar esa pantalla entera en el servidor, con sus
+ * consultas, para tirarla si no se pulsa. En Vercel eso son invocaciones que se
+ * pagan y que no las pide nadie, y la sospecha de #126 es que una tanda de esas
+ * peticiones en vuelo es lo que hace que el enrutador no aplique la respuesta
+ * de una acción.
  */
 
-/** Sólo se pinta lo terminado: un menú con huecos es peor que un menú corto. */
-function etiquetaDe(clave: ClaveModulo): string {
-  return t(`panel.modulos.${clave}`);
+export interface SesionDelPanel {
+  /** El nombre del perfil o, si no tiene, el correo. */
+  nombre: string;
 }
+
+const ICONO_DE: Record<(typeof MODULOS_EN_LA_BARRA)[number], ClaveIcono> = {
+  resumen: "resumen",
+  invitados: "invitados",
+  tareas: "tareas",
+  dia: "dia",
+};
+
+/** Los destinos fijos de la barra, con su ruta: sólo los que estén entregados. */
+const DESTINOS_DE_LA_BARRA = MODULOS_EN_LA_BARRA.flatMap((clave) => {
+  const modulo = MODULOS_ENTREGADOS.find((candidato) => candidato.clave === clave);
+  return modulo ? [{ clave, ruta: modulo.ruta }] : [];
+});
 
 /**
  * `marca` son los nombres de los novios, leídos de la base por el layout: aquí
  * no se escriben, que es un componente de cliente y la base no llega.
  */
-export function NavegacionPanel({ marca }: { marca: string }) {
+export function NavegacionPanel({ marca, sesion }: { marca: string; sesion: SesionDelPanel }) {
   const ruta = usePathname();
   const activo = moduloActivo(ruta);
-  const tira = useRef<HTMLUListElement>(null);
+  const hoja = useRef<HTMLDialogElement>(null);
+  const botonMas = useRef<HTMLButtonElement>(null);
+  const [hojaAbierta, setHojaAbierta] = useState(false);
+  const idTituloHoja = useId();
+
+  // El módulo abierto no tiene hueco propio en la barra: «Más» lo representa.
+  const masMarcado =
+    activo !== null && !DESTINOS_DE_LA_BARRA.some((destino) => destino.clave === activo);
 
   /*
-    EL MÓDULO ACTUAL, A LA VISTA EN LA BARRA DEL MÓVIL. La tira se desplaza en
-    horizontal y, al abrir un módulo del final, su enlace quedaba fuera de la
-    pantalla: no se veía dónde estaba uno. Se centra moviendo sólo la tira
-    —`scrollLeft`, no `scrollIntoView`, que también movería la página—.
+    AL CAMBIAR DE PANTALLA, LA HOJA SE CIERRA. Pulsar un destino ya la cierra;
+    esto cubre el resto —«atrás» del navegador con la hoja abierta—, que la
+    dejaba encima de una pantalla que no era la suya.
   */
   useEffect(() => {
-    const contenedor = tira.current;
-    const enlace = contenedor?.querySelector<HTMLElement>('[aria-current="page"]');
-    if (!contenedor || !enlace) return;
-    contenedor.scrollLeft =
-      enlace.offsetLeft - (contenedor.clientWidth - enlace.offsetWidth) / 2;
-  }, [activo]);
+    if (hoja.current?.open) hoja.current.close();
+  }, [ruta]);
+
+  /*
+    Y SI LA BARRA DESAPARECE, TAMBIÉN. La hoja sólo existe en el móvil; abierta
+    en una tableta en vertical y girada a horizontal, quedaba oculta pero
+    seguía siendo modal, y la página entera se quedaba sin responder. Se cierra
+    en cuanto «Más» deja de verse, que es lo mismo que decir que manda el
+    lateral, sin repetir aquí el punto de corte.
+  */
+  useEffect(() => {
+    const alCambiarElTamano = () => {
+      if (hoja.current?.open && botonMas.current?.offsetParent === null) hoja.current.close();
+    };
+    window.addEventListener("resize", alCambiarElTamano);
+    return () => window.removeEventListener("resize", alCambiarElTamano);
+  }, []);
+
+  const abrirHoja = () => {
+    hoja.current?.showModal();
+    setHojaAbierta(true);
+  };
+  const cerrarHoja = () => hoja.current?.close();
 
   return (
     <>
       {/* Lateral, en escritorio */}
       <nav
         aria-label={t("panel.navegacion")}
-        className="fixed inset-y-0 left-0 capa-lateral hidden w-lateral flex-col gap-elemento overflow-y-auto overscroll-contain border-r border-borde bg-superficie px-interno py-elemento md:flex print:hidden"
+        className="fixed inset-y-0 left-0 capa-lateral hidden w-lateral flex-col overflow-y-auto overscroll-contain border-r border-borde bg-superficie px-interno py-elemento md:flex print:hidden"
       >
-        <Link
-          href="/"
-          prefetch={false}
-          className="px-interno-compacto font-titulo text-titulo-3 leading-titulo-corto text-tinta-marca transicion-color hover:text-tinta"
-        >
+        <p className="px-interno-compacto font-titulo text-titulo-3 leading-titulo-corto text-tinta-marca">
           {marca}
-        </Link>
+        </p>
 
-        <ul className="grid gap-linea">
-          {MODULOS_ENTREGADOS.map((modulo) => (
-            <li key={modulo.clave}>
-              <Enlace
-                ruta={modulo.ruta}
-                etiqueta={etiquetaDe(modulo.clave)}
-                activo={modulo.clave === activo}
-              />
-            </li>
-          ))}
-        </ul>
+        <MenuAgrupado activo={activo} className="mt-elemento" />
+
+        <PieDelMenu sesion={sesion} activo={activo} className="mt-auto pt-elemento" />
       </nav>
 
       {/* Barra inferior, en móvil */}
@@ -106,50 +141,218 @@ export function NavegacionPanel({ marca }: { marca: string }) {
         aria-label={t("panel.navegacion")}
         className="fixed inset-x-0 bottom-0 capa-lateral border-t border-borde bg-superficie barra-inferior md:hidden print:hidden"
       >
-        {/*
-          SE DESPLAZA DE VERDAD EN HORIZONTAL. Cada destino mide lo que mide su
-          rótulo. Antes se repartían el ancho a partes iguales —`flex-1
-          basis-0`— y con trece módulos en 390 px cada casilla tenía 28 px: los
-          rótulos, que no se parten, se montaban unos encima de otros y no se
-          leía ninguno. El degradado del final dice «hay más» sin escribirlo,
-          como en la barra de la portada.
-
-          Y CON AIRE ARRIBA Y ABAJO: una tira que se desplaza en horizontal
-          recorta también en vertical, y los enlaces medían lo mismo que ella.
-          El anillo de foco salía cortado —un paréntesis en vez de un recuadro—.
-          Con el relleno, el anillo cabe entero y el enlace sigue midiendo más
-          que el mínimo táctil.
-        */}
-        <ul
-          ref={tira}
-          className="desvanecer-final flex h-barra-movil items-stretch gap-linea overflow-x-auto px-interno-compacto py-interno-compacto"
-        >
-          {MODULOS_ENTREGADOS.map((modulo) => (
-            <li key={modulo.clave} className="flex shrink-0">
-              <Enlace
-                ruta={modulo.ruta}
-                etiqueta={etiquetaDe(modulo.clave)}
-                activo={modulo.clave === activo}
-                centrado
+        <ul className="flex h-barra-movil items-stretch px-interno-compacto">
+          {DESTINOS_DE_LA_BARRA.map((destino) => (
+            <li key={destino.clave} className="flex flex-1 basis-0">
+              <DestinoDeLaBarra
+                ruta={destino.ruta}
+                icono={ICONO_DE[destino.clave]}
+                rotulo={t(`panel.barra.${destino.clave}`)}
+                activo={destino.clave === activo}
               />
             </li>
           ))}
+          <li className="flex flex-1 basis-0">
+            <button
+              ref={botonMas}
+              type="button"
+              aria-haspopup="dialog"
+              aria-expanded={hojaAbierta}
+              onClick={abrirHoja}
+              className={claseDestino(masMarcado)}
+            >
+              <IconoDeDestino icono="mas" activo={masMarcado} />
+              <span>{t("panel.barra.mas")}</span>
+            </button>
+          </li>
         </ul>
       </nav>
+
+      {/*
+        LA HOJA DEL MÓVIL ES UN `<dialog>` NATIVO, y no un `div` con estado: el
+        navegador ya atrapa el foco dentro, lo devuelve al botón al cerrar,
+        cierra con Escape y deja inerte lo de detrás. Escribirlo a mano es
+        reescribir lo que ya funciona, y peor.
+
+        Pulsar fuera —en el velo— también cierra: el contenido llena la hoja,
+        así que el único clic que llega al `<dialog>` mismo es el del velo.
+      */}
+      <dialog
+        ref={hoja}
+        aria-labelledby={idTituloHoja}
+        onClose={() => setHojaAbierta(false)}
+        onClick={(evento) => {
+          if (evento.target === evento.currentTarget) cerrarHoja();
+        }}
+        className="hoja-menu fixed inset-x-0 top-auto bottom-0 m-0 max-h-hoja-menu w-full max-w-full rounded-t-tarjeta bg-superficie p-0 text-tinta backdrop:bg-velo md:hidden print:hidden"
+      >
+        <div className="flex max-h-hoja-menu flex-col overflow-y-auto overscroll-contain px-interno pt-interno barra-inferior">
+          <div className="flex items-center justify-between gap-interno">
+            <p
+              id={idTituloHoja}
+              className="font-titulo text-titulo-3 leading-titulo-corto text-tinta-marca"
+            >
+              {t("panel.menu.titulo")}
+            </p>
+            <button
+              type="button"
+              onClick={cerrarHoja}
+              className="inline-flex size-control-compacto items-center justify-center rounded-campo text-tinta-suave transicion-color hover:bg-superficie-hundida hover:text-tinta"
+            >
+              <IconoPanel icono="cerrar" className="size-icono-barra" />
+              <span className="sr-only">{t("panel.menu.cerrar")}</span>
+            </button>
+          </div>
+
+          <MenuAgrupado
+            activo={activo}
+            alElegir={cerrarHoja}
+            enDosColumnas
+            className="mt-interno"
+          />
+
+          <PieDelMenu
+            sesion={sesion}
+            activo={activo}
+            alElegir={cerrarHoja}
+            enDosColumnas
+            className="mt-elemento pb-elemento"
+          />
+        </div>
+      </dialog>
     </>
   );
 }
 
-function Enlace({
-  ruta,
-  etiqueta,
+/** El resumen suelto y los cuatro grupos, cada uno con su rótulo. */
+function MenuAgrupado({
   activo,
-  centrado = false,
+  alElegir,
+  enDosColumnas = false,
+  className = "",
+}: {
+  activo: ClaveModulo | null;
+  alElegir?: () => void;
+  /** En la hoja del móvil: el menú entero cabe en una pantalla sin desplazarse. */
+  enDosColumnas?: boolean;
+  className?: string;
+}) {
+  const idBase = useId();
+  const lugares: LugarEnElMenu[] = ["inicio", ...GRUPOS_DE_MODULOS];
+
+  return (
+    <div className={`grid gap-elemento ${className}`}>
+      {lugares.map((lugar) => {
+        const modulos = modulosDe(lugar);
+        if (modulos.length === 0 || lugar === "pie") return null;
+        const idRotulo = `${idBase}-${lugar}`;
+
+        return (
+          <div key={lugar}>
+            {/*
+              EL RÓTULO DEL GRUPO NO ES UN ENCABEZADO. Un `<h2>` dentro del menú
+              se colaba en el índice de la página por delante de su título, en
+              todas las pantallas. Nombra la lista con `aria-labelledby`, que es
+              lo que oye quien la recorre: «Preparativos, lista, 4 elementos».
+            */}
+            {lugar === "inicio" ? null : (
+              <p
+                id={idRotulo}
+                className="px-interno-compacto pb-linea text-etiqueta uppercase tracking-etiqueta text-tinta-suave"
+              >
+                {t(`panel.grupos.${lugar}`)}
+              </p>
+            )}
+            <ul
+              aria-labelledby={lugar === "inicio" ? undefined : idRotulo}
+              className={`grid gap-linea ${enDosColumnas ? "grid-cols-2" : ""}`}
+            >
+              {modulos.map((modulo) => (
+                <li key={modulo.clave}>
+                  <EnlaceDelMenu
+                    ruta={modulo.ruta}
+                    rotulo={t(`panel.modulos.${modulo.clave}`)}
+                    activo={modulo.clave === activo}
+                    alElegir={alElegir}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Quién ha entrado, ajustes y cuenta, la web y cerrar sesión. */
+function PieDelMenu({
+  sesion,
+  activo,
+  alElegir,
+  enDosColumnas = false,
+  className = "",
+}: {
+  sesion: SesionDelPanel;
+  activo: ClaveModulo | null;
+  alElegir?: () => void;
+  enDosColumnas?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={`grid gap-interno-compacto border-t border-borde ${className}`}>
+      <p className="px-interno-compacto pt-interno-compacto text-pequeno text-tinta-suave">
+        {t("panel.sesionDe")}{" "}
+        <strong className="font-normal text-tinta">{sesion.nombre}</strong>
+      </p>
+
+      <ul className={`grid gap-linea ${enDosColumnas ? "grid-cols-2" : ""}`}>
+        {modulosDe("pie").map((modulo) => (
+          <li key={modulo.clave}>
+            <EnlaceDelMenu
+              ruta={modulo.ruta}
+              rotulo={t(`panel.modulos.${modulo.clave}`)}
+              activo={modulo.clave === activo}
+              alElegir={alElegir}
+            />
+          </li>
+        ))}
+        <li>
+          {/*
+            LA WEB, CON SU NOMBRE. Antes se llegaba pulsando los nombres de los
+            novios en lo alto del lateral, que no decía a dónde llevaba. Se abre
+            en otra pestaña —se va a mirar un cambio y a volver— y se avisa.
+          */}
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener"
+            className="flex min-h-control-compacto items-center gap-interno-compacto rounded-campo px-interno-compacto text-pequeno text-tinta transicion-color hover:bg-superficie-hundida md:min-h-0 md:py-linea"
+          >
+            {t("panel.menu.verLaWeb")}
+            <IconoPanel icono="externo" className="size-icono text-tinta-suave" />
+            <span className="sr-only"> {t("panel.menu.otraPestana")}</span>
+          </a>
+        </li>
+      </ul>
+
+      <form action={cerrarSesion}>
+        <BotonEnvio jerarquia="terciario">{t("acceso.cerrarSesion")}</BotonEnvio>
+      </form>
+    </div>
+  );
+}
+
+function EnlaceDelMenu({
+  ruta,
+  rotulo,
+  activo,
+  alElegir,
 }: {
   ruta: string;
-  etiqueta: string;
+  rotulo: string;
   activo: boolean;
-  centrado?: boolean;
+  alElegir?: () => void;
 }) {
   return (
     <Link
@@ -157,18 +360,67 @@ function Enlace({
       // Ver la cabecera del fichero: precargar una ruta `force-dynamic` es
       // renderizarla entera para tirarla.
       prefetch={false}
+      onClick={alElegir}
       // `aria-current` es lo que hace que un lector de pantalla diga «página
-      // actual». El color solo no lo cuenta, y el subrayado tampoco.
+      // actual». El color solo no lo cuenta.
       aria-current={activo ? "page" : undefined}
       className={[
-        "flex min-h-control-compacto w-full items-center whitespace-nowrap rounded-campo px-interno-compacto text-etiqueta uppercase tracking-etiqueta transicion-color",
-        centrado ? "justify-center" : "",
-        activo
-          ? "bg-marca-tenue text-tinta-marca"
-          : "text-tinta-suave hover:bg-superficie-hundida hover:text-tinta",
+        // En el lateral, más juntos: con ratón no hace falta el mínimo táctil, y
+        // así los trece módulos y el pie caben en la pantalla de un portátil.
+        "flex min-h-control-compacto w-full items-center rounded-campo px-interno-compacto text-pequeno transicion-color md:min-h-0 md:py-linea",
+        activo ? "bg-marca-tenue text-tinta-marca" : "text-tinta hover:bg-superficie-hundida",
       ].join(" ")}
     >
-      {etiqueta}
+      {rotulo}
+    </Link>
+  );
+}
+
+/** Icono encima y rótulo debajo: el mismo molde para los destinos y «Más». */
+function claseDestino(activo: boolean): string {
+  return [
+    "flex w-full flex-col items-center justify-center gap-linea rounded-campo text-etiqueta transicion-color",
+    activo ? "text-tinta-marca" : "text-tinta-suave hover:text-tinta",
+  ].join(" ");
+}
+
+/**
+ * EL DIBUJO, SOBRE UNA PASTILLA SI ES DONDE SE ESTÁ. El color solo no basta
+ * para ver de un vistazo cuál de los cinco está encendido —menos aún al sol—,
+ * y la pastilla marca el sitio sin mover nada de la barra.
+ */
+function IconoDeDestino({ icono, activo }: { icono: ClaveIcono; activo: boolean }) {
+  return (
+    <span
+      className={`inline-flex rounded-boton px-interno py-linea transicion-color ${
+        activo ? "bg-marca-tenue" : ""
+      }`}
+    >
+      <IconoPanel icono={icono} className="size-icono-barra" />
+    </span>
+  );
+}
+
+function DestinoDeLaBarra({
+  ruta,
+  icono,
+  rotulo,
+  activo,
+}: {
+  ruta: string;
+  icono: ClaveIcono;
+  rotulo: string;
+  activo: boolean;
+}) {
+  return (
+    <Link
+      href={ruta}
+      prefetch={false}
+      aria-current={activo ? "page" : undefined}
+      className={claseDestino(activo)}
+    >
+      <IconoDeDestino icono={icono} activo={activo} />
+      <span>{rotulo}</span>
     </Link>
   );
 }

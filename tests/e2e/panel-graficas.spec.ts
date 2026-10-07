@@ -166,7 +166,13 @@ test.describe("Las gráficas del presupuesto", () => {
     await page.goto(RUTA_PRESUPUESTO);
 
     // La pantalla es alcanzable: un módulo al que no se llega no está entregado.
-    await page.getByRole("link", { name: copy.panel.presupuesto.graficas.enlace }).click();
+    // Se llega por su pestaña, la de las hermanas del presupuesto.
+    await page
+      .getByRole("navigation", {
+        name: copy.panel.pestanas.de.replace("{modulo}", copy.panel.modulos.presupuesto),
+      })
+      .getByRole("link", { name: copy.panel.pestanas.graficas })
+      .click();
     await expect(page).toHaveURL(new RegExp(RUTA_GRAFICAS));
 
     const grande = fila(

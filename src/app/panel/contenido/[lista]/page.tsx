@@ -7,7 +7,7 @@ import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { BUCKET_MEDIOS, RUTA_ACCESO, RUTA_CONTENIDO, RUTA_MEDIOS } from "@/config/constants";
+import { BUCKET_MEDIOS, RUTA_ACCESO, RUTA_MEDIOS } from "@/config/constants";
 import {
   LISTAS_DE_CONTENIDO,
   esClaveLista,
@@ -163,16 +163,7 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
   return (
     <div className="grid gap-bloque">
       <header className="max-w-texto">
-        <Link
-          href={RUTA_CONTENIDO}
-          prefetch={false}
-          className="inline-flex min-h-control-compacto items-center text-etiqueta uppercase tracking-etiqueta text-tinta-suave transicion-color hover:text-tinta"
-        >
-          {t("panel.contenido.listas.comun.volver")}
-        </Link>
-        <Titulo2 como="h1" className="mt-pila">
-          {t(lista.titulo)}
-        </Titulo2>
+        <Titulo2 como="h1">{t(lista.titulo)}</Titulo2>
         <Cuerpo className="mt-pila">{t(lista.descripcion)}</Cuerpo>
       </header>
 

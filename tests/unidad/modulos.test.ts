@@ -1,9 +1,18 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { MODULOS, MODULOS_ENTREGADOS, moduloActivo } from "../../src/config/modulos";
+import {
+  GRUPOS_DE_MODULOS,
+  MODULOS,
+  MODULOS_EN_LA_BARRA,
+  MODULOS_ENTREGADOS,
+  PESTANAS,
+  moduloActivo,
+  modulosDe,
+  pestanaActiva,
+} from "../../src/config/modulos";
 import { RUTA_PANEL } from "../../src/config/constants";
 import copy from "../../content/copy.es.json";
 
@@ -91,5 +100,91 @@ describe("Qué módulo está activo", () => {
     */
     const sinEntregar = MODULOS.find((modulo) => !modulo.entregado);
     if (sinEntregar) expect(moduloActivo(sinEntregar.ruta)).toBeNull();
+  });
+});
+
+describe("Los grupos del menú y la barra del móvil", () => {
+  it("cada grupo tiene al menos un módulo entregado y su rótulo", () => {
+    for (const grupo of GRUPOS_DE_MODULOS) {
+      expect(modulosDe(grupo).length, `el grupo «${grupo}» se pintaría vacío`).toBeGreaterThan(
+        0,
+      );
+      expect(copy.panel.grupos).toHaveProperty(grupo);
+    }
+  });
+
+  it("todo módulo entregado está en algún sitio del menú, y en uno solo", () => {
+    const pintados = (["inicio", ...GRUPOS_DE_MODULOS, "pie"] as const).flatMap((lugar) =>
+      modulosDe(lugar).map((modulo) => modulo.clave),
+    );
+    expect([...pintados].sort()).toEqual(
+      MODULOS_ENTREGADOS.map((modulo) => modulo.clave).sort(),
+    );
+  });
+
+  it("la barra del móvil sólo lleva módulos entregados, cada uno con su rótulo corto", () => {
+    // Con «Más» son cinco huecos: más no caben a 390 px con icono y rótulo.
+    expect(MODULOS_EN_LA_BARRA.length).toBeLessThanOrEqual(4);
+    for (const clave of MODULOS_EN_LA_BARRA) {
+      expect(MODULOS_ENTREGADOS.some((modulo) => modulo.clave === clave)).toBe(true);
+      expect(copy.panel.barra).toHaveProperty(clave);
+    }
+  });
+});
+
+/**
+ * Página propia o, si no, la de un segmento dinámico hermano: las listas de
+ * contenido son `/panel/contenido/[lista]`, una sola página para las seis.
+ */
+function tienePagina(ruta: string): boolean {
+  if (existsSync(ficheroDe(ruta))) return true;
+  const padre = dirname(join(RAIZ_APP, ruta));
+  return (
+    existsSync(padre) &&
+    readdirSync(padre).some(
+      (entrada) => entrada.startsWith("[") && existsSync(join(padre, entrada, "page.tsx")),
+    )
+  );
+}
+
+describe("Las pestañas de cada módulo", () => {
+  it("cada pestaña tiene su página y su rótulo", () => {
+    for (const [modulo, pestanas] of Object.entries(PESTANAS)) {
+      for (const pestana of pestanas) {
+        expect(tienePagina(pestana.ruta), `${modulo} · ${pestana.clave} sin página`).toBe(true);
+        const texto = pestana.rotulo
+          .split(".")
+          .reduce<unknown>((nodo, parte) => (nodo as Record<string, unknown>)?.[parte], copy);
+        expect(typeof texto, `${modulo} · ${pestana.clave} sin rótulo`).toBe("string");
+      }
+    }
+  });
+
+  it("la primera pestaña de cada módulo es su raíz", () => {
+    for (const [modulo, pestanas] of Object.entries(PESTANAS)) {
+      const raiz = MODULOS.find((candidato) => candidato.clave === modulo)?.ruta;
+      expect(pestanas[0].ruta, modulo).toBe(raiz);
+    }
+  });
+
+  it("gana la pestaña de ruta más larga, no la primera que encaja", () => {
+    expect(pestanaActiva("/panel/presupuesto", PESTANAS.presupuesto)).toBe("categorias");
+    expect(pestanaActiva("/panel/presupuesto/pagos", PESTANAS.presupuesto)).toBe("pagos");
+    // La ficha de una invitación cuelga de la lista, no de «Sin contestar».
+    expect(
+      pestanaActiva(
+        "/panel/invitados/00000000-0000-4000-8000-000000000000",
+        PESTANAS.invitados,
+      ),
+    ).toBe("invitaciones");
+    expect(pestanaActiva("/panel/invitados/pendientes", PESTANAS.invitados)).toBe(
+      "sinContestar",
+    );
+  });
+
+  it("una ruta de otro módulo no marca ninguna", () => {
+    expect(pestanaActiva("/panel/mesas", PESTANAS.presupuesto)).toBeNull();
+    // Ni un prefijo de texto que no es una subruta: «presupuestos» no es «presupuesto/».
+    expect(pestanaActiva("/panel/presupuestos", PESTANAS.presupuesto)).toBeNull();
   });
 });

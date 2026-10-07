@@ -337,7 +337,13 @@ test.describe("El día de la boda", () => {
 
     await entrar(page);
     await page.goto(RUTA_DIA);
-    await page.getByRole("link", { name: copy.panel.dia.guion.escribir }).click();
+    // Escribir el guion es su pestaña, junto a las demás pantallas del día.
+    await page
+      .getByRole("navigation", {
+        name: copy.panel.pestanas.de.replace("{modulo}", copy.panel.modulos.dia),
+      })
+      .getByRole("link", { name: copy.panel.pestanas.guion })
+      .click();
     await expect(page).toHaveURL(new RegExp(RUTA_GUION_DIA));
 
     const alta = page
@@ -1119,7 +1125,12 @@ test.describe("El día de la boda", () => {
       )
       .toBe("{}");
 
-    await page.getByRole("link", { name: copy.panel.dia.atajos.agenda }).click();
+    // Por la baldosa grande, que es como se va ese día: la pestaña de arriba
+    // se llama igual y lleva al mismo sitio.
+    await page
+      .getByRole("navigation", { name: copy.panel.dia.titulo })
+      .getByRole("link", { name: copy.panel.dia.atajos.agenda })
+      .click();
     await expect(page).toHaveURL(new RegExp(RUTA_AGENDA_DIA));
     await page.goBack();
     await expect(page).toHaveURL(new RegExp(`${RUTA_DIA}$`));

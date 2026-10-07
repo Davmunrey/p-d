@@ -6,14 +6,7 @@ import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import {
-  LARGOS_DE_CAMPO,
-  RUTA_ACCESO,
-  RUTA_GASTOS,
-  RUTA_GRAFICAS,
-  RUTA_PAGOS,
-  RUTA_PRESUPUESTO,
-} from "@/config/constants";
+import { LARGOS_DE_CAMPO, RUTA_ACCESO, RUTA_PRESUPUESTO } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   loQueVaCostando,
@@ -122,13 +115,6 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
       <header className="max-w-texto">
         <Titulo2 como="h1">{t("panel.presupuesto.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.presupuesto.descripcion")}</Cuerpo>
-        <div className="mt-pila flex flex-wrap gap-interno">
-          <EnlaceSuave href={RUTA_GASTOS}>{t("panel.presupuesto.verGastos")}</EnlaceSuave>
-          <EnlaceSuave href={RUTA_PAGOS}>{t("panel.presupuesto.verPagos")}</EnlaceSuave>
-          <EnlaceSuave href={RUTA_GRAFICAS}>
-            {t("panel.presupuesto.graficas.enlace")}
-          </EnlaceSuave>
-        </div>
       </header>
 
       {enUnaCategoria || enElAlta ? null : aviso}

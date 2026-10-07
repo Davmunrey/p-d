@@ -8,13 +8,7 @@ import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import {
-  LARGOS_DE_CAMPO,
-  RUTA_ACCESO,
-  RUTA_GASTOS,
-  RUTA_PAGOS,
-  RUTA_PRESUPUESTO,
-} from "@/config/constants";
+import { LARGOS_DE_CAMPO, RUTA_ACCESO, RUTA_GASTOS, RUTA_PAGOS } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import {
   loQueVaCostando,
@@ -137,9 +131,6 @@ export default async function PaginaGastos({ searchParams }: Parametros) {
       <header className="max-w-texto">
         <Titulo2 como="h1">{t("panel.presupuesto.gastos.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.presupuesto.gastos.descripcion")}</Cuerpo>
-        <EnlaceSuave href={RUTA_PRESUPUESTO} className="mt-pila">
-          {t("panel.presupuesto.gastos.volver")}
-        </EnlaceSuave>
       </header>
 
       {enUnGasto || enElAlta ? null : aviso}

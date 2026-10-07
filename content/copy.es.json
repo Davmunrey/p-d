@@ -449,6 +449,44 @@
       "dia": "Día de la boda",
       "contenido": "Contenido"
     },
+    "grupos": {
+      "quienViene": "Quién viene",
+      "preparativos": "Preparativos",
+      "web": "La web",
+      "dia": "El día"
+    },
+    "barra": {
+      "resumen": "Resumen",
+      "invitados": "Invitados",
+      "tareas": "Tareas",
+      "dia": "El día",
+      "mas": "Más"
+    },
+    "menu": {
+      "titulo": "Todas las secciones",
+      "cerrar": "Cerrar el menú",
+      "verLaWeb": "Ver la web",
+      "otraPestana": "(se abre en otra pestaña)"
+    },
+    "pestanas": {
+      "de": "Secciones de {modulo}",
+      "invitaciones": "Invitaciones",
+      "sinContestar": "Sin contestar",
+      "importar": "Importar",
+      "proveedores": "Proveedores",
+      "comparar": "Comparar",
+      "categorias": "Categorías",
+      "gastos": "Gastos",
+      "pagos": "Pagos",
+      "graficas": "Gráficas",
+      "secciones": "Secciones",
+      "ahora": "Ahora",
+      "guion": "Guion",
+      "agenda": "Teléfonos",
+      "buscar": "Buscar",
+      "recuento": "Recuento",
+      "exportar": "En papel"
+    },
     "menus": {
       "estandar": "Sin preferencia",
       "vegetariano": "Vegetariano",
@@ -893,8 +931,6 @@
     "importar": {
       "titulo": "Importar invitados",
       "descripcion": "Subid la hoja exportada a CSV. Antes de dar de alta a nadie se enseña qué va a entrar, y si hay una fila mal no se importa ninguna.",
-      "enlaceDesdeLista": "Importar desde CSV",
-      "volver": "Volver a las invitaciones",
       "fichero": "Fichero CSV",
       "ficheroAyuda": "Exportado a CSV desde Excel, Numbers o Google Sheets («Guardar como» o «Descargar» → CSV). Da igual el separador y da igual la codificación.",
       "analizar": "Ver qué se va a importar",
@@ -946,7 +982,6 @@
     "pendientes": {
       "titulo": "Quién no ha contestado",
       "descripcion": "Las invitaciones sin una sola respuesta, empezando por las que llevan más tiempo esperando. Se recuerda de una en una por WhatsApp, como se mandaron.",
-      "enlaceDesdeLista": "Ver quién no ha contestado",
       "volver": "Volver a las invitaciones",
       "vacio": "Han contestado todos. No queda nadie a quien recordarle nada.",
       "personasCuenta": "{personas} personas",
@@ -1113,7 +1148,11 @@
       "comparadorPie": "Los importes con IVA son un cálculo a partir de lo presupuestado, no una cifra pactada.",
       "comparadorVacio": "En esta categoría todavía no hay a quién comparar.",
       "comparadorSinCategoriaTitulo": "Esa categoría no está",
-      "comparadorSinCategoria": "La comparativa se abre sobre una categoría concreta, y ésta ya no existe. Volved a la lista y entrad desde la categoría que queráis comparar.",
+      "comparadorSinCategoria": "La comparativa que buscáis era de una categoría que ya no existe. Elegid otra de la lista.",
+      "comparadorElegirTitulo": "Comparar presupuestos",
+      "comparadorElegirAyuda": "Elegid una categoría: la tabla pone a sus candidatos uno al lado de otro, con el precio en la misma unidad.",
+      "comparadorNadaQueComparar": "Todavía no hay ninguna categoría con dos candidatos. Cuando apuntéis el segundo, aparecerá aquí.",
+      "comparadorCandidatos": "{cuantos} candidatos",
       "sinIva": "Sin IVA",
       "conIva": "Con IVA ({iva} %)",
       "valoracionDe": "{nota} de {maximo}",
@@ -1242,13 +1281,10 @@
       "errorNoExiste": "Esa categoría ya no está.",
       "errorSinPermiso": "Vuestro perfil no puede hacer cambios aquí.",
       "errorGuardar": "No se ha podido guardar. Probad otra vez.",
-      "verGastos": "Ver los gastos, uno a uno",
       "verPagos": "Ver el calendario de pagos",
       "pagos": {
         "titulo": "Pagos y vencimientos",
         "descripcion": "Los proveedores de boda cobran a plazos: la señal, un pago intermedio y el resto la semana antes. Lo que se olvida no es el importe, es la fecha.",
-        "volver": "Volver al presupuesto",
-        "verGastos": "Ver los gastos",
         "vacio": "Todavía no hay ningún pago apuntado.",
         "sinGastos": "Antes de apuntar un pago hace falta un gasto al que colgarlo.",
         "totalPagado": "Ya pagado",
@@ -1323,7 +1359,6 @@
       "gastos": {
         "titulo": "Los gastos",
         "descripcion": "Cada cosa que se paga, dentro de su categoría. Lo estimado es lo que calculáis; lo acordado, lo que ya está cerrado con el proveedor.",
-        "volver": "Volver al presupuesto",
         "vacio": "Todavía no hay ningún gasto apuntado.",
         "sinGastos": "Sin gastos apuntados.",
         "sinCategorias": "Antes de apuntar un gasto hace falta una categoría en la que meterlo.",
@@ -1376,8 +1411,6 @@
       "graficas": {
         "titulo": "Cómo va el dinero",
         "entradilla": "El presupuesto visto de lejos: en qué se va, cuánto llevamos gastado y dónde nos hemos pasado.",
-        "enlace": "Ver las gráficas",
-        "volver": "Volver al presupuesto",
         "vacio": "Todavía no hay nada que dibujar. En cuanto haya categorías con importe y algún pago hecho, aquí aparecen las gráficas.",
         "repartoTitulo": "En qué se va el dinero",
         "repartoEntradilla": "Lo que va costando cada categoría —lo acordado donde ya se cerró, lo estimado donde todavía no—, de lo que más se lleva a lo que menos.",
@@ -1510,7 +1543,6 @@
       "listaTitulo": "Secciones de la web, en su orden",
       "listas": {
         "comun": {
-          "volver": "Volver al contenido",
           "vacia": "Todavía no hay nada aquí.",
           "enLaWeb": "En la web",
           "publicada": "Publicada",
@@ -1788,7 +1820,6 @@
     "dia": {
       "titulo": "El día de la boda",
       "entradilla": "Todo lo que hace falta el mismo día: qué toca ahora, a quién llamar y quién se sienta dónde.",
-      "volver": "Volver al día de la boda",
       "atajos": {
         "agenda": "Teléfonos",
         "buscar": "Buscar a alguien",
@@ -1810,13 +1841,11 @@
         "reintentar": "Mandar ahora",
         "guardando": "Guardando…",
         "sinPermiso": "No se pudo guardar: esta cuenta sólo puede mirar.",
-        "escribir": "Escribir el guion",
         "noExiste": "Un punto que habíais marcado ya no está en el guion: alguien lo ha quitado. Lo demás se ha guardado."
       },
       "escribir": {
         "titulo": "Escribir el guion",
         "entradilla": "Punto a punto y con calma, antes de la boda. El día se marca desde «El día de la boda», con un toque por punto.",
-        "volver": "Volver al día de la boda",
         "soloMirar": "Esta cuenta sólo puede mirar el guion. Para escribirlo hace falta un perfil de editor.",
         "nuevoTitulo": "Añadir un punto",
         "campoHora": "Hora",

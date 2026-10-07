@@ -451,6 +451,19 @@
   animation: subir var(--transicion-cinematica) both;
 }
 
+/*
+ * LA HOJA DEL MENÚ DEL PANEL SUBE UN POCO DESDE ABAJO, que es donde está el
+ * botón que la abre, y el velo de detrás aparece a la vez. Corta: es
+ * navegación, y quien la abre ya sabe a dónde quiere ir.
+ */
+.hoja-menu[open] {
+  animation: subir var(--transicion-hoja) both;
+}
+
+.hoja-menu[open]::backdrop {
+  animation: aparecer var(--transicion-hoja) both;
+}
+
 .animacion-bajar {
   animation: bajar var(--transicion-aparicion) both;
 }
@@ -777,7 +790,9 @@
   .animacion-derecha-al-ver,
   .animacion-trazar-vertical-al-ver,
   .animacion-pop-al-ver,
-  .animacion-barrido-al-ver {
+  .animacion-barrido-al-ver,
+  .hoja-menu[open],
+  .hoja-menu[open]::backdrop {
     animation: aparecer var(--duration-instant) var(--ease-salida) both;
     animation-timeline: auto;
   }

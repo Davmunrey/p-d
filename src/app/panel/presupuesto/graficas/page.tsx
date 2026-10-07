@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { TablaDesplazable } from "@/components/ui/tabla-desplazable";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
-import { IDIOMA, RUTA_ACCESO, RUTA_PRESUPUESTO } from "@/config/constants";
+import { IDIOMA, RUTA_ACCESO } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
 import { obtenerPagos } from "@/lib/bbdd/pagos";
 import {
@@ -96,12 +95,7 @@ export default async function PaginaGraficas() {
   return (
     <>
       <div className="max-w-texto">
-        <EnlaceSuave href={RUTA_PRESUPUESTO} discreto>
-          {t("panel.presupuesto.graficas.volver")}
-        </EnlaceSuave>
-        <Titulo2 como="h1" className="mt-pila">
-          {t("panel.presupuesto.graficas.titulo")}
-        </Titulo2>
+        <Titulo2 como="h1">{t("panel.presupuesto.graficas.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.presupuesto.graficas.entradilla")}</Cuerpo>
       </div>
 

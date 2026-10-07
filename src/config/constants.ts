@@ -424,6 +424,9 @@ export const MAXIMO_FILAS_IMPORTACION = 500;
 /** La lista de quien no ha contestado. La escriben el panel y su test. */
 export const RUTA_PENDIENTES = "/panel/invitados/pendientes";
 
+/** El alta de invitados desde una hoja de cálculo (BODA-53). */
+export const RUTA_IMPORTAR = "/panel/invitados/importar";
+
 /**
  * Los gastos, uno a uno, dentro del presupuesto.
  *

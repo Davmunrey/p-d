@@ -100,7 +100,12 @@ test.describe("Quién no ha contestado", () => {
 
   test("se llega desde la lista de invitaciones", async ({ page }) => {
     await page.goto(RUTA_INVITADOS);
-    await page.getByRole("link", { name: copy.panel.pendientes.enlaceDesdeLista }).click();
+    await page
+      .getByRole("navigation", {
+        name: copy.panel.pestanas.de.replace("{modulo}", copy.panel.modulos.invitados),
+      })
+      .getByRole("link", { name: copy.panel.pestanas.sinContestar })
+      .click();
     await expect(page).toHaveURL(new RegExp(RUTA_PENDIENTES));
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       copy.panel.pendientes.titulo,

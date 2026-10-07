@@ -11,9 +11,7 @@ import {
   LARGOS_DE_CAMPO,
   IDIOMA,
   RUTA_ACCESO,
-  RUTA_GASTOS,
   RUTA_PAGOS,
-  RUTA_PRESUPUESTO,
   ZONA_HORARIA,
 } from "@/config/constants";
 import { obtenerMonedaBoda } from "@/lib/bbdd/ajustes";
@@ -153,10 +151,6 @@ export default async function PaginaPagos({ searchParams }: Parametros) {
       <header className="max-w-texto">
         <Titulo2 como="h1">{t("panel.presupuesto.pagos.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.presupuesto.pagos.descripcion")}</Cuerpo>
-        <div className="mt-pila flex flex-wrap gap-interno">
-          <Enlace href={RUTA_PRESUPUESTO}>{t("panel.presupuesto.pagos.volver")}</Enlace>
-          <Enlace href={RUTA_GASTOS}>{t("panel.presupuesto.pagos.verGastos")}</Enlace>
-        </div>
       </header>
 
       {enUnPago || enElAlta ? null : aviso}

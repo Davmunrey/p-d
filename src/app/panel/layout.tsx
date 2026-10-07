@@ -3,13 +3,10 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { NavegacionPanel } from "@/components/panel/navegacion-panel";
-import { BotonEnvio } from "@/components/ui/boton-envio";
 import { ID_CONTENIDO, RUTA_ACCESO } from "@/config/constants";
 import { nombresDeLaBoda } from "@/lib/bbdd/landing";
 import { accesoActual } from "@/lib/sesion";
 import { t } from "@/lib/copy";
-
-import { cerrarSesion } from "../acceso/acciones";
 
 /**
  * EL MARCO DEL PANEL
@@ -55,7 +52,10 @@ export default async function LayoutPanel({ children }: { children: ReactNode })
         {t("panel.saltarAlContenido")}
       </a>
 
-      <NavegacionPanel marca={nombres ?? t("meta.titulo")} />
+      <NavegacionPanel
+        marca={nombres ?? t("meta.titulo")}
+        sesion={{ nombre: acceso.nombre ?? acceso.correo ?? "" }}
+      />
 
       {/*
         El hueco lo deja el contenido, no la navegación: está fija, así que no
@@ -66,19 +66,12 @@ export default async function LayoutPanel({ children }: { children: ReactNode })
         en una hoja impresa se repite en cada página: la lista de mesas que se
         da a la finca salía en dos tercios del ancho, con el menú del panel y
         «Cerrar sesión» en todas las hojas.
+
+        Y SIN FRANJA DE SESIÓN ENCIMA. «Has entrado como… · Cerrar sesión» vive
+        ahora al pie del menú (ver `navegacion-panel.tsx`): cada pantalla
+        empieza por su título, que en el móvil eran dos renglones más arriba.
       */}
       <div className="hueco-barra-inferior md:pb-0 md:pl-lateral print:pb-0 print:pl-0">
-        <header className="flex flex-wrap items-center justify-between gap-interno border-b border-borde px-interno py-interno-compacto print:hidden">
-          <p className="text-pequeno text-tinta-suave">
-            {t("panel.sesionDe")}{" "}
-            <strong className="font-normal text-tinta">{acceso.nombre ?? acceso.correo}</strong>
-          </p>
-
-          <form action={cerrarSesion}>
-            <BotonEnvio jerarquia="terciario">{t("acceso.cerrarSesion")}</BotonEnvio>
-          </form>
-        </header>
-
         <main id={ID_CONTENIDO} className="px-interno py-elemento">
           {children}
         </main>

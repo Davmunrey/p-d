@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo2 } from "@/components/ui/tipografia";
-import { RUTA_ACCESO, RUTA_DIA } from "@/config/constants";
+import { RUTA_ACCESO } from "@/config/constants";
 import { obtenerAgendaDelDia } from "@/lib/bbdd/dia";
 import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
@@ -39,12 +38,7 @@ export default async function PaginaAgendaDelDia() {
   return (
     <>
       <div className="max-w-texto">
-        <EnlaceSuave href={RUTA_DIA} discreto>
-          {t("panel.dia.volver")}
-        </EnlaceSuave>
-        <Titulo2 como="h1" className="mt-pila">
-          {t("panel.dia.agenda.titulo")}
-        </Titulo2>
+        <Titulo2 como="h1">{t("panel.dia.agenda.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.dia.agenda.entradilla")}</Cuerpo>
       </div>
 

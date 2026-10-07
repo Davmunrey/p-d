@@ -1,8 +1,22 @@
 import { expect, test } from "./utiles/origen-propio";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_ACCESO, RUTA_CUENTA, RUTA_PANEL } from "../../src/config/constants";
-import { MODULOS, MODULOS_ENTREGADOS } from "../../src/config/modulos";
+import {
+  RUTA_ACCESO,
+  RUTA_CUENTA,
+  RUTA_GASTOS,
+  RUTA_INVITADOS,
+  RUTA_PAGOS,
+  RUTA_PANEL,
+  RUTA_PRESUPUESTO,
+} from "../../src/config/constants";
+import {
+  GRUPOS_DE_MODULOS,
+  MODULOS,
+  MODULOS_EN_LA_BARRA,
+  MODULOS_ENTREGADOS,
+  modulosDe,
+} from "../../src/config/modulos";
 
 /**
  * BODA-42 · El esqueleto del panel
@@ -51,7 +65,7 @@ test.describe("Dentro del panel", () => {
     );
   });
 
-  test("el nombre que se guarda es el que aparece arriba", async ({ page }) => {
+  test("el nombre que se guarda es el que aparece en el menú", async ({ page }) => {
     // Escribe de verdad en `perfiles`: si esto pasa, la pantalla está cableada.
     const nombre = "(PRUEBA) Nombre cambiado";
 
@@ -62,7 +76,11 @@ test.describe("Dentro del panel", () => {
     await expect(page.getByRole("main").getByRole("status")).toHaveText(
       copy.panel.cuenta.guardado,
     );
-    await expect(page.getByRole("banner")).toContainText(nombre);
+    // «Has entrado como…» vive al pie del menú, no en una franja encima de
+    // cada pantalla.
+    await expect(
+      page.getByRole("navigation", { name: copy.panel.navegacion }).first(),
+    ).toContainText(nombre);
 
     // Y sigue ahí al recargar, que es lo que separa guardar de aparentarlo.
     await page.reload();
@@ -121,6 +139,29 @@ test.describe("Dentro del panel", () => {
         menu.getByRole("link", { name: copy.panel.modulos[modulo.clave] }),
       ).toHaveCount(0);
     }
+  });
+
+  /**
+   * CAMINO FELIZ · El lateral va en grupos, y cada grupo es una lista con su
+   * nombre: «Preparativos, lista, 4 elementos». Trece rótulos iguales en una
+   * columna se recorrían enteros cada vez.
+   */
+  test("el lateral agrupa los módulos por lo que contestan", async ({ page }) => {
+    const menu = page.getByRole("navigation", { name: copy.panel.navegacion }).first();
+
+    for (const grupo of GRUPOS_DE_MODULOS) {
+      const lista = menu.getByRole("list", { name: copy.panel.grupos[grupo] });
+      const esperados = modulosDe(grupo).map((modulo) => copy.panel.modulos[modulo.clave]);
+      await expect(lista.getByRole("link")).toHaveText(esperados);
+    }
+
+    // Y la web, con su nombre y avisando de que se abre aparte.
+    const web = menu.getByRole("link", { name: copy.panel.menu.verLaWeb });
+    await expect(web).toHaveAttribute("href", "/");
+    await expect(web).toHaveAttribute("target", "_blank");
+    await expect(web).toHaveAccessibleName(
+      new RegExp(copy.panel.menu.otraPestana.replace(/[()]/g, "\\$&")),
+    );
   });
 
   // --- El caso que de verdad importa -----------------------------------
@@ -186,30 +227,123 @@ test.describe("La navegación del panel en pantallas pequeñas", () => {
     await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
   }
 
-  test("en el móvil cada rótulo de la barra se lee entero, y el módulo actual está a la vista", async ({
+  /**
+   * CAMINO FELIZ · En el móvil, cuatro destinos fijos y «Más». La barra era
+   * una tira de trece rótulos que había que arrastrar para encontrar cada uno.
+   * Desde «Más» se llega a cualquier módulo, y la hoja se cierra al elegir.
+   */
+  test("en el móvil la barra lleva cuatro destinos y «Más» abre el menú entero", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await entrar(page);
-    const ultimo = MODULOS_ENTREGADOS.at(-1)!;
-    await page.goto(ultimo.ruta);
 
     const barra = page.getByRole("navigation", { name: copy.panel.navegacion }).last();
-    const enlaces = barra.getByRole("link");
-    const medidas = await enlaces.evaluateAll((todos) =>
-      todos.map((enlace) => ({
-        sobra: enlace.scrollWidth - enlace.clientWidth,
-        ancho: enlace.getBoundingClientRect().width,
+    const destinos = barra.getByRole("link");
+    await expect(destinos).toHaveText(
+      MODULOS_EN_LA_BARRA.map((clave) => copy.panel.barra[clave]),
+    );
+    const mas = barra.getByRole("button", { name: copy.panel.barra.mas });
+
+    // Ningún rótulo se sale de su hueco, y cada hueco se puede tocar.
+    const medidas = await barra.locator("a, button").evaluateAll((todos) =>
+      todos.map((destino) => ({
+        sobra: destino.scrollWidth - destino.clientWidth,
+        ancho: destino.getBoundingClientRect().width,
+        alto: destino.getBoundingClientRect().height,
       })),
     );
     for (const medida of medidas) {
-      // Ningún rótulo se sale de su enlace ni queda en una casilla mínima.
       expect(medida.sobra).toBeLessThanOrEqual(1);
       expect(medida.ancho).toBeGreaterThanOrEqual(44);
+      expect(medida.alto).toBeGreaterThanOrEqual(44);
     }
 
-    const actual = barra.locator('[aria-current="page"]');
-    await expect(actual).toBeInViewport();
+    await mas.click();
+    const hoja = page.getByRole("dialog", { name: copy.panel.menu.titulo });
+    await expect(hoja).toBeVisible();
+    await expect(mas).toHaveAttribute("aria-expanded", "true");
+
+    await hoja.getByRole("link", { name: copy.panel.modulos.presupuesto }).click();
+    await expect(page).toHaveURL(new RegExp(`${RUTA_PRESUPUESTO}$`));
+    await expect(hoja).toBeHidden();
+
+    // En un módulo sin hueco propio, la hoja dice dónde se está.
+    await mas.click();
+    await expect(
+      hoja.getByRole("link", { name: copy.panel.modulos.presupuesto }),
+    ).toHaveAttribute("aria-current", "page");
+  });
+
+  /**
+   * CASO DE ERROR · La hoja no atrapa a nadie: Escape la cierra y el foco
+   * vuelve a «Más», que es de donde salió. Y cerrar sesión, que ya no está
+   * encima de cada pantalla, está dentro.
+   */
+  test("en el móvil la hoja se cierra con Escape y lleva el cierre de sesión", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await entrar(page);
+
+    const mas = page
+      .getByRole("navigation", { name: copy.panel.navegacion })
+      .last()
+      .getByRole("button", { name: copy.panel.barra.mas });
+    await mas.click();
+    const hoja = page.getByRole("dialog", { name: copy.panel.menu.titulo });
+    await expect(hoja.getByRole("button", { name: copy.acceso.cerrarSesion })).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(hoja).toBeHidden();
+    await expect(mas).toBeFocused();
+    await expect(mas).toHaveAttribute("aria-expanded", "false");
+
+    // Y el botón de cerrar de la propia hoja también la cierra.
+    await mas.click();
+    await hoja.getByRole("button", { name: copy.panel.menu.cerrar }).click();
+    await expect(hoja).toBeHidden();
+  });
+
+  /**
+   * CASO DE ERROR · Abierta en una tableta en vertical y girada a horizontal,
+   * la hoja quedaba oculta pero seguía siendo modal: la página entera dejaba
+   * de responder. Al dejar de verse la barra, se cierra.
+   */
+  test("si la barra del móvil desaparece con la hoja abierta, la hoja se cierra", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await entrar(page);
+
+    await page
+      .getByRole("navigation", { name: copy.panel.navegacion })
+      .last()
+      .getByRole("button", { name: copy.panel.barra.mas })
+      .click();
+    const hoja = page.getByRole("dialog", { name: copy.panel.menu.titulo });
+    await expect(hoja).toBeVisible();
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    // Por el elemento y no por su papel: cerrada, ya no está en el árbol
+    // accesible y `getByRole` no la encontraría para preguntarle.
+    await expect
+      .poll(() =>
+        page
+          .locator("dialog")
+          .evaluateAll((dialogos) =>
+            dialogos.some((dialogo) => (dialogo as HTMLDialogElement).open),
+          ),
+      )
+      .toBe(false);
+
+    // Y el lateral responde: nada se ha quedado inerte detrás.
+    await page
+      .getByRole("navigation", { name: copy.panel.navegacion })
+      .first()
+      .getByRole("link", { name: copy.panel.modulos.tareas })
+      .click();
+    await expect(page).toHaveURL(/\/panel\/tareas$/);
   });
 
   test("en un portátil bajo, el lateral se desplaza y llega al último módulo", async ({
@@ -226,5 +360,85 @@ test.describe("La navegación del panel en pantallas pequeñas", () => {
     await expect(ultimo).toBeInViewport();
     await ultimo.click();
     await expect(page).toHaveURL(new RegExp(MODULOS_ENTREGADOS.at(-1)!.ruta));
+  });
+});
+
+/*
+  LAS PESTAÑAS DE CADA MÓDULO. Gastos, pagos y gráficas colgaban de tres
+  enlaces sueltos bajo la descripción del presupuesto, cada uno con su
+  «Volver»; ahora las hermanas se ven siempre, arriba, y la abierta se marca.
+*/
+test.describe("Las pestañas de cada módulo", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(RUTA_ACCESO);
+    await page.getByLabel(copy.acceso.correo).fill(CORREO_CON_ACCESO!);
+    await page.getByLabel(copy.acceso.contrasena).fill(CONTRASENA!);
+    await page.getByRole("button", { name: copy.acceso.entrar }).click();
+    await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
+  });
+
+  const pestanasDe = (page: import("@playwright/test").Page, modulo: string) =>
+    page.getByRole("navigation", {
+      name: copy.panel.pestanas.de.replace("{modulo}", modulo),
+    });
+
+  /** CAMINO FELIZ · Se pasa de una hermana a otra y la marca la sigue. */
+  test("las pestañas del presupuesto llevan a sus pantallas y marcan la abierta", async ({
+    page,
+  }) => {
+    await page.goto(RUTA_GASTOS);
+    const pestanas = pestanasDe(page, copy.panel.modulos.presupuesto);
+
+    await expect(pestanas.getByRole("link")).toHaveText([
+      copy.panel.pestanas.categorias,
+      copy.panel.pestanas.gastos,
+      copy.panel.pestanas.pagos,
+      copy.panel.pestanas.graficas,
+    ]);
+    await expect(
+      pestanas.getByRole("link", { name: copy.panel.pestanas.gastos }),
+    ).toHaveAttribute("aria-current", "page");
+
+    await pestanas.getByRole("link", { name: copy.panel.pestanas.pagos }).click();
+    await expect(page).toHaveURL(new RegExp(`${RUTA_PAGOS}$`));
+    await expect(
+      pestanas.getByRole("link", { name: copy.panel.pestanas.pagos }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      pestanas.getByRole("link", { name: copy.panel.pestanas.gastos }),
+    ).not.toHaveAttribute("aria-current", "page");
+  });
+
+  /**
+   * CASO DE ERROR · Una pantalla de dentro marca su pestaña madre, no la
+   * primera ni ninguna: la ficha de una invitación sigue en «Invitaciones».
+   */
+  test("la ficha de una invitación marca «Invitaciones» y no «Sin contestar»", async ({
+    page,
+  }) => {
+    await page.goto(RUTA_INVITADOS);
+    // La primera ficha de la lista: las pestañas también cuelgan de
+    // `/panel/invitados/`, así que se busca un enlace con identificador.
+    const fichas = await page
+      .locator(`main a[href^="${RUTA_INVITADOS}/"]`)
+      .evaluateAll((enlaces) =>
+        enlaces
+          .map((enlace) => enlace.getAttribute("href") ?? "")
+          .filter((href) => /\/[0-9a-f-]{36}$/.test(href)),
+      );
+    expect(fichas.length, "la semilla trae invitaciones").toBeGreaterThan(0);
+    await page.goto(fichas[0]);
+    await expect(page).toHaveURL(new RegExp(`${RUTA_INVITADOS}/[0-9a-f-]{36}`));
+
+    const pestanas = pestanasDe(page, copy.panel.modulos.invitados);
+    await expect(
+      pestanas.getByRole("link", { name: copy.panel.pestanas.invitaciones }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(pestanas.locator('[aria-current="page"]')).toHaveCount(1);
   });
 });

@@ -134,12 +134,10 @@ test.describe("Ajustes de la boda", () => {
     const nombres = `${nuevaNovia} ${copy.portada.conjuncion} ${nuevoNovio}`;
     await page.goto(RUTA_AJUSTES);
     await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", nombres);
-    // El lateral sólo se pinta en escritorio; en el móvil está, oculto.
+    // El lateral sólo se pinta en escritorio, y lleva los nombres arriba.
     await expect(
-      page
-        .getByRole("navigation", { name: copy.panel.navegacion, includeHidden: true })
-        .getByRole("link", { name: nombres, includeHidden: true }),
-    ).toHaveCount(1);
+      page.getByRole("navigation", { name: copy.panel.navegacion }).first(),
+    ).toContainText(nombres);
     const anonimo = await browser.newContext({ locale: "es-ES" });
     const puerta = await anonimo.newPage();
     await puerta.goto("/acceso");

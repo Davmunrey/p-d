@@ -124,7 +124,12 @@ test.describe("Importar invitados", () => {
 
   test("se llega desde la lista de invitaciones", async ({ page }) => {
     await page.goto(RUTA_INVITADOS);
-    await page.getByRole("link", { name: copy.panel.importar.enlaceDesdeLista }).click();
+    await page
+      .getByRole("navigation", {
+        name: copy.panel.pestanas.de.replace("{modulo}", copy.panel.modulos.invitados),
+      })
+      .getByRole("link", { name: copy.panel.pestanas.importar })
+      .click();
     await expect(page).toHaveURL(new RegExp(`${RUTA_INVITADOS}/importar`));
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       copy.panel.importar.titulo,

@@ -12,7 +12,6 @@ import {
   MAXIMO_ACOMPANANTES,
   RUTA_ACCESO,
   RUTA_INVITADOS,
-  RUTA_PENDIENTES,
   ZONA_HORARIA,
 } from "@/config/constants";
 import { obtenerGrupos } from "@/lib/bbdd/invitados";
@@ -96,25 +95,16 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
         <Cuerpo className="mt-pila">{t("panel.invitados.descripcion")}</Cuerpo>
       </header>
       {/*
-        LAS ACCIONES, ARRIBA. Estaban al final, debajo de la lista y de la
-        exportación: con cuarenta invitaciones, crear la siguiente o importar
-        la hoja exigía bajar seis mil píxeles para encontrar el botón.
+        LA ACCIÓN, ARRIBA. Estaba al final, debajo de la lista y de la
+        exportación: con cuarenta invitaciones, crear la siguiente exigía bajar
+        seis mil píxeles para encontrar el botón. Importar la hoja y ver quién
+        no ha contestado son pestañas del módulo, encima del título.
       */}
-      <div className="mt-elemento flex flex-wrap items-center gap-interno-compacto">
-        {puedeEditar ? (
-          <>
-            <BotonEnlace href="#nueva-invitacion">
-              {t("panel.invitados.accionNueva")}
-            </BotonEnlace>
-            <BotonEnlace href={`${RUTA_INVITADOS}/importar`} jerarquia="secundario">
-              {t("panel.importar.enlaceDesdeLista")}
-            </BotonEnlace>
-          </>
-        ) : null}
-        <BotonEnlace href={RUTA_PENDIENTES} jerarquia="terciario">
-          {t("panel.pendientes.enlaceDesdeLista")}
-        </BotonEnlace>
-      </div>
+      {puedeEditar ? (
+        <div className="mt-elemento">
+          <BotonEnlace href="#nueva-invitacion">{t("panel.invitados.accionNueva")}</BotonEnlace>
+        </div>
+      ) : null}
 
       <AvisoEstado estado={soloTexto(consulta.estado)} />
 
