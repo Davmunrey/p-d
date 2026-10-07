@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { AccionArriba } from "@/components/panel/accion-arriba";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
@@ -47,6 +48,9 @@ interface Parametros {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
+/** El alta de un punto, al final: el botón de debajo del título salta aquí. */
+const ANCLA_NUEVO_PUNTO = "nuevo-punto";
+
 const soloTexto = (valor: string | string[] | undefined) =>
   typeof valor === "string" ? valor : "";
 
@@ -74,6 +78,12 @@ export default async function PaginaEscribirGuion({ searchParams }: Parametros) 
         <Titulo2 como="h1">{t("panel.dia.escribir.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.dia.escribir.entradilla")}</Cuerpo>
       </header>
+
+      {puedeEditar ? (
+        <AccionArriba ancla={ANCLA_NUEVO_PUNTO}>
+          {t("panel.dia.escribir.nuevoTitulo")}
+        </AccionArriba>
+      ) : null}
 
       {aviso ? (
         <p
@@ -112,7 +122,7 @@ export default async function PaginaEscribirGuion({ searchParams }: Parametros) 
         )}
       </section>
       {puedeEditar ? (
-        <section className="max-w-texto">
+        <section id={ANCLA_NUEVO_PUNTO} className="max-w-texto scroll-mt-elemento">
           <Titulo3 como="h2">{t("panel.dia.escribir.nuevoTitulo")}</Titulo3>
           <form action={crearPunto} className="mt-elemento grid gap-interno">
             <CamposPunto orden={siguiente} />

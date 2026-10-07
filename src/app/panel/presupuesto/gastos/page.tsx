@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
+import { AccionArriba } from "@/components/panel/accion-arriba";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
@@ -132,6 +133,14 @@ export default async function PaginaGastos({ searchParams }: Parametros) {
         <Titulo2 como="h1">{t("panel.presupuesto.gastos.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.presupuesto.gastos.descripcion")}</Cuerpo>
       </header>
+
+      {/* Sin categorías no hay alta —se pide crear una antes—: el botón no
+          saltaría a ninguna parte. */}
+      {puedeEditar && categorias.length > 0 ? (
+        <AccionArriba ancla={ANCLA_ALTA_GASTO}>
+          {t("panel.presupuesto.gastos.nuevaTitulo")}
+        </AccionArriba>
+      ) : null}
 
       {enUnGasto || enElAlta ? null : aviso}
 

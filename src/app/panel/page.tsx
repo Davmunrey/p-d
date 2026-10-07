@@ -9,7 +9,9 @@ import {
   LIMITE_PROXIMOS_PORTADA,
   RUTA_INVITADOS,
   RUTA_PAGOS,
+  RUTA_PENDIENTES,
   RUTA_PRESUPUESTO,
+  RUTA_RECUENTO,
   RUTA_TAREAS,
   ZONA_HORARIA,
 } from "@/config/constants";
@@ -154,6 +156,11 @@ export default async function PaginaResumen() {
                 contestados(resumen) / resumen.invitados.personas,
               ),
             })}
+            enlace={
+              resumen.invitados.pendientes > 0
+                ? { href: RUTA_PENDIENTES, rotulo: t("panel.resumen.verPendientes") }
+                : { href: RUTA_INVITADOS, rotulo: t("panel.resumen.irAInvitados") }
+            }
           >
             <Cifra rotulo={t("panel.resumen.personas")} valor={resumen.invitados.personas} />
             <Cifra
@@ -224,11 +231,18 @@ const formatoPorcentaje = new Intl.NumberFormat(IDIOMA, {
 function Bloque({
   titulo,
   pie,
+  enlace,
   children,
 }: {
   titulo: string;
   /** Una frase bajo las cifras, para lo que no es una cifra suelta. */
   pie?: string;
+  /**
+   * A dónde se va desde estas cifras. El presupuesto y lo que vence llevaban
+   * a su pantalla; los invitados no: «39 pendientes» y ningún camino a ver
+   * quiénes son.
+   */
+  enlace?: { href: string; rotulo: string };
   children: React.ReactNode;
 }) {
   return (
@@ -241,6 +255,11 @@ function Bloque({
       */}
       <dl className="mt-pila grid grid-cols-2 gap-interno lg:grid-cols-4">{children}</dl>
       {pie ? <Cuerpo className="mt-pila text-pequeno text-tinta-suave">{pie}</Cuerpo> : null}
+      {enlace ? (
+        <EnlaceSuave href={enlace.href} className="mt-pila">
+          {enlace.rotulo}
+        </EnlaceSuave>
+      ) : null}
     </section>
   );
 }
@@ -317,6 +336,11 @@ function Menus({ menus }: { menus: ResumenBoda["menus"] }) {
           ))}
         </dl>
       )}
+      {/* Lo que se le dice al catering —con las correcciones de última hora—
+          está en el recuento del día, no aquí. */}
+      <EnlaceSuave href={RUTA_RECUENTO} className="mt-pila">
+        {t("panel.resumen.verRecuento")}
+      </EnlaceSuave>
     </section>
   );
 }

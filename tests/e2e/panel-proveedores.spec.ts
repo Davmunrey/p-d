@@ -908,6 +908,40 @@ test.describe("Proveedores: buscar, categorías y la ficha", () => {
   });
 
   /**
+   * LA FICHA VUELVE A SU CATEGORÍA, NO A LA CABECERA. Se llega a un proveedor
+   * desde la sección de su categoría, a miles de píxeles de arriba, y «Volver
+   * a proveedores» dejaba arriba del todo.
+   *
+   * CASO DE ERROR · la ficha de uno que no existe sigue ofreciendo la vuelta a
+   * la lista, sin categoría a la que volver.
+   */
+  test("la ficha de un proveedor vuelve a la sección de su categoría", async ({ page }) => {
+    const sello = Date.now();
+    const nombreCategoria = `${MARCA} Vuelta ${sello}`;
+    const categoriaId = await categoriaNueva(nombreCategoria);
+    const id = await proveedorEn(categoriaId, `${MARCA} Ficha ${sello}`);
+
+    await entrar(page);
+    await page.goto(`${RUTA_PROVEEDORES}/${id}`);
+    await page
+      .getByRole("link", {
+        name: copy.panel.proveedores.volverA.replace("{categoria}", nombreCategoria),
+        exact: true,
+      })
+      .click();
+
+    await expect(page).toHaveURL(new RegExp(`${RUTA_PROVEEDORES}#categoria-${categoriaId}$`));
+    await expect(
+      page.getByRole("heading", { name: nombreCategoria, exact: true }),
+    ).toBeInViewport();
+
+    await page.goto(`${RUTA_PROVEEDORES}/00000000-0000-4000-8000-000000000000`);
+    await expect(
+      page.getByRole("link", { name: copy.panel.proveedores.volver, exact: true }),
+    ).toHaveAttribute("href", RUTA_PROVEEDORES);
+  });
+
+  /**
    * #68 · UNA CATEGORÍA SE CORRIGE Y SE MUEVE. Antes no había ninguna acción
    * que la tocara después de crearla.
    */

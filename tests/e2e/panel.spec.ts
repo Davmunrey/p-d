@@ -4,11 +4,17 @@ import copy from "../../content/copy.es.json";
 import {
   RUTA_ACCESO,
   RUTA_CUENTA,
+  RUTA_DOCUMENTOS,
   RUTA_GASTOS,
+  RUTA_GUION_DIA,
   RUTA_INVITADOS,
+  RUTA_MESAS,
+  RUTA_MESAS_REPARTO,
   RUTA_PAGOS,
   RUTA_PANEL,
   RUTA_PRESUPUESTO,
+  RUTA_PROVEEDORES,
+  RUTA_TAREAS,
 } from "../../src/config/constants";
 import {
   GRUPOS_DE_MODULOS,
@@ -440,5 +446,123 @@ test.describe("Las pestañas de cada módulo", () => {
       pestanas.getByRole("link", { name: copy.panel.pestanas.invitaciones }),
     ).toHaveAttribute("aria-current", "page");
     await expect(pestanas.locator('[aria-current="page"]')).toHaveCount(1);
+  });
+});
+
+test.describe("La acción de crear, arriba", () => {
+  test.skip(
+    !CORREO_CON_ACCESO || !CONTRASENA,
+    "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
+  );
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(RUTA_ACCESO);
+    await page.getByLabel(copy.acceso.correo).fill(CORREO_CON_ACCESO!);
+    await page.getByLabel(copy.acceso.contrasena).fill(CONTRASENA!);
+    await page.getByRole("button", { name: copy.acceso.entrar }).click();
+    await expect(page).toHaveURL(new RegExp(RUTA_PANEL));
+  });
+
+  /** El botón de debajo del título y el título del alta a la que salta. */
+  const PANTALLAS = [
+    {
+      ruta: RUTA_INVITADOS,
+      accion: copy.panel.invitados.accionNueva,
+      alta: copy.panel.invitados.nuevaTitulo,
+    },
+    {
+      ruta: RUTA_PROVEEDORES,
+      accion: copy.panel.proveedores.nuevoTitulo,
+      alta: copy.panel.proveedores.nuevoTitulo,
+    },
+    {
+      ruta: RUTA_PRESUPUESTO,
+      accion: copy.panel.presupuesto.nuevaTitulo,
+      alta: copy.panel.presupuesto.nuevaTitulo,
+    },
+    {
+      ruta: RUTA_GASTOS,
+      accion: copy.panel.presupuesto.gastos.nuevaTitulo,
+      alta: copy.panel.presupuesto.gastos.nuevaTitulo,
+    },
+    {
+      ruta: RUTA_PAGOS,
+      accion: copy.panel.presupuesto.pagos.nuevaTitulo,
+      alta: copy.panel.presupuesto.pagos.nuevaTitulo,
+    },
+    {
+      ruta: RUTA_TAREAS,
+      accion: copy.panel.tareas.nuevaTitulo,
+      alta: copy.panel.tareas.nuevaTitulo,
+    },
+    {
+      ruta: RUTA_DOCUMENTOS,
+      accion: copy.panel.documentos.nuevoTitulo,
+      alta: copy.panel.documentos.nuevoTitulo,
+    },
+    {
+      ruta: RUTA_GUION_DIA,
+      accion: copy.panel.dia.escribir.nuevoTitulo,
+      alta: copy.panel.dia.escribir.nuevoTitulo,
+    },
+  ];
+
+  /**
+   * CAMINO FELIZ · El alta de cada pantalla estaba al final, debajo de todo lo
+   * que ya hay —la de proveedores, a cuatro mil quinientos píxeles—. El botón
+   * de debajo del título salta a ella y la deja a la vista.
+   */
+  test("el botón de debajo del título lleva al alta de cada pantalla", async ({ page }) => {
+    for (const { ruta, accion, alta } of PANTALLAS) {
+      await page.goto(ruta);
+      const boton = page.getByRole("main").getByRole("link", { name: accion, exact: true });
+      await expect(boton, `${ruta} lleva su acción arriba`).toBeVisible();
+      await expect(boton, `${ruta}: la acción va antes que la lista`).toBeInViewport();
+
+      await boton.click();
+      await expect(
+        page.getByRole("heading", { name: alta, exact: true }),
+        `${ruta}: el alta queda a la vista`,
+      ).toBeInViewport();
+    }
+  });
+
+  /**
+   * CASO DE ERROR · Un botón que salta a un alta que no está en la pantalla
+   * no hace nada, y parece roto. Pasa en cuanto la pantalla esconde el alta
+   * —sin categorías no se apunta un gasto; sin gastos, un pago— o la lista
+   * se filtra o cambia de vista. En cada variante, si hay botón, su destino
+   * existe.
+   */
+  test("ningún botón de arriba salta a un alta que no está", async ({ page }) => {
+    // Quince pantallas enteras, cada una `force-dynamic`: no caben en el plazo
+    // de una.
+    test.slow();
+    const variantes = [
+      ...PANTALLAS.map(({ ruta }) => ruta),
+      `${RUTA_TAREAS}?vista=tablero`,
+      `${RUTA_PROVEEDORES}?buscar=ninguno-${Date.now()}`,
+      `${RUTA_INVITADOS}?buscar=ninguno-${Date.now()}`,
+      `${RUTA_GASTOS}?categoria=no-existe`,
+      // Las mesas viven de anclas: el índice de las bolsas y «Ir a una mesa».
+      RUTA_MESAS,
+      RUTA_MESAS_REPARTO,
+    ];
+
+    for (const ruta of variantes) {
+      await page.goto(ruta);
+      const destinos = await page
+        .getByRole("main")
+        .locator("a[href^='#']")
+        .evaluateAll((enlaces) =>
+          enlaces
+            .map((enlace) => enlace.getAttribute("href")!.slice(1))
+            .filter((id) => id.length > 0)
+            .map((id) => ({ id, existe: document.getElementById(id) !== null })),
+        );
+      for (const { id, existe } of destinos) {
+        expect(existe, `${ruta} salta a #${id}, que no está en la pantalla`).toBe(true);
+      }
+    }
   });
 });

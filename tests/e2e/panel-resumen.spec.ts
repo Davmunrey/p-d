@@ -2,7 +2,12 @@ import { expect, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_ACCESO, RUTA_PANEL } from "../../src/config/constants";
+import {
+  RUTA_ACCESO,
+  RUTA_PANEL,
+  RUTA_PENDIENTES,
+  RUTA_RECUENTO,
+} from "../../src/config/constants";
 import { formateadorDeImporte } from "../../src/lib/importe";
 
 /**
@@ -91,7 +96,48 @@ test.describe("La portada del panel", () => {
         )
       `;
       await sql`delete from public.categorias_presupuesto where nombre like ${`${MARCA}%`}`;
+      // `on delete cascade` se lleva a sus invitados.
+      await sql`delete from public.grupos_invitacion where nombre like ${`${MARCA}%`}`;
     });
+  });
+
+  /**
+   * LAS CIFRAS LLEVAN A DONDE SE ACTÚA. «Pendientes: 39» no llevaba a ninguna
+   * parte, y la pregunta siguiente es siempre «¿quiénes?». Mientras quede
+   * alguien sin contestar, el bloque lleva a «Sin contestar»; la cocina, al
+   * recuento del día.
+   *
+   * CASO DE ERROR · la cifra de pendientes es la de la base, y el enlace está
+   * mientras sea mayor que cero: con alguien sin contestar sembrado por SQL, no
+   * puede faltar.
+   */
+  test("los invitados llevan a quién no ha contestado, y la cocina al recuento", async ({
+    page,
+  }) => {
+    await conBase(async (sql) => {
+      const [grupo] = await sql<{ id: string }[]>`
+        insert into public.grupos_invitacion (nombre, huella_token)
+        values (${`${MARCA} Sin contestar ${Date.now()}`}, public.huella_token(${`tok-resumen-${Date.now()}`}))
+        returning id
+      `;
+      await sql`
+        insert into public.invitados (grupo_id, nombre, apellidos)
+        values (${grupo.id}, ${`${MARCA} Pendiente`}, '(DES)')
+      `;
+    });
+
+    await entrar(page);
+    await page.goto(RUTA_PANEL);
+    const invitados = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: copy.panel.resumen.bloqueInvitados }) });
+    await expect(cifra(page, copy.panel.resumen.pendientes)).not.toHaveText("0");
+    await invitados.getByRole("link", { name: copy.panel.resumen.verPendientes }).click();
+    await expect(page).toHaveURL(new RegExp(`${RUTA_PENDIENTES}$`));
+
+    await page.goto(RUTA_PANEL);
+    await page.getByRole("link", { name: copy.panel.resumen.verRecuento }).click();
+    await expect(page).toHaveURL(new RegExp(`${RUTA_RECUENTO}$`));
   });
 
   /**

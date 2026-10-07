@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AccionArriba } from "@/components/panel/accion-arriba";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
@@ -129,16 +131,45 @@ export default async function PaginaTareas({ searchParams }: Parametros) {
       <header className="max-w-texto">
         <Titulo2 como="h1">{t("panel.tareas.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.tareas.descripcion")}</Cuerpo>
-        <div className="mt-pila flex flex-wrap gap-interno">
-          {vista === VISTA_TABLERO ? (
-            <EnlaceSuave href={RUTA_TAREAS}>{t("panel.tareas.verLista")}</EnlaceSuave>
-          ) : (
-            <EnlaceSuave href={`${RUTA_TAREAS}?vista=${VISTA_TABLERO}`}>
-              {t("panel.tareas.verTablero")}
-            </EnlaceSuave>
-          )}
-        </div>
+        {/*
+          LAS DOS VISTAS, Y CUÁL ESTÁ ABIERTA. Era un enlace suelto —«Ver el
+          tablero»— que decía adónde se podía ir, pero no dónde se estaba.
+        */}
+        <nav aria-label={t("panel.tareas.vistas")} className="mt-pila print:hidden">
+          <ul className="inline-flex gap-linea rounded-boton border border-borde p-linea">
+            {[
+              { clave: "", href: RUTA_TAREAS, rotulo: t("panel.tareas.vistaLista") },
+              {
+                clave: VISTA_TABLERO,
+                href: `${RUTA_TAREAS}?vista=${VISTA_TABLERO}`,
+                rotulo: t("panel.tareas.vistaTablero"),
+              },
+            ].map((opcion) => {
+              const abierta = opcion.clave === vista;
+              return (
+                <li key={opcion.href} className="flex">
+                  <Link
+                    href={opcion.href}
+                    prefetch={false}
+                    aria-current={abierta ? "page" : undefined}
+                    className={`inline-flex min-h-control-compacto items-center rounded-boton px-interno text-pequeno transicion-color ${
+                      abierta
+                        ? "bg-marca-tenue text-tinta-marca"
+                        : "text-tinta-suave hover:text-tinta"
+                    }`}
+                  >
+                    {opcion.rotulo}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
       </header>
+
+      {puedeEditar ? (
+        <AccionArriba ancla={ANCLA_ALTA_TAREA}>{t("panel.tareas.nuevaTitulo")}</AccionArriba>
+      ) : null}
 
       {enUnaTarea || enElAlta || enLaPlantilla ? null : aviso}
 

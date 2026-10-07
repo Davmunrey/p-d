@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { BotonEnlace } from "@/components/ui/boton";
+import { AccionArriba } from "@/components/panel/accion-arriba";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
 import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
@@ -21,6 +21,9 @@ import { accesoActual } from "@/lib/sesion";
 
 import { crearInvitacion } from "./acciones";
 import { AvisoEstado } from "./aviso";
+
+/** El alta, al final de la lista: el botón de debajo del título salta aquí. */
+const ANCLA_NUEVA_INVITACION = "nueva-invitacion";
 
 /** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
 export const metadata: Metadata = { title: t("panel.invitados.titulo") };
@@ -101,9 +104,9 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
         no ha contestado son pestañas del módulo, encima del título.
       */}
       {puedeEditar ? (
-        <div className="mt-elemento">
-          <BotonEnlace href="#nueva-invitacion">{t("panel.invitados.accionNueva")}</BotonEnlace>
-        </div>
+        <AccionArriba ancla={ANCLA_NUEVA_INVITACION}>
+          {t("panel.invitados.accionNueva")}
+        </AccionArriba>
       ) : null}
 
       <AvisoEstado estado={soloTexto(consulta.estado)} />
@@ -287,7 +290,7 @@ export default async function PaginaInvitados({ searchParams }: Parametros) {
 
       {puedeEditar ? (
         <section
-          id="nueva-invitacion"
+          id={ANCLA_NUEVA_INVITACION}
           className="mt-bloque scroll-mt-bloque border-t border-borde pt-bloque"
         >
           <Titulo3 como="h2">{t("panel.invitados.nuevaTitulo")}</Titulo3>

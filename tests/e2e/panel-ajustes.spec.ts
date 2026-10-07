@@ -91,6 +91,35 @@ test.describe("Ajustes de la boda", () => {
     await expect(page.getByRole("heading", { name: copy.panel.ajustes.titulo })).toBeVisible();
   });
 
+  /**
+   * GUARDAR, SIEMPRE A MANO. Cinco grupos y un solo botón al final: en un
+   * móvil, cambiar los nombres de arriba obligaba a bajar tres mil píxeles
+   * para guardarlos. El botón se pega al pie mientras el formulario está a la
+   * vista, encima de la barra de navegación del móvil y no debajo.
+   *
+   * CASO DE ERROR · pegado no puede tapar nada: al llegar a la cuenta de los
+   * regalos, que es otro formulario, se queda en su sitio y el botón de esa
+   * cuenta se puede pulsar.
+   */
+  test("en el móvil, «Guardar» se alcanza desde arriba y no tapa nada", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(RUTA_AJUSTES);
+
+    await expect(page.getByLabel(copy.panel.ajustes.nombreNovia)).toBeInViewport();
+    const guardar = page.getByRole("button", { name: copy.panel.ajustes.guardar, exact: true });
+    await expect(guardar).toBeInViewport();
+    // `trial`: comprueba que el clic le llegaría a él —no a la barra del
+    // móvil que tiene debajo— sin enviar el formulario.
+    await guardar.click({ trial: true });
+
+    const regalos = page.getByRole("button", {
+      name: copy.panel.ajustes.guardarRegalos,
+      exact: true,
+    });
+    await regalos.scrollIntoViewIfNeeded();
+    await regalos.click({ trial: true });
+  });
+
   test("la pantalla llega con los datos que hay en la base", async ({ page }) => {
     // Vacío significaría que la consulta no trajo nada y el formulario
     // guardaría encima un hueco.

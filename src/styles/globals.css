@@ -776,6 +776,16 @@
 }
 
 /**
+ * Lo que se pega al pie de una pantalla del panel —el «Guardar» de los
+ * ajustes— se pega ENCIMA de la barra del móvil, no debajo de ella: mismo
+ * cálculo que `hueco-barra-inferior`, y por lo mismo. En escritorio no hay
+ * barra, y se pega al borde con `md:bottom-0`.
+ */
+@utility pegado-sobre-barra {
+  bottom: calc(var(--alto-barra-movil) + env(safe-area-inset-bottom));
+}
+
+/**
  * Superficie translúcida con desenfoque por detrás. Se escribe aquí y no como
  * `backdrop-blur-*` porque esas clases traen la escala por defecto de Tailwind,
  * que es hardcode entrando por la puerta de atrás.

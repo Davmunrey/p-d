@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
+import { AccionArriba } from "@/components/panel/accion-arriba";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
@@ -152,6 +153,14 @@ export default async function PaginaPagos({ searchParams }: Parametros) {
         <Titulo2 como="h1">{t("panel.presupuesto.pagos.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.presupuesto.pagos.descripcion")}</Cuerpo>
       </header>
+
+      {/* Sin gastos, en el sitio del alta va la frase que pide apuntar uno:
+          el botón no saltaría a ninguna parte. */}
+      {puedeEditar && gastos.length > 0 ? (
+        <AccionArriba ancla={ANCLA_ALTA_PAGO}>
+          {t("panel.presupuesto.pagos.nuevaTitulo")}
+        </AccionArriba>
+      ) : null}
 
       {enUnPago || enElAlta ? null : aviso}
 

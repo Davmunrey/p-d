@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AccionArriba } from "@/components/panel/accion-arriba";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { BotonEnvio } from "@/components/ui/boton-envio";
@@ -146,6 +147,10 @@ export default async function PaginaProveedores({ searchParams }: Parametros) {
         <Titulo2 como="h1">{t("panel.proveedores.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.proveedores.descripcion")}</Cuerpo>
       </header>
+
+      {puedeEditar ? (
+        <AccionArriba ancla={ANCLA_ALTA}>{t("panel.proveedores.nuevoTitulo")}</AccionArriba>
+      ) : null}
 
       <AvisoProveedores estado={soloTexto(consulta.estado)} />
 
@@ -656,12 +661,16 @@ function SinCerrar({
               CADA CHIP LLEVA A DONDE SE ARREGLA: la sin empezar, al alta con
               su categoría puesta; la que tiene candidatos, a su sección. Antes
               no llevaban a ninguna parte y había que bajar a buscarlo.
+
+              Con la ruta delante y no el ancla sola: con una búsqueda puesta,
+              la sección de esa categoría puede no estar pintada, y el chip no
+              hacía nada. Así quita el filtro de paso y llega.
             */}
             <Link
               href={
                 categoria.candidatos === 0 && puedeEditar
                   ? `${RUTA_PROVEEDORES}?categoria=${categoria.id}#${ANCLA_ALTA}`
-                  : `#${anclaDeCategoria(categoria.id)}`
+                  : `${RUTA_PROVEEDORES}#${anclaDeCategoria(categoria.id)}`
               }
               className="inline-flex min-h-control-compacto items-center underline decoration-borde-fuerte underline-offset-4"
             >

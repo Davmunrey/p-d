@@ -470,8 +470,15 @@ export default async function PaginaAjustes({
           </Ancla>
         </Grupo>
 
+        {/*
+          GUARDAR, SIEMPRE A MANO. Son cinco grupos y un solo botón al final:
+          en un móvil, cambiar los nombres de arriba obligaba a bajar tres mil
+          píxeles para guardarlos. Se pega al pie mientras el formulario está a
+          la vista —encima de la barra del móvil— y al acabar el formulario se
+          queda en su sitio, sin tapar la cuenta de los regalos.
+        */}
         {soloLectura ? null : (
-          <div>
+          <div className="velada sticky pegado-sobre-barra border-t border-borde py-interno md:bottom-0 print:hidden">
             <BotonEnvio>{t("panel.ajustes.guardar")}</BotonEnvio>
           </div>
         )}

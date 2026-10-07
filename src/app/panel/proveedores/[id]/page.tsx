@@ -53,6 +53,7 @@ import {
   subirDocumento,
 } from "../acciones";
 import { AvisoProveedores } from "../aviso";
+import { anclaDeCategoria } from "../estado";
 import { formateadorDeImporte, importeParaCampo } from "@/lib/importe";
 
 import {
@@ -165,8 +166,18 @@ export default async function PaginaProveedor({ params, searchParams }: Parametr
   return (
     <>
       <div className="max-w-texto">
-        <EnlaceSuave href={RUTA_PROVEEDORES} discreto>
-          {t("panel.proveedores.volver")}
+        {/*
+          A SU CATEGORÍA, NO A LA CABECERA DE LA LISTA. Se llega desde la
+          sección de su categoría, a miles de píxeles de arriba, y «volver»
+          dejaba arriba del todo: había que bajar otra vez a buscar el sitio.
+        */}
+        <EnlaceSuave
+          href={`${RUTA_PROVEEDORES}#${anclaDeCategoria(proveedor.categoriaId)}`}
+          discreto
+        >
+          {proveedor.categoriaNombre
+            ? t("panel.proveedores.volverA", { categoria: proveedor.categoriaNombre })
+            : t("panel.proveedores.volver")}
         </EnlaceSuave>
         <Titulo2 como="h1" className="mt-pila">
           {proveedor.nombre}

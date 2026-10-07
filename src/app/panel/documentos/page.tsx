@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { AccionArriba } from "@/components/panel/accion-arriba";
 import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
@@ -164,6 +165,12 @@ export default async function PaginaDocumentos({ searchParams }: Parametros) {
         <Titulo2 como="h1">{t("panel.documentos.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.documentos.descripcion")}</Cuerpo>
       </header>
+
+      {puedeEditar ? (
+        <AccionArriba ancla={ANCLA_ALTA_DOCUMENTO}>
+          {t("panel.documentos.nuevoTitulo")}
+        </AccionArriba>
+      ) : null}
 
       {enUnDocumento || enElAlta ? null : aviso}
 

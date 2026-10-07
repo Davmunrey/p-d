@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { AccionArriba } from "@/components/panel/accion-arriba";
 import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
@@ -116,6 +117,12 @@ export default async function PaginaPresupuesto({ searchParams }: Parametros) {
         <Titulo2 como="h1">{t("panel.presupuesto.titulo")}</Titulo2>
         <Cuerpo className="mt-pila">{t("panel.presupuesto.descripcion")}</Cuerpo>
       </header>
+
+      {puedeEditar ? (
+        <AccionArriba ancla={ANCLA_ALTA_CATEGORIA} jerarquia="secundario">
+          {t("panel.presupuesto.nuevaTitulo")}
+        </AccionArriba>
+      ) : null}
 
       {enUnaCategoria || enElAlta ? null : aviso}
 

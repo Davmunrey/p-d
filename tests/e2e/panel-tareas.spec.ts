@@ -351,6 +351,37 @@ test.describe("El módulo de tareas", () => {
     await expect(page.getByText(copy.panel.tareas.errorNoExiste)).toBeVisible();
   });
 
+  /**
+   * LAS DOS VISTAS DICEN CUÁL ESTÁ ABIERTA. Era un enlace suelto, «Ver el
+   * tablero», que no decía dónde se estaba.
+   *
+   * CASO DE ERROR · una vista que no existe en la dirección se lee como la
+   * lista, y la lista es la que sale marcada: nunca las dos, ni ninguna.
+   */
+  test("lista y tablero se cambian de un toque y marcan la abierta", async ({ page }) => {
+    await entrar(page);
+    await page.goto(RUTA_TAREAS);
+    const vistas = page.getByRole("navigation", { name: copy.panel.tareas.vistas });
+
+    await expect(
+      vistas.getByRole("link", { name: copy.panel.tareas.vistaLista, exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await vistas
+      .getByRole("link", { name: copy.panel.tareas.vistaTablero, exact: true })
+      .click();
+    await expect(page).toHaveURL(/vista=tablero/);
+    await expect(
+      vistas.getByRole("link", { name: copy.panel.tareas.vistaTablero, exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(vistas.locator('[aria-current="page"]')).toHaveCount(1);
+
+    await page.goto(`${RUTA_TAREAS}?vista=no-existe`);
+    await expect(
+      vistas.getByRole("link", { name: copy.panel.tareas.vistaLista, exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(vistas.locator('[aria-current="page"]')).toHaveCount(1);
+  });
+
   test("en el tablero, una tarjeta cambia de columna sólo con el teclado", async ({ page }) => {
     const titulo = `${MARCA} Mover con el teclado ${Date.now()}`;
     const tablero = `${RUTA_TAREAS}?vista=tablero`;
