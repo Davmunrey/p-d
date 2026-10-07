@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { RUTA_ACCESO, RUTA_MENSAJES } from "@/config/constants";
+import { RUTA_ACCESO, RUTA_MENSAJES, RUTA_PLAYLIST } from "@/config/constants";
 import { filasDelMismoMensaje } from "@/lib/bbdd/mensajes";
 import { accesoActual } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
@@ -12,7 +12,8 @@ import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
  * BODA-112/113 · Lo que se hace con lo que escriben los invitados
  *
  * Marcar un mensaje como leído y retirar una canción de la web. Las dos son
- * reversibles a propósito: ninguna borra nada.
+ * reversibles a propósito: ninguna borra nada. Cada una vuelve a su pestaña:
+ * los mensajes a la bandeja, las canciones a la playlist.
  *
  * QUIÉN PUEDE LO DECIDE LA BASE. `mensajes_leidos_editor_escribir` y
  * `canciones_sugeridas_gestion` exigen `puede_editar()`. Y como RLS no da error
@@ -46,7 +47,12 @@ type Estado =
 */
 const texto = (datos: FormData, campo: string) => String(datos.get(campo) ?? "").trim();
 
-function volver(estado: Estado, datos?: FormData): never {
+function volver(
+  estado: Estado,
+  datos?: FormData,
+  /** La pestaña a la que se vuelve: los mensajes, o la playlist si es una canción. */
+  ruta: string = RUTA_MENSAJES,
+): never {
   /*
     LA BÚSQUEDA Y EL FILTRO VUELVEN CON EL ACUSE. Sin ellos, repasar los
     destacados la semana antes de la boda obligaba a filtrar otra vez después
@@ -56,7 +62,7 @@ function volver(estado: Estado, datos?: FormData): never {
   const buscar = datos ? texto(datos, "buscar") : "";
   if (buscar) parametros.set("buscar", buscar);
   if (datos && texto(datos, "destacados") === "1") parametros.set("destacados", "1");
-  redirect(`${RUTA_MENSAJES}?${parametros}`);
+  redirect(`${ruta}?${parametros}`);
 }
 
 /**
@@ -179,6 +185,11 @@ export async function destacarMensaje(datos: FormData): Promise<void> {
   volver(destacadoAhora ? "sin-destacar" : "destacado", datos);
 }
 
+/** Las canciones viven en su propia pestaña, y a ella vuelve su aviso. */
+function volverALaPlaylist(estado: Estado): never {
+  volver(estado, undefined, RUTA_PLAYLIST);
+}
+
 /**
  * Retira una canción de la web, o la devuelve.
  *
@@ -191,7 +202,7 @@ export async function destacarMensaje(datos: FormData): Promise<void> {
 export async function moderarCancion(datos: FormData): Promise<void> {
   const cancionId = texto(datos, "cancion_id");
   const aprobar = texto(datos, "aprobar") === "1";
-  if (!cancionId) volver("error", datos);
+  if (!cancionId) volverALaPlaylist("error");
 
   /*
     EL ROL SE MIRA ANTES, por lo mismo que al marcar un mensaje: el cero de
@@ -202,7 +213,7 @@ export async function moderarCancion(datos: FormData): Promise<void> {
   */
   const acceso = await accesoActual();
   if (!acceso) redirect(RUTA_ACCESO);
-  if (acceso.rol === "lector") volver("sin-permiso", datos);
+  if (acceso.rol === "lector") volverALaPlaylist("sin-permiso");
 
   const supabase = await cliente();
   const { error, count } = await supabase
@@ -212,13 +223,13 @@ export async function moderarCancion(datos: FormData): Promise<void> {
 
   if (error) {
     console.error("No se pudo moderar la canción:", error);
-    volver("error", datos);
+    volverALaPlaylist("error");
   }
-  if (count === 0) volver("no-existe", datos);
+  if (count === 0) volverALaPlaylist("no-existe");
 
   // La landing la lee en cada visita, pero se revalida igual por si algún día
   // deja de ser dinámica: el olvido se paga con una canción retirada que sigue
   // viéndose.
   revalidatePath("/");
-  volver(aprobar ? "cancion-mostrada" : "cancion-ocultada", datos);
+  volverALaPlaylist(aprobar ? "cancion-mostrada" : "cancion-ocultada");
 }

@@ -21,6 +21,7 @@ import {
   RUTA_PAGOS,
   RUTA_PANEL,
   RUTA_PENDIENTES,
+  RUTA_PLAYLIST,
   RUTA_PRESUPUESTO,
   RUTA_PROVEEDORES,
   RUTA_RECUENTO,
@@ -151,6 +152,10 @@ export const PESTANAS = {
   proveedores: [
     { clave: "lista", ruta: RUTA_PROVEEDORES, rotulo: "panel.pestanas.proveedores" },
     { clave: "comparar", ruta: RUTA_COMPARADOR, rotulo: "panel.pestanas.comparar" },
+  ],
+  mensajes: [
+    { clave: "mensajes", ruta: RUTA_MENSAJES, rotulo: "panel.pestanas.mensajes" },
+    { clave: "playlist", ruta: RUTA_PLAYLIST, rotulo: "panel.pestanas.playlist" },
   ],
   mesas: [
     { clave: "porSentar", ruta: RUTA_MESAS, rotulo: "panel.pestanas.porSentar" },

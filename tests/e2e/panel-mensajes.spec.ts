@@ -7,6 +7,7 @@ import {
   RUTA_INVITADOS,
   RUTA_MENSAJES,
   RUTA_PANEL,
+  RUTA_PLAYLIST,
   RUTA_PLAYLIST_EXPORTAR,
   TOPE_CANCIONES_POR_GRUPO,
 } from "../../src/config/constants";
@@ -133,7 +134,7 @@ test.describe("Bandeja de mensajes", () => {
     request,
   }) => {
     await entrar(page);
-    await page.goto(RUTA_MENSAJES);
+    await page.goto(RUTA_PLAYLIST);
 
     const fila = page.locator("li").filter({ hasText: "(DES) Canción de prueba" }).first();
     const texto = (await fila.locator("span").first().textContent())!.trim();
@@ -144,6 +145,8 @@ test.describe("Bandeja de mensajes", () => {
 
     await fila.getByRole("button", { name: copy.panel.mensajes.ocultar }).click();
     await expect(page.getByText(copy.panel.mensajes.cancionOcultada)).toBeVisible();
+    // Y vuelve a su pestaña, no a la de los mensajes.
+    await expect(page).toHaveURL(new RegExp(`${RUTA_PLAYLIST}\\?estado=cancion-ocultada`));
 
     // Y ya no está. Se mira el HTML entregado: que el panel diga que la ha
     // ocultado no prueba que el invitado deje de verla.
@@ -189,7 +192,7 @@ test.describe("Bandeja de mensajes", () => {
     );
 
     await entrar(page);
-    await page.goto(RUTA_MENSAJES);
+    await page.goto(RUTA_PLAYLIST);
     const fila = page.locator("li").filter({ hasText: texto }).first();
     await expect(fila).toBeVisible();
 
@@ -373,7 +376,7 @@ test.describe("Bandeja de mensajes", () => {
 
       // Y en la pantalla, cuántas lleva el grupo: las diez, ocultas incluidas,
       // que es como las cuenta la base.
-      await page.goto(RUTA_MENSAJES);
+      await page.goto(RUTA_PLAYLIST);
       await page.getByText(copy.panel.mensajes.porGrupoTitulo).click();
       const fila = page.locator("details li").filter({ hasText: grupo });
       await expect(fila).toContainText(
@@ -406,6 +409,44 @@ test.describe("Bandeja de mensajes", () => {
     const menu = page.getByRole("navigation", { name: copy.panel.navegacion }).first();
     await menu.getByRole("link", { name: copy.panel.modulos.mensajes }).click();
     await expect(page).toHaveURL(new RegExp(RUTA_MENSAJES));
+  });
+
+  /**
+   * LA PLAYLIST ES SU PROPIA PESTAÑA. Vivía debajo de todos los mensajes, bajo
+   * un menú que dice «Mensajes», y quien buscaba la lista para el DJ no la
+   * encontraba.
+   *
+   * CASO DE ERROR · las canciones no se cuelan en la bandeja: ni su título ni
+   * la descarga para el DJ están en la pestaña de los mensajes.
+   */
+  test("mensajes y playlist son dos pestañas, y cada una marca la suya", async ({ page }) => {
+    await entrar(page);
+    await page.goto(RUTA_MENSAJES);
+    const pestanas = page.getByRole("navigation", {
+      name: copy.panel.pestanas.de.replace("{modulo}", copy.panel.modulos.mensajes),
+    });
+
+    await expect(
+      pestanas.getByRole("link", { name: copy.panel.pestanas.mensajes, exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      page.getByRole("heading", { name: copy.panel.mensajes.playlistTitulo, exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: copy.panel.mensajes.exportarPlaylist }),
+    ).toHaveCount(0);
+
+    await pestanas
+      .getByRole("link", { name: copy.panel.pestanas.playlist, exact: true })
+      .click();
+    await expect(page).toHaveURL(new RegExp(`${RUTA_PLAYLIST}$`));
+    await expect(
+      page.getByRole("heading", { level: 1, name: copy.panel.mensajes.playlistTitulo }),
+    ).toBeVisible();
+    await expect(
+      pestanas.getByRole("link", { name: copy.panel.pestanas.playlist, exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(pestanas.locator('[aria-current="page"]')).toHaveCount(1);
   });
 
   /** Un grupo con una persona y su respuesta con mensaje. Devuelve los ids. */

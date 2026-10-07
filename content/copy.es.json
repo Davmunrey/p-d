@@ -473,6 +473,8 @@
       "invitaciones": "Invitaciones",
       "sinContestar": "Sin contestar",
       "importar": "Importar",
+      "mensajes": "Mensajes",
+      "playlist": "Playlist",
       "porSentar": "Por sentar",
       "plano": "Plano",
       "mesaAMesa": "Mesa a mesa",
@@ -766,10 +768,10 @@
       "repartirYaMandada": "La familia ya tiene un enlace que funciona. Emitir uno nuevo lo anula: hacedlo sólo si lo han perdido o se ha filtrado."
     },
     "mensajes": {
-      "titulo": "Lo que escriben los invitados",
-      "descripcion": "Los mensajes que dejan al confirmar y las canciones que piden para la fiesta.",
-      "bloqueMensajes": "Mensajes",
-      "bloquePlaylist": "Playlist",
+      "titulo": "Mensajes",
+      "descripcion": "Lo que os escriben los invitados al confirmar. Lo destacado se queda a la vista aunque lo marquéis como leído.",
+      "playlistTitulo": "Playlist",
+      "playlistDescripcion": "Las canciones que piden los invitados al confirmar. Lo que retiréis deja de verse en la web y en la lista para el DJ, pero no se borra: se puede devolver.",
       "sinMensajes": "Todavía no os ha escrito nadie.",
       "sinCanciones": "Todavía no ha pedido nadie ninguna canción.",
       "buscar": "Buscar en los mensajes",

@@ -7,11 +7,13 @@ import {
   RUTA_DIA,
   RUTA_INVITADOS,
   URL_WHATSAPP,
+  RUTA_MENSAJES,
   RUTA_MESAS,
   RUTA_MESAS_PLANO,
   RUTA_MESAS_REPARTO,
   RUTA_PANEL,
   RUTA_PENDIENTES,
+  RUTA_PLAYLIST,
   RUTA_RSVP,
 } from "../../src/config/constants";
 
@@ -807,6 +809,8 @@ test.describe("Un estado inventado en la URL", () => {
     RUTA_MESAS_REPARTO,
     RUTA_PENDIENTES,
     RUTA_DIA,
+    RUTA_MENSAJES,
+    RUTA_PLAYLIST,
   ]) {
     test(`${ruta} aguanta «constructor», «__proto__» y «toString»`, async ({ page }) => {
       for (const trampa of ["constructor", "__proto__", "toString"]) {

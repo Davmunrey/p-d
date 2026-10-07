@@ -301,8 +301,11 @@ export const RUTA_AJUSTES = "/panel/ajustes";
 export const RUTA_INVITADOS = "/panel/invitados";
 export const RUTA_MENSAJES = "/panel/mensajes";
 
+/** Las canciones que piden los invitados: la segunda pestaña de los mensajes. */
+export const RUTA_PLAYLIST = "/panel/mensajes/playlist";
+
 /** La lista de canciones para el DJ, en texto: una por línea. */
-export const RUTA_PLAYLIST_EXPORTAR = "/panel/mensajes/playlist";
+export const RUTA_PLAYLIST_EXPORTAR = "/panel/mensajes/playlist/exportar";
 
 /**
  * Cuántas canciones puede pedir cada grupo. LO IMPONE LA BASE —`sugerir_cancion()`

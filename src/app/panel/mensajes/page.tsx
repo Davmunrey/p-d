@@ -5,42 +5,36 @@ import { redirect } from "next/navigation";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoTexto } from "@/components/ui/campo";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
-import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
+import { Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import {
   IDIOMA,
   RUTA_ACCESO,
   RUTA_INVITADOS,
   RUTA_MENSAJES,
-  RUTA_PLAYLIST_EXPORTAR,
-  TOPE_CANCIONES_POR_GRUPO,
   ZONA_HORARIA,
 } from "@/config/constants";
-import {
-  obtenerCancionesTodas,
-  obtenerMensajes,
-  type CancionSugerida,
-  type MensajeInvitado,
-} from "@/lib/bbdd/mensajes";
-import { t, type ClaveCopy } from "@/lib/copy";
+import { obtenerMensajes, type MensajeInvitado } from "@/lib/bbdd/mensajes";
+import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 import { normalizar } from "@/lib/texto";
-import { avisoDe } from "@/lib/avisos";
 
-import { destacarMensaje, marcarLeido, moderarCancion } from "./acciones";
+import { destacarMensaje, marcarLeido } from "./acciones";
+import { AVISOS_MENSAJES, AvisoMensajes } from "./aviso";
 
 /** El título de la pestaña: así el lector de pantalla anuncia a qué pantalla se llega. */
 export const metadata: Metadata = { title: t("panel.mensajes.titulo") };
 
 /**
- * BODA-112/113 · LO QUE ESCRIBEN LOS INVITADOS
+ * BODA-112 · LO QUE ESCRIBEN LOS INVITADOS
  *
- * Los mensajes que dejan al confirmar y las canciones que piden. Las dos cosas
- * llegan por el mismo formulario y hasta ahora se guardaban sin que nadie las
- * leyera — que es tanto como no haberlas pedido.
+ * Los mensajes que dejan al confirmar. Llegan por el mismo formulario que las
+ * canciones, y antes se guardaban sin que nadie los leyera — que es tanto como
+ * no haberlos pedido.
  *
- * VAN JUNTAS Y NO EN DOS PANTALLAS porque son la misma pregunta desde el punto
- * de vista de quien organiza: «¿me ha dicho alguien algo?». Separarlas
- * obligaría a mirar en dos sitios lo que llega de una vez.
+ * LAS CANCIONES SON LA OTRA PESTAÑA (`playlist/page.tsx`). Vivían aquí debajo,
+ * con la idea de que las dos cosas contestan «¿me ha dicho alguien algo?»;
+ * pero bajo un menú que dice «Mensajes», quien buscaba la lista para el DJ no
+ * la encontraba. Las pestañas las dejan a un toque la una de la otra.
  *
  * NO SE CACHEA: cambia cada vez que alguien confirma.
  */
@@ -53,19 +47,6 @@ const formatoFecha = new Intl.DateTimeFormat(IDIOMA, {
   minute: "2-digit",
   timeZone: ZONA_HORARIA,
 });
-
-const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
-  marcado: { clave: "panel.mensajes.marcado", error: false },
-  destacado: { clave: "panel.mensajes.avisoDestacado", error: false },
-  "sin-destacar": { clave: "panel.mensajes.avisoSinDestacar", error: false },
-  "cancion-ocultada": { clave: "panel.mensajes.cancionOcultada", error: false },
-  "cancion-mostrada": { clave: "panel.mensajes.cancionMostrada", error: false },
-  "no-existe": { clave: "panel.mensajes.errorNoExiste", error: true },
-  "mensaje-cambiado": { clave: "panel.mensajes.errorMensajeCambiado", error: true },
-  "mensaje-no-existe": { clave: "panel.mensajes.errorMensajeNoExiste", error: true },
-  "sin-permiso": { clave: "panel.mensajes.errorSinPermiso", error: true },
-  error: { clave: "panel.mensajes.errorGuardar", error: true },
-};
 
 interface Parametros {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -82,7 +63,7 @@ export default async function PaginaMensajes({ searchParams }: Parametros) {
   const busqueda = soloTexto(consulta.buscar);
   const soloDestacados = soloTexto(consulta.destacados) === "1";
 
-  const [mensajes, canciones] = await Promise.all([obtenerMensajes(), obtenerCancionesTodas()]);
+  const mensajes = await obtenerMensajes();
 
   const puedeEditar = acceso.rol !== "lector";
   const aguja = normalizar(busqueda);
@@ -106,7 +87,6 @@ export default async function PaginaMensajes({ searchParams }: Parametros) {
   if (busqueda) conDestacados.set("buscar", busqueda);
   if (!soloDestacados) conDestacados.set("destacados", "1");
   const alternarDestacados = `${RUTA_MENSAJES}${conDestacados.size ? `?${conDestacados}` : ""}`;
-  const aviso = avisoDe(AVISOS, soloTexto(consulta.estado));
 
   return (
     <div className="grid gap-bloque">
@@ -115,26 +95,14 @@ export default async function PaginaMensajes({ searchParams }: Parametros) {
         <Cuerpo className="mt-pila">{t("panel.mensajes.descripcion")}</Cuerpo>
       </header>
 
-      {aviso ? (
-        <p
-          role={aviso.error ? "alert" : "status"}
-          className={`rounded-campo p-interno text-pequeno ${
-            aviso.error ? "bg-error-fondo text-error-tinta" : "bg-exito-fondo text-exito-tinta"
-          }`}
-        >
-          {t(aviso.clave)}
-        </p>
-      ) : null}
+      <AvisoMensajes avisos={AVISOS_MENSAJES} estado={soloTexto(consulta.estado)} />
 
       <section>
-        <div className="flex flex-wrap items-baseline justify-between gap-interno">
-          <Titulo3 como="h2">{t("panel.mensajes.bloqueMensajes")}</Titulo3>
-          <Etiqueta>
-            {sinLeer > 0
-              ? t("panel.mensajes.sinLeer", { cuantos: sinLeer })
-              : t("panel.mensajes.todoLeido")}
-          </Etiqueta>
-        </div>
+        <Etiqueta>
+          {sinLeer > 0
+            ? t("panel.mensajes.sinLeer", { cuantos: sinLeer })
+            : t("panel.mensajes.todoLeido")}
+        </Etiqueta>
 
         {mensajes.length === 0 ? (
           <Cuerpo className="mt-pila">{t("panel.mensajes.sinMensajes")}</Cuerpo>
@@ -201,93 +169,7 @@ export default async function PaginaMensajes({ searchParams }: Parametros) {
           </>
         )}
       </section>
-
-      <section className="border-t border-borde pt-bloque">
-        <Titulo3 como="h2">{t("panel.mensajes.bloquePlaylist")}</Titulo3>
-
-        {canciones.length === 0 ? (
-          <Cuerpo className="mt-pila">{t("panel.mensajes.sinCanciones")}</Cuerpo>
-        ) : (
-          <>
-            {/*
-              LA LISTA PARA EL DJ, ARRIBA. Es lo que acaba saliendo de aquí, y
-              con cien canciones debajo no se encontraría. Lo ve también un
-              lector: exportar es leer.
-            */}
-            <form method="get" action={RUTA_PLAYLIST_EXPORTAR} className="mt-pila">
-              <BotonEnvio jerarquia="secundario">
-                {t("panel.mensajes.exportarPlaylist")}
-              </BotonEnvio>
-              <Cuerpo className="mt-linea text-pequeno text-tinta-suave">
-                {t("panel.mensajes.exportarPlaylistAyuda")}
-              </Cuerpo>
-            </form>
-
-            <PorGrupo canciones={canciones} />
-
-            <ul className="mt-elemento grid gap-interno-compacto">
-              {canciones.map((cancion) => (
-                <Cancion key={cancion.id} cancion={cancion} puedeEditar={puedeEditar} />
-              ))}
-            </ul>
-          </>
-        )}
-      </section>
     </div>
-  );
-}
-
-/**
- * CUÁNTAS HA PEDIDO CADA GRUPO, CONTRA EL TOPE. El tope lo pone la base; esto
- * sirve para ver quién ha llegado —y por qué una familia dice que ya no le deja
- * pedir más— y quién está llenando la lista. Cuentan también las ocultas,
- * porque la base las cuenta: ocultar no devuelve la plaza.
- *
- * Plegado: es una consulta de vez en cuando, no lo que se viene a mirar.
- */
-function PorGrupo({ canciones }: { canciones: CancionSugerida[] }) {
-  const porGrupo = new Map<string, { id: string; nombre: string; cuantas: number }>();
-  for (const cancion of canciones) {
-    if (!cancion.grupoId) continue;
-    const actual = porGrupo.get(cancion.grupoId);
-    porGrupo.set(cancion.grupoId, {
-      id: cancion.grupoId,
-      nombre: cancion.grupoNombre ?? t("panel.mensajes.cancionSinGrupo"),
-      cuantas: (actual?.cuantas ?? 0) + 1,
-    });
-  }
-  const grupos = [...porGrupo.values()].sort(
-    (a, b) => b.cuantas - a.cuantas || a.nombre.localeCompare(b.nombre, IDIOMA),
-  );
-  if (grupos.length === 0) return null;
-
-  return (
-    <details className="mt-elemento">
-      <summary className="inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca">
-        {t("panel.mensajes.porGrupoTitulo")}
-      </summary>
-      <ul className="mt-pila grid max-w-texto gap-linea">
-        {grupos.map((grupo) => (
-          <li
-            key={grupo.id}
-            className="flex flex-wrap items-baseline justify-between gap-interno-compacto text-pequeno"
-          >
-            <span className="text-tinta">{grupo.nombre}</span>
-            <span className="flex items-baseline gap-interno-compacto tabular-nums text-tinta-suave">
-              {t("panel.mensajes.porGrupoFila", {
-                cuantas: grupo.cuantas,
-                tope: TOPE_CANCIONES_POR_GRUPO,
-              })}
-              {grupo.cuantas >= TOPE_CANCIONES_POR_GRUPO ? (
-                <EtiquetaEstado variante="aviso-marcada" tamano="versalita-compacta">
-                  {t("panel.mensajes.enElTope")}
-                </EtiquetaEstado>
-              ) : null}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </details>
   );
 }
 
@@ -382,34 +264,6 @@ function Mensaje({
           </Link>
         ) : null}
       </div>
-    </li>
-  );
-}
-
-function Cancion({ cancion, puedeEditar }: { cancion: CancionSugerida; puedeEditar: boolean }) {
-  return (
-    <li className="flex flex-wrap items-center justify-between gap-interno rounded-campo border border-borde px-interno py-pila">
-      <div>
-        <span className={`text-cuerpo ${cancion.aprobada ? "text-tinta" : "text-tinta-suave"}`}>
-          {cancion.texto}
-        </span>
-        <Etiqueta className="mt-linea">
-          {cancion.grupoNombre
-            ? t("panel.mensajes.cancionDe", { grupo: cancion.grupoNombre })
-            : t("panel.mensajes.cancionSinGrupo")}
-          {cancion.aprobada ? "" : ` · ${t("panel.mensajes.oculta")}`}
-        </Etiqueta>
-      </div>
-
-      {puedeEditar ? (
-        <form action={moderarCancion}>
-          <input type="hidden" name="cancion_id" value={cancion.id} />
-          <input type="hidden" name="aprobar" value={cancion.aprobada ? "0" : "1"} />
-          <BotonEnvio jerarquia="terciario">
-            {cancion.aprobada ? t("panel.mensajes.ocultar") : t("panel.mensajes.mostrar")}
-          </BotonEnvio>
-        </form>
-      ) : null}
     </li>
   );
 }
