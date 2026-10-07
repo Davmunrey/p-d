@@ -8,7 +8,6 @@ import {
   LADO_PLANO_MESAS,
   PASO_PLANO_MESAS,
   RUTA_ACCESO,
-  RUTA_MESAS,
   SEPARACION_COLOCAR_MESA,
 } from "@/config/constants";
 import {
@@ -30,8 +29,10 @@ import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 import {
   ANCLA_NUEVA,
   ANCLA_PLANO,
+  ANCLA_REPARTO,
   anclaDeMesa,
   esAnclaDeMesas,
+  rutaDeAncla,
   type EstadoMesas,
 } from "./estado";
 
@@ -57,11 +58,12 @@ import {
  * hace unos segundos, y la otra mitad de la pareja está sentando gente desde su
  * móvil al mismo tiempo.
  *
- * NO SE REVALIDA NINGUNA RUTA. Todas las acciones vuelven a `RUTA_MESAS`, y
- * `revalidatePath` de la ruta a la que se redirige compite con la redirección:
- * el refresco repinta la página donde ya estás y el `?estado=` se pierde por el
- * camino, así que la operación ocurre y no sale ningún aviso. La pantalla es
- * `force-dynamic`, o sea que la redirección ya la vuelve a leer entera.
+ * NO SE REVALIDA NINGUNA RUTA. Todas las acciones vuelven a una de las vistas
+ * de las mesas (`rutaDeAncla`), y `revalidatePath` de la ruta a la que se
+ * redirige compite con la redirección: el refresco repinta la página donde ya
+ * estás y el `?estado=` se pierde por el camino, así que la operación ocurre y
+ * no sale ningún aviso. Las vistas son `force-dynamic`, o sea que la
+ * redirección ya las vuelve a leer enteras.
  */
 
 function texto(datos: FormData, campo: string): string {
@@ -92,7 +94,7 @@ function volver(
     parametros.set(clave, String(valor));
   }
   if (ancla) parametros.set("ancla", ancla);
-  redirect(`${RUTA_MESAS}?${parametros.toString()}${ancla ? `#${ancla}` : ""}`);
+  redirect(`${rutaDeAncla(ancla)}?${parametros.toString()}${ancla ? `#${ancla}` : ""}`);
 }
 
 /** El ancla que manda el formulario, si es de las de esta pantalla. */
@@ -221,7 +223,7 @@ export async function crearMesa(datos: FormData): Promise<void> {
 
   if (error) volver(motivo(error), undefined, ANCLA_NUEVA);
   // Cero filas y sin error es RLS callando: un lector no crea mesas.
-  if (!data?.length) volver("sin-permiso");
+  if (!data?.length) volver("sin-permiso", undefined, ANCLA_NUEVA);
 
   // A su bloque, que es donde está el botón de colocarla.
   const nueva = data[0]!.id as string;
@@ -230,7 +232,7 @@ export async function crearMesa(datos: FormData): Promise<void> {
 
 export async function editarMesa(datos: FormData): Promise<void> {
   const id = texto(datos, "id");
-  if (!id) volver("no-existe");
+  if (!id) volver("no-existe", undefined, ANCLA_REPARTO);
 
   const nombre = texto(datos, "nombre");
   if (!nombre) volver("nombre", { mesa: id }, anclaDeMesa(id));
@@ -265,7 +267,7 @@ export async function editarMesa(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error), { mesa: id }, anclaDeMesa(id));
-  if (!data?.length) volver(await ceroFilas());
+  if (!data?.length) volver(await ceroFilas(), { mesa: id }, anclaDeMesa(id));
 
   /*
     BAJAR LA CAPACIDAD POR DEBAJO DE LOS SENTADOS SE GUARDA, PERO SE DICE. Es
@@ -301,19 +303,23 @@ function primerHuecoLibre(ocupadas: { x: number; y: number }[]): { x: number; y:
 }
 
 /**
- * COLOCAR EN EL CENTRO, que es lo que hace falta para empezar.
+ * COLOCAR EN EL PRIMER HUECO LIBRE, que es lo que hace falta para empezar.
  *
  * Una mesa sin coordenadas no sale en el plano, y lo que se quiere en ese
  * momento no es teclear dos números: es verla aparecer para empujarla a su
- * sitio con las flechas. El centro es el único punto que no está encima de una
- * pared y que siempre queda a la vista.
+ * sitio con las flechas. El centro es la pista de baile, así que se busca el
+ * hueco más cercano que no pise otra mesa (`primerHuecoLibre`).
+ *
+ * Se coloca desde dos sitios —el bloque de la mesa en «Mesa a mesa» y la lista
+ * de «sin colocar» del plano— y un fallo vuelve al que se pulsó.
  */
 export async function colocarMesa(datos: FormData): Promise<void> {
   const id = texto(datos, "id");
-  if (!id) volver("no-existe");
+  const ancla = anclaDelFormulario(datos) ?? (id ? anclaDeMesa(id) : ANCLA_PLANO);
+  if (!id) volver("no-existe", undefined, ancla);
 
   const mesas = await obtenerMesas().catch(() => undefined);
-  if (!mesas) volver("error", { mesa: id }, anclaDeMesa(id));
+  if (!mesas) volver("error", { mesa: id }, ancla);
   const hueco = primerHuecoLibre(
     mesas
       .filter((mesa) => mesa.id !== id && mesa.posicionX !== null && mesa.posicionY !== null)
@@ -327,8 +333,8 @@ export async function colocarMesa(datos: FormData): Promise<void> {
     .eq("id", id)
     .select("id");
 
-  if (error) volver(motivo(error), { mesa: id }, anclaDeMesa(id));
-  if (!data?.length) volver(await ceroFilas());
+  if (error) volver(motivo(error), { mesa: id }, ancla);
+  if (!data?.length) volver(await ceroFilas(), undefined, ancla);
 
   // Al plano, con sus flechas debajo: lo siguiente es empujarla a su sitio.
   volver("colocada", { mesa: id }, ANCLA_PLANO);
@@ -347,13 +353,13 @@ export async function colocarMesa(datos: FormData): Promise<void> {
  */
 export async function empujarMesa(datos: FormData): Promise<void> {
   const id = texto(datos, "id");
-  if (!id) volver("no-existe");
+  if (!id) volver("no-existe", undefined, ANCLA_PLANO);
 
   const sentido = texto(datos, "sentido");
 
   const mesa = await obtenerMesa(id);
   if (mesa === undefined) volver("error", { mesa: id }, ANCLA_PLANO);
-  if (!mesa) volver("no-existe");
+  if (!mesa) volver("no-existe", undefined, ANCLA_PLANO);
   // Una mesa sin colocar no se puede empujar: no hay desde dónde.
   if (mesa.posicionX === null || mesa.posicionY === null) {
     volver("posicion", { mesa: id }, anclaDeMesa(id));
@@ -387,7 +393,7 @@ export async function empujarMesa(datos: FormData): Promise<void> {
     .select("id");
 
   if (error) volver(motivo(error), { mesa: id }, ANCLA_PLANO);
-  if (!data?.length) volver(await ceroFilas());
+  if (!data?.length) volver(await ceroFilas(), undefined, ANCLA_PLANO);
 
   // Al plano, con las flechas de esta mesa debajo: se ven la mesa moviéndose
   // y el botón para seguir moviéndola, sin bajar veinte mil píxeles cada vez.
@@ -408,7 +414,7 @@ export async function empujarMesa(datos: FormData): Promise<void> {
  */
 export async function borrarMesa(datos: FormData): Promise<void> {
   const id = texto(datos, "id");
-  if (!id) volver("no-existe");
+  if (!id) volver("no-existe", undefined, ANCLA_REPARTO);
 
   const supabase = await cliente();
 
@@ -425,9 +431,10 @@ export async function borrarMesa(datos: FormData): Promise<void> {
   const { data, error } = await supabase.from("mesas").delete().eq("id", id).select("id");
 
   if (error) volver(motivo(error), { mesa: id }, anclaDeMesa(id));
-  if (!data?.length) volver(await ceroFilas());
+  if (!data?.length) volver(await ceroFilas(), undefined, ANCLA_REPARTO);
 
-  volver("borrada");
+  // Su bloque ya no existe: a la cabecera de «Mesa a mesa».
+  volver("borrada", undefined, ANCLA_REPARTO);
 }
 
 /* -------------------------------------------------------------------------- */

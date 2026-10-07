@@ -8,6 +8,8 @@ import {
   RUTA_INVITADOS,
   URL_WHATSAPP,
   RUTA_MESAS,
+  RUTA_MESAS_PLANO,
+  RUTA_MESAS_REPARTO,
   RUTA_PANEL,
   RUTA_PENDIENTES,
   RUTA_RSVP,
@@ -798,7 +800,14 @@ test.describe("Un estado inventado en la URL", () => {
     );
   });
 
-  for (const ruta of [RUTA_INVITADOS, RUTA_MESAS, RUTA_PENDIENTES, RUTA_DIA]) {
+  for (const ruta of [
+    RUTA_INVITADOS,
+    RUTA_MESAS,
+    RUTA_MESAS_PLANO,
+    RUTA_MESAS_REPARTO,
+    RUTA_PENDIENTES,
+    RUTA_DIA,
+  ]) {
     test(`${ruta} aguanta «constructor», «__proto__» y «toString»`, async ({ page }) => {
       for (const trampa of ["constructor", "__proto__", "toString"]) {
         const respuesta = await page.goto(`${ruta}?estado=${trampa}`);

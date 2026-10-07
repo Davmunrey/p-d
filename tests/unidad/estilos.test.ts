@@ -260,8 +260,8 @@ describe("La píldora de estado sólo se escribe en un sitio", () => {
       "la barra que mide un token de espaciado en el catálogo: es una regla, no una etiqueta",
     [join("src", "app", "panel", "invitados", "page.tsx")]:
       "un `label` con casilla dentro (`has-checked:`): se pulsa y se marca, una etiqueta no",
-    [join("src", "app", "panel", "mesas", "page.tsx")]:
-      "un enlace de navegación a una mesa, y el contorno de una mesa redonda del plano",
+    [join("src", "app", "panel", "mesas", "piezas.tsx")]:
+      "las fichas de «Ir a una mesa», que son enlaces, y el contorno de una mesa redonda del plano",
   };
 
   it("ninguna pantalla escribe una etiqueta de estado a mano", () => {

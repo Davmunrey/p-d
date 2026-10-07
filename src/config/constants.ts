@@ -519,6 +519,13 @@ export const RUTA_TAREAS = "/panel/tareas";
 export const RUTA_MESAS = "/panel/mesas";
 
 /**
+ * Las otras dos vistas de las mesas. La raíz es «Por sentar»: mientras quede
+ * alguien sin sitio, el reparto no está hecho, y es lo primero que se ve.
+ */
+export const RUTA_MESAS_PLANO = "/panel/mesas/plano";
+export const RUTA_MESAS_REPARTO = "/panel/mesas/reparto";
+
+/**
  * Los papeles de la boda civil.
  *
  * Es un módulo del panel y no una pestaña del presupuesto ni una lista de

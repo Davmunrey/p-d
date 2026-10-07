@@ -7,6 +7,8 @@ import {
   RUTA_ACCESO,
   RUTA_MESAS,
   RUTA_MESAS_EXPORTAR,
+  RUTA_MESAS_PLANO,
+  RUTA_MESAS_REPARTO,
   RUTA_PANEL,
   SEPARACION_COLOCAR_MESA,
 } from "../../src/config/constants";
@@ -94,6 +96,21 @@ function conValores(plantilla: string, valores: Record<string, string | number>)
   return plantilla.replace(/\{(\w+)\}/g, (todo, clave: string) =>
     clave in valores ? String(valores[clave]) : todo,
   );
+}
+
+/**
+ * LAS MESAS SON TRES PESTAÑAS: «Por sentar», el plano y «Mesa a mesa». Se
+ * cambia de una a otra como lo haría alguien, pulsando la pestaña, y no
+ * tecleando la dirección.
+ */
+async function irALaPestana(pagina: Page, rotulo: string, ruta: string): Promise<void> {
+  await pagina
+    .getByRole("navigation", {
+      name: conValores(copy.panel.pestanas.de, { modulo: copy.panel.modulos.mesas }),
+    })
+    .getByRole("link", { name: rotulo, exact: true })
+    .click();
+  await expect(pagina).toHaveURL(new RegExp(`${ruta}$`));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -330,7 +347,8 @@ test.describe("El plano de mesas y el reparto", () => {
     const nombre = `${MARCA} Redonda ${Date.now()}`;
 
     await entrar(page);
-    await page.goto(RUTA_MESAS);
+    // El alta vive en «Mesa a mesa», debajo de todas las mesas.
+    await page.goto(RUTA_MESAS_REPARTO);
 
     const alta = seccion(page, copy.panel.mesas.nuevaTitulo);
     await alta.getByLabel(copy.panel.mesas.campoNombre, { exact: true }).fill(nombre);
@@ -365,10 +383,12 @@ test.describe("El plano de mesas y el reparto", () => {
       "el centro es la pista: una mesa colocada no cae encima",
     ).not.toEqual([CENTRO, CENTRO]);
 
-    // Y un empujón a la derecha la mueve exactamente un paso.
+    // Colocar lleva al plano, con sus flechas debajo: un empujón a la derecha
+    // la mueve exactamente un paso.
+    await expect(page).toHaveURL(new RegExp(RUTA_MESAS_PLANO));
     await enviar(
       page,
-      seccion(page, nombre).getByRole("button", {
+      seccion(page, copy.panel.mesas.planoTitulo).getByRole("button", {
         name: conValores(copy.panel.mesas.empujarDerecha, { mesa: nombre }),
       }),
     );
@@ -389,12 +409,13 @@ test.describe("El plano de mesas y el reparto", () => {
       dirección conservaría el estado del paso anterior y cualquier espera
       posterior se cumpliría sola, encontrando el rastro de lo ya hecho.
     */
-    await page.goto(RUTA_MESAS);
+    await page.goto(RUTA_MESAS_REPARTO);
     await expect(
       seccion(page, nombre).getByLabel(copy.panel.mesas.campoPosicionX, { exact: true }),
     ).toHaveValue(String(Number(colocada.posicion_x) + PASO_PLANO_MESAS));
 
     // Y la mesa está en el plano, con su rótulo y su ocupación.
+    await irALaPestana(page, copy.panel.pestanas.plano, RUTA_MESAS_PLANO);
     await expect(
       seccion(page, copy.panel.mesas.planoTitulo).getByRole("link", { name: nombre }),
     ).toBeVisible();
@@ -433,7 +454,7 @@ test.describe("El plano de mesas y el reparto", () => {
     await crearMesa(nombre, 8);
 
     await entrar(page);
-    await page.goto(RUTA_MESAS);
+    await page.goto(RUTA_MESAS_REPARTO);
     await page.waitForLoadState("networkidle");
 
     const datos = seccion(page, nombre).locator("details");
@@ -471,26 +492,37 @@ test.describe("El plano de mesas y el reparto", () => {
   test("de la tableta al portátil, ningún desplegable del reparto se queda sin sitio", async ({
     page,
   }) => {
-    await crearMesa(`${MARCA} Tableta ${Date.now()}`, 8);
+    const sello = Date.now();
+    const mesaId = await crearMesa(`${MARCA} Tableta ${sello}`, 8);
     // Un grupo sin sentar: es el que lleva la fila con «Sentar al grupo entero».
-    await crearGrupo(`${MARCA} Tableta ${Date.now()}`, 2, true);
+    await crearGrupo(`${MARCA} Tableta ${sello}`, 2, true);
+    // Y uno sentado, para que «Mesa a mesa» tenga su desplegable de «Cambiar».
+    const sentado = await crearGrupo(`${MARCA} Tableta sentada ${sello}`, 1, true);
+    await conBase(
+      (sql) => sql`update public.invitados set mesa_id = ${mesaId} where grupo_id = ${sentado}`,
+    );
     await page.setViewportSize({ width: 820, height: 1180 });
     await entrar(page);
-    await page.goto(RUTA_MESAS);
-    await page.waitForLoadState("networkidle");
 
-    for (const ancho of [820, 1024, 1280, 1440]) {
-      await page.setViewportSize({ width: ancho, height: 1180 });
-      const anchos = await page
-        .locator('select[name="mesa_id"]')
-        .evaluateAll((desplegables) =>
-          desplegables
-            .map((desplegable) => desplegable.getBoundingClientRect().width)
-            .filter((medida) => medida > 0),
+    for (const ruta of [RUTA_MESAS, RUTA_MESAS_REPARTO]) {
+      await page.goto(ruta);
+      await page.waitForLoadState("networkidle");
+
+      for (const ancho of [820, 1024, 1280, 1440]) {
+        await page.setViewportSize({ width: ancho, height: 1180 });
+        const anchos = await page
+          .locator('select[name="mesa_id"]')
+          .evaluateAll((desplegables) =>
+            desplegables
+              .map((desplegable) => desplegable.getBoundingClientRect().width)
+              .filter((medida) => medida > 0),
+          );
+        expect(anchos.length, `en ${ruta} hace falta alguien a quien sentar`).toBeGreaterThan(
+          0,
         );
-      expect(anchos.length, "hace falta alguien a quien sentar").toBeGreaterThan(0);
-      // Lo que ocupa «Elegir mesa…» con su flecha: por debajo, no se lee.
-      expect(Math.min(...anchos), `a ${ancho} px`).toBeGreaterThanOrEqual(160);
+        // Lo que ocupa «Elegir mesa…» con su flecha: por debajo, no se lee.
+        expect(Math.min(...anchos), `${ruta} a ${ancho} px`).toBeGreaterThanOrEqual(160);
+      }
     }
   });
 
@@ -562,7 +594,8 @@ test.describe("El plano de mesas y el reparto", () => {
         .filter({ hasText: nombreGrupo }),
     ).toHaveCount(0);
 
-    // …y la mesa lo cuenta.
+    // …y la mesa lo cuenta, en su pestaña.
+    await irALaPestana(page, copy.panel.pestanas.mesaAMesa, RUTA_MESAS_REPARTO);
     await expect(seccion(page, nombreMesa)).toContainText(
       conValores(copy.panel.mesas.ocupacion, { sentados: 3, capacidad: 8 }),
     );
@@ -715,7 +748,7 @@ test.describe("El plano de mesas y el reparto", () => {
     });
 
     await entrar(page);
-    await page.goto(RUTA_MESAS);
+    await page.goto(RUTA_MESAS_REPARTO);
 
     const mesa = seccion(page, nombreMesa);
     await expect(mesa).toContainText(
@@ -727,6 +760,7 @@ test.describe("El plano de mesas y el reparto", () => {
     ).toContainText(copy.panel.mesas.noViene);
 
     // CAMINO FELIZ · Su silla libre admite a otro.
+    await irALaPestana(page, copy.panel.pestanas.porSentar, RUTA_MESAS);
     const suelto = seccion(page, copy.panel.mesas.sinMesaTitulo)
       .locator("li")
       .filter({ hasText: nombreSuelto });
@@ -742,8 +776,9 @@ test.describe("El plano de mesas y el reparto", () => {
     await esperarEstado(page, "grupo-sentado");
 
     expect(await cuantosSentados(mesaId), "la pareja sigue apuntada y el suelto entra").toBe(3);
-    await expect(seccion(page, nombreMesa)).toContainText(
-      conValores(copy.panel.mesas.ocupacion, { sentados: 2, capacidad: 2 }),
+    // El desplegable de la bolsa ya la da por llena, sin ir a mirarla.
+    await expect(page.locator(`option[value="${mesaId}"]`).first()).toHaveText(
+      conValores(copy.panel.mesas.opcionMesa, { mesa: nombreMesa, sentados: 2, capacidad: 2 }),
     );
 
     // CASO DE ERROR · Sólo esa: con la mesa ya llena, el siguiente no cabe.
@@ -775,6 +810,9 @@ test.describe("El plano de mesas y el reparto", () => {
    * Toda mesa colocada caía en el centro —que es la pista de baile— y la
    * segunda, encima de la primera. Y cada empujón volvía a la cabecera: para
    * mover una mesa diez pasos había que bajar diez veces hasta sus flechas.
+   *
+   * Ahora el plano es su propia pestaña: las mesas sin colocar se colocan desde
+   * ahí, y tocar una mesa del plano la elige y saca sus flechas debajo.
    */
   test("colocar deja cada mesa en un hueco, y se sigue moviendo desde el plano", async ({
     page,
@@ -787,27 +825,21 @@ test.describe("El plano de mesas y el reparto", () => {
 
     await entrar(page);
     await page.goto(RUTA_MESAS);
+    await irALaPestana(page, copy.panel.pestanas.plano, RUTA_MESAS_PLANO);
 
-    // El índice de arriba lleva al plano sin recorrer las bolsas.
-    await page
-      .getByRole("navigation", { name: copy.panel.mesas.indice })
-      .getByRole("link", { name: copy.panel.mesas.planoTitulo, exact: true })
-      .click();
-    await volvioA(page, ANCLA_PLANO);
-    await expect(
-      page.getByRole("heading", { name: copy.panel.mesas.planoTitulo }),
-    ).toBeInViewport();
+    const plano = seccion(page, copy.panel.mesas.planoTitulo);
+    const colocar = (nombre: string) =>
+      plano.getByRole("button", {
+        name: conValores(copy.panel.mesas.colocarDe, { mesa: nombre }),
+        exact: true,
+      });
 
-    await enviar(
-      page,
-      seccion(page, primera).getByRole("button", { name: copy.panel.mesas.colocar }),
-    );
+    await enviar(page, colocar(primera));
     await esperarEstado(page, "colocada");
     await volvioA(page, ANCLA_PLANO);
     const colocada = await posicionDe(idPrimera);
 
     // Las flechas de esa mesa, bajo el plano y con su nombre.
-    const plano = seccion(page, copy.panel.mesas.planoTitulo);
     await expect(
       plano.getByText(conValores(copy.panel.mesas.seguirMoviendo, { mesa: primera })),
     ).toBeVisible();
@@ -828,17 +860,33 @@ test.describe("El plano de mesas y el reparto", () => {
       ),
     ).toBeVisible();
 
-    // La segunda va a otro hueco: no encima de la primera.
-    await enviar(
-      page,
-      seccion(page, segunda).getByRole("button", { name: copy.panel.mesas.colocar }),
-    );
+    // CASO DE ERROR · La segunda va a otro hueco: no encima de la primera.
+    await enviar(page, colocar(segunda));
     await esperarEstado(page, "colocada");
     const otra = await posicionDe(idSegunda);
     const separadas =
       Math.abs(otra.x - movida.x) >= SEPARACION_COLOCAR_MESA ||
       Math.abs(otra.y - movida.y) >= SEPARACION_COLOCAR_MESA;
     expect(separadas, "dos mesas colocadas seguidas no se pisan").toBe(true);
+
+    /*
+      TOCAR UNA MESA DEL PLANO LA ELIGE. Con un `dispatchEvent` y no con un
+      clic de ratón: los tests de este fichero colocan mesas en paralelo, y una
+      que cae encima taparía el punto que se pulsa sin que eso sea lo probado.
+    */
+    const enElPlano = seccion(page, copy.panel.mesas.planoTitulo).getByRole("link", {
+      name: primera,
+    });
+    await enElPlano.dispatchEvent("click");
+    await expect(page).toHaveURL(new RegExp(`mesa=${idPrimera}`));
+    await expect(
+      seccion(page, copy.panel.mesas.planoTitulo).getByRole("link", { name: primera }),
+    ).toHaveAttribute("aria-current", "true");
+    await expect(
+      page.getByText(conValores(copy.panel.mesas.moverMesa, { mesa: primera }), {
+        exact: true,
+      }),
+    ).toBeVisible();
   });
 
   /**
@@ -933,7 +981,7 @@ test.describe("El plano de mesas y el reparto", () => {
     );
 
     await entrar(page);
-    await page.goto(RUTA_MESAS);
+    await page.goto(RUTA_MESAS_REPARTO);
 
     const datos = seccion(page, nombreMesa).locator("details");
     await datos.locator("summary").click();
@@ -982,7 +1030,7 @@ test.describe("El plano de mesas y el reparto", () => {
     });
 
     await entrar(page);
-    await page.goto(RUTA_MESAS);
+    await page.goto(RUTA_MESAS_REPARTO);
 
     const alta = seccion(page, copy.panel.mesas.nuevaTitulo);
     await alta.getByLabel(copy.panel.mesas.campoNombre, { exact: true }).fill(nombre);
@@ -1043,7 +1091,7 @@ test.describe("El plano de mesas y el reparto", () => {
     });
 
     await entrar(page);
-    await page.goto(RUTA_MESAS);
+    await page.goto(RUTA_MESAS_REPARTO);
 
     const fila = seccion(page, nombreVieja)
       .locator("li")
