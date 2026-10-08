@@ -405,6 +405,8 @@
   --alto-barra-muestra: var(--size-barra-muestra);
   --ancho-ficha-catalogo: var(--size-ficha-catalogo);
   --lado-constelacion: var(--size-constelacion);
+  --lado-constelacion-portada: var(--size-constelacion-portada);
+  --aire-constelacion: var(--inset-aire-constelacion);
   --ancho-columna-minima: var(--size-columna-minima);
   --ancho-entradilla: var(--size-entradilla);
   --alto-foto-portada: var(--size-foto-portada);
@@ -488,6 +490,24 @@
   --retardo-portada-5: var(--delay-5);
   --retardo-portada-6: var(--delay-6);
   --retardo-portada-7: var(--delay-7);
+
+  /* La constelación de la portada y la «y» que se escribe (ver primitivos). */
+  --pausa-anillo: var(--delay-anillo);
+  --pausa-estrellas: var(--delay-estrellas);
+  --pausa-trazos: var(--delay-trazos);
+  --paso-constelacion: var(--step-constelacion);
+  --pausa-titilar: var(--delay-titilar);
+  --transicion-trazo: var(--duration-trazo) var(--ease-salida);
+  --transicion-anillo: var(--duration-anillo) var(--ease-suave);
+  --pausa-escritura: var(--delay-escritura);
+  --transicion-escritura: var(--duration-escritura) var(--ease-suave);
+
+  /* Las cifras que ruedan y el botón que cede al pulsarlo. */
+  --transicion-cifra: var(--duration-cifra) var(--ease-salida);
+  --recorrido-cifra: var(--space-cifra-recorrido);
+  --transicion-pulsado: var(--duration-instant) var(--ease-salida);
+  --escala-pulsado: var(--scale-pulsado);
+  --paso-escalonado: var(--step-escalonado);
   --recorrido-reveal: var(--space-reveal);
   --recorrido-pista: var(--space-pista-recorrido);
   --opacidad-pista-alta: var(--opacity-pista-alta);

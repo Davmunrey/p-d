@@ -405,3 +405,13 @@ export const ESCALA_ESTRELLA_TARJETA = 1.2;
  * coordenadas: una línea más gruesa deja de parecer un mapa del cielo.
  */
 export const GROSOR_TRAZO = 0.7;
+
+/**
+ * El anillo que rodea la constelación de la portada: un pelo, como los filetes
+ * de la página. Su svg no tiene `viewBox` —cuenta en píxeles de pantalla—
+ * porque el anillo crece con la pantalla y un filete que engorda deja de ser
+ * un filete. Por eso el radio va en porcentaje del lado: medio punto dentro
+ * del borde, para que el trazo no se corte.
+ */
+export const GROSOR_ANILLO = 1;
+export const RADIO_ANILLO = "49.5%";

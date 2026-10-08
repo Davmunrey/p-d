@@ -118,8 +118,15 @@ export function Titulo3({
 export function Conector({
   children,
   tamano = "conector",
+  escrita = false,
 }: {
   children: ReactNode;
+  /**
+   * Si la letra se escribe al entrar, de izquierda a derecha, como un trazo de
+   * pluma. Sólo la de la portada: una «y» que se escribe en cada sitio deja de
+   * ser un gesto y pasa a ser un tic.
+   */
+  escrita?: boolean;
   /**
    * El escalón. `conector` es la «y» de la portada, fluida; `naipe` la de la
    * tarjeta del Save the Date, que se mide contra el alto del naipe; y `sello`
@@ -134,7 +141,11 @@ export function Conector({
     escena: "text-conector-escena leading-titulo-corto text-acento-sobre-foto",
   }[tamano];
 
-  return <span className={`font-conector ${escalon}`}>{children}</span>;
+  return (
+    <span className={`font-conector ${escalon} ${escrita ? "animacion-escribir" : ""}`}>
+      {children}
+    </span>
+  );
 }
 
 /**

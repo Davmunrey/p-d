@@ -195,7 +195,7 @@ export function Navegacion({
               href={`#${confirmar.ancla}`}
               data-ancla={confirmar.ancla}
               aria-current={confirmar.ancla === anclaActiva ? "location" : undefined}
-              className="flex min-h-control-compacto shrink-0 items-center whitespace-nowrap rounded-boton bg-accion px-pila py-interno-compacto text-menu uppercase tracking-pildora text-tinta-sobre-accion transicion-color hover:bg-accion-hover active:bg-accion-activa"
+              className="flex min-h-control-compacto shrink-0 items-center whitespace-nowrap rounded-boton bg-accion px-pila py-interno-compacto text-menu uppercase tracking-pildora text-tinta-sobre-accion pulsable hover:bg-accion-hover active:bg-accion-activa"
             >
               {confirmar.rotulo}
             </a>

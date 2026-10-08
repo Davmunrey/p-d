@@ -44,7 +44,7 @@ export type JerarquiaBoton = "primario" | "secundario" | "terciario";
  * nada.
  */
 const BASE =
-  "inline-flex items-center justify-center gap-interno-compacto text-boton uppercase tracking-boton transicion-color disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-transparent disabled:bg-accion-desactivada disabled:text-tinta-desactivada";
+  "inline-flex items-center justify-center gap-interno-compacto text-boton uppercase tracking-boton pulsable disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-transparent disabled:bg-accion-desactivada disabled:text-tinta-desactivada";
 
 const JERARQUIAS: Record<JerarquiaBoton, string> = {
   primario:

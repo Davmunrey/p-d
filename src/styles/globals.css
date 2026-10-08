@@ -344,6 +344,10 @@
   /* Un solo token da `size-constelacion`: el hueco es cuadrado por definición. */
   --spacing-constelacion: var(--lado-constelacion);
 
+  /* `size-constelacion-portada` y el aire de dentro: `inset-aire-constelacion`. */
+  --spacing-constelacion-portada: var(--lado-constelacion-portada);
+  --spacing-aire-constelacion: var(--aire-constelacion);
+
   /* Un solo token da `h-cabecera`, `pt-cabecera` y `scroll-mt-cabecera`. */
   --spacing-cabecera: var(--alto-cabecera);
 

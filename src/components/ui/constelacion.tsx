@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import {
   CONSTELACION_NOVIOS,
   constelacionPorClave,
@@ -38,7 +40,19 @@ import {
  * tarjeta del Save the Date lo pide a 1.2 porque en un lienzo pequeño el
  * brillo de 1× se pierde. Por eso el svg desborda a la vista: una estrella
  * pegada al borde crece hacia fuera y no puede quedar cortada.
+ *
+ * `animada` la dibuja en vez de pintarla: cada estrella y cada trazo llevan su
+ * turno en `--orden`, y `constelacion-dibujada` (en `motion.css`) los enciende
+ * y los traza en ese orden. El turno es el del mapa —Vega la primera en la
+ * Lira—, que es el orden en que se lee una constelación. Los trazos llevan
+ * `pathLength` 1 para que el mismo fotograma recorra una línea corta y una
+ * larga.
  */
+
+/** El turno de cada pieza del dibujo, en una variable que lee el CSS. */
+function turno(orden: number): CSSProperties {
+  return { "--orden": orden } as CSSProperties;
+}
 
 /** Lado del lienzo. Las coordenadas del mapa son porcentajes de este número. */
 const LIENZO = 100;
@@ -47,6 +61,7 @@ export function Constelacion({
   clave,
   rotulada = false,
   escala = 1,
+  animada = false,
   className = "",
 }: {
   clave: string;
@@ -54,6 +69,8 @@ export function Constelacion({
   rotulada?: boolean;
   /** Factor del radio de las estrellas. 1 es el catálogo. */
   escala?: number;
+  /** Si se dibuja al entrar: estrellas una a una y luego los trazos. */
+  animada?: boolean;
   className?: string;
 }) {
   const constelacion: Constelacion | undefined =
@@ -68,7 +85,9 @@ export function Constelacion({
   return (
     <svg
       viewBox={`0 0 ${LIENZO} ${LIENZO}`}
-      className={`block h-full w-full overflow-visible ${className}`}
+      className={`block h-full w-full overflow-visible ${
+        animada ? "constelacion-dibujada" : ""
+      } ${className}`}
       fill="none"
       preserveAspectRatio="xMidYMid meet"
       role={rotulada ? "img" : undefined}
@@ -77,7 +96,7 @@ export function Constelacion({
     >
       {rotulada ? <title id={idTitulo}>{nombre}</title> : null}
 
-      {lineas.map(([desde, hasta]) => {
+      {lineas.map(([desde, hasta], orden) => {
         const [x1, y1] = estrellas[desde];
         const [x2, y2] = estrellas[hasta];
         return (
@@ -90,17 +109,20 @@ export function Constelacion({
             className="stroke-constelacion-trazo"
             strokeWidth={GROSOR_TRAZO}
             strokeLinecap="round"
+            pathLength={animada ? 1 : undefined}
+            style={animada ? turno(orden) : undefined}
           />
         );
       })}
 
-      {estrellas.map(([x, y, radio]) => (
+      {estrellas.map(([x, y, radio], orden) => (
         <circle
           key={`${x}-${y}`}
           cx={x}
           cy={y}
           r={radio * escala}
           className="fill-constelacion-estrella"
+          style={animada ? turno(orden) : undefined}
         />
       ))}
     </svg>

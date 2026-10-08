@@ -382,6 +382,9 @@
   /* Cuánto viaja un elemento al entrar: 26 px, subiendo o desde un lado. */
   --space-reveal: 1.625rem;
 
+  /* Una cifra de la cuenta atrás que cambia sube un tercio de su alto. */
+  --space-cifra-recorrido: 0.35em;
+
   /* La pista «bajad» cae 7 px y se apaga; la foto de portada baja hasta 60 px
      mientras se hace scroll, en los primeros 428 px de recorrido (60 / 0,14),
      y sangra un 6 % por arriba y por abajo para que ese viaje no deje borde. */
@@ -529,6 +532,16 @@
    */
   --size-hoja-menu: 85dvh;
 
+  /**
+   * La constelación de la portada cuando todavía no hay foto: cabe al lado de
+   * los nombres sin competir con ellos, y nunca baja de 14 rem. El aire es el
+   * que pide la regla 3 de la entrega —«dentro de círculo con aire, nunca
+   * recortada»—: el dibujo se mete un 10 % por cada lado, y la estrella más
+   * alejada del centro, Vega, queda a un tercio del radio del anillo.
+   */
+  --size-constelacion-portada: clamp(14rem, 30vw, 28rem);
+  --inset-aire-constelacion: 10%;
+
   /* ---------------------------------------------------------------------
    * Forma
    * ------------------------------------------------------------------- */
@@ -565,6 +578,9 @@
   --scale-paralaje: 1.1;
   --scale-pop: 0.6;
   --scale-reveal: 0.94;
+
+  /* Un botón que se pulsa cede un 3 %: lo justo para notar que ha oído el dedo. */
+  --scale-pulsado: 0.97;
 
   /* El cielo de la cuenta atrás deriva 40 × 26 px y titila del 90 al 40 %. */
   --shift-deriva-x: -2.5rem;
@@ -609,6 +625,32 @@
   --delay-5: 950ms;
   --delay-6: 1100ms;
   --delay-7: 1600ms;
+
+  /*
+   * LA CONSTELACIÓN DE LA PORTADA SE DIBUJA DESPUÉS DE LOS NOMBRES: el anillo
+   * empieza a los 0,6 s, las estrellas se encienden desde 0,9 s y los trazos
+   * las unen desde 1,15 s, uno cada 110 ms. Todo acaba hacia los 2,4 s, a la
+   * vez que la pista «bajad»: una sola secuencia, no dos.
+   */
+  --delay-anillo: 600ms;
+  --delay-estrellas: 900ms;
+  --delay-trazos: 1150ms;
+  --step-constelacion: 110ms;
+
+  /* Ya dibujadas, las estrellas titilan: desde los 2,6 s, cada una a su paso. */
+  --delay-titilar: 2600ms;
+  --duration-trazo: 700ms;
+  --duration-anillo: 1600ms;
+
+  /* La «y» se escribe mientras llega el segundo nombre, en 0,9 s. */
+  --delay-escritura: 550ms;
+  --duration-escritura: 900ms;
+
+  /* Una cifra que cambia rueda en 0,45 s: menos que el segundo que tarda la siguiente. */
+  --duration-cifra: 450ms;
+
+  /* En una fila de tarjetas, cada una entra un 8 % de pantalla más tarde que la de su izquierda. */
+  --step-escalonado: 8%;
 
   /* ---------------------------------------------------------------------
    * Capas y anchos

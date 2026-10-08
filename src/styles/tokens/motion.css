@@ -228,6 +228,60 @@
   }
 }
 
+/**
+ * UN TRAZO QUE SE DIBUJA. El elemento lleva `pathLength="1"`, así que el mismo
+ * fotograma vale para una línea corta de la constelación y para el anillo
+ * entero: siempre se recorre «uno».
+ */
+@keyframes dibujar-trazo {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/**
+ * LA «Y» SE ESCRIBE de izquierda a derecha. El recorte deja medio cuerpo de
+ * holgura por arriba, por abajo y por la izquierda porque el rabo de la letra,
+ * en Italianno, sale de su caja: sin holgura se quedaría cortado para siempre.
+ */
+@keyframes escribir {
+  from {
+    clip-path: inset(-50% 100% -50% -50%);
+  }
+
+  to {
+    clip-path: inset(-50% -50% -50% -50%);
+  }
+}
+
+/* Una cifra nueva de la cuenta atrás entra desde abajo, como en un contador. */
+@keyframes rodar {
+  from {
+    opacity: 0%;
+    transform: translateY(var(--recorrido-cifra));
+  }
+
+  to {
+    opacity: 100%;
+    transform: translateY(0);
+  }
+}
+
+/* La hora del programa se enciende en bronce cuando se llega a ella. */
+@keyframes encender-hora {
+  from {
+    color: var(--tinta-tenue);
+  }
+
+  to {
+    color: var(--acento);
+  }
+}
+
 /* Paralaje dentro de un marco: la foto, algo más grande, viaja al bajar. */
 @keyframes paralaje-foto {
   from {
@@ -530,6 +584,73 @@
 }
 
 /**
+ * LA CONSTELACIÓN DE LA PORTADA SE DIBUJA, cuando todavía no hay foto que
+ * poner al lado de los nombres. Primero el anillo, luego las estrellas se
+ * encienden una a una y por último los trazos las unen; ya dibujada, cada
+ * estrella titila a su paso. El orden de cada pieza lo pone `--orden` en el
+ * propio elemento: es el orden del dibujo, no del DOM.
+ *
+ * Los trazos y el anillo llevan `pathLength="1"`: un guion tan largo como el
+ * trazo entero, desplazado de 1 a 0.
+ */
+.anillo-dibujado {
+  animation: dibujar-trazo var(--transicion-anillo) both;
+  animation-delay: var(--pausa-anillo);
+  stroke-dasharray: 1;
+}
+
+.constelacion-dibujada line {
+  animation: dibujar-trazo var(--transicion-trazo) both;
+  animation-delay: calc(var(--pausa-trazos) + var(--orden, 0) * var(--paso-constelacion));
+  stroke-dasharray: 1;
+}
+
+/*
+  El titileo va SIN `both`: si rellenara hacia atrás, mientras espera su turno
+  pondría su primera opacidad encima de la del encendido, y las estrellas
+  aparecerían a medias antes de tiempo.
+*/
+.constelacion-dibujada circle {
+  animation:
+    pop var(--transicion-muelle) both,
+    titilar var(--periodo-titilar) ease-in-out infinite;
+  animation-delay:
+    calc(var(--pausa-estrellas) + var(--orden, 0) * var(--paso-constelacion)),
+    calc(var(--pausa-titilar) + var(--orden, 0) * var(--paso-constelacion));
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.animacion-escribir {
+  animation: escribir var(--transicion-escritura) both;
+  animation-delay: var(--pausa-escritura);
+}
+
+/* La cifra de la cuenta atrás que acaba de cambiar. */
+.animacion-rodar {
+  animation: rodar var(--transicion-cifra) both;
+}
+
+/**
+ * UN BOTÓN CEDE UN 3 % AL PULSARLO, en 100 ms: la confirmación de que el dedo
+ * ha llegado, antes de que pase nada más. Lleva también las transiciones de
+ * color de `transicion-color`, porque las dos clases escribirían la misma
+ * propiedad `transition` y la segunda borraría a la primera.
+ */
+.pulsable {
+  transition:
+    color var(--transicion-color),
+    background-color var(--transicion-color),
+    border-color var(--transicion-color),
+    box-shadow var(--transicion-color),
+    transform var(--transicion-pulsado);
+}
+
+.pulsable:active:not(:disabled, [aria-disabled="true"]) {
+  transform: scale(var(--escala-pulsado));
+}
+
+/**
  * Una tarjeta que se levanta al pasar el ratón: cuatro píxeles, sombra y el
  * borde a la marca, en 0,3 s. Y una ficha que se levanta dos. Ninguno de los
  * dos es un `hover:` de Tailwind porque el `transition` tiene que ir siempre,
@@ -557,6 +678,25 @@
 .levantar-al-pasar:hover {
   background-color: var(--marca-tenue);
   transform: translateY(calc(var(--espacio-linea) * -0.5));
+}
+
+/**
+ * EL HILO DEL DÍA. Sobre el filete de cada hora del programa corre un hilo de
+ * bronce que se llena mientras se baja por esa fila, y la hora se enciende al
+ * llegar a ella: el scroll ES el paso del día. Sin líneas de tiempo de vista no
+ * hay hilo, y las horas se quedan en bronce desde el principio, como siempre.
+ */
+.hilo-del-dia {
+  display: none;
+}
+
+/* El puesto de cada tarjeta en su fila, para el escalonado de abajo. */
+.escalonado > :nth-child(3n + 2) {
+  --indice: 1;
+}
+
+.escalonado > :nth-child(3n + 3) {
+  --indice: 2;
 }
 
 /**
@@ -750,6 +890,37 @@
     animation-name: barrido;
   }
 
+  /*
+    El hilo se llena entre que la fila asoma por el último cuarto de la
+    pantalla y que su centro pasa por la mitad: se lee a la altura del ojo,
+    no al borde. La hora se enciende un poco antes de que acabe el hilo.
+  */
+  .hilo-del-dia {
+    animation: trazar-vertical linear both;
+    animation-range: entry 75% cover 55%;
+    animation-timeline: view();
+    display: block;
+    transform-origin: top;
+  }
+
+  .hora-que-llega {
+    animation: encender-hora linear both;
+    animation-range: entry 75% cover 45%;
+    animation-timeline: view();
+  }
+
+  /*
+    UNA FILA DE TARJETAS ENTRA DE IZQUIERDA A DERECHA. Las tres de una fila
+    asoman a la vez —están a la misma altura—, así que con el mismo rango
+    subían en bloque, como una sola pieza. Cada columna empieza y acaba un
+    paso después que la anterior, y la fila se lee en orden. Hasta tres
+    columnas, que es el máximo de las rejillas de la landing.
+  */
+  .escalonado > .animacion-subir-al-ver {
+    animation-range: entry calc(var(--indice, 0) * var(--paso-escalonado)) cover
+      calc(30% + var(--indice, 0) * var(--paso-escalonado));
+  }
+
   /* El paralaje dura lo que la foto tarda en cruzar la pantalla entera. */
   .animacion-paralaje {
     animation: paralaje-foto linear both;
@@ -791,6 +962,11 @@
   .animacion-trazar-vertical-al-ver,
   .animacion-pop-al-ver,
   .animacion-barrido-al-ver,
+  .animacion-escribir,
+  .animacion-rodar,
+  .anillo-dibujado,
+  .constelacion-dibujada line,
+  .constelacion-dibujada circle,
   .hoja-menu[open],
   .hoja-menu[open]::backdrop {
     animation: aparecer var(--duration-instant) var(--ease-salida) both;
@@ -809,12 +985,19 @@
   .animacion-sacudir,
   .animacion-paralaje,
   .animacion-paralaje-portada,
+  .hora-que-llega,
   .cabecera-compacta {
     animation: none;
   }
 
+  /* Sin movimiento, el filete del programa se queda como estaba: sin hilo. */
+  .hilo-del-dia {
+    display: none;
+  }
+
   .elevar-al-pasar:hover,
-  .levantar-al-pasar:hover {
+  .levantar-al-pasar:hover,
+  .pulsable:active:not(:disabled, [aria-disabled="true"]) {
     transform: none;
   }
 

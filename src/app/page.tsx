@@ -7,6 +7,7 @@ import { HuecoFoto } from "@/components/marketing/hueco-foto";
 import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { VideoDeFondo } from "@/components/marketing/video-de-fondo";
+import { ConstelacionPortada } from "@/components/marketing/constelacion-portada";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { BotonEnlace } from "@/components/ui/boton";
 import { DatosEstructurados } from "@/components/datos-estructurados";
@@ -469,12 +470,13 @@ async function cargarLanding() {
  * ancho mínimo de columna, así que el corte pasa cuando de verdad estorba y no
  * a un número redondo.
  *
- * LA PARTICIÓN SÓLO EXISTE SI HAY FOTO. Todavía no las hay —la sesión de
- * preboda ni siquiera está decidida— y media pantalla en blanco no se lee como
- * una decisión de diseño, se lee como algo que no ha cargado. Sin foto, el
- * texto se queda en una columna centrada y la portada se sostiene sola; el día
- * que se publique una imagen, `auto-fit` abre la segunda columna sin que haya
- * que tocar nada.
+ * SIN FOTO, LA OTRA MITAD ES LA CONSTELACIÓN. Todavía no hay fotos —la sesión
+ * de preboda ni siquiera está decidida— y media pantalla en blanco no se lee
+ * como una decisión de diseño, se lee como algo que no ha cargado. Así que en
+ * la mitad de la foto se dibuja la Lira de los novios dentro de su anillo
+ * (`ConstelacionPortada`). En un móvil no cabe sin echar el botón de la
+ * pantalla, y ahí el texto se queda solo en su columna centrada; el día que se
+ * publique una imagen, la foto ocupa ese sitio sin tocar nada.
  *
  * El bloque de datos usa `--texto-titulo-2` y la fecha va en `26 · 06 · 2027`,
  * que es como la escribe la marca en todas las piezas.
@@ -528,7 +530,7 @@ function Portada({
           {configuracion.nombreNovia}
         </Display>
         <div className="animacion-subir retardo-3 flex flex-wrap items-baseline gap-conector">
-          <Conector>{t("portada.conjuncion")}</Conector>
+          <Conector escrita>{t("portada.conjuncion")}</Conector>
           <Display como="p">{configuracion.nombreNovio}</Display>
         </div>
 
@@ -619,7 +621,9 @@ function Portada({
           medidas="(min-width: 40rem) 50vw, 100vw"
           className="alto-foto-portada"
         />
-      ) : null}
+      ) : (
+        <ConstelacionPortada />
+      )}
     </section>
   );
 }
@@ -824,7 +828,7 @@ function Historia({ hitos, urlBase }: { hitos: HitoHistoria[]; urlBase: string |
       titulo={t("historia.titulo")}
       realzada
     >
-      <ol className="grid gap-bloque sm:grid-cols-3">
+      <ol className="escalonado grid gap-bloque sm:grid-cols-3">
         {hitos.map((hito) => (
           <li key={hito.id} className="animacion-subir-al-ver">
             {hito.foto && urlBase ? (
@@ -927,20 +931,31 @@ function ListaDeHoras({
               flotaba a media altura de su fila en vez de alinearse con el
               titular de al lado.
             */}
+            {/*
+              EL HILO DEL DÍA, sólo en el programa: al bajar por cada fila, su
+              filete se llena de bronce de arriba abajo y la hora, que espera
+              en tinta tenue, se enciende al llegar a ella. El scroll es el
+              paso de las horas. La víspera no lo lleva: es un extra, y el
+              gesto es del día. Sin líneas de tiempo de scroll —o con
+              movimiento reducido— la hora está en bronce desde el principio y
+              el filete es el de siempre.
+            */}
             <span
               className={`animacion-izquierda-al-ver font-titulo peso-titulo-menor ${
                 menor ? "text-hora-menor" : "text-hora"
               } leading-compacto text-acento tabular-nums`}
             >
-              {hito.hora}
+              {menor ? hito.hora : <span className="hora-que-llega">{hito.hora}</span>}
             </span>
             {/* El filete es color, no contenido: se dibuja de arriba abajo al entrar. */}
             <span
               aria-hidden="true"
               className={`animacion-trazar-vertical-al-ver self-stretch ${
-                menor ? "bg-borde-filete" : "bg-borde"
+                menor ? "bg-borde-filete" : "relative bg-borde"
               }`}
-            />
+            >
+              {menor ? null : <span className="hilo-del-dia absolute inset-0 bg-acento" />}
+            </span>
             <div>
               <Titulo3 como="h3" tamano={menor ? "hito-menor" : "hito"}>
                 {hito.titulo}
@@ -1033,7 +1048,7 @@ function Alojamiento({
       composicion="apilada"
       hundida
     >
-      <ul className="rejilla-tarjetas gap-rejilla-fluida">
+      <ul className="escalonado rejilla-tarjetas gap-rejilla-fluida">
         {sitios.map((sitio) => (
           <Tarjeta
             key={sitio.id}
@@ -1364,7 +1379,7 @@ function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
       ancho="medio"
       hundida
     >
-      <ul className="rejilla-consejos gap-rejilla-fluida">
+      <ul className="escalonado rejilla-consejos gap-rejilla-fluida">
         {consejos.map((consejo) => (
           <li
             key={consejo.id}

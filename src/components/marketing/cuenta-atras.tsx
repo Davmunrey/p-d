@@ -178,7 +178,17 @@ export function CuentaAtras({
             Las cifras tienen su propio tamaño, más contenido que el titular:
             son cuatro seguidas y a tamaño de portada no cabrían en un móvil.
           */}
-          <div className="font-titulo text-cifra font-light leading-none tabular-nums">
+          {/*
+            LA CIFRA RUEDA CUANDO CAMBIA. La `key` es el propio valor: React
+            monta una cifra nueva cada vez que cambia y `animacion-rodar` la
+            sube desde abajo en 0,45 s, como un contador de los de antes. Las
+            que no cambian se quedan quietas: con los días a cientos, sólo se
+            mueven los segundos, que es lo que tiene que moverse.
+          */}
+          <div
+            key={bloque.valor}
+            className="animacion-rodar font-titulo text-cifra font-light leading-none tabular-nums"
+          >
             {bloque.valor}
           </div>
           <div className="mt-hueco-corto text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
