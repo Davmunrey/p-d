@@ -73,6 +73,12 @@ async function devolverFotoDePortada(ids: string[]): Promise<void> {
  * Espera a que acaben las animaciones de entrada de un elemento y sus hijos.
  * Las que no acaban nunca —el titileo, la deriva del cielo— y las que van con
  * el scroll se quedan fuera: esas no tienen un «después».
+ *
+ * UNA ANIMACIÓN CANCELADA TAMBIÉN HA ACABADO. WebKit cancela y vuelve a crear
+ * la de entrada cuando el estilo se recalcula —con movimiento reducido, al
+ * aplicar la regla que la acorta—, y su `finished` se rechaza con
+ * `AbortError` en vez de resolverse. Lo que se espera es que no quede nada
+ * moviéndose, y eso se cumple igual.
  */
 async function entradaTerminada(elemento: Locator): Promise<void> {
   await elemento.first().evaluate(async (nodo) => {
@@ -83,7 +89,7 @@ async function entradaTerminada(elemento: Locator): Promise<void> {
           animacion.timeline === document.timeline &&
           Number.isFinite(animacion.effect?.getComputedTiming().iterations ?? Infinity),
       );
-    await Promise.all(deEntrada.map((animacion) => animacion.finished));
+    await Promise.all(deEntrada.map((animacion) => animacion.finished.catch(() => undefined)));
   });
 }
 
