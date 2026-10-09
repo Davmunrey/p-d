@@ -403,12 +403,26 @@ test.describe("Bandeja de mensajes", () => {
     await contexto.close();
   });
 
-  test("se llega desde el menú del panel", async ({ page }) => {
+  /**
+   * EL MENÚ NOMBRA LAS DOS PESTAÑAS. Bajo un «Mensajes» a secas, la playlist
+   * no se encontraba desde el lateral: el rótulo es «Mensajes y playlist», y
+   * si un día vuelve a dejar fuera la playlist, este test lo dice.
+   *
+   * CASO DE ERROR · la playlist no queda escondida detrás del rótulo: desde
+   * la entrada del menú está a una pestaña.
+   */
+  test("se llega desde el menú del panel, que nombra también la playlist", async ({ page }) => {
     await entrar(page);
     await page.goto(RUTA_PANEL);
     const menu = page.getByRole("navigation", { name: copy.panel.navegacion }).first();
-    await menu.getByRole("link", { name: copy.panel.modulos.mensajes }).click();
+    const enlace = menu.getByRole("link", { name: copy.panel.modulos.mensajes });
+
+    await expect(enlace).toHaveText(new RegExp(copy.panel.pestanas.playlist, "i"));
+    await enlace.click();
     await expect(page).toHaveURL(new RegExp(RUTA_MENSAJES));
+
+    await page.getByRole("link", { name: copy.panel.pestanas.playlist, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${RUTA_PLAYLIST}$`));
   });
 
   /**
