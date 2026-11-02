@@ -50,8 +50,15 @@ function tablasDelEsquema(): string[] {
 describe("docs/MODELO-DATOS.md", () => {
   const tablas = tablasDelEsquema();
 
+  /*
+    UN SUELO, NO LA CUENTA. Esto sólo caza que el barrido de las migraciones
+    se rompa —una expresión que deja de casar daría cero o casi—; la cuenta
+    exacta la comprueba `probar-bbdd.sh` contra la base. Bajó de 35 a 30
+    cuando `20261102190000` y `20261102200000` retiraron cuatro tablas sin uso
+    y el esquema se quedó en 34.
+  */
   it("hay tablas que comprobar", () => {
-    expect(tablas.length).toBeGreaterThanOrEqual(35);
+    expect(tablas.length).toBeGreaterThanOrEqual(30);
   });
 
   it("cita todas las tablas del esquema", () => {

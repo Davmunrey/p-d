@@ -57,10 +57,9 @@ async function crearGrupo(
   await conBase(async (sql) => {
     await sql`delete from public.grupos_invitacion where nombre = ${nombre}`;
     const [grupo] = await sql<{ id: string }[]>`
-      insert into public.grupos_invitacion (nombre, lado, invitado_a, maximo_acompanantes, huella_token)
+      insert into public.grupos_invitacion (nombre, lado, maximo_acompanantes, huella_token)
       values (
-        ${nombre}, 'ambos',
-        array['ceremonia','banquete','fiesta']::public.evento_boda[], ${maximoAcompanantes},
+        ${nombre}, 'ambos', ${maximoAcompanantes},
         public.huella_token(${token})
       )
       returning id

@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**67**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**68**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -27,7 +27,7 @@ Cada una tiene su reverso exacto en
 [`supabase/migrations/rollback/`](../supabase/migrations/rollback/), con el mismo
 nombre. Se ejecutan en orden **inverso**.
 
-En números: **36 tablas, 15 vistas, 20 enumerados, 60 funciones, 70 políticas RLS.**
+En números: **34 tablas, 15 vistas, 19 enumerados, 59 funciones, 68 políticas RLS.**
 
 Esos cinco números no se escriben a mano: los cuenta la suite de seguridad contra
 el catálogo de la base recién migrada, y si el documento dice otra cosa, el CI se
@@ -100,8 +100,6 @@ erDiagram
     invitaciones_panel ||..o| perfiles : "autoriza por correo"
 
     grupos_invitacion ||--o{ invitados : "compone"
-    grupos_invitacion ||--o| notas_grupo : "notas privadas"
-    invitados ||--o| notas_invitado : "notas privadas"
     invitados ||--o{ confirmaciones : "historial de respuestas"
     mesas ||--o{ invitados : "sienta"
     perfiles ||--o{ confirmaciones : "registró"
@@ -142,7 +140,6 @@ erDiagram
         bytea huella_token "SHA-256, único"
         smallint maximo_acompanantes
         enum lado
-        array invitado_a
     }
     invitados {
         uuid id PK
@@ -242,8 +239,8 @@ borrar**.
 
 #### `configuracion_privada` — fila única, **nunca sale del panel**
 
-`presupuesto_objetivo`, `aforo_maximo`, `iban_regalos`, `titular_cuenta`,
-`notas_privadas`. Lectura para editor y propietario; escritura sólo propietario.
+`iban_regalos` y `titular_cuenta`. Lectura para editor y propietario; escritura
+sólo propietario.
 
 **La única salida es `datos_para_regalos()`**, que publica el IBAN y su titular
 —y nada más— cuando la sección `regalos` está visible. Desde BODA-129 los dos se
@@ -281,8 +278,9 @@ abortaría el alta de la cuenta con un 500 opaco.
 
 #### `registro_auditoria` y `campos_auditoria_redactados`
 
-Bitácora de quién cambió qué y cuándo. Está enganchada a **las 20 tablas de
-dominio**, no a dos: los triggers de fila también se disparan en los borrados en
+Bitácora de quién cambió qué y cuándo. Está enganchada a **todas las tablas de
+dominio**, no a dos —la suite de seguridad falla si alguna nueva se queda sin
+su trigger—: los triggers de fila también se disparan en los borrados en
 cascada, así que un grupo borrado por error se puede reconstruir entero.
 
 `campos_auditoria_redactados` es una **tabla** y no una lista dentro de la
@@ -306,20 +304,15 @@ La unidad de invitación: una familia o una pareja.
   `crear_grupo_invitacion()` o `rotar_token_invitacion()`. Si se pierde, se emite
   otro; rotar invalida el anterior en el acto, así que también sirve para
   revocar un enlace filtrado.
-- **`invitado_a`** — array de eventos, normalizado por trigger (sin duplicados y
-  ordenado). El CHECK no fija el número de eventos: ese dato es derivable del
-  enumerado y copiarlo obligaría a tocar la restricción al añadir uno nuevo.
-- **`invitado_a`, `maximo_acompanantes`, `lado` y `huella_token` son
-  privilegios, no datos**: definen a cuántos eventos entra el grupo y cuánta
-  gente puede añadir. Un trigger los congela frente a cualquiera que no sea
-  editor (`RSV06`).
-
-#### `notas_grupo` y `notas_invitado`
-
-Notas privadas de los novios, en tablas aparte. La ruta pública del RSVP tiene
-que leer `grupos_invitacion` e `invitados`; **lo que el invitado no debe ver,
-sencillamente no está en la tabla que se le devuelve.** Ninguna función pública
-las toca, y llevan RLS forzada.
+- **`maximo_acompanantes`, `lado` y `huella_token` son privilegios, no
+  datos**: definen cuánta gente puede añadir el grupo y a quién pertenece su
+  enlace. Un trigger los congela frente a cualquiera que no sea editor
+  (`RSV06`).
+- **Lo que ya no está** (`20261102200000`): los eventos de cada invitación
+  (`invitado_a`, con su enumerado `evento_boda`), que el panel nunca pidió ni
+  la web filtraba; el idioma de cada invitación, porque la boda es sólo en
+  castellano —el de la boda sigue en `configuracion_boda`—, y las notas
+  privadas (`notas_grupo`, `notas_invitado`), que ninguna pantalla escribía.
 
 #### `invitados`
 
@@ -597,7 +590,7 @@ TRUNCATE no entre por la puerta de atrás).
 | **`anon`** (la landing) | `configuracion_boda`, `secciones_landing` visibles, `medios` publicados, y las tres vistas públicas | **nada**                                         |
 | **`anon`** (con token)  | Su grupo, vía `nombre_de_invitacion()` y `obtener_invitacion()`                                     | Su respuesta y la playlist, por sus puertas      |
 | **`lector`**            | Todo el dominio: invitados, confirmaciones, economía, tareas, mesas, medios                         | nada                                             |
-| **`editor`**            | Lo anterior + notas privadas + `configuracion_privada`                                              | Todo el dominio; en `confirmaciones` sólo INSERT |
+| **`editor`**            | Lo anterior + `configuracion_privada`                                                               | Todo el dominio; en `confirmaciones` sólo INSERT |
 | **`propietario`**       | Todo, incluida la bitácora de auditoría y la lista blanca                                           | Todo, incluidos usuarios y configuración privada |
 
 Nadie —ningún rol, en ninguna circunstancia— tiene UPDATE ni DELETE sobre

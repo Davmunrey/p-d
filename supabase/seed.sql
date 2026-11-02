@@ -58,7 +58,7 @@ declare
   v_tabla text;
 begin
   foreach v_tabla in array array[
-    'configuracion_privada', 'secciones_landing', 'notas_grupo', 'notas_invitado',
+    'configuracion_privada', 'secciones_landing',
     'categorias_proveedor', 'proveedores', 'documentos_proveedor', 'servicios',
     'categorias_presupuesto', 'partidas_presupuesto', 'pagos', 'tareas', 'mesas',
     'medios'
@@ -105,14 +105,11 @@ update public.configuracion_boda set
   idioma_por_defecto   = 'es';
 
 update public.configuracion_privada set
-  presupuesto_objetivo = 42000.00,
-  aforo_maximo         = 150,
   -- IBAN de ejemplo de la documentación pública de la ISO, no una cuenta real.
   -- Aquí porque la sección de regalos no se puede probar sin él: sin cuenta,
   -- `datos_para_regalos()` no devuelve nada y la sección no se pinta.
   iban_regalos         = 'ES9121000418450200051332',
-  titular_cuenta       = '(DES) Ana Ejemplo y (DES) Luis Ejemplo',
-  notas_privadas       = '(DES) Fila de desarrollo. No son cifras reales.';
+  titular_cuenta       = '(DES) Ana Ejemplo y (DES) Luis Ejemplo';
 
 -- La reserva de fecha nace apagada en la migración base, que es lo correcto en
 -- producción: no se publica hasta que los novios lo deciden. En desarrollo se
@@ -135,28 +132,17 @@ update public.secciones_landing set visible = true where seccion = 'regalos';
 -- ----------------------------------------------------------------------------
 
 insert into public.grupos_invitacion
-  (id, nombre, huella_token, token_emitido_en, maximo_acompanantes, lado, invitado_a,
-   idioma)
+  (id, nombre, huella_token, token_emitido_en, maximo_acompanantes, lado)
 values
   ('aaaaaaaa-0000-4000-8000-000000000001',
    '(DES) Familia Uno',
    public.huella_token('desarrollo-familia-uno-000000'),
-   now(), 2, 'novia',
-   array['ceremonia','banquete','fiesta']::public.evento_boda[],
-   'es'),
+   now(), 2, 'novia'),
 
   ('aaaaaaaa-0000-4000-8000-000000000002',
    '(DES) Familia Dos',
    public.huella_token('desarrollo-familia-dos-000000'),
-   now(), 0, 'novio',
-   -- Sólo a la ceremonia: sirve para probar que la invitación no enseña el
-   -- banquete a quien no está invitado.
-   array['ceremonia']::public.evento_boda[],
-   'es');
-
-insert into public.notas_grupo (grupo_id, texto) values
-  ('aaaaaaaa-0000-4000-8000-000000000001',
-   '(DES) Nota privada. Si esto aparece en el RSVP público, hay una fuga.');
+   now(), 0, 'novio');
 
 insert into public.invitados
   (id, grupo_id, nombre, apellidos,
@@ -178,10 +164,6 @@ values
   ('bbbbbbbb-0000-4000-8000-000000000004', 'aaaaaaaa-0000-4000-8000-000000000002',
    '(DES) Bea', 'Dos',
    false, false, 'estandar', null);
-
-insert into public.notas_invitado (invitado_id, texto) values
-  ('bbbbbbbb-0000-4000-8000-000000000001',
-   '(DES) Nota privada sobre una persona. Tampoco debe salir por el RSVP.');
 
 -- Respuestas. Cada invitado ya tiene su fila `pendiente` (la crea el trigger
 -- `invitados_confirmacion_inicial`): estas INSERT la degradan y pasan a ser las
@@ -305,7 +287,7 @@ declare
   v_tabla text;
 begin
   foreach v_tabla in array array[
-    'configuracion_privada', 'secciones_landing', 'notas_grupo', 'notas_invitado',
+    'configuracion_privada', 'secciones_landing',
     'categorias_proveedor', 'proveedores', 'documentos_proveedor', 'servicios',
     'categorias_presupuesto', 'partidas_presupuesto', 'pagos', 'tareas', 'mesas',
     'medios'

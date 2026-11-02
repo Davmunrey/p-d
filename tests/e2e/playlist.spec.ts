@@ -77,10 +77,9 @@ async function crearGrupo(sufijo: string): Promise<{ token: string; grupoId: str
     `;
     const [grupo] = await sql<{ id: string }[]>`
       insert into public.grupos_invitacion
-        (nombre, lado, invitado_a, maximo_acompanantes, huella_token)
+        (nombre, lado, maximo_acompanantes, huella_token)
       values (
-        ${`(DES) Playlist ${sufijo}`}, 'ambos',
-        array['ceremonia','banquete','fiesta']::public.evento_boda[], 0,
+        ${`(DES) Playlist ${sufijo}`}, 'ambos', 0,
         public.huella_token(${token})
       )
       returning id

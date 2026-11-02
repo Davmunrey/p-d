@@ -75,9 +75,8 @@ async function crearInvitacion(
   const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
   try {
     const [grupo] = await sql<{ id: string }[]>`
-      insert into public.grupos_invitacion (nombre, lado, invitado_a, maximo_acompanantes, huella_token)
-      values (${nombre}, ${lado}::public.lado_invitacion,
-              array['ceremonia','banquete','fiesta']::public.evento_boda[], 0,
+      insert into public.grupos_invitacion (nombre, lado, maximo_acompanantes, huella_token)
+      values (${nombre}, ${lado}::public.lado_invitacion, 0,
               public.huella_token(${`desarrollo-importar-${nombre}-000000`}))
       returning id
     `;
@@ -279,9 +278,8 @@ test.describe("Importar invitados", () => {
     const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
     try {
       const [grupo] = await sql<{ id: string }[]>`
-        insert into public.grupos_invitacion (nombre, lado, invitado_a, maximo_acompanantes, huella_token)
-        values (${`${MARCA} carrera ${sello}`}, 'ambos',
-                array['ceremonia','banquete','fiesta']::public.evento_boda[], 0,
+        insert into public.grupos_invitacion (nombre, lado, maximo_acompanantes, huella_token)
+        values (${`${MARCA} carrera ${sello}`}, 'ambos', 0,
                 public.huella_token(${`desarrollo-importar-${sello}-000000`}))
         returning id
       `;

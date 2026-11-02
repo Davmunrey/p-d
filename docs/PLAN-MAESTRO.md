@@ -227,7 +227,7 @@ La convención es uniforme: `id uuid` como clave, `creado_en` y `actualizado_en`
 
 **`configuracion_boda`** (fila única) — fecha y hora de ceremonia y banquete, nombres, lugares, direcciones, coordenadas, hashtag, correo de contacto, moneda, zona horaria, idioma por defecto y `fecha_limite_rsvp`. La vista **`v_configuracion_publica`** es lo único que lee `anon`: enumera columna a columna lo que puede salir a la web, para que una columna añadida mañana no aparezca sola en la landing.
 
-**`configuracion_privada`** (fila única) — lo que no sale a la web: presupuesto objetivo, aforo, IBAN de regalos con su titular, y notas. `anon` no tiene nada sobre esta tabla; la única excepción es **`datos_para_regalos()`**, que publica el IBAN y el titular —y sólo eso— cuando la sección `regalos` está visible. Encender la sección **es** publicar la cuenta: no hay un segundo interruptor que pueda quedar en desacuerdo con el primero. La sección está encendida, así que el interruptor real es el propio IBAN: mientras esté vacío no se pinta nada, y el día que se escriba en el panel se publica.
+**`configuracion_privada`** (fila única) — lo que no sale a la web: el IBAN de regalos con su titular. `anon` no tiene nada sobre esta tabla; la única excepción es **`datos_para_regalos()`**, que publica el IBAN y el titular —y sólo eso— cuando la sección `regalos` está visible. Encender la sección **es** publicar la cuenta: no hay un segundo interruptor que pueda quedar en desacuerdo con el primero. La sección está encendida, así que el interruptor real es el propio IBAN: mientras esté vacío no se pinta nada, y el día que se escriba en el panel se publica.
 
 **`secciones_landing`** — qué secciones se enseñan y en qué orden (`seccion`, `visible`, `orden`). Añadir una sección es una fila, no una migración. Su política es `using (visible)`: a un invitado no le llega ni el nombre de una sección apagada. Vista pública: **`v_secciones_publicas`**.
 
@@ -243,7 +243,7 @@ La convención es uniforme: `id uuid` como clave, `creado_en` y `actualizado_en`
 
 ### Invitados y confirmaciones
 
-**`grupos_invitacion`** — la unidad de invitación (una familia, una cuadrilla). `nombre`, `lado` (`novia` | `novio` | `ambos`), `invitado_a` (array de `ceremonia` | `banquete` | `fiesta`), `maximo_acompanantes`, `idioma`, `huella_token` y `token_emitido_en`.
+**`grupos_invitacion`** — la unidad de invitación (una familia, una cuadrilla). `nombre`, `lado` (`novia` | `novio` | `ambos`), `maximo_acompanantes`, `huella_token`, `token_emitido_en` y cuándo se le mandó la invitación y el recordatorio.
 
 > **El token no se guarda.** La columna es `huella_token`: el SHA-256 del token, y nada más. Ni un volcado de la base ni quien tenga la contraseña de Supabase puede reconstruir un enlace. De ahí que el panel lo enseñe **una sola vez** al emitirlo, y que perderlo obligue a emitir otro — que invalida el anterior en el acto.
 
@@ -253,9 +253,9 @@ La convención es uniforme: `id uuid` como clave, `creado_en` y `actualizado_en`
 
 > **Histórico inmutable.** Cambiar una respuesta inserta una fila nueva; la anterior deja de ser vigente pero no se toca. Un trigger lo impide, así que **ninguna columna añadida aquí se puede actualizar después**: lo que tenga que cambiar sin ser una respuesta nueva vive en otra tabla.
 
-**`notas_grupo`** y **`notas_invitado`** — anotaciones privadas del panel. No las ve ningún invitado.
-
 > **Lo que se retiró** (`20261102190000`): el mensaje para los novios, la canción y el alojamiento de cada respuesta, con la bandeja del panel (`mensajes_leidos` y `mensajes_destacados`); el correo del acuse y el teléfono de cada invitado; la dirección postal de cada invitación; el teléfono y el avatar de los perfiles, y el teléfono privado de `configuracion_privada`. Ninguna pantalla los pedía ya: el formulario se rehízo sin ellos, las canciones van por `sugerir_cancion()` y las invitaciones salen por WhatsApp desde el selector de contactos del móvil. En producción no tenían ni una fila.
+
+> **Y en la segunda pasada** (`20261102200000`): los eventos de cada invitación (`invitado_a` y el enumerado `evento_boda`), que el panel nunca pidió ni la web filtraba; el idioma de cada invitación (la boda es sólo en castellano); las notas privadas (`notas_grupo`, `notas_invitado` y las de `configuracion_privada`), el presupuesto objetivo y el aforo, que ninguna pantalla escribía; `invitaciones_panel.invitado_por`, que nada rellenaba, y el blog de ejemplo de Supabase (`users`, `posts`, `comments`) que apareció en la base de producción sin ninguna migración detrás.
 
 **`mesas`** — mesas del banquete: nombre, capacidad, forma y posición para el plano.
 

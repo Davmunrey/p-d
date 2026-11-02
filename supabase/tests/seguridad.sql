@@ -89,8 +89,8 @@ do $$
 declare
   t text;
   privadas text[] := array[
-    'grupos_invitacion', 'invitados', 'confirmaciones', 'notas_invitado',
-    'notas_grupo', 'proveedores', 'documentos_proveedor', 'contactos_proveedor',
+    'grupos_invitacion', 'invitados', 'confirmaciones',
+    'proveedores', 'documentos_proveedor', 'contactos_proveedor',
     'servicios', 'documentos_boda',
     'categorias_proveedor', 'categorias_presupuesto', 'partidas_presupuesto',
     'pagos', 'tareas', 'mesas', 'perfiles', 'registro_auditoria',
@@ -754,8 +754,7 @@ declare
 begin
   select token into v_token
     from public.crear_grupo_invitacion(
-      'Grupo playlist', 2::smallint, 'ambos'::public.lado_invitacion,
-      array['fiesta']::public.evento_boda[]
+      'Grupo playlist', 2::smallint, 'ambos'::public.lado_invitacion
     );
 
   set local role anon;
@@ -828,8 +827,7 @@ declare
 begin
   select token, grupo_id into v_token, v_grupo
     from public.crear_grupo_invitacion(
-      'Grupo de prueba', 2::smallint, 'ambos'::public.lado_invitacion,
-      array['ceremonia']::public.evento_boda[]
+      'Grupo de prueba', 2::smallint, 'ambos'::public.lado_invitacion
     );
 
   -- Sin nadie dentro todavía no hay a quién saludar.
@@ -887,8 +885,7 @@ begin
   -- el ataque cruzado, que es la comprobación importante de todo el fichero.
   select token into v_token
     from public.crear_grupo_invitacion(
-      'Grupo de prueba', 2::smallint, 'ambos'::public.lado_invitacion,
-      array['ceremonia']::public.evento_boda[]
+      'Grupo de prueba', 2::smallint, 'ambos'::public.lado_invitacion
     );
 
   select g.id into v_grupo
@@ -974,16 +971,14 @@ declare
 begin
   select token, grupo_id into v_token, v_grupo
     from public.crear_grupo_invitacion(
-      'Grupo acompañantes', 1::smallint, 'ambos'::public.lado_invitacion,
-      array['ceremonia']::public.evento_boda[]
+      'Grupo acompañantes', 1::smallint, 'ambos'::public.lado_invitacion
     );
   insert into public.invitados (grupo_id, nombre) values (v_grupo, 'Titular')
   returning id into v_titular;
 
   select token, grupo_id into v_otro, v_grupo2
     from public.crear_grupo_invitacion(
-      'Otra familia con acompañante', 1::smallint, 'ambos'::public.lado_invitacion,
-      array['ceremonia']::public.evento_boda[]
+      'Otra familia con acompañante', 1::smallint, 'ambos'::public.lado_invitacion
     );
   insert into public.invitados (grupo_id, nombre, es_acompanante)
   values (v_grupo2, 'Acompañante ajeno', true)
@@ -1535,8 +1530,7 @@ declare
 begin
   select token, grupo_id into v_token, v_grupo
     from public.crear_grupo_invitacion(
-      'Grupo puertas', 2::smallint, 'ambos'::public.lado_invitacion,
-      array['fiesta']::public.evento_boda[]
+      'Grupo puertas', 2::smallint, 'ambos'::public.lado_invitacion
     );
   insert into public.invitados (grupo_id, nombre) values (v_grupo, 'Puerta');
 
