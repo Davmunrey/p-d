@@ -76,7 +76,11 @@ export function Galeria({
   }));
 
   return (
-    <section id={ancla} className="px-margen py-seccion-fluida" aria-labelledby={idTitulo}>
+    <section
+      id={ancla}
+      className="contorno-arriba px-margen py-seccion-fluida"
+      aria-labelledby={idTitulo}
+    >
       <div className="mx-auto max-w-amplio">
         <header className="sr-only">
           <h2 id={idTitulo}>{t("galeria.titulo")}</h2>
@@ -97,7 +101,7 @@ export function Galeria({
                 <a
                   href={enElBucket(foto.ruta)}
                   data-indice={indice}
-                  className="block overflow-hidden rounded-imagen bg-superficie-hundida transicion-color hover:shadow-elevada"
+                  className="elevar-al-pasar block overflow-hidden rounded-imagen contorno-bloque bg-superficie-hundida"
                 >
                   <Image
                     src={enElBucket(foto.ruta)}

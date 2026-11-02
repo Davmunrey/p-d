@@ -676,8 +676,8 @@ test.describe("El ritmo y la composición son los de la entrega", () => {
       .locator("header")
       .first()
       .evaluate((barra) => barra.getBoundingClientRect().height);
-    // 64 más el filete de un píxel.
-    expect(Math.round(alto)).toBe(65);
+    // 64 más la raya de tinta de abajo, que en la web neobrutalista mide dos.
+    expect(Math.round(alto)).toBe(66);
   });
 
   test("cada sección usa el ancho que le da la entrega", async ({ page }) => {
@@ -783,13 +783,28 @@ test.describe("El ritmo y la composición son los de la entrega", () => {
           filete: parseFloat(estilo.gridTemplateColumns.split(" ")[1]),
           arriba: parseFloat(estilo.borderTopWidth),
           abajo: parseFloat(estilo.borderBottomWidth),
+          tinta: estilo.borderTopColor,
+          // La tinta del contorno, resuelta en una sonda: el color que debe tener.
+          tintaContorno: (() => {
+            const sonda = document.createElement("div");
+            sonda.style.color = "var(--tinta-contorno)";
+            li.appendChild(sonda);
+            const color = getComputedStyle(sonda).color;
+            sonda.remove();
+            return color;
+          })(),
         };
       });
 
+    // El filete y la raya de arriba, de dos píxeles: el programa es un horario
+    // con sus rayas de tinta, como el resto de bloques de la web.
     expect(fila.columnas).toBe(3);
-    expect(fila.filete).toBe(1);
-    expect(fila.arriba).toBe(1);
+    expect(fila.filete).toBe(2);
+    expect(fila.arriba).toBe(2);
     expect(fila.abajo).toBe(0);
+    expect(fila.tinta, "la raya es de la tinta del contorno, no un gris").toBe(
+      fila.tintaContorno,
+    );
 
     // Y la víspera, al revés: cierra por abajo, como en la entrega.
     const vispera = await page

@@ -93,7 +93,8 @@ export const GRUPOS_COLOR = [
     "tokens": [
       "accion",
       "accion-hover",
-      "accion-activa"
+      "accion-activa",
+      "relleno-boton-secundario"
     ]
   },
   {
@@ -117,7 +118,11 @@ export const GRUPOS_COLOR = [
       "borde-fuerte",
       "borde-tenue",
       "borde-filete",
-      "borde-marca"
+      "borde-marca",
+      "tinta-contorno",
+      "tinta-contorno-control",
+      "tinta-sombra-dura",
+      "tinta-sombra-accion"
     ]
   },
   {

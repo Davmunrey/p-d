@@ -574,35 +574,49 @@ test.describe("Los componentes del catálogo", () => {
    * de foco un borde que cambia de gris a azul. Sin la última afirmación de
    * este test, el ticket se puede dar por hecho con el foco todavía apagado.
    */
-  test("un campo enfocado tiene el anillo de tres píxeles y no pierde su aro", async ({
+  test("un campo enfocado lleva su sombra dura de foco y no pierde su aro", async ({
     page,
   }) => {
     const campo = page.locator('[data-prueba="componente-campos"] input').first();
     await expect(campo).toBeVisible();
 
     const enReposo = await campo.evaluate((nodo) => getComputedStyle(nodo).boxShadow);
-    expect(enReposo, "sin enfocar no puede haber anillo: si no, siempre estaría puesto").toBe(
-      "none",
-    );
+    expect(
+      enReposo,
+      "sin enfocar no puede haber sombra de foco: si no, siempre estaría puesta",
+    ).toBe("none");
 
     await campo.focus();
     await expect(campo).toBeFocused();
 
-    const grosor = await leerToken(page, "anillo-campo-ancho");
-    expect(grosor, "el anillo de la entrega mide tres píxeles").toBe("3px");
+    /*
+      EN LA WEB, EL FOCO ES UNA SOMBRA DURA: el campo se despega tres píxeles
+      sobre una sombra de bronce, como un botón. El anillo de tres píxeles es
+      del panel, y se prueba allí abajo, en «El panel no es neobrutalista».
+    */
+    // Se mide en píxeles con una sonda: el CSS servido escribe el token
+    // minificado («.1875rem»), y lo que importa es lo que ocupa.
+    const desplazamiento = await page.evaluate(() => {
+      const sonda = document.createElement("div");
+      sonda.style.width = "var(--foco-campo-desplazamiento)";
+      document.body.appendChild(sonda);
+      const ancho = getComputedStyle(sonda).width;
+      sonda.remove();
+      return ancho;
+    });
+    expect(desplazamiento, "la sombra de foco se desplaza tres píxeles").toBe("3px");
 
     /*
-      SE LEE CON `poll`, PORQUE EL CAMPO TRANSICIONA. El borde y el anillo no
+      SE LEE CON `poll`, PORQUE EL CAMPO TRANSICIONA. El borde y la sombra no
       saltan a su valor: viajan hasta él durante la transición de color del
       campo. Una lectura única justo después de enfocar devuelve el fotograma de
-      en medio —un anillo de 0,68 px al 23 % en vez de uno de 3 px— y el test
-      acusa al componente de un valor que sí acaba poniendo. `poll` reintenta
-      hasta que la transición se cierra.
+      en medio y el test acusa al componente de un valor que sí acaba poniendo.
+      `poll` reintenta hasta que la transición se cierra.
     */
     await expect
       .poll(async () => campo.evaluate((nodo) => getComputedStyle(nodo).boxShadow))
-      // `box-shadow` computa como «color 0px 0px 0px <grosor>».
-      .toContain(`0px 0px 0px ${grosor}`);
+      // `box-shadow` computa como «color x y desenfoque extensión».
+      .toContain("3px 3px 0px 0px");
 
     await expect
       .poll(async () => campo.evaluate((nodo) => getComputedStyle(nodo).boxShadow))

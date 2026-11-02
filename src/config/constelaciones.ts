@@ -407,11 +407,9 @@ export const ESCALA_ESTRELLA_TARJETA = 1.2;
 export const GROSOR_TRAZO = 0.7;
 
 /**
- * El anillo que rodea la constelación de la portada: un pelo, como los filetes
- * de la página. Su svg no tiene `viewBox` —cuenta en píxeles de pantalla—
- * porque el anillo crece con la pantalla y un filete que engorda deja de ser
- * un filete. Por eso el radio va en porcentaje del lado: medio punto dentro
- * del borde, para que el trazo no se corte.
+ * El radio del anillo que rodea la constelación de la portada, en porcentaje
+ * del lado: su svg no tiene `viewBox` —cuenta en píxeles de pantalla— y el
+ * trazo, de tres píxeles como el contorno de un marco (`trazo-contorno`), se
+ * queda dentro del borde.
  */
-export const GROSOR_ANILLO = 1;
 export const RADIO_ANILLO = "49.5%";

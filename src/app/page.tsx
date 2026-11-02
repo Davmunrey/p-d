@@ -540,7 +540,7 @@ function Portada({
           escritorio los dos datos van separados como pide la entrega. Un solo
           token fluido hace las dos cosas sin un `sm:` de por medio.
         */}
-        <hr className="animacion-trazar retardo-4 my-raya border-t border-borde-fuerte" />
+        <hr className="animacion-trazar retardo-4 my-raya contorno-arriba" />
 
         <dl className="animacion-subir retardo-5 flex flex-wrap gap-datos">
           <div>
@@ -686,7 +686,11 @@ function Paisaje({
   const esVideo = Boolean(foto?.tipo === "video" && foto.posterRuta && fuente);
 
   return (
-    <section id={anclaDe("paisaje")} aria-labelledby={idTitulo} className="escena-paisaje">
+    <section
+      id={anclaDe("paisaje")}
+      aria-labelledby={idTitulo}
+      className="escena-paisaje contorno-arriba"
+    >
       <div className="panel-paisaje bg-fondo">
         <div className="marco-paisaje bg-superficie-tenue">
           <div className="foto-paisaje">
@@ -832,7 +836,7 @@ function Historia({ hitos, urlBase }: { hitos: HitoHistoria[]; urlBase: string |
         {hitos.map((hito) => (
           <li key={hito.id} className="animacion-subir-al-ver">
             {hito.foto && urlBase ? (
-              <div className="relative mb-elemento aspect-hito overflow-hidden rounded-imagen bg-superficie-hundida">
+              <div className="relative mb-elemento aspect-hito overflow-hidden rounded-imagen contorno-bloque bg-superficie-hundida sombra-dura">
                 <Image
                   src={`${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${hito.foto.ruta}`}
                   alt={hito.foto.textoAlternativo}
@@ -923,7 +927,7 @@ function ListaDeHoras({
             className={`animacion-subir-al-ver rejilla-dato-filete gap-fila-hueco ${
               menor
                 ? "border-b border-borde-filete py-fila"
-                : "rounded-fila border-t border-borde px-fila-lado py-fila-programa transicion-color hover:bg-superficie-hundida"
+                : "rounded-fila contorno-arriba px-fila-lado py-fila-programa transicion-color hover:bg-superficie-hundida"
             }`}
           >
             {/*
@@ -972,11 +976,17 @@ function ListaDeHoras({
         LOS AVISOS DE LA ENTREGA: una fila de etiquetas redondeadas bajo una
         línea, con lo que conviene saber antes de vestirse. Son contenido de
         la boda —se editan en Ajustes— y sin ninguno no se pinta ni la línea.
+        Van como pegatinas: contorno de tinta y su sombra dura pequeña.
       */}
       {avisos.length > 0 ? (
-        <ul className="mt-elemento flex flex-wrap items-center gap-fila-hueco border-t border-borde pt-hueco-fluido">
+        <ul className="mt-elemento flex flex-wrap items-center gap-fila-hueco contorno-arriba pt-hueco-fluido">
           {avisos.map((aviso) => (
-            <EtiquetaEstado como="li" key={aviso} tamano="aviso">
+            <EtiquetaEstado
+              como="li"
+              key={aviso}
+              tamano="aviso"
+              className="contorno-bloque sombra-dura-s"
+            >
               {aviso}
             </EtiquetaEstado>
           ))}
@@ -1153,7 +1163,7 @@ function Transporte({
             «18 min»: las descripciones no se alineaban. Con `subgrid`, la
             columna de la duración la marca la más ancha y vale para todas.
           */}
-          <ul className="rejilla-dato gap-x-elemento border-t border-borde">
+          <ul className="rejilla-dato gap-x-elemento contorno-arriba">
             {rutas.map((ruta) => (
               <li
                 key={ruta.id}
@@ -1224,7 +1234,7 @@ function MapaDelLugar({ latitud, longitud }: { latitud: number; longitud: number
         el hueco antes de que cargue nada. Sin radio y casi cuadrado, como en
         la entrega.
       */
-      className="aspect-mapa h-auto w-full border border-borde"
+      className="aspect-mapa h-auto w-full contorno-marco sombra-dura-l"
     />
   );
 }
@@ -1241,7 +1251,7 @@ function Preguntas({
       titulo={t("preguntas.titulo")}
       hundida
     >
-      <ul className="mx-auto max-w-estrecho border-t border-borde">
+      <ul className="mx-auto max-w-estrecho contorno-arriba">
         {preguntas.map((pregunta) => (
           <li key={pregunta.id} className="border-b border-borde">
             {/* Acordeón nativo: accesible por teclado sin una línea de JS */}
@@ -1303,7 +1313,7 @@ function Playlist({
               como="li"
               key={cancion.id}
               tamano="chip"
-              className="animacion-pop levantar-al-pasar"
+              className="animacion-pop levantar-al-pasar contorno-bloque sombra-dura-s"
             >
               {cancion.texto}
             </EtiquetaEstado>
@@ -1344,7 +1354,7 @@ function Regalos() {
     >
       {/* Centrada entera, a 820 px, como la entrega: no hay nada que leer en
           columna, hay una sola cosa que ofrecer. La tarjeta entra escalando. */}
-      <div className="animacion-escala-al-ver mt-hueco-fluido rounded-tarjeta border border-borde bg-superficie-tenue p-tarjeta-fluida text-center">
+      <div className="animacion-escala-al-ver mt-hueco-fluido rounded-tarjeta contorno-bloque bg-superficie-tenue p-tarjeta-fluida text-center sombra-dura">
         {/*
           EL NÚMERO NO ESTÁ AQUÍ, y es el ticket entero. Este componente pinta
           un botón; el IBAN se pide a `/regalos/cuenta` cuando alguien lo
@@ -1383,7 +1393,7 @@ function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
         {consejos.map((consejo) => (
           <li
             key={consejo.id}
-            className="animacion-subir-al-ver elevar-al-pasar rounded-tarjeta border border-borde bg-superficie p-tarjeta"
+            className="animacion-subir-al-ver elevar-al-pasar rounded-tarjeta contorno-bloque bg-superficie p-tarjeta"
           >
             {/* Versalita en marca, no titular serif: así rotula la entrega
                 «Ellas», «Ellos» y «Solo dos peticiones». */}
@@ -1602,7 +1612,7 @@ function Bloque({
   return (
     <section
       id={ancla}
-      className={`px-margen py-seccion-fluida ${hundida ? "bg-superficie-hundida" : ""}`}
+      className={`contorno-arriba px-margen py-seccion-fluida ${hundida ? "bg-superficie-hundida" : ""}`}
       aria-labelledby={titulo || conTitularDentro ? idTitulo : undefined}
     >
       <div className={`mx-auto ${ANCHOS[ancho]}`}>

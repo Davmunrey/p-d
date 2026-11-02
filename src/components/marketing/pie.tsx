@@ -65,7 +65,7 @@ export function Pie({
   return (
     <footer
       data-seccion="pie"
-      className="animacion-subir-al-ver px-margen pt-pie-arriba pb-pie-abajo text-center"
+      className="animacion-subir-al-ver contorno-arriba px-margen pt-pie-arriba pb-pie-abajo text-center"
     >
       <div className="mx-auto max-w-estrecho">
         {/*

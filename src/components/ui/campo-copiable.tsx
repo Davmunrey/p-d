@@ -76,7 +76,7 @@ export function CampoCopiable({
         readOnly
         value={valorMostrado}
         aria-label={etiqueta}
-        className="min-h-campo min-w-0 flex-1 rounded-campo border border-borde bg-superficie px-interno font-codigo text-pequeno text-tinta"
+        className="min-h-campo min-w-0 flex-1 rounded-campo contorno-bloque bg-superficie px-interno font-codigo text-pequeno text-tinta"
       />
       <Boton jerarquia="secundario" onClick={copiar}>
         {copiado ? textoCopiado : textoCopiar}

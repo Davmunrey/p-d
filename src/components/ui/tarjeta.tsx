@@ -80,7 +80,7 @@ export function Tarjeta({
 
   return (
     <Caja
-      className={`flex flex-col overflow-hidden rounded-tarjeta border border-borde ${forma.caja} ${className}`}
+      className={`flex flex-col overflow-hidden rounded-tarjeta contorno-bloque ${forma.caja} ${className}`}
     >
       {imagen ? (
         <div className="relative aspect-foto-tarjeta bg-superficie-hundida">{imagen}</div>

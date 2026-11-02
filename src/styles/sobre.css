@@ -26,7 +26,7 @@
 .raya-cabecera {
   background: linear-gradient(var(--borde-fuerte), transparent);
   height: var(--alto-raya-vertical);
-  width: var(--grosor-filete);
+  width: var(--grosor-trama);
 }
 
 /* --------------------------------------------------------------------------
@@ -69,9 +69,15 @@
     var(--papel-sobre-arriba) 0%,
     var(--papel-sobre-abajo) 100%
   );
-  border: var(--grosor-filete) solid var(--borde-sobre);
   border-radius: var(--radio-sobre);
   box-shadow: var(--sombra-sobre);
+
+  /*
+    EL CONTORNO VA POR FUERA (`outline`) Y NO COMO BORDE: el dorso y la solapa
+    se pintan encima del cuerpo y tapaban el borde entero, y el sobre se
+    quedaba con la sombra dura y sin la raya que la justifica.
+  */
+  outline: var(--grosor-filete) solid var(--borde-sobre);
   inset: 0;
   position: absolute;
 }
@@ -80,8 +86,8 @@
 .sobre-trama {
   background-image: repeating-linear-gradient(
     45deg,
-    var(--trama-sobre) 0 var(--grosor-filete),
-    transparent var(--grosor-filete) var(--paso-trama)
+    var(--trama-sobre) 0 var(--grosor-trama),
+    transparent var(--grosor-trama) var(--paso-trama)
   );
   border-radius: var(--radio-sobre);
   inset: 0;
@@ -196,7 +202,7 @@
     var(--sello-medio) 48%,
     var(--sello-fondo) 100%
   );
-  border-radius: var(--radio-boton);
+  border-radius: var(--radio-sello);
   display: grid;
   height: var(--lado-sello);
   place-items: center;
@@ -355,7 +361,7 @@
 
 .tarjeta-foto {
   background: var(--papel-foto);
-  border: var(--grosor-filete) solid var(--borde);
+  border: var(--grosor-filete) solid var(--tinta-contorno);
   box-shadow: var(--sombra-naipe-foto);
 }
 
@@ -365,7 +371,7 @@
     var(--papel-tarjeta-arriba) 0%,
     var(--papel-tarjeta-abajo) 100%
   );
-  border: var(--grosor-filete) solid var(--borde);
+  border: var(--grosor-filete) solid var(--tinta-contorno);
   box-shadow: var(--sombra-naipe);
 }
 

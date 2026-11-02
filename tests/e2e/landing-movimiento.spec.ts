@@ -16,7 +16,7 @@ import copy from "../../content/copy.es.json";
  * 2. La «y» de la portada se escribe.
  * 3. La cifra de la cuenta atrás que cambia rueda; la que no cambia, quieta.
  * 4. Un hilo de bronce recorre el programa al bajar, y cada hora se enciende.
- * 5. Los botones ceden al pulsarlos.
+ * 5. Los botones se hunden en su sombra al pulsarlos.
  *
  * Y lo que no se negocia: con movimiento reducido todo está ya dibujado,
  * escrito y en su color, sin esperar a nada.
@@ -365,33 +365,61 @@ test.describe("El movimiento de la landing", () => {
     }
   });
 
-  /** Un botón cede un 3 % mientras se pulsa; con movimiento reducido, no. */
-  async function escalaAlPulsar(page: Page): Promise<number> {
+  /**
+   * UN BOTÓN SE HUNDE EN SU SOMBRA AL PULSARLO. En reposo lleva su sombra dura
+   * de tres píxeles —de bronce, el de la acción principal—; pulsado, baja esos
+   * tres píxeles y la sombra se va: el bloque tapa la suya. Con movimiento
+   * reducido no se desplaza, pero la sombra se va igual: el cambio de estado
+   * se ve sin que nada se mueva.
+   */
+  async function alPulsar(page: Page) {
     const boton = page.locator("#portada").getByRole("link", {
       name: copy.portada.confirmarAsistencia,
     });
     await boton.scrollIntoViewIfNeeded();
     // Los botones suben al entrar: se espera a que paren para apuntarles.
     await entradaTerminada(boton.locator(".."));
+    const reposo = await boton.evaluate((n) => getComputedStyle(n).boxShadow);
     const caja = (await boton.boundingBox())!;
     await page.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2);
     await page.mouse.down();
     // La transición dura 100 ms: se lee cuando ha llegado, no a mitad.
     await page.waitForTimeout(250);
-    // La escala horizontal de la matriz: 1 es su tamaño, «none» incluido.
-    const escala = await boton.evaluate((n) => new DOMMatrix(getComputedStyle(n).transform).a);
+    const pulsado = await boton.evaluate((n) => {
+      const estilo = getComputedStyle(n);
+      // «none» da la identidad: sin desplazamiento y a escala 1.
+      const matriz = new DOMMatrix(estilo.transform);
+      return { x: matriz.e, y: matriz.f, escala: matriz.a, sombra: estilo.boxShadow };
+    });
     await page.mouse.up();
-    return escala;
+    return { reposo, ...pulsado };
   }
 
-  test("un botón cede al pulsarlo", async ({ page }) => {
+  test("un botón se hunde en su sombra al pulsarlo", async ({ page }) => {
     await page.goto("/");
-    expect(await escalaAlPulsar(page)).toBeCloseTo(0.97, 2);
+    const pulsacion = await alPulsar(page);
+
+    expect(pulsacion.reposo, "en reposo, la sombra dura de tres píxeles").toMatch(
+      /3px 3px 0px 0px/,
+    );
+    expect(pulsacion.x).toBeCloseTo(3, 0);
+    expect(pulsacion.y).toBeCloseTo(3, 0);
+    expect(pulsacion.escala, "se hunde, no encoge").toBe(1);
+    expect(pulsacion.sombra, "hundido, ya no hay sombra").toMatch(/0px 0px 0px 0px/);
   });
 
   test("con movimiento reducido el botón no se mueve al pulsarlo", async ({ page }) => {
     await conMovimientoReducido(page);
-    expect(await escalaAlPulsar(page)).toBe(1);
+    const pulsacion = await alPulsar(page);
+
+    expect({ x: pulsacion.x, y: pulsacion.y, escala: pulsacion.escala }).toEqual({
+      x: 0,
+      y: 0,
+      escala: 1,
+    });
+    expect(pulsacion.sombra, "la sombra se va igual: el estado se ve").toMatch(
+      /0px 0px 0px 0px/,
+    );
   });
 
   /**
