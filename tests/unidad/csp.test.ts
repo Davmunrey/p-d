@@ -11,8 +11,6 @@ import { construirCsp } from "../../src/lib/csp";
  */
 const ORIGENES = {
   supabase: "https://abc.supabase.co",
-  posthog: "https://eu.i.posthog.com",
-  sentry: "https://o1.ingest.sentry.io/api/2/envelope/",
   mapa: "https://www.openstreetmap.org/export/embed.html?bbox=1",
   whatsapp: "https://wa.me/",
   desarrollo: false,
@@ -29,7 +27,8 @@ describe("construirCsp", () => {
   it("los scripts van con nonce y strict-dynamic, sin unsafe-inline ni eval en producción", () => {
     expect(directiva("script-src")).toContain("'nonce-nonce-de-prueba'");
     expect(directiva("script-src")).toContain("'strict-dynamic'");
-    expect(directiva("script-src")).toContain("https://eu.i.posthog.com");
+    // Sólo lo nuestro: ni analítica ni informes de errores de terceros.
+    expect(directiva("script-src")).toBe("'self' 'nonce-nonce-de-prueba' 'strict-dynamic'");
     expect(directiva("script-src")).not.toContain("'unsafe-inline'");
     expect(directiva("script-src")).not.toContain("'unsafe-eval'");
   });
@@ -38,13 +37,11 @@ describe("construirCsp", () => {
     expect(construirCsp("n", { ...ORIGENES, desarrollo: true })).toContain("'unsafe-eval'");
   });
 
-  it("las imágenes y el vídeo vienen del bucket; la conexión, del bucket, la analítica y los avisos", () => {
+  it("las imágenes y el vídeo vienen del bucket; la conexión, sólo del bucket", () => {
     expect(directiva("img-src")).toBe("'self' data: blob: https://abc.supabase.co");
     expect(directiva("media-src")).toBe("'self' https://abc.supabase.co");
     // El bucket, porque el panel sube las fotos del navegador a Storage.
-    expect(directiva("connect-src")).toBe(
-      "'self' https://abc.supabase.co https://eu.i.posthog.com https://o1.ingest.sentry.io",
-    );
+    expect(directiva("connect-src")).toBe("'self' https://abc.supabase.co");
     expect(directiva("frame-src")).toBe("https://www.openstreetmap.org");
   });
 

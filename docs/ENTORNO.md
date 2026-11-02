@@ -20,18 +20,15 @@ solo están los **nombres**.
 **Settings → Environment Variables.** Marcar las tres ramas (Production,
 Preview, Development) salvo que se indique otra cosa.
 
-| Variable                        | De dónde se saca                                                                                                                                                              |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                  | Botón **Connect** del dashboard → pestaña **Transaction pooler**                                                                                                              |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Botón **Connect** → pestaña de frameworks, o Settings → **API Keys**                                                                                                          |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Igual que la anterior: salen juntas                                                                                                                                           |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Settings → **API Keys** → `service_role`. **Hace falta para subir fotos** (BODA-29): Storage no admite escrituras con la sesión de un usuario                                 |
-| `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                                                                                                                    |
-| `RESEND_API_KEY`                | [resend.com](https://resend.com) → **API Keys**. Sin ella no se manda el acuse de recibo, y no es un error                                                                    |
-| `CORREO_REMITENTE`              | La dirección desde la que se escribe, en un dominio **verificado** en Resend                                                                                                  |
-| `SENTRY_DSN`                    | [sentry.io](https://sentry.io) → proyecto → **Settings → Client Keys (DSN)**. Sin ella no se arranca Sentry, y no es un error. Basta ésta: el navegador la recibe al compilar |
-| `NEXT_PUBLIC_POSTHOG_KEY`       | [posthog.com](https://posthog.com) → **Project settings → Project API key**. Sin ella no se arranca la analítica                                                              |
-| `NEXT_PUBLIC_POSTHOG_HOST`      | Opcional. `https://eu.i.posthog.com` por defecto; sólo se cambia si el proyecto está en la nube americana                                                                     |
+| Variable                        | De dónde se saca                                                                                                                              |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                  | Botón **Connect** del dashboard → pestaña **Transaction pooler**                                                                              |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Botón **Connect** → pestaña de frameworks, o Settings → **API Keys**                                                                          |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Igual que la anterior: salen juntas                                                                                                           |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Settings → **API Keys** → `service_role`. **Hace falta para subir fotos** (BODA-29): Storage no admite escrituras con la sesión de un usuario |
+| `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                                                                                    |
+| `RESEND_API_KEY`                | [resend.com](https://resend.com) → **API Keys**. Sin ella no se manda el acuse de recibo, y no es un error                                    |
+| `CORREO_REMITENTE`              | La dirección desde la que se escribe, en un dominio **verificado** en Resend                                                                  |
 
 **El pooler, no la conexión directa.** Cada petición a la web arranca una
 función efímera; con conexión directa se agotan las conexiones del servidor en
@@ -74,49 +71,14 @@ llevar el prefijo `NEXT_PUBLIC_`, porque eso la metería en el JavaScript que
 descarga cualquier visitante y le daría acceso completo a la lista de invitados
 y al presupuesto.
 
-### Observabilidad (BODA-93)
+### Sin terceros
 
-**Sin clave no se arranca nada, y es a propósito.** En local y en CI no hay ni
-`SENTRY_DSN` ni `NEXT_PUBLIC_POSTHOG_KEY`, así que no sale ni una petición hacia
-ningún tercero y los tests no dependen de que un servicio externo esté de pie.
-Lo contrario —una clave de mentira «para que no falle»— manda datos reales a un
-sitio que nadie mira.
-
-**Qué NO sale de aquí, pase lo que pase.** Todo lo que se manda pasa antes por
-`src/lib/observabilidad/limpiar.ts`, que quita el token de las invitaciones, los
-correos y los teléfonos, y por `antesDeMandar`, que además tira enteras las
-cookies, las cabeceras y el bloque `user` que Sentry rellena con la IP. Está
-probado en `tests/unidad/observabilidad.test.ts` y vigilado sobre el tráfico de
-verdad en `tests/e2e/observabilidad.spec.ts`.
-
-**La alerta de confirmaciones fallidas se configura a mano**, una vez, en
-Sentry: **Alerts → Create Alert → Issues**, con el filtro
-`message:"confirmacion-fallida"` y el umbral que se quiera (por ejemplo, más de
-tres en una hora). El nombre del mensaje es la constante
-`AVISO_CONFIRMACION_FALLIDA` de `src/config/constants.ts`: si se cambia ahí, hay
-que cambiarlo también en la regla, o la alerta se apaga en silencio.
-
-**Una sola variable para los dos lados.** El navegador sólo recibe variables
-`NEXT_PUBLIC_*`, así que `next.config.ts` copia `SENTRY_DSN` a
-`NEXT_PUBLIC_SENTRY_DSN` al compilar. Hasta que se hizo, con sólo `SENTRY_DSN`
-arrancaba el Sentry del servidor y el del navegador no —el que se entera de lo
-que le pasa a un invitado en el RSVP—. El DSN es público por diseño; tras
-cambiarlo hay que volver a desplegar, porque va dentro del bundle.
-
-**Las trazas pasan por el mismo filtro que los errores.** Con el muestreo
-encendido, las transacciones y sus tramos llevan la URL de la página, que en el
-RSVP es el token: van por `beforeSendTransaction` y `beforeSendSpan`, no por
-`beforeSend`. Las opciones de Sentry viven en
-`src/lib/observabilidad/opciones-sentry.ts` y los dos arranques las comparten:
-un filtro nuevo llega a los dos o a ninguno. Los identificadores de Sentry
-(`event_id`, los de la traza) salen intactos: no son datos de nadie, y uno
-estropeado hace que Sentry rechace el informe entero.
-
-**Lo que no se puede probar en CI**: que un error provocado a propósito llegue
-al panel de Sentry hace falta comprobarlo a mano sobre el preview, porque leerlo
-de vuelta exige un token de la API de Sentry que no va a estar en el
-repositorio. Se hace una vez tras configurar el DSN, **con un error del
-navegador y otro del servidor**: uno solo no dice si arrancan los dos.
+**La web no habla con ningún servicio de fuera** salvo Supabase (la base y las
+fotos) y el mapa de OpenStreetMap. Sentry y PostHog se retiraron del código: no
+se iban a usar, y cada servicio externo es un sitio más por donde puede salir el
+token de una invitación. Los fallos quedan en el registro del servidor
+(**Vercel → Logs**). Que el token no sale hacia ningún otro dominio lo vigila
+`tests/e2e/fugas-del-token.spec.ts` sobre el tráfico de verdad.
 
 Si falta `DATABASE_URL`, **la web despliega igual** y muestra que está en
 preparación, dejando el error en el log del servidor. Se decidió así tras un
@@ -285,7 +247,7 @@ parte del CI y no debe ensuciar el estado de una PR.
 
 ### Si algún día hacen falta más
 
-Cuando entren los emails (BODA-57) o la analítica (BODA-93) habrá que añadir
+Cuando entren los emails (BODA-57) habrá que añadir
 `RESEND_API_KEY` y similares. En todos los casos:
 
 **Settings → Secrets and variables → Actions → New repository secret.**

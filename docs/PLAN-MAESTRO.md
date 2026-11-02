@@ -154,8 +154,6 @@ De las seis comprobaciones que la entrega pide antes de mandar a imprenta, tres 
 | Emails        | Resend (free tier)                                             | Confirmaciones de RSVP y recordatorios                                                                                            |
 | Tests         | Vitest + Testing Library + Playwright                          | Unitarios y E2E del flujo crítico (RSVP y login)                                                                                  |
 | Calidad       | ESLint + Prettier + Stylelint + Husky + lint-staged            | Las reglas del §2 se aplican solas                                                                                                |
-| Errores       | Sentry (free tier)                                             | Ya disponible en el entorno                                                                                                       |
-| Analítica     | PostHog (free tier)                                            | Ya disponible en el entorno                                                                                                       |
 
 **Alternativas descartadas:** Astro (mejor landing, peor panel — no compensa mantener dos apps); Neon + Auth.js (Postgres excelente, pero habría que construir auth, storage y RLS por separado); PocketBase (ligero, pero requiere servidor propio y sigue pre-1.0).
 
@@ -484,7 +482,7 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 
 **Las gráficas usan tres tokens de color y no doce.** Lo normal es una paleta propia de gráficas; aquí sería el hardcode que prohíbe la regla 1 y rompería una identidad que tiene un azul y un bronce. Se diseñan para necesitar poco color: el reparto por categoría lleva el nombre al lado, no un color por barra, y donde de verdad hay dos series se distinguen también por posición y por cifra. Son manchas, así que el umbral es 3:1 contra la superficie, y lo comprueba el test de paleta **en los dos temas** — que es como se descubrió que el pie heredaba las series claras sobre su fondo casi negro. Cada gráfica lleva su tabla con la misma información y calculada por las mismas funciones: el `<svg>` va `aria-hidden` porque para quien no lo ve no es nada. El reparto por categoría suma lo que va costando —lo acordado donde se cerró, lo estimado donde no—, no sólo lo acordado: una categoría todavía estimada desaparecía del reparto. En el móvil las tablas se desplazan en horizontal (`tabla-desplazable`) con una sombra en el borde que tiene más, la primera columna fija, el rótulo fuera del área que se desplaza y la región alcanzable con el tabulador.
 
-**Nada de lo que sale hacia Sentry o PostHog lleva datos de nadie.** `/rsvp/<token>` es una credencial y va dentro de la URL de cualquier informe de error, así que todo pasa antes por `src/lib/observabilidad/limpiar.ts`. El token se corta **por estructura** —se sustituye el segmento entero detrás de `/rsvp/`— y no por su aspecto: es base64 sin forma y los de desarrollo se llaman «desarrollo-familia-uno-000000», así que ninguna expresión regular acierta con los dos. Correos y teléfonos sí van por patrón. Las cookies, las cabeceras y el bloque `user` que Sentry rellena con la IP se tiran enteros. Sin clave no se arranca ninguna de las dos herramientas, así que en local y en CI no sale ni una petición.
+**Ningún tercero: ni Sentry ni PostHog.** Se retiraron del código —paquetes, arranque, CSP y variables— porque no se iban a usar, y cada servicio externo es un sitio más por donde puede salir un dato. La web no manda nada a nadie: la CSP sólo abre la propia web, el bucket de Supabase y el mapa, y `tests/e2e/fugas-del-token.spec.ts` vigila sobre el tráfico de verdad que el token de una invitación no salga hacia ningún otro dominio. Los fallos quedan en el registro del servidor (Vercel → Logs).
 
 ---
 
@@ -524,7 +522,7 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 | **6 — Presupuesto**             | Categorías, partidas, pagos, gráficas                                                                                    | Control económico operativo                   | 3 d   |
 | **7 — Proveedores + servicios** | Fichas, pipeline, documentos, precio por invitado                                                                        | Gestión de contratación                       | 3 d   |
 | **8 — Tareas + seating**        | Checklist, kanban, plano de mesas                                                                                        | Organización del día                          | 3-4 d |
-| **9 — Pulido**                  | Performance (Lighthouse ≥ 95), a11y, SEO, Sentry, PostHog, E2E, backups                                                  | Producción                                    | 2-3 d |
+| **9 — Pulido**                  | Performance (Lighthouse ≥ 95), a11y, SEO, E2E, backups                                                                   | Producción                                    | 2-3 d |
 
 **Camino crítico:** 0 → 1 → 2 → 3 permite publicar y empezar a repartir el Save the Date mientras el panel sigue en desarrollo. Las fases 6-8 son internas: no bloquean nada de cara a los invitados.
 
@@ -545,7 +543,7 @@ El grupo se identifica por su enlace único — sin contraseñas. Formulario mul
 
 Si el despliegue apunta a una rama de trabajo, producción deja de actualizarse en cuanto esa rama se mergea y se abandona.
 
-Variables de entorno (Vercel, nunca en git): `DATABASE_URL` (cadena del pooler de Supabase, modo transaction), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (solo servidor), `RESEND_API_KEY`, `NEXT_PUBLIC_SITE_URL`, `SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`.
+Variables de entorno (Vercel, nunca en git): `DATABASE_URL` (cadena del pooler de Supabase, modo transaction), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (solo servidor), `RESEND_API_KEY`, `NEXT_PUBLIC_SITE_URL`.
 
 **Backups:** export diario del esquema y datos a un repo privado vía GitHub Action — el free tier de Supabase tiene retención limitada, y la lista de invitados no se puede perder. El volcado lleva los permisos (el modelo de acceso son GRANT explícitos) y se hace con el `pg_dump` de la versión de la base; cómo se restaura, en el mismo proyecto o en uno nuevo, está en `docs/ENTORNO.md`. Los intentos del RSVP, con la IP de cada invitado, los purga pg_cron cada noche según la retención configurada.
 
@@ -553,13 +551,12 @@ Variables de entorno (Vercel, nunca en git): `DATABASE_URL` (cadena del pooler d
 
 ## 10. Costes
 
-| Servicio         | Plan                             | Coste        |
-| ---------------- | -------------------------------- | ------------ |
-| Vercel           | Hobby                            | 0 €          |
-| Supabase         | Free (500 MB BBDD, 1 GB storage) | 0 €          |
-| Resend           | Free (3.000 emails/mes)          | 0 €          |
-| Sentry / PostHog | Free                             | 0 €          |
-| Dominio          | `.com` o `.es`                   | ~10-15 €/año |
+| Servicio | Plan                             | Coste        |
+| -------- | -------------------------------- | ------------ |
+| Vercel   | Hobby                            | 0 €          |
+| Supabase | Free (500 MB BBDD, 1 GB storage) | 0 €          |
+| Resend   | Free (3.000 emails/mes)          | 0 €          |
+| Dominio  | `.com` o `.es`                   | ~10-15 €/año |
 
 **Total: ~12 €/año.** Único punto de atención: el free tier de Supabase pausa proyectos tras 7 días sin actividad — se resuelve con un ping semanal desde una GitHub Action (o el plan Pro, 25 $/mes, si se prefiere no depender de ello en la semana de la boda).
 

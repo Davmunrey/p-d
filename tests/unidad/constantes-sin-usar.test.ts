@@ -35,10 +35,9 @@ function fuente(): string {
     });
 
   /*
-    `instrumentation.ts` e `instrumentation-client.ts` viven en la RAÍZ, no en
-    `src/`: los carga Next por su nombre y su sitio. Dejarlos fuera del barrido
-    daría por muertas `SENTRY_DSN` y `MUESTREO_TRAZAS`, que son justo las que
-    apagan la observabilidad entera si se tocan.
+    `next.config.ts` vive en la RAÍZ, no en `src/`: lo carga Next por su nombre
+    y su sitio. Dejarlo fuera del barrido daría por muerta
+    `PESO_MAXIMO_VIDEO_MB`, que es la que fija el tope de las subidas.
   */
   const sueltos = readdirSync(RAIZ, { withFileTypes: true })
     .filter((entrada) => entrada.isFile() && /\.(ts|tsx|mjs)$/.test(entrada.name))

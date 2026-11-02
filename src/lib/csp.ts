@@ -11,8 +11,8 @@
  * propia cabecera en la petición y lo pone en cada script que emite.
  *
  * EL INVENTARIO, leído del código y contrastado con el HTML de producción:
- *   · scripts   → los de `/_next/static` y los en línea de Next (nonce), y los
- *                 que PostHog carga desde su servidor.
+ *   · scripts   → los de `/_next/static` y los en línea de Next (nonce). Ni
+ *                 analítica ni informes de errores de terceros: no hay.
  *   · estilos   → la hoja de `/_next/static` y atributos `style=`: `next/image`
  *                 los escribe con `fill` y con el marcador borroso, y dos
  *                 pantallas del panel posicionan con `style={{}}`.
@@ -20,8 +20,8 @@
  *                 público de Supabase (póster del vídeo, miniaturas del panel).
  *   · vídeo     → el bucket.
  *   · fuentes   → locales.
- *   · conexión  → PostHog y Sentry, si están configurados. Supabase sólo se
- *                 habla desde el servidor: no hay cliente en el navegador.
+ *   · conexión  → la propia web y el bucket de Supabase (las subidas del
+ *                 panel). Ningún tercero.
  *   · marcos    → el mapa de OpenStreetMap; que nos enmarquen, nadie.
  *   · formularios → los nuestros, y el bucket: las descargas de documentos
  *                 redirigen a su URL firmada.
@@ -32,8 +32,6 @@
 
 export interface OrigenesCsp {
   supabase?: string | null;
-  posthog?: string | null;
-  sentry?: string | null;
   mapa: string;
   /** Adonde redirigen «Abrir WhatsApp» y «Recordar por WhatsApp». */
   whatsapp: string;
@@ -51,8 +49,6 @@ function origenDe(valor: string | null | undefined): string | null {
 
 export function construirCsp(nonce: string, origenes: OrigenesCsp): string {
   const supabase = origenDe(origenes.supabase);
-  const posthog = origenDe(origenes.posthog);
-  const sentry = origenDe(origenes.sentry);
   const mapa = origenDe(origenes.mapa);
   const whatsapp = origenDe(origenes.whatsapp);
 
@@ -63,7 +59,7 @@ export function construirCsp(nonce: string, origenes: OrigenesCsp): string {
     // `'strict-dynamic'`: lo que cargue un script con nonce —los trozos que Next
     // pide después— también vale, y los navegadores que lo entienden ignoran
     // la lista de dominios; los antiguos se quedan con ella.
-    `script-src ${lista("'self'", `'nonce-${nonce}'`, "'strict-dynamic'", posthog, origenes.desarrollo ? "'unsafe-eval'" : null)}`,
+    `script-src ${lista("'self'", `'nonce-${nonce}'`, "'strict-dynamic'", origenes.desarrollo ? "'unsafe-eval'" : null)}`,
     `style-src 'self' 'unsafe-inline'`,
     `img-src ${lista("'self'", "data:", "blob:", supabase)}`,
     `media-src ${lista("'self'", supabase)}`,
@@ -71,7 +67,7 @@ export function construirCsp(nonce: string, origenes: OrigenesCsp): string {
     // Y el bucket: las fotos y los vídeos del panel suben del navegador a
     // Storage directamente, porque por el servidor no caben (ver
     // `panel/medios/formulario-subida.tsx`).
-    `connect-src ${lista("'self'", supabase, posthog, sentry)}`,
+    `connect-src ${lista("'self'", supabase)}`,
     `frame-src ${lista(mapa)}`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,

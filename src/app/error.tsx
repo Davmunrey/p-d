@@ -21,7 +21,7 @@ import { t } from "@/lib/copy";
  * de la base.
  *
  * NO SE ENSEÑA `error.message`: puede llevar dentro una consulta o un dato de
- * otra persona. Va al registro (y a Sentry, si está puesto).
+ * otra persona. Va al registro del servidor.
  */
 export default function ErrorPublico({
   error,

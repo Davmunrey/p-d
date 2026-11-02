@@ -4,31 +4,21 @@ import postgres from "postgres";
 import { RUTA_RSVP } from "../../src/config/constants";
 
 /**
- * BODA-93 (#64) · QUE EL TOKEN NO SALGA DE AQUÍ
+ * QUE EL TOKEN NO SALGA DE AQUÍ
  *
- * Es el caso de error del ticket, escrito tal cual: «una URL de confirmación
- * con token nunca aparece entera en lo que se envía; se comprueba sobre el
- * payload».
+ * El enlace de cada invitación lleva su token en la URL, y ese token es una
+ * credencial: abre la invitación de esa familia. Ninguna petición hacia otro
+ * dominio puede llevarlo encima.
  *
- * SE COMPRUEBA SOBRE EL TRÁFICO DE VERDAD Y NO SOBRE EL FILTRO. El filtro ya
- * tiene sus dieciséis tests unitarios —`tests/unidad/observabilidad.test.ts`— y
- * ahí se le pasan informes a mano. Aquí se abre una invitación real en un
+ * SE COMPRUEBA SOBRE EL TRÁFICO DE VERDAD. Se abre una invitación real en un
  * navegador real y se mira TODO lo que sale por el cable hacia fuera. Es lo
  * único que caza el fallo de mañana: alguien añade una librería de mapas, o un
- * píxel, o un chat de soporte, y esa librería manda la URL entera sin pasar por
- * ningún filtro nuestro.
+ * píxel, o un chat de soporte, y esa librería manda la URL entera.
  *
- * POR QUÉ VALE AUNQUE NO HAYA NI SENTRY NI POSTHOG CONFIGURADOS. En CI no hay
- * claves, así que hoy no sale nada hacia terceros y el test pasa por vacío. No
+ * HOY NO SALE NADA HACIA TERCEROS —sin Sentry ni PostHog, la web no habla con
+ * nadie más que con Supabase y el mapa—, así que el test pasa por vacío. No
  * sobra por eso: lo que vigila es que no aparezca un destino nuevo, y ese es
- * justo el cambio que nadie va a recordar comprobar. Un test que hoy no tiene
- * nada que mirar y mañana sí es lo contrario de un test que sobra.
- *
- * LO QUE NO SE PUEDE PROBAR AQUÍ, y conviene que quede escrito: «un error
- * provocado a propósito llega al panel de Sentry» necesita un proyecto de
- * Sentry de verdad, su DSN y un token de su API para volver a leerlo. Eso no
- * cabe en CI sin meter una credencial de un servicio externo en el repositorio.
- * Se comprueba a mano sobre el preview, y está apuntado en `docs/ENTORNO.md`.
+ * justo el cambio que nadie va a recordar comprobar.
  */
 
 const cadena = process.env.DATABASE_URL;

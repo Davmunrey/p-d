@@ -3,10 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import {
   PARAMETRO_VOLVER,
-  POSTHOG_SERVIDOR,
   RUTA_ACCESO,
   RUTA_PANEL,
-  SENTRY_DSN,
   URL_MAPA_EMBEBIDO,
   URL_WHATSAPP,
 } from "@/config/constants";
@@ -58,8 +56,6 @@ function conCsp(peticion: NextRequest): string {
   const nonce = btoa(crypto.randomUUID());
   const csp = construirCsp(nonce, {
     supabase: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    posthog: POSTHOG_SERVIDOR,
-    sentry: SENTRY_DSN,
     mapa: URL_MAPA_EMBEBIDO,
     whatsapp: URL_WHATSAPP,
     desarrollo: process.env.NODE_ENV !== "production",
