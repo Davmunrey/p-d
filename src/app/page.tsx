@@ -372,7 +372,6 @@ export default async function PaginaInicio() {
         inicio={inicio}
         enlaces={enlaces}
         etiqueta={t("navegacion.etiquetaPrincipal")}
-        marca={nombres}
         nombreNovia={configuracion.nombreNovia}
         nombreNovio={configuracion.nombreNovio}
         empiezaDeNoche={aPintar[0] === "portada"}

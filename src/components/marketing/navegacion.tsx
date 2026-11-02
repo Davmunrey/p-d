@@ -31,7 +31,6 @@ export function Navegacion({
   inicio,
   enlaces,
   etiqueta,
-  marca,
   nombreNovia,
   nombreNovio,
   empiezaDeNoche = false,
@@ -40,8 +39,6 @@ export function Navegacion({
   inicio: string;
   enlaces: EnlaceSeccion[];
   etiqueta: string;
-  /** Los dos nombres juntos: es el nombre accesible del enlace al inicio. */
-  marca: string;
   nombreNovia: string;
   nombreNovio: string;
   /** Si lo primero de la página es de noche: así no destella clara al cargar. */
@@ -101,7 +98,6 @@ export function Navegacion({
         */}
         <a
           href={inicio}
-          aria-label={marca}
           /*
             A 23 px con el espaciado abierto (+.04em) y el «&» al 72 % del
             cuerpo, que es como la entrega dibuja el monograma en la barra: no
@@ -110,14 +106,12 @@ export function Navegacion({
           className="flex h-cabecera shrink-0 items-center transicion-color hover:text-tinta"
         >
           {/*
-            El enlace ya se anuncia con `aria-label`, así que el monograma se
-            calla: si no, quien escucha oiría los dos nombres dos veces.
+            EL NOMBRE DEL ENLACE LO DA EL MONOGRAMA: los dos nombres en texto
+            para lectores de pantalla y las iniciales calladas. Con un
+            `aria-label` encima, axe 4.14 exige que lo que se ve («A & L»)
+            forme parte de ese nombre (WCAG 2.5.3) y lo marca como grave.
           */}
-          <Monograma
-            nombreNovia={nombreNovia}
-            nombreNovio={nombreNovio}
-            nombreAccesible={false}
-          />
+          <Monograma nombreNovia={nombreNovia} nombreNovio={nombreNovio} />
         </a>
 
         {/*

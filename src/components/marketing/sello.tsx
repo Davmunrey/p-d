@@ -17,6 +17,11 @@ import { t } from "@/lib/copy";
  * la pulsación sigue haciendo algo. El nombre accesible es «Abrir la
  * invitación»; las iniciales son decoración para quien escucha.
  *
+ * ESE NOMBRE VA DENTRO, EN TEXTO OCULTO, Y NO EN `aria-label`: con
+ * `aria-label`, axe 4.14 exige que lo que se ve («A & L») forme parte del
+ * nombre (WCAG 2.5.3), y aquí lo visible es un monograma, no una etiqueta; la
+ * etiqueta que se lee es la pista de debajo. Igual que en la cabecera.
+ *
  * El aspecto vive en `sobre.css`: el degradado, el latido y el crecimiento al
  * pasar el ratón son capa de componente y no caben en una utilidad.
  */
@@ -33,7 +38,6 @@ export function Sello({
     <button
       ref={ref}
       type="submit"
-      aria-label={t("saveTheDate.abrir")}
       className="sello animacion-latido cursor-pointer border-0 p-0"
     >
       <Monograma
@@ -42,6 +46,7 @@ export function Sello({
         variante="sello"
         nombreAccesible={false}
       />
+      <span className="sr-only">{t("saveTheDate.abrir")}</span>
     </button>
   );
 }
