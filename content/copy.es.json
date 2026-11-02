@@ -184,7 +184,7 @@
     "pasoDetallesAyuda": "Sólo para quienes vienen.",
     "menuEtiqueta": "Menú",
     "menus": {
-      "estandar": "Sin preferencia",
+      "estandar": "Menú general",
       "vegetariano": "Vegetariano",
       "vegano": "Vegano",
       "infantil": "Infantil",
@@ -499,7 +499,7 @@
       "exportar": "En papel"
     },
     "menus": {
-      "estandar": "Sin preferencia",
+      "estandar": "General",
       "vegetariano": "Vegetariano",
       "vegano": "Vegano",
       "infantil": "Infantil",
@@ -658,7 +658,9 @@
       "acompanante": "Acompañante",
       "puedeTraer": "Puede traer {cuantos} acompañantes",
       "puedeTraerUno": "Puede traer un acompañante",
+      "acompanantesApuntados": "Acompañantes: {apuntados} de {maximo}",
       "sinAcompanantes": "Sin acompañantes",
+      "alergiasDe": "Alergias: {alergias}",
       "contestado": "Contestado",
       "nuevaTitulo": "Nueva invitación",
       "nuevaAyuda": "El nombre es el que verán en la portada al abrir su enlace: «Familia Fernández», «Los del máster».",
@@ -1827,6 +1829,7 @@
       "guion": {
         "titulo": "El guion de la jornada",
         "vacio": "Todavía no hay guion. Se escribe punto a punto, antes de la boda: la hora, qué pasa y quién responde de ello.",
+        "escribirlo": "Escribir el guion",
         "tocaAhora": "Ahora toca",
         "todoHecho": "Todo hecho. Que la disfrutéis.",
         "marcar": "Marcar hecho",

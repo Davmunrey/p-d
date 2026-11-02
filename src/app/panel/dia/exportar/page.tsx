@@ -117,8 +117,14 @@ export default async function PaginaExportarDelDia() {
               columnas según su contenido, así que en el papel el menú bailaba
               de una tabla a la siguiente; y en el móvil el nombre se partía en
               dos renglones para dejar sitio a una columna de alergias vacía.
+
+              MENOS EN EL MÓVIL. A 390 px, el cuarto de ancho que le tocaba al
+              menú eran unos 50 px de texto, y «Vegetariano» salía partido en
+              «Vegetari / ano». Ahí manda el contenido (`table-auto`): ninguna
+              columna baja de su palabra más larga, y si no cupiera, el
+              contenedor se desplaza. El papel y la tableta siguen fijos.
             */}
-            <table className="w-full table-fixed border-collapse text-left">
+            <table className="w-full table-fixed border-collapse text-left max-sm:table-auto">
               <thead>
                 <tr>
                   {[

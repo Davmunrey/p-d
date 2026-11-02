@@ -8,6 +8,7 @@ import {
   RUTA_AGENDA_DIA,
   RUTA_BUSCAR_DIA,
   RUTA_EXPORTAR_DIA,
+  RUTA_GUION_DIA,
   RUTA_RECUENTO,
 } from "@/config/constants";
 import { obtenerGuion } from "@/lib/bbdd/dia";
@@ -55,9 +56,24 @@ export default async function PaginaDia() {
       <Atajos />
 
       {guion.length === 0 ? (
-        <Cuerpo className="mt-bloque max-w-texto text-pequeno text-tinta-suave">
-          {t("panel.dia.guion.vacio")}
-        </Cuerpo>
+        /*
+          UN VACÍO QUE LLEVA A ALGÚN SITIO. Decía cómo se escribe el guion y
+          no dónde: la pestaña estaba arriba, pero quien lee «todavía no hay»
+          busca el siguiente paso justo debajo. Sólo para quien puede escribir.
+        */
+        <div className="mt-bloque max-w-texto">
+          <Cuerpo className="text-pequeno text-tinta-suave">
+            {t("panel.dia.guion.vacio")}
+          </Cuerpo>
+          {puedeEditar ? (
+            <Link
+              href={RUTA_GUION_DIA}
+              className="mt-pila inline-flex min-h-control-compacto items-center text-pequeno text-tinta underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca"
+            >
+              {t("panel.dia.guion.escribirlo")}
+            </Link>
+          ) : null}
+        </div>
       ) : (
         <Guion puntos={guion} puedeEditar={puedeEditar} />
       )}
@@ -86,9 +102,14 @@ function Atajos() {
       <ul className="grid grid-cols-2 gap-interno sm:grid-cols-4">
         {atajos.map((atajo) => (
           <li key={atajo.ruta}>
+            {/*
+              `h-full`: la celda de la cuadrícula ya se estira a la altura de la
+              fila, pero el enlace no la ocupaba, y el de una línea quedaba más
+              bajo que su vecino de dos («Buscar a alguien»).
+            */}
             <Link
               href={atajo.ruta}
-              className="flex min-h-control items-center justify-center rounded-campo border border-borde-fuerte p-elemento text-center text-etiqueta uppercase tracking-boton text-tinta-marca transicion-color hover:border-borde-marca hover:bg-superficie-hundida"
+              className="flex h-full min-h-control items-center justify-center rounded-campo border border-borde-fuerte p-elemento text-center text-etiqueta uppercase tracking-boton text-tinta-marca transicion-color hover:border-borde-marca hover:bg-superficie-hundida"
             >
               {t(atajo.clave)}
             </Link>

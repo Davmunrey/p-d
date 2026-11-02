@@ -21,21 +21,24 @@ import { IDIOMA, IMPORTE_MAXIMO } from "@/config/constants";
  * «EUR» aquí sería exactamente el hardcode que prohíbe la regla 1, aunque hoy
  * acertara.
  *
- * OJO CON LAS CUATRO CIFRAS, que es donde se equivoca todo el mundo: 2000 € se
- * escribe «2000,00 €», sin punto. El separador de millar aparece a partir de
- * cinco cifras —«12.000,00 €»—, y no es un capricho de la librería: la RAE deja
- * los números de cuatro cifras sin separador, y `es-ES` lo cumple.
+ * LAS CUATRO CIFRAS, CON PUNTO: «2.000,00 €». `es-ES` las deja sin separador
+ * —la RAE no lo pone en un número de cuatro cifras suelto— y así estuvo un
+ * tiempo. Pero la misma Ortografía hace la excepción que aquí manda: en listas
+ * y columnas, junto a cantidades de cinco o más cifras, también lo llevan. Y
+ * en el panel no hay importes sueltos. La tabla del presupuesto ponía
+ * «8600,00 €» debajo de «20.000,00 €», y en una columna de dinero comparar es
+ * lo único que se hace: sin el punto, se lee mal de un vistazo. El mismo
+ * importe se escribe además igual en la tabla y en el aviso que lo cita.
  *
- * Importa porque casi todo lo que se compara en una boda cae justo ahí, entre
- * mil y diez mil. Dos tests se han caído ya escribiendo «2.000,00» a mano
- * contra una pantalla que ponía «2000,00»; los dos daban por buena la regla
- * inglesa. Un importe esperado no se teclea: se pide aquí.
+ * Un importe esperado no se teclea en un test: se pide aquí. Dos se cayeron
+ * ya por escribir a mano la regla equivocada, en un sentido y en el otro.
  */
 export function formateadorDeImporte(moneda: string): (importe: number) => string {
   const formato = new Intl.NumberFormat(IDIOMA, {
     style: "currency",
     currency: moneda,
     minimumFractionDigits: 2,
+    useGrouping: "always",
   });
   return (importe: number) => formato.format(importe);
 }

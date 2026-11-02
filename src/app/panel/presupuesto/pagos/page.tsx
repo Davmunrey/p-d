@@ -7,7 +7,7 @@ import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
-import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
+import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   LARGOS_DE_CAMPO,
   IDIOMA,
@@ -606,7 +606,10 @@ function Alta({ gastos, aviso }: { gastos: GastoParaPagar[]; aviso: ReactNode })
       className="mt-bloque scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
     >
       <Titulo3 como="h2">{t("panel.presupuesto.pagos.nuevaTitulo")}</Titulo3>
-      <Etiqueta className="mt-pila block">{t("panel.presupuesto.pagos.nuevaAyuda")}</Etiqueta>
+      {/* Una frase, no un rótulo: en versalitas espaciadas costaba seguirla. */}
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
+        {t("panel.presupuesto.pagos.nuevaAyuda")}
+      </Cuerpo>
 
       {aviso}
 

@@ -574,7 +574,10 @@ function Alta({
       className="mt-bloque scroll-mt-elemento rounded-tarjeta border border-borde p-interno"
     >
       <Titulo3 como="h2">{t("panel.presupuesto.gastos.nuevaTitulo")}</Titulo3>
-      <Etiqueta className="mt-pila block">{t("panel.presupuesto.gastos.nuevaAyuda")}</Etiqueta>
+      {/* Una frase, no un rótulo: en versalitas espaciadas costaba seguirla. */}
+      <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
+        {t("panel.presupuesto.gastos.nuevaAyuda")}
+      </Cuerpo>
 
       {aviso}
 

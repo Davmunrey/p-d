@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { IMPORTE_MAXIMO } from "@/config/constants";
-import { importeParaCampo, leerImporte } from "@/lib/importe";
+import { formateadorDeImporte, importeParaCampo, leerImporte } from "@/lib/importe";
 
 /**
  * CÓMO SE LEE UN IMPORTE TECLEADO
@@ -127,5 +127,28 @@ describe("importeParaCampo", () => {
     for (const importe of [0, 1, 0.05, 99.99, 1250.5, 12000.5, 450, IMPORTE_MAXIMO]) {
       expect(leerImporte(importeParaCampo(importe))).toBe(importe);
     }
+  });
+});
+
+/**
+ * CÓMO SE ESCRIBE UN IMPORTE EN EL PANEL: CON PUNTO DE MILLAR SIEMPRE.
+ *
+ * Es la excepción de la propia RAE para listas y columnas: «2000» sin punto
+ * debajo de «20.000» no se compara de un vistazo. Y el campo que se edita
+ * sigue sin punto (arriba): son dos reglas para dos sitios distintos.
+ */
+describe("formateadorDeImporte", () => {
+  const euros = formateadorDeImporte("EUR");
+  const sinEspacios = (texto: string) => texto.replace(/\s/g, " ");
+
+  it("las cuatro cifras llevan punto, como las cinco", () => {
+    expect(sinEspacios(euros(2000))).toBe("2.000,00 €");
+    expect(sinEspacios(euros(8600))).toBe("8.600,00 €");
+    expect(sinEspacios(euros(20000))).toBe("20.000,00 €");
+  });
+
+  it("por debajo de mil no hay punto, y los céntimos van siempre", () => {
+    expect(sinEspacios(euros(600))).toBe("600,00 €");
+    expect(sinEspacios(euros(0.5))).toBe("0,50 €");
   });
 });

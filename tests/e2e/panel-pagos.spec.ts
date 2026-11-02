@@ -316,6 +316,10 @@ test.describe("Los pagos y sus vencimientos", () => {
     await page.goto(RUTA_PAGOS);
 
     const alta = seccion(page, pagos.nuevaTitulo);
+    // La explicación del alta es una frase: se lee en texto normal, no en versalitas.
+    const ayuda = alta.getByText(pagos.nuevaAyuda);
+    await expect(ayuda).toBeVisible();
+    expect(await ayuda.evaluate((nodo) => getComputedStyle(nodo).textTransform)).toBe("none");
     await alta
       .getByLabel(pagos.campoGasto, { exact: true })
       .selectOption({ label: montaje.concepto });

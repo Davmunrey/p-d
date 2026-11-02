@@ -83,6 +83,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
 
   const puedeEditar = acceso.rol !== "lector";
   const token = soloTexto(consulta.token);
+  const acompanantesApuntados = grupo.gente.filter((persona) => persona.esAcompanante).length;
 
   /*
     El enlace absoluto, para poder pegarlo en WhatsApp. `urlDelSitio()` puede
@@ -113,12 +114,21 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
             pendientes: grupo.pendientes,
           })}
           {" · "}
-          {/* El cupo no salía en ninguna parte: ni aquí ni en la lista. */}
+          {/*
+            El cupo no salía en ninguna parte: ni aquí ni en la lista. Y desde
+            que los acompañantes los apunta el propio invitado al confirmar,
+            importa tanto el tope como cuántos lleva ya.
+          */}
           {grupo.maximoAcompanantes === 0
             ? t("panel.invitados.sinAcompanantes")
-            : grupo.maximoAcompanantes === 1
-              ? t("panel.invitados.puedeTraerUno")
-              : t("panel.invitados.puedeTraer", { cuantos: grupo.maximoAcompanantes })}
+            : acompanantesApuntados > 0
+              ? t("panel.invitados.acompanantesApuntados", {
+                  apuntados: acompanantesApuntados,
+                  maximo: grupo.maximoAcompanantes,
+                })
+              : grupo.maximoAcompanantes === 1
+                ? t("panel.invitados.puedeTraerUno")
+                : t("panel.invitados.puedeTraer", { cuantos: grupo.maximoAcompanantes })}
         </Cuerpo>
       </header>
 
@@ -676,7 +686,6 @@ function Persona({ persona }: { persona: PersonaDelGrupo }) {
     persona.estado === "confirmado"
       ? t(`panel.menus.${persona.tipoMenu}` as "panel.menus.estandar")
       : null,
-    persona.alergias,
   ].filter(Boolean);
   return (
     <div>
@@ -684,6 +693,17 @@ function Persona({ persona }: { persona: PersonaDelGrupo }) {
         {[persona.nombre, persona.apellidos].filter(Boolean).join(" ")}
       </span>
       <Etiqueta className="mt-linea">{detalles.join(" · ")}</Etiqueta>
+      {/*
+        LAS ALERGIAS, EN SU LÍNEA Y COMO SE ESCRIBIERON. Iban dentro de la
+        etiqueta, en versalitas espaciadas: el texto del invitado salía
+        transformado («CELÍACA.») y pegado al menú, justo lo que la cocina
+        tiene que leer sin dudar.
+      */}
+      {persona.alergias ? (
+        <p className="mt-linea text-pequeno text-tinta wrap-anywhere">
+          {t("panel.invitados.alergiasDe", { alergias: persona.alergias })}
+        </p>
+      ) : null}
     </div>
   );
 }

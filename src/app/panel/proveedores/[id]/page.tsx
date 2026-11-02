@@ -683,7 +683,9 @@ function Borrado({ proveedor }: { proveedor: FichaProveedor }) {
       <form action={borrarProveedor} className="flex flex-wrap items-center gap-interno">
         <input type="hidden" name="id" value={proveedor.id} />
         <BotonEnvio jerarquia="terciario">{t("panel.proveedores.borrar")}</BotonEnvio>
-        <Etiqueta>{t("panel.proveedores.borrarAyuda")}</Etiqueta>
+        <span className="text-pequeno text-tinta-suave">
+          {t("panel.proveedores.borrarAyuda")}
+        </span>
       </form>
     </section>
   );

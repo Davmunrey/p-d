@@ -211,17 +211,14 @@ test.describe("Las categorías del presupuesto", () => {
     await expect(page.getByText(copy.panel.presupuesto.avisoCreada)).toBeVisible();
 
     /*
-      EN EL RESUMEN, CON SU IMPORTE YA FORMATEADO — Y SIN PUNTO DE MILLAR.
-
-      Aquí me equivoqué yo y lo dijo el CI: escribí «1.250,50» dando por hecho
-      que el punto va siempre. En castellano no: `Intl.NumberFormat` con
-      `es-ES` no agrupa los números de cuatro cifras, así que 1250,50 € se
-      escribe tal cual y el punto sólo aparece a partir de cinco. La página
-      estaba bien y el test estaba mal.
+      EN EL RESUMEN, CON SU IMPORTE YA FORMATEADO. La cifra se pide al mismo
+      módulo que la escribe: aquí estuvo tecleada dos veces, y las dos con la
+      regla del punto de millar que no tocaba en ese momento.
     */
+    const importe = await comoSeEscribenLosImportes();
     const fila = page.locator("tr").filter({ hasText: nombre });
     await expect(fila).toHaveCount(1);
-    await expect(fila).toContainText("1250,50");
+    await expect(fila).toContainText(importe(1250.5));
 
     // Y al corregirla, su campo lo escribe como la tabla: con la coma del
     // castellano, no «1250.5».

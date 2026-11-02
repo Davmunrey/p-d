@@ -3,6 +3,7 @@ import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_GASTOS, RUTA_PANEL } from "../../src/config/constants";
+import { formateadorDeImporte } from "../../src/lib/importe";
 import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles/rastro";
 
 /**
@@ -41,6 +42,17 @@ async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T
   } finally {
     await sql.end();
   }
+}
+
+/**
+ * Las cifras se piden al módulo que las escribe en la pantalla, con la moneda
+ * de la boda: tecleadas a mano, este proyecto ya tropezó con el punto de millar.
+ */
+async function comoSeEscribenLosImportes(): Promise<(importe: number) => string> {
+  const [configuracion] = await conBase(
+    (sql) => sql<{ moneda: string }[]>`select moneda from public.configuracion_boda limit 1`,
+  );
+  return formateadorDeImporte(configuracion.moneda);
 }
 
 async function entrar(pagina: Page) {
@@ -289,6 +301,10 @@ test.describe("Los gastos del presupuesto", () => {
     const antes = await totalQueVaCostando(page);
 
     const alta = seccion(page, gastos.nuevaTitulo);
+    // La explicación del alta es una frase: se lee en texto normal, no en versalitas.
+    const ayuda = alta.getByText(gastos.nuevaAyuda);
+    await expect(ayuda).toBeVisible();
+    expect(await ayuda.evaluate((nodo) => getComputedStyle(nodo).textTransform)).toBe("none");
     await alta.getByLabel(gastos.campoConcepto, { exact: true }).fill(concepto);
     await alta
       .getByLabel(gastos.campoCategoria, { exact: true })
@@ -320,7 +336,9 @@ test.describe("Los gastos del presupuesto", () => {
 
     // 3 · Y el de su categoría, que empezaba vacía, es justo ese importe.
     const suya = seccion(page, categoria.nombre);
-    await expect(suya.getByText(gastos.subtotal)).toContainText("1234,50");
+    await expect(suya.getByText(gastos.subtotal)).toContainText(
+      (await comoSeEscribenLosImportes())(1234.5),
+    );
   });
 
   /**
@@ -499,7 +517,9 @@ test.describe("Los gastos del presupuesto", () => {
     await esperarEstado(page, "por-debajo-de-pagos");
 
     const aviso = gastos.errorPorDebajoDePagos.split("{apuntado}")[0].trim();
-    await expect(page.getByText(aviso)).toContainText("1200,00");
+    await expect(page.getByText(aviso)).toContainText(
+      (await comoSeEscribenLosImportes())(1200),
+    );
 
     const [sigue] = await conBase(
       (sql) => sql<{ importe_estimado: string }[]>`

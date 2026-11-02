@@ -963,6 +963,105 @@ test.describe("El día de la boda", () => {
   });
 
   /**
+   * EN EL MÓVIL, EL PAPEL NO PARTE PALABRAS.
+   *
+   * La tabla de cada mesa es `table-fixed`, con la mitad para el nombre, para
+   * que en el papel todas las mesas salgan iguales. A 390 px al menú le
+   * quedaban unos 50 px y «Vegetariano» salía partido en «Vegetari / ano». Se
+   * mira palabra a palabra: ninguna puede ocupar dos renglones. Y desde la
+   * tableta sigue fija, que es lo que pide el papel.
+   */
+  test("en el móvil la hoja para llevarse no parte ninguna palabra", async ({ page }) => {
+    const sembrado = await sembrar(Date.now() + 21);
+    await conBase(
+      (sql) => sql`
+        update public.invitados set tipo_menu = 'vegetariano'
+         where apellidos = ${sembrado.invitado.apellidos}
+      `,
+    );
+
+    await entrar(page);
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto(RUTA_EXPORTAR_DIA);
+    await expect(page.getByText(copy.panel.menus.vegetariano).first()).toBeVisible();
+
+    const partidas = await page.locator("table td").evaluateAll((celdas) => {
+      const malas: string[] = [];
+      for (const celda of celdas) {
+        const recorrido = document.createTreeWalker(celda, NodeFilter.SHOW_TEXT);
+        for (let nodo = recorrido.nextNode(); nodo; nodo = recorrido.nextNode()) {
+          for (const palabra of (nodo.textContent ?? "").matchAll(/\S+/g)) {
+            const rango = document.createRange();
+            rango.setStart(nodo, palabra.index);
+            rango.setEnd(nodo, palabra.index + palabra[0].length);
+            const renglones = new Set(
+              [...rango.getClientRects()].map((r) => Math.round(r.top)),
+            );
+            if (renglones.size > 1) malas.push(palabra[0]);
+          }
+        }
+      }
+      return malas;
+    });
+    expect(partidas, "palabras partidas en dos renglones").toEqual([]);
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    expect(
+      await page
+        .locator("table")
+        .first()
+        .evaluate((tabla) => getComputedStyle(tabla).tableLayout),
+    ).toBe("fixed");
+  });
+
+  /**
+   * UN GUION VACÍO LLEVA A ESCRIBIRLO, Y LOS ATAJOS MIDEN LO MISMO.
+   *
+   * El vacío decía cómo se escribe el guion y no dónde. Y en el móvil, el
+   * atajo de una línea («Teléfonos») quedaba más bajo que su vecino de dos.
+   */
+  test("sin guion, el vacío lleva a escribirlo; con guion, no", async ({ page }) => {
+    await limpiar();
+    const [{ puntos }] = await conBase(
+      (sql) => sql<{ puntos: number }[]>`select count(*)::int as puntos from public.guion_dia`,
+    );
+    expect(puntos, "esta prueba necesita el guion vacío, como lo deja el seed").toBe(0);
+
+    await entrar(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(RUTA_DIA);
+
+    // Los cuatro atajos: en cada fila, los dos de la misma altura.
+    const atajos = await page
+      .getByRole("navigation", { name: copy.panel.dia.titulo, exact: true })
+      .getByRole("link")
+      .evaluateAll((enlaces) =>
+        enlaces.map((enlace) => {
+          const caja = enlace.getBoundingClientRect();
+          return { arriba: Math.round(caja.top), alto: Math.round(caja.height) };
+        }),
+      );
+    expect(atajos).toHaveLength(4);
+    for (const fila of [atajos.slice(0, 2), atajos.slice(2, 4)]) {
+      expect(fila[0]!.arriba).toBe(fila[1]!.arriba);
+      expect(fila[0]!.alto).toBe(fila[1]!.alto);
+    }
+
+    await expect(page.getByText(copy.panel.dia.guion.vacio)).toBeVisible();
+    await page.getByRole("link", { name: copy.panel.dia.guion.escribirlo }).click();
+    await expect(page).toHaveURL(new RegExp(`${RUTA_GUION_DIA}$`));
+
+    // Con guion, ni el vacío ni el enlace: lo que hay es el guion.
+    const sembrado = await sembrar(Date.now() + 22);
+    await page.goto(RUTA_DIA);
+    await expect(page.locator("li").filter({ hasText: sembrado.primerPunto })).toBeVisible();
+    await expect(page.getByText(copy.panel.dia.guion.vacio)).toHaveCount(0);
+    await expect(page.getByRole("link", { name: copy.panel.dia.guion.escribirlo })).toHaveCount(
+      0,
+    );
+  });
+
+  /**
    * QUIEN HA DICHO QUE NO NO OCUPA SILLA EN EL PAPEL, Y EL BUSCADOR LO DICE.
    *
    * Conserva su mesa —el reparto es de los novios—, pero salía en ella con

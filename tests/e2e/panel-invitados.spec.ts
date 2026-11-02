@@ -1016,6 +1016,62 @@ test.describe("La ficha de una invitación", () => {
     );
   });
 
+  /*
+    LOS ACOMPAÑANTES APUNTADOS Y LAS ALERGIAS COMO SE ESCRIBIERON.
+
+    Desde que el invitado apunta a sus acompañantes al confirmar, la ficha
+    tiene que decir cuántos lleva y no sólo el tope. Y las alergias iban
+    dentro de la etiqueta, en versalitas: «(DES) celíaca» salía «(DES)
+    CELÍACA», transformado y pegado al menú.
+  */
+  test("la ficha dice cuántos acompañantes lleva y las alergias como se escribieron", async ({
+    page,
+  }) => {
+    const id = await crear(page, `${MARCA} acompañantes ${Date.now()}`, 2);
+    await anadir(page, "(DES) Titular");
+    await anadir(page, "(DES) Sin alergias");
+
+    const cabecera = page
+      .locator("header")
+      .filter({ has: page.getByRole("heading", { level: 1 }) });
+    await expect(cabecera).toContainText(
+      copy.panel.invitados.puedeTraer.replace("{cuantos}", "2"),
+    );
+
+    const alergia = "(DES) celíaca y frutos secos";
+    await conBase(async (sql) => {
+      await sql`
+        update public.invitados set alergias = ${alergia}
+         where grupo_id = ${id} and nombre = '(DES) Titular'
+      `;
+      await sql`
+        insert into public.invitados (grupo_id, nombre, es_acompanante)
+        values (${id}, '(DES) Pareja', true)
+      `;
+    });
+    await page.reload();
+
+    await expect(cabecera).toContainText(
+      copy.panel.invitados.acompanantesApuntados
+        .replace("{apuntados}", "1")
+        .replace("{maximo}", "2"),
+    );
+
+    const linea = page.getByText(
+      copy.panel.invitados.alergiasDe.replace("{alergias}", alergia),
+    );
+    await expect(linea).toBeVisible();
+    expect(await linea.evaluate((nodo) => getComputedStyle(nodo).textTransform)).toBe("none");
+
+    // Quien no tiene alergias no lleva la línea.
+    await expect(
+      page
+        .locator("li")
+        .filter({ hasText: "(DES) Sin alergias" })
+        .getByText(copy.panel.invitados.alergiasDe.split("{")[0]!.trim()),
+    ).toHaveCount(0);
+  });
+
   test("quitar a alguien se confirma, y repetirlo desde una pantalla vieja lo dice", async ({
     page,
     context,
@@ -1250,10 +1306,13 @@ test.describe("La ficha de una invitación", () => {
 
     await expect(page).toHaveURL(/estado=respuesta-apuntada/);
     await expect(page.getByText(copy.panel.invitados.respuestaApuntada)).toBeVisible();
-    await expect(
-      page.locator("li").filter({ hasText: "(DES) Tía Rosario" }).first(),
-    ).toContainText(
-      `${copy.panel.respuesta.vieneSi} · ${copy.panel.menus.sin_gluten} · (DES) Celíaca`,
+    // El menú en su etiqueta, y las alergias en su línea, como se escribieron.
+    const rosario = page.locator("li").filter({ hasText: "(DES) Tía Rosario" }).first();
+    await expect(rosario).toContainText(
+      `${copy.panel.respuesta.vieneSi} · ${copy.panel.menus.sin_gluten}`,
+    );
+    await expect(rosario).toContainText(
+      copy.panel.invitados.alergiasDe.replace("{alergias}", "(DES) Celíaca"),
     );
 
     const [respuesta] = await conBase(
