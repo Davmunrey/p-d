@@ -399,8 +399,10 @@ test.describe("Ajustes de la boda", () => {
     ).toHaveValue("ES6000491500051234567892");
 
     // Y en la web, detrás de su botón: el número no viaja en el HTML (BODA-28).
+    // Los regalos van plegados al final: primero se abren.
     await page.goto("/");
     const seccion = page.locator("#regalos");
+    await seccion.locator("summary").click();
     await seccion.getByRole("button", { name: copy.regalos.revelar }).click();
     await expect(seccion.getByLabel(copy.regalos.etiquetaCuenta)).toHaveValue(
       "ES60 0049 1500 0512 3456 7892",
