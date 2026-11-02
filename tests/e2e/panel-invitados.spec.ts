@@ -845,23 +845,21 @@ test.describe("Un doble toque en el panel", () => {
 });
 
 /*
-  EL EMAIL DE CADA PERSONA, Y CORREGIR A QUIEN YA ESTÁ DADO DE ALTA.
+  CORREGIR A QUIEN YA ESTÁ DADO DE ALTA.
 
-  El acuse de recibo (BODA-57) sale a `invitados.correo_electronico`, y nada en
-  el panel escribía esa columna: el acuse no podía salir nunca. Tampoco se
-  podía corregir una errata en un nombre sin borrar a la persona.
+  Una errata en un nombre no se podía arreglar sin borrar a la persona. Y el
+  email, que era a dónde salía el acuse de recibo, se retiró con él
+  (`20261102190000`): la ficha ya no lo pide.
 */
-test.describe("El email y los datos de cada persona", () => {
+test.describe("Los datos de cada persona", () => {
   test.skip(
     !CORREO_CON_ACCESO || !CONTRASENA || !cadena,
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
   );
 
-  test("se apunta al dar de alta y se corrige después, y llega a la base", async ({ page }) => {
+  test("se da de alta, se corrige la errata y llega a la base", async ({ page }) => {
     const sello = Date.now();
-    const nombreGrupo = `${MARCA} con email ${sello}`;
-    const correo = `ana-${sello}@ejemplo.test`;
-    const correoNuevo = `ana.nueva-${sello}@ejemplo.test`;
+    const nombreGrupo = `${MARCA} corregir ${sello}`;
 
     await entrar(page);
     await page.goto(RUTA_INVITADOS);
@@ -869,24 +867,22 @@ test.describe("El email y los datos de cada persona", () => {
     await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
     await expect(page).toHaveURL(FICHA);
 
+    // Sin email: el alta pide nombre y apellidos, y nada más que escribir.
+    await expect(page.locator('input[type="email"]')).toHaveCount(0);
     await page
       .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
       .fill("(DES) Anna");
-    await page.getByLabel(copy.panel.invitados.correoPersona, { exact: true }).fill(correo);
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
     await expect(page.getByText(copy.panel.invitados.personaAnadida)).toBeVisible();
-    await expect(page.getByText(correo)).toBeVisible();
 
     const [alta] = await conBase(
-      (sql) => sql<{ id: string; correo_electronico: string | null }[]>`
-        select i.id, i.correo_electronico from public.invitados as i
+      (sql) => sql<{ id: string }[]>`
+        select i.id from public.invitados as i
           join public.grupos_invitacion as g on g.id = i.grupo_id
          where g.nombre = ${nombreGrupo}
       `,
     );
-    expect(alta.correo_electronico, "el email tiene que llegar a la base").toBe(correo);
 
-    // Se corrige la errata del nombre y se cambia el email.
     const etiqueta = copy.panel.invitados.editarPersonaDe.replace("{persona}", "(DES) Anna");
     await page
       .locator("summary")
@@ -897,26 +893,26 @@ test.describe("El email y los datos de cada persona", () => {
       .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
       .fill("(DES) Ana");
     await formulario
-      .getByLabel(copy.panel.invitados.correoPersona, { exact: true })
-      .fill(correoNuevo);
+      .getByLabel(copy.panel.invitados.apellidosPersona, { exact: true })
+      .fill("Uno");
     await formulario.getByRole("button", { name: copy.panel.invitados.guardarPersona }).click();
     await expect(page.getByText(copy.panel.invitados.personaEditada)).toBeVisible();
 
     const [corregida] = await conBase(
-      (sql) => sql<{ nombre: string; correo_electronico: string | null }[]>`
-        select nombre, correo_electronico from public.invitados where id = ${alta.id}
+      (sql) => sql<{ nombre: string; apellidos: string | null }[]>`
+        select nombre, apellidos from public.invitados where id = ${alta.id}
       `,
     );
-    expect(corregida).toEqual({ nombre: "(DES) Ana", correo_electronico: correoNuevo });
+    expect(corregida).toEqual({ nombre: "(DES) Ana", apellidos: "Uno" });
 
     await conBase(
       (sql) => sql`delete from public.grupos_invitacion where nombre = ${nombreGrupo}`,
     );
   });
 
-  test("un email sin dominio completo se explica y no da de alta a nadie", async ({ page }) => {
+  test("un nombre de una letra se explica y no pisa el que había", async ({ page }) => {
     const sello = Date.now();
-    const nombreGrupo = `${MARCA} email malo ${sello}`;
+    const nombreGrupo = `${MARCA} nombre corto ${sello}`;
 
     await entrar(page);
     await page.goto(RUTA_INVITADOS);
@@ -924,24 +920,32 @@ test.describe("El email y los datos de cada persona", () => {
     await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
     await expect(page).toHaveURL(FICHA);
 
-    // El navegador lo da por bueno —no exige punto en el dominio— y la base no.
     await page
       .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
       .fill("(DES) Unai");
-    await page
-      .getByLabel(copy.panel.invitados.correoPersona, { exact: true })
-      .fill("unai@fincalasierra");
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
+    await expect(page.getByText(copy.panel.invitados.personaAnadida)).toBeVisible();
 
-    await expect(page.getByText(copy.panel.invitados.errorCorreo)).toBeVisible();
-    const [{ cuantos }] = await conBase(
-      (sql) => sql<{ cuantos: number }[]>`
-        select count(*)::int as cuantos from public.invitados as i
+    // El navegador lo da por bueno —`required` sólo pide que no esté vacío— y
+    // la acción no: el mínimo es el de la base.
+    const etiqueta = copy.panel.invitados.editarPersonaDe.replace("{persona}", "(DES) Unai");
+    await page
+      .locator("summary")
+      .filter({ hasText: copy.panel.invitados.editarPersona })
+      .click();
+    const formulario = page.getByRole("form", { name: etiqueta });
+    await formulario.getByLabel(copy.panel.invitados.nombrePersona, { exact: true }).fill("U");
+    await formulario.getByRole("button", { name: copy.panel.invitados.guardarPersona }).click();
+
+    await expect(page.getByText(copy.panel.invitados.errorNombrePersona)).toBeVisible();
+    const [{ nombre }] = await conBase(
+      (sql) => sql<{ nombre: string }[]>`
+        select i.nombre from public.invitados as i
           join public.grupos_invitacion as g on g.id = i.grupo_id
          where g.nombre = ${nombreGrupo}
       `,
     );
-    expect(cuantos, "no se da de alta a nadie").toBe(0);
+    expect(nombre, "el nombre que había sigue ahí").toBe("(DES) Unai");
 
     await conBase(
       (sql) => sql`delete from public.grupos_invitacion where nombre = ${nombreGrupo}`,
@@ -1196,8 +1200,8 @@ test.describe("La ficha de una invitación", () => {
       `;
       await sql`
         insert into public.confirmaciones
-          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
-        values (${persona!.id}, 'rechazado', 'publico', false, false)
+          (invitado_id, estado, origen, necesita_autobus)
+        values (${persona!.id}, 'rechazado', 'publico', null)
       `;
     });
     await page.getByLabel(copy.panel.invitados.borrarInvitacionConfirmar).check();

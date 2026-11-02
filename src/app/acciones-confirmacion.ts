@@ -186,7 +186,6 @@ export async function avanzar(datos: FormData): Promise<void> {
       invitado_id: persona.id,
       estado: viene ? "confirmado" : "rechazado",
       necesita_autobus: viene ? Boolean(borrador.autobus[persona.id]) : null,
-      necesita_alojamiento: viene ? false : null,
       ...(viene && borrador.menu[persona.id] ? { tipo_menu: borrador.menu[persona.id] } : {}),
       ...(viene && borrador.alergias[persona.id] !== undefined
         ? { alergias: borrador.alergias[persona.id] || null }

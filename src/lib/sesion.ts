@@ -23,16 +23,14 @@ export interface Acceso {
    * DOS IDENTIFICADORES, Y HAY QUE MIRAR A CUÁL APUNTA CADA COLUMNA.
    *
    * `perfiles` tiene su propia clave primaria (`id`) y guarda aparte la de
-   * Supabase Auth (`usuario_id`). Las claves ajenas del esquema usan una u
-   * otra, y no por descuido:
+   * Supabase Auth (`usuario_id`). Todas las columnas de autoría del esquema
+   * —`medios.subido_por`, `documentos_proveedor.subido_por`,
+   * `tareas.responsable_id`, `pagos.registrado_por` y
+   * `confirmaciones.registrado_por`— apuntan a `perfiles (id)`, nunca a la de
+   * Auth.
    *
-   *   · `medios.subido_por`, `documentos_proveedor.subido_por`,
-   *     `tareas.responsable_id`, `pagos.registrado_por`,
-   *     `confirmaciones.registrado_por`  → `perfiles (id)`
-   *   · `mensajes_leidos.leido_por`      → `perfiles (usuario_id)`
-   *
-   * (Ese reparto está sacado de `pg_constraint` en una base con las migraciones
-   * aplicadas, no de leer los ficheros: leyéndolos ya me equivoqué una vez.)
+   * (Sacado de `pg_constraint` en una base con las migraciones aplicadas, no de
+   * leer los ficheros: leyéndolos ya me equivoqué una vez.)
    *
    * Los dos son `uuid`, así que confundirlos compila igual de bien y revienta
    * en la base con «Key is not present in table "perfiles"». Costó un CI: la

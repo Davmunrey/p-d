@@ -107,7 +107,6 @@ update public.configuracion_boda set
 update public.configuracion_privada set
   presupuesto_objetivo = 42000.00,
   aforo_maximo         = 150,
-  telefono_contacto    = '+34 600 000 000',
   -- IBAN de ejemplo de la documentación pública de la ISO, no una cuenta real.
   -- Aquí porque la sección de regalos no se puede probar sin él: sin cuenta,
   -- `datos_para_regalos()` no devuelve nada y la sección no se pinta.
@@ -137,14 +136,14 @@ update public.secciones_landing set visible = true where seccion = 'regalos';
 
 insert into public.grupos_invitacion
   (id, nombre, huella_token, token_emitido_en, maximo_acompanantes, lado, invitado_a,
-   direccion, codigo_postal, ciudad, provincia, pais, idioma)
+   idioma)
 values
   ('aaaaaaaa-0000-4000-8000-000000000001',
    '(DES) Familia Uno',
    public.huella_token('desarrollo-familia-uno-000000'),
    now(), 2, 'novia',
    array['ceremonia','banquete','fiesta']::public.evento_boda[],
-   '(DES) Calle Uno, 1', '28001', 'Madrid', 'Madrid', 'España', 'es'),
+   'es'),
 
   ('aaaaaaaa-0000-4000-8000-000000000002',
    '(DES) Familia Dos',
@@ -153,31 +152,31 @@ values
    -- Sólo a la ceremonia: sirve para probar que la invitación no enseña el
    -- banquete a quien no está invitado.
    array['ceremonia']::public.evento_boda[],
-   '(DES) Calle Dos, 2', '08001', 'Barcelona', 'Barcelona', 'España', 'es');
+   'es');
 
 insert into public.notas_grupo (grupo_id, texto) values
   ('aaaaaaaa-0000-4000-8000-000000000001',
    '(DES) Nota privada. Si esto aparece en el RSVP público, hay una fuga.');
 
 insert into public.invitados
-  (id, grupo_id, nombre, apellidos, correo_electronico, telefono,
+  (id, grupo_id, nombre, apellidos,
    es_nino, es_acompanante, tipo_menu, alergias)
 values
   ('bbbbbbbb-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001',
-   '(DES) Ana', 'Uno', 'ana.uno@ejemplo.test', '+34 600 000 001',
+   '(DES) Ana', 'Uno',
    false, false, 'estandar', null),
 
   ('bbbbbbbb-0000-4000-8000-000000000002', 'aaaaaaaa-0000-4000-8000-000000000001',
-   '(DES) Luis', 'Uno', 'luis.uno@ejemplo.test', null,
+   '(DES) Luis', 'Uno',
    false, false, 'vegetariano', null),
 
   -- Niña celíaca: el caso que la restricción antigua hacía imposible registrar.
   ('bbbbbbbb-0000-4000-8000-000000000003', 'aaaaaaaa-0000-4000-8000-000000000001',
-   '(DES) Nina', 'Uno', null, null,
+   '(DES) Nina', 'Uno',
    true, false, 'sin_gluten', '(DES) Celíaca.'),
 
   ('bbbbbbbb-0000-4000-8000-000000000004', 'aaaaaaaa-0000-4000-8000-000000000002',
-   '(DES) Bea', 'Dos', 'bea.dos@ejemplo.test', null,
+   '(DES) Bea', 'Dos',
    false, false, 'estandar', null);
 
 insert into public.notas_invitado (invitado_id, texto) values
@@ -188,17 +187,12 @@ insert into public.notas_invitado (invitado_id, texto) values
 -- `invitados_confirmacion_inicial`): estas INSERT la degradan y pasan a ser las
 -- vigentes, dejando además un historial con el que probar la pantalla.
 insert into public.confirmaciones
-  (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento,
-   cancion_solicitada, mensaje)
+  (invitado_id, estado, origen, necesita_autobus)
 values
-  ('bbbbbbbb-0000-4000-8000-000000000001', 'confirmado', 'publico', true,  false,
-   '(DES) Una canción', '(DES) Allí estaremos.'),
-  ('bbbbbbbb-0000-4000-8000-000000000002', 'confirmado', 'publico', true,  false,
-   null, null),
-  ('bbbbbbbb-0000-4000-8000-000000000003', 'confirmado', 'publico', true,  false,
-   null, null),
-  ('bbbbbbbb-0000-4000-8000-000000000004', 'rechazado',  'publico', null,  null,
-   null, '(DES) No podremos ir.');
+  ('bbbbbbbb-0000-4000-8000-000000000001', 'confirmado', 'publico', true),
+  ('bbbbbbbb-0000-4000-8000-000000000002', 'confirmado', 'publico', true),
+  ('bbbbbbbb-0000-4000-8000-000000000003', 'confirmado', 'publico', true),
+  ('bbbbbbbb-0000-4000-8000-000000000004', 'rechazado',  'publico', null);
 
 
 -- ----------------------------------------------------------------------------

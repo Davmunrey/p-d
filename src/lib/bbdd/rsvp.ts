@@ -96,7 +96,6 @@ export type RespuestaInvitado = {
   invitado_id: string;
   estado: "confirmado" | "rechazado";
   necesita_autobus: boolean | null;
-  necesita_alojamiento: boolean | null;
   tipo_menu?: string;
   alergias?: string | null;
 };

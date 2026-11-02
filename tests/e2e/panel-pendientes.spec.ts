@@ -78,8 +78,8 @@ async function contestar(grupoId: string) {
   await conBase(
     (sql) => sql`
       insert into public.confirmaciones
-        (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
-      select i.id, 'confirmado', 'publico', false, false
+        (invitado_id, estado, origen, necesita_autobus)
+      select i.id, 'confirmado', 'publico', false
         from public.invitados as i
        where i.grupo_id = ${grupoId}
     `,

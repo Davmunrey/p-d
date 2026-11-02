@@ -30,9 +30,9 @@ export async function sembrarFichas(cadena: string): Promise<string[]> {
       returning id
     `;
     await sql`
-      insert into public.invitados (grupo_id, nombre, apellidos, correo_electronico)
-      values (${grupo.id}, '(DES) Ficha', 'Con dos apellidos', 'ficha@ejemplo.test'),
-             (${grupo.id}, '(DES) Otra', null, null)
+      insert into public.invitados (grupo_id, nombre, apellidos)
+      values (${grupo.id}, '(DES) Ficha', 'Con dos apellidos'),
+             (${grupo.id}, '(DES) Otra', null)
     `;
 
     const [categoria] = await sql<{ id: string }[]>`

@@ -25,7 +25,6 @@ const AVISOS: Record<string, { clave: ClaveCopy; error: boolean }> = {
   "nombre-largo": { clave: "panel.invitados.errorNombreLargo", error: true },
   "nombre-persona": { clave: "panel.invitados.errorNombrePersona", error: true },
   "persona-larga": { clave: "panel.invitados.errorPersonaLarga", error: true },
-  correo: { clave: "panel.invitados.errorCorreo", error: true },
   acompanantes: { clave: "panel.invitados.errorAcompanantes", error: true },
   "no-existe": { clave: "panel.invitados.errorNoExiste", error: true },
   "quitar-con-respuesta": { clave: "panel.invitados.errorQuitarConRespuesta", error: true },

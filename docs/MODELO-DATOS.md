@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**65**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**66**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -27,7 +27,7 @@ Cada una tiene su reverso exacto en
 [`supabase/migrations/rollback/`](../supabase/migrations/rollback/), con el mismo
 nombre. Se ejecutan en orden **inverso**.
 
-En números: **38 tablas, 15 vistas, 20 enumerados, 58 funciones, 74 políticas RLS.**
+En números: **36 tablas, 15 vistas, 20 enumerados, 58 funciones, 70 políticas RLS.**
 
 Esos cinco números no se escriben a mano: los cuenta la suite de seguridad contra
 el catálogo de la base recién migrada, y si el documento dice otra cosa, el CI se
@@ -242,7 +242,7 @@ borrar**.
 
 #### `configuracion_privada` — fila única, **nunca sale del panel**
 
-`presupuesto_objetivo`, `aforo_maximo`, `telefono_contacto`, `iban_regalos`,
+`presupuesto_objetivo`, `aforo_maximo`, `iban_regalos`, `titular_cuenta`,
 `notas_privadas`. Lectura para editor y propietario; escritura sólo propietario.
 
 **La única salida es `datos_para_regalos()`**, que publica el IBAN y su titular
@@ -369,22 +369,15 @@ Una fila por respuesta. La anterior deja de ser vigente; nunca se edita.
   ya estaba si el grupo repite la misma (índice único parcial sobre
   `(grupo_id, lower(btrim(texto)))`): reeditar la respuesta no la apunta dos veces.
 
-- `mensajes_leidos` — qué mensajes de invitados se han leído y quién, en tabla
-  aparte porque **`confirmaciones` es inmutable por diseño**: el trigger
-  `confirmaciones_inmutables` compara la fila entera menos `es_vigente` y
-  `actualizado_en`, así que una columna nueva allí caería bajo esa protección y
-  marcar como leído fallaría con `CNF01`. La clave primaria es sólo
-  `confirmacion_id` —un mensaje se lee o no se lee— y `leido_por` es dato: que
-  lo abra uno de los novios no lo deja sin leer para el otro. Las dos claves
-  foráneas borran en cascada y `anon` no tiene ningún privilegio: la bandeja es
-  del panel.
-
-- `mensajes_destacados` — los mensajes que se han destacado desde la bandeja
-  porque avisan de algo práctico (una alergia, una llegada tarde), para que no
-  se pierdan al marcarlos como leídos. Misma forma y mismo motivo que
-  `mensajes_leidos`: tabla aparte porque `confirmaciones` es inmutable, clave
-  primaria `confirmacion_id`, `destacado_por` como dato, cascada en las dos
-  claves foráneas, RLS forzada y ningún privilegio para `anon`.
+- **Lo que ya no está** (`20261102190000`): la respuesta llevaba un mensaje
+  para los novios, una canción y si necesitaba alojamiento, con su bandeja en el
+  panel (`mensajes_leidos`, `mensajes_destacados`); cada invitado, un correo para
+  el acuse y un teléfono; cada invitación, su dirección postal. Nada de eso se
+  pide ya —el formulario se rehízo, las canciones van por `sugerir_cancion()` y
+  las invitaciones salen por WhatsApp desde el selector de contactos del
+  móvil—, así que se retiró con sus comprobaciones. Quien viene sólo dice si
+  necesita autobús: `confirmaciones_logistica_completa` lo exige cuando el
+  estado es `confirmado`.
 
 ### 3.3 Economía
 
@@ -553,7 +546,7 @@ Las vistas **materializadas** están prohibidas sobre estas tablas: no admiten
 | `v_configuracion_publica`  | `anon`        | Datos de la boda para la landing                     |
 | `v_secciones_publicas`     | `anon`        | Secciones visibles, en orden                         |
 | `v_medios_publicados`      | `anon`        | Fotos publicadas por sección                         |
-| `v_estadisticas_invitados` | colaboradores | Confirmados, adultos, niños, autobús, alojamiento    |
+| `v_estadisticas_invitados` | colaboradores | Confirmados, adultos, niños, autobús                 |
 | `v_menus_confirmados`      | colaboradores | Recuento de menús para el catering                   |
 | `v_servicios_importe`      | colaboradores | Importe real, resolviendo el precio por invitado     |
 | `v_resumen_presupuesto`    | colaboradores | Previsto vs estimado vs real vs pagado, y desviación |

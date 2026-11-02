@@ -192,8 +192,8 @@ async function sembrar(sello: number): Promise<Sembrado> {
     */
     await sql`
       insert into public.confirmaciones
-        (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
-      values (${persona.id}, 'confirmado', 'publico', false, false)
+        (invitado_id, estado, origen, necesita_autobus)
+      values (${persona.id}, 'confirmado', 'publico', false)
     `;
 
     return {
@@ -989,8 +989,8 @@ test.describe("El día de la boda", () => {
       `;
       await sql`
         insert into public.confirmaciones
-          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
-        values (${persona.id}, 'rechazado', 'publico', null, null)
+          (invitado_id, estado, origen, necesita_autobus)
+        values (${persona.id}, 'rechazado', 'publico', null)
       `;
       // Y otra que no contesta: la base le deja su `pendiente` al darla de alta.
       await sql`

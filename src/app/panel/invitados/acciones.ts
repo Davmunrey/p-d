@@ -13,7 +13,6 @@ import {
   RUTA_PENDIENTES,
   URL_WHATSAPP,
 } from "@/config/constants";
-import { esCorreoValido } from "@/lib/correo-valido";
 import { accesoActual, ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
@@ -44,7 +43,6 @@ type Estado =
   | "nombre-largo"
   | "nombre-persona"
   | "persona-larga"
-  | "correo"
   | "acompanantes"
   | "no-existe"
   | "quitar-con-respuesta"
@@ -306,17 +304,16 @@ export async function emitirEnlace(datos: FormData): Promise<void> {
 }
 
 /**
- * Nombre, apellidos y correo de una persona, comprobados como los comprueba la
- * base. Lo comparten el alta y la edición.
+ * Nombre y apellidos de una persona, comprobados como los comprueba la base.
+ * Lo comparten el alta y la edición.
  */
 function datosPersona(
   datos: FormData,
 ):
   | { ok: false; estado: Estado }
-  | { ok: true; valores: { nombre: string; apellidos: string | null; correo: string | null } } {
+  | { ok: true; valores: { nombre: string; apellidos: string | null } } {
   const nombre = texto(datos, "nombre");
   const apellidos = texto(datos, "apellidos") || null;
-  const correo = texto(datos, "correo_electronico") || null;
 
   if (nombre.length < LONGITUD_MINIMA_NOMBRE) return { ok: false, estado: "nombre-persona" };
   if (
@@ -325,9 +322,7 @@ function datosPersona(
   ) {
     return { ok: false, estado: "persona-larga" };
   }
-  if (correo && !esCorreoValido(correo)) return { ok: false, estado: "correo" };
-
-  return { ok: true, valores: { nombre, apellidos, correo } };
+  return { ok: true, valores: { nombre, apellidos } };
 }
 
 export async function anadirPersona(datos: FormData): Promise<void> {
@@ -338,21 +333,12 @@ export async function anadirPersona(datos: FormData): Promise<void> {
   if (!grupoId) volver("no-existe");
   const persona = datosPersona(datos);
   if (!persona.ok) volver(persona.estado, grupoId, token);
-  const { nombre, apellidos, correo } = persona.valores;
+  const { nombre, apellidos } = persona.valores;
 
   const supabase = await cliente();
-  const { error, count } = await supabase.from("invitados").insert(
-    {
-      grupo_id: grupoId,
-      nombre,
-      apellidos,
-      // El correo es a donde sale el acuse cuando contesta (BODA-57). Sin un
-      // sitio donde apuntarlo, el acuse no podía salir nunca.
-      correo_electronico: correo,
-      es_nino: esNino,
-    },
-    { count: "exact" },
-  );
+  const { error, count } = await supabase
+    .from("invitados")
+    .insert({ grupo_id: grupoId, nombre, apellidos, es_nino: esNino }, { count: "exact" });
 
   if (error) {
     console.error("No se pudo añadir a la persona:", error);
@@ -365,12 +351,11 @@ export async function anadirPersona(datos: FormData): Promise<void> {
 }
 
 /**
- * Corrige el nombre, los apellidos o el correo de alguien ya dado de alta.
+ * Corrige el nombre o los apellidos de alguien ya dado de alta.
  *
  * NO TOCA LO QUE CONTESTÓ: el menú, las alergias y si viene son suyos, y
  * viven en su respuesta. Tampoco «es menor», que arrastra el menú infantil y
- * tiene su propia regla en la base. Esto es corregir una errata o apuntar el
- * correo que faltaba, que es lo que el panel no dejaba hacer.
+ * tiene su propia regla en la base. Esto es corregir una errata.
  */
 export async function editarPersona(datos: FormData): Promise<void> {
   const grupoId = texto(datos, "grupo_id");
@@ -380,12 +365,12 @@ export async function editarPersona(datos: FormData): Promise<void> {
 
   const persona = datosPersona(datos);
   if (!persona.ok) volver(persona.estado, grupoId, token);
-  const { nombre, apellidos, correo } = persona.valores;
+  const { nombre, apellidos } = persona.valores;
 
   const supabase = await cliente();
   const { data, error } = await supabase
     .from("invitados")
-    .update({ nombre, apellidos, correo_electronico: correo })
+    .update({ nombre, apellidos })
     .eq("id", personaId)
     .eq("grupo_id", grupoId)
     .select("id");
@@ -478,10 +463,9 @@ export async function quitarPersona(datos: FormData): Promise<void> {
  * tras una llamada», que el plazo no frena— y ninguna pantalla lo usaba.
  *
  * Es una respuesta nueva, como cuando el invitado la cambia desde su enlace:
- * el histórico es inmutable y la anterior deja de ser la vigente. Lo que ya
- * había escrito —su mensaje— viaja con ella para no perderlo de la bandeja.
- * El menú y las alergias viven en la persona, y se escriben antes: si lo
- * segundo fallara, lo anotado seguiría siendo cierto.
+ * el histórico es inmutable y la anterior deja de ser la vigente. El menú y
+ * las alergias viven en la persona, y se escriben antes: si lo segundo
+ * fallara, lo anotado seguiría siendo cierto.
  */
 export async function apuntarRespuesta(datos: FormData): Promise<void> {
   const grupoId = texto(datos, "grupo_id");
@@ -519,13 +503,6 @@ export async function apuntarRespuesta(datos: FormData): Promise<void> {
   // La misma regla que la base (`invitados_menu_infantil_solo_ninos`), dicha antes.
   if (viene && menu === "infantil" && !persona.es_nino) volver("menu-infantil", grupoId, token);
 
-  const { data: anterior } = await supabase
-    .from("confirmaciones")
-    .select("mensaje, cancion_solicitada")
-    .eq("invitado_id", personaId)
-    .eq("es_vigente", true)
-    .maybeSingle();
-
   if (viene) {
     const { data: escrita, error } = await supabase
       .from("invitados")
@@ -546,11 +523,7 @@ export async function apuntarRespuesta(datos: FormData): Promise<void> {
       origen: "panel",
       registrado_por: acceso.perfilId,
       respondido_en: new Date().toISOString(),
-      // Como en el formulario del invitado: el alojamiento no se pregunta.
       necesita_autobus: viene ? datos.get("necesita_autobus") !== null : null,
-      necesita_alojamiento: viene ? false : null,
-      mensaje: anterior?.mensaje ?? null,
-      cancion_solicitada: anterior?.cancion_solicitada ?? null,
     },
     { count: "exact" },
   );

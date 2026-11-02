@@ -873,15 +873,6 @@ export const LARGOS_DE_CAMPO = {
   "configuracion_boda.paisaje_cierre": 80,
   "configuracion_boda.paisaje_intro": 60,
   "configuracion_boda.paisaje_titulo": 200,
-  /*
-    LOS TRES DEL RSVP SON LOS ÚNICOS QUE ESCRIBE UN INVITADO, y son justo los
-    que no tenían tope en la pantalla. Un mensaje de 2001 caracteres no daba un
-    aviso: hacía saltar el CHECK de la base, y su código no lo reconoce nadie,
-    así que la confirmación entera volvía como «avería». Quien lo sufría no
-    podía confirmar por mucho que reintentara y nadie le decía por qué.
-  */
-  "confirmaciones.cancion_solicitada": 200,
-  "confirmaciones.mensaje": 2000,
   "contactos_proveedor.nombre": 120,
   "contactos_proveedor.notas": 1000,
   "contactos_proveedor.papel": 80,
@@ -895,6 +886,11 @@ export const LARGOS_DE_CAMPO = {
   "guion_dia.notas": 1000,
   "guion_dia.responsable": 120,
   "guion_dia.titulo": 160,
+  /*
+    LAS ALERGIAS LAS ESCRIBE TAMBIÉN EL INVITADO, desde su enlace. Sin tope en
+    la pantalla, un texto de más no daba un aviso: hacía saltar el CHECK de la
+    base, y la confirmación entera volvía como «avería».
+  */
   "invitados.alergias": 500,
   "invitados.apellidos": 120,
   "invitados.nombre": 80,

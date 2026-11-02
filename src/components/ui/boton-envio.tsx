@@ -10,9 +10,9 @@ import { Boton } from "./boton";
  *
  * Con JavaScript, `<form action>` no bloquea un segundo envío mientras el
  * primero está en vuelo: dos toques seguidos en un móvil con conexión lenta
- * despachaban la acción dos veces. En el RSVP eso eran dos acuses de recibo
- * idénticos y, hasta que la base dejó de admitir la misma canción dos veces,
- * la canción por duplicado en la playlist.
+ * despachaban la acción dos veces. En el RSVP eso eran dos respuestas
+ * idénticas en el histórico y, hasta que la base dejó de admitir la misma
+ * canción dos veces, la canción por duplicado en la playlist.
  *
  * Se lee el estado del formulario que lo envuelve —tiene que ir DENTRO del
  * `<form>`— y se deshabilita mientras la acción corre. Sin JavaScript el

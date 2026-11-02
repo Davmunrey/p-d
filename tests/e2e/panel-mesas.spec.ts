@@ -260,8 +260,8 @@ async function crearGrupo(
     if (confirmado) {
       await sql`
         insert into public.confirmaciones
-          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
-        select i.id, 'confirmado', 'publico', false, false
+          (invitado_id, estado, origen, necesita_autobus)
+        select i.id, 'confirmado', 'publico', false
           from public.invitados as i
          where i.grupo_id = ${grupo.id}
       `;
@@ -741,8 +741,8 @@ test.describe("El plano de mesas y el reparto", () => {
       `;
       await sql`
         insert into public.confirmaciones
-          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
-        values (${persona.id}, 'rechazado', 'publico', null, null)
+          (invitado_id, estado, origen, necesita_autobus)
+        values (${persona.id}, 'rechazado', 'publico', null)
       `;
       return persona;
     });
@@ -1084,8 +1084,8 @@ test.describe("El plano de mesas y el reparto", () => {
       `;
       await sql`
         insert into public.confirmaciones
-          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
-        values (${persona.id}, 'rechazado', 'publico', null, null)
+          (invitado_id, estado, origen, necesita_autobus)
+        values (${persona.id}, 'rechazado', 'publico', null)
       `;
       return persona;
     });

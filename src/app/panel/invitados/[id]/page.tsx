@@ -455,8 +455,8 @@ function BorrarInvitacion({ grupoId }: { grupoId: string }) {
 }
 
 /**
- * Nombre, apellidos y email, con los topes de la base. Los mismos en el alta y
- * en la corrección, para que no se separen.
+ * Nombre y apellidos, con los topes de la base. Los mismos en el alta y en la
+ * corrección, para que no se separen.
  */
 function CamposPersona({ persona }: { persona?: PersonaDelGrupo }) {
   return (
@@ -476,22 +476,13 @@ function CamposPersona({ persona }: { persona?: PersonaDelGrupo }) {
         maxLength={LARGOS_DE_CAMPO["invitados.apellidos"]}
         defaultValue={persona?.apellidos ?? undefined}
       />
-      <CampoTexto
-        etiqueta={t("panel.invitados.correoPersona")}
-        ayuda={t("panel.invitados.correoPersonaAyuda")}
-        name="correo_electronico"
-        type="email"
-        inputMode="email"
-        autoComplete="off"
-        defaultValue={persona?.correo ?? undefined}
-      />
     </>
   );
 }
 
 /**
- * Corregir a alguien ya dado de alta: una errata en el nombre, o el email que
- * faltaba para que le llegue el acuse. Plegado, porque es lo excepcional.
+ * Corregir a alguien ya dado de alta: una errata en el nombre o los
+ * apellidos. Plegado, porque es lo excepcional.
  */
 function EditarPersona({
   grupoId,
@@ -632,7 +623,7 @@ function ApuntarRespuesta({
 
 /**
  * QUITAR A ALGUIEN SE CONFIRMA. El botón estaba pegado a «Corregir datos»: un
- * toque de más borraba a la persona con su correo, sin deshacer. Y se llamaba
+ * toque de más borraba a la persona, sin deshacer. Y se llamaba
  * «Quitar» a secas, así que con dos personas el lector de pantalla decía dos
  * veces lo mismo sin decir de quién. Sin JavaScript, como el resto: un
  * desplegable que, abierto, explica y ofrece el botón que de verdad quita.
@@ -693,11 +684,6 @@ function Persona({ persona }: { persona: PersonaDelGrupo }) {
         {[persona.nombre, persona.apellidos].filter(Boolean).join(" ")}
       </span>
       <Etiqueta className="mt-linea">{detalles.join(" · ")}</Etiqueta>
-      {persona.correo ? (
-        <span className="mt-linea block text-pequeno text-tinta-suave wrap-anywhere">
-          {persona.correo}
-        </span>
-      ) : null}
     </div>
   );
 }

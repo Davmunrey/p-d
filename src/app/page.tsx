@@ -726,7 +726,7 @@ function Portada({
           <span className="animacion-flotar block h-raya-pista w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
         </p>
 
-        {/* Confirmar no tiene botón: se contesta por WhatsApp. */}
+        {/* Confirmar no va en la portada: está al final, tocando la estrella. */}
         {hayPrograma ? (
           <div className="animacion-subir retardo-6 mt-acciones flex flex-wrap gap-interno">
             <BotonEnlace href={`#${anclaDe("programa")}`}>{t("portada.verElDia")}</BotonEnlace>
