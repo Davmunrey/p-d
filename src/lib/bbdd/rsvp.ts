@@ -17,6 +17,9 @@ import { ErrorDeLectura, leerComoAnonimo, llamarComoAnonimo } from "./cliente";
  *   · `registrar_confirmacion(…)`  — escribe la respuesta del grupo. Sólo por
  *                                    personas de SU grupo, y el plazo lo mira
  *                                    la base contra `now()`.
+ *   · `anadir_acompanante(…)` y    — el «¿Venís con alguien?»: apunta a quien
+ *     `quitar_acompanante(…)`        trae el grupo, hasta el tope del panel, y
+ *                                    deshace un alta que aún no ha contestado.
  *
  * El token nunca viaja en un formulario ni en la URL: lo lee el servidor de la
  * cookie que deja el enlace al abrirse (`invitacionRecordada`).
@@ -27,6 +30,7 @@ export const MOTIVOS_RSVP = {
   demasiadosIntentos: "RSV02",
   plazoCerrado: "RSV03",
   respuestasInvalidas: "RSV04",
+  sinPlazaDeAcompanante: "RSV05",
 } as const;
 
 export interface PersonaInvitada {
@@ -44,11 +48,15 @@ export interface PersonaInvitada {
 
 export interface Invitacion {
   grupoNombre: string;
+  /** Cuántos acompañantes más puede apuntar el grupo, según el tope del panel. */
+  plazasLibres: number;
   personas: PersonaInvitada[];
 }
 
 interface FilaInvitacion {
   grupo_nombre: string;
+  maximo_acompanantes: number;
+  acompanantes_usados: string | number;
   invitado_id: string;
   nombre: string;
   apellidos: string | null;
@@ -76,6 +84,10 @@ export async function obtenerInvitacion(token: string): Promise<Invitacion | nul
   const [primera] = filas;
   return {
     grupoNombre: primera.grupo_nombre,
+    plazasLibres: Math.max(
+      0,
+      Number(primera.maximo_acompanantes) - Number(primera.acompanantes_usados),
+    ),
     personas: filas.map((f) => ({
       id: f.invitado_id,
       nombre: f.nombre,
@@ -133,8 +145,68 @@ function motivoDe(error: unknown): "plazo" | "intentos" | "respuestas" | "averia
   if (texto.includes(MOTIVOS_RSVP.plazoCerrado)) return "plazo";
   if (texto.includes(MOTIVOS_RSVP.demasiadosIntentos)) return "intentos";
   if (texto.includes(MOTIVOS_RSVP.respuestasInvalidas)) return "respuestas";
-  console.error("Fallo al registrar la confirmación:", error);
+  console.error("Fallo en una puerta de la confirmación:", error);
   return "averia";
+}
+
+export type ResultadoAcompanante =
+  | { ok: true; id: string }
+  | { ok: false; motivo: "enlace" | "plazo" | "intentos" | "tope" | "averia" };
+
+/**
+ * Apunta a un acompañante en el grupo del token. El menú y las alergias no van
+ * aquí: se dicen en el paso de detalles, con la respuesta, como los de todos.
+ * Nunca lanza.
+ */
+export async function anadirAcompanante(
+  token: string,
+  acompanante: { nombre: string; apellidos: string | null; esNino: boolean },
+): Promise<ResultadoAcompanante> {
+  try {
+    const filas = await llamarComoAnonimo(
+      (tx) => tx<{ anadir_acompanante: string | null }[]>`
+        select public.anadir_acompanante(
+          ${token}, ${acompanante.nombre}, ${acompanante.apellidos}, ${acompanante.esNino}
+        )
+      `,
+      await huellaDePeticion(),
+    );
+    const id = filas[0]?.anadir_acompanante ?? null;
+    return id ? { ok: true, id } : { ok: false, motivo: "enlace" };
+  } catch (error) {
+    const texto = error instanceof Error ? error.message : String(error);
+    if (texto.includes(MOTIVOS_RSVP.sinPlazaDeAcompanante))
+      return { ok: false, motivo: "tope" };
+    const motivo = motivoDe(error);
+    return { ok: false, motivo: motivo === "respuestas" ? "averia" : motivo };
+  }
+}
+
+export type ResultadoQuitarAcompanante =
+  | { ok: true; quitado: boolean }
+  | { ok: false; motivo: "enlace" | "plazo" | "intentos" | "averia" };
+
+/**
+ * Deshace un acompañante apuntado por error. `quitado: false` es que la base
+ * no lo ha dejado: no es de este grupo, no es acompañante o ya ha contestado.
+ */
+export async function quitarAcompanante(
+  token: string,
+  invitadoId: string,
+): Promise<ResultadoQuitarAcompanante> {
+  try {
+    const filas = await llamarComoAnonimo(
+      (tx) => tx<{ quitar_acompanante: boolean | null }[]>`
+        select public.quitar_acompanante(${token}, ${invitadoId}::uuid)
+      `,
+      await huellaDePeticion(),
+    );
+    const quitado = filas[0]?.quitar_acompanante ?? null;
+    return quitado === null ? { ok: false, motivo: "enlace" } : { ok: true, quitado };
+  } catch (error) {
+    const motivo = motivoDe(error);
+    return { ok: false, motivo: motivo === "respuestas" ? "averia" : motivo };
+  }
 }
 
 /**

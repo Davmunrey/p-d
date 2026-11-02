@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**66**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**67**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -27,7 +27,7 @@ Cada una tiene su reverso exacto en
 [`supabase/migrations/rollback/`](../supabase/migrations/rollback/), con el mismo
 nombre. Se ejecutan en orden **inverso**.
 
-En números: **36 tablas, 15 vistas, 20 enumerados, 58 funciones, 70 políticas RLS.**
+En números: **36 tablas, 15 vistas, 20 enumerados, 60 funciones, 70 políticas RLS.**
 
 Esos cinco números no se escriben a mano: los cuenta la suite de seguridad contra
 el catálogo de la base recién migrada, y si el documento dice otra cosa, el CI se
@@ -718,8 +718,9 @@ novios pueden además apuntar a mano lo que les digan (`confirmaciones` con
 `origen = 'panel'`, que el trigger de plazo deja pasar). La migración
 `20261102100000` quitó el formulario y sus cuatro puertas cuando se pasó a
 confirmar por WhatsApp; `20261102160000` devuelve las dos que usa el formulario
-—`obtener_invitacion` y `registrar_confirmacion`— y deja fuera
-`anadir_acompanante` y `destinatarios_confirmacion`, que ya no usa nadie.
+—`obtener_invitacion` y `registrar_confirmacion`— y `20261102190100` las del
+«¿Venís con alguien?»: `anadir_acompanante` y `quitar_acompanante`.
+`destinatarios_confirmacion`, la del acuse por correo, no vuelve.
 `obtener_invitacion` ya no anota los aciertos: la lee la landing en cada visita
 de quien tiene su enlace recordado.
 
@@ -747,7 +748,16 @@ El invitado recibe   https://…/invitacion/<token de 32 caracteres>
        └─ mismo cortafuegos; sólo escribe por personas de SU grupo, y el
           plazo lo comprueba la base contra now()
 
-  4. sugerir_cancion(token, texto)
+  4. anadir_acompanante(token, nombre, apellidos, es_nino)
+       └─ mismo cortafuegos; da de alta en SU grupo, con es_acompanante
+          fijado por el servidor; el tope del panel lo impone el trigger del
+          grupo (RSV05) y el plazo, la base (RSV03)
+
+  5. quitar_acompanante(token, invitado_id)
+       └─ mismo cortafuegos; sólo un acompañante de SU grupo que aún no ha
+          contestado: deshace un alta equivocada, nunca una respuesta
+
+  6. sugerir_cancion(token, texto)
        └─ mismo cortafuegos y misma resolución por huella; tope por grupo
 ```
 
@@ -767,20 +777,22 @@ Contrato resultante, que el frontend debe respetar:
 | `nombre_de_invitacion`   | devuelve `NULL`  |
 | `obtener_invitacion`     | cero filas       |
 | `registrar_confirmacion` | devuelve `0`     |
+| `anadir_acompanante`     | devuelve `NULL`  |
+| `quitar_acompanante`     | devuelve `NULL`  |
 | `sugerir_cancion`        | devuelve `NULL`  |
 
-Las cuatro pasan por `exigir_cupo_rsvp()` y anotan el intento fallido con
+Las seis pasan por `exigir_cupo_rsvp()` y anotan el intento fallido con
 `registrar_intento_rsvp()`. `sugerir_cancion` lanzaba `CAN02` hasta la migración
 `20260919200000`, y la excepción se llevaba el registro con ella: se reprodujo
 —dos llamadas con un token inventado, cero intentos— y se corrigió.
 
-### 5.8 Sólo cinco funciones son públicas
+### 5.8 Sólo siete funciones son públicas
 
 `nombre_de_invitacion`, `obtener_invitacion`, `registrar_confirmacion`,
-`sugerir_cancion` y `datos_para_regalos`. Ninguna más, y la lista es cerrada en
-los dos sentidos: `supabase/tests/seguridad.sql` falla si `anon` puede ejecutar
-una que no esté aquí **y** si alguna de estas cinco deja de existir o de poder
-ejecutarla.
+`anadir_acompanante`, `quitar_acompanante`, `sugerir_cancion` y
+`datos_para_regalos`. Ninguna más, y la lista es cerrada en los dos sentidos:
+`supabase/tests/seguridad.sql` falla si `anon` puede ejecutar una que no esté
+aquí **y** si alguna de estas siete deja de existir o de poder ejecutarla.
 
 Conseguirlo exigió entender un detalle de PostgreSQL que durante meses se
 atribuyó a Supabase: **`alter default privileges in schema public revoke execute
@@ -849,13 +861,14 @@ select c.relname, c.relkind
               from pg_options_to_table(c.reloptions)
              where option_name = 'security_invoker'), 'false') not in ('true','on')));
 
--- c) Ninguna función ejecutable por anon salvo las cinco puertas públicas
+-- c) Ninguna función ejecutable por anon salvo las siete puertas públicas
 --    (vive en supabase/tests/seguridad.sql, en los dos sentidos)
 select p.proname
   from pg_proc p
  where p.pronamespace = 'public'::regnamespace
    and has_function_privilege('anon', p.oid, 'execute')
    and p.proname not in ('nombre_de_invitacion','obtener_invitacion','registrar_confirmacion',
+                         'anadir_acompanante','quitar_acompanante',
                          'sugerir_cancion','datos_para_regalos');
 ```
 
@@ -872,7 +885,10 @@ Además, la suite E2E con la clave anónima debe comprobar, como mínimo:
   y con un token inventado, nada; superado el cupo de intentos, `RSV02`;
 - `obtener_invitacion` con un token devuelve su grupo y nada más, y
   `registrar_confirmacion` no puede confirmar a nadie de otro grupo;
-- `anadir_acompanante` y `destinatarios_confirmacion` no existen;
+- `anadir_acompanante` sólo apunta en el grupo del token y hasta su tope
+  (`RSV05`), y `quitar_acompanante` no quita a nadie de otro grupo, ni a un
+  titular, ni a quien ya ha contestado;
+- `destinatarios_confirmacion` no existe;
 - un `lector` autenticado no escribe en ninguna tabla.
 
 ---

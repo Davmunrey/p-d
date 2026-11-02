@@ -22,6 +22,7 @@ import { BotonEnlace } from "@/components/ui/boton";
 import { CuentaRegalos } from "@/components/ui/cuenta-regalos";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { FormularioPlaylist } from "@/components/ui/formulario-playlist";
+import { SignoAbrir } from "@/components/ui/signo-abrir";
 import {
   Cita,
   Conector,
@@ -488,6 +489,7 @@ function consultaDeConfirmacion(
     falta: uno("falta"),
     fallo: uno("fallo"),
     largo: uno("largo"),
+    acompanante: uno("acompanante"),
     enviado: uno(MARCA_RSVP_ENVIADO.parametro) === MARCA_RSVP_ENVIADO.valor,
   };
 }
@@ -1298,34 +1300,6 @@ function Preguntas({
         </details>
       </div>
     </section>
-  );
-}
-
-/**
- * El giro de cada desplegable, escrito entero: Tailwind sólo compila las
- * clases que encuentra tal cual en el código.
- */
-const GIRO_AL_ABRIR = {
-  preguntas: "group-open/preguntas:rotate-45",
-  regalos: "group-open/regalos:rotate-45",
-} as const;
-
-/** El «+» de un desplegable, que se vuelve «×» al abrirse. Decoración. */
-function SignoAbrir({ grupo }: { grupo: keyof typeof GIRO_AL_ABRIR }) {
-  const lado = 24;
-  const margen = 5;
-  const medio = lado / 2;
-  return (
-    <svg
-      aria-hidden
-      viewBox={`0 0 ${lado} ${lado}`}
-      className={`size-icono shrink-0 stroke-current transicion-transformacion ${GIRO_AL_ABRIR[grupo]}`}
-      fill="none"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-    >
-      <path d={`M${medio} ${margen}V${lado - margen}M${margen} ${medio}H${lado - margen}`} />
-    </svg>
   );
 }
 

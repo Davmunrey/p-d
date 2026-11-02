@@ -2,10 +2,12 @@ import { avanzar, reabrir } from "@/app/acciones-confirmacion";
 import { VuestraEstrella } from "@/components/marketing/vuestra-estrella";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto } from "@/components/ui/campo";
+import { SignoAbrir } from "@/components/ui/signo-abrir";
 import { Cita, Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
 import {
   IDIOMA,
   LARGOS_DE_CAMPO,
+  LONGITUD_MINIMA_NOMBRE,
   MENU_SOLO_NINOS,
   MENUS_RSVP,
   PASOS_RSVP,
@@ -25,8 +27,9 @@ import type { Borrador } from "@/lib/rsvp-borrador";
  *
  * Lo último de la landing es vuestra estrella: hueca, latiendo, con «Sólo falta
  * vuestra estrella». Es un desplegable (`<details>`): tocarla abre, ahí mismo,
- * el formulario del grupo —quién viene y, de quien viene, el menú, las
- * alergias y el autobús—, sin salir de la página ni perder de vista lo demás.
+ * el formulario del grupo —quién viene, a quién traen si la invitación deja
+ * traer a alguien y, de quien viene, el menú, las alergias y el autobús—, sin
+ * salir de la página ni perder de vista lo demás.
  * Cuando el grupo ha confirmado que viene alguien, la estrella se enciende.
  *
  * SÓLO CON EL ENLACE DE LA INVITACIÓN. El formulario es el del grupo de quien
@@ -53,6 +56,8 @@ export interface ConsultaConfirmacion {
   falta?: string;
   fallo?: string;
   largo?: string;
+  /** Qué ha pasado al apuntar o quitar a un acompañante. */
+  acompanante?: string;
   enviado: boolean;
 }
 
@@ -86,7 +91,12 @@ export function Confirmacion({
 
   // Abierto si se vuelve de un paso: lo que se estaba haciendo sigue a la vista.
   const abierto = Boolean(
-    consulta.paso || consulta.falta || consulta.fallo || consulta.largo || consulta.enviado,
+    consulta.paso ||
+    consulta.falta ||
+    consulta.fallo ||
+    consulta.largo ||
+    consulta.acompanante ||
+    consulta.enviado,
   );
 
   return (
@@ -265,6 +275,8 @@ function Contenido({
             personas={invitacion.personas}
             borrador={borrador}
             faltan={faltanDeLaUrl(consulta.falta ?? "")}
+            plazasLibres={invitacion.plazasLibres}
+            acompanante={consulta.acompanante}
           />
         ) : (
           <PasoDetalles
@@ -354,10 +366,14 @@ function PasoAsistencia({
   personas,
   borrador,
   faltan,
+  plazasLibres,
+  acompanante,
 }: {
   personas: PersonaInvitada[];
   borrador: Borrador;
   faltan: Set<string>;
+  plazasLibres: number;
+  acompanante?: string;
 }) {
   return (
     <div className="grid gap-elemento">
@@ -365,9 +381,16 @@ function PasoAsistencia({
         <Titulo2 como="h3">{t("rsvp.pasoAsistenciaTitulo")}</Titulo2>
         <Cuerpo className="mt-linea">{t("rsvp.pasoAsistenciaAyuda")}</Cuerpo>
       </div>
+      <AvisoAcompanante resultado={acompanante} />
       {personas.map((persona) => {
         const elegido = borrador.asistencia[persona.id];
         const falta = faltan.has(persona.id);
+        // Un acompañante sin respuesta guardada aún se puede quitar: es el que
+        // se acaba de apuntar, quizá con una errata.
+        const quitable =
+          persona.esAcompanante &&
+          persona.estado !== "confirmado" &&
+          persona.estado !== "rechazado";
         return (
           <fieldset
             key={persona.id}
@@ -409,10 +432,140 @@ function PasoAsistencia({
                 {t("rsvp.errorSinRespuesta", { nombre: persona.nombre })}
               </span>
             ) : null}
+            {quitable ? (
+              <div className="flex justify-end">
+                <BotonEnvio
+                  name="quitar"
+                  value={persona.id}
+                  jerarquia="terciario"
+                  aria-label={t("rsvp.acompananteQuitarA", { nombre: nombreCompleto(persona) })}
+                  rotuloPendiente={t("rsvp.guardando")}
+                >
+                  {t("rsvp.acompananteQuitar")}
+                </BotonEnvio>
+              </div>
+            ) : null}
           </fieldset>
         );
       })}
+      {plazasLibres > 0 ? (
+        <VenisConAlguien plazasLibres={plazasLibres} acompanante={acompanante} />
+      ) : null}
     </div>
+  );
+}
+
+/** Lo que ha pasado con el acompañante: lo bueno en `status`, lo que no en `alert`. */
+function AvisoAcompanante({ resultado }: { resultado?: string }) {
+  const bien: Record<string, string> = {
+    anadido: t("rsvp.acompananteAnadido"),
+    quitado: t("rsvp.acompananteQuitado"),
+  };
+  const mal: Record<string, string> = {
+    tope: t("rsvp.acompananteSinSitio"),
+    contestado: t("rsvp.acompananteYaContestado"),
+  };
+  if (resultado && bien[resultado]) {
+    return (
+      <p
+        role="status"
+        className="rounded-campo border border-borde-marca bg-superficie-tenue p-interno text-pequeno text-tinta"
+      >
+        {bien[resultado]}
+      </p>
+    );
+  }
+  if (resultado && mal[resultado]) {
+    return (
+      <p
+        role="alert"
+        className="rounded-campo border border-error bg-error-fondo p-interno text-pequeno text-error-tinta"
+      >
+        {mal[resultado]}
+      </p>
+    );
+  }
+  return null;
+}
+
+/**
+ * «¿VENÍS CON ALGUIEN?» Plegado: la mayoría no trae a nadie, y la lista de
+ * quién viene es lo que hay que contestar. Sale abierto si lo escrito no se
+ * pudo apuntar, con el porqué en el propio campo.
+ *
+ * Va dentro del mismo formulario y no en uno aparte: así, apuntar a alguien
+ * guarda también lo ya marcado arriba. Su botón es otro destino del mismo
+ * envío (`direccion=acompanante`).
+ */
+function VenisConAlguien({
+  plazasLibres,
+  acompanante,
+}: {
+  plazasLibres: number;
+  acompanante?: string;
+}) {
+  const errorNombre =
+    acompanante === "nombre"
+      ? t("rsvp.acompananteNombreCorto")
+      : acompanante === "largo"
+        ? t("rsvp.demasiadoLargo")
+        : undefined;
+  return (
+    <details
+      open={Boolean(errorNombre)}
+      className="group/acompanante rounded-tarjeta border border-borde p-interno"
+    >
+      <summary className="flex min-h-control cursor-pointer list-none items-center justify-between gap-interno">
+        <span className="grid gap-linea">
+          <span className="font-titulo text-titulo-3 text-tinta">
+            {t("rsvp.acompananteTitulo")}
+          </span>
+          <span className="text-pequeno text-tinta-suave">
+            {plazasLibres === 1
+              ? t("rsvp.acompananteHuecoUno")
+              : t("rsvp.acompananteHuecos", { cuantos: plazasLibres })}
+          </span>
+        </span>
+        <SignoAbrir grupo="acompanante" />
+      </summary>
+      <div className="mt-interno grid gap-interno">
+        <CampoTexto
+          etiqueta={t("rsvp.acompananteNombre")}
+          name="acompanante-nombre"
+          autoComplete="off"
+          minLength={LONGITUD_MINIMA_NOMBRE}
+          maxLength={LARGOS_DE_CAMPO["invitados.nombre"]}
+          error={errorNombre}
+        />
+        <CampoTexto
+          etiqueta={t("rsvp.acompananteApellidos")}
+          name="acompanante-apellidos"
+          autoComplete="off"
+          maxLength={LARGOS_DE_CAMPO["invitados.apellidos"]}
+        />
+        <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
+          <input
+            type="checkbox"
+            name="acompanante-nino"
+            className="casilla-marca transicion-color"
+          />
+          <span className="text-cuerpo text-tinta">{t("rsvp.acompananteNino")}</span>
+        </label>
+        <Cuerpo className="text-pequeno text-tinta-suave">
+          {t("rsvp.acompananteDespues")}
+        </Cuerpo>
+        <div>
+          <BotonEnvio
+            name="direccion"
+            value="acompanante"
+            jerarquia="secundario"
+            rotuloPendiente={t("rsvp.guardando")}
+          >
+            {t("rsvp.acompananteAnadir")}
+          </BotonEnvio>
+        </div>
+      </div>
+    </details>
   );
 }
 

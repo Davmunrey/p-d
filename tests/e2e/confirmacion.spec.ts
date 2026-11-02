@@ -45,10 +45,11 @@ async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T
 
 const marcaDelProyecto = () => `${MARCA} ${test.info().project.name}`;
 
-/** Un grupo sin contestar, con su token. */
+/** Un grupo sin contestar, con su token y, si se pide, sitio para acompañantes. */
 async function crearGrupo(
   sufijo: string,
   personas: string[],
+  maximoAcompanantes = 0,
 ): Promise<{ token: string; nombre: string }> {
   const proyecto = test.info().project.name;
   const token = `desarrollo-confirmar-${proyecto}-${sufijo}-000000`;
@@ -59,7 +60,7 @@ async function crearGrupo(
       insert into public.grupos_invitacion (nombre, lado, invitado_a, maximo_acompanantes, huella_token)
       values (
         ${nombre}, 'ambos',
-        array['ceremonia','banquete','fiesta']::public.evento_boda[], 0,
+        array['ceremonia','banquete','fiesta']::public.evento_boda[], ${maximoAcompanantes},
         public.huella_token(${token})
       )
       returning id
@@ -134,8 +135,8 @@ async function abrirConElEnlace(pagina: Page, token: string): Promise<Locator> {
   await pagina.goto(`${RUTA_INVITACION}/${token}`);
   expect(new URL(pagina.url()).pathname).toBe("/");
   const rsvp = confirmacion(pagina);
-  await rsvp.locator("summary").click();
-  await expect(rsvp.locator("details")).toHaveAttribute("open", "");
+  await rsvp.locator("[data-confirmacion] > summary").click();
+  await expect(rsvp.locator("details[data-confirmacion]")).toHaveAttribute("open", "");
   return rsvp;
 }
 
@@ -171,13 +172,15 @@ test.describe("Vuestra estrella, sin enlace", () => {
     );
     expect(ultima).toBe("rsvp");
 
-    const details = rsvp.locator("details");
+    const details = rsvp.locator("details[data-confirmacion]");
     await expect(details).not.toHaveAttribute("open", /.*/);
-    await expect(rsvp.locator("summary")).toContainText(copy.rsvp.faltaVuestraEstrella);
+    await expect(rsvp.locator("[data-confirmacion] > summary")).toContainText(
+      copy.rsvp.faltaVuestraEstrella,
+    );
     await expect(rsvp.locator('summary [data-vuestra-estrella="falta"]')).toHaveCount(1);
 
     // Un desplegable de verdad: con Intro se abre, como cualquier otro.
-    await rsvp.locator("summary").focus();
+    await rsvp.locator("[data-confirmacion] > summary").focus();
     await page.keyboard.press("Enter");
     await expect(details).toHaveAttribute("open", "");
 
@@ -220,7 +223,7 @@ test.describe("Confirmar con el enlace", () => {
 
     // Paso 2 · vuelve a la página con el desplegable abierto, y sólo quien viene.
     await expect(pagina).toHaveURL(/paso=detalles/);
-    await expect(rsvp.locator("details")).toHaveAttribute("open", "");
+    await expect(rsvp.locator("details[data-confirmacion]")).toHaveAttribute("open", "");
     await expect(rsvp.getByText(copy.rsvp.pasoDetallesTitulo)).toBeVisible();
     await expect(rsvp.locator('select[name^="menu-"]')).toHaveCount(1);
     await rsvp.locator('select[name^="menu-"]').selectOption("vegano");
@@ -232,7 +235,9 @@ test.describe("Confirmar con el enlace", () => {
     await expect(pagina).toHaveURL(/enviado=1/);
     await expect(rsvp).toContainText(copy.rsvp.graciasSi);
     await expect(rsvp.locator('summary [data-vuestra-estrella="encendida"]')).toHaveCount(1);
-    await expect(rsvp.locator("summary")).toContainText(copy.rsvp.estrellaEncendida);
+    await expect(rsvp.locator("[data-confirmacion] > summary")).toContainText(
+      copy.rsvp.estrellaEncendida,
+    );
 
     // LO QUE PIDIÓ PALOMA: nadie pierde la información de la boda por confirmar.
     await expect(pagina.locator("#portada")).toHaveCount(1);
@@ -255,9 +260,11 @@ test.describe("Confirmar con el enlace", () => {
 
     // Al volver otro día: plegada, encendida, y dentro lo contestado.
     await pagina.goto("/");
-    await expect(rsvp.locator("details")).not.toHaveAttribute("open", /.*/);
-    await expect(rsvp.locator("summary")).toContainText(copy.rsvp.tocadParaVer);
-    await rsvp.locator("summary").click();
+    await expect(rsvp.locator("details[data-confirmacion]")).not.toHaveAttribute("open", /.*/);
+    await expect(rsvp.locator("[data-confirmacion] > summary")).toContainText(
+      copy.rsvp.tocadParaVer,
+    );
+    await rsvp.locator("[data-confirmacion] > summary").click();
     await expect(rsvp).toContainText(copy.rsvp.resumenNoVienen);
 
     await contexto.close();
@@ -373,7 +380,7 @@ test.describe("Confirmar con el enlace", () => {
 
     await page.goto("/");
     const rsvp = confirmacion(page);
-    await rsvp.locator("summary").click();
+    await rsvp.locator("[data-confirmacion] > summary").click();
     await expect(rsvp.getByRole("alert")).toHaveText(copy.rsvp.avisoEnlaceNoValido);
     await expect(rsvp.locator("form")).toHaveCount(0);
   });
@@ -419,16 +426,150 @@ test.describe("Confirmar con el enlace", () => {
 
     await page.goto("/");
     const rsvp = confirmacion(page);
-    await rsvp.locator("summary").click();
+    await rsvp.locator("[data-confirmacion] > summary").click();
     await expect(rsvp.getByRole("alert")).toHaveText(copy.rsvp.demasiadosIntentos);
   });
 
+  /*
+    «¿VENÍS CON ALGUIEN?» El panel pone en cada invitación cuántos
+    acompañantes caben, y el invitado apunta al suyo desde la estrella. Sin
+    JavaScript: el desplegable es un `<details>` y apuntar es otro destino del
+    mismo `POST`. Lo marcado arriba no se pierde al apuntarlo, y su menú y sus
+    alergias van en el paso siguiente, como los de todos.
+  */
+  test("se apunta a un acompañante, dice su menú y queda en la base como acompañante", async ({
+    browser,
+  }) => {
+    const { token } = await crearGrupo("acompanante", ["(DES) Eva"], 1);
+
+    const contexto = await browser.newContext({
+      viewport: MOVIL,
+      javaScriptEnabled: false,
+      locale: "es-ES",
+      extraHTTPHeaders: origenDelTest(),
+    });
+    const pagina = await contexto.newPage();
+    const rsvp = await abrirConElEnlace(pagina, token);
+
+    await contestar(rsvp, "(DES) Eva", true);
+    const bloque = rsvp.locator("details details");
+    await bloque.locator("summary").click();
+    await expect(bloque).toContainText(copy.rsvp.acompananteHuecoUno);
+    await bloque.getByLabel(copy.rsvp.acompananteNombre).fill("(DES) Fran");
+    await bloque.getByLabel(copy.rsvp.acompananteApellidos).fill("(DES)");
+    await bloque.getByLabel(copy.rsvp.acompananteNino).check();
+    await bloque.getByRole("button", { name: copy.rsvp.acompananteAnadir }).click();
+
+    // De vuelta en el mismo paso: apuntado, marcado como que viene, y lo de
+    // Eva sigue marcado. Ya no cabe nadie más, así que el desplegable se va.
+    await expect(pagina).toHaveURL(/acompanante=anadido/);
+    await expect(rsvp.getByRole("status")).toHaveText(copy.rsvp.acompananteAnadido);
+    const fran = rsvp.getByRole("group", { name: /\(DES\) Fran/ });
+    await expect(fran.getByLabel(copy.rsvp.vieneSi)).toBeChecked();
+    await expect(
+      rsvp.getByRole("group", { name: /\(DES\) Eva/ }).getByLabel(copy.rsvp.vieneSi),
+    ).toBeChecked();
+    await expect(rsvp.getByText(copy.rsvp.acompananteTitulo)).toHaveCount(0);
+
+    // Paso 2 · su menú: siendo menor, le toca el infantil de entrada.
+    await botonAvanzar(rsvp, copy.rsvp.siguiente).click();
+    await expect(pagina).toHaveURL(/paso=detalles/);
+    const detallesFran = rsvp.getByRole("group", { name: /\(DES\) Fran/ });
+    await expect(detallesFran.getByLabel(copy.rsvp.menuEtiqueta)).toHaveValue("infantil");
+    await detallesFran.getByLabel(copy.rsvp.alergias).fill("(DES) Lactosa");
+    await botonAvanzar(rsvp, copy.rsvp.enviar).click();
+    await expect(pagina).toHaveURL(/enviado=1/);
+
+    const [acompanante] = await conBase(
+      (sql) => sql<
+        {
+          es_acompanante: boolean;
+          es_nino: boolean;
+          tipo_menu: string;
+          alergias: string | null;
+          estado: string;
+        }[]
+      >`
+        select i.es_acompanante, i.es_nino, i.tipo_menu::text as tipo_menu, i.alergias,
+               c.estado::text as estado
+          from public.invitados as i
+          join public.confirmaciones as c on c.invitado_id = i.id and c.es_vigente
+          join public.grupos_invitacion as g on g.id = i.grupo_id
+         where g.huella_token = public.huella_token(${token}) and i.nombre = '(DES) Fran'
+      `,
+    );
+    expect(acompanante).toEqual({
+      es_acompanante: true,
+      es_nino: true,
+      tipo_menu: "infantil",
+      alergias: "(DES) Lactosa",
+      estado: "confirmado",
+    });
+
+    await contexto.close();
+  });
+
+  test("una errata se quita antes de contestar, y sin sitio no se apunta a nadie", async ({
+    page,
+  }) => {
+    const { token, nombre } = await crearGrupo("sin-sitio", ["(DES) Gala"], 1);
+    const rsvp = await abrirConElEnlace(page, token);
+    await contestar(rsvp, "(DES) Gala", true);
+
+    // Se apunta con una errata y se quita: no ha contestado, así que se puede.
+    const bloque = rsvp.locator("details details");
+    await bloque.locator("summary").click();
+    await bloque.getByLabel(copy.rsvp.acompananteNombre).fill("(DES) Hgo");
+    await bloque.getByRole("button", { name: copy.rsvp.acompananteAnadir }).click();
+    await expect(page).toHaveURL(/acompanante=anadido/);
+    await rsvp
+      .getByRole("button", {
+        name: copy.rsvp.acompananteQuitarA.replace("{nombre}", "(DES) Hgo"),
+      })
+      .click();
+    await expect(page).toHaveURL(/acompanante=quitado/);
+    await expect(rsvp.getByRole("status")).toHaveText(copy.rsvp.acompananteQuitado);
+    await expect(rsvp.getByRole("group", { name: /\(DES\) Hgo/ })).toHaveCount(0);
+
+    // Mientras se escribe, otro móvil de la familia gasta la única plaza.
+    await bloque.locator("summary").click();
+    await bloque.getByLabel(copy.rsvp.acompananteNombre).fill("(DES) Hugo");
+    await conBase(
+      (sql) => sql`
+        insert into public.invitados (grupo_id, nombre, es_acompanante)
+        select id, '(DES) Desde otro móvil', true
+          from public.grupos_invitacion where nombre = ${nombre}
+      `,
+    );
+    await bloque.getByRole("button", { name: copy.rsvp.acompananteAnadir }).click();
+
+    await expect(page).toHaveURL(/acompanante=tope/);
+    await expect(rsvp.getByRole("alert")).toHaveText(copy.rsvp.acompananteSinSitio);
+    const [{ hugos }] = await conBase(
+      (sql) => sql<{ hugos: number }[]>`
+        select count(*)::int as hugos from public.invitados as i
+          join public.grupos_invitacion as g on g.id = i.grupo_id
+         where g.nombre = ${nombre} and i.nombre = '(DES) Hugo'
+      `,
+    );
+    expect(hugos, "sin sitio no se apunta a nadie").toBe(0);
+    // Lo marcado arriba no se ha perdido por el camino.
+    await expect(
+      rsvp.getByRole("group", { name: /\(DES\) Gala/ }).getByLabel(copy.rsvp.vieneSi),
+    ).toBeChecked();
+  });
+
   test("el formulario abierto no tiene fallos graves de accesibilidad", async ({ page }) => {
-    const { token } = await crearGrupo("axe", ["(DES) Leo", "(DES) Mar"]);
+    const { token } = await crearGrupo("axe", ["(DES) Leo", "(DES) Mar"], 2);
     const rsvp = await abrirConElEnlace(page, token);
     await contestar(rsvp, "(DES) Leo", true);
     await botonAvanzar(rsvp, copy.rsvp.siguiente).click();
     await expect(page).toHaveURL(/falta=/);
+    // Con el «¿Venís con alguien?» abierto, que también se revisa.
+    await rsvp.locator("details details summary").click();
+    await expect(
+      rsvp.getByText(copy.rsvp.acompananteHuecos.replace("{cuantos}", "2")),
+    ).toBeVisible();
 
     const resultado = await new AxeBuilder({ page }).include("#rsvp").analyze();
     const graves = resultado.violations

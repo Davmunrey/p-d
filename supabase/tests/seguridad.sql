@@ -855,11 +855,11 @@ begin
   perform pg_temp.comprobar('y deja rastro en el cortafuegos', v_despues = v_antes + 1);
 
   perform pg_temp.comprobar(
-    'las puertas que no usa el formulario no existen',
+    'la puerta del acuse por correo no existe',
     not exists (
       select 1 from pg_proc as p
        where p.pronamespace = 'public'::regnamespace
-         and p.proname in ('anadir_acompanante', 'destinatarios_confirmacion')));
+         and p.proname = 'destinatarios_confirmacion'));
 
   delete from public.grupos_invitacion where id = v_grupo;
 end $$;
@@ -949,6 +949,98 @@ begin
   perform pg_temp.comprobar('una confirmación sin logística explícita se acepta', v_ok);
 
   reset role;
+end $$;
+
+\echo ''
+\echo '========================================'
+\echo '  ¿Venís con alguien? · acompañantes desde el enlace'
+\echo '========================================'
+
+-- Lo que se defiende: que con un token se apuntan acompañantes en SU grupo y
+-- hasta su tope, y que sólo se quita lo que el propio grupo apuntó y aún no
+-- ha contestado. El ataque cruzado —quitar a alguien de otra familia con un
+-- token válido— es la comprobación importante.
+do $$
+declare
+  v_token   text;
+  v_grupo   uuid;
+  v_otro    text;
+  v_grupo2  uuid;
+  v_titular uuid;
+  v_nuevo   uuid;
+  v_ajeno   uuid;
+  v_ok      boolean;
+  v_cuantos bigint;
+begin
+  select token, grupo_id into v_token, v_grupo
+    from public.crear_grupo_invitacion(
+      'Grupo acompañantes', 1::smallint, 'ambos'::public.lado_invitacion,
+      array['ceremonia']::public.evento_boda[]
+    );
+  insert into public.invitados (grupo_id, nombre) values (v_grupo, 'Titular')
+  returning id into v_titular;
+
+  select token, grupo_id into v_otro, v_grupo2
+    from public.crear_grupo_invitacion(
+      'Otra familia con acompañante', 1::smallint, 'ambos'::public.lado_invitacion,
+      array['ceremonia']::public.evento_boda[]
+    );
+  insert into public.invitados (grupo_id, nombre, es_acompanante)
+  values (v_grupo2, 'Acompañante ajeno', true)
+  returning id into v_ajeno;
+
+  set local role anon;
+
+  v_nuevo := public.anadir_acompanante(v_token, 'Pareja', null, false);
+  perform pg_temp.comprobar('anon apunta un acompañante en su grupo', v_nuevo is not null);
+
+  select count(*) into v_cuantos
+    from public.obtener_invitacion(v_token) as f
+   where f.invitado_id = v_nuevo and f.es_acompanante;
+  perform pg_temp.comprobar('y sale en su invitación, marcado como acompañante', v_cuantos = 1);
+
+  begin
+    perform public.anadir_acompanante(v_token, 'Uno de más', null, false);
+    v_ok := false;
+  exception when others then
+    v_ok := sqlerrm = 'RSV05';
+  end;
+  perform pg_temp.comprobar('pasado el tope del panel no se apunta nadie más (RSV05)', v_ok);
+
+  perform pg_temp.comprobar(
+    'un token inventado no apunta a nadie',
+    public.anadir_acompanante('token-inventado-que-no-existe-0000', 'Nadie') is null);
+
+  perform pg_temp.comprobar(
+    'no se quita a un acompañante de otra familia',
+    not public.quitar_acompanante(v_token, v_ajeno));
+  perform pg_temp.comprobar(
+    'ni a un titular del propio grupo',
+    not public.quitar_acompanante(v_token, v_titular));
+
+  perform public.registrar_confirmacion(
+    v_token,
+    jsonb_build_array(jsonb_build_object('invitado_id', v_nuevo, 'estado', 'confirmado'))
+  );
+  perform pg_temp.comprobar(
+    'ni a quien ya ha contestado',
+    not public.quitar_acompanante(v_token, v_nuevo));
+
+  reset role;
+
+  -- Ya contestado no se quita; uno recién apuntado, sí.
+  delete from public.invitados where id = v_nuevo;
+  set local role anon;
+  v_nuevo := public.anadir_acompanante(v_token, 'Errata', null, false);
+  perform pg_temp.comprobar(
+    'y uno recién apuntado, sin respuesta, se quita',
+    public.quitar_acompanante(v_token, v_nuevo));
+  reset role;
+
+  select count(*) into v_cuantos from public.invitados where id in (v_ajeno, v_titular);
+  perform pg_temp.comprobar('el ajeno y el titular siguen ahí', v_cuantos = 2);
+
+  delete from public.grupos_invitacion where id in (v_grupo, v_grupo2);
 end $$;
 
 \echo ''
@@ -1475,7 +1567,8 @@ declare
   v_de_menos text;
   v_puertas text[] := array[
     'nombre_de_invitacion', 'sugerir_cancion', 'datos_para_regalos',
-    'obtener_invitacion', 'registrar_confirmacion'
+    'obtener_invitacion', 'registrar_confirmacion',
+    'anadir_acompanante', 'quitar_acompanante'
   ];
   v_anon_puede boolean;
 begin
@@ -1485,7 +1578,7 @@ begin
      and has_function_privilege('anon', p.oid, 'execute')
      and p.proname <> all (v_puertas);
   perform pg_temp.comprobar(
-    format('anon sólo ejecuta las cinco puertas públicas (de más: %s)', coalesce(v_de_mas, 'ninguna')),
+    format('anon sólo ejecuta las siete puertas públicas (de más: %s)', coalesce(v_de_mas, 'ninguna')),
     v_de_mas is null);
 
   select string_agg(puerta, ', ' order by puerta) into v_de_menos
@@ -1496,7 +1589,7 @@ begin
         and p.proname = puerta
         and has_function_privilege('anon', p.oid, 'execute'));
   perform pg_temp.comprobar(
-    format('y las cinco existen y las puede ejecutar (de menos: %s)', coalesce(v_de_menos, 'ninguna')),
+    format('y las siete existen y las puede ejecutar (de menos: %s)', coalesce(v_de_menos, 'ninguna')),
     v_de_menos is null);
 
   -- Los default privileges existen de verdad: una función creada AHORA, sin

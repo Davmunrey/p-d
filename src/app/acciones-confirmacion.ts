@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import {
   LARGOS_DE_CAMPO,
+  LONGITUD_MINIMA_NOMBRE,
   MARCA_RSVP_ENVIADO,
   MENUS_RSVP,
   PASOS_RSVP,
@@ -11,8 +12,10 @@ import {
 } from "@/config/constants";
 import { anclaDe } from "@/config/secciones";
 import {
+  anadirAcompanante,
   esCupoAgotado,
   obtenerInvitacion,
+  quitarAcompanante,
   registrarConfirmacion,
   type Invitacion,
   type RespuestaInvitado,
@@ -111,6 +114,77 @@ function volverAContestar(faltan: { id: string }[]): never {
   redirect(`/?paso=asistencia&falta=${faltanEnLaUrl(ids)}#${anclaPersona(ids[0]!)}`);
 }
 
+/** Vuelve al paso de asistencia con lo que ha pasado con el acompañante. */
+function volverConAcompanante(resultado: string, persona?: string): never {
+  const ancla = persona ? anclaPersona(persona) : anclaDe("rsvp");
+  redirect(`/?paso=asistencia&acompanante=${resultado}#${ancla}`);
+}
+
+/**
+ * «¿VENÍS CON ALGUIEN?» Apunta en el grupo a quien trae, y lo deja marcado como
+ * que viene: lo ha apuntado para eso. Su menú y sus alergias los dice en el
+ * paso de detalles, como los demás.
+ *
+ * Lo que impide apuntarlo se dice ANTES de tocar la base —sin sitio, nombre
+ * corto o largo—; la base lo vuelve a mirar igual (el tope, con el grupo
+ * bloqueado, por si otro móvil de la familia apuntaba a alguien a la vez).
+ */
+async function apuntarAcompanante(
+  token: string,
+  borrador: Borrador,
+  invitacion: Invitacion,
+  datos: FormData,
+): Promise<never> {
+  const nombre = texto(datos, "acompanante-nombre");
+  const apellidos = texto(datos, "acompanante-apellidos") || null;
+
+  if (invitacion.plazasLibres <= 0) volverConAcompanante("tope");
+  if (nombre.length < LONGITUD_MINIMA_NOMBRE) volverConAcompanante("nombre");
+  if (
+    nombre.length > LARGOS_DE_CAMPO["invitados.nombre"] ||
+    (apellidos?.length ?? 0) > LARGOS_DE_CAMPO["invitados.apellidos"]
+  ) {
+    volverConAcompanante("largo");
+  }
+
+  const resultado = await anadirAcompanante(token, {
+    nombre,
+    apellidos,
+    esNino: datos.get("acompanante-nino") !== null,
+  });
+  if (!resultado.ok) {
+    if (resultado.motivo === "tope") volverConAcompanante("tope");
+    volver(`paso=asistencia&fallo=${resultado.motivo}`);
+  }
+
+  borrador.asistencia[resultado.id] = "confirmado";
+  await guardarBorrador(borrador);
+  volverConAcompanante("anadido", resultado.id);
+}
+
+/** Deshace un acompañante apuntado por error, si aún no ha contestado. */
+async function quitarDeLaLista(
+  token: string,
+  borrador: Borrador,
+  invitacion: Invitacion,
+  id: string,
+): Promise<never> {
+  // Sólo se pide por quien la pantalla enseña como acompañante de este grupo.
+  const persona = invitacion.personas.find((p) => p.id === id && p.esAcompanante);
+  if (!persona) volver(`paso=asistencia`);
+
+  const resultado = await quitarAcompanante(token, id);
+  if (!resultado.ok) volver(`paso=asistencia&fallo=${resultado.motivo}`);
+  if (!resultado.quitado) volverConAcompanante("contestado", id);
+
+  delete borrador.asistencia[id];
+  delete borrador.menu[id];
+  delete borrador.alergias[id];
+  delete borrador.autobus[id];
+  await guardarBorrador(borrador);
+  volverConAcompanante("quitado");
+}
+
 /** Un paso del formulario: «Siguiente», «Atrás» o el envío final. */
 export async function avanzar(datos: FormData): Promise<void> {
   const token = await invitacionRecordada();
@@ -141,6 +215,19 @@ export async function avanzar(datos: FormData): Promise<void> {
   const propias = (ids: string[]) => ids.filter((id) => personas.includes(id));
   incorporar(borrador, datos, pasoActual, propias);
   await guardarBorrador(borrador);
+
+  /*
+    EL ACOMPAÑANTE, ANTES QUE AVANZAR. Si hay un nombre escrito en «¿Venís con
+    alguien?», se apunta aunque se haya pulsado «Siguiente» o Intro: quien lo
+    ha escrito quiere traerlo, y avanzar sin él lo perdería en silencio.
+  */
+  if (pasoActual === "asistencia") {
+    const quitar = texto(datos, "quitar");
+    if (quitar) await quitarDeLaLista(token, borrador, invitacion, quitar);
+    if (direccion === "acompanante" || texto(datos, "acompanante-nombre")) {
+      await apuntarAcompanante(token, borrador, invitacion, datos);
+    }
+  }
 
   /*
     LO LARGO SE MIDE AQUÍ, ANTES DE TOCAR LA BASE. Las alergias tienen su tope
