@@ -215,7 +215,7 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
       {soloTexto(consulta.largo) ? (
         <p
           role="alert"
-          className="mt-elemento rounded-campo contorno-bloque contorno-error bg-error-fondo p-interno text-pequeno text-error-tinta"
+          className="mt-elemento rounded-campo border border-error bg-error-fondo p-interno text-pequeno text-error-tinta"
         >
           {t("rsvp.demasiadoLargo")}
         </p>
@@ -420,7 +420,7 @@ function Aviso({ motivo, correo }: { motivo: string | undefined; correo: string 
   return (
     <p
       role="alert"
-      className="mt-elemento rounded-campo contorno-bloque contorno-error bg-error-fondo p-interno text-error-tinta"
+      className="mt-elemento rounded-campo border border-error bg-error-fondo p-interno text-error-tinta"
     >
       {texto}
     </p>
@@ -470,8 +470,8 @@ function PasoAsistencia({
           <fieldset
             key={persona.id}
             id={anclaPersona(persona.id)}
-            className={`grid scroll-mt-elemento gap-interno rounded-tarjeta contorno-bloque bg-superficie p-interno sombra-dura ${
-              falta ? "contorno-error" : ""
+            className={`grid scroll-mt-elemento gap-interno rounded-tarjeta border p-interno ${
+              falta ? "border-error" : "border-borde"
             }`}
           >
             <legend className="px-linea font-titulo text-titulo-3">
@@ -486,7 +486,7 @@ function PasoAsistencia({
             ).map(([valor, rotulo]) => (
               <label
                 key={valor}
-                className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo contorno-bloque px-interno transicion-color has-checked:bg-superficie-tenue has-checked:sombra-dura-s"
+                className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue"
               >
                 <input
                   type="radio"
@@ -539,7 +539,7 @@ function PasoDetalles({
       {vienen.map((persona) => (
         <fieldset
           key={persona.id}
-          className="grid gap-interno rounded-tarjeta contorno-bloque bg-superficie p-interno sombra-dura"
+          className="grid gap-interno rounded-tarjeta border border-borde p-interno"
         >
           <legend className="px-linea font-titulo text-titulo-3">
             {nombreCompleto(persona)}
@@ -572,7 +572,7 @@ function PasoDetalles({
             defaultValue={borrador.alergias[persona.id] ?? persona.alergias ?? ""}
           />
 
-          <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo contorno-bloque px-interno transicion-color has-checked:bg-superficie-tenue has-checked:sombra-dura-s">
+          <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
             <input
               type="checkbox"
               name={`autobus-${persona.id}`}

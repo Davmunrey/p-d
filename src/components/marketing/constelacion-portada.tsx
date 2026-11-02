@@ -1,5 +1,5 @@
 import { Constelacion } from "@/components/ui/constelacion";
-import { CONSTELACION_NOVIOS, RADIO_ANILLO } from "@/config/constelaciones";
+import { CONSTELACION_NOVIOS, GROSOR_ANILLO, RADIO_ANILLO } from "@/config/constelaciones";
 
 /** El centro del anillo, en porcentaje del lado. */
 const CENTRO = "50%";
@@ -32,22 +32,15 @@ export function ConstelacionPortada() {
       className="hidden items-center justify-center px-portada-lado md:flex"
     >
       <div className="animacion-paralaje-portada relative size-constelacion-portada">
-        {/*
-          LA SOMBRA DURA DEL DISCO: un disco de tinta detrás, desplazado como
-          la sombra de cualquier bloque de la página. Llega cuando el anillo
-          ya se ha cerrado: antes sería la sombra de algo que no está.
-        */}
-        <div className="sombra-que-llega absolute inset-0 translate-x-sombra-dura-l translate-y-sombra-dura-l rounded-full fondo-sombra-dura" />
-
-        <div className="absolute inset-0 overflow-hidden rounded-full bg-superficie">
+        <div className="absolute inset-0 overflow-hidden rounded-full">
           <div className="animacion-cielo-claro cielo-claro pointer-events-none absolute -inset-sangrado-cielo" />
         </div>
 
         {/*
           Girado un cuarto de vuelta para que el anillo empiece a cerrarse por
           arriba, a las doce, y no a las tres. Sin `viewBox` a propósito: con
-          él, el grosor del trazo crecería con el disco, y el contorno de un
-          marco mide lo mismo en todas partes.
+          él, un trazo de un píxel necesitaría `vector-effect`, y éste mide
+          los guiones en pantalla y rompe el dibujo en dos arcos.
         */}
         <svg className="absolute inset-0 h-full w-full -rotate-90 overflow-visible" fill="none">
           <circle
@@ -55,7 +48,8 @@ export function ConstelacionPortada() {
             cy={CENTRO}
             r={RADIO_ANILLO}
             pathLength={1}
-            className="anillo-dibujado trazo-contorno"
+            className="anillo-dibujado stroke-borde-fuerte"
+            strokeWidth={GROSOR_ANILLO}
           />
         </svg>
 

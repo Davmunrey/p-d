@@ -348,9 +348,6 @@
   --spacing-constelacion-portada: var(--lado-constelacion-portada);
   --spacing-aire-constelacion: var(--aire-constelacion);
 
-  /* El desplazamiento de la sombra dura, para la que es una pieza aparte: `translate-x-sombra-dura-l`. */
-  --spacing-sombra-dura-l: var(--sombra-dura-l);
-
   /* Un solo token da `h-cabecera`, `pt-cabecera` y `scroll-mt-cabecera`. */
   --spacing-cabecera: var(--alto-cabecera);
 
@@ -383,8 +380,7 @@
     desplazamiento y sin difuminado. Lo único configurable, el grosor y el
     color, son los dos semánticos.
   */
-  --shadow-anillo-campo: var(--foco-campo-desplazamiento) var(--foco-campo-desplazamiento) 0
-    var(--anillo-campo-ancho) var(--anillo-campo);
+  --shadow-anillo-campo: 0 0 0 var(--anillo-campo-ancho) var(--anillo-campo);
   --shadow-sutil: var(--sombra-sutil);
   --shadow-tarjeta: var(--sombra-tarjeta);
   --shadow-elevada: var(--sombra-elevada);
@@ -597,73 +593,6 @@
 @utility rejilla-llegar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-columna-llegar)), 1fr));
-}
-
-/**
- * EL BLOQUE NEOBRUTALISTA. Un contorno de tinta y una sombra dura detrás: así
- * se dibujan las piezas de la web pública. El contorno de un bloque es de dos
- * píxeles (`contorno-bloque`), el de un marco grande de tres
- * (`contorno-marco`), y el de un control —botón secundario, campo— lleva su
- * propia tinta para que el panel pueda devolverle su gris. La sombra tiene
- * tres alturas, y `sombra-acento` la pasa a bronce: es la de la acción
- * principal. Todo lee semánticos que el bloque inverso y el panel reasignan.
- */
-@utility contorno-bloque {
-  border: var(--ancho-contorno) solid var(--tinta-contorno);
-}
-
-@utility contorno-marco {
-  border: var(--ancho-contorno-fuerte) solid var(--tinta-contorno);
-}
-
-@utility contorno-control {
-  border: var(--ancho-contorno) solid var(--tinta-contorno-control);
-}
-
-@utility sombra-dura-s {
-  box-shadow: var(--sombra-dura-s) var(--sombra-dura-s) 0 0 var(--tinta-sombra-dura);
-}
-
-@utility sombra-dura {
-  box-shadow: var(--sombra-dura) var(--sombra-dura) 0 0 var(--tinta-sombra-dura);
-}
-
-@utility sombra-dura-l {
-  box-shadow: var(--sombra-dura-l) var(--sombra-dura-l) 0 0 var(--tinta-sombra-dura);
-}
-
-@utility sombra-acento {
-  --tinta-sombra-dura: var(--tinta-sombra-accion);
-}
-
-/* Una raya de tinta encima o debajo: la que separa los bloques de la página. */
-@utility contorno-arriba {
-  border-top: var(--ancho-contorno) solid var(--tinta-contorno);
-}
-
-@utility contorno-abajo {
-  border-bottom: var(--ancho-contorno) solid var(--tinta-contorno);
-}
-
-/* El trazo de un svg con la tinta y el grosor de un marco: el anillo de la portada. */
-@utility trazo-contorno {
-  stroke: var(--tinta-contorno);
-  stroke-width: var(--ancho-contorno-fuerte);
-}
-
-/* Una pieza que ES la sombra dura de otra: el disco de detrás de la Lira. */
-@utility fondo-sombra-dura {
-  background-color: var(--tinta-sombra-dura);
-}
-
-/* Un campo con error dibuja su contorno en la tinta de error. */
-@utility contorno-error {
-  --tinta-contorno: var(--error);
-}
-
-/* El botón secundario es un bloque lleno en la web; en el panel, transparente. */
-@utility relleno-secundario {
-  background-color: var(--relleno-boton-secundario);
 }
 
 /**

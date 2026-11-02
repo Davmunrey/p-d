@@ -173,19 +173,12 @@ export function CuentaAtras({
       {...accesibilidad}
     >
       {bloques.map((bloque) => (
-        <div
-          key={bloque.etiqueta}
-          className="animacion-escala-al-ver min-w-cifra contorno-bloque bg-superficie px-interno py-interno text-center sombra-dura"
-        >
+        <div key={bloque.etiqueta} className="animacion-escala-al-ver min-w-cifra text-center">
           {/*
             Las cifras tienen su propio tamaño, más contenido que el titular:
             son cuatro seguidas y a tamaño de portada no cabrían en un móvil.
           */}
           {/*
-            CIFRAS DE CAJA ALTA (`lining-nums`): las de Cormorant son de texto
-            y el 3, el 5 o el 7 bajan de la línea; dentro de una caja con su
-            rótulo debajo, lo pisaban.
-
             LA CIFRA RUEDA CUANDO CAMBIA. La `key` es el propio valor: React
             monta una cifra nueva cada vez que cambia y `animacion-rodar` la
             sube desde abajo en 0,45 s, como un contador de los de antes. Las
@@ -194,7 +187,7 @@ export function CuentaAtras({
           */}
           <div
             key={bloque.valor}
-            className="animacion-rodar font-titulo text-cifra font-light leading-none lining-nums tabular-nums"
+            className="animacion-rodar font-titulo text-cifra font-light leading-none tabular-nums"
           >
             {bloque.valor}
           </div>

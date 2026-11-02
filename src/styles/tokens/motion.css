@@ -327,7 +327,7 @@
   to {
     backdrop-filter: blur(var(--desenfoque-cabecera));
     background-color: var(--superficie-cabecera);
-    border-color: var(--tinta-contorno);
+    border-color: var(--borde-tenue);
   }
 }
 
@@ -621,12 +621,6 @@
   transform-origin: center;
 }
 
-/* La sombra del disco de la portada no está hasta que el anillo lo cierra. */
-.sombra-que-llega {
-  animation: aparecer var(--transicion-aparicion) both;
-  animation-delay: var(--pausa-sombra-disco);
-}
-
 .animacion-escribir {
   animation: escribir var(--transicion-escritura) both;
   animation-delay: var(--pausa-escritura);
@@ -638,70 +632,41 @@
 }
 
 /**
- * UN BOTÓN SE HUNDE AL PULSARLO, en 100 ms: la confirmación de que el dedo ha
- * llegado, antes de que pase nada más. Cuánto y cómo lo dice el tema: en la
- * web pública el botón baja hacia su sombra (`--pulsado`); en el panel cede
- * un 3 %, como siempre. Lleva también las transiciones de color de
- * `transicion-color`, porque las dos clases escribirían la misma propiedad
- * `transition` y la segunda borraría a la primera.
+ * UN BOTÓN CEDE UN 3 % AL PULSARLO, en 100 ms: la confirmación de que el dedo
+ * ha llegado, antes de que pase nada más. Lleva también las transiciones de
+ * color de `transicion-color`, porque las dos clases escribirían la misma
+ * propiedad `transition` y la segunda borraría a la primera.
  */
 .pulsable {
   transition:
     color var(--transicion-color),
     background-color var(--transicion-color),
     border-color var(--transicion-color),
-    box-shadow var(--transicion-pulsado),
+    box-shadow var(--transicion-color),
     transform var(--transicion-pulsado);
 }
 
 .pulsable:active:not(:disabled, [aria-disabled="true"]) {
-  transform: var(--pulsado);
+  transform: scale(var(--escala-pulsado));
 }
 
 /**
- * EL BOTÓN DE BLOQUE: contorno y sombra dura. Al pasar sube dos píxeles y su
- * sombra crece lo mismo —la base no se mueve, el bloque se despega—; al
- * pulsarlo baja hasta tapar su sombra entera, y la sombra desaparece: está
- * hundido. En el panel las sombras miden cero y el alzado también, así que
- * de todo esto sólo queda el 3 % de `--pulsado-bloque`.
- */
-.bloque-pulsable {
-  box-shadow: var(--sombra-dura-s) var(--sombra-dura-s) 0 0 var(--tinta-sombra-dura);
-}
-
-.bloque-pulsable:hover:not(:disabled, [aria-disabled="true"]) {
-  box-shadow: calc(var(--sombra-dura-s) + var(--alzado))
-    calc(var(--sombra-dura-s) + var(--alzado)) 0 0 var(--tinta-sombra-dura);
-  transform: translate(calc(var(--alzado) * -1), calc(var(--alzado) * -1));
-}
-
-.bloque-pulsable:active:not(:disabled, [aria-disabled="true"]) {
-  box-shadow: 0 0 0 0 var(--tinta-sombra-dura);
-  transform: var(--pulsado-bloque);
-}
-
-.bloque-pulsable:disabled,
-.bloque-pulsable[aria-disabled="true"] {
-  box-shadow: none;
-}
-
-/**
- * UNA TARJETA QUE SE DESPEGA AL PASAR: sube dos píxeles y su sombra dura
- * crece lo mismo, en 0,3 s. Y una ficha que se levanta dos. Ninguno de los
+ * Una tarjeta que se levanta al pasar el ratón: cuatro píxeles, sombra y el
+ * borde a la marca, en 0,3 s. Y una ficha que se levanta dos. Ninguno de los
  * dos es un `hover:` de Tailwind porque el `transition` tiene que ir siempre,
  * no sólo en el estado que entra: si no, la tarjeta sube suave y baja a saltos.
  */
 .elevar-al-pasar {
-  box-shadow: var(--sombra-dura) var(--sombra-dura) 0 0 var(--tinta-sombra-dura);
   transition:
     transform var(--transicion-transformacion),
-    box-shadow var(--transicion-transformacion);
+    box-shadow var(--transicion-transformacion),
+    border-color var(--transicion-transformacion);
 }
 
 .elevar-al-pasar:hover {
-  box-shadow: calc(var(--sombra-dura) + var(--alzado)) calc(var(--sombra-dura) + var(--alzado))
-    0 0 var(--tinta-sombra-dura);
-  transform: translate(calc(var(--alzado) * -1), calc(var(--alzado) * -1));
+  border-color: var(--borde-marca);
+  box-shadow: var(--sombra-tarjeta);
+  transform: translateY(calc(var(--espacio-linea) * -1));
 }
 
 .levantar-al-pasar {
@@ -999,7 +964,6 @@
   .animacion-barrido-al-ver,
   .animacion-escribir,
   .animacion-rodar,
-  .sombra-que-llega,
   .anillo-dibujado,
   .constelacion-dibujada line,
   .constelacion-dibujada circle,
@@ -1033,9 +997,7 @@
 
   .elevar-al-pasar:hover,
   .levantar-al-pasar:hover,
-  .pulsable:active:not(:disabled, [aria-disabled="true"]),
-  .bloque-pulsable:hover:not(:disabled, [aria-disabled="true"]),
-  .bloque-pulsable:active:not(:disabled, [aria-disabled="true"]) {
+  .pulsable:active:not(:disabled, [aria-disabled="true"]) {
     transform: none;
   }
 

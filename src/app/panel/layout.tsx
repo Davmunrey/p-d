@@ -44,7 +44,7 @@ export default async function LayoutPanel({ children }: { children: ReactNode })
   if (!acceso) redirect(RUTA_ACCESO);
 
   return (
-    <div data-zona="panel" className="min-h-dvh bg-fondo">
+    <div className="min-h-dvh bg-fondo">
       <a
         href={`#${ID_CONTENIDO}`}
         className="sr-only focus:not-sr-only focus:absolute focus:left-interno focus:top-interno focus:capa-modal focus:rounded-campo focus:bg-superficie focus:px-interno focus:py-interno-compacto focus:text-pequeno"

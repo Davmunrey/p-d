@@ -59,7 +59,7 @@ interface Envoltura {
  * saliera el teclado ni nada que dijera por qué.
  */
 const CLASES_CONTROL =
-  "w-full contorno-bloque bg-superficie text-cuerpo text-tinta transicion-color placeholder:text-tinta-tenue focus-visible:border-marca focus-visible:shadow-anillo-campo disabled:cursor-not-allowed disabled:border-transparent disabled:bg-superficie-hundida disabled:text-tinta-suave";
+  "w-full border bg-superficie text-cuerpo text-tinta transicion-color placeholder:text-tinta-tenue focus-visible:border-marca focus-visible:shadow-anillo-campo disabled:cursor-not-allowed disabled:border-transparent disabled:bg-superficie-hundida disabled:text-tinta-suave";
 
 /**
  * Dos formas, y sólo dos: la caja de siempre y la píldora que la entrega usa
@@ -154,7 +154,7 @@ export function CampoTexto({
         <input
           {...propiedades}
           {...resto}
-          className={`${CLASES_CONTROL} ${FORMAS[forma]} ${error ? "contorno-error" : ""}`}
+          className={`${CLASES_CONTROL} ${FORMAS[forma]} ${error ? "border-error" : "border-borde"}`}
         />
       )}
     </EnvolturaCampo>
@@ -172,7 +172,7 @@ export function CampoTextoLargo({ etiqueta, ayuda, error, ...resto }: Propiedade
           {...propiedades}
           {...resto}
           className={`${CLASES_CONTROL} ${FORMAS.caja} resize-y py-interno leading-cuerpo ${
-            error ? "contorno-error" : ""
+            error ? "border-error" : "border-borde"
           }`}
         />
       )}
@@ -204,7 +204,7 @@ export function CampoSeleccion({
         <select
           {...propiedades}
           {...resto}
-          className={`${CLASES_CONTROL} ${FORMAS.caja} ${error ? "contorno-error" : ""}`}
+          className={`${CLASES_CONTROL} ${FORMAS.caja} ${error ? "border-error" : "border-borde"}`}
         >
           {children}
         </select>

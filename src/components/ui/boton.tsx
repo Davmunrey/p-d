@@ -48,9 +48,9 @@ const BASE =
 
 const JERARQUIAS: Record<JerarquiaBoton, string> = {
   primario:
-    "bloque-pulsable sombra-acento rounded-boton bg-accion px-elemento text-tinta-sobre-accion hover:bg-accion-hover active:bg-accion-activa aria-busy:cursor-progress aria-busy:bg-accion aria-busy:text-tinta-sobre-accion",
+    "rounded-boton bg-accion px-elemento text-tinta-sobre-accion hover:bg-accion-hover active:bg-accion-activa aria-busy:cursor-progress aria-busy:bg-accion aria-busy:text-tinta-sobre-accion",
   secundario:
-    "bloque-pulsable contorno-control relleno-secundario rounded-boton px-elemento text-tinta-marca hover:border-marca hover:bg-superficie-hundida active:bg-marca-tenue",
+    "rounded-boton border border-borde-fuerte px-elemento text-tinta-marca hover:border-marca hover:bg-superficie-hundida active:bg-marca-tenue",
   terciario:
     "border-b border-borde-fuerte px-interno-compacto text-marca hover:border-marca hover:text-tinta active:border-tinta active:text-tinta",
 };

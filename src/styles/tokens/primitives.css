@@ -109,8 +109,6 @@
    * Color — absolutos y velos
    * ------------------------------------------------------------------- */
 
-  /* Sin relleno: el botón secundario del panel deja ver lo que tiene debajo. */
-  --color-transparente: transparent;
   --color-blanco: #fff;
   --color-negro: #000;
 
@@ -387,17 +385,6 @@
   /* Una cifra de la cuenta atrás que cambia sube un tercio de su alto. */
   --space-cifra-recorrido: 0.35em;
 
-  /*
-   * NEOBRUTALISMO. La sombra dura no tiene desenfoque: es el mismo bloque,
-   * desplazado. Tres alturas —3 px para lo que se pulsa (botones, etiquetas,
-   * campos), 5 para las tarjetas y 8 para los marcos grandes (la foto de la
-   * portada, el sobre)— y 2 px de alzado: lo que sube al pasar el ratón.
-   */
-  --space-sombra-dura-s: 0.1875rem;
-  --space-sombra-dura: 0.3125rem;
-  --space-sombra-dura-l: 0.5rem;
-  --space-alzado: 0.125rem;
-
   /* La pista «bajad» cae 7 px y se apaga; la foto de portada baja hasta 60 px
      mientras se hace scroll, en los primeros 428 px de recorrido (60 / 0,14),
      y sangra un 6 % por arriba y por abajo para que ese viaje no deje borde. */
@@ -595,15 +582,6 @@
   /* Un botón que se pulsa cede un 3 %: lo justo para notar que ha oído el dedo. */
   --scale-pulsado: 0.97;
 
-  /* Pulsar, en cada tema. En la web, el botón baja hacia su sombra: dos
-     píxeles un enlace, tres —la sombra entera— un bloque. En el panel, cede. */
-  --transform-pulsado-hundir: translate(var(--space-alzado), var(--space-alzado));
-  --transform-pulsado-hundir-bloque: translate(
-    var(--space-sombra-dura-s),
-    var(--space-sombra-dura-s)
-  );
-  --transform-pulsado-ceder: scale(var(--scale-pulsado));
-
   /* El cielo de la cuenta atrás deriva 40 × 26 px y titila del 90 al 40 %. */
   --shift-deriva-x: -2.5rem;
   --shift-deriva-y: -1.625rem;
@@ -658,9 +636,6 @@
   --delay-estrellas: 900ms;
   --delay-trazos: 1150ms;
   --step-constelacion: 110ms;
-
-  /* La sombra dura del disco llega cuando el anillo se cierra, a los 2 s. */
-  --delay-sombra-disco: 2000ms;
 
   /* Ya dibujadas, las estrellas titilan: desde los 2,6 s, cada una a su paso. */
   --delay-titilar: 2600ms;
@@ -747,17 +722,6 @@
   --shadow-sello: 0 12px 26px -14px rgb(20 20 15 / 55%);
   --shadow-naipe: 0 1px 2px rgb(20 20 15 / 5%), 0 22px 52px -26px rgb(20 20 15 / 40%);
   --shadow-naipe-foto: 0 1px 2px rgb(20 20 15 / 5%), 0 22px 50px -28px rgb(20 20 15 / 45%);
-
-  /* Las mismas piezas, neobrutalistas: el sobre lleva la sombra dura de un
-     marco y los naipes la de una tarjeta, en el marino de la marca. */
-  --shadow-dura-marco: var(--space-sombra-dura-l) var(--space-sombra-dura-l) 0 0
-    var(--color-marino-700);
-  --shadow-dura-tarjeta: var(--space-sombra-dura) var(--space-sombra-dura) 0 0
-    var(--color-marino-700);
-  --shadow-dura-s: var(--space-sombra-dura-s) var(--space-sombra-dura-s) 0 0
-    var(--color-marino-700);
-  --shadow-dura-elevada: calc(var(--space-sombra-dura) + var(--space-alzado))
-    calc(var(--space-sombra-dura) + var(--space-alzado)) 0 0 var(--color-marino-700);
 
   /* El aire de la página, el escenario y lo que cuelga debajo. */
   --space-sobre-arriba: clamp(1.5rem, 4.6vw, 3.125rem);

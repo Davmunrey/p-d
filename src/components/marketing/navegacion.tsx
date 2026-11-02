@@ -78,7 +78,7 @@ export function Navegacion({
   return (
     <header
       ref={cabecera}
-      className="velada cabecera-compacta capa-cabecera fixed inset-x-0 top-0 contorno-abajo"
+      className="velada cabecera-compacta capa-cabecera fixed inset-x-0 top-0 border-b border-borde-tenue"
     >
       <div className="mx-auto flex h-cabecera max-w-contenido items-center gap-interno px-margen-cabecera">
         {/*
@@ -195,7 +195,7 @@ export function Navegacion({
               href={`#${confirmar.ancla}`}
               data-ancla={confirmar.ancla}
               aria-current={confirmar.ancla === anclaActiva ? "location" : undefined}
-              className="flex min-h-control-compacto shrink-0 items-center whitespace-nowrap rounded-boton bg-accion px-pila py-interno-compacto text-menu uppercase tracking-pildora text-tinta-sobre-accion pulsable bloque-pulsable sombra-acento hover:bg-accion-hover active:bg-accion-activa"
+              className="flex min-h-control-compacto shrink-0 items-center whitespace-nowrap rounded-boton bg-accion px-pila py-interno-compacto text-menu uppercase tracking-pildora text-tinta-sobre-accion pulsable hover:bg-accion-hover active:bg-accion-activa"
             >
               {confirmar.rotulo}
             </a>

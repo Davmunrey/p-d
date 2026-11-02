@@ -47,13 +47,13 @@ export default function ErrorGlobal({
               <button
                 type="button"
                 onClick={() => retry()}
-                className="pulsable bloque-pulsable sombra-acento min-h-control rounded-boton bg-accion px-elemento text-boton uppercase tracking-boton text-tinta-sobre-accion"
+                className="min-h-control rounded-boton bg-accion px-elemento text-boton uppercase tracking-boton text-tinta-sobre-accion"
               >
                 {t("errores.reintentar")}
               </button>
               <Link
                 href="/"
-                className="pulsable bloque-pulsable contorno-control relleno-secundario inline-flex min-h-control items-center rounded-boton px-elemento text-boton uppercase tracking-boton text-tinta"
+                className="inline-flex min-h-control items-center rounded-boton border border-borde-fuerte px-elemento text-boton uppercase tracking-boton text-tinta"
               >
                 {t("errores.volverAlInicio")}
               </Link>

@@ -93,9 +93,6 @@
   */
   --accion-activa: var(--color-pizarra-900);
 
-  /* El botón secundario es un bloque lleno sobre el fondo. */
-  --relleno-boton-secundario: var(--color-blanco);
-
   /* --- Acento (el bronce, a gotas) ------------------------------------ */
   --acento: var(--color-bronce-600);
   --acento-hover: var(--color-bronce-500);
@@ -110,17 +107,6 @@
   --borde-tenue: var(--color-nieve-150);
   --borde-filete: var(--color-bruma-350);
   --borde-marca: var(--color-marino-420);
-
-  /*
-   * LA TINTA DEL NEOBRUTALISMO. El contorno de un bloque y su sombra dura van
-   * en el marino de la marca; el del botón secundario y el de un control
-   * tienen su propia tinta para que el panel les devuelva su gris. La sombra
-   * de la acción principal es bronce: la única gota cálida, donde se pulsa.
-   */
-  --tinta-contorno: var(--color-marino-700);
-  --tinta-contorno-control: var(--color-marino-700);
-  --tinta-sombra-dura: var(--color-marino-700);
-  --tinta-sombra-accion: var(--color-bronce-600);
 
   /* --- Estado -------------------------------------------------------- */
   --exito: var(--color-exito-claro);
@@ -222,12 +208,8 @@
    * nada. Hasta ahora el campo llevaba `outline: none` y se quedaba sin el
    * primero, que es justo lo que este ticket viene a arreglar.
    */
-
-  /* El foco de un campo, en la web: una sombra dura de bronce, desplazada
-     como la de un botón y sin extenderse. En el panel, su anillo de 3 px. */
-  --anillo-campo: var(--color-bronce-600);
-  --anillo-campo-ancho: var(--space-0);
-  --foco-campo-desplazamiento: var(--space-sombra-dura-s);
+  --anillo-campo: var(--color-marino-100);
+  --anillo-campo-ancho: var(--border-width-3);
 
   /**
    * --- Desactivado -----------------------------------------------------
@@ -440,49 +422,15 @@
   --alto-hoja-menu: var(--size-hoja-menu);
 
   /* --- Forma --------------------------------------------------------- */
-
-  /*
-   * NEOBRUTALISMO CON LA MARCA. La web pública dibuja sus piezas como bloques:
-   * esquinas casi rectas, un contorno de tinta marino de dos píxeles y una
-   * sombra dura —desplazada, sin desenfoque— del mismo marino. La paleta, las
-   * tres familias, el monograma y las constelaciones no cambian: cambia la
-   * estructura. Las etiquetas siguen redondas: son pegatinas.
-   *
-   * El panel no es neobrutalista. Comparte botones, campos y tarjetas con la
-   * web, y `[data-zona="panel"]`, al final de este fichero, le devuelve sus
-   * radios, sus contornos de un píxel y su pulsación: los componentes no
-   * saben en qué tema están, sólo leen estos semánticos.
-   */
-  --radio-boton: var(--radius-sutil);
-  --radio-campo: var(--radius-sutil);
-  --radio-tarjeta: var(--radius-sutil);
-  --radio-imagen: var(--radius-0);
-  --radio-modal: var(--radius-sutil);
+  --radio-boton: var(--radius-redondo);
+  --radio-campo: var(--radius-caja);
+  --radio-tarjeta: var(--radius-caja);
+  --radio-imagen: var(--radius-sutil);
+  --radio-modal: var(--radius-amplio);
   --radio-etiqueta: var(--radius-redondo);
-  --radio-fila: var(--radius-0);
+  --radio-fila: var(--radius-suave);
   --radio-sobre: var(--radius-papel);
-
-  /* El sello es de lacre: redondo siempre, aunque los botones sean cuadrados. */
-  --radio-sello: var(--radius-redondo);
-  --grosor-filete: var(--border-width-2);
-
-  /* La trama del papel del sobre y su raya: un pelo, sea cual sea el filete. */
-  --grosor-trama: var(--border-width-1);
-
-  /* El contorno de un bloque: dos píxeles de tinta; tres en los marcos. */
-  --ancho-contorno: var(--border-width-2);
-  --ancho-contorno-fuerte: var(--border-width-3);
-
-  /* La sombra dura: cuánto se desplaza. Su tinta está en «Bordes». */
-  --sombra-dura-s: var(--space-sombra-dura-s);
-  --sombra-dura: var(--space-sombra-dura);
-  --sombra-dura-l: var(--space-sombra-dura-l);
-
-  /* Al pasar, el bloque sube dos píxeles y su sombra crece lo mismo; al
-     pulsarlo, se hunde en su sombra. */
-  --alzado: var(--space-alzado);
-  --pulsado: var(--transform-pulsado-hundir);
-  --pulsado-bloque: var(--transform-pulsado-hundir-bloque);
+  --grosor-filete: var(--border-width-1);
 
   /* El mapa de «cómo llegar»: casi cuadrado (1 / 1.06), como lo dibuja la
    * entrega al lado de la columna de texto. Con 4/3 quedaba bajo y dejaba
@@ -504,17 +452,13 @@
    * Tomaba la proporción del mapa de la landing: si el estudio la cambiaba,
    * la sala se deformaba y las mesas cambiaban de sitio en pantalla. */
   --proporcion-plano: var(--ratio-cuadrado);
+  --sombra-sutil: var(--shadow-1);
 
-  /*
-   * LAS SOMBRAS CON NOMBRE, NEOBRUTALISTAS: duras, desplazadas y en el marino
-   * de la marca. La sutil es la de un botón (3 px), la de tarjeta la de un
-   * bloque (5), la elevada la de un bloque que se despega al pasar (7) y la
-   * de modal la de un marco (8). El panel les devuelve las suyas, difuminadas.
-   */
-  --sombra-sutil: var(--shadow-dura-s);
-  --sombra-tarjeta: var(--shadow-dura-tarjeta);
-  --sombra-elevada: var(--shadow-dura-elevada);
-  --sombra-modal: var(--shadow-dura-marco);
+  /* La de una tarjeta al levantarse al pasar el ratón (Landing aplicada); la
+   * «elevada» es la que el catálogo llama tarjeta (0 24px 60px -34px). */
+  --sombra-tarjeta: var(--shadow-2);
+  --sombra-elevada: var(--shadow-3);
+  --sombra-modal: var(--shadow-4);
 
   /* 14 px, como la cabecera compactada de la entrega. */
   --desenfoque-cabecera: var(--blur-3);
@@ -549,7 +493,6 @@
 
   /* La constelación de la portada y la «y» que se escribe (ver primitivos). */
   --pausa-anillo: var(--delay-anillo);
-  --pausa-sombra-disco: var(--delay-sombra-disco);
   --pausa-estrellas: var(--delay-estrellas);
   --pausa-trazos: var(--delay-trazos);
   --paso-constelacion: var(--step-constelacion);
@@ -594,7 +537,7 @@
   --papel-tarjeta-abajo: var(--color-nieve-70);
   --papel-foto: var(--color-blanco);
   --hueco-foto-naipe: var(--color-bruma-200);
-  --borde-sobre: var(--color-marino-700);
+  --borde-sobre: var(--color-bruma-320);
   --borde-naipe: var(--color-bruma-200);
   --trama-sobre: var(--color-trama-sobre);
   --brillo-papel: var(--color-brillo-papel);
@@ -619,11 +562,11 @@
   --velo-cielo-centro: var(--color-velo-nieve-95);
   --velo-cielo-medio: var(--color-velo-nieve-60);
   --velo-cielo-borde: var(--color-velo-nieve-0);
-  --sombra-sobre: var(--shadow-dura-marco);
+  --sombra-sobre: var(--shadow-sobre);
   --sombra-solapa: var(--shadow-solapa);
   --sombra-sello: var(--shadow-sello);
-  --sombra-naipe: var(--shadow-dura-tarjeta);
-  --sombra-naipe-foto: var(--shadow-dura-tarjeta);
+  --sombra-naipe: var(--shadow-naipe);
+  --sombra-naipe-foto: var(--shadow-naipe-foto);
 
   /* El aire y las medidas de la página y del escenario. */
   --espacio-sobre-arriba: var(--space-sobre-arriba);
@@ -923,14 +866,6 @@
   --serie-exceso: var(--color-error-oscuro);
   --foco: var(--color-bronce-300);
 
-  /* Sobre el marino, el contorno es de nieve y la sombra dura de bronce: una
-     sombra marino sobre fondo marino no se vería. */
-  --tinta-contorno: var(--color-nieve-100);
-  --tinta-contorno-control: var(--color-nieve-100);
-  --tinta-sombra-dura: var(--color-bronce-300);
-  --tinta-sombra-accion: var(--color-bronce-300);
-  --relleno-boton-secundario: var(--color-marino-775);
-
   /**
    * Lo desactivado también se da la vuelta. Heredar el par claro dejaría un
    * botón apagado en marino-100 —el mismo relleno que aquí tiene el botón
@@ -939,7 +874,7 @@
    */
   --accion-desactivada: var(--color-marino-600);
   --tinta-desactivada: var(--color-marino-400);
-  --anillo-campo: var(--color-bronce-300);
+  --anillo-campo: var(--color-marino-600);
   --nota-fondo: var(--color-marino-775);
   --nota-tinta: var(--color-marino-200);
   --nota-tinta-fuerte: var(--color-nieve-100);
@@ -988,17 +923,10 @@
   --serie-exceso: var(--color-error-oscuro);
   --foco: var(--color-bronce-300);
 
-  /* Como en el bloque inverso: contorno de nieve y sombra de bronce. */
-  --tinta-contorno: var(--color-nieve-100);
-  --tinta-contorno-control: var(--color-nieve-100);
-  --tinta-sombra-dura: var(--color-bronce-300);
-  --tinta-sombra-accion: var(--color-bronce-300);
-  --relleno-boton-secundario: var(--color-pizarra-950);
-
   /* Por lo mismo que en el bloque inverso: aquí la acción también es clara. */
   --accion-desactivada: var(--color-marino-800);
   --tinta-desactivada: var(--color-marino-450);
-  --anillo-campo: var(--color-bronce-300);
+  --anillo-campo: var(--color-marino-800);
   --nota-fondo: var(--color-marino-900);
   --nota-tinta: var(--color-marino-350);
   --nota-tinta-fuerte: var(--color-nieve-100);
@@ -1015,43 +943,4 @@
 [data-lienzo="solapa"] {
   --constelacion-estrella: var(--color-marino-420);
   --constelacion-trazo: var(--color-trazo-solapa);
-}
-
-/**
- * EL PANEL NO ES NEOBRUTALISTA. Es una herramienta de trabajo: tablas,
- * formularios largos y listas densas, donde un contorno de dos píxeles en
- * cada pieza y una sombra dura detrás de cada botón serían ruido. Comparte
- * componentes con la web pública (`Boton`, `Campo`, `Tarjeta`,
- * `EtiquetaEstado`…), y este bloque le devuelve lo suyo: radios suaves,
- * contornos de un píxel en su gris, sin sombras duras, y el botón que cede
- * un 3 % al pulsarlo en vez de hundirse. Lo llevan el armazón del panel y las
- * pantallas de acceso.
- */
-
-[data-zona="panel"] {
-  --radio-boton: var(--radius-redondo);
-  --radio-campo: var(--radius-caja);
-  --radio-tarjeta: var(--radius-caja);
-  --radio-imagen: var(--radius-sutil);
-  --radio-modal: var(--radius-amplio);
-  --radio-fila: var(--radius-suave);
-  --grosor-filete: var(--border-width-1);
-  --ancho-contorno: var(--border-width-1);
-  --ancho-contorno-fuerte: var(--border-width-1);
-  --tinta-contorno: var(--color-bruma-300);
-  --tinta-contorno-control: var(--color-bruma-400);
-  --sombra-dura-s: var(--space-0);
-  --sombra-dura: var(--space-0);
-  --sombra-dura-l: var(--space-0);
-  --alzado: var(--space-0);
-  --pulsado: var(--transform-pulsado-ceder);
-  --pulsado-bloque: var(--transform-pulsado-ceder);
-  --relleno-boton-secundario: var(--color-transparente);
-  --anillo-campo: var(--color-marino-100);
-  --anillo-campo-ancho: var(--border-width-3);
-  --foco-campo-desplazamiento: var(--space-0);
-  --sombra-sutil: var(--shadow-1);
-  --sombra-tarjeta: var(--shadow-2);
-  --sombra-elevada: var(--shadow-3);
-  --sombra-modal: var(--shadow-4);
 }
