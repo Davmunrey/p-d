@@ -1,4 +1,6 @@
-import { expect, test } from "./utiles/origen-propio";
+import postgres from "postgres";
+
+import { expect, test, type Page } from "./utiles/origen-propio";
 
 import copy from "../../content/copy.es.json";
 
@@ -1043,24 +1045,23 @@ test.describe("El movimiento es el de la entrega", () => {
     expect(raya).toEqual({ nombre: "flotar", periodo: "2.6s" });
   });
 
+  /*
+    LO QUE SE LEVANTA AL PASAR SON LAS CANCIONES APUNTADAS, que son lo único
+    de la landing con forma de ficha. El seed no trae ninguna: el test apunta
+    la suya, aprobada, y la borra al acabar.
+  */
   test("las canciones apuntadas se levantan al pasar el ratón", async ({ page }) => {
-    await page.goto("/");
-    const tarjeta = page.locator("#playlist ul > li").first();
-    // Arriba del todo de la pantalla, pasado el tramo del reveal: mientras el
-    // reveal está activo es él quien manda en el `transform`, no el hover.
-    await tarjeta.evaluate((nodo) => nodo.scrollIntoView({ block: "start" }));
-    await tarjeta.hover();
-
-    // El `transform` es una matriz: la última cifra es el desplazamiento
-    // vertical, y tiene que ser negativo (sube) una vez acabe la transición.
-    await expect
-      .poll(async () =>
-        tarjeta.evaluate((nodo) => {
-          const matriz = getComputedStyle(nodo).transform.match(/[-\d.]+/g);
-          return matriz ? Number(matriz.at(-1)) : 0;
-        }),
-      )
-      .toBeLessThan(0);
+    const cadena = process.env.DATABASE_URL;
+    test.skip(!cadena, "Hace falta DATABASE_URL: la playlist lee de la base real.");
+    const texto = `(DES) Sonda del hover ${Date.now()}`;
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    await sql`insert into public.canciones_sugeridas (texto, aprobada) values (${texto}, true)`;
+    try {
+      await levantaAlPasar(page, texto);
+    } finally {
+      await sql`delete from public.canciones_sugeridas where texto = ${texto}`;
+      await sql.end();
+    }
   });
 
   test("la barra de lectura mide lo leído y la cabecera se compacta al bajar", async ({
@@ -1146,3 +1147,24 @@ test.describe("El movimiento es el de la entrega", () => {
       .toEqual(Array(7).fill("1"));
   });
 });
+
+/** Pasa el ratón por la canción `texto` y espera a que suba. */
+async function levantaAlPasar(page: Page, texto: string) {
+  await page.goto("/");
+  const tarjeta = page.locator("#playlist ul > li").filter({ hasText: texto });
+  // Arriba del todo de la pantalla, pasado el tramo del reveal: mientras el
+  // reveal está activo es él quien manda en el `transform`, no el hover.
+  await tarjeta.evaluate((nodo) => nodo.scrollIntoView({ block: "start" }));
+  await tarjeta.hover();
+
+  // El `transform` es una matriz: la última cifra es el desplazamiento
+  // vertical, y tiene que ser negativo (sube) una vez acabe la transición.
+  await expect
+    .poll(async () =>
+      tarjeta.evaluate((nodo) => {
+        const matriz = getComputedStyle(nodo).transform.match(/[-\d.]+/g);
+        return matriz ? Number(matriz.at(-1)) : 0;
+      }),
+    )
+    .toBeLessThan(0);
+}

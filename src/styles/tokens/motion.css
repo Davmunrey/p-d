@@ -681,24 +681,10 @@
 }
 
 /**
- * Una tarjeta que se levanta al pasar el ratón: cuatro píxeles, sombra y el
- * borde a la marca, en 0,3 s. Y una ficha que se levanta dos. Ninguno de los
- * dos es un `hover:` de Tailwind porque el `transition` tiene que ir siempre,
- * no sólo en el estado que entra: si no, la tarjeta sube suave y baja a saltos.
+ * Una ficha —una canción apuntada— que se levanta dos píxeles al pasar el
+ * ratón. No es un `hover:` de Tailwind porque el `transition` tiene que ir
+ * siempre, no sólo en el estado que entra: si no, sube suave y baja a saltos.
  */
-.elevar-al-pasar {
-  transition:
-    transform var(--transicion-transformacion),
-    box-shadow var(--transicion-transformacion),
-    border-color var(--transicion-transformacion);
-}
-
-.elevar-al-pasar:hover {
-  border-color: var(--borde-marca);
-  box-shadow: var(--sombra-tarjeta);
-  transform: translateY(calc(var(--espacio-linea) * -1));
-}
-
 .levantar-al-pasar {
   transition:
     transform var(--transicion-color),
@@ -1077,7 +1063,6 @@
     display: none;
   }
 
-  .elevar-al-pasar:hover,
   .levantar-al-pasar:hover,
   .pulsable:active:not(:disabled, [aria-disabled="true"]) {
     transform: none;
