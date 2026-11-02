@@ -160,6 +160,30 @@ begin
            coalesce(array_to_string(sin_search_path, ', '), 'ninguna')),
     cardinality(sin_search_path) = 0
   );
+
+  -- Y LAS DEMÁS TAMBIÉN. Una función normal que vive en un CHECK se ejecuta
+  -- con los privilegios de quien escribe y el search_path de su sesión: es lo
+  -- que el asesor de Supabase marcó en `avisos_programa_validos`, y esta
+  -- comprobación, que sólo miraba las SECURITY DEFINER, dejaba pasar. Fuera
+  -- quedan las de extensiones, que no son nuestras.
+  select coalesce(array_agg(p.proname::text), '{}')
+    into sin_search_path
+    from pg_proc as p
+    join pg_namespace as n on n.oid = p.pronamespace
+   where n.nspname = 'public'
+     and not exists (
+       select 1 from pg_depend as d where d.objid = p.oid and d.deptype = 'e'
+     )
+     and not exists (
+       select 1 from unnest(coalesce(p.proconfig, '{}')) as cfg
+        where cfg like 'search_path=%'
+     );
+
+  perform pg_temp.comprobar(
+    format('toda función de public fija search_path (sin fijar: %s)',
+           coalesce(array_to_string(sin_search_path, ', '), 'ninguna')),
+    cardinality(sin_search_path) = 0
+  );
 end $$;
 
 \echo ''
