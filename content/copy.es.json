@@ -147,7 +147,7 @@
   "dresscode": {
     "etiqueta": "Qué ponerse",
     "titulo": "Dress code",
-    "descripcion": "Etiqueta elegante. La ceremonia es al aire libre y en junio hace calor de día y fresco de noche, así que vestíos cómodos: la fiesta es larga."
+    "descripcion": "Venid como queráis, que lo importante es celebrar juntos. Eso sí, tened en cuenta un par de detalles:"
   },
   "rsvp": {
     "titulo": "Confirmad asistencia",
@@ -1610,8 +1610,8 @@
           "titulo": "Dress code",
           "descripcion": "Lo que se espera de la ropa, en bloques cortos.",
           "unaFicha": "el consejo",
-          "tituloConsejo": "Para quién",
-          "tituloConsejoAyuda": "«Ellas», «Ellos», «Sólo dos peticiones».",
+          "tituloConsejo": "Título",
+          "tituloConsejoAyuda": "«Colores», «Tacones a salvo», «Ley de León».",
           "texto": "Qué se dice"
         },
         "preguntas": {

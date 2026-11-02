@@ -5,6 +5,7 @@ import { expect, origenDelTest, test, type Locator, type Page } from "./utiles/o
 
 import copy from "../../content/copy.es.json";
 import { LARGOS_DE_CAMPO, RUTA_INVITACION } from "../../src/config/constants";
+import { ANCLA_ACOMPANANTE, ANCLA_FORMULARIO } from "../../src/lib/rsvp-ancla";
 import { conPlazoCerrado } from "./utiles/plazo";
 
 /**
@@ -555,6 +556,103 @@ test.describe("Confirmar con el enlace", () => {
     // Lo marcado arriba no se ha perdido por el camino.
     await expect(
       rsvp.getByRole("group", { name: /\(DES\) Gala/ }).getByLabel(copy.rsvp.vieneSi),
+    ).toBeChecked();
+  });
+
+  /**
+   * CADA PASO ATERRIZA DONDE SIGUE, Y DE GOLPE. El formulario está al final
+   * de una landing de seis pantallas. Con `scroll-behavior: smooth` en el
+   * `<html>`, Next 16 bajaba deslizándose por TODA la página en cada paso
+   * —dos segundos y medio de cielo antes de ver nada— y paraba en la estrella,
+   * con el paso siguiente por debajo del pliegue. Se cuenta por cuántas
+   * posiciones pasa la página: un salto son una o dos; deslizarse, decenas.
+   */
+  test("cada paso salta sin recorrer la página y aterriza en el formulario", async ({
+    page,
+  }) => {
+    // Cuatro personas: el formulario es largo y, al pulsar «Siguiente», la
+    // estrella ya ha quedado arriba, fuera de la vista. Con uno solo cabía todo
+    // y no había adónde deslizarse.
+    const familia = ["(DES) Nora", "(DES) Pablo", "(DES) Rita", "(DES) Saúl"];
+    const { token } = await crearGrupo("aterriza", familia);
+    const rsvp = await abrirConElEnlace(page, token);
+    for (const persona of familia) await contestar(rsvp, persona, true);
+
+    /** Por cuántas posiciones pasa la página, hasta que deja de moverse. */
+    const posiciones = async (accion: () => Promise<void>) => {
+      await page.evaluate(() => {
+        const ventana = window as Window & { posiciones?: number[] };
+        ventana.posiciones = [];
+        ventana.addEventListener(
+          "scroll",
+          () => ventana.posiciones?.push(Math.round(scrollY)),
+          {
+            passive: true,
+          },
+        );
+      });
+      await accion();
+      // Quieta durante doce fotogramas seguidos: un deslizamiento no para tanto.
+      await page.evaluate(
+        () =>
+          new Promise<void>((listo) => {
+            let ultima = scrollY;
+            let quietos = 0;
+            const mirar = () => {
+              quietos = scrollY === ultima ? quietos + 1 : 0;
+              ultima = scrollY;
+              if (quietos >= 12) listo();
+              else requestAnimationFrame(mirar);
+            };
+            requestAnimationFrame(mirar);
+          }),
+      );
+      return page.evaluate(
+        () => (window as Window & { posiciones?: number[] }).posiciones?.length ?? 0,
+      );
+    };
+
+    const alPaso2 = await posiciones(async () => {
+      await botonAvanzar(rsvp, copy.rsvp.siguiente).click();
+      await expect(page).toHaveURL(new RegExp(`paso=detalles#${ANCLA_FORMULARIO}$`));
+      await expect(rsvp.getByText(copy.rsvp.pasoDetallesTitulo)).toBeInViewport();
+    });
+    expect(alPaso2, "al paso 2 se salta, no se baja deslizándose").toBeLessThanOrEqual(2);
+
+    // «Atrás» también: vuelve al paso 1 con su título a la vista.
+    await botonAvanzar(rsvp, copy.rsvp.atras).click();
+    await expect(page).toHaveURL(new RegExp(`paso=asistencia#${ANCLA_FORMULARIO}$`));
+    await expect(rsvp.getByText(copy.rsvp.pasoAsistenciaTitulo)).toBeInViewport();
+
+    // Enviado, la página se para en la estrella: es su momento.
+    await botonAvanzar(rsvp, copy.rsvp.siguiente).click();
+    await expect(page).toHaveURL(/paso=detalles/);
+    await botonAvanzar(rsvp, copy.rsvp.enviar).click();
+    await expect(page).toHaveURL(/enviado=1#rsvp$/);
+    await expect(rsvp.locator('summary [data-vuestra-estrella="encendida"]')).toBeInViewport();
+  });
+
+  /** CASO DE ERROR · un nombre que no vale vuelve a su campo, no a la estrella. */
+  test("un acompañante sin nombre vuelve a su bloque con el porqué a la vista", async ({
+    page,
+  }) => {
+    const { token } = await crearGrupo("nombre-corto", ["(DES) Olga"], 1);
+    const rsvp = await abrirConElEnlace(page, token);
+    await contestar(rsvp, "(DES) Olga", true);
+
+    const bloque = rsvp.locator("details details");
+    await bloque.locator("summary").click();
+    // El `minlength` lo quita cualquiera; quien manda es el servidor.
+    const nombre = bloque.getByLabel(copy.rsvp.acompananteNombre);
+    await nombre.evaluate((campo) => campo.removeAttribute("minlength"));
+    await nombre.fill("A");
+    await bloque.getByRole("button", { name: copy.rsvp.acompananteAnadir }).click();
+
+    await expect(page).toHaveURL(new RegExp(`acompanante=nombre#${ANCLA_ACOMPANANTE}$`));
+    await expect(rsvp.getByText(copy.rsvp.acompananteNombreCorto)).toBeInViewport();
+    // Y lo marcado arriba sigue marcado.
+    await expect(
+      rsvp.getByRole("group", { name: /\(DES\) Olga/ }).getByLabel(copy.rsvp.vieneSi),
     ).toBeChecked();
   });
 

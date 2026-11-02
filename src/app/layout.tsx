@@ -38,8 +38,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  /*
+    `data-scroll-behavior`: el `scroll-behavior: smooth` del CSS es para los
+    saltos dentro de la página. Sin este atributo, Next 16 también desliza al
+    cambiar de ruta, y cada paso de la confirmación cruzaba la landing
+    deslizándose hasta su ancla. Con él, entre rutas se salta de golpe.
+  */
   return (
-    <html lang={IDIOMA} className={VARIABLES_DE_FUENTES}>
+    <html lang={IDIOMA} className={VARIABLES_DE_FUENTES} data-scroll-behavior="smooth">
       <body>
         {/* Cada cambio de página, un fundido (ver `motion.css`). */}
         <ViewTransition>{children}</ViewTransition>

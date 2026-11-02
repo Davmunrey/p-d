@@ -21,7 +21,12 @@ import {
   type RespuestaInvitado,
 } from "@/lib/bbdd/rsvp";
 import { invitacionRecordada } from "@/lib/invitacion-recordada";
-import { anclaPersona, faltanEnLaUrl } from "@/lib/rsvp-ancla";
+import {
+  ANCLA_ACOMPANANTE,
+  ANCLA_FORMULARIO,
+  anclaPersona,
+  faltanEnLaUrl,
+} from "@/lib/rsvp-ancla";
 import {
   borrarBorrador,
   guardarBorrador,
@@ -44,9 +49,17 @@ import { sembrarDesdeLaBase } from "@/lib/rsvp-siembra";
  * enviar, y la acción vuelve a la sección, que explica cómo se confirma.
  */
 
-/** Adónde vuelve cada paso: la landing, con el desplegable a la vista. */
-function volver(consulta = ""): never {
-  redirect(`/${consulta ? `?${consulta}` : ""}#${anclaDe("rsvp")}`);
+/**
+ * A la landing, a la sección de la estrella. Es adonde se vuelve sin nada
+ * abierto —sin enlace— y al enviar: la estrella encendida es ese momento.
+ */
+function volver(consulta = "", ancla: string = anclaDe("rsvp")): never {
+  redirect(`/${consulta ? `?${consulta}` : ""}#${ancla}`);
+}
+
+/** Al paso que toca: la tarjeta del formulario arriba, no la estrella. */
+function volverAlPaso(consulta: string): never {
+  volver(consulta, ANCLA_FORMULARIO);
 }
 
 function esPaso(valor: string): valor is PasoRsvp {
@@ -114,9 +127,17 @@ function volverAContestar(faltan: { id: string }[]): never {
   redirect(`/?paso=asistencia&falta=${faltanEnLaUrl(ids)}#${anclaPersona(ids[0]!)}`);
 }
 
-/** Vuelve al paso de asistencia con lo que ha pasado con el acompañante. */
+/**
+ * Vuelve al paso de asistencia con lo que ha pasado con el acompañante, donde
+ * se lee: en la persona, si la hay; en su campo, si el nombre no valía; si no,
+ * arriba del formulario, donde va el aviso.
+ */
 function volverConAcompanante(resultado: string, persona?: string): never {
-  const ancla = persona ? anclaPersona(persona) : anclaDe("rsvp");
+  const ancla = persona
+    ? anclaPersona(persona)
+    : resultado === "nombre" || resultado === "largo"
+      ? ANCLA_ACOMPANANTE
+      : ANCLA_FORMULARIO;
   redirect(`/?paso=asistencia&acompanante=${resultado}#${ancla}`);
 }
 
@@ -154,7 +175,7 @@ async function apuntarAcompanante(
   });
   if (!resultado.ok) {
     if (resultado.motivo === "tope") volverConAcompanante("tope");
-    volver(`paso=asistencia&fallo=${resultado.motivo}`);
+    volverAlPaso(`paso=asistencia&fallo=${resultado.motivo}`);
   }
 
   borrador.asistencia[resultado.id] = "confirmado";
@@ -171,10 +192,10 @@ async function quitarDeLaLista(
 ): Promise<never> {
   // Sólo se pide por quien la pantalla enseña como acompañante de este grupo.
   const persona = invitacion.personas.find((p) => p.id === id && p.esAcompanante);
-  if (!persona) volver(`paso=asistencia`);
+  if (!persona) volverAlPaso(`paso=asistencia`);
 
   const resultado = await quitarAcompanante(token, id);
-  if (!resultado.ok) volver(`paso=asistencia&fallo=${resultado.motivo}`);
+  if (!resultado.ok) volverAlPaso(`paso=asistencia&fallo=${resultado.motivo}`);
   if (!resultado.quitado) volverConAcompanante("contestado", id);
 
   delete borrador.asistencia[id];
@@ -204,11 +225,11 @@ export async function avanzar(datos: FormData): Promise<void> {
     const pendiente = await leerBorrador(token);
     incorporar(pendiente, datos, pasoActual, (ids) => ids);
     await guardarBorrador(pendiente);
-    volver(`paso=${pasoActual}&fallo=${lectura.fallo}`);
+    volverAlPaso(`paso=${pasoActual}&fallo=${lectura.fallo}`);
   }
 
   const { invitacion } = lectura;
-  if (!invitacion) volver(`fallo=enlace`);
+  if (!invitacion) volverAlPaso(`fallo=enlace`);
 
   const borrador = sembrarDesdeLaBase(await leerBorrador(token), invitacion.personas);
   const personas = invitacion.personas.map((p) => p.id);
@@ -242,18 +263,18 @@ export async function avanzar(datos: FormData): Promise<void> {
       (id) => (borrador.alergias[id]?.length ?? 0) > LARGOS_DE_CAMPO["invitados.alergias"],
     )
   ) {
-    volver(`paso=detalles&largo=alergias`);
+    volverAlPaso(`paso=detalles&largo=alergias`);
   }
 
   const alguienViene = personas.some((id) => borrador.asistencia[id] === "confirmado");
 
-  if (direccion === "atras") volver(`paso=asistencia`);
+  if (direccion === "atras") volverAlPaso(`paso=asistencia`);
 
   if (pasoActual === "asistencia") {
     const sinContestar = invitacion.personas.filter((p) => !borrador.asistencia[p.id]);
     if (sinContestar.length > 0) volverAContestar(sinContestar);
     // Si viene alguien, sus detalles; si no viene nadie, ya está todo dicho.
-    if (alguienViene) volver(`paso=detalles`);
+    if (alguienViene) volverAlPaso(`paso=detalles`);
   }
 
   /*
@@ -281,7 +302,7 @@ export async function avanzar(datos: FormData): Promise<void> {
   });
 
   const resultado = await registrarConfirmacion(token, respuestas);
-  if (!resultado.ok) volver(`paso=${pasoActual}&fallo=${resultado.motivo}`);
+  if (!resultado.ok) volverAlPaso(`paso=${pasoActual}&fallo=${resultado.motivo}`);
 
   await borrarBorrador();
   volver(`${MARCA_RSVP_ENVIADO.parametro}=${MARCA_RSVP_ENVIADO.valor}`);
@@ -296,9 +317,9 @@ export async function reabrir(): Promise<void> {
   if (!token) volver();
 
   const lectura = await leerInvitacion(token);
-  if ("fallo" in lectura) volver(`fallo=${lectura.fallo}`);
+  if ("fallo" in lectura) volverAlPaso(`fallo=${lectura.fallo}`);
   const { invitacion } = lectura;
-  if (!invitacion) volver(`fallo=enlace`);
+  if (!invitacion) volverAlPaso(`fallo=enlace`);
 
   const borrador = await leerBorrador(token);
   borrador.sembrado = true;
@@ -311,5 +332,5 @@ export async function reabrir(): Promise<void> {
     borrador.autobus[persona.id] = Boolean(persona.necesitaAutobus);
   }
   await guardarBorrador(borrador);
-  volver(`paso=asistencia`);
+  volverAlPaso(`paso=asistencia`);
 }

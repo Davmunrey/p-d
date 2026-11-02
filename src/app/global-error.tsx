@@ -33,7 +33,7 @@ export default function ErrorGlobal({
   }, [error]);
 
   return (
-    <html lang={IDIOMA} className={VARIABLES_DE_FUENTES}>
+    <html lang={IDIOMA} className={VARIABLES_DE_FUENTES} data-scroll-behavior="smooth">
       <body>
         <title>{t("errores.falloTitulo")}</title>
         <main

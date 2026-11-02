@@ -8,6 +8,16 @@
  * mismo, así que se dicen una vez.
  */
 
+/**
+ * El `id` de la tarjeta del formulario: adonde vuelve cada paso. No a la
+ * sección, que empieza por la estrella: con un grupo de cuatro, volver ahí
+ * dejaba el paso siguiente debajo del pliegue, y había que buscarlo.
+ */
+export const ANCLA_FORMULARIO = "rsvp-formulario";
+
+/** El `id` de «¿Venís con alguien?»: adonde vuelve un nombre que no se pudo apuntar. */
+export const ANCLA_ACOMPANANTE = "rsvp-acompanante";
+
 /** El `id` del bloque de una persona en el paso de asistencia. */
 export function anclaPersona(personaId: string): string {
   return `persona-${personaId}`;

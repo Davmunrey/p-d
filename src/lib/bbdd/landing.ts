@@ -433,7 +433,7 @@ export interface ConsejoVestimenta {
   texto: string;
 }
 
-/** Los bloques del dress code —«Ellas», «Ellos»…—, en su orden. */
+/** Los bloques del dress code —«Colores», «Tacones a salvo»…—, en su orden. */
 export async function obtenerConsejosVestimenta(): Promise<ConsejoVestimenta[]> {
   const filas = await leerComoAnonimo(
     (tx) => tx<{ id: string; titulo: string; texto: string }[]>`

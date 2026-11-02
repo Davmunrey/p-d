@@ -283,7 +283,7 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 
 **Aquí se renumera, y en `secciones_landing` y `medios` se permuta, y la diferencia no es de estilo.** El `orden` de estas tablas **no** es único, así que dos filas pueden compartir número y un intercambio de los dos valores no movería nada; se renumera la lista entera por posición y se escriben sólo las filas que cambian. Donde la unicidad es diferida —`secciones_landing`, `medios`— eso no vale: hacen falta las dos escrituras en el mismo commit, y por eso allí hay una función de base de datos.
 
-**`consejos_vestimenta`** — los bloques del dress code («Ellas», «Ellos», «Solo dos peticiones»), con `orden` y `publicado`. Es una tabla y no copy fijo porque los consejos dependen de la finca y de la fecha —el del tacón sale de conocer el suelo— y se retocan sin desplegar.
+**`consejos_vestimenta`** — los bloques del dress code («Colores», «Tacones a salvo», «Ley de León»), con `orden` y `publicado`. Es una tabla y no copy fijo porque los consejos dependen de la finca y de la fecha —el del tacón sale de conocer el suelo— y se retocan sin desplegar.
 
 **`medios`** — fotos y vídeos de la landing: `ruta_almacenamiento`, `texto_alternativo`, `seccion`, `orden`, `ancho`, `alto`, `marcador_borroso`, `tipo`, `poster_ruta` y `publicado`. Vista pública: **`v_medios_publicados`**. Ninguna imagen va en `/public`.
 

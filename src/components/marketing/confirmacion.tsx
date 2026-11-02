@@ -19,7 +19,13 @@ import type { ConfiguracionBoda } from "@/lib/bbdd/landing";
 import type { Invitacion, PersonaInvitada } from "@/lib/bbdd/rsvp";
 import { t } from "@/lib/copy";
 import { fechaLarga } from "@/lib/fechas";
-import { anclaPersona, avisoPersona, faltanDeLaUrl } from "@/lib/rsvp-ancla";
+import {
+  ANCLA_ACOMPANANTE,
+  ANCLA_FORMULARIO,
+  anclaPersona,
+  avisoPersona,
+  faltanDeLaUrl,
+} from "@/lib/rsvp-ancla";
 import type { Borrador } from "@/lib/rsvp-borrador";
 
 /**
@@ -132,7 +138,11 @@ export function Confirmacion({
             </span>
           </summary>
 
-          <div className="mt-elemento rounded-tarjeta border border-borde bg-superficie p-tarjeta-fluida shadow-tarjeta">
+          {/* Cada paso vuelve aquí (`ANCLA_FORMULARIO`), con la tarjeta arriba. */}
+          <div
+            id={ANCLA_FORMULARIO}
+            className="mt-elemento scroll-mt-cabecera rounded-tarjeta border border-borde bg-superficie p-tarjeta-fluida shadow-tarjeta"
+          >
             <Contenido lectura={lectura} consulta={consulta} configuracion={configuracion} />
           </div>
         </details>
@@ -512,8 +522,9 @@ function VenisConAlguien({
         : undefined;
   return (
     <details
+      id={ANCLA_ACOMPANANTE}
       open={Boolean(errorNombre)}
-      className="group/acompanante rounded-tarjeta border border-borde p-interno"
+      className="group/acompanante scroll-mt-cabecera rounded-tarjeta border border-borde p-interno"
     >
       <summary className="flex min-h-control cursor-pointer list-none items-center justify-between gap-interno">
         <span className="grid gap-linea">
