@@ -72,8 +72,8 @@ export type SeccionConRuta = keyof typeof RUTAS_PROPIAS;
  * a la carrera: la historia, la galería, el paisaje, la playlist, el dress code,
  * las preguntas. No se esconden — siguen en la página, en su orden.
  *
- * `rsvp` está porque es el botón, no un rótulo más: es lo único que se le pide a
- * un invitado y va suelto al final de la barra.
+ * Tampoco va la de confirmar: se confirma por WhatsApp, y la sección sólo lo
+ * dice. Un botón arriba que lleva a un texto prometería algo que no hay.
  *
  * Una sección de esta lista SIN CONTENIDO no aparece: manda el filtro de la
  * página, que sólo pinta lo que de verdad hay hecho. Esto es un tope, no una
@@ -83,7 +83,6 @@ export const SECCIONES_EN_MENU = [
   "programa",
   "transporte",
   "alojamiento",
-  "rsvp",
 ] as const satisfies readonly Seccion[];
 
 /** ¿Esta sección va en la barra de arriba? */

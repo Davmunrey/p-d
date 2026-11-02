@@ -2,7 +2,7 @@ import { expect, test, type Browser, type BrowserContext } from "./utiles/origen
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_RSVP } from "../../src/config/constants";
+import { RUTA_INVITACION } from "../../src/config/constants";
 
 /**
  * BODA-27 · Apuntar una canción desde la portada
@@ -85,6 +85,12 @@ async function crearGrupo(sufijo: string): Promise<{ token: string; grupoId: str
       )
       returning id
     `;
+    // Con alguien dentro: un grupo vacío todavía no es de nadie y su enlace no
+    // se recuerda.
+    await sql`
+      insert into public.invitados (grupo_id, nombre, apellidos)
+      values (${grupo.id}, ${`(DES) Playlist ${sufijo}`}, '(DES)')
+    `;
     return grupo.id;
   });
   return { token, grupoId };
@@ -107,7 +113,7 @@ async function conInvitacionAbierta(
     reducedMotion: "reduce",
   });
   const pagina = await contexto.newPage();
-  await pagina.goto(`${RUTA_RSVP}/${token}`);
+  await pagina.goto(`${RUTA_INVITACION}/${token}`);
   await pagina.close();
   return contexto;
 }
@@ -144,23 +150,41 @@ test.describe("La playlist colaborativa", () => {
   });
 
   /**
-   * CASO DE ERROR · UN ENLACE QUE NO VALE SE OLVIDA AL PRIMER ENVÍO.
+   * CASO DE ERROR · Un enlace que no existe no se recuerda.
    *
-   * El middleware recuerda el token de cualquier `/rsvp/<lo-que-sea>` sin
-   * poder comprobarlo —y está bien que no pueda: comprobarlo gastaría cupo
-   * del cortafuegos—, así que un enlace mal tecleado dejaba en la cookie un
-   * token que no existe, con un año de vida. La portada pintaba el campo de la
-   * playlist, y cada envío volvía con «ese enlace no vale». Un año así.
-   *
-   * Ahora la acción, en cuanto la base dice que el token no vale, borra la
-   * cookie: la siguiente visita ve la explicación de «sin invitación», que es
-   * lo que de verdad le pasa a esa persona.
+   * Abrir `/invitacion/<token>` lo comprueba contra la base antes de guardarlo:
+   * un enlace mal tecleado lleva a la portada de todos, sin campo y con la
+   * explicación de que hace falta la invitación.
    */
-  test("un enlace que no existe deja de recordarse en cuanto falla", async ({ browser }) => {
+  test("un enlace que no existe no se recuerda", async ({ browser }) => {
     const contexto = await conInvitacionAbierta(browser, "no-existe-000000", false);
+    expect(
+      (await contexto.cookies()).find((c) => c.name === "boda:invitacion"),
+    ).toBeUndefined();
+
+    const html = await (await contexto.request.get("/")).text();
+    expect(html).toContain(copy.playlist.sinInvitacion);
+    expect(html).not.toContain(copy.playlist.campoCancion);
+    await contexto.close();
+  });
+
+  /**
+   * CASO DE ERROR · Un enlace que se anula después deja de recordarse al fallar.
+   *
+   * Los novios borran la invitación —o emiten un enlace nuevo— y el que la
+   * familia tenía guardado deja de valer. Su navegador lo recuerda, así que la portada pinta el campo; al
+   * apuntar, la base dice que no vale y la acción borra la cookie: la siguiente
+   * visita ve la explicación, que es lo que de verdad le pasa a esa persona.
+   */
+  test("un enlace anulado deja de recordarse en cuanto falla", async ({ browser }) => {
+    const { token, grupoId } = await crearGrupo("anulado");
+    const contexto = await conInvitacionAbierta(browser, token, false);
+    // El token no se puede cambiar a mano (RSV06, lo congela un trigger): se
+    // anula como lo anula de verdad borrar la invitación desde el panel.
+    await conBase((sql) => sql`delete from public.grupos_invitacion where id = ${grupoId}`);
     const pagina = await contexto.newPage();
 
-    // La cookie está, y por tanto el campo: es el estado atascado de antes.
+    // La cookie está, y por tanto el campo.
     const antes = await (await pagina.request.get("/")).text();
     expect(antes).toContain(copy.playlist.campoCancion);
 
@@ -173,27 +197,15 @@ test.describe("La playlist colaborativa", () => {
       .locator("#playlist")
       .getByRole("button", { name: copy.playlist.anadir })
       .click();
-    /*
-      SIN JAVASCRIPT, LA MISMA RESPUESTA YA DICE LA VERDAD. La acción borra la
-      cookie y, como la portada se repinta entera en esa respuesta, la sección
-      sale sin formulario y con la explicación: no hay error de enlace que
-      enseñar porque ya no hay enlace que recordar. Con JavaScript el
-      formulario recibe el aviso de «enlace» y es la siguiente visita la que
-      ve esto mismo.
-    */
+    // Sin JavaScript, la misma respuesta ya sale sin campo y con la explicación.
     await expect(pagina.locator("#playlist")).toContainText(copy.playlist.sinInvitacion);
     await expect(
       pagina.locator("#playlist").getByLabel(copy.playlist.campoCancion),
     ).toHaveCount(0);
 
-    // Y ya no hay cookie: la siguiente portada dice la verdad.
     expect(
       (await contexto.cookies()).find((c) => c.name === "boda:invitacion"),
     ).toBeUndefined();
-    const despues = await (await pagina.request.get("/")).text();
-    expect(despues).toContain(copy.playlist.sinInvitacion);
-    expect(despues).not.toContain(copy.playlist.campoCancion);
-
     await contexto.close();
   });
 

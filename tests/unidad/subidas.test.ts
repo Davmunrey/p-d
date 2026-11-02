@@ -24,7 +24,7 @@ describe("el tope de subida de las acciones de servidor", () => {
   it("se declara en next.config.ts a partir de la constante, no de un número", () => {
     expect(config).toContain("bodySizeLimit: `${PESO_MAXIMO_VIDEO_MB}mb`");
     expect(config).toMatch(
-      /import \{ PESO_MAXIMO_VIDEO_MB \} from "\.\/src\/config\/constants"/,
+      /import \{[^}]*\bPESO_MAXIMO_VIDEO_MB\b[^}]*\} from "\.\/src\/config\/constants"/,
     );
   });
 

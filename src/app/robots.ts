@@ -1,6 +1,11 @@
 import type { MetadataRoute } from "next";
 
-import { RUTA_ACCESO, RUTA_PANEL, RUTA_RSVP } from "@/config/constants";
+import {
+  RUTA_ACCESO,
+  RUTA_INVITACION,
+  RUTA_PANEL,
+  RUTA_RSVP_ANTIGUA,
+} from "@/config/constants";
 import { urlDelSitio } from "@/lib/url-sitio";
 
 /**
@@ -17,8 +22,9 @@ import { urlDelSitio } from "@/lib/url-sitio";
  * un enlace de invitación. Un token en un resultado de búsqueda es la
  * invitación de una familia a la vista de cualquiera.
  *
- * SE NIEGA POR PREFIJO Y NO POR RUTA EXACTA: `/rsvp/` cubre todos los tokens,
- * que es justo lo que no se puede enumerar.
+ * SE NIEGA POR PREFIJO Y NO POR RUTA EXACTA: `/invitacion/` cubre todos los
+ * tokens, que es justo lo que no se puede enumerar. Y `/rsvp/`, la forma que
+ * tenían los primeros enlaces, que siguen funcionando.
  */
 export default function robots(): MetadataRoute.Robots {
   const sitio = urlDelSitio();
@@ -27,7 +33,13 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: [`${RUTA_PANEL}/`, `${RUTA_RSVP}/`, `${RUTA_ACCESO}/`, "/cocina"],
+      disallow: [
+        `${RUTA_PANEL}/`,
+        `${RUTA_INVITACION}/`,
+        `${RUTA_RSVP_ANTIGUA}/`,
+        `${RUTA_ACCESO}/`,
+        "/cocina",
+      ],
     },
     // Sin dominio configurado no se apunta a un sitemap inventado: mejor no
     // decir nada que mandar a los rastreadores a una URL que no existe.

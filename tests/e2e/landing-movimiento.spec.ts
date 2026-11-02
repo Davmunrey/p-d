@@ -368,7 +368,7 @@ test.describe("El movimiento de la landing", () => {
   /** Un botón cede un 3 % mientras se pulsa; con movimiento reducido, no. */
   async function escalaAlPulsar(page: Page): Promise<number> {
     const boton = page.locator("#portada").getByRole("link", {
-      name: copy.portada.confirmarAsistencia,
+      name: copy.portada.verElDia,
     });
     await boton.scrollIntoViewIfNeeded();
     // Los botones suben al entrar: se espera a que paren para apuntarles.

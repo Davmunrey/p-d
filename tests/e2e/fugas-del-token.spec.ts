@@ -1,7 +1,7 @@
 import { expect, test, type Request } from "./utiles/origen-propio";
 import postgres from "postgres";
 
-import { RUTA_RSVP } from "../../src/config/constants";
+import { RUTA_INVITACION } from "../../src/config/constants";
 
 /**
  * QUE EL TOKEN NO SALGA DE AQUÍ
@@ -120,7 +120,7 @@ test.describe("Lo que sale hacia fuera", () => {
 
     page.on("request", vigilar);
 
-    await page.goto(`${RUTA_RSVP}/${TOKEN}`);
+    await page.goto(`${RUTA_INVITACION}/${TOKEN}`);
     await page.waitForLoadState("networkidle");
 
     // Se navega un poco: las trazas y los eventos de analítica suelen salir al
@@ -160,7 +160,7 @@ test.describe("Lo que sale hacia fuera", () => {
     };
 
     page.on("request", vigilar);
-    await page.goto(`${RUTA_RSVP}/${TOKEN}`);
+    await page.goto(`${RUTA_INVITACION}/${TOKEN}`);
     await page.waitForLoadState("networkidle");
     page.off("request", vigilar);
 

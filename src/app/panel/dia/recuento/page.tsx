@@ -8,7 +8,7 @@ import { Cuerpo, Etiqueta, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   IDIOMA,
   LARGOS_DE_CAMPO,
-  MENUS_RSVP,
+  MENUS_INVITADO,
   RUTA_ACCESO,
   ZONA_HORARIA,
 } from "@/config/constants";
@@ -124,7 +124,7 @@ export default async function PaginaRecuento({ searchParams }: Parametros) {
         tiene que dejar escribirla.
       */}
       {puedeEditar ? (
-        <Corregir menuInicial={lineas[0]?.tipoMenu ?? MENUS_RSVP[0]} lineas={lineas} />
+        <Corregir menuInicial={lineas[0]?.tipoMenu ?? MENUS_INVITADO[0]} lineas={lineas} />
       ) : null}
 
       <Alergias alergias={alergias} />
@@ -327,7 +327,7 @@ function Corregir({
             corrección del menú, y sin verla se apuntaba −1 encima de un −2
             creyendo sumar: el total subía uno y la nota de antes se perdía.
           */}
-          {MENUS_RSVP.map((menu) => (
+          {MENUS_INVITADO.map((menu) => (
             <option key={menu} value={menu}>
               {ajusteDe.get(menu)
                 ? t("panel.dia.recuento.opcionConCorreccion", {

@@ -124,7 +124,7 @@ test.describe("Los campos", () => {
     const error = page.getByText(copy.errores.emailInvalido);
     await expect(error).toBeVisible();
     // La ayuda de ese mismo campo ya no sale a la vez.
-    await expect(page.getByText(copy.rsvp.contactoAyuda)).toHaveCount(0);
+    await expect(page.getByText(copy.cocina.campoContactoAyuda)).toHaveCount(0);
 
     const id = await error.getAttribute("id");
     const campo = page.locator(`[aria-describedby="${id}"]`);

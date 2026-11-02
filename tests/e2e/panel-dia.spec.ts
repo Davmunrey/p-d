@@ -675,7 +675,7 @@ test.describe("El día de la boda", () => {
     const ficha = page.locator("article").filter({ hasText: sembrado.invitado.apellidos });
     await expect(ficha).toBeVisible();
     await expect(ficha).toContainText(sembrado.invitado.mesa);
-    await expect(ficha).toContainText(copy.rsvp.menus.sin_gluten);
+    await expect(ficha).toContainText(copy.panel.menus.sin_gluten);
     await expect(ficha).toContainText("Celíaca");
 
     // CASO DE ERROR: un apellido que no existe se dice con palabras.
@@ -702,7 +702,7 @@ test.describe("El día de la boda", () => {
     // La fila del menú que se ha sembrado existe y cuenta a alguien.
     const fila = page
       .locator("tr")
-      .filter({ has: page.getByRole("rowheader", { name: copy.rsvp.menus.sin_gluten }) });
+      .filter({ has: page.getByRole("rowheader", { name: copy.panel.menus.sin_gluten }) });
     await expect(fila).toBeVisible();
 
     /*
@@ -737,7 +737,7 @@ test.describe("El día de la boda", () => {
 
     // Se corrige a la baja: alguien ha fallado a última hora.
     await page.getByLabel(copy.panel.dia.recuento.campoMenu, { exact: true }).selectOption({
-      label: copy.rsvp.menus.sin_gluten,
+      label: copy.panel.menus.sin_gluten,
     });
     await page.getByLabel(copy.panel.dia.recuento.campoAjuste, { exact: true }).fill("-1");
     await page
@@ -812,7 +812,7 @@ test.describe("El día de la boda", () => {
     await page.goto(RUTA_RECUENTO);
 
     await page.getByLabel(copy.panel.dia.recuento.campoMenu, { exact: true }).selectOption({
-      label: copy.rsvp.menus.infantil,
+      label: copy.panel.menus.infantil,
     });
     await page.getByLabel(copy.panel.dia.recuento.campoAjuste, { exact: true }).fill("2");
     await page
@@ -833,7 +833,7 @@ test.describe("El día de la boda", () => {
     await expect(
       page
         .locator("tr")
-        .filter({ has: page.getByRole("rowheader", { name: copy.rsvp.menus.infantil }) }),
+        .filter({ has: page.getByRole("rowheader", { name: copy.panel.menus.infantil }) }),
     ).toBeVisible();
 
     await conBase(
@@ -859,7 +859,7 @@ test.describe("El día de la boda", () => {
     expect(tope, "el campo tiene que llevar el tope de la base").toBeGreaterThan(0);
 
     await page.getByLabel(copy.panel.dia.recuento.campoMenu, { exact: true }).selectOption({
-      label: copy.rsvp.menus.vegano,
+      label: copy.panel.menus.vegano,
     });
     await page.getByLabel(copy.panel.dia.recuento.campoAjuste, { exact: true }).fill("1");
     await nota.evaluate((campo) => campo.removeAttribute("maxlength"));
@@ -943,7 +943,7 @@ test.describe("El día de la boda", () => {
       .locator("section")
       .filter({ has: page.getByRole("heading", { name: sembrado.invitado.mesa }) });
     await expect(seccion).toContainText(sembrado.invitado.apellidos);
-    await expect(seccion).toContainText(copy.rsvp.menus.sin_gluten);
+    await expect(seccion).toContainText(copy.panel.menus.sin_gluten);
     await expect(seccion).toContainText("Celíaca");
 
     // Los teléfonos del día, que es lo que pide el ticket que se lleve también.
@@ -1013,13 +1013,13 @@ test.describe("El día de la boda", () => {
     // Quien no ha contestado sigue en su mesa, marcado y sin un menú que no pidió.
     const filaCallada = mesa.locator("tr").filter({ hasText: callada.apellidos });
     await expect(filaCallada).toContainText(copy.panel.dia.buscar.sinConfirmar);
-    await expect(filaCallada).not.toContainText(copy.rsvp.menus.estandar);
+    await expect(filaCallada).not.toContainText(copy.panel.menus.estandar);
 
     const noVienen = page
       .locator("section")
       .filter({ has: page.getByRole("heading", { name: copy.panel.dia.exportar.noVienen }) });
     await expect(noVienen).toContainText(noViene.apellidos);
-    await expect(noVienen).not.toContainText(copy.rsvp.menus.vegetariano);
+    await expect(noVienen).not.toContainText(copy.panel.menus.vegetariano);
 
     // El buscador: la ficha lo dice antes que nada, y no le pone menú.
     await page.goto(RUTA_BUSCAR_DIA);
@@ -1029,7 +1029,7 @@ test.describe("El día de la boda", () => {
     const fichaNo = page.locator("article").filter({ hasText: noViene.apellidos });
     await expect(fichaNo).toContainText(copy.panel.dia.buscar.noViene);
     await expect(fichaNo).not.toContainText(copy.panel.dia.buscar.sinConfirmar);
-    await expect(fichaNo).not.toContainText(copy.rsvp.menus.vegetariano);
+    await expect(fichaNo).not.toContainText(copy.panel.menus.vegetariano);
 
     await campo.fill("callada");
     const fichaCallada = page.locator("article").filter({ hasText: callada.apellidos });

@@ -49,9 +49,6 @@ export function Navegacion({
   const anclaActiva = useAnclaVisible(enlaces, cabecera);
   const quedaTira = useQuedaPorLaDerecha(tira);
 
-  const confirmar = enlaces.find((enlace) => enlace.seccion === "rsvp");
-  const secciones = enlaces.filter((enlace) => enlace !== confirmar);
-
   // La sección activa se trae a la vista dentro de la tira: si no, en móvil el
   // invitado va por «Playlist» y el menú sigue enseñando «Inicio».
   useEffect(() => {
@@ -147,7 +144,7 @@ export function Navegacion({
               ref={tira}
               className="flex h-cabecera items-stretch justify-start gap-tira-nav overflow-x-auto"
             >
-              {secciones.map((enlace) => {
+              {enlaces.map((enlace) => {
                 const activo = enlace.ancla === anclaActiva;
 
                 return (
@@ -179,27 +176,6 @@ export function Navegacion({
               })}
             </ul>
           </div>
-
-          {/*
-            CONFIRMAR NO ES UNA SECCIÓN MÁS, y la entrega lo dibuja así: un
-            botón relleno al final de la barra, no un rótulo igual que los
-            demás. Se reconoce por la sección y no por su posición: el orden lo
-            deciden los novios desde el panel.
-
-            LA PÍLDORA NO SE ESTIRA CON LA BARRA —un botón relleno del alto
-            entero de la cabecera sería una mancha—, así que su altura mínima se
-            pone explícita: los 44 px que hace falta acertar con el pulgar.
-          */}
-          {confirmar ? (
-            <a
-              href={`#${confirmar.ancla}`}
-              data-ancla={confirmar.ancla}
-              aria-current={confirmar.ancla === anclaActiva ? "location" : undefined}
-              className="flex min-h-control-compacto shrink-0 items-center whitespace-nowrap rounded-boton bg-accion px-pila py-interno-compacto text-menu uppercase tracking-pildora text-tinta-sobre-accion pulsable hover:bg-accion-hover active:bg-accion-activa"
-            >
-              {confirmar.rotulo}
-            </a>
-          ) : null}
         </nav>
       </div>
     </header>

@@ -268,6 +268,9 @@
   --texto-titulo-2: var(--font-size-titulo-2);
   --texto-titulo-3: var(--font-size-titulo-3);
   --texto-conector: var(--font-size-conector);
+
+  /* «Para Familia Fernández» en la portada, cuando se entra por el enlace. */
+  --texto-saludo: var(--font-size-saludo);
   --texto-cifra: var(--font-size-cifra);
   --texto-cita: var(--font-size-cita);
   --texto-cuerpo-grande: var(--font-size-cuerpo-grande);

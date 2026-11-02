@@ -7,14 +7,13 @@ import {
   RUTA_DIA,
   RUTA_INVITADOS,
   URL_WHATSAPP,
-  RUTA_MENSAJES,
   RUTA_MESAS,
   RUTA_MESAS_PLANO,
   RUTA_MESAS_REPARTO,
   RUTA_PANEL,
   RUTA_PENDIENTES,
   RUTA_PLAYLIST,
-  RUTA_RSVP,
+  RUTA_INVITACION,
 } from "../../src/config/constants";
 
 /**
@@ -22,9 +21,10 @@ import {
  *
  * Lo que se prueba aquí es **la vuelta entera**, que es lo único que demuestra
  * que el módulo está cableado: se crea una invitación en el panel, se copia su
- * enlace, se contesta desde él como haría un invitado, y se vuelve al panel a
- * ver la respuesta. Si esa vuelta se cierra, el RSVP y el panel están unidos de
- * verdad; si se corta por algún sitio, este test dice por cuál.
+ * enlace, se abre como haría un invitado —la portada le saluda por su nombre—,
+ * y la respuesta que llega por WhatsApp se apunta en el panel y cuenta. Si esa
+ * vuelta se cierra, el enlace y el panel están unidos de verdad; si se corta
+ * por algún sitio, este test dice por cuál.
  *
  * Necesita sesión, así que vive en el trabajo de CI que levanta el Supabase
  * local y se salta en cualquier otro sitio.
@@ -44,6 +44,27 @@ async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T
   } finally {
     await sql.end();
   }
+}
+
+/**
+ * Apunta en la ficha abierta la respuesta de una persona, como cuando llega por
+ * WhatsApp: el desplegable que dice de quién, el sí o el no, y guardar.
+ */
+async function apuntar(pagina: Page, persona: string, estado: "confirmado" | "rechazado") {
+  await pagina
+    .getByLabel(copy.panel.invitados.apuntarRespuestaDe.replace("{persona}", persona))
+    .click();
+  const formulario = pagina.locator("form").filter({
+    has: pagina.locator('input[name="estado"]'),
+    hasText: copy.panel.invitados.guardarRespuesta,
+  });
+  await formulario
+    .getByLabel(
+      estado === "confirmado" ? copy.panel.respuesta.vieneSi : copy.panel.respuesta.vieneNo,
+    )
+    .check();
+  await formulario.getByRole("button", { name: copy.panel.invitados.guardarRespuesta }).click();
+  await expect(pagina).toHaveURL(/estado=respuesta-apuntada/);
 }
 
 /** La ficha de una invitación. Se espera a llegar aquí antes de seguir. */
@@ -80,7 +101,7 @@ test.describe("Invitaciones", () => {
   /**
    * EL CAMINO COMPLETO. Panel → enlace → respuesta → panel.
    */
-  test("crear una invitación, contestarla desde su enlace y verla de vuelta", async ({
+  test("crear una invitación, abrir su enlace y apuntar la respuesta", async ({
     page,
     browser,
   }) => {
@@ -97,7 +118,7 @@ test.describe("Invitaciones", () => {
     const campoEnlace = page.getByLabel(copy.panel.invitados.copiarEnlace);
     await expect(campoEnlace).toBeVisible();
     const enlace = await campoEnlace.inputValue();
-    expect(enlace).toContain(`${RUTA_RSVP}/`);
+    expect(enlace).toContain(`${RUTA_INVITACION}/`);
 
     // Una persona dentro.
     await page
@@ -108,31 +129,27 @@ test.describe("Invitaciones", () => {
     await expect(page.getByText("(DES) Olalla E2E")).toBeVisible();
 
     // Ahora, como invitada: sesión aparte y sin JavaScript, que es como se abre
-    // un enlace de estos desde WhatsApp.
-    const rutaRsvp = new URL(enlace).pathname;
+    // un enlace de estos desde WhatsApp. El enlace la lleva a la portada, que
+    // la saluda por el nombre de su invitación.
+    const rutaInvitacion = new URL(enlace).pathname;
     const comoInvitada = await browser.newContext({
       javaScriptEnabled: false,
       locale: "es-ES",
       extraHTTPHeaders: origenDelTest(),
     });
     const paginaInvitada = await comoInvitada.newPage();
-    await paginaInvitada.goto(rutaRsvp);
-    await expect(paginaInvitada.getByRole("heading", { level: 1 })).toContainText(nombreGrupo);
-
-    await paginaInvitada.locator('input[value="confirmado"]').first().check();
-    await paginaInvitada.getByRole("button", { name: copy.rsvp.siguiente }).click();
-    await paginaInvitada.getByRole("button", { name: copy.rsvp.siguiente }).click();
-    await paginaInvitada.getByRole("button", { name: copy.rsvp.enviar }).click();
-    await expect(paginaInvitada.getByRole("heading", { level: 1 })).toHaveText(
-      copy.rsvp.graciasSi,
-    );
+    await paginaInvitada.goto(rutaInvitacion);
+    expect(new URL(paginaInvitada.url()).pathname).toBe("/");
+    await expect(paginaInvitada.locator("#portada")).toContainText(nombreGrupo);
     await comoInvitada.close();
 
-    // Y de vuelta al panel: la respuesta tiene que estar ahí.
-    await page.reload();
+    // Contesta por WhatsApp, y en el panel se apunta.
+    await apuntar(page, "(DES) Olalla E2E", "confirmado");
     // La que se ve: «Sí, viene» es también una opción, plegada, del formulario
-    // con el que el panel apunta una respuesta por teléfono.
-    await expect(page.getByText(copy.rsvp.vieneSi).filter({ visible: true })).toBeVisible();
+    // con el que el panel apunta la respuesta.
+    await expect(
+      page.getByText(copy.panel.respuesta.vieneSi).filter({ visible: true }),
+    ).toBeVisible();
 
     /*
       También en la lista, en el recuento del grupo.
@@ -219,13 +236,15 @@ test.describe("Invitaciones", () => {
     });
     const invitada = await contexto.newPage();
 
+    // El anterior lleva a la portada de todos: ni saluda ni cuenta de quién era.
     await invitada.goto(new URL(primero).pathname);
-    await expect(invitada.getByText(copy.rsvp.tokenInvalido)).toBeVisible();
-    // Y no cuenta de quién era: ni el nombre del grupo se escapa.
+    expect(new URL(invitada.url()).pathname).toBe("/");
     await expect(invitada.locator("body")).not.toContainText(nombreGrupo);
+    expect((await contexto.cookies()).some((c) => c.name === "boda:invitacion")).toBe(false);
 
+    // El nuevo, sí.
     await invitada.goto(new URL(segundo).pathname);
-    await expect(invitada.getByRole("heading", { level: 1 })).toContainText(nombreGrupo);
+    await expect(invitada.locator("#portada")).toContainText(nombreGrupo);
 
     await contexto.close();
   });
@@ -235,14 +254,13 @@ test.describe("Invitaciones", () => {
    * respuesta por delante en cascada, y el recuento de la cocina cambiaría solo
    * sin dejar rastro.
    */
-  test("no se puede quitar a alguien que ya ha contestado", async ({ page, browser }) => {
+  test("no se puede quitar a alguien que ya ha contestado", async ({ page }) => {
     const nombreGrupo = `${MARCA} quitar ${Date.now()}`;
 
     await page.goto(RUTA_INVITADOS);
     await page.getByLabel(copy.panel.invitados.nombreGrupo).fill(nombreGrupo);
     await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
     await expect(page).toHaveURL(FICHA);
-    const enlace = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
 
     await page
       .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
@@ -255,17 +273,7 @@ test.describe("Invitaciones", () => {
     );
     await expect(quitarAXabi).toBeVisible();
 
-    const contexto = await browser.newContext({
-      locale: "es-ES",
-      extraHTTPHeaders: origenDelTest(),
-    });
-    const invitada = await contexto.newPage();
-    await invitada.goto(new URL(enlace).pathname);
-    await invitada.locator('input[value="rechazado"]').first().check();
-    await invitada.getByRole("button", { name: copy.rsvp.siguiente }).click();
-    await invitada.getByRole("button", { name: copy.rsvp.enviar }).click();
-    await expect(invitada.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasNo);
-    await contexto.close();
+    await apuntar(page, "(DES) Xabi", "rechazado");
 
     // Contestado: el control de quitar desaparece.
     await page.reload();
@@ -286,7 +294,7 @@ test.describe("Resumen del panel", () => {
     "Necesita el Supabase local: solo corre en el trabajo de CI que lo levanta.",
   );
 
-  test("las cifras suben cuando alguien confirma", async ({ page, browser }) => {
+  test("las cifras suben cuando alguien confirma", async ({ page }) => {
     await entrar(page);
 
     const confirmados = page
@@ -304,38 +312,13 @@ test.describe("Resumen del panel", () => {
       .fill(`${MARCA} cifras ${Date.now()}`);
     await page.getByRole("button", { name: copy.panel.invitados.crear }).click();
     await expect(page).toHaveURL(FICHA);
-    const enlace = await page.getByLabel(copy.panel.invitados.copiarEnlace).inputValue();
     await page
       .getByLabel(copy.panel.invitados.nombrePersona, { exact: true })
       .fill("(DES) Nekane");
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
     await expect(page.getByText("(DES) Nekane")).toBeVisible();
 
-    const contexto = await browser.newContext({
-      locale: "es-ES",
-      extraHTTPHeaders: origenDelTest(),
-    });
-    const invitada = await contexto.newPage();
-    await invitada.goto(new URL(enlace).pathname);
-    await invitada.locator('input[value="confirmado"]').first().check();
-
-    /*
-      UN PASO CADA VEZ, Y ESPERANDO A VERLO.
-
-      Con JavaScript apagado cada «Siguiente» es una navegación completa y
-      Playwright la espera solo. Aquí no: el paso lo cambia una acción de
-      servidor y el botón del paso anterior sigue en el DOM unos milisegundos,
-      así que dos clics seguidos caen los dos en el mismo formulario y el
-      asistente se queda donde estaba. Afirmar el título entre clic y clic es
-      lo que ata cada uno a su paso.
-    */
-    await invitada.getByRole("button", { name: copy.rsvp.siguiente }).click();
-    await expect(invitada.getByText(copy.rsvp.pasoDetallesTitulo)).toBeVisible();
-    await invitada.getByRole("button", { name: copy.rsvp.siguiente }).click();
-    await expect(invitada.getByText(copy.rsvp.pasoMensajeTitulo)).toBeVisible();
-    await invitada.getByRole("button", { name: copy.rsvp.enviar }).click();
-    await expect(invitada.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
-    await contexto.close();
+    await apuntar(page, "(DES) Nekane", "confirmado");
 
     await page.goto(RUTA_PANEL);
     const despues = Number((await confirmados.first().textContent())?.trim() ?? "0");
@@ -809,7 +792,6 @@ test.describe("Un estado inventado en la URL", () => {
     RUTA_MESAS_REPARTO,
     RUTA_PENDIENTES,
     RUTA_DIA,
-    RUTA_MENSAJES,
     RUTA_PLAYLIST,
   ]) {
     test(`${ruta} aguanta «constructor», «__proto__» y «toString»`, async ({ page }) => {
@@ -1259,10 +1241,10 @@ test.describe("La ficha de una invitación", () => {
     const formulario = page.locator("form").filter({
       has: page.getByRole("button", { name: copy.panel.invitados.guardarRespuesta }),
     });
-    await formulario.getByLabel(copy.rsvp.vieneSi).check();
-    await formulario.getByLabel(copy.rsvp.menuEtiqueta).selectOption("sin_gluten");
-    await formulario.getByLabel(copy.rsvp.alergias).fill("(DES) Celíaca");
-    await formulario.getByLabel(copy.rsvp.autobusPersona).check();
+    await formulario.getByLabel(copy.panel.respuesta.vieneSi).check();
+    await formulario.getByLabel(copy.panel.respuesta.menu).selectOption("sin_gluten");
+    await formulario.getByLabel(copy.panel.respuesta.alergias).fill("(DES) Celíaca");
+    await formulario.getByLabel(copy.panel.respuesta.autobus).check();
     // El menú infantil no se ofrece a una adulta.
     await expect(formulario.locator('option[value="infantil"]')).toHaveCount(0);
     await formulario
@@ -1273,7 +1255,9 @@ test.describe("La ficha de una invitación", () => {
     await expect(page.getByText(copy.panel.invitados.respuestaApuntada)).toBeVisible();
     await expect(
       page.locator("li").filter({ hasText: "(DES) Tía Rosario" }).first(),
-    ).toContainText(`${copy.rsvp.vieneSi} · ${copy.panel.menus.sin_gluten} · (DES) Celíaca`);
+    ).toContainText(
+      `${copy.panel.respuesta.vieneSi} · ${copy.panel.menus.sin_gluten} · (DES) Celíaca`,
+    );
 
     const [respuesta] = await conBase(
       (sql) => sql<

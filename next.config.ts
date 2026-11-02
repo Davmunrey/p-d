@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
-import { PESO_MAXIMO_VIDEO_MB } from "./src/config/constants";
+import {
+  PESO_MAXIMO_VIDEO_MB,
+  RUTA_INVITACION,
+  RUTA_PLAYLIST,
+  RUTA_RSVP_ANTIGUA,
+} from "./src/config/constants";
 
 /**
  * Cabeceras de seguridad.
@@ -104,9 +109,35 @@ const nextConfig: NextConfig = {
       },
       {
         // El enlace de invitación es personal: que no acabe en un buscador.
-        source: "/rsvp/:path*",
+        source: `${RUTA_INVITACION}/:path*`,
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
+    ];
+  },
+
+  /*
+    LO QUE CAMBIÓ DE SITIO AL QUITAR EL RSVP DE LA WEB.
+
+    · Los primeros enlaces de invitación se repartieron como `/rsvp/<token>`.
+      Siguen en los WhatsApp de las familias, así que siguen funcionando: van
+      al enlace de ahora, que recuerda la invitación y lleva a la portada.
+    · El panel tenía «Mensajes y playlist» en `/panel/mensajes`. Sin formulario
+      ya no entran mensajes, y lo que queda es la playlist: un marcador viejo
+      llega a ella en lugar de a un 404.
+  */
+  async redirects() {
+    return [
+      {
+        source: `${RUTA_RSVP_ANTIGUA}/:token`,
+        destination: `${RUTA_INVITACION}/:token`,
+        permanent: true,
+      },
+      {
+        source: "/panel/mensajes/playlist/:resto*",
+        destination: `${RUTA_PLAYLIST}/:resto*`,
+        permanent: true,
+      },
+      { source: "/panel/mensajes", destination: RUTA_PLAYLIST, permanent: true },
     ];
   },
 };

@@ -18,7 +18,7 @@ import {
   Titulo2,
   Titulo3,
 } from "@/components/ui/tipografia";
-import { MENUS_RSVP } from "@/config/constants";
+import { MENUS_INVITADO } from "@/config/constants";
 import {
   TOKENS_CURVA,
   TOKENS_DURACION,
@@ -377,17 +377,20 @@ export default async function PaginaCocina() {
 
           <Ficha titulo={t("cocina.grupoCampos")} prueba="campos">
             <div className="grid gap-pila">
-              <CampoTexto etiqueta={t("rsvp.nombre")} placeholder={t("cocina.ejemploNombre")} />
-              <CampoSeleccion etiqueta={t("rsvp.menuEtiqueta")} defaultValue={MENUS_RSVP[0]}>
-                {MENUS_RSVP.map((menu) => (
+              <CampoTexto
+                etiqueta={t("cocina.campoNombre")}
+                placeholder={t("cocina.ejemploNombre")}
+              />
+              <CampoSeleccion etiqueta={t("cocina.campoMenu")} defaultValue={MENUS_INVITADO[0]}>
+                {MENUS_INVITADO.map((menu) => (
                   <option key={menu} value={menu}>
-                    {t(`rsvp.menus.${menu}`)}
+                    {t(`panel.menus.${menu}`)}
                   </option>
                 ))}
               </CampoSeleccion>
               <CampoTexto
-                etiqueta={t("rsvp.contacto")}
-                ayuda={t("rsvp.contactoAyuda")}
+                etiqueta={t("cocina.campoContacto")}
+                ayuda={t("cocina.campoContactoAyuda")}
                 error={t("errores.emailInvalido")}
                 defaultValue="correo@"
               />
@@ -452,7 +455,10 @@ export default async function PaginaCocina() {
             <EtiquetaEstado variante="exito">{t("cocina.etiquetaConfirmado")}</EtiquetaEstado>
           </div>
           <div className="mt-pila grid gap-pila sm:grid-cols-2">
-            <CampoTexto etiqueta={t("rsvp.nombre")} placeholder={t("cocina.ejemploNombre")} />
+            <CampoTexto
+              etiqueta={t("cocina.campoNombre")}
+              placeholder={t("cocina.ejemploNombre")}
+            />
             <Aviso titulo={t("cocina.avisoRotulo")}>{t("cocina.avisoTexto")}</Aviso>
           </div>
           <Cita className="mt-pila">{t("cocina.muestraTipografica")}</Cita>

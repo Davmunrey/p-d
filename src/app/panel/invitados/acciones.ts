@@ -7,7 +7,7 @@ import {
   LARGOS_DE_CAMPO,
   LONGITUD_MINIMA_NOMBRE,
   MAXIMO_ACOMPANANTES,
-  MENUS_RSVP,
+  MENUS_INVITADO,
   RUTA_ACCESO,
   RUTA_INVITADOS,
   RUTA_PENDIENTES,
@@ -494,9 +494,9 @@ export async function apuntarRespuesta(datos: FormData): Promise<void> {
     volver("respuesta-sin-estado", grupoId, token);
   }
   const viene = estado === "confirmado";
-  const menu = texto(datos, "tipo_menu") || MENUS_RSVP[0];
+  const menu = texto(datos, "tipo_menu") || MENUS_INVITADO[0];
   const alergias = texto(datos, "alergias") || null;
-  if (viene && !(MENUS_RSVP as readonly string[]).includes(menu))
+  if (viene && !(MENUS_INVITADO as readonly string[]).includes(menu))
     volver("error", grupoId, token);
   if ((alergias?.length ?? 0) > LARGOS_DE_CAMPO["invitados.alergias"]) {
     volver("alergias-largas", grupoId, token);

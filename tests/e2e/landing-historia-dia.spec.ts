@@ -1,9 +1,6 @@
-import postgres from "postgres";
-
 import { expect, test, type Locator, type Page } from "./utiles/origen-propio";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_RSVP } from "../../src/config/constants";
 
 /**
  * LA LANDING CUENTA EL DÍA, DE LA MAÑANA A LA NOCHE, BAJO LA LIRA
@@ -11,15 +8,14 @@ import { RUTA_RSVP } from "../../src/config/constants";
  * La historia que se eligió: arriba es el alba y al bajar el fondo pasa por la
  * tarde dorada y el ocaso hasta la noche marino del final; los nombres emergen
  * como un título; «nuestra historia» enciende una estrella de la Lira por cada
- * hito; y al llegar al RSVP la Lira está entera y espera, hueca, la estrella
- * de los invitados, que se enciende en las gracias del RSVP si alguien viene.
+ * hito; y al final la Lira está entera y espera, hueca, la estrella de los
+ * invitados —que confirman por WhatsApp—.
  *
  * Cada gesto se prueba leyendo lo que el navegador tiene puesto, con su caso
  * de error: sin movimiento —o sin líneas de tiempo de scroll— todo está ya
  * dibujado y quieto, y la página es la de siempre.
  */
 
-const cadena = process.env.DATABASE_URL;
 const ESCRITORIO = { width: 1440, height: 900 };
 
 async function conLineasDeTiempo(page: Page): Promise<boolean> {
@@ -267,80 +263,5 @@ test.describe("La noche del final", () => {
       await rsvp.locator(".latido-estrella").evaluate((n) => getComputedStyle(n).animationName),
     ).toBe("none");
     expect(await opacidad(rsvp.locator(".estrella-fugaz"))).toBe(0);
-  });
-});
-
-/**
- * EL FINAL DE LA HISTORIA, EN EL RSVP. Si alguien del grupo viene, las gracias
- * llevan la Lira con su estrella encendida; si no viene nadie, la Lira de
- * siempre, sin estrella. Se fabrican dos grupos con su respuesta para no
- * depender del estado en que otros tests dejen los del seed.
- */
-test.describe("Vuestra estrella en las gracias del RSVP", () => {
-  test.skip(!cadena, "Hace falta DATABASE_URL para fabricar las invitaciones.");
-
-  async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T> {
-    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
-    try {
-      return await trabajo(sql);
-    } finally {
-      await sql.end();
-    }
-  }
-
-  /** Un grupo de una persona que ya ha contestado. Devuelve su token. */
-  async function grupoQueResponde(sufijo: string, estado: "confirmado" | "rechazado") {
-    const token = `desarrollo-e2e-estrella-${sufijo}-000000`;
-    await conBase(async (sql) => {
-      const [grupo] = await sql<{ id: string }[]>`
-        insert into public.grupos_invitacion (nombre, lado, invitado_a, maximo_acompanantes, huella_token)
-        values (
-          ${`(DES) Grupo e2e-estrella-${sufijo}`}, 'ambos',
-          array['ceremonia','banquete','fiesta']::public.evento_boda[], 0,
-          public.huella_token(${token})
-        )
-        returning id
-      `;
-      const [persona] = await sql<{ id: string }[]>`
-        insert into public.invitados (grupo_id, nombre, apellidos, es_nino)
-        values (${grupo.id}, '(DES) Estrella', '(DES)', false)
-        returning id
-      `;
-      await sql`
-        insert into public.confirmaciones
-          (invitado_id, estado, origen, necesita_autobus, necesita_alojamiento)
-        values (${persona.id}, ${estado}, 'publico', false, false)
-      `;
-    });
-    return token;
-  }
-
-  test.afterAll(async () => {
-    if (!cadena) return;
-    await conBase(
-      (sql) =>
-        sql`delete from public.grupos_invitacion where nombre like '(DES) Grupo e2e-estrella-%'`,
-    );
-  });
-
-  test("si alguien viene, su estrella se enciende junto a la Lira", async ({ page }) => {
-    const token = await grupoQueResponde("si", "confirmado");
-    await page.setViewportSize(ESCRITORIO);
-    await page.goto(`${RUTA_RSVP}/${token}`);
-
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
-    await expect(page.locator('svg[data-vuestra-estrella="encendida"]')).toBeVisible();
-    await expect(page.getByText(copy.rsvp.estrellaEncendida)).toBeVisible();
-  });
-
-  /** CASO DE ERROR · si no viene nadie, no hay estrella que encender. */
-  test("si no viene nadie, la Lira se queda sin vuestra estrella", async ({ page }) => {
-    const token = await grupoQueResponde("no", "rechazado");
-    await page.setViewportSize(ESCRITORIO);
-    await page.goto(`${RUTA_RSVP}/${token}`);
-
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasNo);
-    await expect(page.locator("[data-vuestra-estrella]")).toHaveCount(0);
-    await expect(page.getByText(copy.rsvp.estrellaEncendida)).toHaveCount(0);
   });
 });

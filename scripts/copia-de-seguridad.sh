@@ -71,7 +71,7 @@ FICHERO="$DESTINO/boda-$FECHA.dump"
 # `service_role` están en todos—, y el modelo de acceso de esta base está hecho
 # de GRANT explícitos: se revoca todo y se concede tabla a tabla. Sin ellos, la
 # base restaurada tenía sus filas y sus políticas, pero la portada no podía leer
-# `configuracion_boda`, el RSVP no podía llamar a `obtener_invitacion` y el
+# `configuracion_boda`, el enlace no podía llamar a `nombre_de_invitacion` y el
 # panel no veía nada. Las POLÍTICAS RLS van dentro igual —son esquema—.
 pg_dump "$DATABASE_URL" \
   --format=custom \

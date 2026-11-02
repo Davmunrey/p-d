@@ -44,8 +44,8 @@ const formatoFechaFichero = new Intl.DateTimeFormat("en-CA", {
 });
 
 function respuestaDe(persona: Comensal): string {
-  if (persona.estado === ESTADO_CONFIRMADO) return t("rsvp.vieneSi");
-  if (persona.estado === "rechazado") return t("rsvp.vieneNo");
+  if (persona.estado === ESTADO_CONFIRMADO) return t("panel.respuesta.vieneSi");
+  if (persona.estado === "rechazado") return t("panel.respuesta.vieneNo");
   return t("panel.invitados.pendienteRespuesta");
 }
 

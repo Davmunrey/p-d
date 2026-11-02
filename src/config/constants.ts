@@ -61,18 +61,6 @@ export const PLAZO_SUBIDA_NAVEGADOR_MS = 10 * 60_000;
 export const CACHE_MEDIOS_SEGUNDOS = 3600;
 
 /**
- * Lo que se espera a que Resend acepte un correo antes de darlo por perdido.
- *
- * Por lo mismo que arriba: un `fetch` sin `signal` espera hasta que undici se
- * rinde —cinco minutos—, y la función de Vercel se agota antes. El invitado
- * acababa de guardar su respuesta y veía un 504: creía que no se había
- * guardado, volvía atrás, y a la segunda salían dos acuses. Ocho segundos son
- * de sobra para una API que contesta en cientos de milisegundos, y quedan por
- * debajo del tope de la función.
- */
-export const PLAZO_CORREO_MS = 8_000;
-
-/**
  * Lo que se deja subir. El mismo array que la migración pone en el bucket, y
  * un test unitario comprueba que no se separan.
  *
@@ -190,29 +178,16 @@ export const URL_MAPA_EXTERNO = "https://www.google.com/maps/search/";
 export const URL_WHATSAPP = "https://wa.me/";
 
 /**
- * Raíz del RSVP público. El enlace de cada invitación es `${RUTA_RSVP}/token`,
- * y esta ruta es además el ámbito de la cookie del borrador: fuera del RSVP no
- * se manda, que es donde no pinta nada.
+ * Raíz del enlace personal de cada invitación: `${RUTA_INVITACION}/token`.
+ * Abrirlo recuerda la invitación y lleva a la portada.
  */
-export const RUTA_RSVP = "/rsvp";
+export const RUTA_INVITACION = "/invitacion";
 
 /**
- * La marca de «la respuesta acaba de llegar» en la URL del RSVP: la pone la
- * acción al guardar (`?enviado=1`), la lee la página para dar las gracias y la
- * lee la analítica para contar el último paso del embudo. Tres sitios que
- * tienen que decir lo mismo, así que se dice una vez.
+ * Donde vivía el formulario del RSVP. Los enlaces que ya se repartieron con
+ * esta forma siguen funcionando: `next.config.ts` los manda a `RUTA_INVITACION`.
  */
-export const MARCA_RSVP_ENVIADO = { parametro: "enviado", valor: "1" } as const;
-
-/**
- * Cuánto vive el borrador del RSVP a medio rellenar.
- *
- * Generoso a propósito. El caso que hay que aguantar no es el de alguien que
- * responde de un tirón, sino el de quien deja el móvil, pregunta a su hermana
- * si va a ir, y vuelve. Media hora se queda corta; un día entero convierte un
- * borrador en un estado que nadie recuerda haber dejado ahí.
- */
-export const MINUTOS_BORRADOR_RSVP = 180;
+export const RUTA_RSVP_ANTIGUA = "/rsvp";
 
 /**
  * Cuánto vive lo escrito en Ajustes cuando el servidor lo rechaza.
@@ -230,26 +205,22 @@ export const MINUTOS_BORRADOR_AJUSTES = 30;
 export const LARGO_IBAN_ESPANOL = 24;
 
 /**
- * Cuánto cabe en cada trozo de la cookie del borrador del RSVP.
+ * Cuánto cabe en cada trozo de la cookie de un borrador (el de Ajustes).
  *
  * Los navegadores tiran una cookie de más de 4096 bytes SIN DECIR NADA, y un
- * borrador realista —cuatro personas con menú, alergias y autobús, más un
- * mensaje de dos mil caracteres con tildes— pasaba de ahí una vez codificado.
+ * borrador realista —todos los datos de la boda, con textos largos y tildes—
+ * pasa de ahí una vez codificado.
  * El borrador se reparte en varias cookies de este tamaño y se vuelve a unir
  * al leer. Tres mil deja margen para el nombre y los atributos.
  */
 export const TROZO_COOKIE_BYTES = 3_000;
 
-/** Los tres pasos del RSVP, en orden. Los escriben la página y su test. */
-export const PASOS_RSVP = ["asistencia", "detalles", "mensaje"] as const;
-export type PasoRsvp = (typeof PASOS_RSVP)[number];
-
 /**
- * Los menús que se ofrecen en el RSVP: el enumerado `tipo_menu` de la base.
- * Lo que llegue con otro valor no se guarda en el borrador —antes un
- * `menu-<id>=pizza` a mano acababa en un 22P02 que se contaba como avería—.
+ * Los menús que se pueden apuntar a un invitado: el enumerado `tipo_menu` de
+ * la base. Lo que llegue con otro valor no se guarda —un `pizza` a mano acababa
+ * en un 22P02 que se contaba como avería—.
  */
-export const MENUS_RSVP = [
+export const MENUS_INVITADO = [
   "estandar",
   "vegetariano",
   "vegano",
@@ -257,14 +228,7 @@ export const MENUS_RSVP = [
   "sin_gluten",
   "otro",
 ] as const;
-export type MenuRsvp = (typeof MENUS_RSVP)[number];
-
-/**
- * El menú que sólo se ofrece a quien está marcado como niño. La base lo
- * descarta en silencio para un adulto —deja `estandar`—, así que ofrecerlo
- * era prometer algo que no se iba a servir.
- */
-export const MENU_SOLO_NINOS: MenuRsvp = "infantil";
+export type MenuInvitado = (typeof MENUS_INVITADO)[number];
 
 /**
  * Cuánto recuerda el navegador de qué invitación es.
@@ -307,13 +271,12 @@ export const RUTA_NUEVA_CONTRASENA = "/acceso/nueva-contrasena";
 export const RUTA_CUENTA = "/panel/cuenta";
 export const RUTA_AJUSTES = "/panel/ajustes";
 export const RUTA_INVITADOS = "/panel/invitados";
-export const RUTA_MENSAJES = "/panel/mensajes";
 
-/** Las canciones que piden los invitados: la segunda pestaña de los mensajes. */
-export const RUTA_PLAYLIST = "/panel/mensajes/playlist";
+/** Las canciones que piden los invitados desde la portada. */
+export const RUTA_PLAYLIST = "/panel/playlist";
 
 /** La lista de canciones para el DJ, en texto: una por línea. */
-export const RUTA_PLAYLIST_EXPORTAR = "/panel/mensajes/playlist/exportar";
+export const RUTA_PLAYLIST_EXPORTAR = "/panel/playlist/exportar";
 
 /**
  * Cuántas canciones puede pedir cada grupo. LO IMPONE LA BASE —`sugerir_cancion()`
@@ -501,16 +464,6 @@ export const RUTA_PAGOS = "/panel/presupuesto/pagos";
  * a ver si esto va bien o va mal.
  */
 export const RUTA_GRAFICAS = "/panel/presupuesto/graficas";
-
-/**
- * A dónde se mandan los correos.
- *
- * Configurable a propósito, y no porque vaya a cambiar de proveedor: es lo que
- * permite que el test del camino feliz apunte a un buzón de pruebas y lea lo
- * que se mandó de verdad. Sin esto, comprobar el envío exigiría una clave real
- * en CI o un mock de nuestro propio código, que no probaría que el correo sale.
- */
-export const URL_RESEND = process.env.RESEND_URL ?? "https://api.resend.com";
 
 /**
  * De dónde saca la landing el número de cuenta, y por qué no viene ya puesto:

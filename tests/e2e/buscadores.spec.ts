@@ -1,7 +1,12 @@
 import { expect, test } from "./utiles/origen-propio";
 import postgres from "postgres";
 
-import { RUTA_ACCESO, RUTA_PANEL, RUTA_RSVP } from "../../src/config/constants";
+import {
+  RUTA_ACCESO,
+  RUTA_INVITACION,
+  RUTA_PANEL,
+  RUTA_RSVP_ANTIGUA,
+} from "../../src/config/constants";
 
 /**
  * BODA-92 · Buscadores: lo público sí, lo privado no
@@ -36,7 +41,9 @@ test.describe("Lo privado no se indexa", () => {
   test("un enlace de invitación tampoco, exista o no", async ({ request }) => {
     // Con token inventado: si sólo se protegieran los válidos, bastaría con
     // probar cadenas para saber cuáles lo son.
-    const respuesta = await request.get(`${RUTA_RSVP}/token-que-no-existe-000000`);
+    const respuesta = await request.get(`${RUTA_INVITACION}/token-que-no-existe-000000`, {
+      maxRedirects: 0,
+    });
     expect(respuesta.headers()["x-robots-tag"] ?? "").toContain("noindex");
   });
 
@@ -44,7 +51,8 @@ test.describe("Lo privado no se indexa", () => {
     const texto = await (await request.get("/robots.txt")).text();
 
     expect(texto).toContain(`Disallow: ${RUTA_PANEL}/`);
-    expect(texto).toContain(`Disallow: ${RUTA_RSVP}/`);
+    expect(texto).toContain(`Disallow: ${RUTA_INVITACION}/`);
+    expect(texto).toContain(`Disallow: ${RUTA_RSVP_ANTIGUA}/`);
     expect(texto).toContain("Disallow: /cocina");
   });
 });
@@ -63,7 +71,10 @@ test.describe("El sitemap", () => {
       Se comprueba por el prefijo de la ruta, no por un token concreto, porque
       lo que no puede aparecer es la sección entera.
     */
-    expect(xml, "el sitemap no puede enumerar invitaciones").not.toContain(`${RUTA_RSVP}/`);
+    expect(xml, "el sitemap no puede enumerar invitaciones").not.toContain(
+      `${RUTA_INVITACION}/`,
+    );
+    expect(xml).not.toContain(`${RUTA_RSVP_ANTIGUA}/`);
     expect(xml).not.toContain(RUTA_PANEL);
     expect(xml).not.toContain(RUTA_ACCESO);
   });
@@ -235,6 +246,6 @@ test.describe("Los datos estructurados del evento", () => {
 
     // Y no se cuela nada privado: los datos estructurados son lo más fácil de
     // recolectar de toda la página.
-    expect(bruto).not.toContain(RUTA_RSVP);
+    expect(bruto).not.toContain(RUTA_INVITACION);
   });
 });

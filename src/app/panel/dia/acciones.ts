@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import {
   AJUSTE_MAXIMO_RECUENTO,
   LARGOS_DE_CAMPO,
-  MENUS_RSVP,
+  MENUS_INVITADO,
   RUTA_ACCESO,
   RUTA_RECUENTO,
 } from "@/config/constants";
@@ -113,7 +113,7 @@ function volver(estado: EstadoDia): never {
  */
 export async function corregirRecuento(datos: FormData): Promise<void> {
   const tipoMenu = String(datos.get("tipo_menu") ?? "").trim();
-  if (!(MENUS_RSVP as readonly string[]).includes(tipoMenu)) volver("menu-invalido");
+  if (!(MENUS_INVITADO as readonly string[]).includes(tipoMenu)) volver("menu-invalido");
 
   const escrito = String(datos.get("ajuste") ?? "").trim();
 

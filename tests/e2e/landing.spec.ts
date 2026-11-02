@@ -70,10 +70,10 @@ test.describe("Landing", () => {
     await expect(segundos).not.toHaveText(antes ?? "", { timeout: 3000 });
   });
 
-  test("el CTA de la portada lleva al RSVP", async ({ page }) => {
-    await page.getByRole("link", { name: copy.portada.confirmarAsistencia }).first().click();
-    await expect(page).toHaveURL(/#rsvp$/);
-    await expect(page.locator("#rsvp")).toBeInViewport();
+  test("el CTA de la portada lleva al programa", async ({ page }) => {
+    await page.locator("#portada").getByRole("link", { name: copy.portada.verElDia }).click();
+    await expect(page).toHaveURL(/#programa$/);
+    await expect(page.locator("#programa")).toBeInViewport();
   });
 
   test("la jerarquía de encabezados es correcta", async ({ page }) => {
@@ -185,8 +185,7 @@ test.describe("Landing", () => {
  *
  * La invitación llega por WhatsApp: casi nadie la abrirá en un escritorio. Un
  * control de 34 px de alto se ve perfecto en una captura y se falla una de cada
- * tres veces con el dedo, y el que más se falla es siempre el mismo —el de
- * confirmar—, porque los botones bonitos se dibujan ajustados.
+ * tres veces con el dedo, porque los botones bonitos se dibujan ajustados.
  *
  * 44 px es el mínimo de la WCAG (2.5.8) y el de las guías de Apple. Se mide el
  * rectángulo REAL en el navegador, no la clase: el alto de una píldora sale de
@@ -231,30 +230,6 @@ test.describe("Se toca con el pulgar", () => {
     }, MINIMO);
 
     expect(pequenos, `controles por debajo de ${MINIMO}px de alto`).toEqual([]);
-  });
-
-  /**
-   * Y el de confirmar por su nombre, aparte del barrido.
-   *
-   * Es lo ÚNICO que se le pide al invitado, así que merece un test que lo
-   * nombre: si algún día el barrido se relaja o se le añade una excepción,
-   * éste sigue diciendo que confirmar no puede encoger. Es el de la barra: el
-   * pie ya no repite el menú (BODA-113, como la entrega), y quien ha bajado la
-   * invitación entera se encuentra la sección de confirmar justo encima.
-   */
-  test("los enlaces de confirmar no encogen", async ({ page }) => {
-    await page.goto("/");
-
-    const confirmar = page.getByRole("link", {
-      name: copy.navegacion.secciones.rsvp,
-      exact: true,
-    });
-    await expect(confirmar, "el de la barra").toHaveCount(1);
-
-    for (const enlace of await confirmar.all()) {
-      const caja = await enlace.boundingBox();
-      expect(caja!.height, "un enlace de confirmar").toBeGreaterThanOrEqual(MINIMO);
-    }
   });
 });
 
@@ -550,7 +525,7 @@ test.describe("La tipografía es la de la entrega", () => {
   test("los botones y el menú van al escalón de 12 px", async ({ page }) => {
     await page.goto("/");
 
-    const boton = await medir(page, `#portada a[href="#rsvp"]`);
+    const boton = await medir(page, `#portada a[href="#programa"]`);
     const enlaceMenu = await medir(page, "header nav a");
 
     expect(boton.tamano).toBe(12);

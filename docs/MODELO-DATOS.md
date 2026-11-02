@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**60**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**61**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -19,7 +19,7 @@ verdad se explica cada decisión.
 | `20260803090200_economia.sql`           | BODA-13           | Proveedores, servicios, presupuesto, pagos                                         |
 | `20260803090300_organizacion.sql`       | BODA-13           | Tareas, mesas, medios y cableado de la auditoría                                   |
 | `20260803090400_rls.sql`                | BODA-14           | Funciones de rol, privilegios, políticas RLS, `force`                              |
-| `20260803090500_funciones_publicas.sql` | BODA-14           | RSVP público y emisión de enlaces                                                  |
+| `20260803090500_funciones_publicas.sql` | BODA-14           | RSVP público y emisión de enlaces (el RSVP web se retiró en `20261102100000`)      |
 | `20260803090600_vistas.sql`             | BODA-14           | Vistas de lectura y barrido final de permisos                                      |
 | `20260803090700_arranque.sql`           | BODA-10           | Arranque en frío del primer propietario                                            |
 
@@ -27,7 +27,7 @@ Cada una tiene su reverso exacto en
 [`supabase/migrations/rollback/`](../supabase/migrations/rollback/), con el mismo
 nombre. Se ejecutan en orden **inverso**.
 
-En números: **38 tablas, 15 vistas, 20 enumerados, 59 funciones, 74 políticas RLS.**
+En números: **38 tablas, 15 vistas, 20 enumerados, 56 funciones, 74 políticas RLS.**
 
 Esos cinco números no se escriben a mano: los cuenta la suite de seguridad contra
 el catálogo de la base recién migrada, y si el documento dice otra cosa, el CI se
@@ -594,13 +594,13 @@ TRUNCATE no entre por la puerta de atrás).
 
 ### 5.2 Qué ve cada quién
 
-| Rol                     | Lectura                                                                                                | Escritura                                                                                              |
-| ----------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| **`anon`** (la landing) | `configuracion_boda`, `secciones_landing` visibles, `medios` publicados, y las tres vistas públicas    | **nada**                                                                                               |
-| **`anon`** (con token)  | Su invitación, vía `obtener_invitacion()`; los correos de su grupo, vía `destinatarios_confirmacion()` | Su RSVP, vía `registrar_confirmacion()` y `anadir_acompanante()`; la playlist, vía `sugerir_cancion()` |
-| **`lector`**            | Todo el dominio: invitados, confirmaciones, economía, tareas, mesas, medios                            | nada                                                                                                   |
-| **`editor`**            | Lo anterior + notas privadas + `configuracion_privada`                                                 | Todo el dominio; en `confirmaciones` sólo INSERT                                                       |
-| **`propietario`**       | Todo, incluida la bitácora de auditoría y la lista blanca                                              | Todo, incluidos usuarios y configuración privada                                                       |
+| Rol                     | Lectura                                                                                             | Escritura                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| **`anon`** (la landing) | `configuracion_boda`, `secciones_landing` visibles, `medios` publicados, y las tres vistas públicas | **nada**                                         |
+| **`anon`** (con token)  | El nombre de su grupo, vía `nombre_de_invitacion()`                                                 | La playlist, vía `sugerir_cancion()`             |
+| **`lector`**            | Todo el dominio: invitados, confirmaciones, economía, tareas, mesas, medios                         | nada                                             |
+| **`editor`**            | Lo anterior + notas privadas + `configuracion_privada`                                              | Todo el dominio; en `confirmaciones` sólo INSERT |
+| **`propietario`**       | Todo, incluida la bitácora de auditoría y la lista blanca                                           | Todo, incluidos usuarios y configuración privada |
 
 Nadie —ningún rol, en ninguna circunstancia— tiene UPDATE ni DELETE sobre
 `confirmaciones` ni sobre `registro_auditoria`. Un histórico que se puede editar
@@ -712,30 +712,33 @@ funciones públicas**, y es una regla de revisión, no una recomendación:
   `registrado_por`, `respondido_en` y `es_vigente` los fija el servidor.
 - El plazo se comprueba siempre contra `now()`, jamás contra una fecha recibida.
 
-### 5.7 Cómo funciona el RSVP por token
+### 5.7 Cómo funciona el enlace por token
+
+Los invitados **confirman por WhatsApp**, y los novios apuntan la respuesta en el
+panel (`confirmaciones` con `origen = 'panel'`, que el trigger de plazo deja
+pasar). Hasta la migración `20261102100000` había un RSVP en la web con cuatro
+puertas públicas —`obtener_invitacion`, `registrar_confirmacion`,
+`anadir_acompanante` y `destinatarios_confirmacion`—; se borraron con el
+formulario, y su rollback las devuelve tal cual estaban.
+
+El enlace personal de cada invitación sigue existiendo: saluda al grupo en la
+portada y le deja proponer canciones.
 
 ```
-El invitado recibe   https://…/rsvp/<token de 32 caracteres>
+El invitado recibe   https://…/invitacion/<token de 32 caracteres>
                      └─ 192 bits de entropía, base64 url-safe
+                     (los primeros se repartieron como /rsvp/<token>: siguen
+                      valiendo, la web los redirige)
 
-  1. obtener_invitacion(token)
+  1. nombre_de_invitacion(token)
        ├─ cortafuegos: ¿demasiados intentos fallidos desde este origen? → RSV02
        ├─ busca por SHA-256 del token (la tabla no guarda el token en claro)
-       ├─ anota el intento en intentos_rsvp
-       └─ devuelve SOLO su grupo y sus personas, con columnas enumeradas:
-          nada de notas privadas, nada de la dirección de otros, nada del token
+       ├─ token que no existe → anota el intento fallido y devuelve NULL
+       └─ devuelve SÓLO el nombre del grupo (NULL si no tiene a nadie dentro):
+          ni personas, ni menús, ni alergias
 
-  2. registrar_confirmacion(token, respuestas)
-       ├─ mismo cortafuegos y misma resolución por huella
-       ├─ INSERT ... FROM jsonb_array_elements JOIN invitados JOIN grupo del token
-       │    → un invitado_id de otro grupo no casa: 0 filas
-       ├─ si insertadas ≠ recibidas → RSV04 y se deshace TODO
-       ├─ la canción que el grupo deja de pedir sale de la playlist
-       │    (la corregida la apunta después sugerir_cancion)
-       └─ triggers: plazo (RSV03), sellado de fecha (RSV07), vigencia
-
-  3. anadir_acompanante(token, …)
-       └─ constraint trigger con bloqueo del grupo → RSV05 si se agota el cupo
+  2. sugerir_cancion(token, texto)
+       └─ mismo cortafuegos y misma resolución por huella; tope por grupo
 ```
 
 **Un enlace no válido no lanza excepción: devuelve vacío.** No es un capricho de
@@ -749,30 +752,22 @@ cero filas registradas. PostgreSQL no tiene transacciones autónomas, así que l
 
 Contrato resultante, que el frontend debe respetar:
 
-| Función                      | Enlace no válido |
-| ---------------------------- | ---------------- |
-| `obtener_invitacion`         | cero filas       |
-| `registrar_confirmacion`     | devuelve `0`     |
-| `anadir_acompanante`         | devuelve `NULL`  |
-| `sugerir_cancion`            | devuelve `NULL`  |
-| `destinatarios_confirmacion` | cero filas       |
+| Función                | Enlace no válido |
+| ---------------------- | ---------------- |
+| `nombre_de_invitacion` | devuelve `NULL`  |
+| `sugerir_cancion`      | devuelve `NULL`  |
 
-Las cinco pasan por `exigir_cupo_rsvp()` y anotan el intento con
+Las dos pasan por `exigir_cupo_rsvp()` y anotan el intento fallido con
 `registrar_intento_rsvp()`. `sugerir_cancion` lanzaba `CAN02` hasta la migración
 `20260919200000`, y la excepción se llevaba el registro con ella: se reprodujo
-—dos llamadas con un token inventado, cero intentos— y se corrigió. Y
-`anadir_acompanante` aplica el plazo (`RSV03`) igual que el trigger de
-`confirmaciones`: la fila inicial del acompañante nace con `origen = 'sistema'`,
-que es justo lo que ese trigger deja pasar, así que la función lo mira antes de
-escribir.
+—dos llamadas con un token inventado, cero intentos— y se corrigió.
 
-### 5.8 Sólo seis funciones son públicas
+### 5.8 Sólo tres funciones son públicas
 
-`obtener_invitacion`, `registrar_confirmacion`, `anadir_acompanante`,
-`sugerir_cancion`, `destinatarios_confirmacion` y `datos_para_regalos`. Ninguna
-más, y la lista es cerrada en los dos sentidos: `supabase/tests/seguridad.sql`
-falla si `anon` puede ejecutar una que no esté aquí **y** si alguna de estas
-seis deja de existir o de poder ejecutarla.
+`nombre_de_invitacion`, `sugerir_cancion` y `datos_para_regalos`. Ninguna más, y
+la lista es cerrada en los dos sentidos: `supabase/tests/seguridad.sql` falla si
+`anon` puede ejecutar una que no esté aquí **y** si alguna de estas tres deja de
+existir o de poder ejecutarla.
 
 Conseguirlo exigió entender un detalle de PostgreSQL que durante meses se
 atribuyó a Supabase: **`alter default privileges in schema public revoke execute
@@ -797,21 +792,21 @@ alguien toque los default privileges sin querer, el barrido sigue ahí.
 
 ### 5.9 Códigos de error
 
-| Código  | Significa                                            | Lo lanza                    |
-| ------- | ---------------------------------------------------- | --------------------------- |
-| `RSV01` | Enlace no válido — **resultado vacío**, no excepción | Las tres funciones públicas |
-| `RSV02` | Demasiados intentos                                  | `exigir_cupo_rsvp()`        |
-| `RSV03` | Plazo de confirmación cerrado                        | Trigger de plazo            |
-| `RSV04` | El invitado no pertenece a esta invitación           | `registrar_confirmacion()`  |
-| `RSV05` | El grupo ha agotado sus acompañantes                 | Constraint trigger de aforo |
-| `RSV06` | Intento de cambiar privilegios de la invitación      | Trigger de congelación      |
-| `RSV07` | Respuesta fechada en el futuro                       | Trigger de sellado          |
-| `CNF01` | Las confirmaciones son inmutables                    | Trigger de inmutabilidad    |
-| `CNF02` | No se puede reactivar una respuesta caducada         | Trigger de inmutabilidad    |
-| `CNF03` | Un invitado se quedaría sin respuesta vigente        | Constraint trigger diferido |
-| `PRF01` | Sólo un propietario cambia rol o alta                | Trigger de privilegios      |
-| `CFG01` | La configuración no se borra                         | Trigger de borrado          |
-| `MED01` | Falta texto alternativo en el idioma de la boda      | Trigger de accesibilidad    |
+| Código  | Significa                                                       | Lo lanza                    |
+| ------- | --------------------------------------------------------------- | --------------------------- |
+| `RSV01` | Enlace no válido — **resultado vacío**, no excepción            | Las puertas con token       |
+| `RSV02` | Demasiados intentos                                             | `exigir_cupo_rsvp()`        |
+| `RSV03` | Plazo de confirmación cerrado                                   | Trigger de plazo            |
+| `RSV04` | El invitado no pertenece a esta invitación (RSVP web, retirado) | —                           |
+| `RSV05` | El grupo ha agotado sus acompañantes                            | Constraint trigger de aforo |
+| `RSV06` | Intento de cambiar privilegios de la invitación                 | Trigger de congelación      |
+| `RSV07` | Respuesta fechada en el futuro                                  | Trigger de sellado          |
+| `CNF01` | Las confirmaciones son inmutables                               | Trigger de inmutabilidad    |
+| `CNF02` | No se puede reactivar una respuesta caducada                    | Trigger de inmutabilidad    |
+| `CNF03` | Un invitado se quedaría sin respuesta vigente                   | Constraint trigger diferido |
+| `PRF01` | Sólo un propietario cambia rol o alta                           | Trigger de privilegios      |
+| `CFG01` | La configuración no se borra                                    | Trigger de borrado          |
+| `MED01` | Falta texto alternativo en el idioma de la boda                 | Trigger de accesibilidad    |
 
 Cada uno necesita su entrada en `content/copy.es.json` bajo `errores`.
 
@@ -841,14 +836,13 @@ select c.relname, c.relkind
               from pg_options_to_table(c.reloptions)
              where option_name = 'security_invoker'), 'false') not in ('true','on')));
 
--- c) Ninguna función ejecutable por anon salvo las seis puertas públicas
+-- c) Ninguna función ejecutable por anon salvo las tres puertas públicas
 --    (vive en supabase/tests/seguridad.sql, en los dos sentidos)
 select p.proname
   from pg_proc p
  where p.pronamespace = 'public'::regnamespace
    and has_function_privilege('anon', p.oid, 'execute')
-   and p.proname not in ('obtener_invitacion','registrar_confirmacion','anadir_acompanante',
-                         'sugerir_cancion','destinatarios_confirmacion','datos_para_regalos');
+   and p.proname not in ('nombre_de_invitacion','sugerir_cancion','datos_para_regalos');
 ```
 
 Además, la suite E2E con la clave anónima debe comprobar, como mínimo:
@@ -860,10 +854,9 @@ Además, la suite E2E con la clave anónima debe comprobar, como mínimo:
 - `anon` sí lee `v_configuracion_publica`, `v_secciones_publicas` y sólo los
   medios publicados;
 - una cuenta creada con la clave anónima no lee nada y no puede ascenderse;
-- `obtener_invitacion` con un token devuelve **sólo** ese grupo;
-- `registrar_confirmacion` con un `invitado_id` de otro grupo devuelve `RSV04`
-  y **no deja escrito nada**, y la confirmación de la víctima sigue vigente;
-- fuera de plazo devuelve `RSV03`; superado el cupo de intentos, `RSV02`;
+- `nombre_de_invitacion` con un token devuelve **sólo** el nombre de ese grupo,
+  y con un token inventado, nada; superado el cupo de intentos, `RSV02`;
+- las puertas del antiguo RSVP web no existen;
 - un `lector` autenticado no escribe en ninguna tabla.
 
 ---
@@ -875,7 +868,7 @@ prefijo `(DES)` y con correos en el dominio reservado `.test`. Si en una pantall
 aparece «(DES)», está leyendo del seed.
 
 Incluye dos grupos con **token conocido** para que la suite E2E pueda visitar
-`/rsvp/<token>` sin capturar nada:
+`/invitacion/<token>` sin capturar nada:
 
 ```
 Familia Uno  ->  desarrollo-familia-uno-000000

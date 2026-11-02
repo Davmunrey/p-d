@@ -89,9 +89,9 @@ export async function GET(peticion: NextRequest) {
               return persona.esNino ? t("panel.invitados.si") : t("panel.invitados.no");
             case "respuesta":
               return persona.estado === "confirmado"
-                ? t("rsvp.vieneSi")
+                ? t("panel.respuesta.vieneSi")
                 : persona.estado === "rechazado"
-                  ? t("rsvp.vieneNo")
+                  ? t("panel.respuesta.vieneNo")
                   : t("panel.invitados.pendienteRespuesta");
             case "menu":
               // Sólo de quien viene. El menú de quien no viene no es un dato

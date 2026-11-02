@@ -61,7 +61,7 @@ import {
 } from "@/lib/fechas";
 import { numeroEnLetra } from "@/lib/numeros";
 import { enlaceMapaEmbebido, enlaceMapaExterno } from "@/lib/mapa";
-import { invitacionRecordada } from "@/lib/invitacion-recordada";
+import { invitacionRecordada, saludoDeLaVisita } from "@/lib/invitacion-recordada";
 
 /**
  * LANDING
@@ -105,16 +105,17 @@ export const dynamic = "force-dynamic";
 
 export default async function PaginaInicio() {
   /*
-    Si el navegador recuerda una invitación, la playlist enseña el campo para
-    apuntar una canción. Se lee aquí y no dentro de la sección para que la
-    portada tenga un solo sitio donde se decide qué se pinta.
+    QUIÉN ABRE LA WEB, si ha entrado alguna vez por el enlace de su invitación.
+    Con invitación, la portada saluda al grupo por su nombre y la playlist
+    enseña el campo para apuntar una canción. Se lee aquí y no dentro de cada
+    sección para que la página tenga un solo sitio donde se decide qué se pinta.
 
-    NO SE COMPRUEBA CONTRA LA BASE. Sería una consulta más en cada visita a la
-    portada para adelantar un «no» que la base va a dar igualmente al escribir,
-    y por el camino gastaría cupo del cortafuegos del RSVP a quien no ha pedido
-    nada.
+    El campo de la playlist mira sólo la cookie: si el enlace ya no vale, la
+    base lo dice al apuntar y la cookie se olvida. El saludo sí pregunta a la
+    base, porque un nombre viejo o de un enlace anulado sería mentir.
   */
   const hayInvitacion = (await invitacionRecordada()) !== null;
+  const saludo = hayInvitacion ? await saludoDeLaVisita() : null;
 
   let datos;
   try {
@@ -167,17 +168,13 @@ export default async function PaginaInicio() {
       : null;
 
   /*
-    A DÓNDE PUEDEN LLEVAR LOS BOTONES. «Confirmar asistencia» y «Ver el día»
-    apuntaban siempre a #rsvp y #programa, y esas secciones pueden no estar:
-    apagadas desde el panel, o el programa sin ningún hito todavía. Un botón
-    que lleva a un ancla que no existe se pulsa y no pasa nada. Se usa el mismo
-    criterio que decide qué se pinta (`aPintar`, más abajo): visible y con
-    contenido.
+    A DÓNDE PUEDE LLEVAR EL BOTÓN. «Ver el día» apunta a #programa, y esa
+    sección puede no estar: apagada desde el panel, o sin ningún hito todavía.
+    Un botón que lleva a un ancla que no existe se pulsa y no pasa nada. Se usa
+    el mismo criterio que decide qué se pinta (`aPintar`, más abajo): visible y
+    con contenido.
   */
-  const destinos = {
-    rsvp: secciones.includes("rsvp"),
-    programa: secciones.includes("programa") && programa.length > 0,
-  };
+  const hayPrograma = secciones.includes("programa") && programa.length > 0;
 
   const contenido: Partial<Record<Seccion, ReactNode>> = {
     portada: (
@@ -185,7 +182,8 @@ export default async function PaginaInicio() {
         configuracion={configuracion}
         foto={fotosPortada[0] ?? null}
         urlBase={urlBase}
-        destinos={destinos}
+        hayPrograma={hayPrograma}
+        saludo={saludo}
       />
     ),
     // Pasado el día, no queda nada que contar: la sección no se pinta.
@@ -304,7 +302,7 @@ export default async function PaginaInicio() {
     había que arrastrar, con las últimas fuera de la pantalla. Ahora lleva sólo
     las que alguien busca CON PRISA, que es la única razón por la que un menú
     existe en una página que se lee bajando: la mañana de la boda se pregunta a
-    qué hora es, cómo se llega y dónde se duerme. Más el botón de confirmar.
+    qué hora es, cómo se llega y dónde se duerme.
 
     Quién entra lo decide `SECCIONES_EN_MENU`, y sigue mandando el filtro de
     arriba: una sección sin contenido no aparece tampoco aquí.
@@ -491,13 +489,16 @@ function Portada({
   configuracion,
   foto,
   urlBase,
-  destinos,
+  hayPrograma,
+  saludo,
 }: {
   configuracion: ConfiguracionBoda;
   foto: Medio | null;
   urlBase: string | undefined;
-  /** Qué secciones existen de verdad en la página, para no enlazar al vacío. */
-  destinos: { rsvp: boolean; programa: boolean };
+  /** Si el programa existe de verdad en la página, para no enlazar al vacío. */
+  hayPrograma: boolean;
+  /** El nombre del grupo que ha abierto su invitación, o `null`. */
+  saludo: string | null;
 }) {
   const lugar = configuracion.lugarCeremonia ?? configuracion.lugarBanquete;
   /*
@@ -521,6 +522,17 @@ function Portada({
           foto ? "" : "mx-auto max-w-contenido"
         }`}
       >
+        {/*
+          EL SALUDO, COMO EN UN SOBRE: «Para Familia Fernández», en la cursiva
+          de los titulares —la letra de la «y» es sólo del conector y del
+          ampersand—. Sólo si se ha entrado por el enlace de la invitación; para
+          el resto la portada es la de todos.
+        */}
+        {saludo ? (
+          <p className="animacion-aparecer-lento mb-interno font-titulo text-saludo italic leading-titulo-corto text-tinta-marca">
+            {t("portada.saludo", { grupo: saludo })}
+          </p>
+        ) : null}
         {procedencia ? (
           <p className="animacion-aparecer-lento retardo-1 text-boton uppercase tracking-marcado text-acento">
             {procedencia}
@@ -610,26 +622,14 @@ function Portada({
         </p>
 
         {/*
-          PEGADOS AL «BAJAD» (20–28 px), como en la entrega y no por ahorrar
+          PEGADO AL «BAJAD» (20–28 px), como en la entrega y no por ahorrar
           espacio: la versalita y su raya son el gesto que enlaza con lo que
-          viene, y de paso «Confirmar asistencia» entra ENTERO en la pantalla
-          de un móvil. Es la única acción que se le pide a un invitado.
+          viene, y de paso el botón entra ENTERO en la pantalla de un móvil.
+          Confirmar no tiene botón: se contesta por WhatsApp.
         */}
-        {destinos.rsvp || destinos.programa ? (
+        {hayPrograma ? (
           <div className="animacion-subir retardo-6 mt-acciones flex flex-wrap gap-interno">
-            {destinos.rsvp ? (
-              <BotonEnlace href={`#${anclaDe("rsvp")}`}>
-                {t("portada.confirmarAsistencia")}
-              </BotonEnlace>
-            ) : null}
-            {destinos.programa ? (
-              <BotonEnlace
-                href={`#${anclaDe("programa")}`}
-                jerarquia={destinos.rsvp ? "secundario" : "primario"}
-              >
-                {t("portada.verElDia")}
-              </BotonEnlace>
-            ) : null}
+            <BotonEnlace href={`#${anclaDe("programa")}`}>{t("portada.verElDia")}</BotonEnlace>
           </div>
         ) : null}
       </div>
@@ -1421,6 +1421,12 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
         </div>
         <Cita className="mb-elemento">{t("rsvp.faltaVuestraEstrella")}</Cita>
 
+        {/*
+          SE CONFIRMA POR WHATSAPP, y aquí sólo se dice. Ni formulario ni
+          botón: cada invitación llegó por un chat, y contestar en ese mismo
+          chat es lo que ya sabe hacer todo el mundo, de los primos a la
+          abuela. Los novios lo apuntan en el panel.
+        */}
         <CabeceraSeccion
           idTitulo={idTitulo}
           etiqueta={
@@ -1432,26 +1438,6 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
           entradilla={t("rsvp.comoSeConfirma")}
           composicion="centrada"
         />
-
-        {/*
-          Aquí no hay formulario, y es a propósito. Se confirma por el enlace
-          personal de cada invitación, que es lo que identifica al grupo: un
-          formulario abierto en la web pública dejaría a cualquiera responder
-          por cualquiera, y a los novios sin saber quién ha contestado de
-          verdad. Lo que sí hay es la manera de recuperar el enlace, porque el
-          mensaje de WhatsApp donde llegó se pierde.
-        */}
-        {configuracion.correoContacto ? (
-          <p className="mx-auto max-w-texto text-pequeno text-tinta-suave">
-            {t("rsvp.enlacePerdido")}{" "}
-            <a
-              href={`mailto:${configuracion.correoContacto}`}
-              className="border-b border-borde-fuerte transicion-color hover:text-acento"
-            >
-              {configuracion.correoContacto}
-            </a>
-          </p>
-        ) : null}
       </div>
     </section>
   );

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { MINUTOS_BORRADOR_AJUSTES, RUTA_AJUSTES, TROZO_COOKIE_BYTES } from "@/config/constants";
 import {
@@ -11,7 +11,6 @@ import {
   trozosSobrantes,
   unirTrozos,
 } from "@/lib/cookie-troceada";
-import { servidoPorHttps } from "@/lib/rsvp-borrador";
 
 /**
  * LO QUE SE ESCRIBIÓ EN AJUSTES, CUANDO EL SERVIDOR LO RECHAZA
@@ -80,4 +79,15 @@ export async function borrarBorradorAjustes(): Promise<void> {
   for (const nombre of trozosSobrantes(nombres, NOMBRE_COOKIE, 0)) {
     tarro.delete({ name: nombre, path: RUTA_AJUSTES });
   }
+}
+
+/**
+ * Si la petición llegó por `https`, para marcar la cookie como segura.
+ *
+ * Según la cabecera del proxy y no según `NODE_ENV`: una compilación de
+ * producción servida por `http` —los tests E2E— marcaba la cookie como segura
+ * y Safari la tiraba sin decir nada.
+ */
+async function servidoPorHttps(): Promise<boolean> {
+  return (await headers()).get("x-forwarded-proto") === "https";
 }

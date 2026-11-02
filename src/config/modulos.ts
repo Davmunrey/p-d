@@ -14,7 +14,6 @@ import {
   RUTA_IMPORTAR,
   RUTA_INVITADOS,
   RUTA_MEDIOS,
-  RUTA_MENSAJES,
   RUTA_MESAS,
   RUTA_MESAS_PLANO,
   RUTA_MESAS_REPARTO,
@@ -80,7 +79,7 @@ export const MODULOS = [
   { clave: "resumen", ruta: RUTA_PANEL, entregado: true, lugar: "inicio" },
   { clave: "invitados", ruta: RUTA_INVITADOS, entregado: true, lugar: "quienViene" },
   { clave: "mesas", ruta: RUTA_MESAS, entregado: true, lugar: "quienViene" },
-  { clave: "mensajes", ruta: RUTA_MENSAJES, entregado: true, lugar: "quienViene" },
+  { clave: "playlist", ruta: RUTA_PLAYLIST, entregado: true, lugar: "quienViene" },
   { clave: "proveedores", ruta: RUTA_PROVEEDORES, entregado: true, lugar: "preparativos" },
   { clave: "presupuesto", ruta: RUTA_PRESUPUESTO, entregado: true, lugar: "preparativos" },
   { clave: "tareas", ruta: RUTA_TAREAS, entregado: true, lugar: "preparativos" },
@@ -152,10 +151,6 @@ export const PESTANAS = {
   proveedores: [
     { clave: "lista", ruta: RUTA_PROVEEDORES, rotulo: "panel.pestanas.proveedores" },
     { clave: "comparar", ruta: RUTA_COMPARADOR, rotulo: "panel.pestanas.comparar" },
-  ],
-  mensajes: [
-    { clave: "mensajes", ruta: RUTA_MENSAJES, rotulo: "panel.pestanas.mensajes" },
-    { clave: "playlist", ruta: RUTA_PLAYLIST, rotulo: "panel.pestanas.playlist" },
   ],
   mesas: [
     { clave: "porSentar", ruta: RUTA_MESAS, rotulo: "panel.pestanas.porSentar" },

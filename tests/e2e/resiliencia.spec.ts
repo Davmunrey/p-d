@@ -2,6 +2,7 @@ import { expect, test } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
+import { RUTA_INVITACION } from "../../src/config/constants";
 
 /**
  * BODA-09 · La web se recupera sola cuando la base vuelve
@@ -86,21 +87,21 @@ test("la reserva de fecha también aguanta la caída", async ({ page }) => {
   }
 });
 
-test("la invitación también: dice que el enlace sigue valiendo, no que la web está a medias", async ({
+test("el enlace de la invitación también aguanta: lleva a la portada y no da el enlace por malo", async ({
   page,
+  context,
 }) => {
   try {
     await conPermisoDeLectura(false);
 
-    const respuesta = await page.goto("/rsvp/desarrollo-familia-uno-000000");
+    const respuesta = await page.goto(`${RUTA_INVITACION}/desarrollo-familia-uno-000000`);
 
+    // A la portada, con su estado de reserva: la web sigue en pie.
+    expect(new URL(page.url()).pathname).toBe("/");
     expect(respuesta?.status()).toBe(200);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      copy.rsvp.invitacionNoDisponible,
-    );
-    await expect(page.getByText(copy.rsvp.invitacionNoDisponibleTexto)).toBeVisible();
-    // Ni el enlace se da por malo, ni se cuenta nada de quién es.
-    await expect(page.locator("body")).not.toContainText(copy.rsvp.tituloEnlaceNoValido);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.portada.noDisponible);
+    // La invitación se recuerda: lo que falla es la base, no el enlace.
+    expect((await context.cookies()).some((c) => c.name === "boda:invitacion")).toBe(true);
     await expect(page.locator("body")).not.toContainText("(DES)");
   } finally {
     await conPermisoDeLectura(true);

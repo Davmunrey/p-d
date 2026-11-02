@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { RUTA_ACCESO, ZONA_HORARIA } from "@/config/constants";
-import { obtenerCancionesTodas } from "@/lib/bbdd/mensajes";
+import { obtenerCancionesTodas } from "@/lib/bbdd/canciones";
 import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 import { normalizar } from "@/lib/texto";
@@ -55,7 +55,7 @@ export async function GET(peticion: NextRequest) {
   });
 
   const cuerpo = sinRepetir.map((cancion) => cancion.texto).join("\r\n");
-  const nombre = t("panel.mensajes.nombreFicheroPlaylist", {
+  const nombre = t("panel.playlist.nombreFicheroPlaylist", {
     fecha: formatoFechaFichero.format(new Date()),
   });
 

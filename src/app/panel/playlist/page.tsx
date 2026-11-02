@@ -10,27 +10,25 @@ import {
   RUTA_PLAYLIST_EXPORTAR,
   TOPE_CANCIONES_POR_GRUPO,
 } from "@/config/constants";
-import { obtenerCancionesTodas, type CancionSugerida } from "@/lib/bbdd/mensajes";
+import { obtenerCancionesTodas, type CancionSugerida } from "@/lib/bbdd/canciones";
 import { t } from "@/lib/copy";
 import { accesoActual } from "@/lib/sesion";
 
-import { moderarCancion } from "../acciones";
-import { AVISOS_PLAYLIST, AvisoMensajes } from "../aviso";
+import { moderarCancion } from "./acciones";
+import { AvisoPlaylist } from "./aviso";
 
-export const metadata: Metadata = { title: t("panel.mensajes.playlistTitulo") };
+export const metadata: Metadata = { title: t("panel.playlist.playlistTitulo") };
 
 /**
  * BODA-113 · LA PLAYLIST: LAS CANCIONES QUE PIDEN LOS INVITADOS
  *
- * Llegan por el mismo formulario que los mensajes y vivían en la misma
- * pantalla, debajo de todos ellos y bajo un menú que decía «Mensajes»: quien
- * buscaba la lista para el DJ no la encontraba. Ahora es la segunda pestaña
- * del módulo, con su título y su dirección.
+ * Las apuntan desde la playlist de la portada quienes han entrado con el
+ * enlace de su invitación. Es la lista para el DJ.
  *
  * Retirar una canción no la borra: deja de verse en la web y en la lista para
  * el DJ, y se puede devolver. Las acciones vuelven aquí con su aviso.
  *
- * NO SE CACHEA: cambia cada vez que alguien confirma.
+ * NO SE CACHEA: cambia cada vez que alguien apunta una canción.
  */
 export const dynamic = "force-dynamic";
 
@@ -52,15 +50,15 @@ export default async function PaginaPlaylist({ searchParams }: Parametros) {
   return (
     <div className="grid gap-bloque">
       <header className="max-w-texto">
-        <Titulo2 como="h1">{t("panel.mensajes.playlistTitulo")}</Titulo2>
-        <Cuerpo className="mt-pila">{t("panel.mensajes.playlistDescripcion")}</Cuerpo>
+        <Titulo2 como="h1">{t("panel.playlist.playlistTitulo")}</Titulo2>
+        <Cuerpo className="mt-pila">{t("panel.playlist.playlistDescripcion")}</Cuerpo>
       </header>
 
-      <AvisoMensajes avisos={AVISOS_PLAYLIST} estado={soloTexto(consulta.estado)} />
+      <AvisoPlaylist estado={soloTexto(consulta.estado)} />
 
       <section>
         {canciones.length === 0 ? (
-          <Cuerpo>{t("panel.mensajes.sinCanciones")}</Cuerpo>
+          <Cuerpo>{t("panel.playlist.sinCanciones")}</Cuerpo>
         ) : (
           <>
             {/*
@@ -70,10 +68,10 @@ export default async function PaginaPlaylist({ searchParams }: Parametros) {
             */}
             <form method="get" action={RUTA_PLAYLIST_EXPORTAR}>
               <BotonEnvio jerarquia="secundario">
-                {t("panel.mensajes.exportarPlaylist")}
+                {t("panel.playlist.exportarPlaylist")}
               </BotonEnvio>
               <Cuerpo className="mt-linea text-pequeno text-tinta-suave">
-                {t("panel.mensajes.exportarPlaylistAyuda")}
+                {t("panel.playlist.exportarPlaylistAyuda")}
               </Cuerpo>
             </form>
 
@@ -106,7 +104,7 @@ function PorGrupo({ canciones }: { canciones: CancionSugerida[] }) {
     const actual = porGrupo.get(cancion.grupoId);
     porGrupo.set(cancion.grupoId, {
       id: cancion.grupoId,
-      nombre: cancion.grupoNombre ?? t("panel.mensajes.cancionSinGrupo"),
+      nombre: cancion.grupoNombre ?? t("panel.playlist.cancionSinGrupo"),
       cuantas: (actual?.cuantas ?? 0) + 1,
     });
   }
@@ -118,7 +116,7 @@ function PorGrupo({ canciones }: { canciones: CancionSugerida[] }) {
   return (
     <details className="mt-elemento">
       <summary className="inline-flex min-h-control-compacto cursor-pointer items-center text-pequeno text-tinta-marca underline decoration-borde-fuerte underline-offset-4 transicion-color hover:decoration-borde-marca">
-        {t("panel.mensajes.porGrupoTitulo")}
+        {t("panel.playlist.porGrupoTitulo")}
       </summary>
       <ul className="mt-pila grid max-w-texto gap-linea">
         {grupos.map((grupo) => (
@@ -128,13 +126,13 @@ function PorGrupo({ canciones }: { canciones: CancionSugerida[] }) {
           >
             <span className="text-tinta">{grupo.nombre}</span>
             <span className="flex items-baseline gap-interno-compacto tabular-nums text-tinta-suave">
-              {t("panel.mensajes.porGrupoFila", {
+              {t("panel.playlist.porGrupoFila", {
                 cuantas: grupo.cuantas,
                 tope: TOPE_CANCIONES_POR_GRUPO,
               })}
               {grupo.cuantas >= TOPE_CANCIONES_POR_GRUPO ? (
                 <EtiquetaEstado variante="aviso-marcada" tamano="versalita-compacta">
-                  {t("panel.mensajes.enElTope")}
+                  {t("panel.playlist.enElTope")}
                 </EtiquetaEstado>
               ) : null}
             </span>
@@ -154,9 +152,9 @@ function Cancion({ cancion, puedeEditar }: { cancion: CancionSugerida; puedeEdit
         </span>
         <Etiqueta className="mt-linea">
           {cancion.grupoNombre
-            ? t("panel.mensajes.cancionDe", { grupo: cancion.grupoNombre })
-            : t("panel.mensajes.cancionSinGrupo")}
-          {cancion.aprobada ? "" : ` · ${t("panel.mensajes.oculta")}`}
+            ? t("panel.playlist.cancionDe", { grupo: cancion.grupoNombre })
+            : t("panel.playlist.cancionSinGrupo")}
+          {cancion.aprobada ? "" : ` · ${t("panel.playlist.oculta")}`}
         </Etiqueta>
       </div>
 
@@ -165,7 +163,7 @@ function Cancion({ cancion, puedeEditar }: { cancion: CancionSugerida; puedeEdit
           <input type="hidden" name="cancion_id" value={cancion.id} />
           <input type="hidden" name="aprobar" value={cancion.aprobada ? "0" : "1"} />
           <BotonEnvio jerarquia="terciario">
-            {cancion.aprobada ? t("panel.mensajes.ocultar") : t("panel.mensajes.mostrar")}
+            {cancion.aprobada ? t("panel.playlist.ocultar") : t("panel.playlist.mostrar")}
           </BotonEnvio>
         </form>
       ) : null}

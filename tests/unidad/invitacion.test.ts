@@ -1,60 +1,42 @@
 import { describe, expect, it } from "vitest";
 
-import { RUTA_RSVP } from "../../src/config/constants";
-import { tokenDeInvitacionEnRuta } from "../../src/lib/invitacion";
+import { DIAS_RECUERDO_INVITACION } from "../../src/config/constants";
+import { COOKIE_INVITACION, opcionesCookieInvitacion } from "../../src/lib/invitacion";
 
 /**
- * DE QUÉ RUTAS SE APUNTA LA INVITACIÓN
+ * LA COOKIE QUE RECUERDA LA INVITACIÓN
  *
- * De esta función depende que la cookie del navegador guarde un token de
- * verdad y no cualquier cosa. Equivocarse tiene dos formas, y las dos son
- * malas:
+ * La pone `/invitacion/<token>` al abrir el enlace y la lee la portada para
+ * saludar al grupo y enseñar el campo de la playlist. Equivocarse en cómo se
+ * guarda tiene dos formas, y las dos se notan tarde:
  *
- *  - **Guardar de más.** Si mañana existiera `/rsvp/<token>/gracias` y se
- *    cogiera el primer trozo, iría bien; pero si se cogiera la ruta entera se
- *    guardaría un token inválido ENCIMA del bueno, y la playlist dejaría de
- *    funcionarle a quien ya la tenía.
- *  - **Guardar de menos.** Sin token no hay campo en la portada, y el invitado
- *    ve la explicación de que le falta su enlace cuando acaba de abrirlo.
- *
- * Es una función pura y el middleware no se puede probar de otra manera
- * razonable, así que se prueba aquí, que además cuesta milisegundos.
+ *  - **Que no llegue.** `Secure` sobre `http` y Safari la tira sin avisar: el
+ *    invitado abre su enlace y la portada no le conoce.
+ *  - **Que llegue a quien no debe.** Legible desde JavaScript, cualquier script
+ *    de la página tendría el token en la mano.
  */
-describe("El token de invitación en la ruta", () => {
-  it("lo saca de un enlace de invitación", () => {
-    expect(tokenDeInvitacionEnRuta(`${RUTA_RSVP}/abc-123`)).toBe("abc-123");
+describe("La cookie de la invitación", () => {
+  it("tiene un nombre con prefijo propio", () => {
+    expect(COOKIE_INVITACION.startsWith("boda:")).toBe(true);
   });
 
-  it("lo devuelve descodificado, como lo espera la base", () => {
-    // Un token con un carácter que el navegador escapa por el camino: si se
-    // guardara tal cual, la huella no coincidiría con ninguna invitación.
-    expect(tokenDeInvitacionEnRuta(`${RUTA_RSVP}/uno%2Bdos`)).toBe("uno+dos");
+  it("sólo la lee el servidor, en toda la web, y dura lo que se ha decidido", () => {
+    const opciones = opcionesCookieInvitacion("https");
+    expect(opciones.httpOnly).toBe(true);
+    expect(opciones.sameSite).toBe("lax");
+    expect(opciones.path).toBe("/");
+    expect(opciones.maxAge).toBe(DIAS_RECUERDO_INVITACION * 24 * 60 * 60);
   });
 
-  it("no se inventa nada fuera del RSVP", () => {
-    expect(tokenDeInvitacionEnRuta("/")).toBeNull();
-    expect(tokenDeInvitacionEnRuta("/panel/invitados")).toBeNull();
-    expect(tokenDeInvitacionEnRuta("/rsvpalgo/abc")).toBeNull();
+  it("es segura cuando la petición llegó por https, venga como venga escrito", () => {
+    expect(opcionesCookieInvitacion("https").secure).toBe(true);
+    // `nextUrl.protocol` lleva los dos puntos; la cabecera del proxy, no.
+    expect(opcionesCookieInvitacion("https:").secure).toBe(true);
   });
 
-  it("la raíz del RSVP no lleva token", () => {
-    expect(tokenDeInvitacionEnRuta(RUTA_RSVP)).toBeNull();
-    expect(tokenDeInvitacionEnRuta(`${RUTA_RSVP}/`)).toBeNull();
-  });
-
-  /**
-   * LO MÁS PROFUNDO NO ES UNA INVITACIÓN.
-   *
-   * Hoy no existe ninguna ruta así. Se fija ahora porque el día que exista,
-   * quien la añada no va a acordarse de esta cookie.
-   */
-  it("una ruta más profunda no cuenta", () => {
-    expect(tokenDeInvitacionEnRuta(`${RUTA_RSVP}/abc-123/gracias`)).toBeNull();
-  });
-
-  it("una ruta mal codificada no rompe nada", () => {
-    // `decodeURIComponent` lanza con un `%` suelto. Un middleware que lanza
-    // tumba TODAS las páginas de la web, no sólo ésta.
-    expect(tokenDeInvitacionEnRuta(`${RUTA_RSVP}/100%`)).toBeNull();
+  it("no se marca segura sobre http, que es como corren los E2E", () => {
+    expect(opcionesCookieInvitacion("http").secure).toBe(false);
+    expect(opcionesCookieInvitacion("http:").secure).toBe(false);
+    expect(opcionesCookieInvitacion(null).secure).toBe(false);
   });
 });

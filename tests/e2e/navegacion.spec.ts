@@ -78,7 +78,6 @@ test.describe("Navegación", () => {
       copy.navegacion.secciones.programa,
       copy.navegacion.secciones.alojamiento,
       copy.navegacion.secciones.transporte,
-      copy.navegacion.secciones.rsvp,
     ]);
   });
 
@@ -92,6 +91,8 @@ test.describe("Navegación", () => {
    */
   test("las secciones que sí están en la página no se cuelan en el menú", async ({ page }) => {
     const fuera = [
+      // Se confirma por WhatsApp: la sección sólo lo dice, y no va arriba.
+      ["rsvp", copy.navegacion.secciones.rsvp],
       ["historia", copy.navegacion.secciones.historia],
       ["playlist", copy.navegacion.secciones.playlist],
       ["dresscode", copy.navegacion.secciones.dresscode],
@@ -121,8 +122,8 @@ test.describe("Navegación", () => {
   test("el orden del menú es el que manda la base de datos", async ({ page }) => {
     /*
       `orden` en la tabla pone programa (35) antes que alojamiento (50) y éste
-      antes que transporte (60) —el orden de la entrega, BODA-114— y `rsvp`
-      (80) al final. El menú respeta ese orden en vez del que tenga escrito
+      antes que transporte (60) —el orden de la entrega, BODA-114—. El menú
+      respeta ese orden en vez del que tenga escrito
       `SECCIONES_EN_MENU`: quien manda sigue siendo la base. Si alguien
       reordena el JSX, esto se cae.
     */
@@ -133,9 +134,6 @@ test.describe("Navegación", () => {
     );
     expect(rotulos.indexOf(copy.navegacion.secciones.alojamiento)).toBeLessThan(
       rotulos.indexOf(copy.navegacion.secciones.transporte),
-    );
-    expect(rotulos.at(-1), "confirmar cierra la barra: es el botón").toBe(
-      copy.navegacion.secciones.rsvp,
     );
   });
 
@@ -228,9 +226,9 @@ test.describe("Navegación", () => {
   });
 
   /*
-    NINGÚN ENLACE DE LA PÁGINA LLEVA A UN ANCLA QUE NO EXISTE. «Confirmar
-    asistencia», «Ver el día», «Volver arriba» y el monograma apuntaban siempre
-    a #rsvp, #programa y #portada, y las tres se pueden apagar desde el panel:
+    NINGÚN ENLACE DE LA PÁGINA LLEVA A UN ANCLA QUE NO EXISTE. «Ver el día»,
+    «Volver arriba» y el monograma apuntan a #programa y #portada, y las dos —y
+    la sección de confirmar— se pueden apagar desde el panel:
     el botón se pulsaba y no pasaba nada. Se apaga cada una y se comprueba
     TODO enlace interno de la página, no sólo los que se conocen hoy.
   */

@@ -9,7 +9,6 @@ import {
   URL_WHATSAPP,
 } from "@/config/constants";
 import { construirCsp } from "@/lib/csp";
-import { recordarInvitacion } from "@/lib/invitacion";
 
 /**
  * BODA-41 · LA PUERTA, ANTES DE PINTAR NADA
@@ -33,11 +32,6 @@ import { recordarInvitacion } from "@/lib/invitacion";
  * `perfiles`. Repetirlo aquí costaría una consulta más en cada navegación y,
  * peor, abriría un bucle: quien tuviera sesión y el perfil desactivado iría de
  * la puerta al panel y del panel a la puerta sin parar.
- *
- * Y DE PASO ANOTA LA INVITACIÓN. Quien abre su enlace `/rsvp/<token>` deja
- * aquí una cookie con él, y así la playlist de la portada sabe quién escribe.
- * Se hace en el middleware porque es el único sitio que ve esa navegación y
- * puede escribir cookies: una página no puede.
  */
 
 /** Rutas que exigen sesión. El resto de la web es pública. */
@@ -81,7 +75,7 @@ export async function middleware(peticion: NextRequest) {
   if (!url || !clave) {
     return esDelPanel(peticion.nextUrl.pathname)
       ? aLaPuerta(peticion)
-      : conCabeceraCsp(recordarInvitacion(peticion, respuesta), csp);
+      : conCabeceraCsp(respuesta, csp);
   }
 
   const supabase = createServerClient(url, clave, {
@@ -113,10 +107,8 @@ export async function middleware(peticion: NextRequest) {
   if (esDelPanel(peticion.nextUrl.pathname)) sinGuardarEnCache(respuesta);
 
   // Al final y no antes: `setAll` puede haber sustituido la respuesta entera
-  // por otra al renovar la sesión, y la cookie tiene que ir en la que se
-  // devuelve. Anotarla en la primera era perderla justo al renovar. La CSP,
-  // por lo mismo, se pone en la respuesta que sale y no en la primera.
-  return conCabeceraCsp(recordarInvitacion(peticion, respuesta), csp);
+  // por otra al renovar la sesión, y la CSP tiene que ir en la que sale.
+  return conCabeceraCsp(respuesta, csp);
 }
 
 function conCabeceraCsp(respuesta: NextResponse, csp: string): NextResponse {

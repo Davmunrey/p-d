@@ -3,7 +3,7 @@ import { expect, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_ACCESO, RUTA_PANEL, RUTA_RSVP } from "../../src/config/constants";
+import { RUTA_ACCESO, RUTA_INVITACION, RUTA_PANEL } from "../../src/config/constants";
 import { seguirLaPista } from "./utiles/rastro";
 import {
   RUTAS_CON_PARAMETRO_CONOCIDAS,
@@ -49,7 +49,7 @@ async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T
   }
 }
 
-/** Los mismos pasos que el spec del RSVP: un grupo de usar y tirar con token conocido. */
+/** Un grupo de usar y tirar con token conocido, con su gente dentro. */
 async function crearGrupo(sufijo: string, personas: string[]): Promise<string> {
   const token = `desarrollo-a11y-${sufijo}-000000`;
   await conBase(async (sql) => {
@@ -107,9 +107,15 @@ function rutasDelPanel(): string[] {
 
 test.afterAll(async () => {
   if (!cadena) return;
-  await conBase(
-    (sql) => sql`delete from public.grupos_invitacion where nombre like ${`${MARCA}%`}`,
-  );
+  await conBase(async (sql) => {
+    // Las canciones primero: al borrar el grupo se quedarían huérfanas y a la
+    // vista en la portada (`on delete set null`).
+    await sql`
+      delete from public.canciones_sugeridas
+       where grupo_id in (select id from public.grupos_invitacion where nombre like ${`${MARCA}%`})
+    `;
+    await sql`delete from public.grupos_invitacion where nombre like ${`${MARCA}%`}`;
+  });
   await limpiarFichas(cadena);
 });
 
@@ -256,102 +262,51 @@ test.describe("Accesibilidad de la parte pública", () => {
     await auditar(page, "/reserva-la-fecha con el sobre abierto");
   });
 
-  test("la invitación pasa axe en cada paso", async ({ page }) => {
+  test("la portada con la invitación abierta pasa axe", async ({ page }) => {
     const token = await crearGrupo("axe", ["(DES) Blas", "(DES) Sole"]);
-    await page.goto(`${RUTA_RSVP}/${token}`);
-    await auditar(page, "el paso de asistencia del RSVP");
-
-    /*
-      CADA PASO, COMO DICE EL NOMBRE. Se auditaba sólo el primero recién
-      cargado: los selects del menú, los campos de alergias, el textarea y la
-      pantalla de gracias no pasaban por axe en ninguna parte de la suite. Y
-      también con un error a la vista: el rojo de los errores de campo sobre
-      el fondo marino se quedaba en 3,1:1 y nadie lo medía.
-    */
-    // Cada paso es una navegación (la acción redirige): se espera a que la
-    // URL cambie y la red se calme antes de auditar. A mitad de transición
-    // Next sustituye la cabecera del documento, y axe llegaba a verla sin
-    // `<title>` durante un instante.
-    await page.getByRole("button", { name: copy.rsvp.siguiente }).click();
-    await expect(page).toHaveURL(/falta=/);
-    // Filtrado por texto: el anunciador de rutas de Next también es `alert`.
-    // Uno por cada persona sin contestar, que aquí son las dos.
+    await page.goto(`${RUTA_INVITACION}/${token}`);
+    // El enlace recuerda la invitación y lleva a la portada: saludo y campo de
+    // la playlist a la vista, que es lo que no ve quien llega sin enlace.
+    await expect(page.locator("#portada")).toContainText(`${MARCA} axe`);
     await expect(
-      page.getByRole("alert").filter({ hasText: copy.rsvp.errorSinRespuesta.split("{")[0] }),
-    ).toHaveCount(2);
+      page.locator("#playlist").getByLabel(copy.playlist.campoCancion),
+    ).toBeVisible();
     await page.waitForLoadState("networkidle");
-    await auditar(page, "el paso de asistencia con un error de campo");
-
-    await page.locator('input[value="confirmado"]').nth(0).check();
-    await page.locator('input[value="confirmado"]').nth(1).check();
-    await page.getByRole("button", { name: copy.rsvp.siguiente }).click();
-    await expect(page).toHaveURL(/paso=detalles/);
-    await expect(page.getByText(copy.rsvp.pasoDetallesTitulo)).toBeVisible();
-    await page.waitForLoadState("networkidle");
-    await auditar(page, "el paso de detalles del RSVP");
-
-    await page.getByRole("button", { name: copy.rsvp.siguiente }).click();
-    await expect(page).toHaveURL(/paso=mensaje/);
-    await expect(page.getByText(copy.rsvp.pasoMensajeTitulo)).toBeVisible();
-    await page.waitForLoadState("networkidle");
-    await auditar(page, "el paso de mensaje del RSVP");
-
-    await page.getByRole("button", { name: copy.rsvp.enviar }).click();
-    await expect(page).toHaveURL(/enviado=1/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
-    await page.waitForLoadState("networkidle");
-    await auditar(page, "la pantalla de gracias del RSVP");
+    await esperarEntradas(page);
+    await auditar(page, "la portada con la invitación abierta");
   });
 });
 
-test.describe("El flujo de confirmación, solo con teclado", () => {
+test.describe("La playlist, solo con teclado", () => {
   test.skip(!cadena, "Hace falta DATABASE_URL para fabricar la invitación.");
   test.beforeEach(({ page }) => seguirLaPista(page));
 
-  test("se confirma de principio a fin sin tocar el ratón", async ({ page }) => {
+  test("se apunta una canción de principio a fin sin tocar el ratón", async ({ page }) => {
     test.slow();
     const token = await crearGrupo("teclado", ["(DES) Rita", "(DES) Manu"]);
+    await page.goto(`${RUTA_INVITACION}/${token}`);
+    await expect(page.locator("#portada")).toContainText(`${MARCA} teclado`);
 
-    await page.goto(`${RUTA_RSVP}/${token}`);
-    await expect(page.getByRole("heading", { level: 1 })).toContainText(MARCA);
-
-    // Paso 1 · asistencia. Los radios se agrupan por persona: espacio marca
-    // «sí» en el primero del grupo y el tabulador salta al grupo siguiente.
-    await tabularHasta(page, 'input[type="radio"]');
-    await page.keyboard.press("Space");
-    await tabularHasta(page, 'input[type="radio"]:not(:checked)');
-    await page.keyboard.press("Space");
-    await tabularHasta(page, "button", copy.rsvp.siguiente);
+    const cancion = "(DES) Teclado — Sin ratón";
+    await tabularHasta(page, `input[name="cancion"]`);
+    await page.keyboard.type(cancion);
+    await tabularHasta(page, "button", copy.playlist.anadir);
     await page.keyboard.press("Enter");
 
-    // Paso 2 · detalles. Los menús por defecto valen: lo que se prueba es que
-    // el teclado atraviesa el paso, no cada combinación.
-    await expect(page.getByText(copy.rsvp.pasoDetallesTitulo)).toBeVisible();
-    await tabularHasta(page, "button", copy.rsvp.siguiente);
-    await page.keyboard.press("Enter");
-
-    // Paso 3 · enviar. Se espera a que el paso esté pintado, como en el 2: sin
-    // esto los sesenta tabuladores de `tabularHasta` pueden gastarse sobre la
-    // página anterior mientras la acción todavía contesta, que en el CI es
-    // justo lo que pasaba una vez de cada pocas.
-    await expect(page.getByText(copy.rsvp.pasoMensajeTitulo)).toBeVisible();
-    await tabularHasta(page, "button", copy.rsvp.enviar);
-    await page.keyboard.press("Enter");
-
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.rsvp.graciasSi);
-
-    // Y la base lo confirma: dos personas, confirmadas de verdad.
-    const confirmadas = await conBase(
-      (sql) => sql<{ cuantos: string }[]>`
-        select count(*) as cuantos
-          from public.confirmaciones as c
-          join public.invitados as i on i.id = c.invitado_id
-          join public.grupos_invitacion as g on g.id = i.grupo_id
-         where g.nombre = ${`${MARCA} teclado`}
-           and c.es_vigente and c.estado = 'confirmado'
-      `,
-    );
-    expect(Number(confirmadas[0].cuantos)).toBe(2);
+    // Y la base lo confirma: la canción es de ese grupo.
+    await expect
+      .poll(async () => {
+        const filas = await conBase(
+          (sql) => sql<{ cuantas: string }[]>`
+            select count(*) as cuantas
+              from public.canciones_sugeridas as c
+              join public.grupos_invitacion as g on g.id = c.grupo_id
+             where g.nombre = ${`${MARCA} teclado`} and c.texto = ${cancion}
+          `,
+        );
+        return Number(filas[0].cuantas);
+      })
+      .toBe(1);
   });
 });
 

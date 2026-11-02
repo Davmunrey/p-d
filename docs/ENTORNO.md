@@ -27,8 +27,6 @@ Preview, Development) salvo que se indique otra cosa.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Igual que la anterior: salen juntas                                                                                                           |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Settings → **API Keys** → `service_role`. **Hace falta para subir fotos** (BODA-29): Storage no admite escrituras con la sesión de un usuario |
 | `NEXT_PUBLIC_SITE_URL`          | El dominio final de la web                                                                                                                    |
-| `RESEND_API_KEY`                | [resend.com](https://resend.com) → **API Keys**. Sin ella no se manda el acuse de recibo, y no es un error                                    |
-| `CORREO_REMITENTE`              | La dirección desde la que se escribe, en un dominio **verificado** en Resend                                                                  |
 
 **El pooler, no la conexión directa.** Cada petición a la web arranca una
 función efímera; con conexión directa se agotan las conexiones del servidor en
@@ -247,8 +245,7 @@ parte del CI y no debe ensuciar el estado de una PR.
 
 ### Si algún día hacen falta más
 
-Cuando entren los emails (BODA-57) habrá que añadir
-`RESEND_API_KEY` y similares. En todos los casos:
+Si entra algún servicio nuevo con clave, va como secreto. En todos los casos:
 
 **Settings → Secrets and variables → Actions → New repository secret.**
 
@@ -268,28 +265,12 @@ uno por aquí, dalo por comprometido y rótalo.
 Rotar una clave cuesta dos minutos. Una lista de invitados filtrada no se
 recupera.
 
-## El correo del acuse de recibo
+## Sin correos
 
-Se manda con [Resend](https://resend.com) y hacen falta dos variables:
-`RESEND_API_KEY` y `CORREO_REMITENTE`. **Si faltan, no se manda nada y no pasa
-nada más**: la confirmación del invitado se guarda igual y la web no cambia. Es
-a propósito — un acuse de recibo no puede costar una respuesta.
-
-**A quién se manda lo decide la ficha de cada invitado**: el acuse sale a los
-emails apuntados en el panel (Invitados → la invitación → «Email» al añadir a
-alguien, o «Corregir datos» en quien ya está). Sin ningún email en esa
-invitación no sale nada, aunque Resend esté configurado. Cada destinatario
-recibe su propia carta: nadie ve la dirección de los demás.
-
-El remitente tiene que estar en un dominio verificado en Resend. Con una
-dirección de un dominio sin verificar, Resend acepta la petición y luego no
-entrega, que es la forma más silenciosa de que no llegue nada.
-
-Hay una tercera variable, `RESEND_URL`, que **no hay que poner en Vercel**: por
-defecto apunta a la API de Resend. Existe para que los tests puedan levantar un
-buzón de captura y leer el correo que sale de verdad, en lugar de simular
-nuestra propia función de envío —que probaría que sabemos llamarla, no que el
-correo sale—.
+Los invitados confirman por WhatsApp, así que la web no manda ningún correo: el
+acuse de recibo de Resend se fue con el formulario del RSVP, y con él
+`RESEND_API_KEY`, `CORREO_REMITENTE` y `RESEND_URL`. Si siguen puestas en
+Vercel, se pueden borrar.
 
 ## Copia de seguridad
 

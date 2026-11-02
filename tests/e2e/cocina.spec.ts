@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect, test, type Page } from "./utiles/origen-propio";
 
 import copy from "../../content/copy.es.json";
-import { MENUS_RSVP } from "../../src/config/constants";
+import { MENUS_INVITADO } from "../../src/config/constants";
 import { TOKENS_DURACION } from "../../src/config/tokens";
 import { PALETAS } from "../../src/config/tokens.generado";
 import { transicionLegible } from "../../src/lib/valor-css";
@@ -232,9 +232,9 @@ test.describe("El catálogo del sistema de marca", () => {
   test("los campos traen el desplegable de menú de la entrega", async ({ page }) => {
     const menu = page
       .locator('[data-prueba="componente-campos"]')
-      .getByLabel(copy.rsvp.menuEtiqueta, { exact: true });
+      .getByLabel(copy.cocina.campoMenu, { exact: true });
     await expect(menu).toHaveJSProperty("tagName", "SELECT");
-    await expect(menu.locator("option")).toHaveCount(MENUS_RSVP.length);
+    await expect(menu.locator("option")).toHaveCount(MENUS_INVITADO.length);
   });
 
   /**

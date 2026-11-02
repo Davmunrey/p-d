@@ -44,7 +44,6 @@ const DE_INVITADO = [
   "alojamiento",
   "comoLlegar",
   "comun",
-  "correoConfirmacion",
   "cuentaAtras",
   "dresscode",
   "errores",

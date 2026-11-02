@@ -9,10 +9,10 @@ import {
   IDIOMA,
   LARGOS_DE_CAMPO,
   MAXIMO_ACOMPANANTES,
-  MENUS_RSVP,
+  MENUS_INVITADO,
   RUTA_ACCESO,
   RUTA_INVITADOS,
-  RUTA_RSVP,
+  RUTA_INVITACION,
   ZONA_HORARIA,
 } from "@/config/constants";
 import { obtenerGrupo, type DetalleGrupo, type PersonaDelGrupo } from "@/lib/bbdd/invitados";
@@ -67,8 +67,8 @@ const soloTexto = (valor: string | string[] | undefined) =>
   typeof valor === "string" ? valor : "";
 
 const ROTULO_ESTADO: Record<string, string> = {
-  confirmado: "rsvp.vieneSi",
-  rechazado: "rsvp.vieneNo",
+  confirmado: "panel.respuesta.vieneSi",
+  rechazado: "panel.respuesta.vieneNo",
 };
 
 export default async function PaginaInvitacion({ params, searchParams }: Parametros) {
@@ -92,7 +92,7 @@ export default async function PaginaInvitacion({ params, searchParams }: Paramet
   */
   const sitio = urlDelSitio();
   const enlace = token
-    ? `${sitio ? sitio.origin : ""}${RUTA_RSVP}/${encodeURIComponent(token)}`
+    ? `${sitio ? sitio.origin : ""}${RUTA_INVITACION}/${encodeURIComponent(token)}`
     : null;
 
   return (
@@ -550,7 +550,7 @@ function ApuntarRespuesta({
   token: string;
 }) {
   const nombre = [persona.nombre, persona.apellidos].filter(Boolean).join(" ");
-  const menus = MENUS_RSVP.filter((menu) => menu !== "infantil" || persona.esNino);
+  const menus = MENUS_INVITADO.filter((menu) => menu !== "infantil" || persona.esNino);
   return (
     <details className="mt-interno-compacto">
       <summary
@@ -570,8 +570,8 @@ function ApuntarRespuesta({
           </legend>
           {(
             [
-              ["confirmado", "rsvp.vieneSi"],
-              ["rechazado", "rsvp.vieneNo"],
+              ["confirmado", "panel.respuesta.vieneSi"],
+              ["rechazado", "panel.respuesta.vieneNo"],
             ] as const
           ).map(([valor, clave]) => (
             <label
@@ -591,7 +591,7 @@ function ApuntarRespuesta({
           ))}
         </fieldset>
         <CampoSeleccion
-          etiqueta={t("rsvp.menuEtiqueta")}
+          etiqueta={t("panel.respuesta.menu")}
           name="tipo_menu"
           defaultValue={
             menus.includes(persona.tipoMenu as (typeof menus)[number])
@@ -606,7 +606,7 @@ function ApuntarRespuesta({
           ))}
         </CampoSeleccion>
         <CampoTextoLargo
-          etiqueta={t("rsvp.alergias")}
+          etiqueta={t("panel.respuesta.alergias")}
           name="alergias"
           rows={2}
           maxLength={LARGOS_DE_CAMPO["invitados.alergias"]}
@@ -618,7 +618,7 @@ function ApuntarRespuesta({
             name="necesita_autobus"
             className="casilla-marca transicion-color"
           />
-          <span className="text-cuerpo text-tinta">{t("rsvp.autobusPersona")}</span>
+          <span className="text-cuerpo text-tinta">{t("panel.respuesta.autobus")}</span>
         </label>
         <div>
           <BotonEnvio jerarquia="secundario">
@@ -679,7 +679,7 @@ function Persona({ persona }: { persona: PersonaDelGrupo }) {
     veía descargando el CSV.
   */
   const detalles = [
-    clave ? t(clave as "rsvp.vieneSi") : t("panel.invitados.sinContestar"),
+    clave ? t(clave as "panel.respuesta.vieneSi") : t("panel.invitados.sinContestar"),
     persona.esNino ? t("panel.invitados.menor") : null,
     persona.esAcompanante ? t("panel.invitados.acompanante") : null,
     persona.estado === "confirmado"
