@@ -1,0 +1,21 @@
+-- ============================================================================
+-- El retrato de estrellas: el enumerado
+--
+-- Paloma, Hati y David, dibujados con estrellas al final de la noche, de pie
+-- sobre el horizonte justo antes del amanecer. No se enseña la foto: se enseña
+-- su contorno, hecho de estrellas que se encienden al bajar.
+--
+-- ES UNA SECCIÓN PORQUE ES ALGO QUE SE ENCIENDE Y SE APAGA DESDE EL PANEL y
+-- tiene su foto, como el paisaje o la portada. No lleva titular ni ancla: es
+-- cielo, no un bloque que se lea.
+--
+-- ESTE FICHERO SÓLO TOCA EL ENUMERADO. PostgreSQL no deja usar un valor nuevo
+-- de un enumerado en la misma transacción que lo añade, así que la fila de
+-- `secciones_landing` y la columna de las estrellas van en la migración
+-- siguiente. Mismo par que el paisaje.
+--
+-- Rollback: supabase/migrations/rollback/20261102170000_retrato_enum.sql
+-- ============================================================================
+
+-- Detrás de la historia, que es donde acaba la noche.
+alter type public.seccion_landing add value if not exists 'retrato' after 'historia';

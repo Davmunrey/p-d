@@ -1152,6 +1152,60 @@ begin
   delete from public.alojamientos where id = v_hotel;
 end $$;
 
+-- EL RETRATO DE ESTRELLAS: sólo el retrato lleva estrellas, con su forma, y
+-- `anon` las lee sólo de lo publicado. Las estrellas son el contorno de una
+-- foto de los novios: lo que no está publicado no sale, como la foto misma.
+
+\echo '  El retrato de estrellas'
+do $$
+declare
+  v_retrato uuid;
+  v_ok      boolean;
+  v_filas   bigint;
+  c_buenas  constant jsonb := '{"proporcion": 0.9, "estrellas": [[0,0,1],[1,0,0.5],[0.5,1,0.5]]}';
+begin
+  -- Una foto de otra sección no puede llevar estrellas.
+  begin
+    insert into public.medios (ruta_almacenamiento, texto_alternativo, seccion, tipo, estrellas)
+    values ('desarrollo/no-es-retrato.png', '{"es": "Prueba"}'::jsonb,
+            'galeria'::public.seccion_landing, 'imagen'::public.tipo_medio, c_buenas);
+    v_ok := false;
+  exception when check_violation then
+    v_ok := true;
+  end;
+  perform pg_temp.comprobar('sólo el retrato lleva estrellas', v_ok);
+
+  -- Y el retrato, con la forma que pinta la landing: un texto no vale.
+  begin
+    insert into public.medios (ruta_almacenamiento, texto_alternativo, seccion, tipo, estrellas)
+    values ('desarrollo/retrato-roto.png', '{"es": "Prueba"}'::jsonb,
+            'retrato'::public.seccion_landing, 'imagen'::public.tipo_medio, '"estrellas"'::jsonb);
+    v_ok := false;
+  exception when check_violation then
+    v_ok := true;
+  end;
+  perform pg_temp.comprobar('unas estrellas sin forma de retrato se rechazan', v_ok);
+
+  insert into public.medios (ruta_almacenamiento, texto_alternativo, seccion, tipo, publicado, estrellas)
+  values ('desarrollo/retrato-borrador.png', '{"es": "Prueba"}'::jsonb,
+          'retrato'::public.seccion_landing, 'imagen'::public.tipo_medio, false, c_buenas)
+  returning id into v_retrato;
+  perform pg_temp.comprobar('un retrato bien formado entra', v_retrato is not null);
+
+  set local role anon;
+  select count(*) into v_filas from public.medios where id = v_retrato;
+  reset role;
+  perform pg_temp.comprobar('anon no ve las estrellas de un retrato sin publicar', v_filas = 0);
+
+  update public.medios set publicado = true where id = v_retrato;
+  set local role anon;
+  select count(*) into v_filas from public.medios where id = v_retrato and estrellas is not null;
+  reset role;
+  perform pg_temp.comprobar('y publicado, sí: es lo que dibuja la landing', v_filas = 1);
+
+  delete from public.medios where id = v_retrato;
+end $$;
+
 -- Y LA FOTO EN BORRADOR NO SALE A LA WEB POR LA PUERTA DE ATRÁS. `anon` no ve
 -- un medio sin publicar cuando pregunta por `medios`; lo que este bloque
 -- defiende es que tampoco lo vea preguntando por el hito que lo enlaza, que es

@@ -13,6 +13,8 @@ import {
   type Veredicto,
 } from "@/lib/medios";
 import { tiposQuePinta } from "@/lib/medios-en-la-web";
+import type { RetratoDeEstrellas } from "@/lib/retrato/estrellas";
+import { retratoDeLaFoto } from "@/lib/retrato/leer";
 import { accesoActual, ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteDeServicio, haySubidaDeMedios } from "@/lib/supabase/servicio";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
@@ -236,6 +238,20 @@ function rutaNueva(seccion: Seccion, veredicto: Admitido): string {
 }
 
 /**
+ * EL RETRATO SE TRAZA AL SUBIRLO, una vez: la landing sólo lee las estrellas.
+ * Para cualquier otra sección no hay nada que trazar y devuelve `null`. Para
+ * el retrato, una foto sin transparencia no tiene contorno: `"sin-recorte"`.
+ */
+async function estrellasAlSubir(
+  seccion: Seccion,
+  bytes: Uint8Array | null,
+): Promise<RetratoDeEstrellas | null | "sin-recorte"> {
+  if (seccion !== "retrato") return null;
+  const retrato = bytes ? await retratoDeLaFoto(bytes) : null;
+  return retrato ?? "sin-recorte";
+}
+
+/**
  * LA FILA, CON LA SESIÓN: es aquí donde RLS —`medios_editor_escribir`, o sea
  * `puede_editar()`— dice si esta persona puede. Nace sin publicar, así que
  * mientras no hay fichero detrás no se ve en ninguna parte.
@@ -247,6 +263,8 @@ async function insertarFila(datos: {
   seccion: Seccion;
   tipo: Admitido["tipo"];
   medida: { ancho: number; alto: number } | null;
+  /** Sólo el retrato: su contorno hecho estrellas. */
+  estrellas?: RetratoDeEstrellas | null;
   perfilId: string;
 }): Promise<{ id: string }> {
   const supabase = await cliente();
@@ -260,6 +278,7 @@ async function insertarFila(datos: {
       tipo: datos.tipo,
       ancho: datos.medida?.ancho ?? null,
       alto: datos.medida?.alto ?? null,
+      estrellas: datos.estrellas ?? null,
       publicado: false,
       // `perfiles.id`, NO el de Auth: es a `perfiles` a quien apunta
       // `medios_subido_por_fk`. Ver el comentario de `Acceso` en `sesion.ts`.
@@ -306,6 +325,10 @@ export async function subirMedio(datos: FormData): Promise<void> {
   */
   const medida = veredicto.tipo === "imagen" ? medirImagen(bytes) : null;
 
+  // Antes de tocar Storage: una foto sin recortar no se sube al retrato.
+  const estrellas = await estrellasAlSubir(seccion, bytes);
+  if (estrellas === "sin-recorte") volver("sin-recorte", { seccion });
+
   const ruta = rutaNueva(seccion, veredicto);
   const rutaPoster = veredictoPoster ? rutaNueva(seccion, veredictoPoster) : null;
 
@@ -317,6 +340,7 @@ export async function subirMedio(datos: FormData): Promise<void> {
     seccion,
     tipo: veredicto.tipo,
     medida,
+    estrellas,
     perfilId,
   });
 
@@ -504,9 +528,18 @@ export async function confirmarSubida(pedido: {
 
   const { seccion, alternativo, veredicto, perfilId } = comprobado;
   let medida: { ancho: number; alto: number } | null = null;
+  let bytes: Uint8Array | null = null;
   if (veredicto.tipo === "imagen") {
     const { data } = await servicio.storage.from(BUCKET_MEDIOS).download(ruta);
-    medida = data ? medirImagen(new Uint8Array(await data.arrayBuffer())) : null;
+    bytes = data ? new Uint8Array(await data.arrayBuffer()) : null;
+    medida = bytes ? medirImagen(bytes) : null;
+  }
+
+  // Lo que llegó al retrato sin recortar se borra: no hay contorno que trazar.
+  const estrellas = await estrellasAlSubir(seccion, bytes);
+  if (estrellas === "sin-recorte") {
+    await servicio.storage.from(BUCKET_MEDIOS).remove(subidas);
+    volver("sin-recorte", { seccion });
   }
 
   try {
@@ -517,6 +550,7 @@ export async function confirmarSubida(pedido: {
       seccion,
       tipo: veredicto.tipo,
       medida,
+      estrellas,
       perfilId,
     });
     volver("subido", { medio: fila.id });

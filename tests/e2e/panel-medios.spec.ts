@@ -2,6 +2,7 @@ import { deflateSync } from "node:zlib";
 
 import { expect, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
+import sharp from "sharp";
 
 import copy from "../../content/copy.es.json";
 import { RUTA_ACCESO, RUTA_MEDIOS, RUTA_PANEL } from "../../src/config/constants";
@@ -596,6 +597,84 @@ test.describe("El gestor de fotos y vídeos", () => {
 
     await esperarEstado(page, "tipo-no-admitido");
     await expect(page.getByText(copy.panel.medios.errorTipo)).toBeVisible();
+  });
+
+  /**
+   * EL RETRATO DE ESTRELLAS SE TRAZA AL SUBIRLO. Una foto recortada —con el
+   * fondo transparente— entra y su contorno queda guardado como estrellas, que
+   * es lo que dibuja la landing. Se mira en la base: la pantalla sólo dice
+   * «subido», y un retrato subido sin estrellas no saldría nunca en la web.
+   */
+  test("una foto recortada sube al retrato con su contorno hecho estrellas", async ({
+    page,
+  }) => {
+    const alternativo = `${MARCA} retrato ${Date.now()}`;
+    const recortada = await sharp(
+      Buffer.from(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="300">' +
+          '<ellipse cx="120" cy="150" rx="80" ry="120" fill="#c8a165"/></svg>',
+      ),
+    )
+      .png()
+      .toBuffer();
+
+    await entrar(page);
+    await page.goto(RUTA_MEDIOS);
+    const formulario = await formularioDe(page, "retrato");
+    await expect(page.getByText(copy.panel.medios.retratoAyuda)).toBeVisible();
+    await formulario
+      .locator('input[type="file"][name="fichero"]')
+      .setInputFiles(comoFichero("recortada.png", "image/png", recortada));
+    await formulario.getByLabel(copy.panel.medios.alternativo).fill(alternativo);
+    await formulario
+      .getByRole("button", { name: copy.panel.medios.subir, exact: true })
+      .click();
+    await esperarEstado(page, "subido");
+
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    try {
+      const [fila] = await sql<{ cuantas: number | null; proporcion: number | null }[]>`
+        select jsonb_array_length(estrellas -> 'estrellas') as cuantas,
+               (estrellas ->> 'proporcion')::float as proporcion
+          from public.medios
+         where seccion = 'retrato' and texto_alternativo ->> 'es' = ${alternativo}
+      `;
+      expect(fila?.cuantas ?? 0).toBeGreaterThan(20);
+      expect(fila?.proporcion ?? 0).toBeCloseTo(160 / 240, 1);
+    } finally {
+      await sql.end();
+    }
+
+    await borrar(page, alternativo);
+  });
+
+  /** CASO DE ERROR · una foto sin recortar no tiene contorno, y se dice cómo hacerla. */
+  test("una foto sin recortar no entra en el retrato, y se dice por qué", async ({ page }) => {
+    const alternativo = `${MARCA} retrato sin recortar ${Date.now()}`;
+
+    await entrar(page);
+    await page.goto(RUTA_MEDIOS);
+    const formulario = await formularioDe(page, "retrato");
+    await formulario
+      .locator('input[type="file"][name="fichero"]')
+      .setInputFiles(comoFichero("sin-recortar.png", "image/png", pngMinimo()));
+    await formulario.getByLabel(copy.panel.medios.alternativo).fill(alternativo);
+    await formulario
+      .getByRole("button", { name: copy.panel.medios.subir, exact: true })
+      .click();
+
+    await esperarEstado(page, "sin-recorte");
+    await expect(page.getByText(copy.panel.medios.errorSinRecorte)).toBeVisible();
+
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    try {
+      const filas = await sql`
+        select 1 from public.medios where texto_alternativo ->> 'es' = ${alternativo}
+      `;
+      expect(filas).toHaveLength(0);
+    } finally {
+      await sql.end();
+    }
   });
 
   /**

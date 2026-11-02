@@ -78,6 +78,51 @@ export const TIPOS_MEDIO_ADMITIDOS = [
 ] as const;
 
 /**
+ * EL RETRATO DE ESTRELLAS sólo admite formatos con transparencia: lo que se
+ * sube es una foto recortada, y lo que se traza es el borde de lo que no es
+ * transparente. Un JPG no tiene canal alfa y no habría nada que trazar.
+ */
+export const TIPOS_RETRATO = ["image/png", "image/webp"] as const;
+
+/**
+ * DE LA FOTO RECORTADA A SU CONTORNO HECHO ESTRELLAS (`src/lib/retrato/`).
+ *
+ *  - `umbralAlfa`: desde qué opacidad (0–255) un píxel es figura y no fondo.
+ *  - `ladoDeAnalisis`: el lado mayor, en píxeles, al que se reduce la foto
+ *    para trazarla. El contorno no gana nada con más: las estrellas van
+ *    separadas bastante más que un píxel.
+ *  - `paso`: la separación entre estrellas a lo largo del contorno, en
+ *    fracción del alto de la figura. Más junto y deja de leerse como estrellas.
+ *  - `suavizado`: el radio, en píxeles de análisis, de la media que quita los
+ *    dientes de sierra del borde.
+ *  - `migaja`: los trozos sueltos más pequeños que esta fracción del mayor
+ *    —una brizna de nieve que se coló en el recorte— no se dibujan.
+ *  - `transparenteMinimo`: si menos de esta fracción de la foto es
+ *    transparente, la foto no está recortada.
+ *  - `maximoEstrellas`: el tope; si el contorno da para más, se separan más.
+ *  - `vertice`: cuánto se puede alejar el contorno, en fracción del alto, de
+ *    la línea quebrada que lo resume. Los vértices de esa línea —la cabeza,
+ *    los hombros, las manos, los pies, la punta del rabo— son las estrellas
+ *    principales, como las de una constelación, y brillan más.
+ *  - `brilloBase` y `variacion`: el brillo de las demás, con un poco de
+ *    diferencia entre unas y otras para que no parezca una línea de puntos.
+ *  - `decimales`: con cuántos decimales se guarda cada coordenada.
+ */
+export const RETRATO_DE_ESTRELLAS = {
+  umbralAlfa: 128,
+  ladoDeAnalisis: 640,
+  paso: 0.013,
+  suavizado: 1,
+  migaja: 0.02,
+  transparenteMinimo: 0.05,
+  maximoEstrellas: 900,
+  vertice: 0.022,
+  brilloBase: 0.45,
+  variacion: 0.2,
+  decimales: 4,
+} as const;
+
+/**
  * Bucket de Supabase Storage donde viven las fotos de la landing. La base
  * guarda sólo la ruta relativa —lo impone `es_ruta_almacenamiento_valida`—,
  * así que el bucket se nombra una vez, aquí.

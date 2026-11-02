@@ -634,6 +634,47 @@
 }
 
 /**
+ * EL RETRATO DE ESTRELLAS SE DIBUJA AL BAJAR.
+ *
+ * Cada estrella sabe en qué punto del contorno está (`--orden`, de 0 a 1) y
+ * cuánto brilla (`--brillo`); el contenedor dice cuánto se ha trazado ya
+ * (`--trazado`, de 0 a 1), que pone el JavaScript según se baja. Una estrella
+ * se enciende cuando el trazado la alcanza, en un frente suave
+ * (`--nitidez-trazado`), y lo dibujado se queda dibujado.
+ *
+ * SIN JAVASCRIPT, O SIN MOVIMIENTO, `--trazado` es 1: el retrato está entero.
+ */
+.trazado-del-retrato {
+  --trazado: 1;
+}
+
+/*
+  EL FRENTE LLEGA UN PASO MÁS ALLÁ DEL FINAL: con el trazado entero, la
+  última estrella —`--orden` 1— tiene que estar encendida del todo, y con
+  «trazado menos orden» se quedaba a oscuras (y con ella, el lomo de Hati,
+  que es lo último que se dibuja).
+*/
+.estrella-del-retrato {
+  opacity: calc(
+    var(--brillo) *
+      clamp(
+        0%,
+        ((var(--trazado) - var(--orden)) * var(--nitidez-trazado) + var(--trazado)) * 100%,
+        100%
+      )
+  );
+}
+
+/* Las principales titilan despacio, cada una a su tiempo. */
+.titila-en-el-retrato {
+  --titilar-alta: var(--titilar-retrato-alta);
+  --titilar-baja: var(--titilar-retrato-baja);
+
+  animation: titilar var(--periodo-titilar-lento) ease-in-out infinite;
+  animation-delay: calc(var(--orden) * -1 * var(--periodo-titilar-lento));
+}
+
+/**
  * VUESTRA ESTRELLA, AL FINAL DE LA PÁGINA: hueca, y late —su halo crece y se
  * apaga cada pocos segundos—. Es la de los invitados, y el botón de la
  * confirmación: cuando confirman, se enciende y deja de latir. La misma onda
@@ -1038,6 +1079,7 @@
   .animacion-paralaje-portada,
   .hora-que-llega,
   .latido-estrella,
+  .titila-en-el-retrato,
   .cabecera-compacta {
     animation: none;
   }

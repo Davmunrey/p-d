@@ -104,14 +104,38 @@ describe("visibilidadEnLaWeb", () => {
     expect(seccionEnsenaMedios("programa")).toBe(false);
   });
 
-  it("sólo seis partes de la web enseñan medios", () => {
+  it("sólo siete partes de la web enseñan medios", () => {
     expect(SECCIONES.filter(seccionEnsenaMedios).sort()).toEqual(
-      ["alojamiento", "galeria", "historia", "paisaje", "portada", "reserva_la_fecha"].sort(),
+      [
+        "alojamiento",
+        "galeria",
+        "historia",
+        "paisaje",
+        "portada",
+        "reserva_la_fecha",
+        "retrato",
+      ].sort(),
     );
+  });
+
+  it("del retrato se ve la primera recortada publicada, y las demás no", () => {
+    const medios = [
+      { id: "borrador", publicado: false, tipo: "imagen" as const, ancho: 1, alto: 1 },
+      { id: "primera", publicado: true, tipo: "imagen" as const, ancho: 1, alto: 1 },
+      { id: "segunda", publicado: true, tipo: "imagen" as const, ancho: 1, alto: 1 },
+    ];
+    const visibilidad = visibilidadEnLaWeb("retrato", medios, new Set());
+    expect(visibilidad.get("primera")).toEqual({ seVe: true });
+    expect(visibilidad.get("segunda")).toEqual({ seVe: false, motivo: "solo-la-primera" });
+    expect(visibilidad.get("borrador")).toEqual({ seVe: false, motivo: "borrador" });
   });
 });
 
 describe("tiposQuePinta: sólo se deja subir lo que esa parte de la web enseña", () => {
+  it("el retrato, sólo formatos con transparencia: PNG o WebP", () => {
+    expect([...tiposQuePinta("retrato")].sort()).toEqual(["image/png", "image/webp"]);
+  });
+
   it("portada y paisaje, foto o vídeo", () => {
     expect(tiposQuePinta("portada")).toContain("video/mp4");
     expect(tiposQuePinta("paisaje")).toContain("image/avif");

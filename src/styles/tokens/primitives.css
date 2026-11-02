@@ -599,6 +599,24 @@
   --size-amanecer: clamp(10rem, 34svh, 20rem);
 
   /*
+   * EL RETRATO DE ESTRELLAS, de pie sobre el horizonte: algo más de media
+   * pantalla en un móvil, y sin pasar de lo que se ve de una vez en escritorio.
+   */
+  --size-retrato: clamp(17rem, 56svh, 32rem);
+
+  /*
+   * CUÁNTO TARDA CADA ESTRELLA DEL RETRATO EN ENCENDERSE, en fracción del
+   * trazado entero: con 12, cada una pasa de apagada a encendida mientras se
+   * dibuja una doceava parte del contorno, y la línea avanza con un frente
+   * suave en vez de a saltos.
+   */
+  --number-nitidez-trazado: 12;
+
+  /* Las estrellas principales del retrato titilan sin bajar de las demás. */
+  --opacity-titilar-retrato-alta: 100%;
+  --opacity-titilar-retrato-baja: 65%;
+
+  /*
    * UNA PANTALLA, LA GRANDE. El lienzo de las estrellas mide una pantalla y se
    * queda pegado arriba mientras se baja. Con la grande (`lvh`) y no la
    * dinámica, en un móvil no cambia de tamaño —ni se vuelve a sembrar— cada

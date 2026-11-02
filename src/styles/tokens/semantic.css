@@ -263,6 +263,10 @@
   --cielo-noche-horizonte: var(--color-marino-700);
   --cielo-estrella: var(--color-nieve-100);
   --cielo-estrella-calida: var(--color-bronce-200);
+
+  /* El retrato: las estrellas del contorno, y las principales en bronce claro. */
+  --retrato-estrella: var(--color-nieve-100);
+  --retrato-estrella-principal: var(--color-bronce-200);
   --cielo-via-lactea: var(--color-via-lactea);
   --cielo-via-lactea-final: var(--color-via-lactea-0);
   --cielo-fugaz: var(--color-nieve-50);
@@ -438,6 +442,10 @@
   --lado-constelacion: var(--size-constelacion);
   --lado-vuestra-estrella: var(--size-vuestra-estrella);
   --alto-amanecer: var(--size-amanecer);
+  --alto-retrato: var(--size-retrato);
+  --nitidez-trazado: var(--number-nitidez-trazado);
+  --titilar-retrato-alta: var(--opacity-titilar-retrato-alta);
+  --titilar-retrato-baja: var(--opacity-titilar-retrato-baja);
   --alto-pantalla-estable: var(--size-pantalla-estable);
   --alto-mapa-final: var(--size-mapa-final);
   --lado-estrella-llegada: var(--size-estrella-llegada);

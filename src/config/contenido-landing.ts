@@ -120,6 +120,21 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
   historia: { clase: "lista", tabla: "hitos_historia", donde: enContenido("historia") },
 
   /*
+    EL RETRATO DE ESTRELLAS: la foto recortada de Medios, y sólo si ya tiene sus
+    estrellas, que es lo que pinta la landing. Los mismos predicados que
+    `obtenerRetrato()`.
+  */
+  retrato: {
+    clase: "lista",
+    tabla: "medios",
+    filtro: [
+      { columna: "seccion", igual: "retrato" },
+      { columna: "estrellas", noNula: true },
+    ],
+    donde: EN_MEDIOS,
+  },
+
+  /*
     CON LOS MISMOS PREDICADOS QUE `obtenerGaleria()`, no sólo `publicado`. La
     landing pinta únicamente imágenes con medidas: un vídeo con póster o un
     AVIF —formato admitido que `medirImagen` no sabe medir— se guardan

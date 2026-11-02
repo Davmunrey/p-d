@@ -31,6 +31,7 @@ export type EstadoMedios =
   | "no-existe"
   | "confirmar-borrado"
   | "subida-cortada"
+  | "sin-recorte"
   | "error";
 
 /**
@@ -78,6 +79,8 @@ export const ESTADOS_DE_ERROR: readonly EstadoMedios[] = [
   "no-existe",
   "confirmar-borrado",
   "subida-cortada",
+  // El retrato necesita una foto recortada: sin transparencia no hay contorno.
+  "sin-recorte",
   // Se ha borrado, pero el fichero sigue siendo público por su URL: hay que
   // decirlo en rojo, no felicitar.
   "borrado-sin-fichero",

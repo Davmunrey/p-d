@@ -83,6 +83,7 @@ const AVISOS: Record<EstadoMedios, string> = {
   borrado: t("panel.medios.avisoBorrado"),
   "borrado-sin-fichero": t("panel.medios.avisoBorradoSinFichero"),
   "subida-cortada": t("panel.medios.errorSubidaCortada"),
+  "sin-recorte": t("panel.medios.errorSinRecorte"),
   "confirmar-borrado": t("panel.medios.errorConfirmarBorrado", {
     borrar: t("panel.medios.borrar"),
     confirmar: t("panel.medios.borrarConfirmar"),
@@ -321,6 +322,16 @@ function BloqueSeccion({
       {!ensena ? (
         <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
           {t("panel.medios.seccionSinMedios")}
+        </Cuerpo>
+      ) : null}
+
+      {/*
+        EL RETRATO PIDE OTRA FOTO: recortada, con el fondo transparente. Se dice
+        antes de subir, y cómo se hace en el móvil, que es donde está la foto.
+      */}
+      {seccion === "retrato" ? (
+        <Cuerpo className="mt-pila max-w-texto text-pequeno text-tinta-suave">
+          {t("panel.medios.retratoAyuda")}
         </Cuerpo>
       ) : null}
 

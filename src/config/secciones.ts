@@ -28,6 +28,7 @@ export const SECCIONES = [
   "reserva_la_fecha",
   "cuenta_atras",
   "historia",
+  "retrato",
   "galeria",
   "preboda",
   "programa",

@@ -1,4 +1,4 @@
-import { TIPOS_MEDIO_ADMITIDOS } from "@/config/constants";
+import { TIPOS_MEDIO_ADMITIDOS, TIPOS_RETRATO } from "@/config/constants";
 import type { Seccion } from "@/config/secciones";
 import { TIPOS_MEDIBLES } from "@/lib/dimensiones";
 
@@ -14,6 +14,7 @@ import { TIPOS_MEDIBLES } from "@/lib/dimensiones";
  *   · la galería, las fotos CON MEDIDAS —una rejilla no reserva hueco para lo
  *     que no sabe cuánto mide—;
  *   · historia y alojamiento, la que se ELIGE EN UNA FICHA publicada;
+ *   · el retrato de estrellas, LA PRIMERA, y sólo recortada (con transparencia);
  *   · y las demás secciones, NINGUNA.
  *
  * Es la misma regla que aplican `obtenerMedios`, `obtenerGaleria` y las
@@ -21,7 +22,7 @@ import { TIPOS_MEDIBLES } from "@/lib/dimensiones";
  * el fallo no da error, sólo se ve comparando el panel con la web.
  */
 
-type ComoSePinta = "la-primera" | "la-primera-foto" | "con-medidas" | "por-ficha";
+type ComoSePinta = "la-primera" | "la-primera-foto" | "con-medidas" | "por-ficha" | "recortada";
 
 const COMO_SE_PINTA: Partial<Record<Seccion, ComoSePinta>> = {
   portada: "la-primera",
@@ -30,6 +31,7 @@ const COMO_SE_PINTA: Partial<Record<Seccion, ComoSePinta>> = {
   galeria: "con-medidas",
   historia: "por-ficha",
   alojamiento: "por-ficha",
+  retrato: "recortada",
 };
 
 /** Si esa parte de la web enseña algún medio. Si no, no se ofrece subir nada. */
@@ -47,6 +49,8 @@ const PINTA: Record<ComoSePinta, (tipo: string) => boolean> = {
   "la-primera-foto": (tipo) => tipo.startsWith("image/"),
   "con-medidas": (tipo) => (TIPOS_MEDIBLES as readonly string[]).includes(tipo),
   "por-ficha": (tipo) => tipo.startsWith("image/"),
+  // Sólo formatos con canal alfa: lo que se traza es el borde de lo opaco.
+  recortada: (tipo) => (TIPOS_RETRATO as readonly string[]).includes(tipo),
 };
 
 /**
@@ -104,7 +108,7 @@ export function visibilidadEnLaWeb(
   const laPrimera =
     como === "la-primera"
       ? publicados[0]?.id
-      : como === "la-primera-foto"
+      : como === "la-primera-foto" || como === "recortada"
         ? publicados.find((medio) => medio.tipo === "imagen")?.id
         : undefined;
 
@@ -132,6 +136,10 @@ function deUno(
     case undefined:
       return { seVe: false, motivo: "seccion-sin-medios" };
     case "la-primera":
+      return medio.id === laPrimera
+        ? { seVe: true }
+        : { seVe: false, motivo: "solo-la-primera" };
+    case "recortada":
       return medio.id === laPrimera
         ? { seVe: true }
         : { seVe: false, motivo: "solo-la-primera" };

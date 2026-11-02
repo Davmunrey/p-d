@@ -165,6 +165,8 @@ export const GRUPOS_COLOR = [
       "cielo-noche-horizonte",
       "cielo-estrella",
       "cielo-estrella-calida",
+      "retrato-estrella",
+      "retrato-estrella-principal",
       "cielo-via-lactea",
       "cielo-via-lactea-final",
       "cielo-fugaz"

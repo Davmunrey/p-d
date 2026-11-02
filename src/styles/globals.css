@@ -340,6 +340,7 @@
   --spacing-vuestra-estrella: var(--lado-vuestra-estrella);
   --spacing-estrella-llegada: var(--lado-estrella-llegada);
   --spacing-estrella-hito: var(--lado-estrella-hito);
+  --spacing-retrato: var(--alto-retrato);
   --spacing-columna-estrella: var(--ancho-columna-estrella);
   --spacing-solape-mapa: var(--solape-mapa);
 

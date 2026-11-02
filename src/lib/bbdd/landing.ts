@@ -5,6 +5,7 @@ import { cache } from "react";
 import { LIMITE_CANCIONES_PORTADA } from "@/config/constants";
 import { esSeccionConocida, type Seccion } from "@/config/secciones";
 import { t } from "@/lib/copy";
+import { comoRetrato, type RetratoDeEstrellas } from "@/lib/retrato/estrellas";
 
 import { leerComoAnonimo } from "./cliente";
 
@@ -530,6 +531,42 @@ export async function obtenerMedios(seccion: Seccion): Promise<Medio[]> {
     tipo: f.tipo,
     posterRuta: f.poster_ruta,
   }));
+}
+
+/** El retrato de estrellas, listo para dibujar. */
+export interface Retrato extends RetratoDeEstrellas {
+  /** Lo que oye quien no ve el dibujo: el texto alternativo de la foto. */
+  alternativo: string;
+}
+
+/**
+ * EL RETRATO DE ESTRELLAS: la primera foto recortada que esté publicada, y de
+ * ella sólo sus estrellas y su texto alternativo. La foto no se pide: la
+ * landing no la enseña, dibuja su contorno.
+ *
+ * Los mismos predicados que el origen del retrato en `contenido-landing.ts`,
+ * que es lo que el panel cuenta como «se ve».
+ */
+export async function obtenerRetrato(): Promise<Retrato | null> {
+  const [fila] = await leerComoAnonimo(
+    (tx) => tx<{ texto_alternativo: Record<string, string> | null; estrellas: unknown }[]>`
+      select texto_alternativo, estrellas
+      from public.medios
+      where publicado
+        and seccion = 'retrato'::public.seccion_landing
+        and tipo = 'imagen'
+        and estrellas is not null
+      order by orden nulls last, creado_en
+      limit 1
+    `,
+  );
+  const retrato = fila ? comoRetrato(fila.estrellas) : null;
+  if (!fila || !retrato) return null;
+  return {
+    ...retrato,
+    alternativo:
+      fila.texto_alternativo?.es ?? Object.values(fila.texto_alternativo ?? {})[0] ?? "",
+  };
 }
 
 /**

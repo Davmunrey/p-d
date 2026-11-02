@@ -187,6 +187,42 @@ export const SECCIONES_DE_LLEGADA = [
 ] as const satisfies readonly Seccion[];
 
 /**
+ * LO ÚLTIMO DE LA NOCHE: el retrato de estrellas, de pie sobre el horizonte.
+ * Va al final del tramo de noche ponga lo que ponga el orden de la base, y no
+ * es una sección que se lea: no lleva titular, ni ancla, ni entra en el menú.
+ */
+export const CIERRE_DE_LA_NOCHE = "retrato" as const satisfies Seccion;
+
+/**
+ * EL RETRATO DE ESTRELLAS, en un lienzo de `alto` de alto (el ancho sale de la
+ * proporción de la foto): el radio de cada estrella del contorno, el de las
+ * principales —los vértices: cabeza, hombros, manos, pies, la punta del rabo—
+ * y el de su halo, en veces su radio, con lo que brilla en el centro
+ * (`brilloHalo`). `principal` es desde qué brillo una estrella cuenta como
+ * principal.
+ */
+export const RETRATO_EN_EL_CIELO = {
+  alto: 1000,
+  radio: 3.4,
+  radioPrincipal: 6.5,
+  halo: 4,
+  brilloHalo: 0.45,
+  principal: 0.99,
+} as const;
+
+/**
+ * CUÁNDO SE DIBUJA EL RETRATO. Empieza cuando la cabeza asoma por `empieza`
+ * (en fracción del alto de la pantalla, desde arriba) y acaba cuando los pies
+ * llegan a `acaba`: algo menos de lo que se tarda en bajar una pantalla. Las
+ * estrellas se encienden en el orden del contorno, como si alguien lo
+ * trazara, y lo dibujado se queda dibujado.
+ *
+ * Acaba con el retrato ENTERO A LA VISTA: con los pies a media pantalla, en
+ * un móvil la cabeza ya se había ido por arriba cuando se encendía lo último.
+ */
+export const TRAZADO_DEL_RETRATO = { empieza: 0.95, acaba: 0.7 } as const;
+
+/**
  * VUESTRA ESTRELLA, en el lienzo de 100 de su dibujo: el anillo hueco, su
  * grosor y el de la onda que sale de él y se apaga al crecer, como un latido
  * (`--escala-latido-estrella`; el svg deja que se salga).

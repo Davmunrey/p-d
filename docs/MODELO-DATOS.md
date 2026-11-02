@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**62**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**64**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -195,6 +195,7 @@ erDiagram
         jsonb texto_alternativo
         enum seccion
         bool publicado "por defecto FALSE"
+        jsonb estrellas "sólo el retrato"
     }
     registro_auditoria {
         uuid id PK
@@ -425,7 +426,11 @@ Una fila por respuesta. La anterior deja de ser vigente; nunca se edita.
   **en el idioma por defecto de la boda**, que se lee de `configuracion_boda` en
   un trigger en vez de fijar `'es'` en un CHECK: si los novios cambian el idioma,
   la restricción de accesibilidad tiene que seguir protegiendo el idioma que
-  realmente se sirve.
+  realmente se sirve. `estrellas` sólo existe en la sección `retrato`
+  (`medios_estrellas_del_retrato`, `20261102170100`): el contorno de la foto
+  recortada hecho estrellas, `{ proporcion, estrellas: [[x, y, brillo], …] }`
+  en 0..1, que calcula el panel al subirla y es lo único que lee la landing de
+  esa foto. La forma y un tope de tamaño los pone el CHECK.
 
 - `guion_dia` — el guion interno de la jornada, en tabla aparte de
   `hitos_programa` porque aquello es contenido público de la landing y esto lleva

@@ -10,6 +10,7 @@ import { HuecoFoto } from "@/components/marketing/hueco-foto";
 import { MapaDelLugar } from "@/components/marketing/mapa-del-lugar";
 import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
+import { RetratoDeEstrellas } from "@/components/marketing/retrato-de-estrellas";
 import { VideoDeFondo } from "@/components/marketing/video-de-fondo";
 import {
   Confirmacion,
@@ -32,7 +33,7 @@ import {
   Titulo2,
   Titulo3,
 } from "@/components/ui/tipografia";
-import { SECCIONES_DE_LLEGADA, SECCIONES_DE_NOCHE } from "@/config/cielo";
+import { CIERRE_DE_LA_NOCHE, SECCIONES_DE_LLEGADA, SECCIONES_DE_NOCHE } from "@/config/cielo";
 import {
   BUCKET_MEDIOS,
   ID_CONTENIDO,
@@ -50,6 +51,7 @@ import {
   obtenerHistoria,
   obtenerPreguntasFrecuentes,
   obtenerPrograma,
+  obtenerRetrato,
   obtenerRutas,
   obtenerMedios,
   obtenerSecciones,
@@ -163,6 +165,7 @@ export default async function PaginaInicio({
     fotosPortada,
     fotosPaisaje,
     fotosGaleria,
+    retrato,
   } = datos;
 
   // Sin configuración no hay boda que enseñar: la base respondió, pero el panel
@@ -305,6 +308,8 @@ export default async function PaginaInicio({
     regalos: cuentaRegalos ? <Regalos /> : undefined,
     dresscode: consejos.length > 0 ? <DressCode consejos={consejos} /> : undefined,
     rsvp: <Confirmacion lectura={lectura} consulta={consulta} configuracion={configuracion} />,
+    // Sin foto recortada publicada no hay retrato: el cielo sigue sin él.
+    retrato: retrato ? <RetratoDeEstrellas retrato={retrato} /> : undefined,
   };
 
   // El orden lo pone la base de datos; el filtro, lo que de verdad hay hecho.
@@ -315,8 +320,17 @@ export default async function PaginaInicio({
     base; la llegada va siempre al final, en su propio orden: dónde dormir,
     cómo llegar, los regalos y la confirmación.
   */
-  const deNoche = aPintar.filter((seccion) => esDeNoche(seccion));
-  const deDia = aPintar.filter((seccion) => !esDeNoche(seccion) && !esDeLlegada(seccion));
+  /*
+    EL RETRATO CIERRA LA NOCHE, esté donde esté en el orden de la base: es lo
+    que se ve de pie sobre el horizonte, con el amanecer detrás.
+  */
+  const deNoche = [
+    ...aPintar.filter((seccion) => esDeNoche(seccion)),
+    ...aPintar.filter((seccion) => seccion === CIERRE_DE_LA_NOCHE),
+  ];
+  const deDia = aPintar.filter(
+    (seccion) => !esDeNoche(seccion) && !esDeLlegada(seccion) && seccion !== CIERRE_DE_LA_NOCHE,
+  );
   const deLlegada = SECCIONES_DE_LLEGADA.filter((seccion) => aPintar.includes(seccion));
   const enOrden = [...deNoche, ...deDia, ...deLlegada];
 
@@ -517,6 +531,7 @@ async function cargarLanding() {
     fotosPortada,
     fotosPaisaje,
     fotosGaleria,
+    retrato,
   ] = await Promise.all([
     obtenerSecciones(),
     obtenerConfiguracion(),
@@ -532,6 +547,7 @@ async function cargarLanding() {
     obtenerMedios("portada"),
     obtenerMedios("paisaje"),
     obtenerGaleria(),
+    obtenerRetrato(),
   ]);
 
   return {
@@ -549,6 +565,7 @@ async function cargarLanding() {
     fotosPortada,
     fotosPaisaje,
     fotosGaleria,
+    retrato,
   };
 }
 
