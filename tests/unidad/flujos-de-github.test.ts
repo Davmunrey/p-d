@@ -122,6 +122,26 @@ describe("los flujos de GitHub", () => {
     expect(new Set(instalados)).toEqual(new Set([mayor]));
   });
 
+  /*
+    APLICAR EN PRODUCCIÓN NO PUEDE QUEDARSE ESPERANDO UNA RESPUESTA. El CLI de
+    Supabase se instala en su última versión, y una empezó a pedir
+    confirmación antes de `db push`. En el CI no hay terminal: no aplicaba
+    nada, el código nuevo salía igual y producción se quedaba sin la
+    migración que ese código necesitaba.
+  */
+  it("las migraciones se aplican sin pedir confirmación", () => {
+    // Los `run` de verdad, del YAML leído: un comentario que lo nombre no cuenta.
+    const flujo = parse(readFileSync(join(CARPETA, "migraciones.yml"), "utf8")) as {
+      jobs: Record<string, Trabajo>;
+    };
+    const empujes = Object.values(flujo.jobs)
+      .flatMap((trabajo) => trabajo.steps ?? [])
+      .map((paso) => (typeof paso.run === "string" ? paso.run : ""))
+      .filter((orden) => /supabase\s+db\s+push\b/.test(orden));
+    expect(empujes, "migraciones.yml tiene que aplicar con `supabase db push`").not.toEqual([]);
+    for (const orden of empujes) expect(orden).toMatch(/\s--yes\b/);
+  });
+
   it("y un paso sin uses ni run, o con los dos, también", () => {
     const base = "name: x\non: push\njobs:\n  uno:\n    runs-on: ubuntu-latest\n    steps:\n";
     expect(problemasDe(`${base}      - name: nada\n`)).toHaveLength(1);

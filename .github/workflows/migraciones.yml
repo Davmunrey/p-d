@@ -138,12 +138,18 @@ jobs:
         # sale mal, la primera pregunta siempre es «¿qué se aplicó?».
         run: supabase migration list --linked
 
+      # `--yes`, PORQUE AQUÍ NO HAY NADIE A QUIEN PREGUNTAR. El CLI se instala
+      # en su última versión, y una de ellas empezó a pedir confirmación antes
+      # de tocar producción. Sin terminal no puede preguntar, así que contestaba
+      # «Nothing was changed» y salía con error: el código nuevo se desplegó y
+      # la migración que necesitaba se quedó sin aplicar. Este flujo ES la
+      # confirmación: se lanza al mergear en `main`.
       - name: Aplicar
         if: steps.credenciales.outputs.hay == 'si' && steps.enlace.outcome == 'success'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: supabase db push --linked --include-all
+        run: supabase db push --linked --include-all --yes
 
       - name: Comprobar que quedó al día
         if: steps.credenciales.outputs.hay == 'si' && steps.enlace.outcome == 'success'
