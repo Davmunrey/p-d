@@ -221,18 +221,6 @@ function useQuedaPorLaDerecha(tira: React.RefObject<HTMLElement | null>): boolea
 }
 
 /**
- * Devuelve el `id` de la sección que ocupa la franja de lectura: la banda que
- * va justo por debajo de la barra hasta el primer tercio de la pantalla. Es lo
- * que una persona percibe como «dónde estoy». Observando la ventana entera
- * habría dos secciones activas a la vez.
- *
- * El alto se MIDE del propio elemento en lugar de leer el token, porque
- * `rootMargin` solo acepta píxeles y porcentajes: ni `calc()` ni `var()`.
- *
- * Sin `IntersectionObserver` —o antes de hidratar— no hay sección marcada, que
- * es un estado correcto y no un fallo: los enlaces funcionan igual.
- */
-/**
  * Si la cabecera está sobre un bloque de noche (`[data-seccion="inversa"]`).
  *
  * Se mide la franja de la cabecera contra las secciones inversas al hacer
@@ -278,44 +266,60 @@ function useSobreLaNoche(
   return sobre;
 }
 
+/**
+ * El `id` de la sección del menú en la que está el invitado, o `null` si la
+ * que tiene debajo de la barra no está en el menú. Antes de hidratar no hay
+ * sección marcada, que es un estado correcto y no un fallo: los enlaces
+ * funcionan igual.
+ */
 function useAnclaVisible(
   enlaces: EnlaceSeccion[],
   cabecera: React.RefObject<HTMLElement | null>,
 ): string | null {
   const [activa, setActiva] = useState<string | null>(null);
 
-  // El orden importa para desempatar, pero `enlaces` es un array nuevo en cada
-  // render: se depende de su contenido, no de su identidad.
+  // `enlaces` es un array nuevo en cada render: se depende de su contenido, no
+  // de su identidad.
   const anclas = enlaces.map((enlace) => enlace.ancla).join(",");
 
+  /*
+    LA SECCIÓN QUE PASA POR DEBAJO DE LA BARRA, mirando TODAS las de la página
+    y no sólo las del menú. Antes se observaban sólo las del menú, en una franja
+    hasta el primer tercio de la pantalla: en vuestra estrella, el margen de
+    abajo de «Cómo llegar» aún asomaba por esa franja y el menú decía «Cómo
+    llegar» con el invitado ya confirmando. Ahora, si lo que pasa bajo la barra
+    no está en el menú —la estrella, los regalos, la playlist—, no se marca
+    nada, que es la verdad.
+
+    Se mide al hacer scroll, una vez por fotograma como mucho, como hace la
+    cabecera para saber si va sobre la noche: son una docena de rectángulos.
+  */
   useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") return;
+    const delMenu = new Set(anclas.split(",").filter(Boolean));
+    if (delMenu.size === 0) return;
 
-    const orden = anclas.split(",").filter(Boolean);
-    if (orden.length === 0) return;
+    let pedido = 0;
+    const medir = () => {
+      pedido = 0;
+      const linea = cabecera.current?.getBoundingClientRect().bottom ?? 0;
+      const debajo = [...document.querySelectorAll("main section[id]")].find((seccion) => {
+        const caja = seccion.getBoundingClientRect();
+        return caja.top <= linea && caja.bottom > linea;
+      });
+      setActiva(debajo && delMenu.has(debajo.id) ? debajo.id : null);
+    };
+    const pedir = () => {
+      if (!pedido) pedido = requestAnimationFrame(medir);
+    };
 
-    const visibles = new Set<string>();
-    const altoBarra = cabecera.current?.offsetHeight ?? 0;
-
-    const observador = new IntersectionObserver(
-      (entradas) => {
-        for (const entrada of entradas) {
-          if (entrada.isIntersecting) visibles.add(entrada.target.id);
-          else visibles.delete(entrada.target.id);
-        }
-        // La primera del documento entre las visibles: al bajar, la sección
-        // nueva no roba el marcado hasta que la anterior sale del todo.
-        setActiva(orden.find((ancla) => visibles.has(ancla)) ?? null);
-      },
-      { rootMargin: `-${altoBarra}px 0px -70% 0px` },
-    );
-
-    for (const ancla of orden) {
-      const elemento = document.getElementById(ancla);
-      if (elemento) observador.observe(elemento);
-    }
-
-    return () => observador.disconnect();
+    medir();
+    window.addEventListener("scroll", pedir, { passive: true });
+    window.addEventListener("resize", pedir);
+    return () => {
+      cancelAnimationFrame(pedido);
+      window.removeEventListener("scroll", pedir);
+      window.removeEventListener("resize", pedir);
+    };
   }, [anclas, cabecera]);
 
   return activa;

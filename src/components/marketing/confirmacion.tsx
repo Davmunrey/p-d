@@ -282,6 +282,16 @@ function Contenido({
 
         {paso === "asistencia" ? (
           <PasoAsistencia
+            /*
+              «PASO 1 DE 2» SÓLO SI HAY UN 2: lo mismo que decide el rótulo del
+              botón. Si todos han dicho que no, este paso es el único y su
+              botón ya es «Enviar».
+            */
+            etiquetaPaso={
+              ultimo
+                ? undefined
+                : t("rsvp.etiquetaPaso", { actual: 1, total: PASOS_RSVP.length })
+            }
             personas={invitacion.personas}
             borrador={borrador}
             faltan={faltanDeLaUrl(consulta.falta ?? "")}
@@ -373,12 +383,14 @@ function Aviso({ motivo, correo }: { motivo: string; correo: string | null }) {
  * verdad la hace el servidor, que vuelve aquí señalando a quién falta.
  */
 function PasoAsistencia({
+  etiquetaPaso,
   personas,
   borrador,
   faltan,
   plazasLibres,
   acompanante,
 }: {
+  etiquetaPaso?: string;
   personas: PersonaInvitada[];
   borrador: Borrador;
   faltan: Set<string>;
@@ -388,7 +400,10 @@ function PasoAsistencia({
   return (
     <div className="grid gap-elemento">
       <div>
-        <Titulo2 como="h3">{t("rsvp.pasoAsistenciaTitulo")}</Titulo2>
+        {etiquetaPaso ? <Etiqueta>{etiquetaPaso}</Etiqueta> : null}
+        <Titulo2 como="h3" className={etiquetaPaso ? "mt-linea" : undefined}>
+          {t("rsvp.pasoAsistenciaTitulo")}
+        </Titulo2>
         <Cuerpo className="mt-linea">{t("rsvp.pasoAsistenciaAyuda")}</Cuerpo>
       </div>
       <AvisoAcompanante resultado={acompanante} />

@@ -1,4 +1,3 @@
-import { RUTA_COCINA } from "@/config/constants";
 import { rutaDe, type Seccion } from "@/config/secciones";
 import { Monograma } from "@/components/ui/monograma";
 import { t } from "@/lib/copy";
@@ -12,9 +11,11 @@ import { fechaEnPuntos } from "@/lib/fechas";
  * dos columnas con los nombres completos, el menú repetido y un «cualquier
  * duda, escribidnos» — otra pieza, con otra voz.
  *
- * Los enlaces son los de la entrega salvo uno: «Cartelería» es de imprenta y
- * no tiene página a la que llevar, así que no se enlaza. El sistema de marca
- * sí la tiene —la cocina— y es donde la entrega manda. «Volver arriba» se
+ * Los enlaces son los de la entrega salvo dos: «Cartelería» es de imprenta y
+ * no tiene página a la que llevar, y «Sistema de marca» llevaba a los
+ * invitados a la cocina, una página de trabajo de los novios que no es para
+ * ellos —lo vio la auditoría del recorrido, y los novios pidieron quitarlo—.
+ * La cocina sigue en su dirección, fuera de buscadores. «Volver arriba» se
  * queda al final: en una página de veinte pantallas es el gesto que más se
  * usa desde aquí, y la barra fija no siempre está a la vista en móvil.
  *
@@ -57,7 +58,6 @@ export function Pie({
     secciones.includes("reserva_la_fecha")
       ? { href: rutaDe("reserva_la_fecha"), rotulo: t("navegacion.secciones.reserva_la_fecha") }
       : null,
-    { href: RUTA_COCINA, rotulo: t("pie.sistemaDeMarca") },
     correoContacto ? { href: `mailto:${correoContacto}`, rotulo: correoContacto } : null,
     { href: inicio, rotulo: t("pie.volverArriba") },
   ].filter((enlace) => enlace !== null);

@@ -151,6 +151,9 @@ async function contestar(rsvp: Locator, persona: string, viene: boolean): Promis
 const botonAvanzar = (rsvp: Locator, rotulo: string) =>
   rsvp.getByRole("button", { name: rotulo, exact: true });
 
+const etiquetaPaso = (actual: number, total: number) =>
+  copy.rsvp.etiquetaPaso.replace("{actual}", String(actual)).replace("{total}", String(total));
+
 test.afterAll(async ({}, info) => {
   if (!cadena) return;
   const marca = `${MARCA} ${info.project.name}`;
@@ -215,6 +218,8 @@ test.describe("Confirmar con el enlace", () => {
 
     const rsvp = await abrirConElEnlace(pagina, token);
     await expect(rsvp.getByText(copy.rsvp.saludo.replace("{grupo}", nombre))).toBeVisible();
+    // Dice en qué paso está, como el segundo.
+    await expect(rsvp.getByText(etiquetaPaso(1, 2), { exact: true })).toBeVisible();
 
     // Paso 1 · uno viene y el otro no.
     await contestar(rsvp, "(DES) Aitor", true);
@@ -289,6 +294,14 @@ test.describe("Confirmar con el enlace", () => {
     const guardado = await loGuardado(token);
     expect(guardado.map((fila) => fila.estado)).toEqual(["rechazado", "rechazado"]);
     expect(guardado.every((fila) => fila.necesita_autobus === null)).toBe(true);
+
+    // Al cambiar la respuesta, con todos en «no» no hay paso 2: ni «Paso 1 de
+    // 2», que prometería otro, ni «Siguiente».
+    await rsvp.getByRole("button", { name: copy.rsvp.editarRespuesta }).click();
+    await expect(page).toHaveURL(/paso=asistencia/);
+    await expect(rsvp.getByText(copy.rsvp.pasoAsistenciaTitulo)).toBeVisible();
+    await expect(rsvp.getByText(etiquetaPaso(1, 2), { exact: true })).toHaveCount(0);
+    await expect(botonAvanzar(rsvp, copy.rsvp.enviar)).toBeVisible();
   });
 
   test("cambiar la respuesta abre lo contestado, y la anterior queda en el histórico", async ({
@@ -417,11 +430,11 @@ test.describe("Confirmar con el enlace", () => {
         select maximo_intentos_rsvp::int as maximo from public.parametros_seguridad
       `,
     );
-    // Desde el mismo origen que la página: el cupo se cuenta por origen.
+    // Desde el mismo origen que la página: el cupo se cuenta por origen. Cada
+    // enlace inventado se sigue hasta la portada, que es donde se pregunta a la
+    // base; el salto en sí no pregunta nada.
     for (let i = 0; i < fila!.maximo; i += 1) {
-      await request.get(`${RUTA_INVITACION}/enlace-que-no-existe-${i}-000000`, {
-        maxRedirects: 0,
-      });
+      await request.get(`${RUTA_INVITACION}/enlace-que-no-existe-${i}-000000`);
     }
 
     await page.goto("/");

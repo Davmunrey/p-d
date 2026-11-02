@@ -3,6 +3,7 @@ import { expect, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
+import { RUTA_COCINA } from "../../src/config/constants";
 import { conSeccionApagada } from "./utiles/secciones";
 
 /**
@@ -181,6 +182,26 @@ test.describe("Navegación", () => {
     await expect(activo).toHaveAttribute("aria-current", "location");
   });
 
+  /**
+   * CASO DE ERROR · en la estrella no se marca «Cómo llegar». El margen de
+   * abajo del mapa aún asomaba por la franja que se miraba, y el menú decía
+   * «Cómo llegar» con el invitado ya confirmando.
+   */
+  test("en una sección que no está en el menú, no se marca ninguna", async ({ page }) => {
+    await page
+      .locator("#rsvp")
+      .evaluate((seccion) => seccion.scrollIntoView({ block: "start", behavior: "instant" }));
+    await expect(menu(page).locator('[aria-current="location"]')).toHaveCount(0);
+
+    // Y al volver a una que sí está, se marca otra vez.
+    await page
+      .locator("#transporte")
+      .evaluate((seccion) => seccion.scrollIntoView({ block: "start", behavior: "instant" }));
+    await expect(
+      menu(page).getByRole("link", { name: copy.navegacion.secciones.transporte, exact: true }),
+    ).toHaveAttribute("aria-current", "location");
+  });
+
   // --- Casos de error -----------------------------------------------------
 
   test("una sección del menú apagada en la base de datos desaparece del menú y de la página", async ({
@@ -335,6 +356,13 @@ test.describe("Pie", () => {
 
   test("el hashtag se pinta con el de la base de datos", async ({ page }) => {
     await expect(page.getByRole("contentinfo").getByText(/^#/)).toBeVisible();
+  });
+
+  /** CASO DE ERROR · el pie no saca a los invitados a una página de trabajo. */
+  test("el pie no lleva a la cocina", async ({ page }) => {
+    const pie = page.getByRole("contentinfo");
+    await expect(pie.getByRole("link", { name: copy.pie.volverArriba })).toHaveCount(1);
+    await expect(pie.locator(`a[href^="${RUTA_COCINA}"]`)).toHaveCount(0);
   });
 
   test("desde el pie se puede volver arriba", async ({ page }) => {

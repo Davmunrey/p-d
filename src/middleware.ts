@@ -3,12 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import {
   PARAMETRO_VOLVER,
+  PATRON_TOKEN_INVITACION,
   RUTA_ACCESO,
+  RUTA_INVITACION,
+  RUTA_OLVIDAR_INVITACION,
   RUTA_PANEL,
   URL_TESELAS_MAPA,
   URL_WHATSAPP,
 } from "@/config/constants";
 import { construirCsp } from "@/lib/csp";
+import { COOKIE_INVITACION, opcionesCookieInvitacion } from "@/lib/invitacion";
 
 /**
  * BODA-41 · LA PUERTA, ANTES DE PINTAR NADA
@@ -60,6 +64,10 @@ function conCsp(peticion: NextRequest): string {
 }
 
 export async function middleware(peticion: NextRequest) {
+  const enlace = tokenDelEnlace(peticion.nextUrl.pathname);
+  if (enlace !== undefined) return recordarEnlace(peticion, enlace);
+  if (peticion.nextUrl.pathname === RUTA_OLVIDAR_INVITACION) return olvidarEnlace();
+
   const csp = conCsp(peticion);
 
   // La respuesta se crea antes de preguntar por el usuario: `setAll` escribe
@@ -109,6 +117,83 @@ export async function middleware(peticion: NextRequest) {
   // Al final y no antes: `setAll` puede haber sustituido la respuesta entera
   // por otra al renovar la sesión, y la CSP tiene que ir en la que sale.
   return conCabeceraCsp(respuesta, csp);
+}
+
+/**
+ * EL ENLACE PERSONAL: SE ANOTA Y SE VA A LA PORTADA, AQUÍ MISMO
+ *
+ * El enlace de cada invitación no lleva a una página propia: hace que la web
+ * sepa quién es. Se guarda en una cookie y se salta a la portada, que saluda al
+ * grupo y, en vuestra estrella, le abre su formulario.
+ *
+ * AQUÍ Y NO EN UNA RUTA. Era una ruta que preguntaba a la base antes de
+ * redirigir, y en producción eso costaba arrancar una función entera sólo para
+ * el salto: 2,4 s en frío, y después otro arranque para la portada. Quien abre
+ * el enlace desde el WhatsApp pagaba los dos. Aquí no hay arranque, y la
+ * pregunta a la base la hace la portada, que ya la hacía para saludar: si el
+ * enlace no vale, no saluda a nadie y lo olvida (`OlvidarEnlace`).
+ *
+ * LO QUE NI SIQUIERA PARECE UN TOKEN no se anota: se olvida lo que hubiera y
+ * no llega a preguntarse a la base, que contaría un intento más.
+ *
+ * 303 Y NO 307: «mira esto otro», con GET. Y sin caché, ni en el navegador ni
+ * en ningún intermedio: la respuesta lleva la cookie de una familia.
+ */
+function recordarEnlace(peticion: NextRequest, token: string | null): NextResponse {
+  const portada = peticion.nextUrl.clone();
+  portada.pathname = "/";
+  portada.search = "";
+
+  const respuesta = NextResponse.redirect(portada, REDIRECCION_A_OTRA);
+  if (token) {
+    respuesta.cookies.set(
+      COOKIE_INVITACION,
+      token,
+      opcionesCookieInvitacion(
+        peticion.headers.get("x-forwarded-proto") ?? peticion.nextUrl.protocol,
+      ),
+    );
+  } else {
+    respuesta.cookies.delete(COOKIE_INVITACION);
+  }
+  respuesta.headers.set("Cache-Control", "no-store");
+  respuesta.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return respuesta;
+}
+
+/**
+ * OLVIDA LA INVITACIÓN RECORDADA. La portada lo pide como una imagen cuando la
+ * base le ha dicho que el enlace de la cookie no vale —mal tecleado, o anulado
+ * al emitir otro—: una página no puede borrar una cookie, y una imagen se pide
+ * también sin JavaScript. Sólo borra la cookie de quien lo pide; desde otra web
+ * no llega, porque una cookie `lax` no se escribe desde un recurso de otro
+ * sitio. `204`: no hay nada que pintar.
+ */
+function olvidarEnlace(): NextResponse {
+  const respuesta = new NextResponse(null, { status: SIN_CONTENIDO });
+  respuesta.cookies.delete(COOKIE_INVITACION);
+  respuesta.headers.set("Cache-Control", "no-store");
+  respuesta.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return respuesta;
+}
+
+/**
+ * El token de `/invitacion/<token>`: `undefined` si la ruta no es un enlace,
+ * `null` si lo es pero lo que trae no tiene forma de token.
+ */
+function tokenDelEnlace(ruta: string): string | null | undefined {
+  const prefijo = `${RUTA_INVITACION}/`;
+  if (!ruta.startsWith(prefijo)) return undefined;
+  const tramo = ruta.slice(prefijo.length);
+  if (tramo.includes("/")) return undefined;
+
+  let token: string;
+  try {
+    token = decodeURIComponent(tramo).trim();
+  } catch {
+    return null;
+  }
+  return PATRON_TOKEN_INVITACION.test(token) ? token : null;
 }
 
 function conCabeceraCsp(respuesta: NextResponse, csp: string): NextResponse {
@@ -191,6 +276,8 @@ const CABECERA_REDIRECCION_ACCION = "x-action-redirect";
 const REDIRECCION_TEMPORAL = 307;
 /** 303: «mira esto otro», con GET, sea cual sea el método original. */
 const REDIRECCION_A_OTRA = 303;
+/** 204: hecho, y no hay nada que devolver. */
+const SIN_CONTENIDO = 204;
 
 export const config = {
   /**

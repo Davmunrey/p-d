@@ -240,9 +240,24 @@ export const URL_WHATSAPP = "https://wa.me/";
 
 /**
  * Raíz del enlace personal de cada invitación: `${RUTA_INVITACION}/token`.
- * Abrirlo recuerda la invitación y lleva a la portada.
+ * Abrirlo recuerda la invitación y lleva a la portada (lo hace el middleware).
  */
 export const RUTA_INVITACION = "/invitacion";
+
+/**
+ * La forma de un token de invitación: base64 «url-safe» —letras, cifras, `-` y
+ * `_`—. Los que emite la base miden 32; los de desarrollo y de los tests, algo
+ * más. Lo que no encaja ni se anota ni se pregunta a la base: un enlace
+ * destrozado al copiarlo no gasta un intento del cortafuegos.
+ */
+export const PATRON_TOKEN_INVITACION = /^[A-Za-z0-9_-]{16,128}$/;
+
+/**
+ * Donde se olvida la invitación recordada. La portada la pide como una imagen
+ * cuando el enlace de la cookie ya no vale: así se olvida también sin
+ * JavaScript, y la contesta el middleware, sin arrancar ninguna función.
+ */
+export const RUTA_OLVIDAR_INVITACION = "/invitacion-olvidada";
 
 /**
  * Donde vivía el formulario del RSVP. Los enlaces que ya se repartieron con

@@ -1,8 +1,12 @@
-import { expect, test } from "./utiles/origen-propio";
+import { expect, origenDelTest, test } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
-import { RUTA_INVITACION, RUTA_RSVP_ANTIGUA } from "../../src/config/constants";
+import {
+  RUTA_INVITACION,
+  RUTA_OLVIDAR_INVITACION,
+  RUTA_RSVP_ANTIGUA,
+} from "../../src/config/constants";
 
 /**
  * EL ENLACE DE LA INVITACIÓN: SALUDA, Y ABRE LA CONFIRMACIÓN DEL GRUPO
@@ -126,5 +130,57 @@ test.describe("El enlace de la invitación", () => {
     await expect(page.locator("#portada")).not.toContainText(saludoDe(""));
     await expect(page.locator("#playlist")).toContainText(copy.playlist.sinInvitacion);
     expect((await context.cookies()).some((c) => c.name === "boda:invitacion")).toBe(false);
+  });
+
+  /**
+   * EL SALTO NO ESPERA A NADIE. El enlace lo resuelve el middleware: anota la
+   * cookie y manda a la portada sin arrancar una función —en producción, eso
+   * eran 2,4 s en frío antes de empezar a pintar—. La base se pregunta en la
+   * portada, una vez, y la portada es la que saluda.
+   */
+  test("el enlace anota la invitación y salta a la portada, sin caché", async ({ request }) => {
+    const { token } = await crearGrupo("salto");
+    const respuesta = await request.get(`${RUTA_INVITACION}/${token}`, { maxRedirects: 0 });
+
+    expect(respuesta.status()).toBe(303);
+    expect(new URL(respuesta.headers()["location"] ?? "", "http://x").pathname).toBe("/");
+    expect(respuesta.headers()["cache-control"]).toContain("no-store");
+    const cookie = respuesta.headersArray().find((c) => c.name.toLowerCase() === "set-cookie");
+    expect(cookie?.value).toMatch(/^boda(:|%3A)invitacion=desarrollo-enlace-salto/);
+    expect(cookie?.value).toMatch(/HttpOnly/i);
+  });
+
+  /** CASO DE ERROR · lo que ni parece un token no se anota ni gasta un intento. */
+  test("un enlace destrozado al copiarlo se olvida sin preguntar a la base", async ({
+    request,
+  }) => {
+    const origen = origenDelTest()["x-forwarded-for"];
+    const intentos = async () => {
+      const [fila] = await conBase(
+        (sql) => sql<{ total: number }[]>`
+          select count(*)::int as total from public.intentos_rsvp where huella = ${origen}
+        `,
+      );
+      return fila?.total ?? 0;
+    };
+    const antes = await intentos();
+
+    const respuesta = await request.get(
+      `${RUTA_INVITACION}/${encodeURIComponent("enlace con <espacios>")}`,
+      { maxRedirects: 0 },
+    );
+
+    expect(respuesta.status()).toBe(303);
+    // Se olvida lo que hubiera: la cookie sale vacía y caducada.
+    const cookie = respuesta.headersArray().find((c) => c.name.toLowerCase() === "set-cookie");
+    expect(cookie?.value).toMatch(/^boda(:|%3A)invitacion=;/);
+    expect(await intentos(), "no se pregunta a la base").toBe(antes);
+  });
+
+  test("pedir que se olvide la invitación la borra y no devuelve nada", async ({ request }) => {
+    const respuesta = await request.get(RUTA_OLVIDAR_INVITACION);
+    expect(respuesta.status()).toBe(204);
+    const cookie = respuesta.headersArray().find((c) => c.name.toLowerCase() === "set-cookie");
+    expect(cookie?.value).toMatch(/^boda(:|%3A)invitacion=;/);
   });
 });

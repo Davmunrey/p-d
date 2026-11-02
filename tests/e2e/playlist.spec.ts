@@ -151,8 +151,9 @@ test.describe("La playlist colaborativa", () => {
   /**
    * CASO DE ERROR · Un enlace que no existe no se recuerda.
    *
-   * Abrir `/invitacion/<token>` lo comprueba contra la base antes de guardarlo:
-   * un enlace mal tecleado lleva a la portada de todos, sin campo y con la
+   * La portada lo comprueba contra la base al pintarse y, si no vale, pide que
+   * se olvide —con una imagen, así que también sin JavaScript, como aquí—: un
+   * enlace mal tecleado lleva a la portada de todos, sin campo y con la
    * explicación de que hace falta la invitación.
    */
   test("un enlace que no existe no se recuerda", async ({ browser }) => {
@@ -168,26 +169,26 @@ test.describe("La playlist colaborativa", () => {
   });
 
   /**
-   * CASO DE ERROR · Un enlace que se anula después deja de recordarse al fallar.
+   * CASO DE ERROR · Un enlace que se anula con la página abierta se olvida al fallar.
    *
-   * Los novios borran la invitación —o emiten un enlace nuevo— y el que la
-   * familia tenía guardado deja de valer. Su navegador lo recuerda, así que la portada pinta el campo; al
-   * apuntar, la base dice que no vale y la acción borra la cookie: la siguiente
-   * visita ve la explicación, que es lo que de verdad le pasa a esa persona.
+   * Los novios borran la invitación —o emiten un enlace nuevo— mientras la
+   * familia tiene la portada abierta, con el campo a la vista. Al apuntar, la
+   * base dice que no vale y la acción borra la cookie: la respuesta ya sale con
+   * la explicación, que es lo que de verdad le pasa a esa persona.
    */
   test("un enlace anulado deja de recordarse en cuanto falla", async ({ browser }) => {
     const { token, grupoId } = await crearGrupo("anulado");
     const contexto = await conInvitacionAbierta(browser, token, false);
+    const pagina = await contexto.newPage();
+    await pagina.goto("/#playlist");
+    await expect(
+      pagina.locator("#playlist").getByLabel(copy.playlist.campoCancion),
+    ).toBeVisible();
+
     // El token no se puede cambiar a mano (RSV06, lo congela un trigger): se
     // anula como lo anula de verdad borrar la invitación desde el panel.
     await conBase((sql) => sql`delete from public.grupos_invitacion where id = ${grupoId}`);
-    const pagina = await contexto.newPage();
 
-    // La cookie está, y por tanto el campo.
-    const antes = await (await pagina.request.get("/")).text();
-    expect(antes).toContain(copy.playlist.campoCancion);
-
-    await pagina.goto("/#playlist");
     await pagina
       .locator("#playlist")
       .getByLabel(copy.playlist.campoCancion)
@@ -202,6 +203,30 @@ test.describe("La playlist colaborativa", () => {
       pagina.locator("#playlist").getByLabel(copy.playlist.campoCancion),
     ).toHaveCount(0);
 
+    expect(
+      (await contexto.cookies()).find((c) => c.name === "boda:invitacion"),
+    ).toBeUndefined();
+    await contexto.close();
+  });
+
+  /**
+   * CASO DE ERROR · Al volver con un enlace ya anulado, ni se ofrece el campo.
+   *
+   * La portada pregunta a la base al pintarse —para saludar—, así que ya sabe
+   * que el enlace no vale: no enseña un campo que va a fallar, y pide que se
+   * olvide la cookie. Sin JavaScript también: lo pide una imagen.
+   */
+  test("al volver con un enlace anulado no hay campo, y se olvida", async ({ browser }) => {
+    const { token, grupoId } = await crearGrupo("anulado-vuelta");
+    const contexto = await conInvitacionAbierta(browser, token, false);
+    await conBase((sql) => sql`delete from public.grupos_invitacion where id = ${grupoId}`);
+
+    const pagina = await contexto.newPage();
+    await pagina.goto("/");
+    await expect(pagina.locator("#playlist")).toContainText(copy.playlist.sinInvitacion);
+    await expect(
+      pagina.locator("#playlist").getByLabel(copy.playlist.campoCancion),
+    ).toHaveCount(0);
     expect(
       (await contexto.cookies()).find((c) => c.name === "boda:invitacion"),
     ).toBeUndefined();

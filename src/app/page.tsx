@@ -39,6 +39,7 @@ import {
   BUCKET_MEDIOS,
   ID_CONTENIDO,
   MARCA_RSVP_ENVIADO,
+  RUTA_OLVIDAR_INVITACION,
   URL_ATRIBUCION_MAPA,
 } from "@/config/constants";
 import { anclaDe, esAncla, vaEnElMenu, type Seccion } from "@/config/secciones";
@@ -130,26 +131,42 @@ export default async function PaginaInicio({
     formulario de confirmación. Se lee aquí, UNA VEZ, y no dentro de cada
     sección: la página tiene un solo sitio donde se decide qué se pinta.
 
-    El campo de la playlist mira sólo la cookie: si el enlace ya no vale, la
-    base lo dice al apuntar y la cookie se olvida. El saludo y la confirmación
-    sí preguntan a la base, porque un nombre viejo o de un enlace anulado sería
-    mentir.
+    El enlace se recuerda sin preguntar a nadie (lo hace el middleware, sin
+    arrancar una función); la pregunta a la base se hace AQUÍ, una vez, y de
+    ella salen el saludo, el campo de la playlist y la confirmación: un nombre
+    viejo o de un enlace anulado sería mentir.
   */
   const token = await invitacionRecordada();
-  const hayInvitacion = token !== null;
-  const lectura = await leerLaInvitacion(token);
+
+  /*
+    LA INVITACIÓN Y LO DEMÁS, A LA VEZ. Antes se leía la invitación y después
+    lo de la página: en frío, quien llegaba desde el enlace esperaba las dos
+    cosas en fila. `cargarLanding` puede fallar y se resuelve aparte, para que
+    su avería no se confunda con la de la invitación.
+  */
+  const [lectura, carga] = await Promise.all([
+    leerLaInvitacion(token),
+    cargarLanding().then(
+      (datos) => ({ datos }),
+      () => null,
+    ),
+  ]);
+  /*
+    EL ENLACE YA NO VALE si la base, al preguntarle, dice que no existe —mal
+    tecleado, o anulado al emitir otro—. Entonces no se saluda, la playlist no
+    enseña su campo y la cookie se olvida. Si la base no contesta, NO se da
+    por malo: quien sí tenía un enlace bueno conserva la playlist ese día.
+  */
+  const enlaceQueNoVale = lectura.tipo === "leida" && lectura.invitacion === null;
+  const hayInvitacion = token !== null && !enlaceQueNoVale;
   const saludo =
     lectura.tipo === "leida" && lectura.invitacion ? lectura.invitacion.grupoNombre : null;
   const consulta = consultaDeConfirmacion(await searchParams);
 
-  let datos;
-  try {
-    datos = await cargarLanding();
-  } catch {
-    // La avería ya se registró en el log con su motivo. Aquí sólo se decide
-    // qué ve el invitado, y lo que ve es la verdad: ahora mismo no se puede.
-    return <EnPreparacion motivo="averia" />;
-  }
+  // La avería ya se registró en el log con su motivo. Aquí sólo se decide qué
+  // ve el invitado, y lo que ve es la verdad: ahora mismo no se puede.
+  if (!carga) return <EnPreparacion motivo="averia" />;
+  const { datos } = carga;
 
   const {
     secciones,
@@ -389,6 +406,16 @@ export default async function PaginaInicio({
         anunciarse: para quien escucha la página no mide nada.
       */}
       <div aria-hidden="true" className="barra-lectura" />
+
+      {/*
+        OLVIDAR UN ENLACE QUE NO VALE. La página no puede borrar una cookie;
+        una imagen sí puede pedir que se borre, y se pide también sin
+        JavaScript. La contesta el middleware con un 204 (ver `middleware.ts`).
+      */}
+      {enlaceQueNoVale ? (
+        // eslint-disable-next-line @next/next/no-img-element -- no es una foto: es la petición que olvida la cookie, y `next/image` la mandaría por el optimizador
+        <img src={RUTA_OLVIDAR_INVITACION} alt="" hidden />
+      ) : null}
 
       <Navegacion
         inicio={inicio}
