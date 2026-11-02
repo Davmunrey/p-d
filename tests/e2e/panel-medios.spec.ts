@@ -645,7 +645,11 @@ test.describe("El gestor de fotos y vídeos", () => {
       await sql.end();
     }
 
+    // Esperando a que se borre de verdad: sin esto el test acababa con el clic,
+    // la pestaña se cerraba a medio borrar y el retrato se quedaba en el puesto
+    // 0, donde `retrato.spec.ts` pone el suyo. Fallaba allí, y sólo a veces.
     await borrar(page, alternativo);
+    await esperarEstado(page, "borrado");
   });
 
   /** CASO DE ERROR · una foto sin recortar no tiene contorno, y se dice cómo hacerla. */
