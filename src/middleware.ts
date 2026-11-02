@@ -5,7 +5,7 @@ import {
   PARAMETRO_VOLVER,
   RUTA_ACCESO,
   RUTA_PANEL,
-  URL_MAPA_EMBEBIDO,
+  URL_TESELAS_MAPA,
   URL_WHATSAPP,
 } from "@/config/constants";
 import { construirCsp } from "@/lib/csp";
@@ -50,7 +50,7 @@ function conCsp(peticion: NextRequest): string {
   const nonce = btoa(crypto.randomUUID());
   const csp = construirCsp(nonce, {
     supabase: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    mapa: URL_MAPA_EMBEBIDO,
+    mapa: URL_TESELAS_MAPA,
     whatsapp: URL_WHATSAPP,
     desarrollo: process.env.NODE_ENV !== "production",
   });

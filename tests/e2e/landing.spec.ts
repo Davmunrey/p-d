@@ -45,13 +45,26 @@ test.describe("Landing", () => {
     await expect(enlace).toHaveAttribute("target", "_blank");
   });
 
+  /*
+    LAS PREGUNTAS VAN PLEGADAS: la sección es su titular, que se abre, y dentro
+    cada pregunta se abre a su vez. Las dos cosas, con teclado.
+  */
   test("las preguntas frecuentes se abren y cierran con teclado", async ({ page }) => {
-    const primera = page.locator("#preguntas-frecuentes details").first();
-    await expect(primera).not.toHaveAttribute("open", "");
+    const seccion = page.locator("#preguntas-frecuentes > div > details");
+    await expect(seccion).not.toHaveAttribute("open", "");
 
+    await seccion.locator("> summary").focus();
+    await page.keyboard.press("Enter");
+    await expect(seccion).toHaveAttribute("open", "");
+
+    const primera = seccion.locator("ul details").first();
+    await expect(primera).not.toHaveAttribute("open", "");
     await primera.locator("summary").focus();
     await page.keyboard.press("Enter");
     await expect(primera).toHaveAttribute("open", "");
+
+    await page.keyboard.press("Enter");
+    await expect(primera).not.toHaveAttribute("open", "");
   });
 
   test("la cuenta atrás muestra cifras y no un hueco", async ({ page }) => {
@@ -123,15 +136,17 @@ test.describe("Landing", () => {
   /**
    * BODA-20 · El cielo de la cuenta atrás.
    */
-  test("la cuenta atrás lleva su cielo, y es decoración para quien no ve", async ({ page }) => {
-    const cielo = page.locator("#cuenta-atras [data-cielo-estrellado]");
+  test("la cuenta atrás va en la portada, bajo el mismo cielo, que es decoración", async ({
+    page,
+  }) => {
+    // Con portada, la cuenta atrás es un dato más del primer vistazo.
+    await expect(page.locator("#portada [role=timer]")).toBeVisible();
+    await expect(page.locator("section#cuenta-atras")).toHaveCount(0);
+
+    // Y el cielo es uno, el de la noche: decoración pura para quien no ve.
+    const cielo = page.locator('[data-tramo="noche"] [data-cielo-estrellado]');
     await expect(cielo).toHaveCount(1);
-
-    // Decoración pura: anunciarlo sería ruido en un lector de pantalla.
     await expect(cielo).toHaveAttribute("aria-hidden", "true");
-
-    // Y es un cielo de verdad, no un fondo: estrellas contadas y pintadas.
-    await cielo.scrollIntoViewIfNeeded();
     await expect(cielo).toHaveAttribute("data-cielo", "vivo");
     expect(Number(await cielo.getAttribute("data-estrellas"))).toBeGreaterThan(20);
   });
@@ -314,11 +329,12 @@ test.describe("Cabecera de sección", () => {
 
   test("ninguna sección de contenido se queda sin abrir", async ({ page }) => {
     // La portada y la cuenta atrás tienen su propia composición; el resto
-    // comparte el patrón y ninguna puede quedarse muda.
+    // comparte el patrón y ninguna puede quedarse muda. Las preguntas, que van
+    // plegadas, se abren con su titular dentro del desplegable.
     const mudas = await page.evaluate(() =>
       [...document.querySelectorAll("main section")]
         .filter((seccion) => !["portada", "cuenta-atras"].includes(seccion.id))
-        .filter((seccion) => !seccion.querySelector("header h2"))
+        .filter((seccion) => !seccion.querySelector("header h2, summary h2"))
         .map((seccion) => seccion.id),
     );
 
@@ -415,9 +431,13 @@ test.describe("Cielo con movimiento reducido", () => {
     );
 
     // Pintado una vez y quieto: ni titila, ni cruza ninguna fugaz.
-    const cielo = page.locator("#cuenta-atras [data-cielo-estrellado]");
-    await cielo.scrollIntoViewIfNeeded();
+    const cielo = page.locator('[data-tramo="noche"] [data-cielo-estrellado]');
     await expect(cielo).toHaveAttribute("data-cielo", "quieto");
+    // Ni gira: el firmamento se queda donde estaba aunque se baje.
+    await page.evaluate(() =>
+      window.scrollTo({ top: window.innerHeight, behavior: "instant" }),
+    );
+    await expect(cielo).toHaveAttribute("data-giro", "0.00");
   });
 });
 
@@ -634,19 +654,22 @@ test.describe("El ritmo y la composición son los de la entrega", () => {
     expect(margen).toBe(26);
   });
 
-  test("la cuenta atrás respira con el ancho: 64 px en móvil, 102 en escritorio", async ({
+  test("la cuenta atrás de la portada cabe en una fila también en un móvil", async ({
     page,
   }) => {
-    const relleno = async (ancho: number) => {
-      await page.setViewportSize({ width: ancho, height: 900 });
-      await page.goto("/");
-      return page
-        .locator("#cuenta-atras")
-        .evaluate((seccion) => parseFloat(getComputedStyle(seccion).paddingTop));
-    };
-    // clamp(64px, 8vw, 104px): 64 a 390 y 102,4 a 1280.
-    expect(await relleno(390)).toBe(64);
-    expect(await relleno(1280)).toBeCloseTo(102.4, 0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    const fila = await page.locator("#portada [role=timer]").evaluate((contador) => {
+      const bloques = [...contador.children].filter(
+        (hijo) => !hijo.classList.contains("sr-only"),
+      );
+      const arriba = new Set(bloques.map((b) => Math.round(b.getBoundingClientRect().top)));
+      const derecha = Math.max(...bloques.map((b) => b.getBoundingClientRect().right));
+      return { bloques: bloques.length, filas: arriba.size, derecha };
+    });
+    expect(fila.bloques).toBe(4);
+    expect(fila.filas).toBe(1);
+    expect(fila.derecha).toBeLessThanOrEqual(390);
   });
 
   test("la barra mide 64 px", async ({ page }) => {
@@ -672,9 +695,10 @@ test.describe("El ritmo y la composición son los de la entrega", () => {
       ),
     );
 
-    // 1080, 1180, 900 y 816 (51rem): cuatro anchos, no uno.
+    // 1080, 900 y 816 (51rem): el día y dónde dormir a lo ancho de lectura,
+    // la playlist y los regalos más recogidos.
     expect(anchos.programa).toBe(1080);
-    expect(anchos.alojamiento).toBe(1180);
+    expect(anchos.alojamiento).toBe(1080);
     expect(anchos.playlist).toBe(900);
     expect(anchos.regalos).toBe(816);
   });
@@ -722,7 +746,7 @@ test.describe("El ritmo y la composición son los de la entrega", () => {
     }
   });
 
-  test("cómo llegar es dos columnas: el botón con el texto y el mapa casi cuadrado", async ({
+  test("cómo llegar es la tarjeta sobre el mapa: a la izquierda, y el sitio a la derecha", async ({
     page,
   }) => {
     await page.setViewportSize(ESCRITORIO);
@@ -730,26 +754,30 @@ test.describe("El ritmo y la composición son los de la entrega", () => {
 
     const medidas = await page.evaluate(() => {
       const seccion = document.querySelector("#transporte")!;
-      const boton = seccion.querySelector("a[target='_blank']")!.getBoundingClientRect();
-      const mapa = seccion.querySelector("iframe")!.getBoundingClientRect();
-      const rutas = seccion.querySelector("ul")!.getBoundingClientRect();
+      const tarjeta = seccion.querySelector("header")!.parentElement!.getBoundingClientRect();
+      const mapa = seccion.querySelector("[data-mapa-del-lugar]")!.getBoundingClientRect();
+      const sitio = seccion.querySelector("[data-estrella-llegada]")!.getBoundingClientRect();
       return {
-        botonALaIzquierdaDelMapa: boton.right <= mapa.left,
-        rutasALaIzquierdaDelMapa: rutas.right <= mapa.left,
-        proporcion: mapa.height / mapa.width,
-        radio: getComputedStyle(seccion.querySelector("iframe")!).borderRadius,
+        tarjetaALaIzquierdaDelSitio: tarjeta.right < sitio.left,
+        sitioEnElMapa: sitio.left > mapa.left && sitio.left < mapa.right,
+        mapaAAnchoCompleto: Math.round(mapa.width) === document.documentElement.clientWidth,
+        marcos: document.querySelectorAll("iframe").length,
       };
     });
 
-    expect(medidas.botonALaIzquierdaDelMapa).toBe(true);
-    expect(medidas.rutasALaIzquierdaDelMapa).toBe(true);
-    expect(medidas.proporcion).toBeCloseTo(1.06, 2);
-    expect(medidas.radio).toBe("0px");
+    expect(medidas.tarjetaALaIzquierdaDelSitio).toBe(true);
+    expect(medidas.sitioEnElMapa).toBe(true);
+    expect(medidas.mapaAAnchoCompleto).toBe(true);
+    // El mapa ya no es un marco embebido: no se queda con el dedo.
+    expect(medidas.marcos).toBe(0);
   });
 
   test("las filas del programa llevan el filete vertical y cierran por arriba", async ({
     page,
   }) => {
+    // Con sitio: en un móvil la hora va al lado del titular y no hay filete
+    // (ver el test siguiente).
+    await page.setViewportSize(ESCRITORIO);
     await page.goto("/");
 
     const fila = await page
@@ -779,6 +807,53 @@ test.describe("El ritmo y la composición son los de la entrega", () => {
         abajo: parseFloat(getComputedStyle(li).borderBottomWidth),
       }));
     expect(vispera).toEqual({ arriba: 0, abajo: 1 });
+  });
+
+  /*
+    EN UN MÓVIL, LA HORA AL LADO DEL TITULAR Y LA DESCRIPCIÓN DEBAJO, A TODO EL
+    ANCHO: en una columna estrecha junto a la hora, cada descripción ocupaba el
+    doble de líneas. El filete, sin sitio, no se pinta.
+  */
+  test("en un móvil, la hora va junto al titular y la descripción a todo el ancho", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+
+    const fila = await page
+      .locator("#programa ol > li")
+      .filter({ has: page.locator("h3 + p") })
+      .first()
+      .evaluate((li) => {
+        /*
+          Se mide la maquetación (`offset*`), no lo pintado: la hora entra
+          deslizándose desde la izquierda al verse, y a mitad de la entrada
+          `getBoundingClientRect` la daría fuera de su sitio.
+        */
+        const caja = (nodo: Element) => {
+          const n = nodo as HTMLElement;
+          return {
+            izquierda: n.offsetLeft,
+            derecha: n.offsetLeft + n.offsetWidth,
+            arriba: n.offsetTop,
+            abajo: n.offsetTop + n.offsetHeight,
+            alto: n.offsetHeight,
+          };
+        };
+        const hora = caja(li.children[0]);
+        const titulo = caja(li.querySelector("h3")!);
+        const texto = caja(li.querySelector("h3 + p")!);
+        return {
+          alLado:
+            titulo.izquierda > hora.derecha &&
+            Math.abs(titulo.arriba - hora.arriba) < hora.alto,
+          debajo: texto.arriba >= titulo.abajo,
+          aTodoElAncho: texto.izquierda === hora.izquierda,
+          filete: getComputedStyle(li.children[1]).display,
+        };
+      });
+
+    expect(fila).toEqual({ alLado: true, debajo: true, aTodoElAncho: true, filete: "none" });
   });
 
   test("el pie es el de la entrega: centrado, con monograma, fecha y lugar", async ({
@@ -968,9 +1043,9 @@ test.describe("El movimiento es el de la entrega", () => {
     expect(raya).toEqual({ nombre: "flotar", periodo: "2.6s" });
   });
 
-  test("las tarjetas se levantan al pasar el ratón", async ({ page }) => {
+  test("las canciones apuntadas se levantan al pasar el ratón", async ({ page }) => {
     await page.goto("/");
-    const tarjeta = page.locator("#alojamiento ul > li").first();
+    const tarjeta = page.locator("#playlist ul > li").first();
     // Arriba del todo de la pantalla, pasado el tramo del reveal: mientras el
     // reveal está activo es él quien manda en el `transform`, no el hover.
     await tarjeta.evaluate((nodo) => nodo.scrollIntoView({ block: "start" }));
@@ -1048,9 +1123,8 @@ test.describe("El movimiento es el de la entrega", () => {
       ];
       return {
         retardos: retardos.map((n) => getComputedStyle(n).animationDelay),
-        reveal: getComputedStyle(
-          document.querySelector("#cuenta-atras .animacion-cortina-al-ver")!,
-        ).animationName,
+        reveal: getComputedStyle(document.querySelector("#historia .animacion-subir-al-ver")!)
+          .animationName,
         pista: getComputedStyle(document.querySelector("#portada .animacion-flotar")!)
           .animationName,
       };

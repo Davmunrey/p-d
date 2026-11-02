@@ -144,28 +144,44 @@ export const TOPE_AVISOS_PROGRAMA = 6;
 export const LONGITUD_MAXIMA_AVISO_PROGRAMA = 120;
 
 /**
- * Cuánto se ve alrededor de la finca en el mapa incrustado, en grados.
- *
- * Unos 0,01° son algo más de un kilómetro: lo justo para situar el sitio
- * respecto al pueblo sin que la finca se pierda en una mancha verde. Es un
- * número que se ajusta mirando el resultado, así que vive aquí con su nombre y
- * no incrustado en la URL, donde nadie sabría qué significa el cuarto número de
- * una lista separada por comas.
+ * LAS TESELAS DEL MAPA DEL FINAL, las de OpenStreetMap. El mapa no es un
+ * `<iframe>`: es el fondo del final de la página, y un mapa embebido se queda
+ * con el dedo —en un móvil, al bajar por encima, movía el mapa y no la
+ * página—. Son imágenes de 256 px colocadas alrededor del sitio, como un plano
+ * impreso; para moverse por él está «Abrir en el mapa». Con nombre y en un
+ * solo sitio: desde aquí lo lee también la Content-Security-Policy, que sólo
+ * deja cargar imágenes de este origen.
  */
-export const MAPA_MARGEN_GRADOS = 0.012;
+export const URL_TESELAS_MAPA = "https://tile.openstreetmap.org";
 
 /**
- * El mapa embebido de OpenStreetMap. Con nombre y en un solo sitio: lo usa el
- * `<iframe>` de cómo llegar y, desde ahí, la Content-Security-Policy, que sólo
- * deja enmarcar este origen.
+ * Adónde lleva el «© OpenStreetMap» que acompaña al mapa: su página de
+ * derechos. Usar sus teselas obliga a decir de quién son, con enlace.
  */
-export const URL_MAPA_EMBEBIDO = "https://www.openstreetmap.org/export/embed.html";
+export const URL_ATRIBUCION_MAPA = "https://www.openstreetmap.org/copyright";
+
+/** El lado de una tesela, en píxeles: el que sirve OpenStreetMap. */
+export const TAMANO_TESELA = 256;
+
+/**
+ * El zoom del mapa del final. A 15 se ven las calles del pueblo y los caminos
+ * que llevan a la finca, que es lo que sitúa el sitio; a 13 la finca se pierde
+ * en una mancha verde y a 17 no se ve por dónde se llega.
+ */
+export const ZOOM_MAPA_FINAL = 15;
+
+/**
+ * Cuántas teselas se ponen a cada lado de la del sitio. Con tres columnas y
+ * dos filas a cada lado, el plano cubre un monitor ancho sin huecos; en un
+ * móvil las de los lados ni se piden, porque quedan fuera y cargan perezosas.
+ */
+export const TESELAS_ALREDEDOR = { columnas: 3, filas: 2 } as const;
 
 /**
  * El enlace universal de Google Maps que abre «cómo llegar» fuera de la
  * página: la aplicación del móvil si está instalada, el navegador si no. Con
- * nombre y aquí, junto al mapa embebido, en vez de escrito dentro de la
- * función que lo compone.
+ * nombre y aquí, junto a las teselas, en vez de escrito dentro de la función
+ * que lo compone.
  */
 export const URL_MAPA_EXTERNO = "https://www.google.com/maps/search/";
 

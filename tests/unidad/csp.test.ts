@@ -11,7 +11,7 @@ import { construirCsp } from "../../src/lib/csp";
  */
 const ORIGENES = {
   supabase: "https://abc.supabase.co",
-  mapa: "https://www.openstreetmap.org/export/embed.html?bbox=1",
+  mapa: "https://tile.openstreetmap.org",
   whatsapp: "https://wa.me/",
   desarrollo: false,
 };
@@ -37,12 +37,21 @@ describe("construirCsp", () => {
     expect(construirCsp("n", { ...ORIGENES, desarrollo: true })).toContain("'unsafe-eval'");
   });
 
-  it("las imágenes y el vídeo vienen del bucket; la conexión, sólo del bucket", () => {
-    expect(directiva("img-src")).toBe("'self' data: blob: https://abc.supabase.co");
+  it("las imágenes vienen del bucket y de las teselas del mapa; el vídeo y la conexión, sólo del bucket", () => {
+    expect(directiva("img-src")).toBe(
+      "'self' data: blob: https://abc.supabase.co https://tile.openstreetmap.org",
+    );
     expect(directiva("media-src")).toBe("'self' https://abc.supabase.co");
     // El bucket, porque el panel sube las fotos del navegador a Storage.
     expect(directiva("connect-src")).toBe("'self' https://abc.supabase.co");
-    expect(directiva("frame-src")).toBe("https://www.openstreetmap.org");
+  });
+
+  /*
+    El mapa del final eran un `<iframe>` de OpenStreetMap; ahora son teselas
+    sueltas. Sin ningún marco en la web, no se deja enmarcar nada.
+  */
+  it("no se enmarca nada: el mapa ya no es un iframe", () => {
+    expect(directiva("frame-src")).toBe("'none'");
   });
 
   it("nadie nos enmarca, ningún plugin, ningún formulario a otro sitio que no sea nuestro", () => {
@@ -86,13 +95,13 @@ describe("construirCsp", () => {
       desarrollo: false,
     });
     expect(sinNada).toContain("connect-src 'self';");
-    expect(sinNada).toContain("img-src 'self' data: blob:;");
+    expect(sinNada).toContain("img-src 'self' data: blob: https://tile.openstreetmap.org;");
     expect(sinNada).not.toContain("undefined");
     expect(sinNada).not.toContain("null");
   });
 
   it("un origen mal escrito no rompe la cabecera: se omite", () => {
     const roto = construirCsp("n", { ...ORIGENES, supabase: "esto no es una url" });
-    expect(roto).toContain("img-src 'self' data: blob:;");
+    expect(roto).toContain("img-src 'self' data: blob: https://tile.openstreetmap.org;");
   });
 });

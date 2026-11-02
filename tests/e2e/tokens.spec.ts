@@ -271,9 +271,11 @@ test.describe("El vocabulario de espaciado está cerrado", () => {
    * con un escalón que sólo se ve bajando despacio — y bajando despacio no
    * revisa nadie una web que se abre desde WhatsApp.
    *
-   * Aquí se mide lo pintado y se compara contra los TRES ritmos del sistema,
+   * Aquí se mide lo pintado y se compara contra los ritmos del sistema,
    * leídos de las propias variables:
    *
+   *   · `--espacio-tramo` — las secciones de la landing sobre el cielo
+   *     continuo, que no tienen fondo propio y respiran menos (32–80 px);
    *   · `--espacio-seccion-fluida` — las secciones de contenido, que respiran
    *     con el ancho de la pantalla (76–132 px);
    *   · `--espacio-seccion-compacta-fluida` — la cuenta atrás, que en la
@@ -290,7 +292,7 @@ test.describe("El vocabulario de espaciado está cerrado", () => {
    * reconocen por su nombre sino por lo que hacen: llenar la pantalla. Así una
    * sección normal que se quedara sin relleno no puede colarse por esa puerta.
    */
-  test("cada sección respira uno de los tres ritmos del sistema", async ({ page }) => {
+  test("cada sección respira uno de los ritmos del sistema", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
@@ -307,6 +309,7 @@ test.describe("El vocabulario de espaciado está cerrado", () => {
       };
 
       const permitidos = [
+        raiz.getPropertyValue("--espacio-tramo"),
         raiz.getPropertyValue("--espacio-seccion-fluida"),
         raiz.getPropertyValue("--espacio-seccion-compacta-fluida"),
         raiz.getPropertyValue("--espacio-seccion-compacta"),

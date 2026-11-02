@@ -51,7 +51,6 @@ const DE_INVITADO = [
   "historia",
   "meta",
   "navegacion",
-  "paisaje",
   "pie",
   "playlist",
   "portada",

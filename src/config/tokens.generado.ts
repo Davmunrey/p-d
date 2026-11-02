@@ -71,7 +71,6 @@ export const GRUPOS_COLOR = [
       "tinta-suave",
       "tinta-tenue",
       "tinta-inversa",
-      "tinta-sobre-foto",
       "tinta-sobre-foto-tenue",
       "tinta-marca",
       "tinta-sobre-marca",
@@ -151,28 +150,24 @@ export const GRUPOS_COLOR = [
       "velo",
       "velo-suave",
       "velo-fuerte",
-      "velo-foto",
+      "cielo-amanecer-1",
+      "cielo-amanecer-2",
+      "cielo-amanecer-3",
+      "cielo-amanecer-4",
       "cielo-alba",
-      "cielo-alba-brillo",
-      "cielo-alba-brillo-final",
       "cielo-tarde",
-      "cielo-ocaso",
-      "cielo-ocaso-brillo",
-      "cielo-ocaso-brillo-final",
+      "cielo-mediodia",
       "sol",
       "sol-final",
       "mascara-llena",
       "cielo-noche-cenit",
       "cielo-noche-medio",
       "cielo-noche-horizonte",
-      "cielo-horizonte-calido",
-      "cielo-horizonte-calido-final",
       "cielo-estrella",
       "cielo-estrella-calida",
       "cielo-via-lactea",
       "cielo-via-lactea-final",
-      "cielo-fugaz",
-      "velo-hundido"
+      "cielo-fugaz"
     ]
   },
   {
@@ -206,17 +201,6 @@ export const GRUPOS_COLOR = [
       "velo-cielo-centro",
       "velo-cielo-medio",
       "velo-cielo-borde"
-    ]
-  },
-  {
-    "id": "elPaisaje",
-    "tokens": [
-      "velo-escena-lejos-arriba",
-      "velo-escena-lejos-abajo",
-      "velo-escena-cerca-arriba",
-      "velo-escena-cerca-abajo",
-      "tinta-sobre-foto-fria",
-      "acento-sobre-foto"
     ]
   }
 ] as const;

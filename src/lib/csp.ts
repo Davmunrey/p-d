@@ -16,13 +16,15 @@
  *   · estilos   → la hoja de `/_next/static` y atributos `style=`: `next/image`
  *                 los escribe con `fill` y con el marcador borroso, y dos
  *                 pantallas del panel posicionan con `style={{}}`.
- *   · imágenes  → `/_next/image`, `data:` (marcadores borrosos) y el bucket
- *                 público de Supabase (póster del vídeo, miniaturas del panel).
+ *   · imágenes  → `/_next/image`, `data:` (marcadores borrosos), el bucket
+ *                 público de Supabase (póster del vídeo, miniaturas del panel)
+ *                 y las teselas de OpenStreetMap del mapa del final.
  *   · vídeo     → el bucket.
  *   · fuentes   → locales.
  *   · conexión  → la propia web y el bucket de Supabase (las subidas del
  *                 panel). Ningún tercero.
- *   · marcos    → el mapa de OpenStreetMap; que nos enmarquen, nadie.
+ *   · marcos    → ninguno: el mapa ya no es un `<iframe>`, son teselas. Que
+ *                 nos enmarquen, nadie.
  *   · formularios → los nuestros, y el bucket: las descargas de documentos
  *                 redirigen a su URL firmada.
  *
@@ -61,14 +63,14 @@ export function construirCsp(nonce: string, origenes: OrigenesCsp): string {
     // la lista de dominios; los antiguos se quedan con ella.
     `script-src ${lista("'self'", `'nonce-${nonce}'`, "'strict-dynamic'", origenes.desarrollo ? "'unsafe-eval'" : null)}`,
     `style-src 'self' 'unsafe-inline'`,
-    `img-src ${lista("'self'", "data:", "blob:", supabase)}`,
+    `img-src ${lista("'self'", "data:", "blob:", supabase, mapa)}`,
     `media-src ${lista("'self'", supabase)}`,
     `font-src 'self'`,
     // Y el bucket: las fotos y los vídeos del panel suben del navegador a
     // Storage directamente, porque por el servidor no caben (ver
     // `panel/medios/formulario-subida.tsx`).
     `connect-src ${lista("'self'", supabase)}`,
-    `frame-src ${lista(mapa)}`,
+    `frame-src 'none'`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     // Y el bucket: «Descargar» un documento —de un proveedor o de la boda— es

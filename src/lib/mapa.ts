@@ -1,4 +1,10 @@
-import { MAPA_MARGEN_GRADOS, URL_MAPA_EMBEBIDO, URL_MAPA_EXTERNO } from "@/config/constants";
+import {
+  TAMANO_TESELA,
+  TESELAS_ALREDEDOR,
+  URL_MAPA_EXTERNO,
+  URL_TESELAS_MAPA,
+  ZOOM_MAPA_FINAL,
+} from "@/config/constants";
 
 /**
  * BODA-26 · LOS DOS ENLACES DEL MAPA
@@ -26,37 +32,60 @@ export function enlaceMapaExterno(latitud: number, longitud: number): string {
   return `${URL_MAPA_EXTERNO}?api=1&query=${encodeURIComponent(punto)}`;
 }
 
+/** Una tesela del mapa: su dirección y dónde va respecto al sitio, en píxeles. */
+export interface Tesela {
+  url: string;
+  /** Lo que hay del sitio a la esquina de arriba a la izquierda de la tesela. */
+  x: number;
+  y: number;
+}
+
 /**
- * El mapa que se ve dentro de la página, sin salir de ella.
+ * El mapa que se ve dentro de la página: las teselas de alrededor del sitio.
  *
  * ES OPENSTREETMAP Y NO GOOGLE, por dos razones que van en el mismo sentido:
- * el mapa incrustado de Google exige una clave de API —una cuenta, una
- * facturación y una variable de entorno más que configurar para que la landing
- * no salga rota—, y además le cuenta a Google quién ha abierto la invitación
- * antes de que el invitado haya pulsado nada. Aquí no hace falta ninguna clave.
+ * el mapa de Google exige una clave de API —una cuenta, una facturación y una
+ * variable de entorno más que configurar para que la landing no salga rota—, y
+ * además le cuenta a Google quién ha abierto la invitación antes de que el
+ * invitado haya pulsado nada. Aquí no hace falta ninguna clave.
  *
- * El botón de arriba sigue llevando a Google, que es la aplicación que la gente
- * tiene instalada: eso es una elección del invitado, no una que hagamos nosotros
- * por él al cargar la página.
+ * El botón de «Abrir en el mapa» sigue llevando a Google, que es la aplicación
+ * que la gente tiene instalada: eso es una elección del invitado, no una que
+ * hagamos nosotros por él al cargar la página.
  *
- * El recuadro se calcula alrededor del punto con un margen fijo, que es lo que
- * decide cuánto se ve alrededor de la finca. Vive en `constants.ts` porque es un
- * número que se ajusta mirando el resultado, no una constante de la naturaleza.
+ * LA CUENTA ES LA DE CUALQUIER MAPA WEB (Mercator): a un zoom dado, el mundo
+ * mide 2^zoom teselas de lado, y la longitud y la latitud dicen en qué píxel
+ * de ese mundo cae el sitio. Cada tesela sale con su posición respecto a ese
+ * píxel, así que quien la pinta sólo tiene que poner el sitio donde quiera y
+ * cada tesela a su distancia: el sitio cae exacto, sea cual sea la pantalla.
  */
-export function enlaceMapaEmbebido(latitud: number, longitud: number): string {
-  const margen = MAPA_MARGEN_GRADOS;
-  const recuadro = [
-    longitud - margen,
-    latitud - margen,
-    longitud + margen,
-    latitud + margen,
-  ].join(",");
+export function teselasAlrededor(latitud: number, longitud: number): Tesela[] {
+  const mundo = TAMANO_TESELA * 2 ** ZOOM_MAPA_FINAL;
+  const radianes = (latitud * Math.PI) / 180;
+  const sitioX = ((longitud + 180) / 360) * mundo;
+  const sitioY =
+    ((1 - Math.log(Math.tan(radianes) + 1 / Math.cos(radianes)) / Math.PI) / 2) * mundo;
 
-  const parametros = new URLSearchParams({
-    bbox: recuadro,
-    layer: "mapnik",
-    marker: `${latitud},${longitud}`,
-  });
+  const columna = Math.floor(sitioX / TAMANO_TESELA);
+  const fila = Math.floor(sitioY / TAMANO_TESELA);
+  const teselasPorLado = 2 ** ZOOM_MAPA_FINAL;
 
-  return `${URL_MAPA_EMBEBIDO}?${parametros.toString()}`;
+  const teselas: Tesela[] = [];
+  const { columnas, filas } = TESELAS_ALREDEDOR;
+  for (let df = -filas; df <= filas; df += 1) {
+    for (let dc = -columnas; dc <= columnas; dc += 1) {
+      const c = columna + dc;
+      const f = fila + df;
+      // Ni por encima del polo ni por debajo: ahí no hay mapa.
+      if (f < 0 || f >= teselasPorLado) continue;
+      // En longitud el mundo da la vuelta: la columna se envuelve.
+      const cEnvuelta = ((c % teselasPorLado) + teselasPorLado) % teselasPorLado;
+      teselas.push({
+        url: `${URL_TESELAS_MAPA}/${ZOOM_MAPA_FINAL}/${cEnvuelta}/${f}.png`,
+        x: Math.round(c * TAMANO_TESELA - sitioX),
+        y: Math.round(f * TAMANO_TESELA - sitioY),
+      });
+    }
+  }
+  return teselas;
 }

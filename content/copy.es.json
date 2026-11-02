@@ -66,9 +66,6 @@
     "yaEsHoy": "Hoy es el día",
     "cierre": "Nos hace mucha ilusión celebrarlo con vosotros. Aquí abajo está todo lo que hay que saber."
   },
-  "paisaje": {
-    "seguidBajando": "Seguid bajando"
-  },
   "historia": {
     "etiqueta": "Cómo llegamos hasta aquí",
     "titulo": "Nuestra historia",
@@ -106,7 +103,8 @@
     "etiqueta": "El lugar",
     "titulo": "Cómo llegar",
     "abrirMapa": "Abrir en el mapa",
-    "mapaTitulo": "Mapa con el sitio de la boda"
+    "atribucionMapa": "colaboradores de OpenStreetMap",
+    "mapaDe": "Mapa:"
   },
   "preguntas": {
     "etiqueta": "Por si os queda alguna duda",
@@ -128,7 +126,8 @@
     "errorEnlace": "Vuestro enlace de invitación ya no vale. Escribidnos y os mandamos otro.",
     "errorTope": "Ya habéis apuntado diez canciones. Con eso hay fiesta de sobra.",
     "errorIntentos": "Demasiados intentos seguidos. Probad dentro de un rato.",
-    "errorAveria": "No hemos podido apuntarla. Probad dentro de un rato."
+    "errorAveria": "No hemos podido apuntarla. Probad dentro de un rato.",
+    "apuntadas": "Canciones apuntadas"
   },
   "regalos": {
     "etiqueta": "Vuestra presencia ya es el regalo",

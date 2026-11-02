@@ -634,62 +634,10 @@
 }
 
 /**
- * NUESTRA HISTORIA: UNA ESTRELLA POR HITO. Mientras el texto baja, el cielo
- * del escenario se queda quieto y cada hito, al llegar a media pantalla,
- * enciende su estrella y dibuja el hilo que la une a la anterior; con el
- * último, aparece el cierre. Lo enciende `EscenaHistoria` con
- * `data-encendida`, y sólo cuando la escena está viva (`data-escena="viva"`):
- * sin JavaScript, o con movimiento reducido, todo está encendido desde el
- * principio y no falta nada que leer.
- */
-.estrella-del-camino,
-.halo-del-camino {
-  transform-box: fill-box;
-  transform-origin: center;
-  transition:
-    opacity var(--transicion-destello),
-    transform var(--transicion-destello);
-}
-
-.halo-del-camino {
-  opacity: var(--opacidad-destello-final);
-}
-
-.trazo-del-camino {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset var(--transicion-linea);
-}
-
-.cierre-historia {
-  transition:
-    opacity var(--transicion-aparicion),
-    transform var(--transicion-aparicion);
-}
-
-[data-escena="viva"] .estrella-del-camino:not([data-encendida]) {
-  opacity: var(--opacidad-estrella-dormida);
-  transform: scale(var(--escala-estrella-dormida));
-}
-
-[data-escena="viva"] .halo-del-camino:not([data-encendida]) {
-  opacity: 0%;
-  transform: scale(var(--escala-estrella-dormida));
-}
-
-[data-escena="viva"] .trazo-del-camino:not([data-encendida]) {
-  stroke-dashoffset: 1;
-}
-
-[data-escena="viva"] .cierre-historia:not([data-encendida]) {
-  opacity: 0%;
-  transform: translateY(var(--recorrido-reveal));
-}
-
-/**
- * VUESTRA ESTRELLA, EN EL CIELO DEL FINAL: hueca, entre todas las demás, y
+ * VUESTRA ESTRELLA, AL FINAL DE LA NOCHE: hueca, entre todas las demás, y
  * late —su halo crece y se apaga cada pocos segundos—. Es la de los
- * invitados, que confirman por WhatsApp.
+ * invitados, que confirman por WhatsApp. La misma onda marca, abajo del todo,
+ * el sitio donde se posa la estrella que baja al lugar.
  */
 .latido-estrella {
   animation: latir-estrella var(--periodo-latido) ease-in-out infinite;
@@ -763,41 +711,41 @@
 }
 
 /**
- * EL CIELO DEL DÍA, POR HORAS. `CieloDelDia` pone en `data-fase` la hora de
- * la sección que está a media pantalla, y cada tinte se funde al llegar la
- * suya; el sol cruza de la salida al cenit y al ocaso. De noche no se pinta
- * ningún tinte: las secciones de noche llevan su propio cielo.
+ * LA ESTRELLA QUE BAJA AL LUGAR. Espera arriba a la izquierda, apagada, y en
+ * cuanto el mapa del final entra en la pantalla (`EstrellaQueBaja` pone
+ * `data-llegada="bajando"`) cae hasta el sitio frenando, como una fugaz que
+ * esta vez se queda. Al posarse late, y aparece el nombre del lugar.
+ *
+ * SÓLO SE ESCONDE CON `data-llegada="arriba"`, que pone el JavaScript cuando
+ * el mapa todavía no se ve. Sin JavaScript, o con movimiento reducido, nadie
+ * lo pone: la estrella está posada desde el principio y el sitio se ve siempre.
  */
-.cielo-capa {
-  opacity: 0%;
-  transition: opacity var(--transicion-cielo);
-}
-
-[data-fase="alba"] > .cielo-alba,
-[data-fase="tarde"] > .cielo-tarde,
-[data-fase="ocaso"] > .cielo-ocaso {
-  opacity: 100%;
-}
-
-.cielo-sol {
-  transform: translate(var(--sol-salida-x), var(--sol-salida-y));
+.estrella-que-baja {
   transition:
-    opacity var(--transicion-cielo),
-    transform var(--transicion-sol);
+    opacity var(--transicion-llegada),
+    transform var(--transicion-llegada);
 }
 
-[data-fase="alba"] > .cielo-sol {
-  opacity: 55%;
+.rotulo-de-llegada {
+  transition: opacity var(--transicion-aparicion);
+  transition-delay: var(--duracion-llegada);
 }
 
-[data-fase="tarde"] > .cielo-sol {
-  opacity: 100%;
-  transform: translate(var(--sol-cenit-x), var(--sol-cenit-y));
+[data-llegada="arriba"] .estrella-que-baja {
+  opacity: 0%;
+  transform: translate(var(--estrella-desde-x), var(--estrella-desde-y))
+    scale(var(--escala-estrella-dormida));
 }
 
-[data-fase="ocaso"] > .cielo-sol {
-  opacity: 35%;
-  transform: translate(var(--sol-ocaso-x), var(--sol-ocaso-y));
+[data-llegada="arriba"] .rotulo-de-llegada {
+  opacity: 0%;
+  transition-delay: 0s;
+}
+
+/* La onda sólo late cuando la estrella ya está en el sitio. */
+[data-llegada="arriba"] .latido-estrella,
+[data-llegada="bajando"] .latido-estrella {
+  animation-delay: var(--duracion-llegada);
 }
 
 /**
@@ -1109,11 +1057,12 @@
   }
 
   /*
-    Sin movimiento no hay horas que se funden ni sol que cruza: la página clara
-    de siempre. Las noches siguen siendo noche, con su cielo quieto.
+    Sin movimiento la estrella del final no baja: está posada desde el
+    principio, con el nombre del lugar a la vista.
   */
-  [data-cielo-del-dia] {
-    visibility: hidden;
+  .estrella-que-baja,
+  .rotulo-de-llegada {
+    transition: none;
   }
 
   /* Sin movimiento, cambiar de página es un corte, sin fundido ni viaje. */

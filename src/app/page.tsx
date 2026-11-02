@@ -1,22 +1,21 @@
 import Image from "next/image";
 import { Fragment, type ReactNode } from "react";
 
+import { CieloEstrellado } from "@/components/marketing/cielo-estrellado";
+import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
+import { EstrellaDeCuatroPuntas } from "@/components/marketing/estrella-de-cuatro-puntas";
 import { Galeria } from "@/components/marketing/galeria";
 import { HuecoFoto } from "@/components/marketing/hueco-foto";
+import { MapaDelLugar } from "@/components/marketing/mapa-del-lugar";
 import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { VideoDeFondo } from "@/components/marketing/video-de-fondo";
-import { CieloDelDia } from "@/components/marketing/cielo-del-dia";
-import { CieloEstrellado } from "@/components/marketing/cielo-estrellado";
-import { EscenaHistoria } from "@/components/marketing/escena-historia";
 import { VuestraEstrella } from "@/components/marketing/vuestra-estrella";
-import { CuentaAtras } from "@/components/marketing/cuenta-atras";
-import { BotonEnlace } from "@/components/ui/boton";
 import { DatosEstructurados } from "@/components/datos-estructurados";
+import { BotonEnlace } from "@/components/ui/boton";
 import { CuentaRegalos } from "@/components/ui/cuenta-regalos";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
-import { Tarjeta } from "@/components/ui/tarjeta";
 import { FormularioPlaylist } from "@/components/ui/formulario-playlist";
 import {
   Cita,
@@ -26,10 +25,11 @@ import {
   Etiqueta,
   EtiquetaSeccion,
   Titulo1,
+  Titulo2,
   Titulo3,
 } from "@/components/ui/tipografia";
-import { FASE_DE_SECCION, SEMILLAS_CIELO } from "@/config/cielo";
-import { BUCKET_MEDIOS, ID_CONTENIDO } from "@/config/constants";
+import { SECCIONES_DE_LLEGADA, SECCIONES_DE_NOCHE } from "@/config/cielo";
+import { BUCKET_MEDIOS, ID_CONTENIDO, URL_ATRIBUCION_MAPA } from "@/config/constants";
 import { anclaDe, esAncla, vaEnElMenu, type Seccion } from "@/config/secciones";
 import {
   obtenerAlojamientos,
@@ -61,7 +61,7 @@ import {
   vispera,
 } from "@/lib/fechas";
 import { numeroEnLetra } from "@/lib/numeros";
-import { enlaceMapaEmbebido, enlaceMapaExterno } from "@/lib/mapa";
+import { enlaceMapaExterno } from "@/lib/mapa";
 import { invitacionRecordada, saludoDeLaVisita } from "@/lib/invitacion-recordada";
 
 /**
@@ -76,31 +76,29 @@ import { invitacionRecordada, saludoDeLaVisita } from "@/lib/invitacion-recordad
  * menú a la vez. Aquí solo vive el cómo se pinta cada una.
  *
  * Una sección se enseña si cumple las dos cosas: que la base de datos la dé
- * por visible **y** que haya contenido que pintar. La segunda condición no es
- * un capricho: `ubicaciones` está encendida desde el primer día y todavía no
- * existe (es BODA-26). Sin ese filtro, el menú ofrecería un enlace que no
- * lleva a ninguna parte.
+ * por visible **y** que haya contenido que pintar. «Todavía no está hecha» y
+ * «hoy está vacía» acaban en el mismo sitio: fuera de la página y del menú.
  *
- * Y SIGUE HACIENDO FALTA CON LA SECCIÓN YA ESCRITA, que es lo que enseñó la
- * galería al entrar (BODA-25): existe el código, pero mientras no haya ninguna
- * foto publicada no hay galería que enseñar, y el filtro la deja fuera sola.
- * «Todavía no está hecha» y «hoy está vacía» acaban en el mismo sitio.
+ * UN SOLO CIELO, DE LA NOCHE AL DÍA. La página no tiene secciones con fondo
+ * propio: tiene un cielo que empieza de noche, bajo un firmamento que gira
+ * mientras se baja, amanece a media página y acaba de día en el mapa del sitio
+ * de la boda, donde se posa la última estrella. Las secciones van encima,
+ * transparentes, en tres tramos:
  *
- * NO SE CACHEA, y es un cambio respecto a cómo nació.
+ *   · LA NOCHE   → lo que se cuenta bajo las estrellas (`SECCIONES_DE_NOCHE`):
+ *                  la portada, la historia y «sólo falta vuestra estrella».
+ *   · EL DÍA     → todo lo demás, en el orden de la base.
+ *   · LA LLEGADA → dónde dormir y cómo llegar, siempre al final
+ *                  (`SECCIONES_DE_LLEGADA`), con el mapa debajo.
  *
- * Antes se revalidaba cada hora, así que la página se generaba en el despliegue
- * y se servía desde caché. El problema no era el caso bueno: era el malo. Si la
- * base no respondía justo en ese momento —caída, en pausa por inactividad del
- * plan gratuito, o una variable de entorno que aún no estaba—, lo que se
- * horneaba y se servía **durante una hora entera** era la pantalla de «estamos
- * preparando la web». La base podía volver a estar bien a los diez segundos y
- * los invitados seguían viendo eso.
+ * El orden de la base manda dentro de cada tramo; el tramo, no, porque decide
+ * de qué color es el cielo detrás.
  *
- * Pasó en producción. Ahora se consulta en cada visita: son ocho consultas
- * indexadas sobre tablas de pocas filas, lanzadas a la vez, y la web tiene unos
- * cientos de visitas en total. Cuesta unos milisegundos y a cambio nunca se
- * queda enganchada en un fallo — ni enseñando datos viejos después de un
- * cambio en el panel.
+ * NO SE CACHEA. Si la base no respondía justo al generar la página, lo que se
+ * servía durante una hora entera era la pantalla de «estamos preparando la
+ * web», aunque la base volviera a los diez segundos. Pasó en producción. Ahora
+ * se consulta en cada visita: son consultas indexadas sobre tablas de pocas
+ * filas, lanzadas a la vez, y nunca se queda enganchada en un fallo.
  */
 export const dynamic = "force-dynamic";
 
@@ -151,18 +149,15 @@ export default async function PaginaInicio() {
 
   const nombres = `${configuracion.nombreNovia} ${t("portada.conjuncion")} ${configuracion.nombreNovio}`;
 
-  /*
-    LAS COORDENADAS, COMPROBADAS UNA VEZ Y CON NOMBRE.
-
-    Son dos columnas que sólo valen juntas —una latitud sin longitud no es
-    ningún sitio—, así que se comprueban aquí y lo que baja es un punto o nada.
-    Repetir `!== null` en cada sitio que las use es como se acaba pintando media
-    sección: alguien comprueba una de las dos y da por hecha la otra.
-  */
   // La misma raíz para todas las fotos: dos lecturas de la variable acaban
   // discrepando el día que una se olvide.
   const urlBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
+  /*
+    LAS COORDENADAS, COMPROBADAS UNA VEZ Y CON NOMBRE. Son dos columnas que
+    sólo valen juntas —una latitud sin longitud no es ningún sitio—, así que se
+    comprueban aquí y lo que baja es un punto o nada.
+  */
   const coordenadas =
     configuracion.latitud !== null && configuracion.longitud !== null
       ? { latitud: configuracion.latitud, longitud: configuracion.longitud }
@@ -171,11 +166,20 @@ export default async function PaginaInicio() {
   /*
     A DÓNDE PUEDE LLEVAR EL BOTÓN. «Ver el día» apunta a #programa, y esa
     sección puede no estar: apagada desde el panel, o sin ningún hito todavía.
-    Un botón que lleva a un ancla que no existe se pulsa y no pasa nada. Se usa
-    el mismo criterio que decide qué se pinta (`aPintar`, más abajo): visible y
-    con contenido.
+    Se usa el mismo criterio que decide qué se pinta: visible y con contenido.
   */
   const hayPrograma = secciones.includes("programa") && programa.length > 0;
+
+  /*
+    LA CUENTA ATRÁS VA EN LA PORTADA, en una fila junto a la fecha y el lugar:
+    es un dato más del primer vistazo, y como sección aparte costaba media
+    pantalla. Sólo si está encendida en el panel y no ha pasado el día; si la
+    portada está apagada, vuelve a ser su propia sección.
+  */
+  const quedaCuenta =
+    secciones.includes("cuenta_atras") &&
+    diaEnLaBoda(new Date()) <= diaEnLaBoda(configuracion.fechaCeremonia);
+  const cuentaEnPortada = quedaCuenta && secciones.includes("portada");
 
   const contenido: Partial<Record<Seccion, ReactNode>> = {
     portada: (
@@ -185,13 +189,29 @@ export default async function PaginaInicio() {
         urlBase={urlBase}
         hayPrograma={hayPrograma}
         saludo={saludo}
+        cuentaAtras={cuentaEnPortada}
       />
     ),
-    // Pasado el día, no queda nada que contar: la sección no se pinta.
+    /*
+      MANDA LA FRASE Y NO LA FOTO. Sin frase no hay nada que decir y la sección
+      no se pinta; sin foto sí, sólo con la frase sobre el cielo. Esperar a la
+      sesión de fotos para publicar una frase que ya está escrita sería tenerla
+      meses en un cajón.
+    */
+    paisaje: configuracion.paisajeTitulo ? (
+      <Paisaje
+        intro={configuracion.paisajeIntro}
+        titulo={configuracion.paisajeTitulo}
+        cierre={configuracion.paisajeCierre}
+        foto={fotosPaisaje[0] ?? null}
+        urlBase={urlBase}
+      />
+    ) : undefined,
+    // Pasado el día, no queda nada que contar; con portada, va dentro de ella.
     cuenta_atras:
-      diaEnLaBoda(new Date()) > diaEnLaBoda(configuracion.fechaCeremonia) ? undefined : (
+      quedaCuenta && !cuentaEnPortada ? (
         <CuentaAtrasSeccion configuracion={configuracion} />
-      ),
+      ) : undefined,
     historia: historia.length > 0 ? <Historia hitos={historia} urlBase={urlBase} /> : undefined,
     galeria:
       fotosGaleria.length > 0 ? <Galeria fotos={fotosGaleria} urlBase={urlBase} /> : undefined,
@@ -199,12 +219,11 @@ export default async function PaginaInicio() {
       preboda.length > 0 ? (
         <ListaDeHoras
           seccion="preboda"
-          ancho="medio"
           /*
             LA VERSALITA ES LA FECHA DE LA VÍSPERA —«Viernes 25 de junio»—, no un
-            rótulo fijo: es lo que la entrega escribe y lo que de verdad quiere
-            saber quien llega de fuera. Sale de la fecha de la ceremonia, un día
-            antes, contado en la zona de la boda.
+            rótulo fijo: es lo que de verdad quiere saber quien llega de fuera.
+            Sale de la fecha de la ceremonia, un día antes, contado en la zona
+            de la boda.
           */
           etiqueta={fechaConDia(vispera(configuracion.fechaCeremonia))}
           titulo={t("preboda.titulo")}
@@ -218,8 +237,6 @@ export default async function PaginaInicio() {
             },
           )}
           cierre={t("preboda.cierre")}
-          realzada
-          hundida
           menor
           hitos={preboda}
         />
@@ -228,20 +245,14 @@ export default async function PaginaInicio() {
       programa.length > 0 ? (
         <ListaDeHoras
           seccion="programa"
-          ancho="medio"
           // «Sábado 26 de junio», como la escribe la entrega: sin coma ni año.
           etiqueta={fechaConDia(configuracion.fechaCeremonia)}
           titulo={t("programa.titulo")}
           avisos={configuracion.avisosPrograma}
           /*
-            LA NOTA DEL AUTOBÚS SALE DE `rutas_llegada`, NO DE UN LITERAL.
-
-            La entrega la traía escrita —«a las 12:00 y de vuelta a las 02:00 y
-            04:30»— pero esas horas ya están en la base, en la ruta del
-            autobús. Copiarlas aquí sería tenerlas en dos sitios que se pueden
-            contradecir, y el día que cambie el horario cambiaría uno y no el
-            otro: media boda esperando en la Plaza de Santo Domingo a una hora
-            que ya no es.
+            LA NOTA DEL AUTOBÚS SALE DE `rutas_llegada`, NO DE UN LITERAL: esas
+            horas ya están en la base, en la ruta del autobús, y copiarlas aquí
+            sería tenerlas en dos sitios que se pueden contradecir.
           */
           entradilla={notaDelAutobus(rutas)}
           hitos={programa}
@@ -257,30 +268,10 @@ export default async function PaginaInicio() {
         />
       ) : undefined,
     /*
-      SIN COORDENADAS NO HAY SECCIÓN, aunque haya rutas escritas.
-
-      Puede sonar duro tirar unas rutas que alguien tecleó, pero «treinta
-      minutos en autobús» sin decir hasta dónde no informa de nada: las rutas
-      describen cómo llegar A un sitio, y sin ese sitio quedan flotando. El
-      mapa, que es el centro de la sección, tampoco se puede dibujar. Es el
-      mismo criterio que el resto de la landing —antes ocultar que dejar un
-      hueco a medias— aplicado a lo que aquí hace de columna vertebral.
+      SIN COORDENADAS NO HAY SECCIÓN, aunque haya rutas escritas: «treinta
+      minutos en autobús» sin decir hasta dónde no informa de nada, y el mapa,
+      que es el final de la página, tampoco se puede dibujar.
     */
-    /*
-      MANDA LA FRASE Y NO LA FOTO. Sin frase no hay nada que decir y la sección
-      no se pinta; sin foto sí se pinta, sobre el plano hundido que ya usa la
-      portada. Esperar a la sesión de fotos para publicar una frase que ya está
-      escrita sería tenerla meses en un cajón.
-    */
-    paisaje: configuracion.paisajeTitulo ? (
-      <Paisaje
-        intro={configuracion.paisajeIntro}
-        titulo={configuracion.paisajeTitulo}
-        cierre={configuracion.paisajeCierre}
-        foto={fotosPaisaje[0] ?? null}
-        urlBase={urlBase}
-      />
-    ) : undefined,
     transporte: coordenadas ? (
       <Transporte rutas={rutas} configuracion={configuracion} coordenadas={coordenadas} />
     ) : undefined,
@@ -297,18 +288,21 @@ export default async function PaginaInicio() {
   const aPintar = secciones.filter((seccion) => esAncla(seccion) && contenido[seccion]);
 
   /*
-    EL MENÚ NO ES EL ÍNDICE DE LA PÁGINA.
-
-    Llevaba una entrada por sección —quince— y en un móvil eso era una tira que
-    había que arrastrar, con las últimas fuera de la pantalla. Ahora lleva sólo
-    las que alguien busca CON PRISA, que es la única razón por la que un menú
-    existe en una página que se lee bajando: la mañana de la boda se pregunta a
-    qué hora es, cómo se llega y dónde se duerme.
-
-    Quién entra lo decide `SECCIONES_EN_MENU`, y sigue mandando el filtro de
-    arriba: una sección sin contenido no aparece tampoco aquí.
+    LOS TRES TRAMOS DEL CIELO. La noche y el día conservan el orden de la
+    base; la llegada va siempre al final, en su propio orden: primero dónde
+    dormir y luego cómo llegar, que es lo que se posa en el mapa.
   */
-  const enlaces = aPintar
+  const deNoche = aPintar.filter((seccion) => esDeNoche(seccion));
+  const deDia = aPintar.filter((seccion) => !esDeNoche(seccion) && !esDeLlegada(seccion));
+  const deLlegada = SECCIONES_DE_LLEGADA.filter((seccion) => aPintar.includes(seccion));
+  const enOrden = [...deNoche, ...deDia, ...deLlegada];
+
+  /*
+    EL MENÚ NO ES EL ÍNDICE DE LA PÁGINA: lleva sólo lo que alguien busca CON
+    PRISA —a qué hora es, cómo se llega y dónde se duerme—. Quién entra lo
+    decide `SECCIONES_EN_MENU`, en el orden en que aparecen en la página.
+  */
+  const enlaces = enOrden
     .filter((seccion) => vaEnElMenu(seccion))
     .map((seccion) => ({
       seccion,
@@ -316,18 +310,12 @@ export default async function PaginaInicio() {
       rotulo: t(`navegacion.secciones.${seccion}`),
     }));
 
-  // La hora de cada sección que se pinta, por su ancla (ver `CieloDelDia`).
-  const fasesDelCielo = Object.fromEntries(
-    aPintar.flatMap((seccion) =>
-      seccion in FASE_DE_SECCION
-        ? [[anclaDe(seccion), FASE_DE_SECCION[seccion as keyof typeof FASE_DE_SECCION]]]
-        : [],
-    ),
-  );
-
   // «Volver arriba» y el monograma iban siempre a #portada, que también se
   // puede apagar. Sin portada, el principio del contenido.
   const inicio = aPintar.includes("portada") ? `#${anclaDe("portada")}` : `#${ID_CONTENIDO}`;
+
+  const pintar = (lista: readonly Seccion[]) =>
+    lista.map((seccion) => <Fragment key={seccion}>{contenido[seccion]}</Fragment>);
 
   return (
     <>
@@ -347,10 +335,9 @@ export default async function PaginaInicio() {
       />
 
       {/* Primer elemento enfocable del documento: quien navega con teclado no
-          debería tener que recorrer once enlaces para llegar al contenido.
-          Va en la capa modal y no en la de la cabecera: con la misma capa
-          gana el último del documento, que es la cabecera fija, y el
-          monograma y el menú se pintaban encima del enlace enfocado. */}
+          debería tener que recorrer el menú para llegar al contenido. Va en la
+          capa modal y no en la de la cabecera: con la misma capa gana el
+          último del documento, que es la cabecera fija. */}
       <a
         href={`#${ID_CONTENIDO}`}
         className="sr-only focus:not-sr-only focus:absolute focus:capa-modal focus:m-interno focus:rounded-boton focus:bg-superficie focus:px-interno focus:py-pila focus:text-tinta"
@@ -359,14 +346,11 @@ export default async function PaginaInicio() {
       </a>
 
       {/*
-        La barra de lectura de la entrega: dos píxeles de bronce fijos arriba
-        que crecen con lo leído. Sin JavaScript —va ligada al scroll con CSS—
-        y sin anunciarse: para quien escucha la página no mide nada.
+        La barra de lectura: dos píxeles de bronce fijos arriba que crecen con
+        lo leído. Sin JavaScript —va ligada al scroll con CSS— y sin
+        anunciarse: para quien escucha la página no mide nada.
       */}
       <div aria-hidden="true" className="barra-lectura" />
-
-      {/* El fondo que pasa de la mañana a la noche mientras se baja. */}
-      <CieloDelDia fases={fasesDelCielo} />
 
       <Navegacion
         inicio={inicio}
@@ -374,13 +358,39 @@ export default async function PaginaInicio() {
         etiqueta={t("navegacion.etiquetaPrincipal")}
         nombreNovia={configuracion.nombreNovia}
         nombreNovio={configuracion.nombreNovio}
-        empiezaDeNoche={aPintar[0] === "portada"}
+        empiezaDeNoche={deNoche.length > 0}
       />
 
       <main id={ID_CONTENIDO}>
-        {aPintar.map((seccion) => (
-          <Fragment key={seccion}>{contenido[seccion]}</Fragment>
-        ))}
+        {deNoche.length > 0 ? (
+          <>
+            {/*
+              LA NOCHE. Un bloque inverso —los colores de noche de la marca—
+              con el cielo pintado de cenit a horizonte a lo largo de todo el
+              tramo. El firmamento va en un lienzo pegado arriba, detrás de
+              todo: gira mientras se baja y se apaga al acercarse el amanecer.
+            */}
+            <div
+              data-tramo="noche"
+              data-seccion="inversa"
+              className="tramo-noche relative isolate"
+            >
+              <div aria-hidden className="lienzo-pegado capa-cielo">
+                <CieloEstrellado viaLactea fugaces className="size-full" />
+              </div>
+              {pintar(deNoche)}
+            </div>
+
+            {/* EL AMANECER: la franja sin texto donde la noche se hace día. */}
+            <div aria-hidden data-amanecer="" className="amanecer" />
+          </>
+        ) : null}
+
+        {/* EL DÍA, del alba al blanco de mediodía, y al final, el mapa. */}
+        <div data-tramo="dia" className="tramo-dia">
+          {pintar(deDia)}
+          {pintar(deLlegada)}
+        </div>
       </main>
 
       <Pie
@@ -395,6 +405,14 @@ export default async function PaginaInicio() {
       />
     </>
   );
+}
+
+function esDeNoche(seccion: Seccion): boolean {
+  return (SECCIONES_DE_NOCHE as readonly Seccion[]).includes(seccion);
+}
+
+function esDeLlegada(seccion: Seccion): boolean {
+  return (SECCIONES_DE_LLEGADA as readonly Seccion[]).includes(seccion);
 }
 
 /** «Finca La Sierra, León»: el lugar y, si está escrita, la ciudad detrás. */
@@ -478,20 +496,14 @@ async function cargarLanding() {
 /**
  * LA PORTADA
  *
- * La pantalla partida de la entrega: el texto ocupa una mitad y la foto la
- * otra, y en cuanto no caben dos columnas —móvil, o una ventana estrecha— se
- * apilan solas. No hay `breakpoint` escrito: lo resuelve `auto-fit` con un
- * ancho mínimo de columna, así que el corte pasa cuando de verdad estorba y no
- * a un número redondo.
+ * La pantalla partida: el texto ocupa una mitad y la foto la otra, y en cuanto
+ * no caben dos columnas —móvil, o una ventana estrecha— se apilan solas. No hay
+ * `breakpoint` escrito: lo resuelve `auto-fit` con un ancho mínimo de columna.
  *
- * ES DE NOCHE, Y LA NOCHE ES EL FONDO ENTERO. La landing cuenta un día que
- * empieza bajo las estrellas: la portada es un firmamento a sangre, con los
- * nombres en marfil, y sin foto el texto se queda centrado sobre el cielo. El
- * día que se publique una imagen, ocupa su mitad y el cielo queda detrás del
- * texto, sin tocar nada.
- *
- * El bloque de datos usa `--texto-titulo-2` y la fecha va en `26 · 06 · 2027`,
- * que es como la escribe la marca en todas las piezas.
+ * ES DE NOCHE: no tiene fondo propio, va sobre el principio del cielo, con el
+ * firmamento recién encendido detrás y los nombres en marfil. Sin foto el
+ * texto se queda centrado sobre el cielo; el día que se publique una imagen,
+ * ocupa su mitad sin tocar nada.
  */
 function Portada({
   configuracion,
@@ -499,6 +511,7 @@ function Portada({
   urlBase,
   hayPrograma,
   saludo,
+  cuentaAtras,
 }: {
   configuracion: ConfiguracionBoda;
   foto: Medio | null;
@@ -507,47 +520,38 @@ function Portada({
   hayPrograma: boolean;
   /** El nombre del grupo que ha abierto su invitación, o `null`. */
   saludo: string | null;
+  /** Si va la cuenta atrás debajo de la fecha y el lugar. */
+  cuentaAtras: boolean;
 }) {
   const lugar = configuracion.lugarCeremonia ?? configuracion.lugarBanquete;
   /*
-    «Nos casamos en León», como la entrega. La dirección postal tiene su sitio
-    en «cómo llegar»; aquí sólo aparece si nadie ha escrito la ciudad, que es
-    mejor que dejar la portada sin su versalita.
+    «Nos casamos en León». La dirección postal tiene su sitio en «cómo
+    llegar»; aquí sólo aparece si nadie ha escrito la ciudad, que es mejor que
+    dejar la portada sin su versalita.
   */
   const procedencia = configuracion.ciudadCeremonia
     ? t("portada.etiqueta", { ciudad: configuracion.ciudadCeremonia })
     : configuracion.direccionCeremonia;
 
   return (
+    /*
+      EN UN MÓVIL, UNA PANTALLA JUSTA: el texto arriba y la foto ocupando lo
+      que quede, con un mínimo. Apilada a su alto fijo, la portada medía pantalla
+      y media y la foto empujaba todo lo demás hacia abajo.
+    */
     <section
       id={anclaDe("portada")}
-      data-seccion="inversa"
-      className="fondo-noche relative isolate rejilla-partida min-h-dvh items-stretch overflow-hidden"
+      className="relative rejilla-partida min-h-dvh items-stretch max-md:flex max-md:flex-col"
     >
-      {/*
-        LA NOCHE EN QUE EMPIEZA TODO. La portada es un firmamento entero: tres
-        profundidades de estrellas que titilan, la Vía Láctea en diagonal, una
-        estrella fugaz poco después de que lleguen los nombres, y abajo un
-        resto de bronce en el horizonte que anuncia el día que viene al bajar.
-        Es un `<canvas>` decorativo: sin él, la portada es la misma noche, sin
-        estrellas.
-      */}
-      <CieloEstrellado viaLactea fugaces className="capa-cielo absolute inset-0 size-full" />
-      {/*
-        El relleno es el de la entrega, fluido y asimétrico: más aire arriba
-        —cuenta la barra— que abajo, y los lados crecen con la pantalla. Cada
-        hueco de dentro tiene su token porque cada uno mide distinto.
-      */}
       <div
         className={`flex w-full flex-col justify-center px-portada-lado pt-portada-arriba pb-portada-abajo ${
           foto ? "" : "mx-auto max-w-contenido"
         }`}
       >
         {/*
-          EL SALUDO, COMO EN UN SOBRE: «Para Familia Fernández», en la cursiva
-          de los titulares —la letra de la «y» es sólo del conector y del
-          ampersand—. Sólo si se ha entrado por el enlace de la invitación; para
-          el resto la portada es la de todos.
+          EL SALUDO, COMO EN UN SOBRE: «Para Familia Fernández». Sólo si se ha
+          entrado por el enlace de la invitación; para el resto la portada es
+          la de todos.
         */}
         {saludo ? (
           <p className="animacion-aparecer-lento mb-interno font-titulo text-saludo italic leading-titulo-corto text-tinta-marca">
@@ -561,14 +565,9 @@ function Portada({
         ) : null}
 
         {/*
-          LA PORTADA ENTRA ESCALONADA, de la versalita (0,2 s) a la pista
-          (1,6 s), como en la entrega: siete elementos que llegan en orden de
-          lectura en vez de todos de golpe.
-        */}
-        {/*
           LOS NOMBRES EMERGEN de detrás de una línea invisible, cada uno con la
-          pausa de su línea: es el primer plano de la película, y entra como
-          un título, no como un párrafo.
+          pausa de su línea: es el primer plano de la película, y entra como un
+          título, no como un párrafo.
         */}
         <Display className="animacion-subir retardo-2 mt-nombres">
           <span className="mascara-linea">
@@ -588,51 +587,56 @@ function Portada({
           </Display>
         </div>
 
-        {/*
-          La raya y los datos respiran con el ancho (28–44 y 20–54 px): en un
-          móvil una línea de un píxel no puede costar 112 px de pantalla, y en
-          escritorio los dos datos van separados como pide la entrega. Un solo
-          token fluido hace las dos cosas sin un `sm:` de por medio.
-        */}
         <hr className="animacion-trazar retardo-4 my-raya border-t border-borde-fuerte" />
 
-        <dl className="animacion-subir retardo-5 flex flex-wrap gap-datos">
-          <div>
-            <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
-              {t("portada.etiquetaFecha")}
-            </dt>
-            <dd className="mt-interno-compacto font-titulo peso-titulo-menor text-dato leading-titulo-corto text-tinta-marca tabular-nums">
-              <time dateTime={configuracion.fechaCeremonia.toISOString()}>
-                {fechaEnPuntos(configuracion.fechaCeremonia)}
-              </time>
-            </dd>
-          </div>
-          {lugar ? (
+        {/*
+          LOS DATOS Y LA CUENTA ATRÁS ENTRAN JUNTOS: son el mismo bloque —qué
+          día, dónde y cuánto falta— y llegan a la vez, tras la raya.
+        */}
+        <div className="animacion-subir retardo-5">
+          <dl className="flex flex-wrap gap-datos">
             <div>
               <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
-                {t("portada.etiquetaLugar")}
+                {t("portada.etiquetaFecha")}
               </dt>
-              <dd className="mt-interno-compacto font-titulo peso-titulo-menor text-dato leading-titulo-corto text-tinta-marca">
-                {lugar}
+              <dd className="mt-interno-compacto font-titulo peso-titulo-menor text-dato leading-titulo-corto text-tinta-marca tabular-nums">
+                <time dateTime={configuracion.fechaCeremonia.toISOString()}>
+                  {fechaEnPuntos(configuracion.fechaCeremonia)}
+                </time>
               </dd>
             </div>
+            {lugar ? (
+              <div>
+                <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
+                  {t("portada.etiquetaLugar")}
+                </dt>
+                <dd className="mt-interno-compacto font-titulo peso-titulo-menor text-dato leading-titulo-corto text-tinta-marca">
+                  {lugar}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+
+          {cuentaAtras ? (
+            <div id={anclaDe("cuenta_atras")} className="mt-hueco-fluido">
+              <p className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
+                {t("cuentaAtras.titulo")}
+              </p>
+              <div className="mt-interno-compacto">
+                <CuentaAtras
+                  fechaIso={configuracion.fechaCeremonia.toISOString()}
+                  ahoraIso={new Date().toISOString()}
+                  enFila
+                />
+              </div>
+            </div>
           ) : null}
-        </dl>
+        </div>
 
         {/*
-          El aviso de que la página sigue hacia abajo. Con una portada a
-          pantalla completa hay quien se queda ahí sin saber que hay más, y
-          este es el trabajo que hace la entrega con dos elementos y ningún
-          icono: una versalita y una raya que respira.
-
-          VA ANTES QUE LOS BOTONES, como en la entrega, y no es capricho de
-          orden: lo que sigue —la cuenta atrás, el día, cómo llegar— está justo
-          debajo, y dejar este gesto el último lo convierte en un pie de página
-          cuando es lo que enlaza la portada con el resto.
-
-          `aria-hidden` porque para quien navega con lector de pantalla no
-          significa nada: el documento ya continúa, y anunciar «bajad» sería
-          ruido. La animación es de las que se apagan con movimiento reducido.
+          El aviso de que la página sigue hacia abajo: una versalita y una raya
+          que respira. `aria-hidden` porque para quien navega con lector de
+          pantalla no significa nada: el documento ya continúa.
         */}
         <p
           aria-hidden
@@ -642,12 +646,7 @@ function Portada({
           <span className="animacion-flotar block h-raya-pista w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
         </p>
 
-        {/*
-          PEGADO AL «BAJAD» (20–28 px), como en la entrega y no por ahorrar
-          espacio: la versalita y su raya son el gesto que enlaza con lo que
-          viene, y de paso el botón entra ENTERO en la pantalla de un móvil.
-          Confirmar no tiene botón: se contesta por WhatsApp.
-        */}
+        {/* Confirmar no tiene botón: se contesta por WhatsApp. */}
         {hayPrograma ? (
           <div className="animacion-subir retardo-6 mt-acciones flex flex-wrap gap-interno">
             <BotonEnlace href={`#${anclaDe("programa")}`}>{t("portada.verElDia")}</BotonEnlace>
@@ -660,8 +659,8 @@ function Portada({
           medio={foto}
           urlBase={urlBase}
           prioritaria
-          medidas="(min-width: 40rem) 50vw, 100vw"
-          className="alto-foto-portada"
+          medidas="(min-width: 48rem) 50vw, 100vw"
+          className="alto-foto-portada max-md:flex-1"
         />
       ) : null}
     </section>
@@ -669,34 +668,15 @@ function Portada({
 }
 
 /**
- * EL PAISAJE · la escena que separa la portada de la logística
+ * EL PAISAJE · de dónde vienen los novios, en una frase
  *
- * La entrega lo pone justo debajo de los nombres, y no como una franja: como
- * una ESCENA DE TRES PANTALLAS DE ALTO con un panel pegado dentro. Al bajar, un
- * recuadro pequeño y centrado se abre hasta ocupar la pantalla entera, la foto
- * se aleja, el velo se oscurece y la frase entra por el centro. No es relleno:
- * la portada da los nombres y la fecha, y de la cuenta atrás en adelante todo
- * es logística —cuándo, dónde, cómo llegar, qué ponerse—. Esto es lo único que
- * cuenta de dónde vienen los novios, y va en la costura entre las dos cosas.
+ * Lo único de la página que cuenta de dónde vienen, en la costura entre los
+ * nombres y lo demás. Antes era una escena de tres pantallas de alto; ahora es
+ * una frase sobre el cielo de la noche —versalita, titular y un cierre en la
+ * letra del conector— y, si hay, la foto o el vídeo en una franja apaisada.
  *
- * TODO EL MOVIMIENTO ESTÁ EN `paisaje.css` Y NO AQUÍ. La escena la mueve el
- * scroll a través de una línea de tiempo con nombre; este componente no sabe
- * nada de ella, sólo pone las clases. Donde el navegador no sepa de líneas de
- * tiempo de scroll —o donde alguien haya pedido menos movimiento— no hay
- * escena: la sección mide lo que medía y la frase está a la vista desde el
- * principio. Nunca se esconde nada esperando un scroll que quizá no ocurra.
- *
- * MANDA EL TITULAR, NO LA FOTO. Sin titular no hay sección: una vista aérea
- * muda es un fondo bonito que no dice nada. Sin foto SÍ hay sección, sobre el
- * plano de marca claro que la propia entrega pinta detrás del marco — porque la
- * frase es el mensaje y la foto es cómo se presenta, y esperar a la sesión de
- * fotos para publicar una frase que ya está escrita sería dejarla en un cajón
- * meses. Las otras dos líneas son opcionales una a una.
- *
- * EL TEXTO SE LEE CAIGA LA FOTO QUE CAIGA. Encima de la imagen va un velo que
- * se oscurece según el marco se abre: sin él, el contraste depende de qué
- * suban, y una foto aérea a mediodía deja el texto blanco sobre cielo blanco.
- * El velo es parte del diseño, no un parche.
+ * MANDA EL TITULAR, NO LA FOTO: sin titular no hay sección (lo decide quien la
+ * pinta). La versalita y el cierre son opcionales una a una.
  */
 function Paisaje({
   intro,
@@ -714,121 +694,87 @@ function Paisaje({
   const idTitulo = `titulo-${anclaDe("paisaje")}`;
   const enElBucket = (ruta: string) =>
     `${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${ruta}`;
-
   const fuente = foto && urlBase ? enElBucket(foto.ruta) : null;
-
   /*
-    Lo dice la base —el campo `tipo`—, no el final de la ruta: «.mov» y «.mp4»
-    son el mismo vídeo con distinto envoltorio, y adivinarlo mirando una cadena
-    convierte un dato en una corazonada. El vídeo se monta por su propia rama
-    porque se rinde solo ante `prefers-reduced-motion` y deja el fotograma.
+    Lo dice la base —el campo `tipo`—, no el final de la ruta. El vídeo se
+    monta por su propia rama porque se rinde solo ante `prefers-reduced-motion`
+    y deja el fotograma.
   */
   const esVideo = Boolean(foto?.tipo === "video" && foto.posterRuta && fuente);
 
   return (
-    <section id={anclaDe("paisaje")} aria-labelledby={idTitulo} className="escena-paisaje">
-      <div className="panel-paisaje bg-fondo">
-        <div className="marco-paisaje bg-superficie-tenue">
-          <div className="foto-paisaje">
+    <section
+      id={anclaDe("paisaje")}
+      aria-labelledby={idTitulo}
+      className="relative px-margen py-tramo"
+    >
+      {/*
+        Con foto y sitio, la foto a un lado y la frase al otro: apiladas, en
+        pantalla ancha la franja medía casi una pantalla. Sin foto, o en un
+        móvil, una columna centrada.
+      */}
+      <div
+        className={`mx-auto max-w-medio text-center ${
+          fuente
+            ? "md:grid md:grid-cols-2 md:items-center md:gap-columnas-fluido md:text-left"
+            : ""
+        }`}
+      >
+        {fuente ? (
+          <div className="animacion-escala-al-ver relative mb-cabecera-tramo aspect-paisaje overflow-hidden rounded-imagen bg-superficie-hundida md:mb-0">
             {esVideo ? (
               <VideoDeFondo
-                fuente={fuente!}
+                fuente={fuente}
                 poster={enElBucket(foto!.posterRuta!)}
                 textoAlternativo={foto!.textoAlternativo}
-                className="h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover"
               />
-            ) : fuente ? (
+            ) : (
               <Image
                 src={fuente}
                 alt={foto!.textoAlternativo}
                 fill
-                sizes="100vw"
+                sizes="(min-width: 48rem) 34rem, 100vw"
                 className="object-cover"
-                // El marcador borroso lo calcula quien sube la imagen. Sin él,
-                // el hueco se queda en el plano de marca, que ya es un estado
-                // digno y además es el que pinta la entrega.
                 placeholder={foto!.marcadorBorroso ? "blur" : "empty"}
                 blurDataURL={foto!.marcadorBorroso ?? undefined}
               />
-            ) : null}
+            )}
           </div>
-
-          {/* Es color, no contenido: detrás del texto y delante de la foto. */}
-          <div aria-hidden="true" className="velo-paisaje" />
-        </div>
+        ) : null}
 
         {/*
-          LAS TRES LÍNEAS DE LA ENTREGA. El titular es el `h2` —es lo que la
-          sección dice, y lo que le da nombre a quien la recorre saltando de
-          titular en titular—; la versalita que lo abre y el cierre en cursiva
-          son párrafos, porque leídos sueltos no son encabezados de nada.
+          El titular es el `h2` —es lo que la sección dice—; la versalita que lo
+          abre y el cierre en la letra del conector son párrafos, porque leídos
+          sueltos no son encabezados de nada.
         */}
-        <header className="texto-paisaje">
+        <header className="animacion-subir-al-ver">
           {intro ? (
-            <p className="font-cuerpo peso-cuerpo text-etiqueta uppercase tracking-marcado text-sobre-foto-fria">
-              {intro}
-            </p>
+            <p className="text-etiqueta uppercase tracking-marcado text-acento">{intro}</p>
           ) : null}
-
-          <h2
-            id={idTitulo}
-            className={`font-titulo peso-titulo text-escena leading-titulo tracking-titulo text-sobre-foto ${
-              intro ? "mt-titular-escena" : ""
-            }`}
-          >
+          <Titulo1 como="h2" id={idTitulo} tamano="tramo" className={intro ? "mt-pila" : ""}>
             {titulo}
-          </h2>
-
+          </Titulo1>
           {cierre ? (
-            <p className="mt-cierre-escena">
-              <Conector tamano="escena">{cierre}</Conector>
+            <p className="mt-pila">
+              <Conector tamano="frase">{cierre}</Conector>
             </p>
           ) : null}
         </header>
-
-        {/*
-          LA PISTA NO VA SOBRE LA FOTO, VA SOBRE LA PÁGINA. Al empezar la escena
-          el marco es un recuadro pequeño y «seguid bajando» queda fuera de él,
-          sobre el plano claro: en tinta de foto sería blanco sobre blanco. Va
-          en el gris suave y no en el tenue de la entrega: a once píxeles, el
-          tenue se queda en 3,6:1 sobre ese plano y AA pide 4,5.
-        */}
-        <p className="pista-paisaje">
-          <span className="inline-flex flex-col items-center gap-pista-raya text-etiqueta uppercase tracking-pista text-tinta-suave">
-            {t("paisaje.seguidBajando")}
-            <span className="animacion-flotar block h-elemento w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
-          </span>
-        </p>
       </div>
     </section>
   );
 }
 
-/**
- * LA CUENTA ATRÁS, BAJO UN CIELO
- *
- * En la entrega no es una franja de color: es una noche, la misma de la
- * portada —el día todavía no ha empezado—, con su cielo entero titilando.
- *
- * El cielo es decoración pura, así que va `aria-hidden` y por debajo del
- * contenido. Con `prefers-reduced-motion` se queda quieto: un fondo en
- * movimiento perpetuo es justo lo que marea a quien activa esa preferencia.
- */
 function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBoda }) {
   const idTitulo = `titulo-${anclaDe("cuenta_atras")}`;
   return (
     <section
       id={anclaDe("cuenta_atras")}
-      data-seccion="inversa"
-      className="fondo-noche-alta relative isolate overflow-hidden px-margen py-seccion-compacta-fluida text-center"
+      className="relative px-margen py-tramo text-center"
       aria-labelledby={idTitulo}
     >
-      <CieloEstrellado
-        semilla={SEMILLAS_CIELO.cuentaAtras}
-        className="capa-cielo absolute inset-0 size-full"
-      />
-
-      <div className="animacion-cortina-al-ver relative mx-auto max-w-cuenta">
+      <div className="animacion-cortina-al-ver mx-auto max-w-cuenta">
         <Etiqueta id={idTitulo} espaciado="seccion">
           {t("cuentaAtras.titulo")}
         </Etiqueta>
@@ -847,17 +793,14 @@ function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBod
 }
 
 /**
- * BODA-24 · NUESTRA HISTORIA
+ * NUESTRA HISTORIA, UNA ESTRELLA POR MOMENTO
  *
- * LA FOTO ES OPCIONAL EN CADA HITO, y no por comodidad: la historia se escribe
- * meses antes de tener las fotos escaneadas. Un hito sin imagen deja su hueco
- * en el color de fondo —igual que `HuecoFoto` en la portada— en vez de un icono
- * de imagen rota, y la fila sigue leyéndose.
+ * Bajo el cielo de la noche, cada hito es una estrella de cuatro puntas en una
+ * columna, unidas por un hilo: la fecha, lo que pasó y, si hay, su foto en
+ * pequeño. Al llegar a cada una, se enciende. Cabe en poco más de una pantalla:
+ * es una historia que se lee de un vistazo, no un capítulo por pantalla.
  *
- * EL HUECO SE RESERVA CON `aspect-hito` Y NO CON EL TAMAÑO DE LA FOTO. Las tres
- * van en fila y vienen de sitios distintos —un carrete, un móvil, una captura—,
- * así que respetar la proporción de cada una convertiría la fila en una
- * escalera. Reservado el hueco, la imagen no empuja el texto al cargar.
+ * Con el último hito, la frase que lo cierra: «cada momento fue una estrella».
  */
 function Historia({ hitos, urlBase }: { hitos: HitoHistoria[]; urlBase: string | undefined }) {
   return (
@@ -866,31 +809,57 @@ function Historia({ hitos, urlBase }: { hitos: HitoHistoria[]; urlBase: string |
       etiqueta={t("historia.etiqueta")}
       titulo={t("historia.titulo")}
       realzada
+      ancho="medio"
     >
-      <EscenaHistoria hitos={hitos} urlBase={urlBase} />
+      <ol className="hilo-de-estrellas">
+        {hitos.map((hito) => (
+          <li key={hito.id} className="rejilla-hito pb-elemento last:pb-0">
+            <span className="flex h-columna-estrella items-center justify-center">
+              <EstrellaDeCuatroPuntas className="animacion-pop-al-ver size-estrella-hito text-acento" />
+            </span>
+            <div className="animacion-subir-al-ver">
+              {hito.fechaTexto ? <Etiqueta tono="acento">{hito.fechaTexto}</Etiqueta> : null}
+              <Titulo3 como="h3" tamano="hito-menor" className="mt-interno-compacto">
+                {hito.titulo}
+              </Titulo3>
+              {hito.descripcion ? (
+                <Cuerpo className="mt-interno-compacto max-w-texto text-pequeno text-tinta-suave">
+                  {hito.descripcion}
+                </Cuerpo>
+              ) : null}
+            </div>
+            {hito.foto && urlBase ? (
+              <div className="animacion-escala-al-ver relative size-miniatura overflow-hidden rounded-imagen bg-superficie-hundida">
+                <Image
+                  src={`${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${hito.foto.ruta}`}
+                  alt={hito.foto.textoAlternativo}
+                  fill
+                  sizes="6rem"
+                  className="object-cover"
+                  placeholder={hito.foto.marcadorBorroso ? "blur" : "empty"}
+                  blurDataURL={hito.foto.marcadorBorroso ?? undefined}
+                />
+              </div>
+            ) : (
+              <span />
+            )}
+          </li>
+        ))}
+      </ol>
+      <Cita className="animacion-subir-al-ver mt-cabecera-tramo text-center">
+        {t("historia.cierre")}
+      </Cita>
     </Bloque>
   );
 }
 
-/**
- * LA LISTA DE HORAS
- *
- * La usan el programa del día y la víspera, que son la misma pieza con otros
- * datos: hora a la izquierda, título y detalle a la derecha, una línea entre
- * filas. La diferencia está en la cabecera —una lleva la fecha de la boda y la
- * otra un rótulo— y en el realce: la preboda es un extra, así que su versalita
- * va en bronce; el programa del día hay que leerlo sí o sí, y va sobrio.
- */
 function ListaDeHoras({
   seccion,
   etiqueta,
   titulo,
   entradilla = null,
   cierre = null,
-  realzada = false,
-  hundida = false,
   menor = false,
-  ancho = "contenido",
   avisos = [],
   hitos,
 }: {
@@ -898,18 +867,8 @@ function ListaDeHoras({
   etiqueta: string;
   titulo: string;
   entradilla?: string | null;
-  ancho?: AnchoDeBloque;
-  /** Una línea al pie del bloque, como el «no hace falta confirmarlo» de la preboda. */
   cierre?: string | null;
-  realzada?: boolean;
-  hundida?: boolean;
-  /**
-   * La víspera se lee un punto más pequeña que el día: hora de 24–32 e hito
-   * de 21–27, frente a 26–36 y 23–30. Es un extra, y la entrega lo dibuja
-   * un escalón por debajo para que el programa siga siendo lo primero.
-   */
   menor?: boolean;
-  /** Las etiquetas al pie de la lista: «Césped y grava: cuidado con los tacones». */
   avisos?: string[];
   hitos: { id: string; hora: string; titulo: string; descripcion: string | null }[];
 }) {
@@ -919,43 +878,35 @@ function ListaDeHoras({
       etiqueta={etiqueta}
       titulo={titulo}
       entradilla={entradilla}
-      realzada={realzada}
-      hundida={hundida}
-      ancho={ancho}
+      realzada={!menor}
+      ancho="medio"
     >
       {/*
-        LA FILA DE LA ENTREGA: hora, un filete vertical de un píxel y el texto.
-        En el programa cada fila cierra por arriba, se redondea y se ilumina al
-        pasar el ratón; la víspera cierra por abajo y no se ilumina — va sobre
-        el fondo hundido, donde la iluminación no se vería. Los rellenos son
-        fluidos y distintos en cada una porque la entrega los da así.
+        LA FILA: la hora en bronce, un filete de un píxel y el texto. Compacta:
+        el día entero tiene que leerse bajando poco. En un móvil la hora va al
+        lado del titular y la descripción debajo, a todo el ancho
+        (`rejilla-hora`); con sitio, cada cosa en su columna.
       */}
       <ol>
         {hitos.map((hito) => (
           <li
             key={hito.id}
-            className={`animacion-subir-al-ver rejilla-dato-filete gap-fila-hueco ${
-              menor
-                ? "border-b border-borde-filete py-fila"
-                : "rounded-fila border-t border-borde px-fila-lado py-fila-programa transicion-color hover:bg-superficie-hundida"
+            className={`animacion-subir-al-ver rejilla-hora py-fila-compacta ${
+              menor ? "border-b border-borde-filete" : "border-t border-borde"
             }`}
           >
             {/*
-              Interlínea 1 y no la del cuerpo: es una cifra sola, y con 1.65
-              flotaba a media altura de su fila en vez de alinearse con el
-              titular de al lado.
-            */}
-            {/*
+              Interlínea compacta y no la del cuerpo: es una cifra sola, y con
+              la del cuerpo flotaba en vez de alinearse con el titular.
+
               EL HILO DEL DÍA, sólo en el programa: al bajar por cada fila, su
-              filete se llena de bronce de arriba abajo y la hora, que espera
-              en tinta tenue, se enciende al llegar a ella. El scroll es el
-              paso de las horas. La víspera no lo lleva: es un extra, y el
-              gesto es del día. Sin líneas de tiempo de scroll —o con
-              movimiento reducido— la hora está en bronce desde el principio y
-              el filete es el de siempre.
+              filete se llena de bronce y la hora, que espera en tinta tenue, se
+              enciende al llegar a ella. El scroll es el paso de las horas. Sin
+              líneas de tiempo de scroll —o con movimiento reducido— la hora
+              está en bronce desde el principio.
             */}
             <span
-              className={`animacion-izquierda-al-ver font-titulo peso-titulo-menor ${
+              className={`area-hora animacion-izquierda-al-ver font-titulo peso-titulo-menor ${
                 menor ? "text-hora-menor" : "text-hora"
               } leading-compacto text-acento tabular-nums`}
             >
@@ -964,31 +915,30 @@ function ListaDeHoras({
             {/* El filete es color, no contenido: se dibuja de arriba abajo al entrar. */}
             <span
               aria-hidden="true"
-              className={`animacion-trazar-vertical-al-ver self-stretch ${
+              className={`area-filete animacion-trazar-vertical-al-ver hidden self-stretch md:block ${
                 menor ? "bg-borde-filete" : "relative bg-borde"
               }`}
             >
               {menor ? null : <span className="hilo-del-dia absolute inset-0 bg-acento" />}
             </span>
-            <div>
-              <Titulo3 como="h3" tamano={menor ? "hito-menor" : "hito"}>
-                {hito.titulo}
-              </Titulo3>
-              {hito.descripcion ? (
-                <Cuerpo className="mt-linea max-w-texto">{hito.descripcion}</Cuerpo>
-              ) : null}
-            </div>
+            <Titulo3 como="h3" tamano={menor ? "hito-menor" : "hito"} className="area-titulo">
+              {hito.titulo}
+            </Titulo3>
+            {hito.descripcion ? (
+              <Cuerpo className="area-texto mt-interno-compacto max-w-texto text-pequeno">
+                {hito.descripcion}
+              </Cuerpo>
+            ) : null}
           </li>
         ))}
       </ol>
 
       {/*
-        LOS AVISOS DE LA ENTREGA: una fila de etiquetas redondeadas bajo una
-        línea, con lo que conviene saber antes de vestirse. Son contenido de
-        la boda —se editan en Ajustes— y sin ninguno no se pinta ni la línea.
+        LOS AVISOS: lo que conviene saber antes de vestirse. Son contenido de la
+        boda —se editan en Ajustes— y sin ninguno no se pinta ni la línea.
       */}
       {avisos.length > 0 ? (
-        <ul className="mt-elemento flex flex-wrap items-center gap-fila-hueco border-t border-borde pt-hueco-fluido">
+        <ul className="flex flex-wrap items-center gap-fila-hueco border-t border-borde pt-elemento">
           {avisos.map((aviso) => (
             <EtiquetaEstado como="li" key={aviso} tamano="aviso">
               {aviso}
@@ -1007,9 +957,9 @@ function ListaDeHoras({
 }
 
 /**
- * LAS TARJETAS DE HOTEL, con la foto arriba como las dibuja la entrega. La
- * foto es opcional —los hoteles se apuntan antes de tener una foto de cada
- * uno— y sin ella la tarjeta empieza por la versalita, sin hueco.
+ * DÓNDE DORMIR, justo antes del mapa: los hoteles en filas, no en tarjetas
+ * con foto grande. Se lee el nombre, el precio y «reservar»; la foto, si hay,
+ * va en pequeño, que es lo que hace falta para reconocer la fachada.
  */
 function Alojamiento({
   sitios,
@@ -1024,9 +974,8 @@ function Alojamiento({
 }) {
   /*
     «tres hoteles de León»: la cantidad sale de la lista y la ciudad de la
-    configuración, porque la entrega los escribe y escritos se quedarían
-    viejos el día que se apunte un cuarto hotel. En letra, que es como se
-    escribe una cantidad pequeña dentro de una frase.
+    configuración, en letra, que es como se escribe una cantidad pequeña
+    dentro de una frase.
   */
   const cuantos = numeroEnLetra(sitios.length);
   const ciudad = configuracion.ciudadCeremonia;
@@ -1046,10 +995,9 @@ function Alojamiento({
       titulo={t("alojamiento.titulo")}
       entradilla={
         /*
-          El plazo y los nombres salen de `configuracion_boda`: la entrega los
-          traía escritos —«Boda Paloma y David», «antes del 1 de mayo de 2027»—
-          y ahí escritos se quedarían viejos el día que cambie cualquiera de
-          los dos. Sin fecha límite se dice lo mismo sin ella.
+          El plazo y los nombres salen de `configuracion_boda`: escritos aquí se
+          quedarían viejos el día que cambie cualquiera de los dos. Sin fecha
+          límite se dice lo mismo sin ella.
         */
         configuracion.fechaLimiteRsvp
           ? t("alojamiento.entradilla", {
@@ -1060,36 +1008,38 @@ function Alojamiento({
           : t("alojamiento.entradillaSinPlazo", { hoteles, nombres })
       }
       composicion="apilada"
-      hundida
+      ancho="medio"
     >
-      <ul className="escalonado rejilla-tarjetas gap-rejilla-fluida">
+      <ul className="border-t border-borde">
         {sitios.map((sitio) => (
-          <Tarjeta
+          <li
             key={sitio.id}
-            como="li"
-            tamano="amplia"
-            nivelTitulo="h3"
-            className="animacion-subir-al-ver elevar-al-pasar"
-            meta={sitio.distintivo ?? undefined}
-            titulo={sitio.nombre}
-            texto={sitio.descripcion ?? undefined}
-            imagen={
-              sitio.foto && urlBase ? (
+            className="animacion-subir-al-ver flex gap-elemento border-b border-borde py-fila"
+          >
+            {sitio.foto && urlBase ? (
+              <div className="relative size-miniatura shrink-0 overflow-hidden rounded-imagen bg-superficie-hundida">
                 <Image
                   src={`${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${sitio.foto.ruta}`}
                   alt={sitio.foto.textoAlternativo}
                   fill
-                  // Tres columnas en escritorio, una en móvil: sin esto el
-                  // navegador se descarga la versión de pantalla completa.
-                  sizes="(min-width: 40rem) 33vw, 100vw"
+                  sizes="6rem"
                   className="object-cover"
                   placeholder={sitio.foto.marcadorBorroso ? "blur" : "empty"}
                   blurDataURL={sitio.foto.marcadorBorroso ?? undefined}
                 />
-              ) : undefined
-            }
-            pie={
-              <>
+              </div>
+            ) : null}
+            <div className="min-w-0 flex-1">
+              {sitio.distintivo ? <Etiqueta tono="acento">{sitio.distintivo}</Etiqueta> : null}
+              <Titulo3 como="h3" tamano="hito-menor" className="mt-interno-compacto">
+                {sitio.nombre}
+              </Titulo3>
+              {sitio.descripcion ? (
+                <Cuerpo className="mt-interno-compacto text-pequeno">
+                  {sitio.descripcion}
+                </Cuerpo>
+              ) : null}
+              <div className="mt-interno-compacto flex flex-wrap items-baseline justify-between gap-interno">
                 {sitio.precioTexto ? (
                   <span className="font-titulo peso-titulo-menor text-cifra-dato text-tinta-marca">
                     {sitio.precioTexto}
@@ -1107,9 +1057,9 @@ function Alojamiento({
                     {t("alojamiento.reservar")}
                   </a>
                 ) : null}
-              </>
-            }
-          />
+              </div>
+            </div>
+          </li>
         ))}
       </ul>
     </Bloque>
@@ -1117,10 +1067,13 @@ function Alojamiento({
 }
 
 /**
- * Las coordenadas llegan aparte y ya comprobadas: quien compone la landing no
- * pinta esta sección sin ellas. Volver a preguntar «¿y si son nulas?» aquí
- * dentro obligaría a inventar qué enseñar en un caso que no puede pasar, y ese
- * «por si acaso» es justo el hueco que acaba viéndose.
+ * CÓMO LLEGAR, Y EL FINAL DE LA PÁGINA
+ *
+ * El día acaba en el sitio de la boda: el fondo se vuelve el mapa de
+ * alrededor de la finca, una estrella baja hasta el punto exacto, y encima va
+ * la tarjeta con el nombre del lugar, la dirección, las rutas y el botón que
+ * abre la aplicación de mapas. En un móvil la tarjeta va debajo del mapa,
+ * montada sobre su borde; en pantalla ancha, a su izquierda, encima.
  */
 function Transporte({
   rutas,
@@ -1132,159 +1085,161 @@ function Transporte({
   coordenadas: { latitud: number; longitud: number };
 }) {
   const idTitulo = `titulo-${anclaDe("transporte")}`;
+  const lugar = configuracion.lugarCeremonia ?? configuracion.lugarBanquete;
 
   return (
-    /*
-      DOS COLUMNAS CENTRADAS, como la entrega: a la izquierda la cabecera, las
-      rutas y el botón; a la derecha el mapa, casi cuadrado. La cabecera va
-      DENTRO de la columna y no encima de las dos —es lo que hace que el mapa
-      suba a la altura del titular en vez de quedar bajo una franja vacía—,
-      así que el bloque no la pinta él: la pinta la columna.
-    */
-    <Bloque seccion="transporte" etiqueta={null} titulo={null} conTitularDentro>
-      <div className="rejilla-llegar items-center gap-columnas-fluido">
-        <div>
-          <CabeceraSeccion
-            idTitulo={idTitulo}
-            /*
-              LA ENTREGA PONE AQUÍ EL NOMBRE DE LA FINCA, no un rótulo genérico:
-              es la primera vez que aparece con todas sus letras y es lo que se
-              busca cuando alguien llega a esta sección. Sin lugar configurado
-              se cae al rótulo de siempre en vez de dejar un hueco.
-            */
-            etiqueta={configuracion.lugarCeremonia ?? t("comoLlegar.etiqueta")}
-            titulo={t("comoLlegar.titulo")}
-            entradilla={configuracion.direccionCeremonia ?? undefined}
-            composicion="apilada"
-            anchoEntradilla="llegar"
-            className="mb-antes-rutas"
-          />
+    <section id={anclaDe("transporte")} aria-labelledby={idTitulo} className="relative grid">
+      <MapaDelLugar
+        latitud={coordenadas.latitud}
+        longitud={coordenadas.longitud}
+        rotulo={lugar}
+        className="col-start-1 row-start-1 mapa-final"
+      />
 
-          {/*
-            UNA SOLA REJILLA PARA TODAS LAS RUTAS. Cada fila era su propia
-            rejilla con la primera columna `auto`, así que «1 h 50» la ensanchaba
-            sólo en su fila y su texto empezaba más a la izquierda que el de
-            «18 min»: las descripciones no se alineaban. Con `subgrid`, la
-            columna de la duración la marca la más ancha y vale para todas.
-          */}
-          <ul className="rejilla-dato gap-x-elemento border-t border-borde">
-            {rutas.map((ruta) => (
-              <li
-                key={ruta.id}
-                className="animacion-izquierda-al-ver col-span-full grid grid-cols-subgrid border-b border-borde py-pila"
+      <div className="relative col-start-1 row-start-2 -mt-solape-mapa px-margen pb-tramo md:row-start-1 md:mt-0 md:flex md:items-center md:pt-tramo">
+        <div className="mx-auto w-full max-w-contenido">
+          <div className="animacion-subir-al-ver max-w-entradilla-llegar rounded-tarjeta border border-borde bg-superficie-cabecera p-tarjeta-fluida shadow-tarjeta">
+            <CabeceraSeccion
+              idTitulo={idTitulo}
+              /*
+                EL NOMBRE DE LA FINCA, no un rótulo genérico: es lo que se busca
+                cuando alguien llega aquí. Sin lugar configurado se cae al
+                rótulo de siempre en vez de dejar un hueco.
+              */
+              etiqueta={configuracion.lugarCeremonia ?? t("comoLlegar.etiqueta")}
+              titulo={t("comoLlegar.titulo")}
+              entradilla={configuracion.direccionCeremonia ?? undefined}
+              composicion="apilada"
+              anchoEntradilla="llegar"
+              className="mb-elemento"
+            />
+
+            {/*
+              UNA SOLA REJILLA PARA TODAS LAS RUTAS: con `subgrid`, la columna de
+              la duración la marca la más ancha y vale para todas, y los textos
+              empiezan a la misma altura.
+            */}
+            {rutas.length > 0 ? (
+              <ul className="rejilla-dato gap-x-elemento border-t border-borde">
+                {rutas.map((ruta) => (
+                  <li
+                    key={ruta.id}
+                    className="col-span-full grid grid-cols-subgrid border-b border-borde py-pila"
+                  >
+                    <span className="font-titulo peso-titulo-menor text-cifra-dato-menor text-marca">
+                      {ruta.duracion}
+                    </span>
+                    <div>
+                      <Etiqueta como="h3" tamano="boton" espaciado="boton" tono="tinta">
+                        {ruta.modo}
+                      </Etiqueta>
+                      {ruta.detalle ? (
+                        <Cuerpo className="mt-interno-compacto text-pequeno">
+                          {ruta.detalle}
+                        </Cuerpo>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            <div className="mt-elemento flex flex-wrap items-center justify-between gap-elemento">
+              <BotonEnlace
+                href={enlaceMapaExterno(coordenadas.latitud, coordenadas.longitud)}
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                <span className="font-titulo peso-titulo-menor text-cifra-dato-menor text-marca">
-                  {ruta.duracion}
-                </span>
-                <div>
-                  {/*
-                    Es un `h3` y es una versalita: `Etiqueta` lleva la familia
-                    y el peso del cuerpo escritos para que la regla base de los
-                    titulares no la convierta en serif. Pasó.
-                  */}
-                  <Etiqueta como="h3" tamano="boton" espaciado="boton" tono="tinta">
-                    {ruta.modo}
-                  </Etiqueta>
-                  {ruta.detalle ? <Cuerpo className="mt-linea">{ruta.detalle}</Cuerpo> : null}
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-antes-rutas">
-            <BotonEnlace
-              href={enlaceMapaExterno(coordenadas.latitud, coordenadas.longitud)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t("comoLlegar.abrirMapa")}
-            </BotonEnlace>
+                {t("comoLlegar.abrirMapa")}
+              </BotonEnlace>
+              {/* De quién es el mapa: usar sus teselas obliga a decirlo. */}
+              <p className="text-diminuto text-tinta-suave">
+                {t("comoLlegar.mapaDe")}{" "}
+                <a
+                  href={URL_ATRIBUCION_MAPA}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline transicion-color hover:text-tinta"
+                >
+                  {t("comoLlegar.atribucionMapa")}
+                </a>
+              </p>
+            </div>
           </div>
         </div>
-
-        <div className="animacion-derecha-al-ver">
-          <MapaDelLugar latitud={coordenadas.latitud} longitud={coordenadas.longitud} />
-        </div>
       </div>
-    </Bloque>
+    </section>
   );
 }
 
 /**
- * EL MAPA SE CARGA AL LLEGAR A ÉL, no al abrir la portada.
- *
- * `loading="lazy"` en el marco lo deja dicho sin una línea de JavaScript: el
- * navegador no pide nada hasta que la sección se acerca a la pantalla. Hacerlo
- * con un observador de intersección sería el mismo efecto pagando código, y
- * encima dejaría fuera a quien navega sin JavaScript.
- *
- * LLEVA `title` PORQUE ES UN MARCO. Sin él, un lector de pantalla anuncia «marco»
- * y se acabó; con él dice qué hay dentro y quien no quiera entrar puede
- * saltárselo. El alto va en el atributo además de en las clases para que el
- * hueco esté reservado antes de que cargue nada: si aparece de golpe, empuja
- * hacia abajo lo que la persona estaba leyendo.
+ * LAS PREGUNTAS, PLEGADAS. Son para quien tiene una duda, no para leerlas de
+ * corrido: la sección es una sola línea —el titular— que se abre, y dentro
+ * cada pregunta se abre a su vez. Acordeón nativo: accesible por teclado sin
+ * una línea de JavaScript.
  */
-function MapaDelLugar({ latitud, longitud }: { latitud: number; longitud: number }) {
-  return (
-    <iframe
-      src={enlaceMapaEmbebido(latitud, longitud)}
-      title={t("comoLlegar.mapaTitulo")}
-      loading="lazy"
-      width={600}
-      height={400}
-      /*
-        `h-auto` manda sobre el atributo `height`: sin él, el marco ignoraba la
-        proporción y medía 400 px fijos. Los atributos se quedan para reservar
-        el hueco antes de que cargue nada. Sin radio y casi cuadrado, como en
-        la entrega.
-      */
-      className="aspect-mapa h-auto w-full border border-borde"
-    />
-  );
-}
-
 function Preguntas({
   preguntas,
 }: {
   preguntas: { id: string; pregunta: string; respuesta: string }[];
 }) {
+  const idTitulo = `titulo-${anclaDe("preguntas_frecuentes")}`;
   return (
-    <Bloque
-      seccion="preguntas_frecuentes"
-      etiqueta={t("preguntas.etiqueta")}
-      titulo={t("preguntas.titulo")}
-      hundida
+    <section
+      id={anclaDe("preguntas_frecuentes")}
+      aria-labelledby={idTitulo}
+      className="relative px-margen py-tramo"
     >
-      <ul className="mx-auto max-w-estrecho border-t border-borde">
-        {preguntas.map((pregunta) => (
-          <li key={pregunta.id} className="border-b border-borde">
-            {/* Acordeón nativo: accesible por teclado sin una línea de JS */}
-            <details className="group">
-              <summary className="cursor-pointer list-none py-elemento font-titulo text-titulo-3 transicion-color hover:text-tinta-marca">
-                {pregunta.pregunta}
-              </summary>
-              <Cuerpo className="max-w-texto pb-elemento">{pregunta.respuesta}</Cuerpo>
-            </details>
-          </li>
-        ))}
-      </ul>
-    </Bloque>
+      <div className="mx-auto max-w-medio">
+        <details className="group/preguntas border-y border-borde">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-elemento py-elemento">
+            <span>
+              <EtiquetaSeccion>{t("preguntas.etiqueta")}</EtiquetaSeccion>
+              <Titulo2 id={idTitulo} className="mt-pila">
+                {t("preguntas.titulo")}
+              </Titulo2>
+            </span>
+            <SignoAbrir />
+          </summary>
+          <ul className="border-t border-borde">
+            {preguntas.map((pregunta) => (
+              <li key={pregunta.id} className="border-b border-borde last:border-b-0">
+                <details>
+                  <summary className="cursor-pointer list-none py-pila font-titulo text-hito-menor transicion-color hover:text-tinta-marca">
+                    {pregunta.pregunta}
+                  </summary>
+                  <Cuerpo className="max-w-texto pb-pila text-pequeno">
+                    {pregunta.respuesta}
+                  </Cuerpo>
+                </details>
+              </li>
+            ))}
+          </ul>
+        </details>
+      </div>
+    </section>
   );
 }
 
-/**
- * LA PLAYLIST
- *
- * La lista se ve siempre; el campo para apuntar, sólo si el navegador recuerda
- * una invitación. `sugerir_cancion()` exige token —la lista que sonará esa
- * noche es de los invitados, no de internet— y enseñar un campo que va a
- * responder «vuestro enlace no vale» a quien nunca tuvo uno es peor que no
- * enseñarlo: se lee como que la web está rota.
- *
- * En su lugar va una línea que dice qué hace falta. Quien tiene invitación la
- * ha abierto alguna vez, así que para los ciento veinte que importan el campo
- * está ahí.
- */
+/** El «+» de un desplegable, que se vuelve «×» al abrirse. Decoración. */
+function SignoAbrir() {
+  const lado = 24;
+  const margen = 5;
+  const medio = lado / 2;
+  return (
+    <svg
+      aria-hidden
+      viewBox={`0 0 ${lado} ${lado}`}
+      className="size-icono shrink-0 stroke-current transicion-transformacion group-open/preguntas:rotate-45"
+      fill="none"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+    >
+      <path d={`M${medio} ${margen}V${lado - margen}M${margen} ${medio}H${lado - margen}`} />
+    </svg>
+  );
+}
+
 function Playlist({
   canciones,
   puedeApuntar,
@@ -1305,19 +1260,28 @@ function Playlist({
       {puedeApuntar ? (
         <FormularioPlaylist />
       ) : (
-        <Cuerpo className="mx-auto mt-elemento max-w-texto text-center text-pequeno text-tinta-suave">
+        <Cuerpo className="mx-auto max-w-texto text-center text-pequeno text-tinta-suave">
           {t("playlist.sinInvitacion")}
         </Cuerpo>
       )}
 
+      {/*
+        EN UN MÓVIL, UNA SOLA FILA QUE SE DESLIZA: con todas las canciones
+        envueltas, la lista crecía hacia abajo con cada una que se apunta. Se
+        puede recorrer con el dedo y, con el foco, con las flechas.
+      */}
       {canciones.length > 0 ? (
-        <ul className="mt-chips-arriba flex flex-wrap justify-center gap-hueco-corto">
+        <ul
+          tabIndex={0}
+          aria-label={t("playlist.apuntadas")}
+          className="-mx-margen mt-elemento flex gap-hueco-corto overflow-x-auto px-margen pb-interno-compacto max-sm:flex-nowrap sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0 sm:pb-0"
+        >
           {canciones.map((cancion) => (
             <EtiquetaEstado
               como="li"
               key={cancion.id}
               tamano="chip"
-              className="animacion-pop levantar-al-pasar"
+              className="animacion-pop levantar-al-pasar shrink-0"
             >
               {cancion.texto}
             </EtiquetaEstado>
@@ -1330,20 +1294,6 @@ function Playlist({
   );
 }
 
-/**
- * LOS REGALOS
- *
- * La sección más delicada de la web, y la entrega la resuelve con el tono
- * exacto: primero «vuestra presencia ya es el regalo», y sólo después la
- * cuenta. El orden no es decorativo — leerlo al revés convierte una invitación
- * en una petición.
- *
- * NO SE PINTA SI NO HAY CUENTA. `datos_para_regalos()` devuelve cero filas
- * mientras la sección esté apagada o falte el IBAN, así que aquí no se decide
- * nada: si no hay cuenta, no hay sección, y el enlace no aparece en el menú.
- * Una sección de regalos con un hueco donde va el número es peor que no
- * tenerla.
- */
 function Regalos() {
   return (
     <Bloque
@@ -1356,31 +1306,20 @@ function Regalos() {
       composicion="centrada"
       ancho="estrecho"
     >
-      {/* Centrada entera, a 820 px, como la entrega: no hay nada que leer en
-          columna, hay una sola cosa que ofrecer. La tarjeta entra escalando. */}
-      <div className="animacion-escala-al-ver mt-hueco-fluido rounded-tarjeta border border-borde bg-superficie-tenue p-tarjeta-fluida text-center">
-        {/*
-          EL NÚMERO NO ESTÁ AQUÍ, y es el ticket entero. Este componente pinta
-          un botón; el IBAN se pide a `/regalos/cuenta` cuando alguien lo
-          pulsa. Lo que el servidor decide es sólo SI hay cuenta —para no
-          enseñar un botón que no lleva a nada— y eso no revela el número.
-        */}
+      {/*
+        EL NÚMERO NO ESTÁ AQUÍ. Este componente pinta un botón; el IBAN se pide
+        a `/regalos/cuenta` cuando alguien lo pulsa. Lo que el servidor decide
+        es sólo SI hay cuenta —para no enseñar un botón que no lleva a nada— y
+        eso no revela el número.
+      */}
+      <div className="animacion-escala-al-ver text-center">
         <CuentaRegalos />
-
-        <Cuerpo className="mt-pila text-pequeno">{t("regalos.buzon")}</Cuerpo>
+        <Cuerpo className="mt-pila text-pequeno text-tinta-suave">{t("regalos.buzon")}</Cuerpo>
       </div>
     </Bloque>
   );
 }
 
-/**
- * QUÉ PONERSE
- *
- * Es la pregunta que más se repite por WhatsApp antes de una boda, y
- * contestarla aquí ahorra treinta conversaciones idénticas. Los bloques salen
- * de la base —«Ellas», «Ellos», «Solo dos peticiones»— porque son consejos que
- * dependen de la finca y de la fecha, y los novios los van a retocar.
- */
 function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
   return (
     <Bloque
@@ -1391,20 +1330,16 @@ function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
       realzada
       composicion="apilada"
       ancho="medio"
-      hundida
     >
-      <ul className="escalonado rejilla-consejos gap-rejilla-fluida">
+      {/* Sin tarjetas: una versalita y su texto, en columnas cuando caben, que
+          entran de izquierda a derecha (`escalonado`). */}
+      <ul className="escalonado rejilla-consejos gap-elemento border-t border-borde pt-elemento">
         {consejos.map((consejo) => (
-          <li
-            key={consejo.id}
-            className="animacion-subir-al-ver elevar-al-pasar rounded-tarjeta border border-borde bg-superficie p-tarjeta"
-          >
-            {/* Versalita en marca, no titular serif: así rotula la entrega
-                «Ellas», «Ellos» y «Solo dos peticiones». */}
-            <Etiqueta como="h3" tono="marca" className="mb-interno">
+          <li key={consejo.id} className="animacion-subir-al-ver">
+            <Etiqueta como="h3" tono="marca" className="mb-interno-compacto">
               {consejo.titulo}
             </Etiqueta>
-            <Cuerpo>{consejo.texto}</Cuerpo>
+            <Cuerpo className="text-pequeno">{consejo.texto}</Cuerpo>
           </li>
         ))}
       </ul>
@@ -1412,38 +1347,25 @@ function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
   );
 }
 
+/**
+ * CÓMO SE CONFIRMA, AL FINAL DE LA NOCHE
+ *
+ * La historia acaba con «cada momento fue una estrella», y aquí, entre todas
+ * las del cielo, hay una hueca que late: la de los invitados, que es lo único
+ * que falta. Se confirma por WhatsApp, en el mismo chat donde llegó la
+ * invitación; aquí sólo se dice. Ni formulario ni botón.
+ */
 function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
   const idTitulo = `titulo-${anclaDe("rsvp")}`;
   return (
     <section
       id={anclaDe("rsvp")}
-      data-seccion="inversa"
-      className="fondo-noche-alta relative isolate overflow-hidden px-margen py-seccion-fluida text-center"
+      className="relative px-margen py-tramo text-center"
       aria-labelledby={idTitulo}
     >
-      {/*
-        LA NOCHE DEL FINAL. El día que ha ido pasando al bajar acaba aquí, en
-        el mismo firmamento entero de la portada —otro cielo, la misma noche—,
-        con la Vía Láctea y alguna estrella fugaz. Entre todas, una hueca que
-        late: la de los invitados, que es lo único que falta.
-      */}
-      <CieloEstrellado
-        semilla={SEMILLAS_CIELO.final}
-        viaLactea
-        fugaces
-        className="capa-cielo absolute inset-0 size-full"
-      />
-
-      <div className="relative mx-auto max-w-estrecho">
+      <div className="mx-auto max-w-estrecho">
         <VuestraEstrella className="mx-auto mb-elemento size-vuestra-estrella" />
         <Cita className="mb-elemento">{t("rsvp.faltaVuestraEstrella")}</Cita>
-
-        {/*
-          SE CONFIRMA POR WHATSAPP, y aquí sólo se dice. Ni formulario ni
-          botón: cada invitación llegó por un chat, y contestar en ese mismo
-          chat es lo que ya sabe hacer todo el mundo, de los primos a la
-          abuela. Los novios lo apuntan en el panel.
-        */}
         <CabeceraSeccion
           idTitulo={idTitulo}
           etiqueta={
@@ -1454,37 +1376,13 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
           titulo={t("rsvp.titulo")}
           entradilla={t("rsvp.comoSeConfirma")}
           composicion="centrada"
+          className=""
         />
       </div>
     </section>
   );
 }
 
-/**
- * LA CABECERA DE UNA SECCIÓN
- *
- * El patrón que la entrega repite en todas: versalita arriba, titular grande
- * debajo y —cuando hace falta— una entradilla corta que lo acompaña.
- *
- * Tiene TRES composiciones, y la entrega usa las tres. En la **alineada**, la
- * de las listas (la víspera, el programa, la galería), la entradilla va a la
- * derecha del titular y pegada a su línea base. En la **apilada**, la de las
- * secciones que abren con un párrafo (alojamiento, cómo llegar, dress code),
- * la entradilla cae bajo el titular en una columna de 620 px que deja aire a
- * la derecha. En la **centrada**, la de las secciones que son una invitación
- * a hacer algo —la playlist, los regalos, el RSVP—, todo se alinea al eje:
- * no hay una lista que seguir, hay una sola cosa que pedir.
- *
- * El titular es un `h2` con el tamaño de `Titulo1`, no de `Titulo2`, y por eso
- * va con la propiedad `como`. Es lo que dice la entrega y se nota: con el
- * tamaño pequeño las secciones no abren, parecen subapartados de la anterior.
- * La jerarquía del documento la sigue marcando la etiqueta, que es lo que oye
- * un lector de pantalla.
- *
- * Vive suelta y no dentro de `Bloque` porque la usan tres marcos distintos:
- * las secciones de contenido, el RSVP con su propio fondo, y la columna de
- * texto de «cómo llegar».
- */
 type ComposicionDeCabecera = "alineada" | "apilada" | "centrada";
 
 function CabeceraSeccion({
@@ -1496,21 +1394,16 @@ function CabeceraSeccion({
   barrido = false,
   composicion = "alineada",
   anchoEntradilla = "texto",
-  className = "mb-bloque-fluido",
+  className = "mb-cabecera-tramo",
 }: {
   idTitulo: string;
   etiqueta: string | null;
   titulo: string | null;
-  /** Frase corta que acompaña al titular. Opcional: la mayoría no la lleva. */
   entradilla?: string | null;
-  /** Bronce y rombo. Sólo las secciones que son un extra; ver `EtiquetaSeccion`. */
   realzada?: boolean;
-  /** La versalita se descubre con un barrido. La entrega se lo da sólo a regalos. */
   barrido?: boolean;
   composicion?: ComposicionDeCabecera;
-  /** «Cómo llegar» estrecha su entradilla a 460 px; el resto, al ancho de texto. */
   anchoEntradilla?: "texto" | "llegar";
-  /** El aire por debajo. Cada marco lo pone; por defecto, el de una sección. */
   className?: string;
 }) {
   if (!etiqueta && !titulo) return null;
@@ -1534,7 +1427,7 @@ function CabeceraSeccion({
         </EtiquetaSeccion>
       ) : null}
       {titulo ? (
-        <Titulo1 como="h2" id={idTitulo} className="mt-pila">
+        <Titulo1 como="h2" id={idTitulo} tamano="tramo" className="mt-pila">
           {titulo}
         </Titulo1>
       ) : null}
@@ -1562,18 +1455,6 @@ function CabeceraSeccion({
   );
 }
 
-/**
- * EL MARCO DE UNA SECCIÓN DE CONTENIDO
- *
- * Mantiene el ritmo vertical sin repetirlo por página. El aire es fluido: 132
- * px fijos dejan una sección casi vacía en un móvil, y por eso la entrega lo
- * escribe con `clamp` en todas. El margen lateral es el de la entrega, 26 px.
- *
- * EL ANCHO NO ES UNO: la entrega da a cada sección el suyo —1180 a las que
- * llevan tarjetas o un mapa, 1080 a las listas y al dress code, 900 a la
- * playlist, 820 a lo que se centra— y ese número es parte de la composición,
- * no un detalle. Se elige por nombre, nunca por píxeles.
- */
 type AnchoDeBloque = "contenido" | "medio" | "playlist" | "estrecho" | "amplio";
 
 const ANCHOS: Record<AnchoDeBloque, string> = {
@@ -1584,6 +1465,12 @@ const ANCHOS: Record<AnchoDeBloque, string> = {
   amplio: "max-w-amplio",
 };
 
+/**
+ * UNA SECCIÓN SOBRE EL CIELO: sin fondo propio —el cielo es uno— y con el
+ * aire del cielo continuo (`py-tramo`), que es menos que el de una sección con
+ * su banda de color: aquí ya no hace falta una pantalla de margen para saber
+ * que empieza otra cosa.
+ */
 function Bloque({
   seccion,
   etiqueta,
@@ -1592,9 +1479,7 @@ function Bloque({
   realzada = false,
   barrido = false,
   composicion = "alineada",
-  hundida = false,
   ancho = "contenido",
-  conTitularDentro = false,
   children,
 }: {
   seccion: Seccion;
@@ -1604,13 +1489,7 @@ function Bloque({
   realzada?: boolean;
   barrido?: boolean;
   composicion?: ComposicionDeCabecera;
-  hundida?: boolean;
   ancho?: AnchoDeBloque;
-  /**
-   * La sección pinta su propio `CabeceraSeccion` entre los hijos —cómo llegar
-   * lo mete en una columna— y aun así el `h2` tiene que rotular la sección.
-   */
-  conTitularDentro?: boolean;
   children: ReactNode;
 }) {
   const ancla = anclaDe(seccion);
@@ -1618,8 +1497,8 @@ function Bloque({
   return (
     <section
       id={ancla}
-      className={`px-margen py-seccion-fluida ${hundida ? "velo-hundido" : ""}`}
-      aria-labelledby={titulo || conTitularDentro ? idTitulo : undefined}
+      className="relative px-margen py-tramo"
+      aria-labelledby={titulo ? idTitulo : undefined}
     >
       <div className={`mx-auto ${ANCHOS[ancho]}`}>
         <CabeceraSeccion

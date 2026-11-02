@@ -2,6 +2,7 @@ import { expect, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
+import { TAMANO_TESELA, URL_TESELAS_MAPA, ZOOM_MAPA_FINAL } from "../../src/config/constants";
 
 /**
  * BODA-26 · Cuándo y dónde: mapa y rutas de llegada
@@ -70,6 +71,19 @@ async function fijarCoordenadas(punto: Punto): Promise<void> {
 }
 
 /** La sección de «cómo llegar», por su título y nunca por su posición. */
+/**
+ * La tesela donde cae un punto, contada aquí a mano —la cuenta de cualquier
+ * mapa web— y no con la función de la web: si las dos se equivocaran igual,
+ * el test lo daría por bueno.
+ */
+function teselaDe(latitud: number, longitud: number): string {
+  const lado = 2 ** ZOOM_MAPA_FINAL;
+  const x = Math.floor(((longitud + 180) / 360) * lado);
+  const rad = (latitud * Math.PI) / 180;
+  const y = Math.floor(((1 - Math.asinh(Math.tan(rad)) / Math.PI) / 2) * lado);
+  return `${URL_TESELAS_MAPA}/${ZOOM_MAPA_FINAL}/${x}/${y}.png`;
+}
+
 function seccion(pagina: Page) {
   return pagina
     .locator("section")
@@ -120,20 +134,25 @@ test.describe("Cómo llegar", () => {
    * dice el propio marco: sin `loading="lazy"` el navegador lo pide con el
    * resto de la página, que es lo que este criterio viene a impedir.
    */
-  test("el mapa se carga al llegar a la sección, no al abrir la portada", async ({ page }) => {
+  test("el mapa son teselas alrededor del sitio, perezosas y decorativas", async ({ page }) => {
     await fijarCoordenadas(original);
     await page.goto("/");
 
-    const mapa = seccion(page).locator("iframe");
-    await expect(mapa).toHaveAttribute("loading", "lazy");
+    const teselas = seccion(page).locator("[data-mapa-del-lugar] img");
+    expect(await teselas.count()).toBeGreaterThan(1);
+    // Se piden al llegar, no al abrir la portada.
+    await expect(teselas.first()).toHaveAttribute("loading", "lazy");
+    // Son el fondo: decoración, sin texto alternativo y dentro de algo callado.
+    await expect(teselas.first()).toHaveAttribute("alt", "");
+    await expect(teselas.first()).toHaveAttribute("width", String(TAMANO_TESELA));
 
-    // Y lleva título: un marco sin él se anuncia como «marco» y nada más.
-    await expect(mapa).toHaveAttribute("title", copy.comoLlegar.mapaTitulo);
-
-    // El mapa también sale de la base, no de un punto escrito a mano.
+    // Y salen de la base: la tesela donde cae el sitio está entre ellas.
     const guardadas = await leerCoordenadas();
-    const fuente = await mapa.getAttribute("src");
-    expect(fuente).toContain(String(Number(guardadas.latitud)));
+    const centro = teselaDe(Number(guardadas.latitud), Number(guardadas.longitud));
+    await expect(seccion(page).locator(`img[src="${centro}"]`)).toHaveCount(1);
+
+    // Ya no hay ningún marco embebido que se quede con el dedo al bajar.
+    await expect(page.locator("iframe")).toHaveCount(0);
   });
 
   /**
@@ -165,8 +184,11 @@ test.describe("Cómo llegar", () => {
     expect(destino, "el enlace tiene que seguir a la base").toContain(comoLaBase(otro.latitud));
     expect(destino).toContain(comoLaBase(otro.longitud));
 
-    const fuente = await seccion(page).locator("iframe").getAttribute("src");
-    expect(fuente, "y el mapa incrustado también").toContain(comoLaBase(otro.latitud));
+    const centro = teselaDe(Number(otro.latitud), Number(otro.longitud));
+    await expect(
+      seccion(page).locator(`img[src="${centro}"]`),
+      "y el mapa también: la tesela del sitio nuevo",
+    ).toHaveCount(1);
 
     // Y nada del punto anterior se queda por ahí.
     expect(destino).not.toContain(String(Number(original.latitud)));

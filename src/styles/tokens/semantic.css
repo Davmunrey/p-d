@@ -69,7 +69,6 @@
    * sobre un fondo del tema, que se conoce; ésta cae sobre una imagen que sube
    * quien sea. Se nombran aparte para poder ajustar el velo y el texto juntos
    * el día que una foto se resista. */
-  --tinta-sobre-foto: var(--color-nieve-50);
   --tinta-sobre-foto-tenue: var(--color-nieve-150);
   --tinta-marca: var(--color-marino-700);
   --tinta-sobre-marca: var(--color-nieve-50);
@@ -237,18 +236,23 @@
    * es lo que impide que alguien coja el que más oscurece «para que se lea
    * mejor» y se salte la regla sin enterarse.
    */
-  --velo-foto: var(--color-velo-escena-cerca-abajo);
 
-  /* El cielo del día (ver primitivos): los tintes que se cruzan al bajar. */
+  /*
+    El día de la landing (ver primitivos): el amanecer que separa la noche del
+    día, los tintes del día y el sol que asoma en el horizonte.
+  */
+  --cielo-amanecer-1: var(--color-amanecer-pizarra);
+  --cielo-amanecer-2: var(--color-amanecer-malva);
+  --cielo-amanecer-3: var(--color-amanecer-rosa);
+  --cielo-amanecer-4: var(--color-amanecer-arena);
   --cielo-alba: var(--color-alba-100);
-  --cielo-alba-brillo: var(--color-alba-brillo);
-  --cielo-alba-brillo-final: var(--color-alba-brillo-0);
   --cielo-tarde: var(--color-tarde-100);
-  --cielo-ocaso: var(--color-ocaso-100);
-  --cielo-ocaso-brillo: var(--color-ocaso-brillo);
-  --cielo-ocaso-brillo-final: var(--color-ocaso-brillo-0);
+  --cielo-mediodia: var(--color-nieve-50);
   --sol: var(--color-sol);
   --sol-final: var(--color-sol-0);
+
+  /* El mapa del final, como un plano impreso (ver primitivos). */
+  --filtro-mapa: var(--filtro-mapa-papel);
 
   /* Una máscara sólo mira el alfa: el color lleno de donde se ve entero. */
   --mascara-llena: var(--color-negro);
@@ -257,17 +261,11 @@
   --cielo-noche-cenit: var(--color-marino-950);
   --cielo-noche-medio: var(--color-marino-850);
   --cielo-noche-horizonte: var(--color-marino-700);
-  --cielo-horizonte-calido: var(--color-horizonte-noche);
-  --cielo-horizonte-calido-final: var(--color-horizonte-noche-0);
   --cielo-estrella: var(--color-nieve-100);
   --cielo-estrella-calida: var(--color-bronce-200);
   --cielo-via-lactea: var(--color-via-lactea);
   --cielo-via-lactea-final: var(--color-via-lactea-0);
   --cielo-fugaz: var(--color-nieve-50);
-
-  /* Una sección hundida sobre el cielo: un velo, no un gris opaco, para que
-     el tinte de la hora se siga viendo debajo. */
-  --velo-hundido: var(--color-velo-hundido);
 
   /* --- Tipografía semántica ------------------------------------------ */
   --fuente-titulo: var(--font-family-serif);
@@ -277,8 +275,10 @@
   --texto-display: var(--font-size-display);
   --texto-titulo-1: var(--font-size-titulo-1);
   --texto-titulo-2: var(--font-size-titulo-2);
+  --texto-titulo-tramo: var(--font-size-titulo-tramo);
   --texto-titulo-3: var(--font-size-titulo-3);
   --texto-conector: var(--font-size-conector);
+  --texto-conector-frase: var(--font-size-conector-frase);
 
   /* «Para Familia Fernández» en la portada, cuando se entra por el enlace. */
   --texto-saludo: var(--font-size-saludo);
@@ -352,10 +352,11 @@
   --espacio-seccion-compacta: var(--space-seccion-compacta);
   --espacio-seccion: var(--space-seccion);
   --espacio-seccion-fluida: var(--space-seccion-fluida);
-  --espacio-bloque-fluido: var(--space-bloque-fluido);
   --margen-lateral: var(--space-margen);
   --margen-cabecera: var(--space-margen-cabecera);
   --espacio-seccion-compacta-fluida: var(--space-seccion-compacta-fluida);
+  --espacio-tramo: var(--space-tramo);
+  --espacio-cabecera-tramo: var(--space-cabecera-tramo);
   --espacio-hueco-fluido: var(--space-hueco-fluido);
   --espacio-hueco-corto: var(--space-hueco-corto);
   --espacio-portada-arriba: var(--space-portada-arriba);
@@ -371,14 +372,11 @@
   --espacio-cita: var(--space-cita);
   --espacio-tarjeta: var(--space-tarjeta);
   --espacio-tarjeta-fluida: var(--space-tarjeta-fluida);
-  --espacio-rejilla-fluida: var(--space-rejilla-fluida);
   --espacio-columnas-fluido: var(--space-columnas-fluido);
   --espacio-tira-nav: var(--space-tira-nav);
   --espacio-fila: var(--space-fila);
-  --espacio-fila-programa: var(--space-fila-programa);
-  --espacio-fila-lado: var(--space-fila-lado);
+  --espacio-fila-compacta: var(--space-fila-compacta);
   --espacio-fila-hueco: var(--space-fila-hueco);
-  --espacio-antes-rutas: var(--space-antes-rutas);
   --espacio-pie-arriba: var(--space-pie-arriba);
   --espacio-pie-abajo: var(--space-pie-abajo);
   --espacio-chip-y: var(--space-chip-y);
@@ -438,29 +436,25 @@
   --alto-barra-muestra: var(--size-barra-muestra);
   --ancho-ficha-catalogo: var(--size-ficha-catalogo);
   --lado-constelacion: var(--size-constelacion);
-  --lado-constelacion-historia: var(--size-constelacion-historia);
-  --alto-escenario-historia: var(--size-escenario-historia);
-  --alto-escenario-historia-movil: var(--size-escenario-historia-movil);
-  --alto-hito-escena: var(--size-hito-escena);
-  --alto-hito-escena-movil: var(--size-hito-escena-movil);
   --lado-vuestra-estrella: var(--size-vuestra-estrella);
-  --lado-sol: var(--size-sol);
-  --sol-salida-x: var(--space-sol-salida-x);
-  --sol-salida-y: var(--space-sol-salida-y);
-  --sol-cenit-x: var(--space-sol-cenit-x);
-  --sol-cenit-y: var(--space-sol-cenit-y);
-  --sol-ocaso-x: var(--space-sol-ocaso-x);
-  --sol-ocaso-y: var(--space-sol-ocaso-y);
+  --alto-amanecer: var(--size-amanecer);
+  --alto-pantalla-estable: var(--size-pantalla-estable);
+  --alto-mapa-final: var(--size-mapa-final);
+  --lado-estrella-llegada: var(--size-estrella-llegada);
+  --estrella-desde-x: var(--space-estrella-desde-x);
+  --estrella-desde-y: var(--space-estrella-desde-y);
+  --mapa-foco-x: var(--space-mapa-foco-x);
+  --mapa-foco-y: var(--space-mapa-foco-y);
+  --mapa-foco-x-ancho: var(--space-mapa-foco-x-ancho);
+  --mapa-foco-y-ancho: var(--space-mapa-foco-y-ancho);
+  --solape-mapa: var(--space-solape-mapa);
+  --lado-estrella-hito: var(--size-estrella-hito);
+  --ancho-columna-estrella: var(--size-columna-estrella);
   --holgura-mascara: var(--space-holgura-mascara);
   --recorrido-linea: var(--space-recorrido-linea);
   --ancho-columna-minima: var(--size-columna-minima);
   --ancho-entradilla: var(--size-entradilla);
   --alto-foto-portada: var(--size-foto-portada);
-
-  /* El paisaje pide más aire que la foto de la portada: es una vista aérea, y
-   * recortada deja de leerse como paisaje. Pero no llega a pantalla completa a
-   * propósito — se tiene que ver que hay algo debajo. */
-  --alto-paisaje: var(--size-paisaje);
   --alto-cabecera: var(--size-cabecera);
   --ancho-lateral: var(--size-lateral);
   --alto-barra-movil: var(--size-barra-movil);
@@ -474,24 +468,17 @@
   --radio-imagen: var(--radius-sutil);
   --radio-modal: var(--radius-amplio);
   --radio-etiqueta: var(--radius-redondo);
-  --radio-fila: var(--radius-suave);
   --radio-sobre: var(--radius-papel);
   --grosor-filete: var(--border-width-1);
 
-  /* El mapa de «cómo llegar»: casi cuadrado (1 / 1.06), como lo dibuja la
-   * entrega al lado de la columna de texto. Con 4/3 quedaba bajo y dejaba
-   * la columna de al lado colgando. */
-  --proporcion-mapa: var(--ratio-mapa);
+  /* La foto del paisaje, apaisada: una franja entre la portada y la cuenta
+   * atrás, no una escena de pantalla entera. */
+  --proporcion-paisaje: var(--ratio-panorama);
 
   /* La foto que corona una tarjeta de hotel y los huecos de la tira de fotos:
    * 4/3, la proporción de galería del catálogo. */
   --proporcion-foto-tarjeta: var(--ratio-paisaje);
   --proporcion-foto-tira: var(--ratio-paisaje);
-
-  /* La foto de un hito de «nuestra historia». Cuadrada porque las tres van en
-   * fila y son fotos de origen distinto —un carrete, un móvil, una captura—:
-   * dejar cada una con su proporción convierte la fila en una escalera. */
-  --proporcion-hito: var(--ratio-cuadrado);
 
   /* El plano de las mesas: CUADRADO, porque sus coordenadas lo son —un lienzo
    * de lado `LADO_PLANO_MESAS` en las dos direcciones—, y con su propio token.
@@ -539,14 +526,11 @@
   --pausa-escritura: var(--delay-escritura);
   --transicion-linea: var(--duration-linea) var(--ease-salida);
   --duracion-cambio-pagina: var(--duration-cambio-pagina);
-  --transicion-cielo: var(--duration-cielo) var(--ease-suave);
-  --transicion-sol: var(--duration-sol) var(--ease-suave);
+  --duracion-llegada: var(--duration-llegada);
+  --transicion-llegada: var(--duration-llegada) var(--ease-suave);
   --escala-estrella-dormida: var(--scale-estrella-dormida);
-  --opacidad-estrella-dormida: var(--opacity-estrella-dormida);
-  --opacidad-destello-final: var(--opacity-destello-final);
   --escala-latido-estrella: var(--scale-latido-estrella);
   --opacidad-latido-estrella: var(--opacity-latido-estrella);
-  --transicion-destello: var(--duration-destello) var(--ease-salida);
   --transicion-escritura: var(--duration-escritura) var(--ease-suave);
 
   /* Las cifras que ruedan y el botón que cede al pulsarlo. */
@@ -755,44 +739,6 @@
   --capa-sello: var(--layer-escena-4);
   --capa-foto-fuera: var(--layer-escena-3);
   --capa-tarjeta-fuera: var(--layer-escena-4);
-
-  /* --- El paisaje: la escena de scroll -------------------------------- */
-  --alto-escena: var(--size-escena);
-  --alto-panel-escena: var(--size-panel-escena);
-  --recorte-marco-x: var(--inset-marco-x);
-  --recorte-marco-y: var(--inset-marco-y);
-  --radio-marco: var(--radius-marco);
-  --sombra-marco: var(--shadow-marco);
-  --sombra-marco-final: var(--shadow-marco-final);
-  --escala-foto-lejos: var(--scale-foto-lejos);
-  --velo-escena-lejos-arriba: var(--color-velo-escena-lejos-arriba);
-  --velo-escena-lejos-abajo: var(--color-velo-escena-lejos-abajo);
-  --velo-escena-cerca-arriba: var(--color-velo-escena-cerca-arriba);
-  --velo-escena-cerca-abajo: var(--color-velo-escena-cerca-abajo);
-  --tramo-marco-escena: var(--tramo-marco);
-  --tramo-texto-escena-inicio: var(--tramo-texto-inicio);
-  --tramo-texto-escena-fin: var(--tramo-texto-fin);
-  --tramo-pista-escena: var(--tramo-pista);
-  --suavizado-escena: var(--ease-suavizado);
-  --texto-escena: var(--font-size-escena);
-  --texto-conector-escena: var(--font-size-conector-escena);
-  --espacio-titular-escena: var(--space-titular-escena);
-  --espacio-cierre-escena: var(--space-cierre-escena);
-  --espacio-escena-lado: var(--space-escena-lado);
-  --espacio-pista-escena: var(--space-pista-escena);
-  --espacio-pista-raya: var(--space-pista-raya);
-
-  /**
-   * LOS DOS TONOS QUE SÓLO EXISTEN SOBRE UNA FOTO.
-   *
-   * La versalita de la escena va en el marino claro y el cierre en el bronce
-   * claro — los mismos que el bloque inverso reasigna, pero aquí no hay bloque
-   * inverso: hay una fotografía debajo. El acento de raíz es el bronce oscuro
-   * y sobre una foto velada no se lee; por eso tienen nombre propio en vez de
-   * heredarse.
-   */
-  --tinta-sobre-foto-fria: var(--color-marino-200);
-  --acento-sobre-foto: var(--color-bronce-300);
 
   /* --- Anchos de contenido ------------------------------------------- */
   --ancho-texto: var(--width-prose);

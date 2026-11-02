@@ -1,49 +1,37 @@
 import type { Seccion } from "./secciones";
 
 /**
- * EL CIELO ESTRELLADO, MEDIDO
+ * EL CIELO DE LA LANDING, MEDIDO
  *
- * La landing es un día entero: empieza de noche, amanece para la logística y
- * vuelve a ser de noche al final. Las noches son un firmamento completo —no
- * una constelación suelta—, pintado en un `<canvas>` por `CieloEstrellado`.
+ * La landing es un día entero sobre un solo fondo: empieza de noche, bajo un
+ * firmamento completo, amanece a media página y acaba de día, en el mapa del
+ * sitio de la boda. Las estrellas se pintan en un `<canvas>` (`CieloEstrellado`)
+ * y el firmamento GIRA mientras se baja, como gira de verdad a lo largo de una
+ * noche: lo que se ve arriba al empezar no es lo que se ve al acabar.
  *
  * Aquí viven los números del dibujo: cuántas estrellas por superficie, de qué
- * tamaño, con qué brillo, cuánto titilan y cuánto se mueven al bajar. Son
- * geometría y ritmo, como las coordenadas de `constelaciones.ts`; los colores
- * no están aquí: los lee el lienzo de los tokens (`--cielo-*`), así que
- * cambiar de paleta no toca este fichero.
+ * tamaño, con qué brillo, cuánto titilan, cuánto gira el cielo y cuándo se
+ * apaga. Son geometría y ritmo; los colores no están aquí: los lee el lienzo de
+ * los tokens (`--cielo-*`), así que cambiar de paleta no toca este fichero.
  *
  * TODO SALE DE UNA SEMILLA. Las estrellas se reparten con un generador
  * pseudoaleatorio con semilla fija: el cielo es el mismo en cada visita y en
  * cada pantalla —no «se reordena» al girar el móvil— y los tests pueden contar
- * con él.
+ * con él. El número no significa nada: sólo tiene que ser siempre el mismo.
  */
-
-/**
- * Las semillas de cada cielo: la fecha de la boda, 21·05·27, y un número de
- * cielo detrás. Cada noche de la página tiene su firmamento —repetir el mismo
- * en la portada y en el final se notaría—, y cada una es siempre la misma.
- */
-export const SEMILLAS_CIELO = {
-  portada: 2105271,
-  cuentaAtras: 2105272,
-  historia: 2105273,
-  final: 2105274,
-} as const;
+export const SEMILLA_CIELO = 2105271;
 
 /**
  * Las tres profundidades del cielo. De lejos a cerca: más estrellas y más
  * pequeñas al fondo, pocas y brillantes delante. Lo que da profundidad es el
  * contraste entre las tres, no ninguna por separado.
  *
- * - `densidad`: estrellas por cada millón de píxeles CSS de lienzo. A 1440×900
- *   salen unas 440, 120 y 25; en un móvil de 390×844, unas 110, 30 y 6.
+ * - `densidad`: estrellas por cada millón de píxeles CSS de cielo. En un móvil
+ *   de 390×844 se ven unas 110, 30 y 6; a 1440×900, unas 440, 120 y 25.
  * - `radio`: de cuánto a cuánto, en píxeles CSS.
  * - `brillo`: opacidad de cuánto a cuánto.
  * - `titilan`: qué parte de la capa titila. Las de fondo casi no: un fondo
  *   entero parpadeando es ruido, no un cielo.
- * - `paralaje`: cuánto se desplaza la capa por cada píxel de scroll. Las de
- *   cerca se mueven más, y eso es lo que se lee como profundidad.
  * - `retardo`: cuándo se enciende al llegar, en milisegundos. Primero el
  *   fondo, luego lo de delante: el cielo «se abre» en vez de aparecer.
  */
@@ -54,7 +42,6 @@ export const CAPAS_CIELO = [
     radio: [0.35, 0.7],
     brillo: [0.22, 0.5],
     titilan: 0.15,
-    paralaje: 0.03,
     retardo: 0,
   },
   {
@@ -63,7 +50,6 @@ export const CAPAS_CIELO = [
     radio: [0.6, 1.05],
     brillo: [0.45, 0.8],
     titilan: 0.4,
-    paralaje: 0.07,
     retardo: 260,
   },
   {
@@ -72,7 +58,6 @@ export const CAPAS_CIELO = [
     radio: [1, 1.65],
     brillo: [0.75, 1],
     titilan: 0.7,
-    paralaje: 0.13,
     retardo: 520,
   },
 ] as const;
@@ -80,18 +65,36 @@ export const CAPAS_CIELO = [
 export type CapaCielo = (typeof CAPAS_CIELO)[number];
 
 /**
- * El tope de estrellas por capa, pase lo que pase con la pantalla. Un monitor
- * 4K a pantalla completa pediría miles; a partir de aquí no se ve más cielo,
- * sólo se gasta batería.
+ * EL GIRO DEL FIRMAMENTO. El cielo gira alrededor de un polo que queda fuera
+ * de la pantalla, por encima —como la estrella polar sobre el horizonte—, así
+ * que las estrellas no dan vueltas sobre sí mismas: cruzan la pantalla en arco.
+ *
+ * - `polo`: dónde está, en proporciones de la pantalla (puede salirse).
+ * - `gradosPorPantalla`: cuánto gira por cada pantalla que se baja. Poco: es
+ *   un cielo que se mueve, no una rueda. En la noche de un móvil, que mide
+ *   unas cuatro pantallas, da algo más de un cuarto de vuelta al cielo visible.
  */
-export const MAXIMO_ESTRELLAS_POR_CAPA = 520;
+export const GIRO_CIELO = {
+  polo: [0.5, -0.45],
+  gradosPorPantalla: 9,
+} as const;
 
 /**
- * Cuántas veces más denso es el cielo de la ventana de «nuestra historia».
- * Es un círculo de unos cientos de píxeles: con la densidad de la portada
- * salían cuarenta estrellas y se leía como un fondo vacío, no como un cielo.
+ * EL TOPE DE ESTRELLAS POR CAPA, pase lo que pase con la pantalla. Al girar,
+ * el cielo que hay que tener sembrado es el círculo que barre la pantalla
+ * alrededor del polo, varias veces más grande que la pantalla; sólo se pintan
+ * las que caen dentro. A partir de aquí no se ve más cielo, sólo se gasta.
  */
-export const DENSIDAD_VENTANA_HISTORIA = 2.6;
+export const MAXIMO_ESTRELLAS_POR_CAPA = 2400;
+
+/**
+ * CUÁNDO SE APAGAN AL AMANECER. Las estrellas se van apagando según se acerca
+ * el horizonte —la franja del amanecer— y por debajo de él no queda ninguna.
+ * `pantallas` es desde cuánto antes del horizonte empiezan a apagarse, en
+ * pantallas: así la última sección de la noche ya tiene menos cielo que la
+ * portada, y el amanecer no llega de golpe.
+ */
+export const APAGADO_AL_AMANECER = { pantallas: 0.9 } as const;
 
 /** Qué parte de las estrellas brillantes tira a cálido (el bronce de la marca). */
 export const PROPORCION_ESTRELLAS_CALIDAS = 0.18;
@@ -106,15 +109,18 @@ export const ESCALA_HALO_ESTRELLA = 4;
 export const BRILLO_HALO = 0.35;
 
 /**
- * LA VÍA LÁCTEA: una franja en diagonal, de abajo a la izquierda a arriba a la
- * derecha, más densa de estrellas y con un velo de luz. En proporciones del
- * lienzo. `refuerzo` es cuántas estrellas de fondo más caben dentro de la
- * franja que fuera.
+ * LA VÍA LÁCTEA: una franja más densa de estrellas y con un velo de luz, que
+ * gira con el resto del cielo. Se mide en «radios del cielo» desde el polo —1
+ * es lo que hay del polo a la esquina más lejana de la pantalla, así que vale
+ * igual en un móvil que en un monitor—: pasa por `centro`, que cae en medio de
+ * la pantalla al llegar, en la dirección de `direccion`, de abajo a la
+ * izquierda a arriba a la derecha. `refuerzo` es cuántas estrellas de fondo
+ * más caben dentro de la franja que fuera.
  */
 export const VIA_LACTEA = {
-  desde: [0, 0.82],
-  hasta: [1, 0.12],
-  anchura: 0.2,
+  centro: [0, 0.62],
+  direccion: [1, -0.7],
+  anchura: 0.16,
   refuerzo: 2.2,
 } as const;
 
@@ -153,55 +159,30 @@ export const FUGACES = {
 } as const;
 
 /**
- * LAS ESTRELLAS DE «NUESTRA HISTORIA»: una por hito, en un camino que cruza el
- * cielo de izquierda a derecha sin formar ninguna figura. En proporciones del
- * escenario: de dónde a dónde va en horizontal, por qué franja vertical se
- * mueve, y cuánto se desvía cada una al azar.
+ * QUÉ SE CUENTA DE NOCHE. La historia de los novios se cuenta bajo las
+ * estrellas: la portada, el paisaje, la cuenta atrás, la historia, la galería
+ * y el «sólo falta vuestra estrella», que es como acaba la noche. Todo lo
+ * demás —el día, la víspera, lo que ponerse, los regalos, la música— es de
+ * día. El orden dentro de cada tramo lo sigue poniendo la base de datos.
  */
-export const CAMINO_HISTORIA = {
-  margen: 0.14,
-  franja: [0.24, 0.76],
-  desvio: 0.06,
-  /** Radio de cada estrella del camino, en unidades del lienzo de 100. */
-  radio: 1.5,
-  /** El halo al encenderse, en veces su radio. */
-  halo: 3.4,
-} as const;
+export const SECCIONES_DE_NOCHE = [
+  "portada",
+  "paisaje",
+  "cuenta_atras",
+  "historia",
+  "galeria",
+  "rsvp",
+] as const satisfies readonly Seccion[];
 
 /**
- * EL DÍA, SECCIÓN A SECCIÓN. La landing empieza de noche (la portada), amanece
- * con la historia, pasa la tarde con la logística y cae al ocaso con lo que se
- * ofrece; el final vuelve a ser de noche. Las secciones de noche pintan su
- * propio cielo; las demás dejan ver el tinte de su hora, que cambia cuando la
- * sección llega a la mitad de la pantalla.
- *
- * Una sección que no está en la lista no cambia la hora: la que había sigue.
+ * CON QUÉ ACABA LA PÁGINA: dónde dormir y cómo llegar, con el mapa del sitio
+ * debajo. Van siempre al final, pongan lo que pongan en el panel, porque el
+ * día acaba en el lugar de la boda: es donde se posa la última estrella.
  */
-export type FaseCielo = "noche" | "alba" | "tarde" | "ocaso";
-
-export const FASE_DE_SECCION = {
-  portada: "noche",
-  paisaje: "alba",
-  cuenta_atras: "alba",
-  historia: "alba",
-  galeria: "alba",
-  preboda: "tarde",
-  programa: "tarde",
-  ubicaciones: "tarde",
-  transporte: "tarde",
-  alojamiento: "tarde",
-  preguntas_frecuentes: "ocaso",
-  playlist: "ocaso",
-  regalos: "ocaso",
-  dresscode: "ocaso",
-  rsvp: "noche",
-} as const satisfies Partial<Record<Seccion, FaseCielo>>;
-
-/**
- * La línea que decide la hora: el centro de la ventana, como margen de un
- * `IntersectionObserver` (arriba y abajo se recorta la mitad).
- */
-export const LINEA_DE_LA_HORA = "-50% 0px -50% 0px";
+export const SECCIONES_DE_LLEGADA = [
+  "alojamiento",
+  "transporte",
+] as const satisfies readonly Seccion[];
 
 /**
  * VUESTRA ESTRELLA, en el lienzo de 100 de su dibujo: el anillo hueco, su
@@ -209,3 +190,19 @@ export const LINEA_DE_LA_HORA = "-50% 0px -50% 0px";
  * (`--escala-latido-estrella`; el svg deja que se salga).
  */
 export const RADIO_VUESTRA_ESTRELLA = { anillo: 12, grosor: 2.5, onda: 1.5 } as const;
+
+/**
+ * LA ESTRELLA QUE BAJA AL LUGAR, en el lienzo de 100 de su dibujo: una
+ * estrella de cuatro puntas —la de los mapas antiguos para marcar un sitio—,
+ * con las puntas largas (`radio`) y la cintura estrecha (`cintura`), y un
+ * halo alrededor (`halo`) que brilla en el centro `brilloHalo` y se apaga
+ * hacia fuera.
+ */
+export const ESTRELLA_LLEGADA = { radio: 30, cintura: 7, halo: 46, brilloHalo: 0.55 } as const;
+
+/**
+ * CUÁNDO BAJA LA ESTRELLA: cuando el sitio del mapa sube por encima del
+ * último tercio de la pantalla, como margen de un `IntersectionObserver`. Antes
+ * se perdería la caída por abajo; mucho después, ya se habría pasado de largo.
+ */
+export const LINEA_DE_LLEGADA = "0px 0px -30% 0px";

@@ -135,22 +135,23 @@
   --color-velado-nieve: rgb(248 249 252 / 86%);
 
   /*
-   * EL CIELO DEL DÍA. La landing se lee de la mañana a la noche: al bajar, el
-   * fondo pasa por el alba, la tarde dorada y el ocaso hasta la noche marino
-   * del final. Tintes MUY claros a propósito —el texto de siempre se lee
-   * encima de todos con el mismo contraste—, y un sol que es sólo luz: un
-   * brillo de bronce sin disco que cruza la página de izquierda a derecha.
+   * EL DÍA DE LA LANDING, DE PUNTA A PUNTA. Arriba es de noche (marino: ver «la
+   * noche estrellada»); en medio amanece en una franja sin texto —pizarra,
+   * malva, rosa viejo, arena— hasta el blanco cálido del alba; y el resto es de
+   * día, del alba a la tarde y al blanco de la página, donde acaba el mapa. Las
+   * paradas del amanecer son cuatro para que el paso no sea un fundido gris de
+   * marino a blanco. Los tintes de día son MUY claros a propósito: el texto de
+   * siempre se lee encima de todos con el mismo contraste. El sol es sólo luz:
+   * un brillo de bronce claro, sin disco, que asoma por el horizonte.
    */
+  --color-amanecer-pizarra: #34405f;
+  --color-amanecer-malva: #675f7d;
+  --color-amanecer-rosa: #b0908f;
+  --color-amanecer-arena: #e2c39e;
   --color-alba-100: #f8efe6;
-  --color-alba-brillo: rgb(240 214 172 / 55%);
-  --color-alba-brillo-0: rgb(240 214 172 / 0%);
   --color-tarde-100: #f9f3e8;
-  --color-ocaso-100: #eceaf2;
-  --color-ocaso-brillo: rgb(195 206 225 / 60%);
-  --color-ocaso-brillo-0: rgb(195 206 225 / 0%);
-  --color-sol: rgb(227 190 134 / 34%);
-  --color-sol-0: rgb(227 190 134 / 0%);
-  --color-velo-hundido: rgb(31 43 68 / 4.5%);
+  --color-sol: rgb(240 214 172 / 70%);
+  --color-sol-0: rgb(240 214 172 / 0%);
   --color-velado-marino: rgb(16 22 35 / 86%);
 
   /**
@@ -162,8 +163,14 @@
    */
   --color-via-lactea: rgb(214 224 245 / 9%);
   --color-via-lactea-0: rgb(214 224 245 / 0%);
-  --color-horizonte-noche: rgb(169 118 52 / 16%);
-  --color-horizonte-noche-0: rgb(169 118 52 / 0%);
+
+  /*
+   * EL MAPA DEL FINAL, EN LOS COLORES DE LA PÁGINA. Las teselas de
+   * OpenStreetMap traen su paleta de carreteras, y sobre un cielo de marfil
+   * chillan: sin color, un punto de sepia y algo más de luz se leen como un
+   * plano impreso, y la estrella de bronce es lo único con color encima.
+   */
+  --filtro-mapa-papel: grayscale(100%) sepia(16%) brightness(106%) contrast(88%);
 
   /**
    * El trazo que une las estrellas de una constelación. La entrega es literal
@@ -207,8 +214,19 @@
      titular de sección medía 64 px a 1280 en vez de los 68 de la entrega. */
   --font-size-titulo-1: clamp(2.375rem, 5.4vw, 4.25rem);
   --font-size-titulo-2: clamp(2rem, 3.4vw, 2.375rem);
+
+  /*
+   * EL TITULAR DE UNA SECCIÓN DE LA LANDING: un escalón por debajo del de
+   * página en un móvil —32 px y no 38—, donde cada línea de titular es sitio
+   * que no tiene lo demás; en escritorio, el mismo: 68 px.
+   */
+  --font-size-titulo-tramo: clamp(2rem, 5.4vw, 4.25rem);
   --font-size-titulo-3: 1.6875rem;
   --font-size-conector: clamp(2.75rem, 8vw, 6.5rem);
+
+  /* El cierre de la frase del paisaje, en la letra del conector: un escalón
+     por debajo de la «y» de la portada, que es la firma y no una línea más. */
+  --font-size-conector-frase: clamp(1.75rem, 3.6vw, 3rem);
   --font-size-saludo: clamp(1.375rem, 3vw, 2rem);
 
   /**
@@ -343,7 +361,6 @@
    * por lo mismo: es el respiro que separa el titular de lo que anuncia, y en
    * un móvil un hueco fijo de escritorio parece un olvido de maquetación.
    */
-  --space-bloque-fluido: clamp(2.5rem, 5vw, 4rem);
 
   /**
    * EL RITMO DE LA LANDING APLICADA, medido en la entrega y no deducido.
@@ -358,6 +375,19 @@
   --space-margen: 1.625rem;
   --space-margen-cabecera: clamp(1.125rem, 3vw, 1.625rem);
   --space-seccion-compacta-fluida: clamp(4rem, 8vw, 6.5rem);
+
+  /*
+   * EL RITMO DEL CIELO CONTINUO. La landing es un solo fondo y las secciones
+   * ya no se separan con bandas de color: las separa el aire. Menos que una
+   * sección de las de antes —sin cambio de fondo, el ojo no necesita una
+   * pantalla de margen para saber que empieza otra cosa—, y en un móvil, poco
+   * más de la mitad: es donde más se baja.
+   */
+  --space-tramo: clamp(2rem, 6vw, 5rem);
+  --space-cabecera-tramo: clamp(1rem, 2.6vw, 2rem);
+
+  /* Las filas de horas del cielo continuo: la mitad de aire que las de antes. */
+  --space-fila-compacta: clamp(0.875rem, 2vw, 1.5rem);
   --space-hueco-fluido: clamp(1.875rem, 4vw, 2.75rem);
   --space-hueco-corto: 0.625rem;
   --space-portada-arriba: clamp(5.25rem, 9vw, 7.5rem);
@@ -373,14 +403,10 @@
   --space-cita: clamp(1.875rem, 4vw, 2.875rem);
   --space-tarjeta: 1.625rem;
   --space-tarjeta-fluida: clamp(1.625rem, 4vw, 2.625rem);
-  --space-rejilla-fluida: clamp(1.125rem, 2.4vw, 1.875rem);
   --space-columnas-fluido: clamp(1.875rem, 5vw, 4.5rem);
   --space-tira-nav: clamp(0.875rem, 2.2vw, 1.75rem);
   --space-fila: clamp(1.25rem, 2.6vw, 1.875rem);
-  --space-fila-programa: clamp(1.375rem, 3vw, 2.125rem);
-  --space-fila-lado: clamp(0.375rem, 1.4vw, 1rem);
   --space-fila-hueco: clamp(1.125rem, 3vw, 2.5rem);
-  --space-antes-rutas: 1.875rem;
   --space-pie-arriba: clamp(3.5rem, 7vw, 5.5rem);
   --space-pie-abajo: 2.5rem;
   --space-chip-y: 0.6875rem;
@@ -404,27 +430,11 @@
   /* Una cifra de la cuenta atrás que cambia sube un tercio de su alto. */
   --space-cifra-recorrido: 0.35em;
 
-  /*
-   * EL RECORRIDO DEL SOL por la pantalla mientras se baja la página: sale por
-   * arriba a la izquierda, culmina arriba al centro a media página y se pone
-   * abajo a la derecha al llegar al final. Es un brillo de 70 vmax.
-   */
-  --size-sol: 70vmax;
-
   /* LOS NOMBRES EMERGEN de una línea invisible: el recorte deja 0,35 em de
      holgura alrededor de la letra —los paréntesis y las colas bajan— y el
      nombre sale desde 1,5 em por debajo, fuera de él. */
   --space-holgura-mascara: 0.35em;
   --space-recorrido-linea: 1.5em;
-
-  /* Al bajar, el texto de la portada se adelanta 12 vh: se va antes que la
-     página, y eso da la profundidad. */
-  --space-sol-salida-x: -30vmax;
-  --space-sol-salida-y: -35vmax;
-  --space-sol-cenit-x: 15vw;
-  --space-sol-cenit-y: -45vmax;
-  --space-sol-ocaso-x: 60vw;
-  --space-sol-ocaso-y: 30vh;
 
   /* La pista «bajad» cae 7 px y se apaga; la foto de portada baja hasta 60 px
      mientras se hace scroll, en los primeros 428 px de recorrido (60 / 0,14),
@@ -532,12 +542,12 @@
   --size-entradilla: 21.25rem;
 
   /**
-   * Alto del hueco de foto de la portada cuando la rejilla ya se ha apilado.
-   * `dvh` y no `vh`: en móvil, con la barra del navegador visible, `vh` mide de
-   * más y la foto empuja el contenido fuera de la pantalla.
+   * Lo MÍNIMO que mide la foto de la portada cuando la rejilla se ha apilado:
+   * en un móvil la portada es una pantalla justa y la foto ocupa lo que deje el
+   * texto, nunca menos de esto. `svh`: con la barra del navegador visible, una
+   * medida mayor empujaría el contenido fuera de la pantalla.
    */
-  --size-foto-portada: min(60dvh, 32.5rem);
-  --size-paisaje: min(72dvh, 40rem);
+  --size-foto-portada: min(30svh, 22rem);
 
   /**
    * Alto de la barra de navegación. Sale una vez de aquí y sirve para tres
@@ -574,24 +584,60 @@
   --size-hoja-menu: 85dvh;
 
   /*
-   * LA ESCENA DE «NUESTRA HISTORIA»: el escenario fijo con la ventana al cielo
-   * donde se encienden las estrellas mide 78 % del alto de la pantalla en
-   * escritorio y 40 % en un móvil
-   * —arriba, con los hitos pasando por debajo—, y cada hito ocupa 72 % y 62 %:
-   * lo que se baja para pasar de una estrella a la siguiente.
-   */
-  --size-constelacion-historia: clamp(14rem, 38vw, 36rem);
-  --size-escenario-historia: 78svh;
-  --size-escenario-historia-movil: 40svh;
-  --size-hito-escena: 72svh;
-  --size-hito-escena-movil: 62svh;
-
-  /*
-   * LA NOCHE DEL FINAL. Vuestra estrella, la hueca que late entre todas, mide
+   * VUESTRA ESTRELLA, la hueca que late entre todas al final de la noche, mide
    * entre 3 y 4,5 rem: lo bastante para verse sola en un cielo lleno, no
    * tanto como para parecer un icono.
    */
   --size-vuestra-estrella: clamp(3rem, 6vw, 4.5rem);
+
+  /*
+   * EL AMANECER: la franja sin texto donde la noche se hace día. Lo bastante
+   * alta para que el paso se lea como un amanecer y no como un corte, y menos
+   * de media pantalla: no hay nada que leer en ella.
+   */
+  --size-amanecer: clamp(10rem, 34svh, 20rem);
+
+  /*
+   * UNA PANTALLA, LA GRANDE. El lienzo de las estrellas mide una pantalla y se
+   * queda pegado arriba mientras se baja. Con la grande (`lvh`) y no la
+   * dinámica, en un móvil no cambia de tamaño —ni se vuelve a sembrar— cada
+   * vez que la barra del navegador sale o se esconde.
+   */
+  --size-pantalla-estable: 100lvh;
+
+  /*
+   * El mapa del final: dos tercios de pantalla en un móvil, con la tarjeta
+   * montada encima, y lo que mida la tarjeta en pantalla ancha.
+   */
+  --size-mapa-final: clamp(22rem, 56svh, 46rem);
+
+  /*
+   * LA ESTRELLA QUE BAJA AL LUGAR: su tamaño y de dónde viene, arriba a la
+   * izquierda, como una fugaz que esta vez se queda.
+   */
+  --size-estrella-llegada: clamp(2.75rem, 6vw, 3.75rem);
+  --space-estrella-desde-x: -26vw;
+  --space-estrella-desde-y: -64svh;
+
+  /*
+   * DÓNDE CAE EL SITIO EN EL MAPA DEL FINAL. En un móvil, en medio y un poco
+   * por encima, que por debajo va la tarjeta de cómo llegar; en pantalla
+   * ancha, a la derecha, porque la tarjeta va a la izquierda.
+   */
+  --space-mapa-foco-x: 50%;
+  --space-mapa-foco-y: 44%;
+  --space-mapa-foco-x-ancho: 68%;
+  --space-mapa-foco-y-ancho: 50%;
+
+  /* Lo que la tarjeta de cómo llegar se monta sobre el mapa en un móvil. */
+  --space-solape-mapa: 6rem;
+
+  /*
+   * LAS ESTRELLAS DE «NUESTRA HISTORIA»: una por hito, de 14 px, en una
+   * columna de 24 que hace de hilo entre ellas.
+   */
+  --size-estrella-hito: 0.875rem;
+  --size-columna-estrella: 1.5rem;
 
   /* ---------------------------------------------------------------------
    * Forma
@@ -599,7 +645,6 @@
 
   --radius-0: 0;
   --radius-sutil: 0.125rem;
-  --radius-suave: 0.25rem;
   --radius-papel: 0.1875rem;
   --radius-caja: 0.375rem;
   --radius-amplio: 0.625rem;
@@ -633,8 +678,6 @@
   /* Una estrella de la historia antes de su hito: pequeña y casi apagada. Al
      encenderse destella un 15 % por encima de su tamaño y su halo se queda. */
   --scale-estrella-dormida: 0.45;
-  --opacity-estrella-dormida: 18%;
-  --opacity-destello-final: 60%;
 
   /* La estrella que falta late: su halo crece 2,4 veces y se apaga. Y el
      trazo que la espera es discontinuo, en guiones de 1,4 con huecos de 2. */
@@ -655,7 +698,7 @@
    * semántica. */
   --ratio-cuadrado: 1 / 1;
   --ratio-paisaje: 4 / 3;
-  --ratio-mapa: 1 / 1.06;
+  --ratio-panorama: 16 / 9;
   --ratio-panoramico: 16 / 9;
 
   /* ---------------------------------------------------------------------
@@ -690,18 +733,17 @@
   --delay-escritura: 550ms;
   --duration-escritura: 900ms;
 
-  /* Una estrella de la historia se enciende con un destello de 1,2 s. */
-  --duration-destello: 1200ms;
-
   /* Al cambiar de página, el contenido se funde en 0,55 s. */
   --duration-cambio-pagina: 550ms;
 
   /* Un nombre de la portada emerge en 1,1 s, y el hilo de la historia se dibuja igual. */
   --duration-linea: 1100ms;
 
-  /* El cielo cambia de hora en 1,8 s; el sol cruza de una a otra en 2,8. */
-  --duration-cielo: 1800ms;
-  --duration-sol: 2800ms;
+  /*
+   * La estrella del final baja en 2,2 s: es la última escena de la página y la
+   * única que se mira entera, así que puede tomarse su tiempo.
+   */
+  --duration-llegada: 2200ms;
 
   /* Una cifra que cambia rueda en 0,45 s: menos que el segundo que tarda la siguiente. */
   --duration-cifra: 450ms;
@@ -922,75 +964,6 @@
   --layer-escena-2: 2;
   --layer-escena-3: 3;
   --layer-escena-4: 4;
-
-  /* ---------------------------------------------------------------------
-   * El paisaje — la escena de scroll
-   *
-   * La Landing aplicada no pinta el paisaje como una franja: lo pinta como una
-   * escena de tres pantallas de alto con un panel pegado dentro. Al bajar, el
-   * marco crece de un recuadro centrado a pantalla completa, la foto se aleja,
-   * el velo se oscurece y la frase aparece a mitad de recorrido.
-   *
-   * Los números son los del script de la entrega, transcritos uno a uno.
-   * ------------------------------------------------------------------- */
-
-  --size-escena: 300dvh;
-  --size-panel-escena: 100dvh;
-
-  /* El marco al empezar mide 40 % de ancho y 46 vh de alto, centrado. Lo que
-     se recorta por cada lado es lo que sobra a la mitad: (100−40)/2 y
-     (100−46)/2. Los dos en porcentaje, porque el panel mide exactamente una
-     pantalla y ahí un 27 % y 27 vh son el mismo sitio. */
-  --inset-marco-x: 30%;
-  --inset-marco-y: 27%;
-  --radius-marco: 0.25rem;
-
-  /* La sombra que levanta el marco pequeño del papel, y su final: la misma
-     receta con el alcance y el alfa a cero, para que interpole sin saltos. */
-  --shadow-marco: 0 2.75rem 2.8125rem rgb(20 20 15 / 50%);
-  --shadow-marco-final: 0 0 0 rgb(20 20 15 / 0%);
-  --scale-foto-lejos: 1.18;
-
-  /* El velo sobre la foto, en sus dos extremos: de lejos apenas tiñe, de cerca
-     es lo que hace legible el titular encima. */
-  --color-velo-escena-lejos-arriba: rgb(20 23 15 / 10%);
-  --color-velo-escena-lejos-abajo: rgb(20 23 15 / 20%);
-  --color-velo-escena-cerca-arriba: rgb(20 23 15 / 40%);
-
-  /*
-    EL 60 % ES UN TOPE, NO UN GUSTO. La entrega acota el velo bajo texto sobre
-    foto entre el 20 % y el 60 %, y ésta es la parte más oscura del único sitio
-    de la web donde hay texto encima de una imagen. Estaba en 62, dos puntos
-    por encima de la regla: invisibles a ojo y comprobables con un medidor, que
-    es exactamente la clase de deriva que el repaso de marca existe para cazar.
-  */
-  --color-velo-escena-cerca-abajo: rgb(20 23 15 / 60%);
-
-  /* Cuándo pasa cada cosa, en tanto por ciento del recorrido de la escena: el
-     marco acaba de crecer al 72 %, la frase entra entre el 42 y el 68, y la
-     pista se apaga dentro del primer 6. */
-  --tramo-marco: 72%;
-  --tramo-texto-inicio: 42%;
-  --tramo-texto-fin: 68%;
-  --tramo-pista: 6%;
-
-  /* La curva de la escena. La entrega usa x²·(3−2x) —la «smoothstep» clásica,
-     que arranca y frena a velocidad cero—; ésta es la cúbica de Bézier que más
-     se le parece. */
-  --ease-suavizado: cubic-bezier(0.4, 0, 0.6, 1);
-
-  /* La frase, en sus tres líneas: la versalita reusa la escala de etiqueta; el
-     titular y el cierre en cursiva tienen la suya. */
-  --font-size-escena: clamp(2.375rem, 7.4vw, 6.125rem);
-  --font-size-conector-escena: clamp(1.875rem, 5vw, 4rem);
-  --space-titular-escena: clamp(0.875rem, 2vw, 1.5rem);
-  --space-cierre-escena: 0.375rem;
-  --space-escena-lado: 1.5rem;
-  --space-pista-escena: clamp(1.375rem, 4vh, 2.75rem);
-
-  /* Lo que separa la pista de su raya. Doce píxeles: no está en la escala del
-     catálogo porque es el aire de un rótulo pequeño sobre su propio adorno. */
-  --space-pista-raya: 0.75rem;
 
   /* Los puntos de ruptura viven en el bloque `@theme` de globals.css:
      las media queries se resuelven en compilación y no aceptan var(). */

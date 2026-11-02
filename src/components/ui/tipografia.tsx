@@ -42,12 +42,20 @@ export function Titulo1({
   id,
   children,
   como: Etiqueta = "h1",
+  tamano = "pagina",
   className = "",
-}: PropiedadesTitulo) {
+}: PropiedadesTitulo & {
+  /**
+   * `pagina`, el de siempre; `tramo`, el de una sección de la landing, un
+   * escalón por debajo en un móvil (ver `--font-size-titulo-tramo`).
+   */
+  tamano?: "pagina" | "tramo";
+}) {
+  const escalon = tamano === "tramo" ? "text-titulo-tramo" : "text-titulo-1";
   return (
     <Etiqueta
       id={id}
-      className={`font-titulo peso-titulo text-titulo-1 leading-titulo tracking-titulo ${className}`}
+      className={`font-titulo peso-titulo ${escalon} leading-titulo tracking-titulo ${className}`}
     >
       {children}
     </Etiqueta>
@@ -128,17 +136,18 @@ export function Conector({
    */
   escrita?: boolean;
   /**
-   * El escalón. `conector` es la «y» de la portada, fluida; `naipe` la de la
-   * tarjeta del Save the Date, que se mide contra el alto del naipe; y `sello`
-   * el «&» del sello, que hereda el color de las iniciales en vez del acento.
+   * El escalón. `conector` es la «y» de la portada, fluida; `frase`, el cierre
+   * de la frase del paisaje, un escalón por debajo; `naipe` la de la tarjeta
+   * del Save the Date, que se mide contra el alto del naipe; y `sello` el «&»
+   * del sello, que hereda el color de las iniciales en vez del acento.
    */
-  tamano?: "conector" | "naipe" | "sello" | "escena";
+  tamano?: "conector" | "frase" | "naipe" | "sello";
 }) {
   const escalon = {
     conector: "text-conector leading-conector text-acento",
+    frase: "text-conector-frase leading-titulo-corto text-acento",
     naipe: "text-naipe-conector leading-compacto text-acento",
     sello: "sello-ampersand text-sello-ampersand leading-compacto text-current",
-    escena: "text-conector-escena leading-titulo-corto text-acento-sobre-foto",
   }[tamano];
 
   return (

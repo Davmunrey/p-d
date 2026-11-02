@@ -102,7 +102,7 @@ async function conMovimientoReducido(page: Page): Promise<void> {
   test.skip(!activo, "Este navegador no aplica la emulación de prefers-reduced-motion");
 }
 
-const CIELO = "#portada [data-cielo-estrellado]";
+const CIELO = '[data-tramo="noche"] [data-cielo-estrellado]';
 
 test.describe("La portada sin foto es una noche entera", () => {
   test.skip(!cadena, "Hace falta DATABASE_URL: la portada lee sus fotos de la base real.");
@@ -118,9 +118,9 @@ test.describe("La portada sin foto es una noche entera", () => {
   });
 
   /**
-   * CAMINO FELIZ · el cielo cubre la portada entera, de borde a borde, y el
-   * texto se queda sobre él: ya no hay una constelación suelta en la otra
-   * mitad.
+   * CAMINO FELIZ · el cielo cubre la pantalla entera, de borde a borde, y el
+   * texto de la portada se queda sobre él: es el mismo cielo de toda la
+   * noche, pegado arriba mientras se baja.
    */
   test("en escritorio, el cielo cubre la portada y el texto va encima", async ({ page }) => {
     await page.setViewportSize(ESCRITORIO);
@@ -129,7 +129,8 @@ test.describe("La portada sin foto es una noche entera", () => {
     const portada = await page.locator("#portada").boundingBox();
     const cielo = await page.locator(CIELO).boundingBox();
     expect(cielo!.width).toBeCloseTo(portada!.width, 0);
-    expect(cielo!.height).toBeCloseTo(portada!.height, 0);
+    expect(cielo!.height).toBeCloseTo(ESCRITORIO.height, 0);
+    expect(cielo!.y).toBeCloseTo(portada!.y, 0);
     await expect(page.locator(CIELO)).toHaveAttribute("data-cielo", "vivo");
     await expect(page.locator("#portada img")).toHaveCount(0);
     await expect(page.locator("#portada h1")).toBeVisible();

@@ -79,12 +79,18 @@ export function CuentaAtras({
   fechaIso,
   ahoraIso,
   compacta = false,
+  enFila = false,
 }: {
   fechaIso: string;
   /** El instante en que el servidor pintó, para que hidratar no cambie nada. */
   ahoraIso: string;
   /** La forma de la tarjeta del Save the Date. */
   compacta?: boolean;
+  /**
+   * La forma de la portada: una sola fila, a la medida de los datos de al
+   * lado —la fecha y el lugar—, que cabe entera en un móvil.
+   */
+  enFila?: boolean;
 }) {
   const objetivo = new Date(fechaIso).getTime();
   const [restante, setRestante] = useState(() =>
@@ -117,12 +123,12 @@ export function CuentaAtras({
     { valor: dosDigitos(restante.horas), etiqueta: t("cuentaAtras.horas"), acento: false },
     {
       valor: dosDigitos(restante.minutos),
-      etiqueta: t(compacta ? "cuentaAtras.minCorto" : "cuentaAtras.minutos"),
+      etiqueta: t(compacta || enFila ? "cuentaAtras.minCorto" : "cuentaAtras.minutos"),
       acento: false,
     },
     {
       valor: dosDigitos(restante.segundos),
-      etiqueta: t(compacta ? "cuentaAtras.segCorto" : "cuentaAtras.segundos"),
+      etiqueta: t(compacta || enFila ? "cuentaAtras.segCorto" : "cuentaAtras.segundos"),
       // En la tarjeta los segundos van en bronce: son lo único que se mueve.
       acento: compacta,
     },
@@ -135,6 +141,27 @@ export function CuentaAtras({
     role: "timer",
     "aria-label": `${restante.dias} ${t("cuentaAtras.dias")}`,
   } as const;
+
+  if (enFila) {
+    return (
+      <div className="flex flex-wrap gap-datos" {...accesibilidad}>
+        {bloques.map((bloque) => (
+          <div key={bloque.etiqueta}>
+            <div
+              key={bloque.valor}
+              className="animacion-rodar font-titulo peso-titulo-menor text-dato leading-compacto text-tinta-marca tabular-nums"
+            >
+              {bloque.valor}
+            </div>
+            <div className="mt-interno-compacto text-diminuto uppercase tracking-etiqueta text-tinta-suave">
+              {bloque.etiqueta}
+            </div>
+          </div>
+        ))}
+        <span className="sr-only">{ZONA_HORARIA}</span>
+      </div>
+    );
+  }
 
   if (compacta) {
     return (

@@ -4,7 +4,7 @@ import postgres from "postgres";
 import copy from "../../content/copy.es.json";
 
 /**
- * BODA-27 · Paisaje · BODA-117 · La escena de la entrega
+ * BODA-27 · Paisaje · de dónde vienen los novios, en una frase
  *
  * LAS TRES LÍNEAS SALEN DE LA BASE, NO DEL CÓDIGO, y eso es lo que se prueba: no
  * que aparezca un texto, sino que **cambiarlo en la base lo cambia en la web**.
@@ -14,13 +14,10 @@ import copy from "../../content/copy.es.json";
  * Y QUE SIN TITULAR NO HAY SECCIÓN. Una vista aérea muda es un fondo bonito que
  * no dice nada; antes ocultarla que dejar media sección. La versalita y el
  * cierre sí son opcionales una a una, y la foto tampoco manda: sin ella la
- * sección se sostiene sobre el plano de marca que pinta la propia entrega.
+ * sección se sostiene sobre el cielo de la noche.
  *
- * LA ESCENA SE MIDE, NO SE MIRA. La sección de la entrega dura tres pantallas
- * de scroll: el marco se abre de un recuadro centrado a pantalla completa y la
- * frase entra a mitad de recorrido. Aquí se coloca el scroll en un punto
- * concreto del recorrido y se leen los valores calculados, que es la única
- * forma de afirmar que la escena avanza de verdad y no que existe una clase.
+ * Y QUE YA NO ES UNA ESCENA. Antes duraba tres pantallas de scroll; ahora es
+ * una frase y, si hay, una franja de foto. Se mide lo que ocupa de verdad.
  *
  * Corre contra la base real: la landing lee de PostgreSQL directamente, así que
  * aquí no hace falta sesión ni Supabase entero.
@@ -84,59 +81,6 @@ async function fijarLineas(lineas: Lineas): Promise<void> {
 
 const seccion = (pagina: Page) => pagina.locator("#paisaje");
 
-/** ¿Sabe este navegador atar una animación al scroll? Si no, no hay escena. */
-function hayEscena(pagina: Page) {
-  return pagina.evaluate(() => CSS.supports("animation-timeline: view()"));
-}
-
-/**
- * Deja el scroll en el punto `p` del recorrido de la escena, con la misma
- * cuenta que hace el navegador: cero cuando el borde de arriba de la sección
- * toca el de la pantalla, uno cuando el de abajo la alcanza.
- */
-async function colocarEscena(pagina: Page, p: number) {
-  await pagina.evaluate((parte) => {
-    const escena = document.querySelector("#paisaje")!;
-    const caja = escena.getBoundingClientRect();
-    const arriba = caja.top + window.scrollY;
-    const recorrido = caja.height - window.innerHeight;
-    /*
-      `behavior: "instant"` Y NO EL `scrollTo(x, y)` DE SIEMPRE. La hoja base
-      pone `scroll-behavior: smooth` en el documento entero, así que un scroll
-      pedido desde JavaScript viaja durante varios cientos de milisegundos: se
-      medía la escena a mitad de camino y siempre salía como al principio.
-    */
-    window.scrollTo({ top: arriba + recorrido * parte, behavior: "instant" });
-  }, p);
-  // Dos fotogramas para que el navegador recalcule la línea de tiempo.
-  await pagina.evaluate(
-    () => new Promise((listo) => requestAnimationFrame(() => requestAnimationFrame(listo))),
-  );
-}
-
-/** Los cuatro números que describen el estado de la escena en este momento. */
-function medirEscena(pagina: Page) {
-  return pagina.evaluate(() => {
-    const recorte = (selector: string) => {
-      const valor = getComputedStyle(document.querySelector(selector)!).clipPath;
-      // `inset(27% 30% round 4px)` → el primer porcentaje, que es lo que mide
-      // cuánto le falta al marco para abrirse del todo.
-      const numero = valor.match(/[\d.]+%/);
-      return numero ? Number.parseFloat(numero[0]) : 0;
-    };
-
-    return {
-      recorteMarco: recorte(".marco-paisaje"),
-      opacidadTexto: Number(
-        getComputedStyle(document.querySelector(".texto-paisaje")!).opacity,
-      ),
-      opacidadPista: Number(
-        getComputedStyle(document.querySelector(".pista-paisaje")!).opacity,
-      ),
-    };
-  });
-}
-
 test.describe("El paisaje", () => {
   test.skip(!cadena, "Hace falta DATABASE_URL: la landing lee de la base real.");
 
@@ -171,9 +115,6 @@ test.describe("El paisaje", () => {
 
     // El titular es el `h2`: es lo que la sección dice y lo que le da nombre.
     await expect(seccion(page).locator("h2")).toHaveText(guardadas.titulo!);
-
-    // Y el cierre de la entrega, que es lo que invita a seguir bajando.
-    await expect(seccion(page)).toContainText(copy.paisaje.seguidBajando);
   });
 
   /**
@@ -251,119 +192,35 @@ test.describe("El paisaje", () => {
 });
 
 /**
- * BODA-117 · La escena
+ * YA NO ES UNA ESCENA DE TRES PANTALLAS
  *
- * Tres pantallas de alto, un panel pegado dentro, y un marco que se abre
- * mientras se baja. Se mide colocando el scroll en puntos concretos del
- * recorrido y leyendo los valores calculados.
+ * Era lo más largo de la landing: tres pantallas de scroll con un marco que se
+ * abría. Ahora es una frase sobre el cielo y, si hay foto, una franja
+ * apaisada. Se mide lo que ocupa, en un móvil, que es donde más se notaba.
  */
-test.describe("La escena del paisaje", () => {
+test.describe("El paisaje, en una frase", () => {
   test.skip(!cadena, "Hace falta DATABASE_URL: la landing lee de la base real.");
 
-  test.beforeEach(async ({ page }) => {
+  test("cabe en una pantalla de móvil y la frase está a la vista sin esperar", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
-  });
-
-  test("la sección dura tres pantallas y su panel se queda pegado", async ({ page }) => {
-    test.skip(!(await hayEscena(page)), "Este navegador no ata animaciones al scroll.");
+    await seccion(page).scrollIntoViewIfNeeded();
 
     const medidas = await seccion(page).evaluate((nodo) => ({
       alto: nodo.getBoundingClientRect().height,
       ventana: window.innerHeight,
-      panel: getComputedStyle(nodo.querySelector(".panel-paisaje")!).position,
-      relleno: getComputedStyle(nodo).paddingTop,
+      pegado: [...nodo.querySelectorAll("*")].some(
+        (hijo) => getComputedStyle(hijo).position === "sticky",
+      ),
     }));
 
-    // Tres pantallas, con margen para el redondeo de las unidades dinámicas.
-    expect(medidas.alto).toBeGreaterThan(medidas.ventana * 2.5);
-    expect(medidas.panel).toBe("sticky");
-    // Sin relleno propio: el aire de esta sección lo pone su contenido dentro.
-    expect(medidas.relleno).toBe("0px");
-  });
-
-  /**
-   * CAMINO FELIZ · al principio del recorrido el marco es un recuadro pequeño y
-   * la frase todavía no está; al final está abierto del todo y la frase se lee.
-   */
-  test("el marco se abre y la frase entra a mitad de recorrido", async ({ page }) => {
-    test.skip(!(await hayEscena(page)), "Este navegador no ata animaciones al scroll.");
-
-    await colocarEscena(page, 0);
-    const alEmpezar = await medirEscena(page);
-
-    // El recuadro de la entrega recorta un 27 % por arriba y por abajo.
-    expect(alEmpezar.recorteMarco).toBeGreaterThan(20);
-    expect(alEmpezar.opacidadTexto).toBeLessThan(0.05);
-    expect(alEmpezar.opacidadPista, "la pista llama al principio").toBeGreaterThan(0.9);
-
-    await colocarEscena(page, 0.9);
-    const alAcabar = await medirEscena(page);
-
-    expect(alAcabar.recorteMarco, "el marco acaba a pantalla completa").toBeLessThan(1);
-    expect(alAcabar.opacidadTexto, "y la frase, a la vista").toBeGreaterThan(0.95);
-    expect(alAcabar.opacidadPista, "la pista ya ha cumplido").toBeLessThan(0.05);
-  });
-
-  /**
-   * CASO DE ERROR · la escena no puede provocar saltos de maquetación.
-   *
-   * La entrega abre el marco animando `width` y `height`, que obliga a
-   * recalcular la maquetación en cada fotograma. Aquí se abre recortando, y eso
-   * es lo que se afirma: que la caja del marco mide lo mismo al principio y al
-   * final del recorrido, aunque lo que se vea sea distinto.
-   */
-  test("el marco no cambia de tamaño: se abre recortando", async ({ page }) => {
-    test.skip(!(await hayEscena(page)), "Este navegador no ata animaciones al scroll.");
-
-    const caja = () =>
-      page.locator(".marco-paisaje").evaluate((nodo) => {
-        const { width, height } = nodo.getBoundingClientRect();
-        return { ancho: Math.round(width), alto: Math.round(height) };
-      });
-
-    await colocarEscena(page, 0);
-    const alEmpezar = await caja();
-
-    await colocarEscena(page, 0.9);
-    const alAcabar = await caja();
-
-    expect(alAcabar).toEqual(alEmpezar);
-  });
-});
-
-/**
- * CASO DE ERROR · quien pide no ver movimiento no ve escena.
- *
- * Ni las tres pantallas de scroll ni la frase escondida esperando a que alguien
- * baje: la sección mide lo que medía y se lee entera desde el primer momento.
- */
-test.describe("El paisaje con movimiento reducido", () => {
-  test.skip(!cadena, "Hace falta DATABASE_URL: la landing lee de la base real.");
-
-  test("no hay escena y la frase se lee sin hacer scroll", async ({ browser }) => {
-    const contexto = await browser.newContext({ reducedMotion: "reduce" });
-    const pagina = await contexto.newPage();
-
-    try {
-      await pagina.goto("/");
-      await pagina.waitForLoadState("networkidle");
-
-      const medidas = await seccion(pagina).evaluate((nodo) => ({
-        alto: nodo.getBoundingClientRect().height,
-        ventana: window.innerHeight,
-        opacidadTexto: Number(getComputedStyle(nodo.querySelector(".texto-paisaje")!).opacity),
-        recorte: getComputedStyle(nodo.querySelector(".marco-paisaje")!).clipPath,
-      }));
-
-      expect(medidas.alto, "sin escena, la sección no dura tres pantallas").toBeLessThan(
-        medidas.ventana * 2,
-      );
-      expect(medidas.opacidadTexto, "la frase está a la vista desde el principio").toBe(1);
-      expect(medidas.recorte, "y el marco se ve entero").toBe("none");
-    } finally {
-      await contexto.close();
-    }
+    expect(medidas.alto, "la frase y su foto no pasan de una pantalla").toBeLessThan(
+      medidas.ventana,
+    );
+    expect(medidas.pegado, "ya no hay ningún panel pegado").toBe(false);
+    await expect(seccion(page).locator("h2")).toBeVisible();
   });
 });
 
