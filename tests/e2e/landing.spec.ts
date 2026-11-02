@@ -95,10 +95,15 @@ test.describe("Landing", () => {
 
   test("la portada se parte en dos cuando hay foto publicada", async ({ page }) => {
     // El seed publica una foto de portada, así que aquí tiene que haber dos
-    // columnas: el texto y la imagen.
+    // columnas: el texto y la imagen. El cielo de noche va detrás, fuera de la
+    // rejilla (posición absoluta), y no es una columna.
     const columnas = await page
       .locator("#portada")
-      .evaluate((seccion) => seccion.children.length);
+      .evaluate(
+        (seccion) =>
+          [...seccion.children].filter((hijo) => getComputedStyle(hijo).position !== "absolute")
+            .length,
+      );
 
     expect(columnas).toBe(2);
   });
@@ -119,16 +124,16 @@ test.describe("Landing", () => {
    * BODA-20 · El cielo de la cuenta atrás.
    */
   test("la cuenta atrás lleva su cielo, y es decoración para quien no ve", async ({ page }) => {
-    const cielo = page.locator("#cuenta-atras .cielo-estrellado");
+    const cielo = page.locator("#cuenta-atras [data-cielo-estrellado]");
     await expect(cielo).toHaveCount(1);
 
     // Decoración pura: anunciarlo sería ruido en un lector de pantalla.
     await expect(cielo).toHaveAttribute("aria-hidden", "true");
 
-    const capas = await cielo.evaluate(
-      (nodo) => getComputedStyle(nodo).backgroundImage.split("radial-gradient").length - 1,
-    );
-    expect(capas).toBe(4);
+    // Y es un cielo de verdad, no un fondo: estrellas contadas y pintadas.
+    await cielo.scrollIntoViewIfNeeded();
+    await expect(cielo).toHaveAttribute("data-cielo", "vivo");
+    expect(Number(await cielo.getAttribute("data-estrellas"))).toBeGreaterThan(20);
   });
 
   /**
@@ -409,11 +414,10 @@ test.describe("Cielo con movimiento reducido", () => {
       "Este navegador no aplica la emulación de prefers-reduced-motion",
     );
 
-    const nombre = await page
-      .locator("#cuenta-atras .cielo-estrellado")
-      .evaluate((nodo) => getComputedStyle(nodo).animationName);
-
-    expect(nombre).toBe("none");
+    // Pintado una vez y quieto: ni titila, ni cruza ninguna fugaz.
+    const cielo = page.locator("#cuenta-atras [data-cielo-estrellado]");
+    await cielo.scrollIntoViewIfNeeded();
+    await expect(cielo).toHaveAttribute("data-cielo", "quieto");
   });
 });
 
@@ -982,14 +986,6 @@ test.describe("El movimiento es el de la entrega", () => {
         }),
       )
       .toBeLessThan(0);
-  });
-
-  test("el cielo de la cuenta atrás deriva en 44 s exactos", async ({ page }) => {
-    await page.goto("/");
-    const cielo = await page
-      .locator("#cuenta-atras .cielo-estrellado")
-      .evaluate((nodo) => getComputedStyle(nodo).animationDuration);
-    expect(cielo).toBe("44s, 7s");
   });
 
   test("la barra de lectura mide lo leído y la cabecera se compacta al bajar", async ({

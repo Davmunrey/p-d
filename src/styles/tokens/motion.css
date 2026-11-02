@@ -258,37 +258,6 @@
   }
 }
 
-/* Una estrella de la historia se enciende cuando se llega a su hito. */
-@keyframes encender-estrella {
-  from {
-    opacity: var(--opacidad-estrella-dormida);
-    transform: scale(var(--escala-estrella-dormida));
-  }
-
-  to {
-    opacity: 100%;
-    transform: scale(1);
-  }
-}
-
-/* Y su halo destella al encenderse y se queda brillando, más bajo. */
-@keyframes destello {
-  0% {
-    opacity: 0%;
-    transform: scale(var(--escala-estrella-dormida));
-  }
-
-  55% {
-    opacity: var(--opacidad-destello);
-    transform: scale(var(--escala-destello));
-  }
-
-  100% {
-    opacity: var(--opacidad-destello-final);
-    transform: scale(1);
-  }
-}
-
 /* La estrella que falta late: su halo crece y se apaga, cada 3 s. */
 @keyframes latir-estrella {
   0%,
@@ -303,24 +272,6 @@
   }
 }
 
-/* La estrella fugaz cruza el cielo del final, inclinada como su camino. */
-@keyframes cruzar-fugaz {
-  0% {
-    opacity: 0%;
-    transform: translate(0, 0) rotate(var(--angulo-fugaz));
-  }
-
-  15%,
-  60% {
-    opacity: 100%;
-  }
-
-  100% {
-    opacity: 0%;
-    transform: translate(var(--fugaz-x), var(--fugaz-y)) rotate(var(--angulo-fugaz));
-  }
-}
-
 /* Un nombre de la portada sube desde detrás de una línea invisible. */
 @keyframes emerger-linea {
   from {
@@ -329,14 +280,6 @@
 
   to {
     transform: translateY(0);
-  }
-}
-
-/* Al bajar, el texto de la portada se adelanta y se apaga un poco. */
-@keyframes salir-portada {
-  to {
-    opacity: 35%;
-    transform: translateY(calc(var(--salida-portada) * -1));
   }
 }
 
@@ -350,72 +293,6 @@
   to {
     opacity: 100%;
     transform: translateY(0);
-  }
-}
-
-/*
- * EL CIELO DEL DÍA, en tres luces y un sol. Los tramos son de la página
- * entera: el alba se apaga en el primer sexto, la tarde dorada llena la mitad
- * y el ocaso entra en el último cuarto, justo antes de la noche marino del
- * RSVP y el pie. Sólo opacidad y transformación: se componen en la GPU y no
- * repintan la pantalla en cada fotograma.
- */
-@keyframes luz-alba {
-  0%,
-  6% {
-    opacity: 100%;
-  }
-
-  20%,
-  100% {
-    opacity: 0%;
-  }
-}
-
-@keyframes luz-tarde {
-  0%,
-  28% {
-    opacity: 0%;
-  }
-
-  46%,
-  66% {
-    opacity: 100%;
-  }
-
-  84%,
-  100% {
-    opacity: 0%;
-  }
-}
-
-@keyframes luz-ocaso {
-  0%,
-  62% {
-    opacity: 0%;
-  }
-
-  84%,
-  100% {
-    opacity: 100%;
-  }
-}
-
-@keyframes recorrer-sol {
-  0% {
-    opacity: 55%;
-    transform: translate(var(--sol-salida-x), var(--sol-salida-y));
-  }
-
-  50% {
-    opacity: 100%;
-    transform: translate(var(--sol-cenit-x), var(--sol-cenit-y));
-  }
-
-  92%,
-  100% {
-    opacity: 0%;
-    transform: translate(var(--sol-ocaso-x), var(--sol-ocaso-y));
   }
 }
 
@@ -678,12 +555,6 @@
   animation: flotar var(--periodo-pista) ease-in-out infinite;
 }
 
-.animacion-cielo {
-  animation:
-    deriva var(--periodo-deriva) linear infinite alternate,
-    titilar var(--periodo-titilar) ease-in-out infinite;
-}
-
 /**
  * LAS ENTRADAS DEL SAVE THE DATE: la cabecera baja en 1,1 s, la raya se traza
  * medio segundo después, el escenario crece del 96,5 % en 1,3 s; y los bucles
@@ -731,44 +602,6 @@
     titilar var(--periodo-titilar-lento) ease-in-out infinite;
 }
 
-/**
- * LA CONSTELACIÓN DE LA PORTADA SE DIBUJA, cuando todavía no hay foto que
- * poner al lado de los nombres. Primero el anillo, luego las estrellas se
- * encienden una a una y por último los trazos las unen; ya dibujada, cada
- * estrella titila a su paso. El orden de cada pieza lo pone `--orden` en el
- * propio elemento: es el orden del dibujo, no del DOM.
- *
- * Los trazos y el anillo llevan `pathLength="1"`: un guion tan largo como el
- * trazo entero, desplazado de 1 a 0.
- */
-.anillo-dibujado {
-  animation: dibujar-trazo var(--transicion-anillo) both;
-  animation-delay: var(--pausa-anillo);
-  stroke-dasharray: 1;
-}
-
-.constelacion-dibujada line {
-  animation: dibujar-trazo var(--transicion-trazo) both;
-  animation-delay: calc(var(--pausa-trazos) + var(--orden, 0) * var(--paso-constelacion));
-  stroke-dasharray: 1;
-}
-
-/*
-  El titileo va SIN `both`: si rellenara hacia atrás, mientras espera su turno
-  pondría su primera opacidad encima de la del encendido, y las estrellas
-  aparecerían a medias antes de tiempo.
-*/
-.constelacion-dibujada circle {
-  animation:
-    pop var(--transicion-muelle) both,
-    titilar var(--periodo-titilar) ease-in-out infinite;
-  animation-delay:
-    calc(var(--pausa-estrellas) + var(--orden, 0) * var(--paso-constelacion)),
-    calc(var(--pausa-titilar) + var(--orden, 0) * var(--paso-constelacion));
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
 .animacion-escribir {
   animation: escribir var(--transicion-escritura) both;
   animation-delay: var(--pausa-escritura);
@@ -801,40 +634,63 @@
 }
 
 /**
- * LA ESCENA DE «NUESTRA HISTORIA». Cada hito declara su línea de tiempo de
- * vista con su nombre (`--hito-0`, `--hito-1`…, en `--nombre-hito`), y la
- * escena entera la hace visible para sus hijos con `timeline-scope`: así una
- * estrella, que vive en el escenario fijo, avanza con el scroll de un hito que
- * está en la otra columna. Qué hito enciende cada estrella y cada trazo lo
- * pone el componente en `--linea-de-tiempo`.
- *
- * El halo no se ve hasta que su estrella se enciende: sin líneas de tiempo, o
- * con movimiento reducido, la Lira está entera y sin halos.
+ * NUESTRA HISTORIA: UNA ESTRELLA POR HITO. Mientras el texto baja, el cielo
+ * del escenario se queda quieto y cada hito, al llegar a media pantalla,
+ * enciende su estrella y dibuja el hilo que la une a la anterior; con el
+ * último, aparece el cierre. Lo enciende `EscenaHistoria` con
+ * `data-encendida`, y sólo cuando la escena está viva (`data-escena="viva"`):
+ * sin JavaScript, o con movimiento reducido, todo está encendido desde el
+ * principio y no falta nada que leer.
  */
-.escena-historia {
-  timeline-scope: var(--ambito-hitos);
+.estrella-del-camino,
+.halo-del-camino {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity var(--transicion-destello),
+    transform var(--transicion-destello);
 }
 
-.hito-en-escena {
-  view-timeline-name: var(--nombre-hito);
+.halo-del-camino {
+  opacity: var(--opacidad-destello-final);
 }
 
-.halo-historia {
+.trazo-del-camino {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--transicion-linea);
+}
+
+.cierre-historia {
+  transition:
+    opacity var(--transicion-aparicion),
+    transform var(--transicion-aparicion);
+}
+
+[data-escena="viva"] .estrella-del-camino:not([data-encendida]) {
+  opacity: var(--opacidad-estrella-dormida);
+  transform: scale(var(--escala-estrella-dormida));
+}
+
+[data-escena="viva"] .halo-del-camino:not([data-encendida]) {
   opacity: 0%;
+  transform: scale(var(--escala-estrella-dormida));
+}
+
+[data-escena="viva"] .trazo-del-camino:not([data-encendida]) {
+  stroke-dashoffset: 1;
+}
+
+[data-escena="viva"] .cierre-historia:not([data-encendida]) {
+  opacity: 0%;
+  transform: translateY(var(--recorrido-reveal));
 }
 
 /**
- * LA NOCHE DEL FINAL Y VUESTRA ESTRELLA. En el RSVP de la landing la Lira se
- * dibuja al llegar a ella —con la línea de tiempo `--noche`, la de la propia
- * sección— y a su lado espera, hueca, la estrella de los invitados: late, y
- * el trazo que la une a la Lira es discontinuo. En la pantalla de gracias del
- * RSVP, si alguien viene, esa estrella se enciende en bronce y el trazo se
- * dibuja entero.
+ * VUESTRA ESTRELLA, EN EL CIELO DEL FINAL: hueca, entre todas las demás, y
+ * late —su halo crece y se apaga cada pocos segundos—. Es la de los
+ * invitados, que confirman por WhatsApp.
  */
-.noche-final {
-  view-timeline-name: --noche;
-}
-
 .latido-estrella {
   animation: latir-estrella var(--periodo-latido) ease-in-out infinite;
   opacity: 0%;
@@ -842,42 +698,10 @@
   transform-origin: center;
 }
 
-.trazo-pendiente {
-  stroke-dasharray: var(--guion-pendiente);
-}
-
-.estrella-que-se-enciende {
-  animation: pop var(--transicion-muelle) both;
-  animation-delay: var(--pausa-vuestra-estrella);
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.halo-que-se-enciende {
-  animation: destello var(--transicion-destello) both;
-  animation-delay: var(--pausa-vuestra-estrella);
-  opacity: var(--opacidad-destello-final);
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.trazo-que-se-une {
-  animation: dibujar-trazo var(--transicion-trazo) both;
-  animation-delay: var(--pausa-trazo-vuestra);
-  stroke-dasharray: 1;
-}
-
-/* Sin líneas de tiempo, la estrella fugaz no cruza: no se ve. */
-.estrella-fugaz {
-  opacity: 0%;
-}
-
 /**
  * DE UNA PÁGINA A OTRA. Las navegaciones del App Router son transiciones, y
- * `<ViewTransition>` (en el layout) las convierte en un fundido; la Lira,
- * que lleva el mismo nombre en la portada, el RSVP y el Save the Date, viaja
- * de su sitio en una página a su sitio en la otra. Aquí sólo se le da el
- * tiempo y la curva de la casa.
+ * `<ViewTransition>` (en el layout) las convierte en un fundido. Aquí sólo se
+ * le da el tiempo y la curva de la casa.
  */
 ::view-transition-group(*) {
   animation-duration: var(--duracion-cambio-pagina);
@@ -938,12 +762,42 @@
   transform: translateY(calc(var(--espacio-linea) * -0.5));
 }
 
-/*
- * Sin líneas de tiempo de scroll —o con movimiento reducido— el cielo no se
- * pinta: la landing se queda en su nieve de siempre, que es como era.
+/**
+ * EL CIELO DEL DÍA, POR HORAS. `CieloDelDia` pone en `data-fase` la hora de
+ * la sección que está a media pantalla, y cada tinte se funde al llegar la
+ * suya; el sol cruza de la salida al cenit y al ocaso. De noche no se pinta
+ * ningún tinte: las secciones de noche llevan su propio cielo.
  */
 .cielo-capa {
   opacity: 0%;
+  transition: opacity var(--transicion-cielo);
+}
+
+[data-fase="alba"] > .cielo-alba,
+[data-fase="tarde"] > .cielo-tarde,
+[data-fase="ocaso"] > .cielo-ocaso {
+  opacity: 100%;
+}
+
+.cielo-sol {
+  transform: translate(var(--sol-salida-x), var(--sol-salida-y));
+  transition:
+    opacity var(--transicion-cielo),
+    transform var(--transicion-sol);
+}
+
+[data-fase="alba"] > .cielo-sol {
+  opacity: 55%;
+}
+
+[data-fase="tarde"] > .cielo-sol {
+  opacity: 100%;
+  transform: translate(var(--sol-cenit-x), var(--sol-cenit-y));
+}
+
+[data-fase="ocaso"] > .cielo-sol {
+  opacity: 35%;
+  transform: translate(var(--sol-ocaso-x), var(--sol-ocaso-y));
 }
 
 /**
@@ -1176,103 +1030,6 @@
   }
 
   /*
-    UNA ESTRELLA POR HITO. Se enciende entre que su hito asoma por abajo y
-    que llega casi al centro; el trazo que la une con la anterior se dibuja
-    después, y el cierre de la historia aparece cuando el último hito ya está
-    a la vista. `animation-timeline` va después del atajo `animation`, que lo
-    reiniciaría.
-  */
-  .estrella-historia,
-  .halo-historia {
-    animation-fill-mode: both;
-    animation-range: entry 70% cover 45%;
-    animation-timeline: var(--linea-de-tiempo);
-    animation-timing-function: linear;
-    transform-box: fill-box;
-    transform-origin: center;
-  }
-
-  .estrella-historia {
-    animation-name: encender-estrella;
-  }
-
-  .halo-historia {
-    animation-name: destello;
-  }
-
-  .trazo-historia {
-    animation: dibujar-trazo linear both;
-    animation-range: cover 35% cover 55%;
-    animation-timeline: var(--linea-de-tiempo);
-    stroke-dasharray: 1;
-  }
-
-  .cierre-historia {
-    animation: subir-al-ver linear both;
-    animation-range: cover 50% cover 75%;
-    animation-timeline: var(--linea-de-tiempo);
-  }
-
-  /*
-    LA LIRA DEL FINAL SE DIBUJA AL LLEGAR A LA NOCHE: estrellas primero, una
-    tras otra, y luego los trazos, dentro del primer tercio de la sección. La
-    estrella fugaz cruza a la vez. Todo con la línea de tiempo `--noche`.
-  */
-  .lira-que-llega .estrella-lira {
-    animation: pop linear both;
-    animation-range: cover calc(8% + var(--orden, 0) * 2%) cover
-      calc(14% + var(--orden, 0) * 2%);
-    animation-timeline: --noche;
-    transform-box: fill-box;
-    transform-origin: center;
-  }
-
-  .lira-que-llega .trazo-lira {
-    animation: dibujar-trazo linear both;
-    animation-range: cover calc(16% + var(--orden, 0) * 2.5%) cover
-      calc(24% + var(--orden, 0) * 2.5%);
-    animation-timeline: --noche;
-    stroke-dasharray: 1;
-  }
-
-  .estrella-fugaz {
-    animation: cruzar-fugaz linear both;
-    animation-range: cover 6% cover 32%;
-    animation-timeline: --noche;
-  }
-
-  /* La portada se va antes que la página: en el primer alto de pantalla. */
-  .salida-portada {
-    animation: salir-portada linear both;
-    animation-range: 0 100dvh;
-    animation-timeline: scroll(root);
-  }
-
-  /* El cielo del día: la página entera es la línea de tiempo. */
-  .cielo-capa {
-    animation-fill-mode: both;
-    animation-timeline: scroll(root);
-    animation-timing-function: linear;
-  }
-
-  .cielo-alba {
-    animation-name: luz-alba;
-  }
-
-  .cielo-tarde {
-    animation-name: luz-tarde;
-  }
-
-  .cielo-ocaso {
-    animation-name: luz-ocaso;
-  }
-
-  .cielo-sol {
-    animation-name: recorrer-sol;
-    will-change: transform, opacity;
-  }
-
-  /*
     UNA FILA DE TARJETAS ENTRA DE IZQUIERDA A DERECHA. Las tres de una fila
     asoman a la vez —están a la misma altura—, así que con el mismo rango
     subían en bloque, como una sola pieza. Cada columna empieza y acaba un
@@ -1328,11 +1085,6 @@
   .animacion-escribir,
   .animacion-rodar,
   .linea-que-emerge,
-  .estrella-que-se-enciende,
-  .trazo-que-se-une,
-  .anillo-dibujado,
-  .constelacion-dibujada line,
-  .constelacion-dibujada circle,
   .hoja-menu[open],
   .hoja-menu[open]::backdrop {
     animation: aparecer var(--duration-instant) var(--ease-salida) both;
@@ -1344,7 +1096,6 @@
     lectura NO: mide cuánto se ha leído y no es decoración; quieta, mentiría.
   */
   .animacion-flotar,
-  .animacion-cielo,
   .animacion-cielo-claro,
   .animacion-latido,
   .animacion-flotar-arriba,
@@ -1352,19 +1103,17 @@
   .animacion-paralaje,
   .animacion-paralaje-portada,
   .hora-que-llega,
-  .cielo-capa,
-  .salida-portada,
-  .estrella-historia,
-  .halo-historia,
-  .trazo-historia,
-  .cierre-historia,
   .latido-estrella,
-  .halo-que-se-enciende,
-  .estrella-fugaz,
-  .lira-que-llega .estrella-lira,
-  .lira-que-llega .trazo-lira,
   .cabecera-compacta {
     animation: none;
+  }
+
+  /*
+    Sin movimiento no hay horas que se funden ni sol que cruza: la página clara
+    de siempre. Las noches siguen siendo noche, con su cielo quieto.
+  */
+  [data-cielo-del-dia] {
+    visibility: hidden;
   }
 
   /* Sin movimiento, cambiar de página es un corte, sin fundido ni viaje. */

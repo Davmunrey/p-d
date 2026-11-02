@@ -8,9 +8,9 @@ import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { VideoDeFondo } from "@/components/marketing/video-de-fondo";
 import { CieloDelDia } from "@/components/marketing/cielo-del-dia";
+import { CieloEstrellado } from "@/components/marketing/cielo-estrellado";
 import { EscenaHistoria } from "@/components/marketing/escena-historia";
-import { LiraConVuestraEstrella } from "@/components/marketing/lira-con-vuestra-estrella";
-import { ConstelacionPortada } from "@/components/marketing/constelacion-portada";
+import { VuestraEstrella } from "@/components/marketing/vuestra-estrella";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { BotonEnlace } from "@/components/ui/boton";
 import { DatosEstructurados } from "@/components/datos-estructurados";
@@ -28,6 +28,7 @@ import {
   Titulo1,
   Titulo3,
 } from "@/components/ui/tipografia";
+import { FASE_DE_SECCION, SEMILLAS_CIELO } from "@/config/cielo";
 import { BUCKET_MEDIOS, ID_CONTENIDO } from "@/config/constants";
 import { anclaDe, esAncla, vaEnElMenu, type Seccion } from "@/config/secciones";
 import {
@@ -315,6 +316,15 @@ export default async function PaginaInicio() {
       rotulo: t(`navegacion.secciones.${seccion}`),
     }));
 
+  // La hora de cada sección que se pinta, por su ancla (ver `CieloDelDia`).
+  const fasesDelCielo = Object.fromEntries(
+    aPintar.flatMap((seccion) =>
+      seccion in FASE_DE_SECCION
+        ? [[anclaDe(seccion), FASE_DE_SECCION[seccion as keyof typeof FASE_DE_SECCION]]]
+        : [],
+    ),
+  );
+
   // «Volver arriba» y el monograma iban siempre a #portada, que también se
   // puede apagar. Sin portada, el principio del contenido.
   const inicio = aPintar.includes("portada") ? `#${anclaDe("portada")}` : `#${ID_CONTENIDO}`;
@@ -356,7 +366,7 @@ export default async function PaginaInicio() {
       <div aria-hidden="true" className="barra-lectura" />
 
       {/* El fondo que pasa de la mañana a la noche mientras se baja. */}
-      <CieloDelDia />
+      <CieloDelDia fases={fasesDelCielo} />
 
       <Navegacion
         inicio={inicio}
@@ -365,6 +375,7 @@ export default async function PaginaInicio() {
         marca={nombres}
         nombreNovia={configuracion.nombreNovia}
         nombreNovio={configuracion.nombreNovio}
+        empiezaDeNoche={aPintar[0] === "portada"}
       />
 
       <main id={ID_CONTENIDO}>
@@ -474,13 +485,11 @@ async function cargarLanding() {
  * ancho mínimo de columna, así que el corte pasa cuando de verdad estorba y no
  * a un número redondo.
  *
- * SIN FOTO, LA OTRA MITAD ES LA CONSTELACIÓN. Todavía no hay fotos —la sesión
- * de preboda ni siquiera está decidida— y media pantalla en blanco no se lee
- * como una decisión de diseño, se lee como algo que no ha cargado. Así que en
- * la mitad de la foto se dibuja la Lira de los novios dentro de su anillo
- * (`ConstelacionPortada`). En un móvil no cabe sin echar el botón de la
- * pantalla, y ahí el texto se queda solo en su columna centrada; el día que se
- * publique una imagen, la foto ocupa ese sitio sin tocar nada.
+ * ES DE NOCHE, Y LA NOCHE ES EL FONDO ENTERO. La landing cuenta un día que
+ * empieza bajo las estrellas: la portada es un firmamento a sangre, con los
+ * nombres en marfil, y sin foto el texto se queda centrado sobre el cielo. El
+ * día que se publique una imagen, ocupa su mitad y el cielo queda detrás del
+ * texto, sin tocar nada.
  *
  * El bloque de datos usa `--texto-titulo-2` y la fecha va en `26 · 06 · 2027`,
  * que es como la escribe la marca en todas las piezas.
@@ -511,14 +520,27 @@ function Portada({
     : configuracion.direccionCeremonia;
 
   return (
-    <section id={anclaDe("portada")} className="rejilla-partida min-h-dvh items-stretch">
+    <section
+      id={anclaDe("portada")}
+      data-seccion="inversa"
+      className="fondo-noche relative isolate rejilla-partida min-h-dvh items-stretch overflow-hidden"
+    >
+      {/*
+        LA NOCHE EN QUE EMPIEZA TODO. La portada es un firmamento entero: tres
+        profundidades de estrellas que titilan, la Vía Láctea en diagonal, una
+        estrella fugaz poco después de que lleguen los nombres, y abajo un
+        resto de bronce en el horizonte que anuncia el día que viene al bajar.
+        Es un `<canvas>` decorativo: sin él, la portada es la misma noche, sin
+        estrellas.
+      */}
+      <CieloEstrellado viaLactea fugaces className="capa-cielo absolute inset-0 size-full" />
       {/*
         El relleno es el de la entrega, fluido y asimétrico: más aire arriba
         —cuenta la barra— que abajo, y los lados crecen con la pantalla. Cada
         hueco de dentro tiene su token porque cada uno mide distinto.
       */}
       <div
-        className={`salida-portada flex w-full flex-col justify-center px-portada-lado pt-portada-arriba pb-portada-abajo ${
+        className={`flex w-full flex-col justify-center px-portada-lado pt-portada-arriba pb-portada-abajo ${
           foto ? "" : "mx-auto max-w-contenido"
         }`}
       >
@@ -642,9 +664,7 @@ function Portada({
           medidas="(min-width: 40rem) 50vw, 100vw"
           className="alto-foto-portada"
         />
-      ) : (
-        <ConstelacionPortada />
-      )}
+      ) : null}
     </section>
   );
 }
@@ -788,12 +808,11 @@ function Paisaje({
 /**
  * LA CUENTA ATRÁS, BAJO UN CIELO
  *
- * En la entrega no es una franja de color: es una noche. El fondo lleva cuatro
- * capas de estrellas que derivan durante 44 s y titilan cada 7, tan despacio
- * que no se leen como animación — sólo se nota que el bloque está vivo.
+ * En la entrega no es una franja de color: es una noche, la misma de la
+ * portada —el día todavía no ha empezado—, con su cielo entero titilando.
  *
  * El cielo es decoración pura, así que va `aria-hidden` y por debajo del
- * contenido. Y se apaga entero con `prefers-reduced-motion`: un fondo en
+ * contenido. Con `prefers-reduced-motion` se queda quieto: un fondo en
  * movimiento perpetuo es justo lo que marea a quien activa esa preferencia.
  */
 function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBoda }) {
@@ -802,12 +821,12 @@ function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBod
     <section
       id={anclaDe("cuenta_atras")}
       data-seccion="inversa"
-      className="relative overflow-hidden px-margen py-seccion-compacta-fluida text-center"
+      className="fondo-noche-alta relative isolate overflow-hidden px-margen py-seccion-compacta-fluida text-center"
       aria-labelledby={idTitulo}
     >
-      <div
-        aria-hidden
-        className="animacion-cielo cielo-estrellado pointer-events-none absolute -inset-bloque"
+      <CieloEstrellado
+        semilla={SEMILLAS_CIELO.cuentaAtras}
+        className="capa-cielo absolute inset-0 size-full"
       />
 
       <div className="animacion-cortina-al-ver relative mx-auto max-w-cuenta">
@@ -1400,25 +1419,24 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
     <section
       id={anclaDe("rsvp")}
       data-seccion="inversa"
-      className="noche-final relative overflow-hidden px-margen py-seccion-fluida text-center"
+      className="fondo-noche-alta relative isolate overflow-hidden px-margen py-seccion-fluida text-center"
       aria-labelledby={idTitulo}
     >
       {/*
-        LA NOCHE DEL FINAL. El día que ha ido pasando al bajar acaba aquí: el
-        cielo de la cuenta atrás, una estrella fugaz que lo cruza al llegar, y
-        la Lira dibujándose con una estrella más a su lado, hueca, que late.
-        Es la de los invitados, y es lo único que falta.
+        LA NOCHE DEL FINAL. El día que ha ido pasando al bajar acaba aquí, en
+        el mismo firmamento entero de la portada —otro cielo, la misma noche—,
+        con la Vía Láctea y alguna estrella fugaz. Entre todas, una hueca que
+        late: la de los invitados, que es lo único que falta.
       */}
-      <div
-        aria-hidden
-        className="animacion-cielo cielo-estrellado pointer-events-none absolute -inset-bloque"
+      <CieloEstrellado
+        semilla={SEMILLAS_CIELO.final}
+        viaLactea
+        fugaces
+        className="capa-cielo absolute inset-0 size-full"
       />
-      <div aria-hidden className="estrella-fugaz estela-fugaz pointer-events-none absolute" />
 
       <div className="relative mx-auto max-w-estrecho">
-        <div className="mx-auto mb-elemento w-lira-final">
-          <LiraConVuestraEstrella estado="falta" alLlegar />
-        </div>
+        <VuestraEstrella className="mx-auto mb-elemento size-vuestra-estrella" />
         <Cita className="mb-elemento">{t("rsvp.faltaVuestraEstrella")}</Cita>
 
         {/*

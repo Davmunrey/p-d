@@ -154,16 +154,16 @@
   --color-velado-marino: rgb(16 22 35 / 86%);
 
   /**
-   * Las estrellas del cielo de la cuenta atrás. Cuatro alfas distintas y no uno
-   * solo: un campo de puntos todos iguales se lee como una trama de imprenta,
-   * no como un cielo. La irregularidad es lo que lo hace funcionar.
-   *
-   * El blanco es el mismo de la tinta sobre oscuro, con transparencia.
+   * LA NOCHE ESTRELLADA. La portada y el final son un firmamento entero: un
+   * degradado de cenit a horizonte, una Vía Láctea que es sólo un velo de luz
+   * fría, y abajo, en la portada, un resto de bronce en el horizonte que
+   * anuncia que va a amanecer. Las estrellas son nieve y, unas pocas, bronce
+   * claro: el mismo par de la marca, de noche.
    */
-  --color-estrella-1: rgb(238 242 248 / 50%);
-  --color-estrella-2: rgb(238 242 248 / 30%);
-  --color-estrella-3: rgb(238 242 248 / 42%);
-  --color-estrella-4: rgb(238 242 248 / 28%);
+  --color-via-lactea: rgb(214 224 245 / 9%);
+  --color-via-lactea-0: rgb(214 224 245 / 0%);
+  --color-horizonte-noche: rgb(169 118 52 / 16%);
+  --color-horizonte-noche-0: rgb(169 118 52 / 0%);
 
   /**
    * El trazo que une las estrellas de una constelación. La entrega es literal
@@ -419,7 +419,6 @@
 
   /* Al bajar, el texto de la portada se adelanta 12 vh: se va antes que la
      página, y eso da la profundidad. */
-  --space-salida-portada: 12vh;
   --space-sol-salida-x: -30vmax;
   --space-sol-salida-y: -35vmax;
   --space-sol-cenit-x: 15vw;
@@ -574,18 +573,10 @@
    */
   --size-hoja-menu: 85dvh;
 
-  /**
-   * La constelación de la portada cuando todavía no hay foto: cabe al lado de
-   * los nombres sin competir con ellos, y nunca baja de 14 rem. El aire es el
-   * que pide la regla 3 de la entrega —«dentro de círculo con aire, nunca
-   * recortada»—: el dibujo se mete un 10 % por cada lado, y la estrella más
-   * alejada del centro, Vega, queda a un tercio del radio del anillo.
-   */
-  --size-constelacion-portada: clamp(14rem, 30vw, 28rem);
-
   /*
-   * LA ESCENA DE «NUESTRA HISTORIA»: el escenario fijo donde se enciende la
-   * Lira mide 78 % del alto de la pantalla en escritorio y 40 % en un móvil
+   * LA ESCENA DE «NUESTRA HISTORIA»: el escenario fijo con la ventana al cielo
+   * donde se encienden las estrellas mide 78 % del alto de la pantalla en
+   * escritorio y 40 % en un móvil
    * —arriba, con los hitos pasando por debajo—, y cada hito ocupa 72 % y 62 %:
    * lo que se baja para pasar de una estrella a la siguiente.
    */
@@ -596,18 +587,11 @@
   --size-hito-escena-movil: 62svh;
 
   /*
-   * LA NOCHE DEL FINAL. La Lira con vuestra estrella al lado mide entre 11 y
-   * 18 rem; la estrella fugaz es un trazo de 9 rem que cruza el cielo hacia
-   * abajo a la izquierda, 40 vw por 18 vh, inclinado lo mismo que su camino.
+   * LA NOCHE DEL FINAL. Vuestra estrella, la hueca que late entre todas, mide
+   * entre 3 y 4,5 rem: lo bastante para verse sola en un cielo lleno, no
+   * tanto como para parecer un icono.
    */
-  --size-lira-final: clamp(11rem, 26vw, 18rem);
-  --size-estrella-fugaz: 9rem;
-  --space-fugaz-x: -40vw;
-  --space-fugaz-y: 18vh;
-  --space-fugaz-arriba: 14%;
-  --space-fugaz-derecha: 10%;
-  --angle-fugaz: -16deg;
-  --inset-aire-constelacion: 10%;
+  --size-vuestra-estrella: clamp(3rem, 6vw, 4.5rem);
 
   /* ---------------------------------------------------------------------
    * Forma
@@ -649,16 +633,13 @@
   /* Una estrella de la historia antes de su hito: pequeña y casi apagada. Al
      encenderse destella un 15 % por encima de su tamaño y su halo se queda. */
   --scale-estrella-dormida: 0.45;
-  --scale-destello: 1.15;
   --opacity-estrella-dormida: 18%;
-  --opacity-destello: 55%;
-  --opacity-destello-final: 22%;
+  --opacity-destello-final: 60%;
 
   /* La estrella que falta late: su halo crece 2,4 veces y se apaga. Y el
      trazo que la espera es discontinuo, en guiones de 1,4 con huecos de 2. */
   --scale-latido-estrella: 2.4;
   --opacity-latido-estrella: 60%;
-  --dash-pendiente: 1.4 2;
 
   /* Un botón que se pulsa cede un 3 %: lo justo para notar que ha oído el dedo. */
   --scale-pulsado: 0.97;
@@ -690,8 +671,6 @@
   --duration-cinematic: 1400ms;
   --duration-escena: 2400ms;
   --duration-pista: 2600ms;
-  --duration-titilar: 7000ms;
-  --duration-deriva: 44000ms;
   --ease-salida: cubic-bezier(0.2, 0.7, 0.3, 1);
   --ease-entrada: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-suave: cubic-bezier(0.22, 0.75, 0.24, 1);
@@ -707,38 +686,22 @@
   --delay-6: 1100ms;
   --delay-7: 1600ms;
 
-  /*
-   * LA CONSTELACIÓN DE LA PORTADA SE DIBUJA DESPUÉS DE LOS NOMBRES: el anillo
-   * empieza a los 0,6 s, las estrellas se encienden desde 0,9 s y los trazos
-   * las unen desde 1,15 s, uno cada 110 ms. Todo acaba hacia los 2,4 s, a la
-   * vez que la pista «bajad»: una sola secuencia, no dos.
-   */
-  --delay-anillo: 600ms;
-  --delay-estrellas: 900ms;
-  --delay-trazos: 1150ms;
-  --step-constelacion: 110ms;
-
-  /* Ya dibujadas, las estrellas titilan: desde los 2,6 s, cada una a su paso. */
-  --delay-titilar: 2600ms;
-  --duration-trazo: 700ms;
-  --duration-anillo: 1600ms;
-
   /* La «y» se escribe mientras llega el segundo nombre, en 0,9 s. */
   --delay-escritura: 550ms;
   --duration-escritura: 900ms;
 
-  /* Vuestra estrella se enciende medio segundo después de llegar a la
-     pantalla de gracias, su halo destella en 1,2 s y el trazo que la une a la
-     Lira se dibuja a los 0,9 s. */
-  --delay-vuestra-estrella: 500ms;
-  --delay-trazo-vuestra: 900ms;
+  /* Una estrella de la historia se enciende con un destello de 1,2 s. */
   --duration-destello: 1200ms;
 
-  /* Al cambiar de página, el contenido se funde y la Lira viaja en 0,55 s. */
+  /* Al cambiar de página, el contenido se funde en 0,55 s. */
   --duration-cambio-pagina: 550ms;
 
-  /* Un nombre de la portada emerge en 1,1 s. */
+  /* Un nombre de la portada emerge en 1,1 s, y el hilo de la historia se dibuja igual. */
   --duration-linea: 1100ms;
+
+  /* El cielo cambia de hora en 1,8 s; el sol cruza de una a otra en 2,8. */
+  --duration-cielo: 1800ms;
+  --duration-sol: 2800ms;
 
   /* Una cifra que cambia rueda en 0,45 s: menos que el segundo que tarda la siguiente. */
   --duration-cifra: 450ms;

@@ -694,15 +694,8 @@ test.describe("Repartir la invitación", () => {
 
     const mensaje = await page.locator('textarea[name="mensaje"]').inputValue();
 
-    // El texto sale de los copys, con el enlace dentro.
-    expect(mensaje).toContain(enlace);
-    expect(mensaje).toContain(
-      copy.panel.invitados.repartirPlantilla
-        .replace("{enlace}", "")
-        .trim()
-        .split("{")[0]
-        .trim(),
-    );
+    // El texto es el de los copys, con el enlace de esta invitación dentro.
+    expect(mensaje).toBe(copy.panel.invitados.repartirPlantilla.replace("{enlace}", enlace));
 
     // Y al mandarlo se va a WhatsApp con ese mismo texto codificado.
     const [destino] = await Promise.all([

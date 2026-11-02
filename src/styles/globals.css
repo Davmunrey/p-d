@@ -345,10 +345,6 @@
   /* Un solo token da `size-constelacion`: el hueco es cuadrado por definición. */
   --spacing-constelacion: var(--lado-constelacion);
 
-  /* `size-constelacion-portada` y el aire de dentro: `inset-aire-constelacion`. */
-  --spacing-constelacion-portada: var(--lado-constelacion-portada);
-  --spacing-aire-constelacion: var(--aire-constelacion);
-
   /* La escena de «nuestra historia»: `size-constelacion-historia`,
      `h-escenario-historia`, `min-h-hito-escena` y sus versiones de móvil. */
   --spacing-constelacion-historia: var(--lado-constelacion-historia);
@@ -357,9 +353,8 @@
   --spacing-hito-escena: var(--alto-hito-escena);
   --spacing-hito-escena-movil: var(--alto-hito-escena-movil);
 
-  /* La Lira del final (`w-lira-final`) y el trazo de la estrella fugaz. */
-  --spacing-lira-final: var(--ancho-lira-final);
-  --spacing-estrella-fugaz: var(--largo-estrella-fugaz);
+  /* Vuestra estrella, la que falta en el cielo del final. */
+  --spacing-vuestra-estrella: var(--lado-vuestra-estrella);
 
   /* Un solo token da `h-cabecera`, `pt-cabecera` y `scroll-mt-cabecera`. */
   --spacing-cabecera: var(--alto-cabecera);
@@ -665,17 +660,46 @@
  * Va en CSS y no como imagen: pesa cero, se adapta a cualquier tamaño de
  * pantalla y cambia de color solo si algún día cambia la paleta.
  */
-@utility cielo-estrellado {
-  background-image:
-    radial-gradient(circle at 18% 24%, var(--color-estrella-1) 1.3px, transparent 0),
-    radial-gradient(circle at 64% 12%, var(--color-estrella-2) 1px, transparent 0),
-    radial-gradient(circle at 86% 58%, var(--color-estrella-3) 1.5px, transparent 0),
-    radial-gradient(circle at 34% 76%, var(--color-estrella-4) 1.1px, transparent 0);
-  background-size:
-    250px 220px,
-    180px 200px,
-    300px 270px,
-    220px 250px;
+
+/**
+ * LA NOCHE DE LA PORTADA: de cenit a horizonte, y abajo un resto de bronce que
+ * anuncia el día que viene al bajar. Las estrellas van encima, en su lienzo.
+ */
+@utility fondo-noche {
+  background:
+    radial-gradient(
+      ellipse 140% 45% at 50% 100%,
+      var(--cielo-horizonte-calido),
+      var(--cielo-horizonte-calido-final) 70%
+    ),
+    linear-gradient(
+      to bottom,
+      var(--cielo-noche-cenit),
+      var(--cielo-noche-medio) 55%,
+      var(--cielo-noche-horizonte)
+    );
+}
+
+/**
+ * EL VELO DEL ESCENARIO DE LA HISTORIA EN UN MÓVIL: los hitos pasan por debajo
+ * de la ventana al cielo, así que lo que pasa detrás se desenfoca; sin color
+ * propio —deja ver el tinte de la hora— y desvaneciéndose hacia abajo en vez de
+ * acabar en un borde: un rectángulo claro alrededor de un círculo de noche se
+ * leía como una caja, no como un cielo.
+ */
+@utility velo-escenario {
+  backdrop-filter: blur(var(--desenfoque-cabecera));
+  mask-image: linear-gradient(to bottom, var(--mascara-llena) 82%, transparent);
+}
+
+/** La noche entera, sin horizonte: la cuenta atrás y el final. */
+@utility fondo-noche-alta {
+  background: linear-gradient(
+    to bottom,
+    var(--cielo-noche-cenit),
+    var(--cielo-noche-medio) 60%,
+    var(--cielo-noche-horizonte)
+  );
 }
 
 /**
@@ -749,19 +773,6 @@
   background: radial-gradient(closest-side, var(--sol), var(--sol-final));
   height: var(--lado-sol);
   width: var(--lado-sol);
-}
-
-/**
- * LA ESTRELLA FUGAZ DEL FINAL: un trazo de luz de un píxel, brillante en la
- * cabeza y apagándose hacia la cola, colocado arriba a la derecha del cielo.
- * Cuándo cruza lo dice el scroll (`motion.css`).
- */
-@utility estela-fugaz {
-  background: linear-gradient(to right, var(--estela-fugaz), var(--estela-fugaz-final));
-  height: var(--grosor-filete);
-  right: var(--fugaz-derecha);
-  top: var(--fugaz-arriba);
-  width: var(--largo-estrella-fugaz);
 }
 
 /* Una sección hundida que deja ver el cielo: un velo en vez de un gris opaco. */

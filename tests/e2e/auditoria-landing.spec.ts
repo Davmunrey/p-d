@@ -13,31 +13,6 @@ import copy from "../../content/copy.es.json";
 const menu = (page: import("@playwright/test").Page) =>
   page.getByRole("navigation", { name: copy.navegacion.etiquetaPrincipal });
 
-test.describe("«Confirmar» en la barra", () => {
-  test("en el móvil se ve entero sin deslizar la barra", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
-
-    const confirmar = menu(page).getByRole("link", { name: copy.navegacion.secciones.rsvp });
-    await expect(confirmar).toBeVisible();
-    const caja = (await confirmar.boundingBox())!;
-    expect(caja.x).toBeGreaterThanOrEqual(0);
-    expect(caja.x + caja.width).toBeLessThanOrEqual(390);
-  });
-
-  test("no se deshace en el degradado del final de la tira", async ({ page }) => {
-    await page.goto("/");
-    const confirmar = menu(page).getByRole("link", { name: copy.navegacion.secciones.rsvp });
-    // El degradado vive en el contenedor de la tira; el botón, fuera de él.
-    await expect(
-      confirmar.locator("xpath=ancestor::*[contains(@class,'desvanecer-final')]"),
-    ).toHaveCount(0);
-    // Y sigue siendo el último enlace del menú.
-    const rotulos = (await menu(page).getByRole("link").allTextContents()).map((r) => r.trim());
-    expect(rotulos.at(-1)).toBe(copy.navegacion.secciones.rsvp);
-  });
-});
-
 test.describe("el degradado del final de la tira", () => {
   const tira = (page: import("@playwright/test").Page) => menu(page).locator("ul");
   const degradado = (page: import("@playwright/test").Page) =>

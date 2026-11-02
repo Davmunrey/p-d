@@ -250,9 +250,20 @@
   --sol: var(--color-sol);
   --sol-final: var(--color-sol-0);
 
-  /* La estela de la estrella fugaz del final: nieve que se apaga. */
-  --estela-fugaz: var(--color-nieve-100);
-  --estela-fugaz-final: var(--color-velo-nieve-0);
+  /* Una máscara sólo mira el alfa: el color lleno de donde se ve entero. */
+  --mascara-llena: var(--color-negro);
+
+  /* La noche estrellada (ver primitivos): lo que lee el lienzo del cielo. */
+  --cielo-noche-cenit: var(--color-marino-950);
+  --cielo-noche-medio: var(--color-marino-850);
+  --cielo-noche-horizonte: var(--color-marino-700);
+  --cielo-horizonte-calido: var(--color-horizonte-noche);
+  --cielo-horizonte-calido-final: var(--color-horizonte-noche-0);
+  --cielo-estrella: var(--color-nieve-100);
+  --cielo-estrella-calida: var(--color-bronce-200);
+  --cielo-via-lactea: var(--color-via-lactea);
+  --cielo-via-lactea-final: var(--color-via-lactea-0);
+  --cielo-fugaz: var(--color-nieve-50);
 
   /* Una sección hundida sobre el cielo: un velo, no un gris opaco, para que
      el tinte de la hora se siga viendo debajo. */
@@ -427,19 +438,12 @@
   --alto-barra-muestra: var(--size-barra-muestra);
   --ancho-ficha-catalogo: var(--size-ficha-catalogo);
   --lado-constelacion: var(--size-constelacion);
-  --lado-constelacion-portada: var(--size-constelacion-portada);
   --lado-constelacion-historia: var(--size-constelacion-historia);
   --alto-escenario-historia: var(--size-escenario-historia);
   --alto-escenario-historia-movil: var(--size-escenario-historia-movil);
   --alto-hito-escena: var(--size-hito-escena);
   --alto-hito-escena-movil: var(--size-hito-escena-movil);
-  --ancho-lira-final: var(--size-lira-final);
-  --largo-estrella-fugaz: var(--size-estrella-fugaz);
-  --fugaz-x: var(--space-fugaz-x);
-  --fugaz-y: var(--space-fugaz-y);
-  --fugaz-arriba: var(--space-fugaz-arriba);
-  --fugaz-derecha: var(--space-fugaz-derecha);
-  --angulo-fugaz: var(--angle-fugaz);
+  --lado-vuestra-estrella: var(--size-vuestra-estrella);
   --lado-sol: var(--size-sol);
   --sol-salida-x: var(--space-sol-salida-x);
   --sol-salida-y: var(--space-sol-salida-y);
@@ -449,8 +453,6 @@
   --sol-ocaso-y: var(--space-sol-ocaso-y);
   --holgura-mascara: var(--space-holgura-mascara);
   --recorrido-linea: var(--space-recorrido-linea);
-  --salida-portada: var(--space-salida-portada);
-  --aire-constelacion: var(--inset-aire-constelacion);
   --ancho-columna-minima: var(--size-columna-minima);
   --ancho-entradilla: var(--size-entradilla);
   --alto-foto-portada: var(--size-foto-portada);
@@ -524,8 +526,6 @@
   --transicion-fundido-portada: var(--duration-slower) var(--ease-salida);
   --transicion-escena: var(--duration-escena) var(--ease-salida);
   --transicion-muelle: var(--duration-medium) var(--ease-muelle);
-  --periodo-deriva: var(--duration-deriva);
-  --periodo-titilar: var(--duration-titilar);
   --periodo-pista: var(--duration-pista);
   --retardo-portada-1: var(--delay-1);
   --retardo-portada-2: var(--delay-2);
@@ -536,26 +536,16 @@
   --retardo-portada-7: var(--delay-7);
 
   /* La constelación de la portada y la «y» que se escribe (ver primitivos). */
-  --pausa-anillo: var(--delay-anillo);
-  --pausa-estrellas: var(--delay-estrellas);
-  --pausa-trazos: var(--delay-trazos);
-  --paso-constelacion: var(--step-constelacion);
-  --pausa-titilar: var(--delay-titilar);
-  --transicion-trazo: var(--duration-trazo) var(--ease-salida);
-  --transicion-anillo: var(--duration-anillo) var(--ease-suave);
   --pausa-escritura: var(--delay-escritura);
   --transicion-linea: var(--duration-linea) var(--ease-salida);
   --duracion-cambio-pagina: var(--duration-cambio-pagina);
+  --transicion-cielo: var(--duration-cielo) var(--ease-suave);
+  --transicion-sol: var(--duration-sol) var(--ease-suave);
   --escala-estrella-dormida: var(--scale-estrella-dormida);
-  --escala-destello: var(--scale-destello);
   --opacidad-estrella-dormida: var(--opacity-estrella-dormida);
-  --opacidad-destello: var(--opacity-destello);
   --opacidad-destello-final: var(--opacity-destello-final);
   --escala-latido-estrella: var(--scale-latido-estrella);
   --opacidad-latido-estrella: var(--opacity-latido-estrella);
-  --guion-pendiente: var(--dash-pendiente);
-  --pausa-vuestra-estrella: var(--delay-vuestra-estrella);
-  --pausa-trazo-vuestra: var(--delay-trazo-vuestra);
   --transicion-destello: var(--duration-destello) var(--ease-salida);
   --transicion-escritura: var(--duration-escritura) var(--ease-suave);
 
@@ -909,6 +899,9 @@
   --borde: var(--color-marino-600);
   --borde-fuerte: var(--color-marino-500);
   --borde-tenue: var(--color-marino-775);
+
+  /* La cabecera cuando pasa por la noche: velo marino en lugar de nieve. */
+  --superficie-cabecera: var(--color-velado-marino);
   --borde-filete: var(--color-marino-600);
 
   /**

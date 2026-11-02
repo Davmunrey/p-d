@@ -405,36 +405,3 @@ export const ESCALA_ESTRELLA_TARJETA = 1.2;
  * coordenadas: una línea más gruesa deja de parecer un mapa del cielo.
  */
 export const GROSOR_TRAZO = 0.7;
-
-/**
- * El anillo que rodea la constelación de la portada: un pelo, como los filetes
- * de la página. Su svg no tiene `viewBox` —cuenta en píxeles de pantalla—
- * porque el anillo crece con la pantalla y un filete que engorda deja de ser
- * un filete. Por eso el radio va en porcentaje del lado: medio punto dentro
- * del borde, para que el trazo no se corte.
- */
-export const GROSOR_ANILLO = 1;
-export const RADIO_ANILLO = "49.5%";
-
-/**
- * El halo de una estrella de «nuestra historia» al encenderse: tres veces su
- * radio. Geometría del dibujo, como el radio de cada estrella.
- */
-export const ESCALA_HALO = 3.2;
-
-/**
- * VUESTRA ESTRELLA: la de los invitados, a la derecha de la Lira. El lienzo
- * de la noche del final es 130 de ancho por 100 de alto —la Lira en su
- * cuadrado de 100 y treinta más para ella—, y la estrella se une a la Lira
- * por la estrella 2, la de su hombro derecho. `[x, y, radio]`, como las de
- * cualquier mapa.
- */
-export const ANCHO_LIENZO_NOCHE = 130;
-export const VUESTRA_ESTRELLA = [116, 30, 1.6] as const;
-export const UNION_CON_VUESTRA_ESTRELLA = 2;
-
-/**
- * El nombre con el que la Lira viaja entre páginas (`<ViewTransition>`): el
- * mismo en la portada, el RSVP y el Save the Date, y uno solo por página.
- */
-export const NOMBRE_TRANSICION_LIRA = "lira";

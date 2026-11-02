@@ -102,9 +102,9 @@ async function conMovimientoReducido(page: Page): Promise<void> {
   test.skip(!activo, "Este navegador no aplica la emulación de prefers-reduced-motion");
 }
 
-const DIBUJO = "#portada [data-constelacion-portada]";
+const CIELO = "#portada [data-cielo-estrellado]";
 
-test.describe("La portada sin foto dibuja la constelación", () => {
+test.describe("La portada sin foto es una noche entera", () => {
   test.skip(!cadena, "Hace falta DATABASE_URL: la portada lee sus fotos de la base real.");
 
   let fotos: string[] = [];
@@ -118,115 +118,59 @@ test.describe("La portada sin foto dibuja la constelación", () => {
   });
 
   /**
-   * CAMINO FELIZ · la Lira ocupa la mitad de la foto y se dibuja en orden:
-   * cada trazo y cada estrella empieza después del anterior, y al acabar el
-   * anillo y los trazos están enteros.
+   * CAMINO FELIZ · el cielo cubre la portada entera, de borde a borde, y el
+   * texto se queda sobre él: ya no hay una constelación suelta en la otra
+   * mitad.
    */
-  test("en escritorio, la Lira se dibuja en la otra mitad de la portada", async ({ page }) => {
+  test("en escritorio, el cielo cubre la portada y el texto va encima", async ({ page }) => {
     await page.setViewportSize(ESCRITORIO);
     await page.goto("/");
 
-    const dibujo = page.locator(DIBUJO);
-    await expect(dibujo).toBeVisible();
-    await expect(dibujo).toHaveAttribute("aria-hidden", "true");
-
-    // A la derecha de los nombres, en la misma fila: es la segunda columna.
-    const nombres = await page.locator("#portada h1").boundingBox();
-    const caja = await dibujo.boundingBox();
-    expect(caja!.x, "la constelación va a la derecha del texto").toBeGreaterThan(
-      nombres!.x + nombres!.width,
-    );
-
-    const animaciones = await dibujo.evaluate((nodo) => {
-      const estilo = (el: Element) => getComputedStyle(el);
-      const trazos = [...nodo.querySelectorAll(".constelacion-dibujada line")];
-      const estrellas = [...nodo.querySelectorAll(".constelacion-dibujada circle")];
-      return {
-        anillo: estilo(nodo.querySelector(".anillo-dibujado")!).animationName,
-        trazos: trazos.map((t) => ({
-          nombre: estilo(t).animationName,
-          retardo: parseFloat(estilo(t).animationDelay),
-          longitud: t.getAttribute("pathLength"),
-        })),
-        estrellas: estrellas.map((e) => ({
-          nombre: estilo(e).animationName,
-          retardo: parseFloat(estilo(e).animationDelay),
-        })),
-      };
-    });
-
-    expect(animaciones.anillo).toBe("dibujar-trazo");
-    expect(animaciones.trazos.length).toBeGreaterThan(1);
-    expect(animaciones.estrellas.length).toBeGreaterThan(1);
-    for (const trazo of animaciones.trazos) {
-      expect(trazo.nombre).toBe("dibujar-trazo");
-      expect(trazo.longitud, "sin pathLength el guion no mide el trazo").toBe("1");
-    }
-    for (const estrella of animaciones.estrellas) {
-      expect(estrella.nombre).toBe("pop, titilar");
-    }
-
-    // En orden: cada pieza empieza después que la anterior, y las estrellas
-    // se encienden antes de que el primer trazo las una.
-    const retardosTrazos = animaciones.trazos.map((t) => t.retardo);
-    const retardosEstrellas = animaciones.estrellas.map((e) => e.retardo);
-    expect(retardosTrazos).toEqual([...retardosTrazos].sort((a, b) => a - b));
-    expect(retardosEstrellas).toEqual([...retardosEstrellas].sort((a, b) => a - b));
-    expect(retardosTrazos[0]).toBeGreaterThan(retardosEstrellas[0]);
-
-    // Y acaba entero: ni el anillo ni un trazo se quedan a medias.
-    await entradaTerminada(page.locator(DIBUJO));
-    const desplazamientos = await dibujo.evaluate((nodo) =>
-      [...nodo.querySelectorAll(".anillo-dibujado, .constelacion-dibujada line")].map((el) =>
-        parseFloat(getComputedStyle(el).strokeDashoffset),
-      ),
-    );
-    expect(new Set(desplazamientos)).toEqual(new Set([0]));
+    const portada = await page.locator("#portada").boundingBox();
+    const cielo = await page.locator(CIELO).boundingBox();
+    expect(cielo!.width).toBeCloseTo(portada!.width, 0);
+    expect(cielo!.height).toBeCloseTo(portada!.height, 0);
+    await expect(page.locator(CIELO)).toHaveAttribute("data-cielo", "vivo");
+    await expect(page.locator("#portada img")).toHaveCount(0);
+    await expect(page.locator("#portada h1")).toBeVisible();
   });
 
   /**
-   * CASO DE ERROR · en un móvil la portada apilada ya llena la pantalla, y la
-   * constelación debajo empujaría el botón de confirmar fuera de ella.
+   * CASO DE ERROR · en un móvil la noche no puede empujar nada fuera de la
+   * pantalla: el botón entra entero en la primera vista.
    */
-  test("en un móvil no se pinta, y el texto se queda solo", async ({ page }) => {
+  test("en un móvil, el botón entra entero en la primera pantalla", async ({ page }) => {
     await page.setViewportSize(MOVIL);
     await page.goto("/");
 
     await expect(page.locator("#portada h1")).toBeVisible();
-    await expect(page.locator(DIBUJO)).toBeHidden();
+    await expect(
+      page.locator("#portada").getByRole("link", { name: copy.portada.verElDia }),
+    ).toBeInViewport({ ratio: 1 });
   });
 
-  /** CASO DE ERROR · con movimiento reducido llega ya dibujada, sin esperar. */
-  test("con movimiento reducido aparece ya dibujada", async ({ page }) => {
+  /** CASO DE ERROR · con movimiento reducido, la noche llega quieta. */
+  test("con movimiento reducido el cielo se pinta una vez y no se mueve", async ({ page }) => {
     await page.setViewportSize(ESCRITORIO);
     await conMovimientoReducido(page);
-
-    await entradaTerminada(page.locator(DIBUJO));
-    const estado = await page.locator(DIBUJO).evaluate((nodo) => ({
-      nombres: [...nodo.querySelectorAll(".anillo-dibujado, .constelacion-dibujada *")].map(
-        (el) => getComputedStyle(el).animationName,
-      ),
-      desplazamientos: [...nodo.querySelectorAll(".anillo-dibujado, line")].map((el) =>
-        parseFloat(getComputedStyle(el).strokeDashoffset),
-      ),
-      cielo: getComputedStyle(nodo.querySelector(".animacion-cielo-claro")!).animationName,
-    }));
-
-    expect(new Set(estado.nombres)).toEqual(new Set(["aparecer"]));
-    expect(new Set(estado.desplazamientos)).toEqual(new Set([0]));
-    expect(estado.cielo).toBe("none");
+    await expect(page.locator(CIELO)).toHaveAttribute("data-cielo", "quieto");
   });
 });
 
 test.describe("El movimiento de la landing", () => {
-  /** CASO DE ERROR · con la foto publicada, la foto ocupa su sitio y esto no se monta. */
-  test("con foto de portada no hay constelación", async ({ page }) => {
+  /** Con la foto publicada, la foto ocupa su mitad y el cielo sigue detrás del texto. */
+  test("con foto de portada, la foto ocupa su mitad y la noche sigue detrás", async ({
+    page,
+  }) => {
     await page.setViewportSize(ESCRITORIO);
     await page.goto("/");
 
     const conFoto = await page.locator("#portada img").count();
     test.skip(conFoto === 0, "La base no tiene foto de portada publicada");
-    await expect(page.locator(DIBUJO)).toHaveCount(0);
+    await expect(page.locator(CIELO)).toHaveCount(1);
+    const nombres = await page.locator("#portada h1").boundingBox();
+    const foto = await page.locator("#portada img").first().boundingBox();
+    expect(foto!.x, "la foto va a la derecha del texto").toBeGreaterThan(nombres!.x);
   });
 
   test("la «y» de la portada se escribe, y sólo la de la portada", async ({ page }) => {

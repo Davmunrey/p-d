@@ -1,13 +1,7 @@
-import { ViewTransition } from "react";
-
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { Constelacion } from "@/components/ui/constelacion";
 import { Conector } from "@/components/ui/tipografia";
-import {
-  CONSTELACION_NOVIOS,
-  ESCALA_ESTRELLA_TARJETA,
-  NOMBRE_TRANSICION_LIRA,
-} from "@/config/constelaciones";
+import { CONSTELACION_NOVIOS, ESCALA_ESTRELLA_TARJETA } from "@/config/constelaciones";
 import { t } from "@/lib/copy";
 
 /**
@@ -63,11 +57,7 @@ export function TarjetaReserva({
 
       <div className="tarjeta-contenido flex h-full w-full flex-col items-center">
         <div className="size-naipe-lira shrink-0">
-          <ViewTransition name={NOMBRE_TRANSICION_LIRA}>
-            <div className="h-full w-full">
-              <Constelacion clave={CONSTELACION_NOVIOS} escala={ESCALA_ESTRELLA_TARJETA} />
-            </div>
-          </ViewTransition>
+          <Constelacion clave={CONSTELACION_NOVIOS} escala={ESCALA_ESTRELLA_TARJETA} />
         </div>
 
         <p className="mt-naipe-hueco-rotulo font-cuerpo peso-cuerpo text-naipe-rotulo leading-titulo-menor uppercase tracking-seccion text-tinta-suave">

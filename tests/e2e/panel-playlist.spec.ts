@@ -92,11 +92,19 @@ test.describe("La playlist del panel", () => {
     page,
     request,
   }) => {
+    // Una canción propia, a la vista en la web: no se depende de lo que otros
+    // tests hayan dejado en la playlist.
+    const texto = `${MARCA} Broma ${Date.now()}`;
+    await conBase(
+      (sql) =>
+        sql`insert into public.canciones_sugeridas (texto, aprobada) values (${texto}, true)`,
+    );
+
     await entrar(page);
     await page.goto(RUTA_PLAYLIST);
 
-    const fila = page.locator("li").filter({ hasText: "(DES) Canción de prueba" }).first();
-    const texto = (await fila.locator("span").first().textContent())!.trim();
+    const fila = page.locator("li").filter({ hasText: texto }).first();
+    await expect(fila).toBeVisible();
 
     // Antes de tocar nada, la canción está en la landing.
     const antes = await request.get("/");
@@ -131,6 +139,8 @@ test.describe("La playlist del panel", () => {
 
     const despues = await request.get("/");
     expect(await despues.text()).toContain(texto);
+
+    await conBase((sql) => sql`delete from public.canciones_sugeridas where texto = ${texto}`);
   });
 
   /**

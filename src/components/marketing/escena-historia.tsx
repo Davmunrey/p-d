@@ -1,48 +1,60 @@
-import Image from "next/image";
-import type { CSSProperties } from "react";
+"use client";
 
+import Image from "next/image";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+
+import { CieloEstrellado } from "@/components/marketing/cielo-estrellado";
 import { Cita, Cuerpo, Etiqueta, Titulo2 } from "@/components/ui/tipografia";
-import { BUCKET_MEDIOS } from "@/config/constants";
 import {
-  CONSTELACION_NOVIOS,
-  constelacionPorClave,
-  ESCALA_HALO,
-  GROSOR_TRAZO,
-} from "@/config/constelaciones";
+  CAMINO_HISTORIA,
+  DENSIDAD_VENTANA_HISTORIA,
+  LINEA_DE_LA_HORA,
+  SEMILLAS_CIELO,
+} from "@/config/cielo";
+import { BUCKET_MEDIOS } from "@/config/constants";
+import { GROSOR_TRAZO } from "@/config/constelaciones";
 import type { HitoHistoria } from "@/lib/bbdd/landing";
+import { caminoDeEstrellas } from "@/lib/camino";
 import { t } from "@/lib/copy";
 
-/** Lado del lienzo de las constelaciones (ver `Constelacion`). */
+/** Lado del lienzo del camino: proporciones en un cuadrado de 100. */
 const LIENZO = 100;
 
-/** El nombre de la línea de tiempo de un hito: `--hito-0`, `--hito-1`… */
-const nombreDeHito = (indice: number) => `--hito-${indice}`;
+/** El degradado del halo. Hay una sola escena por página: el id no choca. */
+const ID_HALO = "halo-del-camino";
 
-/** Una variable CSS en `style`, que React tipa como propiedades conocidas. */
-function variable(nombre: string, valor: string): CSSProperties {
-  return { [nombre]: valor } as CSSProperties;
+const SIN_MOVIMIENTO = "(prefers-reduced-motion: reduce)";
+
+/**
+ * Si la escena puede apagarse para encenderse: en el navegador y con
+ * movimiento. En el servidor no —todo encendido—, y así sin JavaScript la
+ * historia se ve entera.
+ */
+function suscribirMovimiento(avisar: () => void) {
+  const consulta = window.matchMedia(SIN_MOVIMIENTO);
+  consulta.addEventListener("change", avisar);
+  return () => consulta.removeEventListener("change", avisar);
 }
+const conMovimiento = () => !window.matchMedia(SIN_MOVIMIENTO).matches;
+const enElServidor = () => false;
 
 /**
  * «NUESTRA HISTORIA», COMO UNA ESCENA
  *
- * La historia de los novios se cuenta con su constelación. A un lado, fija
- * mientras se baja, la Lira apagada; al otro, los hitos de la base de datos
- * pasando uno a uno. Cada hito que llega enciende su estrella —con un destello
- * que se queda como halo— y el trazo que la une con la anterior se dibuja a
- * continuación. Cuando pasa el último, la Lira está entera y aparece la frase
- * que lo cierra: cada momento fue una estrella, y juntas dibujan la suya.
+ * A un lado, fija mientras se baja, una ventana al cielo de noche; al otro,
+ * los hitos de la base de datos pasando uno a uno. Cada hito, al llegar a
+ * media pantalla, enciende su estrella —un destello que se queda como halo—
+ * y el hilo que la une con la anterior se dibuja. No forman ninguna figura:
+ * es un camino que cruza el cielo, de la primera estrella a la última. Con el
+ * último hito aparece la frase que lo cierra.
  *
- * QUÉ HITO ENCIENDE CADA ESTRELLA. La estrella k la enciende el hito k; si hay
- * menos hitos que estrellas, las que sobran las enciende el último —la Lira
- * siempre se completa—, y si hay más, los que sobran ya no encienden ninguna.
- * Un trazo se dibuja con el hito que enciende la última de sus dos estrellas.
+ * LO ENCIENDE UN `IntersectionObserver`, igual en todos los navegadores, y el
+ * cambio es una transición de CSS (`motion.css`). Una estrella encendida no se
+ * apaga al volver a subir: lo vivido, vivido está.
  *
- * Todo es CSS ligado al scroll (`motion.css`). Sin líneas de tiempo de scroll,
- * o con movimiento reducido, la Lira está entera desde el principio y los
- * hitos se leen como una lista, que es lo que son.
- *
- * El escenario es decoración (`aria-hidden`): para un lector de pantalla la
+ * SIN JAVASCRIPT, O CON MOVIMIENTO REDUCIDO, TODO ESTÁ ENCENDIDO: la escena
+ * sólo se «apaga» para encenderse cuando está viva (`data-escena="viva"`). El
+ * escenario es decoración (`aria-hidden`); para un lector de pantalla la
  * historia es la lista ordenada de hitos y la frase del cierre.
  */
 export function EscenaHistoria({
@@ -52,91 +64,118 @@ export function EscenaHistoria({
   hitos: HitoHistoria[];
   urlBase: string | undefined;
 }) {
-  const lira = constelacionPorClave(CONSTELACION_NOVIOS);
+  const lista = useRef<HTMLOListElement>(null);
+  const viva = useSyncExternalStore(suscribirMovimiento, conMovimiento, enElServidor);
+  const [alcanzado, setAlcanzado] = useState(-1);
+  const camino = caminoDeEstrellas(hitos.length, SEMILLAS_CIELO.historia);
   const ultimo = hitos.length - 1;
-  const hitoDeEstrella = (estrella: number) => Math.min(estrella, ultimo);
-  const ambito = variable("--ambito-hitos", hitos.map((_, i) => nombreDeHito(i)).join(", "));
+
+  useEffect(() => {
+    if (!viva) return;
+    const elementos = [...(lista.current?.children ?? [])];
+    const vigia = new IntersectionObserver(
+      (entradas) => {
+        for (const entrada of entradas) {
+          if (!entrada.isIntersecting) continue;
+          const indice = elementos.indexOf(entrada.target);
+          setAlcanzado((antes) => Math.max(antes, indice));
+        }
+      },
+      { rootMargin: LINEA_DE_LA_HORA },
+    );
+    elementos.forEach((elemento) => vigia.observe(elemento));
+    return () => vigia.disconnect();
+  }, [viva]);
+
+  const encendida = (indice: number) => (indice <= alcanzado ? "" : undefined);
 
   return (
-    <div className="escena-historia mt-bloque grid gap-elemento md:grid-cols-2" style={ambito}>
+    <div
+      data-escena={viva ? "viva" : undefined}
+      className="mt-bloque grid gap-elemento md:grid-cols-2"
+    >
       {/*
         EL ESCENARIO, FIJO MIENTRAS SE BAJA. En escritorio ocupa su columna;
-        en un móvil va arriba, debajo de la barra, velado para que los hitos
-        pasen por debajo sin mezclarse con las estrellas.
+        en un móvil va arriba, debajo de la barra, con un velo que se
+        desvanece hacia abajo para que los hitos pasen por debajo sin
+        mezclarse con las estrellas.
       */}
       <div
         aria-hidden
-        className="sticky top-cabecera flex h-escenario-historia-movil items-center justify-center max-md:velada max-md:capa-lateral md:h-escenario-historia"
+        className="sticky top-cabecera flex h-escenario-historia-movil items-center justify-center max-md:velo-escenario max-md:capa-lateral md:h-escenario-historia"
       >
-        <div className="relative size-constelacion-historia">
-          <div className="absolute inset-0 overflow-hidden rounded-full">
-            <div className="animacion-cielo-claro cielo-claro pointer-events-none absolute -inset-sangrado-cielo" />
-          </div>
-
-          {lira ? (
-            <div className="absolute inset-aire-constelacion">
-              <svg
-                viewBox={`0 0 ${LIENZO} ${LIENZO}`}
-                className="block h-full w-full overflow-visible"
-                fill="none"
-              >
-                {lira.lineas.map(([desde, hasta]) => {
-                  const [x1, y1] = lira.estrellas[desde];
-                  const [x2, y2] = lira.estrellas[hasta];
-                  const hito = Math.max(hitoDeEstrella(desde), hitoDeEstrella(hasta));
-                  return (
-                    <line
-                      key={`${desde}-${hasta}`}
-                      x1={x1}
-                      y1={y1}
-                      x2={x2}
-                      y2={y2}
-                      pathLength={1}
-                      className="trazo-historia stroke-constelacion-trazo"
-                      strokeWidth={GROSOR_TRAZO}
-                      strokeLinecap="round"
-                      style={variable("--linea-de-tiempo", nombreDeHito(hito))}
-                    />
-                  );
-                })}
-
-                {lira.estrellas.map(([x, y, radio], estrella) => {
-                  const tiempo = variable(
-                    "--linea-de-tiempo",
-                    nombreDeHito(hitoDeEstrella(estrella)),
-                  );
-                  return (
-                    <g key={`${x}-${y}`}>
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r={radio * ESCALA_HALO}
-                        className="halo-historia fill-acento"
-                        style={tiempo}
-                      />
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r={radio}
-                        className="estrella-historia fill-constelacion-estrella"
-                        style={tiempo}
-                      />
-                    </g>
-                  );
-                })}
-              </svg>
-            </div>
-          ) : null}
+        {/*
+          UNA VENTANA A LA NOCHE: es de día en la página, y la historia se
+          cuenta con estrellas. Bloque inverso para que las estrellas y el hilo
+          tomen los colores de noche de la marca.
+        */}
+        <div
+          data-seccion="inversa"
+          className="fondo-noche-alta relative isolate size-constelacion-historia overflow-hidden rounded-full"
+        >
+          <CieloEstrellado
+            semilla={SEMILLAS_CIELO.historia}
+            densidad={DENSIDAD_VENTANA_HISTORIA}
+            className="capa-cielo absolute inset-0 size-full"
+          />
+          <svg
+            viewBox={`0 0 ${LIENZO} ${LIENZO}`}
+            className="absolute inset-0 block size-full overflow-visible text-acento"
+            fill="none"
+          >
+            {/* El halo es luz que se apaga hacia fuera, del color del acento. */}
+            <defs>
+              <radialGradient id={ID_HALO}>
+                <stop offset="0" stopColor="currentColor" />
+                <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+            {camino.slice(1).map(([x2, y2], i) => {
+              const [x1, y1] = camino[i];
+              return (
+                <line
+                  key={`hilo-${i}`}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  pathLength={1}
+                  data-encendida={encendida(i + 1)}
+                  className="trazo-del-camino stroke-constelacion-trazo"
+                  strokeWidth={GROSOR_TRAZO}
+                  strokeLinecap="round"
+                />
+              );
+            })}
+            {camino.map(([x, y], i) => (
+              <g key={`estrella-${i}`}>
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={CAMINO_HISTORIA.radio * CAMINO_HISTORIA.halo}
+                  data-encendida={encendida(i)}
+                  fill={`url(#${ID_HALO})`}
+                  className="halo-del-camino"
+                />
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={CAMINO_HISTORIA.radio}
+                  data-encendida={encendida(i)}
+                  className="estrella-del-camino fill-constelacion-estrella"
+                />
+              </g>
+            ))}
+          </svg>
         </div>
       </div>
 
       <div>
-        <ol>
-          {hitos.map((hito, indice) => (
+        <ol ref={lista}>
+          {hitos.map((hito) => (
             <li
               key={hito.id}
-              className="hito-en-escena flex min-h-hito-escena-movil items-center md:min-h-hito-escena"
-              style={variable("--nombre-hito", nombreDeHito(indice))}
+              className="flex min-h-hito-escena-movil items-center md:min-h-hito-escena"
             >
               <div className="animacion-subir-al-ver w-full">
                 {hito.foto && urlBase ? (
@@ -167,11 +206,8 @@ export function EscenaHistoria({
           ))}
         </ol>
 
-        {/* El cierre llega con el último hito, cuando la Lira ya está entera. */}
-        <div
-          className="cierre-historia pb-elemento"
-          style={variable("--linea-de-tiempo", nombreDeHito(ultimo))}
-        >
+        {/* El cierre llega con el último hito, cuando el camino está entero. */}
+        <div className="cierre-historia pb-elemento" data-encendida={encendida(ultimo)}>
           <Cita>{t("historia.cierre")}</Cita>
         </div>
       </div>

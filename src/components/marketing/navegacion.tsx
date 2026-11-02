@@ -34,6 +34,7 @@ export function Navegacion({
   marca,
   nombreNovia,
   nombreNovio,
+  empiezaDeNoche = false,
 }: {
   /** A dónde lleva el monograma: la portada, o el contenido si no hay portada. */
   inicio: string;
@@ -43,10 +44,13 @@ export function Navegacion({
   marca: string;
   nombreNovia: string;
   nombreNovio: string;
+  /** Si lo primero de la página es de noche: así no destella clara al cargar. */
+  empiezaDeNoche?: boolean;
 }) {
   const cabecera = useRef<HTMLElement>(null);
   const tira = useRef<HTMLUListElement>(null);
   const anclaActiva = useAnclaVisible(enlaces, cabecera);
+  const sobreLaNoche = useSobreLaNoche(cabecera, empiezaDeNoche);
   const quedaTira = useQuedaPorLaDerecha(tira);
 
   // La sección activa se trae a la vista dentro de la tira: si no, en móvil el
@@ -71,10 +75,15 @@ export function Navegacion({
     TRANSPARENTE ARRIBA, VELADA AL BAJAR. `cabecera-compacta` la funde de
     transparente a velada en los primeros 90 px de scroll, sin JavaScript;
     donde el navegador no sepa de `scroll()`, se queda `velada` de siempre.
+
+    Y DE NOCHE CUANDO PASA POR LA NOCHE. Sobre la portada, la cuenta atrás o el
+    final, la cabecera se vuelve un bloque inverso —tinta clara y velo marino—
+    con los mismos componentes: el monograma oscuro sobre el cielo no se veía.
   */
   return (
     <header
       ref={cabecera}
+      data-seccion={sobreLaNoche ? "inversa" : undefined}
       className="velada cabecera-compacta capa-cabecera fixed inset-x-0 top-0 border-b border-borde-tenue"
     >
       <div className="mx-auto flex h-cabecera max-w-contenido items-center gap-interno px-margen-cabecera">
@@ -229,6 +238,52 @@ function useQuedaPorLaDerecha(tira: React.RefObject<HTMLElement | null>): boolea
  * Sin `IntersectionObserver` —o antes de hidratar— no hay sección marcada, que
  * es un estado correcto y no un fallo: los enlaces funcionan igual.
  */
+/**
+ * Si la cabecera está sobre un bloque de noche (`[data-seccion="inversa"]`).
+ *
+ * Se mide la franja de la cabecera contra las secciones inversas al hacer
+ * scroll, una vez por fotograma como mucho: son tres o cuatro rectángulos, y
+ * un `IntersectionObserver` necesitaría un margen calculado con el alto de la
+ * ventana que cambia al girar el móvil.
+ */
+function useSobreLaNoche(
+  cabecera: React.RefObject<HTMLElement | null>,
+  empiezaDeNoche: boolean,
+): boolean {
+  const [sobre, setSobre] = useState(empiezaDeNoche);
+
+  useEffect(() => {
+    let pedido = 0;
+    const medir = () => {
+      pedido = 0;
+      const franja = cabecera.current?.getBoundingClientRect();
+      if (!franja) return;
+      const mitad = franja.top + franja.height / 2;
+      const noches = document.querySelectorAll('main [data-seccion="inversa"]');
+      setSobre(
+        [...noches].some((noche) => {
+          const caja = noche.getBoundingClientRect();
+          return caja.top <= mitad && caja.bottom >= mitad;
+        }),
+      );
+    };
+    const pedir = () => {
+      if (!pedido) pedido = requestAnimationFrame(medir);
+    };
+
+    medir();
+    window.addEventListener("scroll", pedir, { passive: true });
+    window.addEventListener("resize", pedir);
+    return () => {
+      cancelAnimationFrame(pedido);
+      window.removeEventListener("scroll", pedir);
+      window.removeEventListener("resize", pedir);
+    };
+  }, [cabecera]);
+
+  return sobre;
+}
+
 function useAnclaVisible(
   enlaces: EnlaceSeccion[],
   cabecera: React.RefObject<HTMLElement | null>,
