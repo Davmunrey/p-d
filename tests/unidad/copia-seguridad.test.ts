@@ -219,7 +219,7 @@ describe.skipIf(!cadena)("La copia de seguridad", () => {
           privada: boolean;
         }[]
       >`
-          select has_function_privilege('anon', 'public.obtener_invitacion(text)', 'execute')    as rsvp,
+          select has_function_privilege('anon', 'public.nombre_de_invitacion(text)', 'execute')  as rsvp,
                  has_table_privilege('anon', 'public.configuracion_boda', 'select')            as portada,
                  has_table_privilege('authenticated', 'public.invitados', 'select')            as panel,
                  has_table_privilege('anon', 'public.invitados', 'select')                     as cerrado,
