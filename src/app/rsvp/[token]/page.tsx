@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import { ViewTransition } from "react";
 
+import { LiraConVuestraEstrella } from "@/components/marketing/lira-con-vuestra-estrella";
 import { BotonEnlace } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { CampoSeleccion, CampoTexto, CampoTextoLargo } from "@/components/ui/campo";
 import { Constelacion } from "@/components/ui/constelacion";
-import { Cuerpo, Etiqueta, Titulo1, Titulo2 } from "@/components/ui/tipografia";
-import { CONSTELACION_NOVIOS } from "@/config/constelaciones";
+import { Cita, Cuerpo, Etiqueta, Titulo1, Titulo2 } from "@/components/ui/tipografia";
+import { CONSTELACION_NOVIOS, NOMBRE_TRANSICION_LIRA } from "@/config/constelaciones";
 import {
   IDIOMA,
   LARGOS_DE_CAMPO,
@@ -119,7 +121,7 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
   const enviado = consulta[MARCA_RSVP_ENVIADO.parametro] === MARCA_RSVP_ENVIADO.valor;
   if (enviado || (yaRespondido && !consulta.paso)) {
     return (
-      <Marco>
+      <Marco vuestraEstrella={invitacion.personas.some((p) => p.estado === "confirmado")}>
         <RespuestaEnviada
           personas={invitacion.personas}
           token={token}
@@ -296,16 +298,38 @@ export default async function PaginaRsvp({ params, searchParams }: Parametros) {
 /* ------------------------------------------------------------------------ */
 
 /** Marco común: fondo marino, ancho de lectura y la constelación de la marca. */
-function Marco({ children }: { children: React.ReactNode }) {
+function Marco({
+  children,
+  vuestraEstrella = false,
+}: {
+  children: React.ReactNode;
+  /**
+   * Con alguien que viene, la Lira lleva al lado la estrella de los
+   * invitados, encendida: es el final de la historia que cuenta la landing,
+   * donde esa estrella esperaba hueca.
+   */
+  vuestraEstrella?: boolean;
+}) {
   return (
     <main
       data-seccion="inversa"
       className="grid min-h-dvh place-items-center px-margen py-seccion-fluida"
     >
       <div className="mx-auto w-full max-w-estrecho">
-        <div className="mx-auto mb-elemento hidden size-constelacion pantalla-alta:block">
-          <Constelacion clave={CONSTELACION_NOVIOS} />
-        </div>
+        {vuestraEstrella ? (
+          <div className="mx-auto mb-elemento hidden w-lira-final pantalla-alta:block">
+            <LiraConVuestraEstrella estado="encendida" />
+          </div>
+        ) : (
+          <div className="mx-auto mb-elemento hidden size-constelacion pantalla-alta:block">
+            {/* La misma Lira que en la portada: viaja al volver a la web. */}
+            <ViewTransition name={NOMBRE_TRANSICION_LIRA}>
+              <div className="h-full w-full">
+                <Constelacion clave={CONSTELACION_NOVIOS} />
+              </div>
+            </ViewTransition>
+          </div>
+        )}
         {children}
       </div>
     </main>
@@ -648,6 +672,8 @@ function RespuestaEnviada({
       <Cuerpo className="mx-auto mt-elemento max-w-texto">
         {alguienViene ? t("rsvp.graciasSiTexto") : t("rsvp.graciasNoTexto")}
       </Cuerpo>
+      {/* El final de la historia de la landing: la estrella que faltaba. */}
+      {alguienViene ? <Cita className="mt-elemento">{t("rsvp.estrellaEncendida")}</Cita> : null}
 
       <dl className="mx-auto mt-bloque grid w-fit max-w-texto gap-pila text-left">
         {vienen.length > 0 ? (

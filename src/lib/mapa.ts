@@ -1,4 +1,4 @@
-import { MAPA_MARGEN_GRADOS, URL_MAPA_EMBEBIDO } from "@/config/constants";
+import { MAPA_MARGEN_GRADOS, URL_MAPA_EMBEBIDO, URL_MAPA_EXTERNO } from "@/config/constants";
 
 /**
  * BODA-26 · LOS DOS ENLACES DEL MAPA
@@ -23,7 +23,7 @@ import { MAPA_MARGEN_GRADOS, URL_MAPA_EMBEBIDO } from "@/config/constants";
  */
 export function enlaceMapaExterno(latitud: number, longitud: number): string {
   const punto = `${latitud},${longitud}`;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(punto)}`;
+  return `${URL_MAPA_EXTERNO}?api=1&query=${encodeURIComponent(punto)}`;
 }
 
 /**

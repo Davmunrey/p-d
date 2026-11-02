@@ -174,6 +174,14 @@ export const MAPA_MARGEN_GRADOS = 0.012;
 export const URL_MAPA_EMBEBIDO = "https://www.openstreetmap.org/export/embed.html";
 
 /**
+ * El enlace universal de Google Maps que abre «cómo llegar» fuera de la
+ * página: la aplicación del móvil si está instalada, el navegador si no. Con
+ * nombre y aquí, junto al mapa embebido, en vez de escrito dentro de la
+ * función que lo compone.
+ */
+export const URL_MAPA_EXTERNO = "https://www.google.com/maps/search/";
+
+/**
  * Adonde se manda una invitación o un recordatorio: `wa.me` sin número abre el
  * selector de contactos con el mensaje escrito. Va aquí y no repetido en cada
  * acción porque también lo necesita la CSP —sin él en `form-action`, el salto

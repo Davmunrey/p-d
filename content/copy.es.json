@@ -71,7 +71,8 @@
   },
   "historia": {
     "etiqueta": "Cómo llegamos hasta aquí",
-    "titulo": "Nuestra historia"
+    "titulo": "Nuestra historia",
+    "cierre": "Cada momento fue una estrella. Juntas dibujan la nuestra."
   },
   "galeria": {
     "titulo": "Nuestras fotos",
@@ -150,6 +151,8 @@
   },
   "rsvp": {
     "titulo": "Confirmad asistencia",
+    "faltaVuestraEstrella": "Sólo falta vuestra estrella.",
+    "estrellaEncendida": "Vuestra estrella ya brilla en nuestro cielo.",
     "nombre": "Nombre y apellidos",
     "contacto": "Email o teléfono",
     "contactoAyuda": "para avisaros de cambios",

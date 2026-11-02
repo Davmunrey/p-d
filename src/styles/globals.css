@@ -348,6 +348,18 @@
   --spacing-constelacion-portada: var(--lado-constelacion-portada);
   --spacing-aire-constelacion: var(--aire-constelacion);
 
+  /* La escena de «nuestra historia»: `size-constelacion-historia`,
+     `h-escenario-historia`, `min-h-hito-escena` y sus versiones de móvil. */
+  --spacing-constelacion-historia: var(--lado-constelacion-historia);
+  --spacing-escenario-historia: var(--alto-escenario-historia);
+  --spacing-escenario-historia-movil: var(--alto-escenario-historia-movil);
+  --spacing-hito-escena: var(--alto-hito-escena);
+  --spacing-hito-escena-movil: var(--alto-hito-escena-movil);
+
+  /* La Lira del final (`w-lira-final`) y el trazo de la estrella fugaz. */
+  --spacing-lira-final: var(--ancho-lira-final);
+  --spacing-estrella-fugaz: var(--largo-estrella-fugaz);
+
   /* Un solo token da `h-cabecera`, `pt-cabecera` y `scroll-mt-cabecera`. */
   --spacing-cabecera: var(--alto-cabecera);
 
@@ -698,6 +710,64 @@
  * capa que usa la web pública. `z-[60]` está prohibido por ESLint, y con razón:
  * es el número mágico que acaba compitiendo con otro número mágico.
  */
+
+/**
+ * EL CIELO DEL DÍA: las capas de luz detrás de la landing. Cada una es un
+ * tinte con su brillo; cuál se ve en cada momento lo decide el scroll
+ * (`motion.css`). Detrás de todo (`capa-cielo`) y sin recibir el ratón.
+ */
+@utility capa-cielo {
+  z-index: var(--capa-cielo);
+}
+
+@utility luz-alba {
+  background:
+    radial-gradient(
+      120% 70% at 18% 0%,
+      var(--cielo-alba-brillo),
+      var(--cielo-alba-brillo-final)
+    ),
+    var(--cielo-alba);
+}
+
+@utility luz-tarde {
+  background-color: var(--cielo-tarde);
+}
+
+@utility luz-ocaso {
+  background:
+    radial-gradient(
+      130% 80% at 85% 100%,
+      var(--cielo-ocaso-brillo),
+      var(--cielo-ocaso-brillo-final)
+    ),
+    var(--cielo-ocaso);
+}
+
+@utility luz-sol {
+  background: radial-gradient(closest-side, var(--sol), var(--sol-final));
+  height: var(--lado-sol);
+  width: var(--lado-sol);
+}
+
+/**
+ * LA ESTRELLA FUGAZ DEL FINAL: un trazo de luz de un píxel, brillante en la
+ * cabeza y apagándose hacia la cola, colocado arriba a la derecha del cielo.
+ * Cuándo cruza lo dice el scroll (`motion.css`).
+ */
+@utility estela-fugaz {
+  background: linear-gradient(to right, var(--estela-fugaz), var(--estela-fugaz-final));
+  height: var(--grosor-filete);
+  right: var(--fugaz-derecha);
+  top: var(--fugaz-arriba);
+  width: var(--largo-estrella-fugaz);
+}
+
+/* Una sección hundida que deja ver el cielo: un velo en vez de un gris opaco. */
+@utility velo-hundido {
+  background-color: var(--velo-hundido);
+}
+
 @utility capa-cabecera {
   z-index: var(--capa-cabecera);
 }

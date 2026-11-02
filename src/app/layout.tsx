@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 
 import { Analitica } from "@/components/analitica";
 import { VARIABLES_DE_FUENTES } from "@/fuentes/fuentes";
@@ -42,7 +42,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang={IDIOMA} className={VARIABLES_DE_FUENTES}>
       <body>
-        {children}
+        {/* Cada cambio de página, un fundido (ver `motion.css`). */}
+        <ViewTransition>{children}</ViewTransition>
         {/*
           LA ANALÍTICA VA AQUÍ Y NO EN LA LANDING, aunque sólo mida la landing y
           el embudo: es el único sitio que envuelve también al RSVP, que es la

@@ -1,5 +1,12 @@
+import { ViewTransition } from "react";
+
 import { Constelacion } from "@/components/ui/constelacion";
-import { CONSTELACION_NOVIOS, GROSOR_ANILLO, RADIO_ANILLO } from "@/config/constelaciones";
+import {
+  CONSTELACION_NOVIOS,
+  GROSOR_ANILLO,
+  NOMBRE_TRANSICION_LIRA,
+  RADIO_ANILLO,
+} from "@/config/constelaciones";
 
 /** El centro del anillo, en porcentaje del lado. */
 const CENTRO = "50%";
@@ -53,9 +60,12 @@ export function ConstelacionPortada() {
           />
         </svg>
 
-        <div className="absolute inset-aire-constelacion">
-          <Constelacion clave={CONSTELACION_NOVIOS} animada />
-        </div>
+        {/* La misma Lira que en el RSVP y el Save the Date: viaja entre páginas. */}
+        <ViewTransition name={NOMBRE_TRANSICION_LIRA}>
+          <div className="absolute inset-aire-constelacion">
+            <Constelacion clave={CONSTELACION_NOVIOS} animada />
+          </div>
+        </ViewTransition>
       </div>
     </div>
   );

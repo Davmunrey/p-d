@@ -151,7 +151,19 @@ export const GRUPOS_COLOR = [
       "velo",
       "velo-suave",
       "velo-fuerte",
-      "velo-foto"
+      "velo-foto",
+      "cielo-alba",
+      "cielo-alba-brillo",
+      "cielo-alba-brillo-final",
+      "cielo-tarde",
+      "cielo-ocaso",
+      "cielo-ocaso-brillo",
+      "cielo-ocaso-brillo-final",
+      "sol",
+      "sol-final",
+      "estela-fugaz",
+      "estela-fugaz-final",
+      "velo-hundido"
     ]
   },
   {

@@ -7,6 +7,9 @@ import { HuecoFoto } from "@/components/marketing/hueco-foto";
 import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { VideoDeFondo } from "@/components/marketing/video-de-fondo";
+import { CieloDelDia } from "@/components/marketing/cielo-del-dia";
+import { EscenaHistoria } from "@/components/marketing/escena-historia";
+import { LiraConVuestraEstrella } from "@/components/marketing/lira-con-vuestra-estrella";
 import { ConstelacionPortada } from "@/components/marketing/constelacion-portada";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { BotonEnlace } from "@/components/ui/boton";
@@ -354,6 +357,9 @@ export default async function PaginaInicio() {
       */}
       <div aria-hidden="true" className="barra-lectura" />
 
+      {/* El fondo que pasa de la mañana a la noche mientras se baja. */}
+      <CieloDelDia />
+
       <Navegacion
         inicio={inicio}
         enlaces={enlaces}
@@ -511,7 +517,7 @@ function Portada({
         hueco de dentro tiene su token porque cada uno mide distinto.
       */}
       <div
-        className={`flex w-full flex-col justify-center px-portada-lado pt-portada-arriba pb-portada-abajo ${
+        className={`salida-portada flex w-full flex-col justify-center px-portada-lado pt-portada-arriba pb-portada-abajo ${
           foto ? "" : "mx-auto max-w-contenido"
         }`}
       >
@@ -526,12 +532,27 @@ function Portada({
           (1,6 s), como en la entrega: siete elementos que llegan en orden de
           lectura en vez de todos de golpe.
         */}
+        {/*
+          LOS NOMBRES EMERGEN de detrás de una línea invisible, cada uno con la
+          pausa de su línea: es el primer plano de la película, y entra como
+          un título, no como un párrafo.
+        */}
         <Display className="animacion-subir retardo-2 mt-nombres">
-          {configuracion.nombreNovia}
+          <span className="mascara-linea">
+            <span className="linea-que-emerge pausa-nombre-novia">
+              {configuracion.nombreNovia}
+            </span>
+          </span>
         </Display>
         <div className="animacion-subir retardo-3 flex flex-wrap items-baseline gap-conector">
           <Conector escrita>{t("portada.conjuncion")}</Conector>
-          <Display como="p">{configuracion.nombreNovio}</Display>
+          <Display como="p">
+            <span className="mascara-linea">
+              <span className="linea-que-emerge pausa-nombre-novio">
+                {configuracion.nombreNovio}
+              </span>
+            </span>
+          </Display>
         </div>
 
         {/*
@@ -828,32 +849,7 @@ function Historia({ hitos, urlBase }: { hitos: HitoHistoria[]; urlBase: string |
       titulo={t("historia.titulo")}
       realzada
     >
-      <ol className="escalonado grid gap-bloque sm:grid-cols-3">
-        {hitos.map((hito) => (
-          <li key={hito.id} className="animacion-subir-al-ver">
-            {hito.foto && urlBase ? (
-              <div className="relative mb-elemento aspect-hito overflow-hidden rounded-imagen bg-superficie-hundida">
-                <Image
-                  src={`${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${hito.foto.ruta}`}
-                  alt={hito.foto.textoAlternativo}
-                  fill
-                  // Tres columnas en escritorio, una en móvil. Sin esto el
-                  // navegador se descarga la versión de pantalla completa para
-                  // pintarla a un tercio de ancho.
-                  sizes="(min-width: 40rem) 33vw, 100vw"
-                  className="object-cover"
-                  placeholder={hito.foto.marcadorBorroso ? "blur" : "empty"}
-                  blurDataURL={hito.foto.marcadorBorroso ?? undefined}
-                />
-              </div>
-            ) : null}
-
-            {hito.fechaTexto ? <Etiqueta>{hito.fechaTexto}</Etiqueta> : null}
-            <Titulo3 className="mt-pila">{hito.titulo}</Titulo3>
-            {hito.descripcion ? <Cuerpo className="mt-linea">{hito.descripcion}</Cuerpo> : null}
-          </li>
-        ))}
-      </ol>
+      <EscenaHistoria hitos={hitos} urlBase={urlBase} />
     </Bloque>
   );
 }
@@ -1404,10 +1400,27 @@ function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
     <section
       id={anclaDe("rsvp")}
       data-seccion="inversa"
-      className="px-margen py-seccion-fluida text-center"
+      className="noche-final relative overflow-hidden px-margen py-seccion-fluida text-center"
       aria-labelledby={idTitulo}
     >
-      <div className="mx-auto max-w-estrecho">
+      {/*
+        LA NOCHE DEL FINAL. El día que ha ido pasando al bajar acaba aquí: el
+        cielo de la cuenta atrás, una estrella fugaz que lo cruza al llegar, y
+        la Lira dibujándose con una estrella más a su lado, hueca, que late.
+        Es la de los invitados, y es lo único que falta.
+      */}
+      <div
+        aria-hidden
+        className="animacion-cielo cielo-estrellado pointer-events-none absolute -inset-bloque"
+      />
+      <div aria-hidden className="estrella-fugaz estela-fugaz pointer-events-none absolute" />
+
+      <div className="relative mx-auto max-w-estrecho">
+        <div className="mx-auto mb-elemento w-lira-final">
+          <LiraConVuestraEstrella estado="falta" alLlegar />
+        </div>
+        <Cita className="mb-elemento">{t("rsvp.faltaVuestraEstrella")}</Cita>
+
         <CabeceraSeccion
           idTitulo={idTitulo}
           etiqueta={
@@ -1602,7 +1615,7 @@ function Bloque({
   return (
     <section
       id={ancla}
-      className={`px-margen py-seccion-fluida ${hundida ? "bg-superficie-hundida" : ""}`}
+      className={`px-margen py-seccion-fluida ${hundida ? "velo-hundido" : ""}`}
       aria-labelledby={titulo || conTitularDentro ? idTitulo : undefined}
     >
       <div className={`mx-auto ${ANCHOS[ancho]}`}>

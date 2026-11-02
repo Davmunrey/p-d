@@ -133,6 +133,24 @@
    * todos los navegadores que abre un invitado desde WhatsApp.
    */
   --color-velado-nieve: rgb(248 249 252 / 86%);
+
+  /*
+   * EL CIELO DEL DÍA. La landing se lee de la mañana a la noche: al bajar, el
+   * fondo pasa por el alba, la tarde dorada y el ocaso hasta la noche marino
+   * del final. Tintes MUY claros a propósito —el texto de siempre se lee
+   * encima de todos con el mismo contraste—, y un sol que es sólo luz: un
+   * brillo de bronce sin disco que cruza la página de izquierda a derecha.
+   */
+  --color-alba-100: #f8efe6;
+  --color-alba-brillo: rgb(240 214 172 / 55%);
+  --color-alba-brillo-0: rgb(240 214 172 / 0%);
+  --color-tarde-100: #f9f3e8;
+  --color-ocaso-100: #eceaf2;
+  --color-ocaso-brillo: rgb(195 206 225 / 60%);
+  --color-ocaso-brillo-0: rgb(195 206 225 / 0%);
+  --color-sol: rgb(227 190 134 / 34%);
+  --color-sol-0: rgb(227 190 134 / 0%);
+  --color-velo-hundido: rgb(31 43 68 / 4.5%);
   --color-velado-marino: rgb(16 22 35 / 86%);
 
   /**
@@ -385,6 +403,29 @@
   /* Una cifra de la cuenta atrás que cambia sube un tercio de su alto. */
   --space-cifra-recorrido: 0.35em;
 
+  /*
+   * EL RECORRIDO DEL SOL por la pantalla mientras se baja la página: sale por
+   * arriba a la izquierda, culmina arriba al centro a media página y se pone
+   * abajo a la derecha al llegar al final. Es un brillo de 70 vmax.
+   */
+  --size-sol: 70vmax;
+
+  /* LOS NOMBRES EMERGEN de una línea invisible: el recorte deja 0,35 em de
+     holgura alrededor de la letra —los paréntesis y las colas bajan— y el
+     nombre sale desde 1,5 em por debajo, fuera de él. */
+  --space-holgura-mascara: 0.35em;
+  --space-recorrido-linea: 1.5em;
+
+  /* Al bajar, el texto de la portada se adelanta 12 vh: se va antes que la
+     página, y eso da la profundidad. */
+  --space-salida-portada: 12vh;
+  --space-sol-salida-x: -30vmax;
+  --space-sol-salida-y: -35vmax;
+  --space-sol-cenit-x: 15vw;
+  --space-sol-cenit-y: -45vmax;
+  --space-sol-ocaso-x: 60vw;
+  --space-sol-ocaso-y: 30vh;
+
   /* La pista «bajad» cae 7 px y se apaga; la foto de portada baja hasta 60 px
      mientras se hace scroll, en los primeros 428 px de recorrido (60 / 0,14),
      y sangra un 6 % por arriba y por abajo para que ese viaje no deje borde. */
@@ -540,6 +581,31 @@
    * alejada del centro, Vega, queda a un tercio del radio del anillo.
    */
   --size-constelacion-portada: clamp(14rem, 30vw, 28rem);
+
+  /*
+   * LA ESCENA DE «NUESTRA HISTORIA»: el escenario fijo donde se enciende la
+   * Lira mide 78 % del alto de la pantalla en escritorio y 40 % en un móvil
+   * —arriba, con los hitos pasando por debajo—, y cada hito ocupa 72 % y 62 %:
+   * lo que se baja para pasar de una estrella a la siguiente.
+   */
+  --size-constelacion-historia: clamp(14rem, 38vw, 36rem);
+  --size-escenario-historia: 78svh;
+  --size-escenario-historia-movil: 40svh;
+  --size-hito-escena: 72svh;
+  --size-hito-escena-movil: 62svh;
+
+  /*
+   * LA NOCHE DEL FINAL. La Lira con vuestra estrella al lado mide entre 11 y
+   * 18 rem; la estrella fugaz es un trazo de 9 rem que cruza el cielo hacia
+   * abajo a la izquierda, 40 vw por 18 vh, inclinado lo mismo que su camino.
+   */
+  --size-lira-final: clamp(11rem, 26vw, 18rem);
+  --size-estrella-fugaz: 9rem;
+  --space-fugaz-x: -40vw;
+  --space-fugaz-y: 18vh;
+  --space-fugaz-arriba: 14%;
+  --space-fugaz-derecha: 10%;
+  --angle-fugaz: -16deg;
   --inset-aire-constelacion: 10%;
 
   /* ---------------------------------------------------------------------
@@ -578,6 +644,20 @@
   --scale-paralaje: 1.1;
   --scale-pop: 0.6;
   --scale-reveal: 0.94;
+
+  /* Una estrella de la historia antes de su hito: pequeña y casi apagada. Al
+     encenderse destella un 15 % por encima de su tamaño y su halo se queda. */
+  --scale-estrella-dormida: 0.45;
+  --scale-destello: 1.15;
+  --opacity-estrella-dormida: 18%;
+  --opacity-destello: 55%;
+  --opacity-destello-final: 22%;
+
+  /* La estrella que falta late: su halo crece 2,4 veces y se apaga. Y el
+     trazo que la espera es discontinuo, en guiones de 1,4 con huecos de 2. */
+  --scale-latido-estrella: 2.4;
+  --opacity-latido-estrella: 60%;
+  --dash-pendiente: 1.4 2;
 
   /* Un botón que se pulsa cede un 3 %: lo justo para notar que ha oído el dedo. */
   --scale-pulsado: 0.97;
@@ -646,6 +726,19 @@
   --delay-escritura: 550ms;
   --duration-escritura: 900ms;
 
+  /* Vuestra estrella se enciende medio segundo después de llegar a la
+     pantalla de gracias, su halo destella en 1,2 s y el trazo que la une a la
+     Lira se dibuja a los 0,9 s. */
+  --delay-vuestra-estrella: 500ms;
+  --delay-trazo-vuestra: 900ms;
+  --duration-destello: 1200ms;
+
+  /* Al cambiar de página, el contenido se funde y la Lira viaja en 0,55 s. */
+  --duration-cambio-pagina: 550ms;
+
+  /* Un nombre de la portada emerge en 1,1 s. */
+  --duration-linea: 1100ms;
+
   /* Una cifra que cambia rueda en 0,45 s: menos que el segundo que tarda la siguiente. */
   --duration-cifra: 450ms;
 
@@ -656,6 +749,8 @@
    * Capas y anchos
    * ------------------------------------------------------------------- */
 
+  /* El cielo de la landing, detrás de todo el contenido. */
+  --layer-cielo: -1;
   --layer-base: 0;
   --layer-raised: 10;
   --layer-sticky: 40;
