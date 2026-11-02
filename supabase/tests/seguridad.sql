@@ -792,11 +792,10 @@ end $$;
 \echo '  El enlace personal: sólo el nombre del grupo'
 \echo '========================================'
 
--- Los invitados confirman por WhatsApp; el enlace de cada invitación sólo
--- saluda al grupo y le deja proponer canciones. Lo que se defiende aquí: que
--- con un token se obtiene el nombre de SU grupo y nada más, que un token
--- inventado no da nada y deja rastro en el cortafuegos, y que las puertas que
--- escribían respuestas ya no existen para nadie.
+-- El enlace de cada invitación saluda al grupo al abrirse. Lo que se defiende
+-- aquí: que con un token se obtiene el nombre de SU grupo y nada más, que un
+-- token inventado no da nada y deja rastro en el cortafuegos, y que las
+-- puertas que el formulario no usa no existen para nadie.
 do $$
 declare
   v_token   text;
@@ -835,14 +834,100 @@ begin
   perform pg_temp.comprobar('y deja rastro en el cortafuegos', v_despues = v_antes + 1);
 
   perform pg_temp.comprobar(
-    'las puertas del RSVP web ya no existen',
+    'las puertas que no usa el formulario no existen',
     not exists (
       select 1 from pg_proc as p
        where p.pronamespace = 'public'::regnamespace
-         and p.proname in ('obtener_invitacion', 'registrar_confirmacion',
-                           'anadir_acompanante', 'destinatarios_confirmacion')));
+         and p.proname in ('anadir_acompanante', 'destinatarios_confirmacion')));
 
   delete from public.grupos_invitacion where id = v_grupo;
+end $$;
+
+
+\echo ''
+\echo '========================================'
+\echo '  Confirmar desde el enlace: sólo tu grupo'
+\echo '========================================'
+
+-- La confirmación vuelve a la web, desde el enlace de cada invitación. Lo que
+-- se defiende: que con un token se lee y se escribe SU grupo y nada más, y
+-- que un token inventado no da nada.
+do $$
+declare
+  v_token   text;
+  v_grupo   uuid;
+  v_otro    uuid;
+  v_mio     uuid;
+  v_ajeno   uuid;
+  v_filas   bigint;
+  v_ok      boolean;
+begin
+  -- Dos grupos distintos: el nuestro y el de otra familia, para poder probar
+  -- el ataque cruzado, que es la comprobación importante de todo el fichero.
+  select token into v_token
+    from public.crear_grupo_invitacion(
+      'Grupo de prueba', 2::smallint, 'ambos'::public.lado_invitacion,
+      array['ceremonia']::public.evento_boda[]
+    );
+
+  select g.id into v_grupo
+    from public.grupos_invitacion as g
+   where g.huella_token = public.huella_token(v_token);
+
+  insert into public.invitados (grupo_id, nombre, apellidos)
+  values (v_grupo, 'Prueba', 'Uno')
+  returning id into v_mio;
+
+  select id into v_otro
+    from public.grupos_invitacion
+   where id <> v_grupo
+   limit 1;
+
+  if v_otro is null then
+    insert into public.grupos_invitacion (nombre) values ('Otra familia')
+    returning id into v_otro;
+  end if;
+
+  insert into public.invitados (grupo_id, nombre, apellidos)
+  values (v_otro, 'Ajena', 'Dos')
+  returning id into v_ajeno;
+
+  set local role anon;
+
+  select count(*) into v_filas from public.obtener_invitacion(v_token);
+  perform pg_temp.comprobar('un token válido devuelve su invitación', v_filas > 0);
+
+  select count(*) into v_filas
+    from public.obtener_invitacion('token-inventado-que-no-existe-0000');
+  perform pg_temp.comprobar('un token inventado no devuelve nada', v_filas = 0);
+
+  begin
+    perform public.registrar_confirmacion(
+      v_token,
+      jsonb_build_array(jsonb_build_object(
+        'invitado_id', v_ajeno, 'estado', 'confirmado',
+        'necesita_autobus', true, 'necesita_alojamiento', false
+      ))
+    );
+    v_ok := false;
+  exception when others then
+    v_ok := true;
+  end;
+  perform pg_temp.comprobar('no se puede confirmar a alguien de otro grupo', v_ok);
+
+  -- Casilla sin marcar: debe aceptarse como «no», no reventar.
+  begin
+    perform public.registrar_confirmacion(
+      v_token,
+      jsonb_build_array(jsonb_build_object('invitado_id', v_mio, 'estado', 'confirmado'))
+    );
+    v_ok := true;
+  exception when others then
+    v_ok := false;
+  end;
+  perform pg_temp.comprobar('una confirmación sin logística explícita se acepta', v_ok);
+
+  reset role;
 end $$;
 
 \echo ''
@@ -1315,7 +1400,8 @@ declare
   v_de_mas  text;
   v_de_menos text;
   v_puertas text[] := array[
-    'nombre_de_invitacion', 'sugerir_cancion', 'datos_para_regalos'
+    'nombre_de_invitacion', 'sugerir_cancion', 'datos_para_regalos',
+    'obtener_invitacion', 'registrar_confirmacion'
   ];
   v_anon_puede boolean;
 begin
@@ -1325,7 +1411,7 @@ begin
      and has_function_privilege('anon', p.oid, 'execute')
      and p.proname <> all (v_puertas);
   perform pg_temp.comprobar(
-    format('anon sólo ejecuta las tres puertas públicas (de más: %s)', coalesce(v_de_mas, 'ninguna')),
+    format('anon sólo ejecuta las cinco puertas públicas (de más: %s)', coalesce(v_de_mas, 'ninguna')),
     v_de_mas is null);
 
   select string_agg(puerta, ', ' order by puerta) into v_de_menos
@@ -1336,7 +1422,7 @@ begin
         and p.proname = puerta
         and has_function_privilege('anon', p.oid, 'execute'));
   perform pg_temp.comprobar(
-    format('y las tres existen y las puede ejecutar (de menos: %s)', coalesce(v_de_menos, 'ninguna')),
+    format('y las cinco existen y las puede ejecutar (de menos: %s)', coalesce(v_de_menos, 'ninguna')),
     v_de_menos is null);
 
   -- Los default privileges existen de verdad: una función creada AHORA, sin

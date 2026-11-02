@@ -221,7 +221,8 @@ export const MINUTOS_BORRADOR_AJUSTES = 30;
 export const LARGO_IBAN_ESPANOL = 24;
 
 /**
- * Cuánto cabe en cada trozo de la cookie de un borrador (el de Ajustes).
+ * Cuánto cabe en cada trozo de la cookie de un borrador: el de Ajustes y el
+ * de la confirmación.
  *
  * Los navegadores tiran una cookie de más de 4096 bytes SIN DECIR NADA, y un
  * borrador realista —todos los datos de la boda, con textos largos y tildes—
@@ -245,6 +246,57 @@ export const MENUS_INVITADO = [
   "otro",
 ] as const;
 export type MenuInvitado = (typeof MENUS_INVITADO)[number];
+
+/**
+ * LA CONFIRMACIÓN, AL FINAL DE LA LANDING. Se toca la estrella y se despliega
+ * el formulario del grupo, sin salir de la página. Funciona sin JavaScript:
+ * cada paso es un `POST` a una acción de servidor que vuelve a la landing con
+ * el paso en la URL y el desplegable abierto.
+ *
+ * La marca de «la respuesta acaba de llegar» (`?enviado=1`): la pone la acción
+ * al guardar y la lee la landing para dar las gracias.
+ */
+export const MARCA_RSVP_ENVIADO = { parametro: "enviado", valor: "1" } as const;
+
+/**
+ * Cuánto vive el borrador de la confirmación a medio rellenar.
+ *
+ * Generoso a propósito. El caso que hay que aguantar no es el de alguien que
+ * responde de un tirón, sino el de quien deja el móvil, pregunta a su hermana
+ * si va a ir, y vuelve. Media hora se queda corta; un día entero convierte un
+ * borrador en un estado que nadie recuerda haber dejado ahí.
+ */
+export const MINUTOS_BORRADOR_RSVP = 180;
+
+/**
+ * Los pasos de la confirmación, en orden: quién viene y, si viene alguien, el
+ * menú, las alergias y el autobús de cada uno. La canción va por la playlist,
+ * que tiene su propio sitio en la página.
+ */
+export const PASOS_RSVP = ["asistencia", "detalles"] as const;
+export type PasoRsvp = (typeof PASOS_RSVP)[number];
+
+/**
+ * Los menús que se ofrecen: el enumerado `tipo_menu` de la base. Lo que llegue
+ * con otro valor no se guarda en el borrador —un `menu-<id>=pizza` a mano
+ * acababa en un 22P02 que se contaba como avería—.
+ */
+export const MENUS_RSVP = [
+  "estandar",
+  "vegetariano",
+  "vegano",
+  "infantil",
+  "sin_gluten",
+  "otro",
+] as const;
+export type MenuRsvp = (typeof MENUS_RSVP)[number];
+
+/**
+ * El menú que sólo se ofrece a quien está marcado como niño. La base lo
+ * descarta en silencio para un adulto —deja `estandar`—, así que ofrecerlo
+ * era prometer algo que no se iba a servir.
+ */
+export const MENU_SOLO_NINOS: MenuRsvp = "infantil";
 
 /**
  * Cuánto recuerda el navegador de qué invitación es.

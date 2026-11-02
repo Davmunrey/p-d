@@ -59,7 +59,7 @@ test.describe("La playlist del panel", () => {
   );
 
   /**
-   * Se confirma por WhatsApp y ya no entran mensajes: el apartado del menú es
+   * El formulario de confirmación ya no pide mensaje: el apartado del menú es
    * «Playlist» y lleva directo a las canciones.
    */
   test("se llega desde el menú del panel, que la nombra", async ({ page }) => {

@@ -8,7 +8,7 @@ const CENTRO = LIENZO / 2;
  * El contorno: ocho vértices alternando punta y cintura cada 45°, empezando
  * por la de arriba. Se calcula una vez; es geometría, no dato.
  */
-const CONTORNO = Array.from({ length: 8 }, (_, i) => {
+export const CONTORNO_ESTRELLA = Array.from({ length: 8 }, (_, i) => {
   const angulo = -Math.PI / 2 + (i * Math.PI) / 4;
   const radio = i % 2 === 0 ? ESTRELLA_LLEGADA.radio : ESTRELLA_LLEGADA.cintura;
   const x = CENTRO + radio * Math.cos(angulo);
@@ -57,7 +57,7 @@ export function EstrellaDeCuatroPuntas({
           <circle cx={CENTRO} cy={CENTRO} r={ESTRELLA_LLEGADA.halo} fill={`url(#${idHalo})`} />
         </>
       ) : null}
-      <polygon points={CONTORNO} fill="currentColor" />
+      <polygon points={CONTORNO_ESTRELLA} fill="currentColor" />
     </svg>
   );
 }

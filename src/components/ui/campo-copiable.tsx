@@ -69,6 +69,12 @@ export function CampoCopiable({
     }
   }
 
+  /*
+    EN EL MÓVIL, EL NÚMERO ENTERO Y EL BOTÓN DEBAJO. Con `flex-1` a secas la
+    base del campo es 0, así que nunca bajaba de línea: se encogía hasta dejar
+    a la vista «ES» y nada más. A todo el ancho en el móvil se lee el IBAN
+    completo; desde tableta caben los dos en la misma línea.
+  */
   return (
     <div className="mt-pila flex flex-wrap items-center gap-interno-compacto">
       <input
@@ -76,7 +82,7 @@ export function CampoCopiable({
         readOnly
         value={valorMostrado}
         aria-label={etiqueta}
-        className="min-h-campo min-w-0 flex-1 rounded-campo border border-borde bg-superficie px-interno font-codigo text-pequeno text-tinta"
+        className="min-h-campo min-w-0 flex-1 basis-full rounded-campo border border-borde bg-superficie px-interno font-codigo text-pequeno text-tinta sm:basis-0"
       />
       <Boton jerarquia="secundario" onClick={copiar}>
         {copiado ? textoCopiado : textoCopiar}

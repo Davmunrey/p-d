@@ -160,9 +160,8 @@ export const FUGACES = {
 
 /**
  * QUÉ SE CUENTA DE NOCHE. La historia de los novios se cuenta bajo las
- * estrellas: la portada, el paisaje, la cuenta atrás, la historia, la galería
- * y el «sólo falta vuestra estrella», que es como acaba la noche. Todo lo
- * demás —el día, la víspera, lo que ponerse, los regalos, la música— es de
+ * estrellas: la portada, el paisaje, la cuenta atrás, la historia y la
+ * galería. Todo lo demás —el día, la víspera, lo que ponerse, la música— es de
  * día. El orden dentro de cada tramo lo sigue poniendo la base de datos.
  */
 export const SECCIONES_DE_NOCHE = [
@@ -171,17 +170,20 @@ export const SECCIONES_DE_NOCHE = [
   "cuenta_atras",
   "historia",
   "galeria",
-  "rsvp",
 ] as const satisfies readonly Seccion[];
 
 /**
- * CON QUÉ ACABA LA PÁGINA: dónde dormir y cómo llegar, con el mapa del sitio
- * debajo. Van siempre al final, pongan lo que pongan en el panel, porque el
- * día acaba en el lugar de la boda: es donde se posa la última estrella.
+ * CON QUÉ ACABA LA PÁGINA, y en este orden: dónde dormir, cómo llegar —con el
+ * mapa del sitio y la estrella que se posa en él—, los regalos y, lo último,
+ * la confirmación: vuestra estrella, que se toca para confirmar. Van siempre
+ * al final, pongan lo que pongan en el panel: lo que hay que hacer va junto, y
+ * la página acaba en lo único que falta.
  */
 export const SECCIONES_DE_LLEGADA = [
   "alojamiento",
   "transporte",
+  "regalos",
+  "rsvp",
 ] as const satisfies readonly Seccion[];
 
 /**
@@ -189,7 +191,7 @@ export const SECCIONES_DE_LLEGADA = [
  * grosor y el de la onda que sale de él y se apaga al crecer, como un latido
  * (`--escala-latido-estrella`; el svg deja que se salga).
  */
-export const RADIO_VUESTRA_ESTRELLA = { anillo: 12, grosor: 2.5, onda: 1.5 } as const;
+export const RADIO_VUESTRA_ESTRELLA = { anillo: 22, grosor: 2.5, onda: 1.5 } as const;
 
 /**
  * LA ESTRELLA QUE BAJA AL LUGAR, en el lienzo de 100 de su dibujo: una

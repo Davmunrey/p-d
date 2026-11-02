@@ -267,8 +267,9 @@ recupera.
 
 ## Sin correos
 
-Los invitados confirman por WhatsApp, así que la web no manda ningún correo: el
-acuse de recibo de Resend se fue con el formulario del RSVP, y con él
+La web no manda ningún correo: cuando el formulario de confirmación volvió, al
+final de la landing, lo hizo sin acuse de recibo. Resend se fue con el primero, y
+con él
 `RESEND_API_KEY`, `CORREO_REMITENTE` y `RESEND_URL`. Si siguen puestas en
 Vercel, se pueden borrar.
 

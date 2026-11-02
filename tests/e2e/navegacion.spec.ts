@@ -91,7 +91,7 @@ test.describe("Navegación", () => {
    */
   test("las secciones que sí están en la página no se cuelan en el menú", async ({ page }) => {
     const fuera = [
-      // Se confirma por WhatsApp: la sección sólo lo dice, y no va arriba.
+      // Se confirma al final, tocando vuestra estrella: no va arriba.
       ["rsvp", copy.navegacion.secciones.rsvp],
       ["historia", copy.navegacion.secciones.historia],
       ["playlist", copy.navegacion.secciones.playlist],

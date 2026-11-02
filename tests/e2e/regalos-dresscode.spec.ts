@@ -67,7 +67,11 @@ test("los regalos enseñan la cuenta que hay en la base, no una escrita a mano",
     la base lo comprueba `regalos.spec.ts`; aquí basta con que el número NO
     esté antes, que es lo que este fichero vigila.
   */
-  await expect(regalos.getByRole("button", { name: copy.regalos.revelar })).toBeVisible();
+  // Plegada, al final de la página: el titular a la vista y lo demás al tocarlo.
+  const revelar = regalos.getByRole("button", { name: copy.regalos.revelar });
+  await expect(revelar).toBeHidden();
+  await regalos.locator("summary").click();
+  await expect(revelar).toBeVisible();
   expect(await page.content()).not.toContain(iban);
 
   await expect(regalos).toContainText(copy.regalos.buzon);

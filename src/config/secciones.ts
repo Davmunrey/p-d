@@ -72,8 +72,8 @@ export type SeccionConRuta = keyof typeof RUTAS_PROPIAS;
  * a la carrera: la historia, la galería, el paisaje, la playlist, el dress code,
  * las preguntas. No se esconden — siguen en la página, en su orden.
  *
- * Tampoco va la de confirmar: se confirma por WhatsApp, y la sección sólo lo
- * dice. Un botón arriba que lleva a un texto prometería algo que no hay.
+ * Tampoco va la de confirmar: va al final, a propósito, después de haberlo
+ * leído todo, y se llega bajando hasta vuestra estrella.
  *
  * Una sección de esta lista SIN CONTENIDO no aparece: manda el filtro de la
  * página, que sólo pinta lo que de verdad hay hecho. Esto es un tope, no una

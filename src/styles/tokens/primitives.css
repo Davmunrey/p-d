@@ -584,11 +584,12 @@
   --size-hoja-menu: 85dvh;
 
   /*
-   * VUESTRA ESTRELLA, la hueca que late entre todas al final de la noche, mide
-   * entre 3 y 4,5 rem: lo bastante para verse sola en un cielo lleno, no
-   * tanto como para parecer un icono.
+   * VUESTRA ESTRELLA, la hueca que late al final de la página y que se toca
+   * para confirmar: entre 4,5 y 6,5 rem. Es un botón, y en un móvil tiene que
+   * poderse tocar con el pulgar sin apuntar; no tanto como para parecer un
+   * icono.
    */
-  --size-vuestra-estrella: clamp(3rem, 6vw, 4.5rem);
+  --size-vuestra-estrella: clamp(4.5rem, 14vw, 6.5rem);
 
   /*
    * EL AMANECER: la franja sin texto donde la noche se hace día. Lo bastante

@@ -9,8 +9,9 @@ import copy from "../../content/copy.es.json";
  *
  * No hay secciones con fondo propio: hay un cielo que empieza de noche, bajo
  * un firmamento entero que GIRA al bajar —la portada y el final de la noche
- * no tienen el mismo cielo encima—, amanece en una franja sin texto y acaba de
- * día en el mapa del sitio de la boda, donde se posa una estrella.
+ * no tienen el mismo cielo encima—, amanece en una franja sin texto y llega de
+ * día al mapa del sitio de la boda, donde se posa una estrella. Debajo, los
+ * regalos y, lo último, vuestra estrella: la confirmación.
  *
  * Se prueba leyendo lo que el código publica —`data-giro`, `data-cielo`,
  * `data-llegada`— y lo que el navegador tiene pintado de verdad: los píxeles
@@ -83,7 +84,7 @@ test.describe("Un solo cielo, de la noche al día", () => {
     expect(orden.conFondo, "el cielo es uno: ninguna sección pinta el suyo").toEqual([]);
   });
 
-  test("la historia y «sólo falta vuestra estrella» son de noche; el día acaba en el mapa", async ({
+  test("la historia es de noche; el día llega al mapa y acaba en vuestra estrella", async ({
     page,
   }) => {
     await page.goto("/");
@@ -91,14 +92,20 @@ test.describe("Un solo cielo, de la noche al día", () => {
     const deNoche = page.locator('[data-tramo="noche"]');
     await expect(deNoche.locator("#portada")).toHaveCount(1);
     await expect(deNoche.locator("#historia")).toHaveCount(1);
-    await expect(deNoche.locator("#rsvp")).toHaveCount(1);
+    await expect(deNoche.locator("#rsvp")).toHaveCount(0);
 
-    // Lo último de la página, antes del pie, es cómo llegar: el mapa.
+    /*
+      La llegada, en este orden: dónde dormir, cómo llegar —el mapa, donde se
+      posa la estrella—, los regalos y, lo último de todo, vuestra estrella:
+      la confirmación va al final, después de haberlo leído todo.
+    */
     const ultima = await page.evaluate(
       () => [...document.querySelectorAll("main section[id]")].at(-1)?.id,
     );
-    expect(ultima).toBe("transporte");
-    await expect(page.locator('[data-tramo="dia"] #alojamiento + #transporte')).toHaveCount(1);
+    expect(ultima).toBe("rsvp");
+    await expect(
+      page.locator('[data-tramo="dia"] #alojamiento + #transporte + #regalos + #rsvp'),
+    ).toHaveCount(1);
   });
 
   test("la landing cabe en pocas pantallas en un móvil", async ({ page }) => {
@@ -150,36 +157,54 @@ test.describe("El firmamento gira con la noche", () => {
     // El horizonte, a media pantalla.
     await ponerA(page, page.locator("[data-amanecer]"), 0.5);
 
+    /*
+      LAS DOS COSAS A LA VEZ, Y ESPERANDO A QUE SE PINTE. Al cargar, las
+      estrellas se encienden desde cero (`DURACION_ENCENDIDO_MS`): en el primer
+      fotograma el lienzo está vacío, y «debajo no hay nada» se cumplía por eso
+      mismo. Se leía el «arriba sí» una sola vez, justo después, y en Safari
+      caía alguna vez en ese lienzo todavía vacío. Ahora se espera a que haya
+      cielo arriba Y ninguna estrella abajo en la misma lectura.
+    */
     await expect
       .poll(() =>
         lienzo(page).evaluate((nodo) => {
           const canvas = nodo as HTMLCanvasElement;
+          const contexto = canvas.getContext("2d")!;
           const caja = canvas.getBoundingClientRect();
           const horizonte = document
             .querySelector("[data-amanecer]")!
             .getBoundingClientRect().top;
           const escala = canvas.height / caja.height;
           const corte = Math.max(0, Math.floor((horizonte - caja.top) * escala));
-          if (corte >= canvas.height) return 0;
-          const { data } = canvas
-            .getContext("2d")!
-            .getImageData(0, corte, canvas.width, canvas.height - corte);
-          let pintados = 0;
-          for (let i = 3; i < data.length; i += 4) if (data[i] > 0) pintados += 1;
-          return pintados;
+
+          let abajo = 0;
+          if (corte < canvas.height) {
+            const { data } = contexto.getImageData(
+              0,
+              corte,
+              canvas.width,
+              canvas.height - corte,
+            );
+            for (let i = 3; i < data.length; i += 4) if (data[i] > 0) abajo += 1;
+          }
+
+          let arriba = false;
+          const { data } = contexto.getImageData(
+            0,
+            0,
+            canvas.width,
+            Math.floor(canvas.height / 4),
+          );
+          for (let i = 3; i < data.length; i += 4) {
+            if (data[i] > 0) {
+              arriba = true;
+              break;
+            }
+          }
+          return { abajo, arriba };
         }),
       )
-      .toBe(0);
-
-    const queda = await lienzo(page).evaluate((nodo) => {
-      const canvas = nodo as HTMLCanvasElement;
-      const { data } = canvas
-        .getContext("2d")!
-        .getImageData(0, 0, canvas.width, Math.floor(canvas.height / 4));
-      for (let i = 3; i < data.length; i += 4) if (data[i] > 0) return true;
-      return false;
-    });
-    expect(queda, "por encima del horizonte sigue habiendo cielo").toBe(true);
+      .toEqual({ abajo: 0, arriba: true });
   });
 
   test("lo que no se ve no se pinta: de día, el cielo de la noche espera parado", async ({
@@ -243,18 +268,16 @@ test.describe("Nuestra historia, una estrella por momento", () => {
   });
 });
 
-test.describe("La noche acaba con vuestra estrella", () => {
-  test("entre las estrellas late la vuestra, y se confirma por WhatsApp", async ({ page }) => {
+test.describe("La página acaba con vuestra estrella", () => {
+  test("la vuestra late hueca, y es el desplegable de la confirmación", async ({ page }) => {
     await page.goto("/");
-    const rsvp = page.locator('[data-tramo="noche"] #rsvp');
-    await expect(rsvp.locator('[data-vuestra-estrella="falta"]')).toHaveAttribute(
-      "aria-hidden",
-      "true",
-    );
-    await expect(rsvp).toContainText(copy.rsvp.faltaVuestraEstrella);
+    const rsvp = page.locator('[data-tramo="dia"] #rsvp');
+    const estrella = rsvp.locator('summary [data-vuestra-estrella="falta"]');
+    await expect(estrella).toHaveAttribute("aria-hidden", "true");
+    await expect(rsvp.locator("summary")).toContainText(copy.rsvp.faltaVuestraEstrella);
     await expect(rsvp.getByRole("heading", { name: copy.rsvp.titulo })).toBeVisible();
-    // Se confirma por WhatsApp: aquí ni formulario ni botón.
-    await expect(rsvp.locator("form, button")).toHaveCount(0);
+    // Plegada: lo de dentro no se ve hasta tocarla.
+    await expect(rsvp.locator("details")).not.toHaveAttribute("open", /.*/);
   });
 });
 

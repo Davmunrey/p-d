@@ -705,25 +705,23 @@ test.describe("El ritmo y la composición son los de la entrega", () => {
     expect(anchos.regalos).toBe(816);
   });
 
-  test("regalos se centra entero: cabecera y tarjeta comparten eje", async ({ page }) => {
+  test("los regalos y vuestra estrella, al final, comparten ancho y eje", async ({ page }) => {
     await page.setViewportSize(ESCRITORIO);
     await page.goto("/");
 
-    const centros = await page.evaluate(() => {
-      const centro = (nodo: Element) => {
-        const caja = nodo.getBoundingClientRect();
-        return Math.round(caja.left + caja.width / 2);
-      };
-      const seccion = document.querySelector("#regalos")!;
-      return {
-        cabecera: centro(seccion.querySelector("header h2")!),
-        tarjeta: centro(seccion.querySelector("header + div")!),
-        alineacion: getComputedStyle(seccion.querySelector("header")!).textAlign,
-      };
-    });
+    const cajas = await page.evaluate(() =>
+      ["#regalos details", "#rsvp details"].map((selector) => {
+        const caja = document.querySelector(selector)!.getBoundingClientRect();
+        return {
+          ancho: Math.round(caja.width),
+          centro: Math.round(caja.left + caja.width / 2),
+        };
+      }),
+    );
 
-    expect(centros.alineacion).toBe("center");
-    expect(Math.abs(centros.cabecera - centros.tarjeta)).toBeLessThanOrEqual(1);
+    const [regalos, rsvp] = cajas;
+    expect(regalos!.ancho).toBe(rsvp!.ancho);
+    expect(Math.abs(regalos!.centro - rsvp!.centro)).toBeLessThanOrEqual(1);
   });
 
   test("en alojamiento y dress code la entradilla cae bajo el titular", async ({ page }) => {

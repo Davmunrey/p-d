@@ -5,15 +5,16 @@ import copy from "../../content/copy.es.json";
 import { RUTA_INVITACION, RUTA_RSVP_ANTIGUA } from "../../src/config/constants";
 
 /**
- * SE CONFIRMA POR WHATSAPP; EL ENLACE SÓLO SALUDA
+ * EL ENLACE DE LA INVITACIÓN: SALUDA, Y ABRE LA CONFIRMACIÓN DEL GRUPO
  *
- * Los invitados contestan por WhatsApp y los novios lo apuntan en el panel. Lo
- * que queda en la web:
+ * Cada grupo tiene su enlace. Lo que hace en la web:
  *
- *  - la sección final dice «Confirmadnos por WhatsApp» y no ofrece ni botón ni
- *    formulario, y la cabecera ya no lleva «Confirmar»;
- *  - el enlace personal de cada invitación lleva a la portada, que saluda al
- *    grupo por su nombre y le enseña el campo de la playlist;
+ *  - lleva a la portada, que saluda al grupo por su nombre y le enseña el
+ *    campo de la playlist;
+ *  - deja al final de la página, en vuestra estrella, el formulario de ESE
+ *    grupo (el recorrido entero está en `confirmacion.spec.ts`);
+ *  - sin enlace, la estrella sólo explica cómo se confirma: no hay formulario
+ *    que rellenar a ciegas, y la cabecera no lleva a confirmar;
  *  - un enlace que no existe lleva a la portada de todos, sin decir de quién
  *    podría ser.
  */
@@ -56,17 +57,22 @@ async function crearGrupo(sufijo: string): Promise<{ token: string; nombre: stri
 const saludoDe = (grupo: string) => copy.portada.saludo.replace("{grupo}", grupo);
 
 test.describe("La sección de confirmar", () => {
-  test("dice que se confirma por WhatsApp, sin botón ni formulario", async ({ page }) => {
+  test("sin enlace, la estrella explica cómo se confirma, y no hay formulario", async ({
+    page,
+  }) => {
     await page.goto("/");
     const seccion = page.locator("#rsvp");
     test.skip((await seccion.count()) === 0, "La sección está apagada en la base");
 
     await expect(seccion.getByRole("heading", { level: 2 })).toHaveText(copy.rsvp.titulo);
+    await seccion.locator("summary").click();
     await expect(seccion).toContainText(copy.rsvp.comoSeConfirma);
-    await expect(seccion.locator("a, button, form, input")).toHaveCount(0);
+    await expect(seccion.locator("button, form, input")).toHaveCount(0);
+    // Ya no se confirma por WhatsApp: que no quede ni la mención.
+    await expect(seccion).not.toContainText(/whatsapp/i);
   });
 
-  /** CASO DE ERROR · nada en la página promete un sitio donde confirmar. */
+  /** CASO DE ERROR · confirmar está al final, y nada de arriba se lo salta. */
   test("ni la cabecera ni la portada llevan a confirmar", async ({ page }) => {
     await page.goto("/");
     await expect(

@@ -634,10 +634,10 @@
 }
 
 /**
- * VUESTRA ESTRELLA, AL FINAL DE LA NOCHE: hueca, entre todas las demás, y
- * late —su halo crece y se apaga cada pocos segundos—. Es la de los
- * invitados, que confirman por WhatsApp. La misma onda marca, abajo del todo,
- * el sitio donde se posa la estrella que baja al lugar.
+ * VUESTRA ESTRELLA, AL FINAL DE LA PÁGINA: hueca, y late —su halo crece y se
+ * apaga cada pocos segundos—. Es la de los invitados, y el botón de la
+ * confirmación: cuando confirman, se enciende y deja de latir. La misma onda
+ * marca el sitio del mapa donde se posa la estrella que baja al lugar.
  */
 .latido-estrella {
   animation: latir-estrella var(--periodo-latido) ease-in-out infinite;

@@ -7,9 +7,10 @@ import { llamarComoAnonimo } from "./cliente";
 /**
  * EL ENLACE PERSONAL DE CADA INVITACIÓN
  *
- * Ya no sirve para confirmar —eso se contesta por WhatsApp y los novios lo
- * apuntan en el panel—: abre la web saludando al grupo por su nombre y le deja
- * proponer canciones para la playlist.
+ * Al abrirlo, la web saluda al grupo por su nombre: esto es sólo esa
+ * comprobación. Lo que hace falta para confirmar —las personas, lo que ya
+ * contestaron— lo lee aparte `obtenerInvitacion()` (`./rsvp.ts`), y sólo
+ * cuando se pinta el formulario.
  *
  * SÓLO EL NOMBRE. `nombre_de_invitacion()` es `security definer` y devuelve
  * eso y nada más: ni las personas del grupo, ni sus menús, ni sus alergias. Un

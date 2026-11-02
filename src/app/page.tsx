@@ -11,7 +11,11 @@ import { MapaDelLugar } from "@/components/marketing/mapa-del-lugar";
 import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { VideoDeFondo } from "@/components/marketing/video-de-fondo";
-import { VuestraEstrella } from "@/components/marketing/vuestra-estrella";
+import {
+  Confirmacion,
+  type ConsultaConfirmacion,
+  type LecturaInvitacion,
+} from "@/components/marketing/confirmacion";
 import { DatosEstructurados } from "@/components/datos-estructurados";
 import { BotonEnlace } from "@/components/ui/boton";
 import { CuentaRegalos } from "@/components/ui/cuenta-regalos";
@@ -29,7 +33,12 @@ import {
   Titulo3,
 } from "@/components/ui/tipografia";
 import { SECCIONES_DE_LLEGADA, SECCIONES_DE_NOCHE } from "@/config/cielo";
-import { BUCKET_MEDIOS, ID_CONTENIDO, URL_ATRIBUCION_MAPA } from "@/config/constants";
+import {
+  BUCKET_MEDIOS,
+  ID_CONTENIDO,
+  MARCA_RSVP_ENVIADO,
+  URL_ATRIBUCION_MAPA,
+} from "@/config/constants";
 import { anclaDe, esAncla, vaEnElMenu, type Seccion } from "@/config/secciones";
 import {
   obtenerAlojamientos,
@@ -62,7 +71,10 @@ import {
 } from "@/lib/fechas";
 import { numeroEnLetra } from "@/lib/numeros";
 import { enlaceMapaExterno } from "@/lib/mapa";
-import { invitacionRecordada, saludoDeLaVisita } from "@/lib/invitacion-recordada";
+import { invitacionRecordada } from "@/lib/invitacion-recordada";
+import { esCupoAgotado, obtenerInvitacion } from "@/lib/bbdd/rsvp";
+import { leerBorrador } from "@/lib/rsvp-borrador";
+import { sembrarDesdeLaBase } from "@/lib/rsvp-siembra";
 
 /**
  * LANDING
@@ -86,10 +98,11 @@ import { invitacionRecordada, saludoDeLaVisita } from "@/lib/invitacion-recordad
  * transparentes, en tres tramos:
  *
  *   · LA NOCHE   → lo que se cuenta bajo las estrellas (`SECCIONES_DE_NOCHE`):
- *                  la portada, la historia y «sólo falta vuestra estrella».
+ *                  la portada, el paisaje y la historia.
  *   · EL DÍA     → todo lo demás, en el orden de la base.
- *   · LA LLEGADA → dónde dormir y cómo llegar, siempre al final
- *                  (`SECCIONES_DE_LLEGADA`), con el mapa debajo.
+ *   · LA LLEGADA → siempre al final (`SECCIONES_DE_LLEGADA`): dónde dormir,
+ *                  cómo llegar con el mapa debajo, los regalos plegados y, lo
+ *                  último, vuestra estrella, que se toca para confirmar.
  *
  * El orden de la base manda dentro de cada tramo; el tramo, no, porque decide
  * de qué color es el cielo detrás.
@@ -102,19 +115,29 @@ import { invitacionRecordada, saludoDeLaVisita } from "@/lib/invitacion-recordad
  */
 export const dynamic = "force-dynamic";
 
-export default async function PaginaInicio() {
+export default async function PaginaInicio({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   /*
     QUIÉN ABRE LA WEB, si ha entrado alguna vez por el enlace de su invitación.
-    Con invitación, la portada saluda al grupo por su nombre y la playlist
-    enseña el campo para apuntar una canción. Se lee aquí y no dentro de cada
-    sección para que la página tenga un solo sitio donde se decide qué se pinta.
+    Con invitación, la portada saluda al grupo por su nombre, la playlist
+    enseña el campo para apuntar una canción y la estrella del final abre su
+    formulario de confirmación. Se lee aquí, UNA VEZ, y no dentro de cada
+    sección: la página tiene un solo sitio donde se decide qué se pinta.
 
     El campo de la playlist mira sólo la cookie: si el enlace ya no vale, la
-    base lo dice al apuntar y la cookie se olvida. El saludo sí pregunta a la
-    base, porque un nombre viejo o de un enlace anulado sería mentir.
+    base lo dice al apuntar y la cookie se olvida. El saludo y la confirmación
+    sí preguntan a la base, porque un nombre viejo o de un enlace anulado sería
+    mentir.
   */
-  const hayInvitacion = (await invitacionRecordada()) !== null;
-  const saludo = hayInvitacion ? await saludoDeLaVisita() : null;
+  const token = await invitacionRecordada();
+  const hayInvitacion = token !== null;
+  const lectura = await leerLaInvitacion(token);
+  const saludo =
+    lectura.tipo === "leida" && lectura.invitacion ? lectura.invitacion.grupoNombre : null;
+  const consulta = consultaDeConfirmacion(await searchParams);
 
   let datos;
   try {
@@ -281,7 +304,7 @@ export default async function PaginaInicio() {
     // Sin cuenta no hay sección: ver el comentario de `Regalos`.
     regalos: cuentaRegalos ? <Regalos /> : undefined,
     dresscode: consejos.length > 0 ? <DressCode consejos={consejos} /> : undefined,
-    rsvp: <Rsvp configuracion={configuracion} />,
+    rsvp: <Confirmacion lectura={lectura} consulta={consulta} configuracion={configuracion} />,
   };
 
   // El orden lo pone la base de datos; el filtro, lo que de verdad hay hecho.
@@ -289,8 +312,8 @@ export default async function PaginaInicio() {
 
   /*
     LOS TRES TRAMOS DEL CIELO. La noche y el día conservan el orden de la
-    base; la llegada va siempre al final, en su propio orden: primero dónde
-    dormir y luego cómo llegar, que es lo que se posa en el mapa.
+    base; la llegada va siempre al final, en su propio orden: dónde dormir,
+    cómo llegar, los regalos y la confirmación.
   */
   const deNoche = aPintar.filter((seccion) => esDeNoche(seccion));
   const deDia = aPintar.filter((seccion) => !esDeNoche(seccion) && !esDeLlegada(seccion));
@@ -413,6 +436,46 @@ function esDeNoche(seccion: Seccion): boolean {
 
 function esDeLlegada(seccion: Seccion): boolean {
   return (SECCIONES_DE_LLEGADA as readonly Seccion[]).includes(seccion);
+}
+
+/**
+ * La invitación de quien mira, leída una vez. Sin enlace recordado no se
+ * pregunta nada; con él, la base dice su grupo —o que el enlace ya no vale—, y
+ * si no responde o salta el cortafuegos, se dice eso y lo demás de la página
+ * sigue en pie. Con el grupo va su borrador, sembrado con lo ya contestado.
+ */
+async function leerLaInvitacion(token: string | null): Promise<LecturaInvitacion> {
+  if (!token) return { tipo: "sin-enlace" };
+  try {
+    const invitacion = await obtenerInvitacion(token);
+    const borrador = await leerBorrador(token);
+    return {
+      tipo: "leida",
+      invitacion,
+      borrador: invitacion ? sembrarDesdeLaBase(borrador, invitacion.personas) : borrador,
+    };
+  } catch (error) {
+    if (esCupoAgotado(error)) return { tipo: "fallo", fallo: "intentos" };
+    console.error("No se pudo leer la invitación para la landing:", error);
+    return { tipo: "fallo", fallo: "averia" };
+  }
+}
+
+/** Lo que trae la URL al volver de un paso de la confirmación. */
+function consultaDeConfirmacion(
+  parametros: Record<string, string | string[] | undefined>,
+): ConsultaConfirmacion {
+  const uno = (clave: string) => {
+    const valor = parametros[clave];
+    return typeof valor === "string" && valor ? valor : undefined;
+  };
+  return {
+    paso: uno("paso"),
+    falta: uno("falta"),
+    fallo: uno("fallo"),
+    largo: uno("largo"),
+    enviado: uno(MARCA_RSVP_ENVIADO.parametro) === MARCA_RSVP_ENVIADO.valor,
+  };
 }
 
 /** «Finca La Sierra, León»: el lugar y, si está escrita, la ciudad detrás. */
@@ -1199,7 +1262,7 @@ function Preguntas({
                 {t("preguntas.titulo")}
               </Titulo2>
             </span>
-            <SignoAbrir />
+            <SignoAbrir grupo="preguntas" />
           </summary>
           <ul className="border-t border-borde">
             {preguntas.map((pregunta) => (
@@ -1221,8 +1284,17 @@ function Preguntas({
   );
 }
 
+/**
+ * El giro de cada desplegable, escrito entero: Tailwind sólo compila las
+ * clases que encuentra tal cual en el código.
+ */
+const GIRO_AL_ABRIR = {
+  preguntas: "group-open/preguntas:rotate-45",
+  regalos: "group-open/regalos:rotate-45",
+} as const;
+
 /** El «+» de un desplegable, que se vuelve «×» al abrirse. Decoración. */
-function SignoAbrir() {
+function SignoAbrir({ grupo }: { grupo: keyof typeof GIRO_AL_ABRIR }) {
   const lado = 24;
   const margen = 5;
   const medio = lado / 2;
@@ -1230,7 +1302,7 @@ function SignoAbrir() {
     <svg
       aria-hidden
       viewBox={`0 0 ${lado} ${lado}`}
-      className="size-icono shrink-0 stroke-current transicion-transformacion group-open/preguntas:rotate-45"
+      className={`size-icono shrink-0 stroke-current transicion-transformacion ${GIRO_AL_ABRIR[grupo]}`}
       fill="none"
       strokeWidth={1.5}
       strokeLinecap="round"
@@ -1294,29 +1366,49 @@ function Playlist({
   );
 }
 
+/**
+ * LOS REGALOS, PLEGADOS Y AL FINAL, junto a la confirmación: lo que se hace
+ * va junto. Una línea —el titular— que se abre, y dentro el texto, el número
+ * de cuenta con su botón de copiar y el buzón.
+ */
 function Regalos() {
+  const idTitulo = `titulo-${anclaDe("regalos")}`;
   return (
-    <Bloque
-      seccion="regalos"
-      etiqueta={t("regalos.etiqueta")}
-      titulo={t("regalos.titulo")}
-      entradilla={t("regalos.descripcion")}
-      realzada
-      barrido
-      composicion="centrada"
-      ancho="estrecho"
+    <section
+      id={anclaDe("regalos")}
+      aria-labelledby={idTitulo}
+      className="relative px-margen py-tramo"
     >
-      {/*
-        EL NÚMERO NO ESTÁ AQUÍ. Este componente pinta un botón; el IBAN se pide
-        a `/regalos/cuenta` cuando alguien lo pulsa. Lo que el servidor decide
-        es sólo SI hay cuenta —para no enseñar un botón que no lleva a nada— y
-        eso no revela el número.
-      */}
-      <div className="animacion-escala-al-ver text-center">
-        <CuentaRegalos />
-        <Cuerpo className="mt-pila text-pequeno text-tinta-suave">{t("regalos.buzon")}</Cuerpo>
+      {/* El mismo ancho y eje que vuestra estrella, que va justo debajo. */}
+      <div className="mx-auto max-w-estrecho">
+        <details className="group/regalos border-y border-borde">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-elemento py-elemento">
+            <span>
+              <EtiquetaSeccion realzada>{t("regalos.etiqueta")}</EtiquetaSeccion>
+              <Titulo2 id={idTitulo} className="mt-pila">
+                {t("regalos.titulo")}
+              </Titulo2>
+            </span>
+            <SignoAbrir grupo="regalos" />
+          </summary>
+          {/*
+            EL NÚMERO NO ESTÁ AQUÍ. Este componente pinta un botón; el IBAN se
+            pide a `/regalos/cuenta` cuando alguien lo pulsa. Lo que el servidor
+            decide es sólo SI hay cuenta —para no enseñar un botón que no lleva
+            a nada— y eso no revela el número.
+          */}
+          <div className="pb-elemento">
+            <Cuerpo className="max-w-texto">{t("regalos.descripcion")}</Cuerpo>
+            <div className="mt-elemento">
+              <CuentaRegalos />
+            </div>
+            <Cuerpo className="mt-pila text-pequeno text-tinta-suave">
+              {t("regalos.buzon")}
+            </Cuerpo>
+          </div>
+        </details>
       </div>
-    </Bloque>
+    </section>
   );
 }
 
@@ -1344,42 +1436,6 @@ function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
         ))}
       </ul>
     </Bloque>
-  );
-}
-
-/**
- * CÓMO SE CONFIRMA, AL FINAL DE LA NOCHE
- *
- * La historia acaba con «cada momento fue una estrella», y aquí, entre todas
- * las del cielo, hay una hueca que late: la de los invitados, que es lo único
- * que falta. Se confirma por WhatsApp, en el mismo chat donde llegó la
- * invitación; aquí sólo se dice. Ni formulario ni botón.
- */
-function Rsvp({ configuracion }: { configuracion: ConfiguracionBoda }) {
-  const idTitulo = `titulo-${anclaDe("rsvp")}`;
-  return (
-    <section
-      id={anclaDe("rsvp")}
-      className="relative px-margen py-tramo text-center"
-      aria-labelledby={idTitulo}
-    >
-      <div className="mx-auto max-w-estrecho">
-        <VuestraEstrella className="mx-auto mb-elemento size-vuestra-estrella" />
-        <Cita className="mb-elemento">{t("rsvp.faltaVuestraEstrella")}</Cita>
-        <CabeceraSeccion
-          idTitulo={idTitulo}
-          etiqueta={
-            configuracion.fechaLimiteRsvp
-              ? t("rsvp.antesDel", { fecha: fechaLarga(configuracion.fechaLimiteRsvp) })
-              : null
-          }
-          titulo={t("rsvp.titulo")}
-          entradilla={t("rsvp.comoSeConfirma")}
-          composicion="centrada"
-          className=""
-        />
-      </div>
-    </section>
   );
 }
 

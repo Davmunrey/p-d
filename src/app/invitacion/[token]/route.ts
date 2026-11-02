@@ -6,10 +6,10 @@ import { COOKIE_INVITACION, opcionesCookieInvitacion } from "@/lib/invitacion";
 /**
  * EL ENLACE PERSONAL: SE ANOTA Y SE VA A LA PORTADA
  *
- * Los invitados confirman por WhatsApp; el enlace de cada invitación ya no
- * lleva a ningún formulario. Lo que hace es que la web sepa quién es: se
- * comprueba contra la base, se guarda en una cookie y se salta a la portada,
- * que saluda al grupo y le deja proponer canciones.
+ * El enlace de cada invitación no lleva a una página propia: hace que la web
+ * sepa quién es. Se comprueba contra la base, se guarda en una cookie y se
+ * salta a la portada, que saluda al grupo, le deja proponer canciones y, al
+ * final, en vuestra estrella, le abre su formulario de confirmación.
  *
  * ES UNA RUTA Y NO UNA PÁGINA porque escribe una cookie, y una página no puede.
  *

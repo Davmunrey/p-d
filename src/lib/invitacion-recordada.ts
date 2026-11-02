@@ -2,7 +2,6 @@ import "server-only";
 
 import { cookies } from "next/headers";
 
-import { nombreDeInvitacion } from "@/lib/bbdd/invitacion";
 import { COOKIE_INVITACION } from "@/lib/invitacion";
 
 /**
@@ -18,30 +17,6 @@ import { COOKIE_INVITACION } from "@/lib/invitacion";
 export async function invitacionRecordada(): Promise<string | null> {
   const valor = (await cookies()).get(COOKIE_INVITACION)?.value?.trim();
   return valor || null;
-}
-
-/**
- * A quién saluda la portada: el nombre del grupo de la invitación que recuerda
- * el navegador, o `null`.
- *
- * SE PREGUNTA A LA BASE Y NO SE GUARDA EN LA COOKIE. Si los novios corrigen el
- * nombre de un grupo en el panel, la portada lo saluda bien en la siguiente
- * visita; un nombre guardado en la cookie lo arrastraría un año. Y si el enlace
- * se ha anulado —se emitió uno nuevo—, deja de saludar, que es la verdad.
- *
- * UNA AVERÍA NO TUMBA LA PORTADA: sin base, o con el cortafuegos cerrado, la
- * portada sale igual, sólo que sin saludo.
- */
-export async function saludoDeLaVisita(): Promise<string | null> {
-  const token = await invitacionRecordada();
-  if (!token) return null;
-
-  try {
-    return await nombreDeInvitacion(token);
-  } catch (error) {
-    console.error("No se pudo leer a quién saludar:", error);
-    return null;
-  }
 }
 
 /**

@@ -129,6 +129,8 @@ test.describe("La sección de regalos", () => {
     await page.goto("/");
 
     const seccion = page.locator("#regalos");
+    // Plegada: primero se abre, como cualquier desplegable.
+    await seccion.locator("summary").click();
     await seccion.getByRole("button", { name: copy.regalos.revelar }).click();
 
     // Ahora sí: el número —agrupado de cuatro en cuatro, como se lee—, su
