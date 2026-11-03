@@ -1,6 +1,12 @@
 import postgres from "postgres";
 
 import { expect, test, type Page } from "./utiles/origen-propio";
+import {
+  ALTERNATIVO_RETRATO_DE_PRUEBA as ALTERNATIVO,
+  ESTRELLAS_RETRATO_DE_PRUEBA as CUANTAS,
+  ponerRetratoDePrueba as ponerRetrato,
+  quitarRetratoDePrueba,
+} from "./utiles/retrato-de-prueba";
 import { conSeccionApagada } from "./utiles/secciones";
 
 /**
@@ -11,29 +17,10 @@ import { conSeccionApagada } from "./utiles/secciones";
  * bajar —cada estrella se enciende cuando el trazado llega a ella— y lo
  * dibujado se queda dibujado. Sin JavaScript o sin movimiento, está entero.
  *
- * El test se fabrica su retrato en la base —un círculo de estrellas con
- * algunas principales—, que es lo que el panel guarda al subir una foto
- * recortada: aquí se prueba lo que la landing hace con él. Cómo se calcula
- * desde la foto lo prueban los unitarios de `src/lib/retrato/`.
+ * El test se fabrica su retrato en la base (`utiles/retrato-de-prueba.ts`).
  */
 
 const cadena = process.env.DATABASE_URL;
-const RUTA = "desarrollo/e2e-retrato.png";
-const ALTERNATIVO = "(DES) Tres figuras de prueba en la nieve";
-const CUANTAS = 60;
-
-/** Un círculo de estrellas; una de cada diez, principal. */
-const ESTRELLAS = {
-  proporcion: 0.8,
-  estrellas: Array.from({ length: CUANTAS }, (_, i) => {
-    const angulo = (i / CUANTAS) * 2 * Math.PI - Math.PI / 2;
-    return [
-      Number((0.5 + 0.5 * Math.cos(angulo)).toFixed(4)),
-      Number((0.5 + 0.5 * Math.sin(angulo)).toFixed(4)),
-      i % 10 === 0 ? 1 : 0.5,
-    ];
-  }),
-};
 
 async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T> {
   const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
@@ -42,20 +29,6 @@ async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T
   } finally {
     await sql.end();
   }
-}
-
-async function ponerRetrato(publicado: boolean): Promise<void> {
-  await conBase(async (sql) => {
-    await sql`delete from public.medios where ruta_almacenamiento = ${RUTA}`;
-    await sql`
-      insert into public.medios
-        (ruta_almacenamiento, texto_alternativo, seccion, tipo, publicado, orden, ancho, alto, estrellas)
-      values (
-        ${RUTA}, ${sql.json({ es: ALTERNATIVO })}, 'retrato', 'imagen', ${publicado}, 0,
-        800, 1000, ${sql.json(ESTRELLAS)}
-      )
-    `;
-  });
 }
 
 const retrato = (pagina: Page) => pagina.locator("[data-retrato]");
@@ -83,10 +56,7 @@ test.describe("El retrato de estrellas", () => {
   });
 
   test.afterAll(async () => {
-    if (cadena)
-      await conBase(
-        (sql) => sql`delete from public.medios where ruta_almacenamiento = ${RUTA}`,
-      );
+    if (cadena) await quitarRetratoDePrueba();
   });
 
   test("cierra la noche, de pie sobre el horizonte, y se oye su texto alternativo", async ({

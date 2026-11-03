@@ -1,6 +1,7 @@
 import postgres from "postgres";
 
 import { expect, test, type Locator, type Page } from "./utiles/origen-propio";
+import { ponerRetratoDePrueba, quitarRetratoDePrueba } from "./utiles/retrato-de-prueba";
 
 import copy from "../../content/copy.es.json";
 
@@ -109,12 +110,15 @@ test.describe("La portada sin foto es una noche entera", () => {
 
   let fotos: string[] = [];
 
+  // El seed no trae retrato de estrellas: el de prueba, para verlo asomar.
   test.beforeAll(async () => {
     fotos = await quitarFotoDePortada();
+    await ponerRetratoDePrueba();
   });
 
   test.afterAll(async () => {
     await devolverFotoDePortada(fotos);
+    await quitarRetratoDePrueba();
   });
 
   /**
