@@ -194,9 +194,23 @@ export default async function PaginaResumen() {
               rotulo={t("panel.resumen.ninos")}
               valor={resumen.invitados.ninosConfirmados}
             />
+            {/*
+              IDA Y VUELTA POR SEPARADO: son las dos cifras que pide quien
+              alquila el autobús, y no tienen por qué coincidir.
+            */}
+            <Cifra rotulo={t("panel.resumen.autobusIda")} valor={resumen.invitados.plazasIda} />
             <Cifra
-              rotulo={t("panel.resumen.autobus")}
-              valor={resumen.invitados.plazasAutobus}
+              rotulo={t("panel.resumen.autobusVuelta")}
+              valor={resumen.invitados.plazasVuelta}
+            />
+            {/*
+              LA PREBODA CUENTA SÓLO LOS «SÍ». Quien contestó antes de que se
+              preguntara, o sin preboda en la web, no suma: no dijo que no,
+              no se le preguntó.
+            */}
+            <Cifra
+              rotulo={t("panel.resumen.preboda")}
+              valor={resumen.invitados.asistentesPreboda}
             />
             {/*
               NO HAY CIFRA DE ALOJAMIENTO, a propósito. El RSVP no lo pregunta,

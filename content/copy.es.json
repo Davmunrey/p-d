@@ -201,7 +201,14 @@
     },
     "alergias": "Alergias o intolerancias",
     "alergiasAyuda": "Opcional. Contadnos cualquier cosa que debamos avisar a la cocina.",
-    "autobusPersona": "Necesita autobús",
+    "autobus": "Autobús",
+    "trayectos": {
+      "ninguno": "Sin autobús",
+      "ida": "Sólo ida",
+      "vuelta": "Sólo vuelta",
+      "ida_y_vuelta": "Ida y vuelta"
+    },
+    "prebodaPersona": "También a la preboda",
     "demasiadoLargo": "Eso es más largo de lo que cabe. Recortadlo un poco y volvemos a probar.",
     "atras": "Atrás",
     "siguiente": "Siguiente",
@@ -213,6 +220,7 @@
     "graciasNo": "Os echaremos de menos",
     "graciasNoTexto": "Gracias por avisar. Brindaremos por vosotros y os guardamos un trozo de tarta.",
     "resumenVienen": "Vienen",
+    "resumenPreboda": "También a la preboda",
     "resumenNoVienen": "No pueden venir",
     "respuestaGuardada": "Respuesta enviada el {fecha}",
     "editarRespuesta": "Cambiar la respuesta",
@@ -536,7 +544,9 @@
       "pendientes": "Sin contestar",
       "adultos": "Adultos",
       "ninos": "Niños",
-      "autobus": "Plazas de autobús",
+      "autobusIda": "Autobús de ida",
+      "autobusVuelta": "Autobús de vuelta",
+      "preboda": "A la preboda",
       "conAlergias": "Con alergias: {cuantas}",
       "sinInvitados": "Todavía no hay invitados. En cuanto creéis la primera invitación, aquí aparecerán los números.",
       "irAInvitados": "Ir a invitados",
@@ -1989,7 +1999,8 @@
       "vieneNo": "No puede venir",
       "menu": "Menú",
       "alergias": "Alergias o intolerancias",
-      "autobus": "Necesita autobús"
+      "autobus": "Autobús",
+      "preboda": "Viene también a la preboda"
     }
   }
 }

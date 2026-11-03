@@ -129,6 +129,15 @@ export const RETRATO_DE_ESTRELLAS = {
  */
 export const BUCKET_MEDIOS = "medios";
 
+/**
+ * LA FOTO DE LA VISTA PREVIA DE WHATSAPP. El renderizador de la imagen sólo
+ * entiende PNG y JPEG; con otro formato, o si la foto no llega a tiempo, se
+ * pinta la tarjeta de siempre. Un rastreador que espera demasiado se va sin
+ * imagen, y eso es peor que la tarjeta sin foto.
+ */
+export const TIPOS_FOTO_OG = ["image/png", "image/jpeg"] as const;
+export const ESPERA_FOTO_OG_MS = 4000;
+
 /** Idioma de la aplicación. La boda es en España: solo castellano. */
 export const IDIOMA = "es-ES";
 
@@ -367,6 +376,18 @@ export type MenuRsvp = (typeof MENUS_RSVP)[number];
  * era prometer algo que no se iba a servir.
  */
 export const MENU_SOLO_NINOS: MenuRsvp = "infantil";
+
+/**
+ * QUÉ AUTOBÚS NECESITA CADA UNO, en el orden del desplegable. Son los valores
+ * del enumerado `trayecto_autobus`, y por lo mismo que los menús: un valor que
+ * no esté aquí no llega al borrador ni a la base.
+ *
+ * Cuatro y no un sí/no porque las plazas que se contratan son de ida y de
+ * vuelta, y no son las mismas: quien duerme en la finca no vuelve.
+ */
+export const TRAYECTOS_AUTOBUS = ["ninguno", "ida", "vuelta", "ida_y_vuelta"] as const;
+
+export type TrayectoAutobus = (typeof TRAYECTOS_AUTOBUS)[number];
 
 /**
  * Cuánto recuerda el navegador de qué invitación es.

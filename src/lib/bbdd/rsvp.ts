@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { TrayectoAutobus } from "@/config/constants";
 import { huellaDePeticion } from "@/lib/huella-peticion";
 
 import { ErrorDeLectura, leerComoAnonimo, llamarComoAnonimo } from "./cliente";
@@ -44,6 +45,10 @@ export interface PersonaInvitada {
   estado: string | null;
   respondidoEn: Date | null;
   necesitaAutobus: boolean | null;
+  /** Si viene también a la preboda. `null` es que no se le preguntó. */
+  asistePreboda: boolean | null;
+  /** Qué autobús necesita. `null` en respuestas de antes del trayecto. */
+  trayectoAutobus: TrayectoAutobus | null;
 }
 
 export interface Invitacion {
@@ -67,6 +72,8 @@ interface FilaInvitacion {
   estado: string | null;
   respondido_en: Date | null;
   necesita_autobus: boolean | null;
+  asiste_preboda: boolean | null;
+  trayecto_autobus: TrayectoAutobus | null;
 }
 
 /**
@@ -99,6 +106,8 @@ export async function obtenerInvitacion(token: string): Promise<Invitacion | nul
       estado: f.estado,
       respondidoEn: f.respondido_en,
       necesitaAutobus: f.necesita_autobus,
+      asistePreboda: f.asiste_preboda,
+      trayectoAutobus: f.trayecto_autobus,
     })),
   };
 }
@@ -108,6 +117,13 @@ export type RespuestaInvitado = {
   invitado_id: string;
   estado: "confirmado" | "rechazado";
   necesita_autobus: boolean | null;
+  /**
+   * Sólo si la casilla estaba en el formulario: ausente, la base guarda NULL
+   * («no se le preguntó»), que no es lo mismo que «no».
+   */
+  asiste_preboda?: boolean;
+  /** Qué autobús, de quien viene. `necesita_autobus` lo deriva la base. */
+  trayecto_autobus?: TrayectoAutobus;
   tipo_menu?: string;
   alergias?: string | null;
 };

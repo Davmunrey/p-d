@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**72**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**73**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -27,7 +27,7 @@ Cada una tiene su reverso exacto en
 [`supabase/migrations/rollback/`](../supabase/migrations/rollback/), con el mismo
 nombre. Se ejecutan en orden **inverso**.
 
-En números: **35 tablas, 15 vistas, 19 enumerados, 59 funciones, 70 políticas RLS.**
+En números: **35 tablas, 15 vistas, 20 enumerados, 60 funciones, 70 políticas RLS.**
 
 Esos cinco números no se escriben a mano: los cuenta la suite de seguridad contra
 el catálogo de la base recién migrada, y si el documento dice otra cosa, el CI se
@@ -158,6 +158,8 @@ erDiagram
         enum origen
         bool es_vigente "una sola por invitado"
         bool necesita_autobus
+        bool asiste_preboda "NULL = no se preguntó"
+        enum trayecto_autobus "ninguno, ida, vuelta, ida_y_vuelta"
     }
     proveedores {
         uuid id PK
@@ -372,7 +374,18 @@ Una fila por respuesta. La anterior deja de ser vigente; nunca se edita.
   las invitaciones salen por WhatsApp desde el selector de contactos del
   móvil—, así que se retiró con sus comprobaciones. Quien viene sólo dice si
   necesita autobús: `confirmaciones_logistica_completa` lo exige cuando el
-  estado es `confirmado`.
+  estado es `confirmado`. Y si viene también a la preboda: `asiste_preboda`,
+  que se pregunta sólo cuando la web enseña la preboda. Por eso NULL es «no se
+  le preguntó» y no «no», y el recuento del panel
+  (`v_estadisticas_invitados.asistentes_preboda`) sólo suma los `true`;
+  `confirmaciones_preboda_solo_si_viene` impide que quien no viene a la boda
+  quede apuntado a la preboda. El autobús se pregunta por TRAYECTO
+  (`trayecto_autobus`: ninguno, sólo ida, sólo vuelta, ida y vuelta), porque
+  lo que se contrata son plazas de ida y de vuelta y no coinciden; el sí/no de
+  siempre se queda, derivado por el disparador `confirmaciones_derivar_autobus`,
+  para que el guion del día, las mesas y los servicios sigan leyendo lo mismo.
+  Las respuestas de antes no se reescriben —el histórico es inmutable—: un «sí»
+  sin trayecto cuenta como ida y vuelta en `plazas_ida` y `plazas_vuelta`.
 
 ### 3.3 Economía
 

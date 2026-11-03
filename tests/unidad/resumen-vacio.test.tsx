@@ -48,7 +48,9 @@ const INVITADOS = {
   ninosConfirmados: 1,
   rechazados: 2,
   pendientes: 5,
-  plazasAutobus: 3,
+  plazasIda: 3,
+  plazasVuelta: 2,
+  asistentesPreboda: 1,
 };
 
 async function pintar(): Promise<string> {

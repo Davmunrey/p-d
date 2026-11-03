@@ -13,6 +13,7 @@ import {
   RUTA_PENDIENTES,
   URL_WHATSAPP,
 } from "@/config/constants";
+import { esTrayecto } from "@/lib/rsvp-autobus";
 import { accesoActual, ceroFilasEsFaltaDePermiso } from "@/lib/sesion";
 import { clienteServidor, hayAutenticacion } from "@/lib/supabase/servidor";
 
@@ -482,6 +483,9 @@ export async function apuntarRespuesta(datos: FormData): Promise<void> {
   const alergias = texto(datos, "alergias") || null;
   if (viene && !(MENUS_INVITADO as readonly string[]).includes(menu))
     volver("error", grupoId, token);
+  // El desplegable siempre manda uno; un valor de fuera de la lista no se guarda.
+  const trayecto = texto(datos, "trayecto_autobus") || "ninguno";
+  if (viene && !esTrayecto(trayecto)) volver("error", grupoId, token);
   if ((alergias?.length ?? 0) > LARGOS_DE_CAMPO["invitados.alergias"]) {
     volver("alergias-largas", grupoId, token);
   }
@@ -523,7 +527,13 @@ export async function apuntarRespuesta(datos: FormData): Promise<void> {
       origen: "panel",
       registrado_por: acceso.perfilId,
       respondido_en: new Date().toISOString(),
-      necesita_autobus: viene ? datos.get("necesita_autobus") !== null : null,
+      // `necesita_autobus` lo deriva la base del trayecto; se manda igual
+      // para que la restricción de logística completa no dependa del orden.
+      necesita_autobus: viene ? trayecto !== "ninguno" : null,
+      trayecto_autobus: viene ? trayecto : null,
+      // Desde el panel se pregunta siempre: quien apunta la respuesta a mano
+      // sabe si la persona viene a la cena de la víspera.
+      asiste_preboda: viene ? datos.get("asiste_preboda") !== null : null,
     },
     { count: "exact" },
   );

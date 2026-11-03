@@ -2,7 +2,11 @@ import "server-only";
 
 import { cookies, headers } from "next/headers";
 
-import { MINUTOS_BORRADOR_RSVP, TROZO_COOKIE_BYTES } from "@/config/constants";
+import {
+  MINUTOS_BORRADOR_RSVP,
+  TROZO_COOKIE_BYTES,
+  type TrayectoAutobus,
+} from "@/config/constants";
 import {
   codificar,
   decodificar,
@@ -11,6 +15,7 @@ import {
   trozosSobrantes,
   unirTrozos,
 } from "@/lib/cookie-troceada";
+import { trayectoDelBorrador } from "@/lib/rsvp-autobus";
 
 /**
  * EL BORRADOR DE LA CONFIRMACIÓN
@@ -46,7 +51,9 @@ export interface Borrador {
   asistencia: Record<string, "confirmado" | "rechazado">;
   menu: Record<string, string>;
   alergias: Record<string, string>;
-  autobus: Record<string, boolean>;
+  autobus: Record<string, TrayectoAutobus>;
+  /** Quién viene también a la preboda, de los que vienen a la boda. */
+  preboda: Record<string, boolean>;
   /**
    * Si ya se le han puesto las respuestas guardadas en la base. Se siembra una
    * vez: después manda lo que se va escribiendo, aunque contradiga a la base.
@@ -60,7 +67,7 @@ const NOMBRE_COOKIE = "boda:rsvp";
 const RUTA_COOKIE = "/";
 
 export function borradorVacio(token: string): Borrador {
-  return { token, asistencia: {}, menu: {}, alergias: {}, autobus: {} };
+  return { token, asistencia: {}, menu: {}, alergias: {}, autobus: {}, preboda: {} };
 }
 
 /**
@@ -76,7 +83,23 @@ export async function leerBorrador(token: string): Promise<Borrador> {
   const guardado = decodificar(bruto) as Partial<Borrador> | null;
   if (!guardado || guardado.token !== token) return borradorVacio(token);
 
-  return { ...borradorVacio(token), ...guardado, token };
+  return {
+    ...borradorVacio(token),
+    ...guardado,
+    token,
+    autobus: autobusDelBorrador(guardado.autobus),
+  };
+}
+
+/** Los trayectos de un borrador guardado; los de antes eran `true`/`false`. */
+function autobusDelBorrador(guardado: unknown): Record<string, TrayectoAutobus> {
+  const autobus: Record<string, TrayectoAutobus> = {};
+  if (!guardado || typeof guardado !== "object") return autobus;
+  for (const [id, valor] of Object.entries(guardado)) {
+    const trayecto = trayectoDelBorrador(valor);
+    if (trayecto) autobus[id] = trayecto;
+  }
+  return autobus;
 }
 
 /**

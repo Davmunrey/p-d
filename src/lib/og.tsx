@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { ImageResponse } from "next/og";
 
-import { IDIOMA, ZONA_HORARIA } from "@/config/constants";
+import { ESPERA_FOTO_OG_MS, IDIOMA, TIPOS_FOTO_OG, ZONA_HORARIA } from "@/config/constants";
 import { ESCALA_OG, PALETAS } from "@/config/tokens.generado";
 
 /**
@@ -156,5 +156,71 @@ export async function construirImagenOg(contenido: ContenidoOg) {
       ) : null}
     </div>,
     { ...TAMANO_OG, fonts: await fuentes() },
+  );
+}
+
+/** Una foto lista para el renderizador: en línea, con sus medidas. */
+export interface FotoOg {
+  datos: string;
+  ancho: number;
+  alto: number;
+}
+
+/**
+ * Descarga una foto para la imagen de compartir y la deja en línea.
+ *
+ * Devuelve `null` —y entonces se pinta la tarjeta de siempre— si la foto no
+ * llega a tiempo, no existe, o viene en un formato que el renderizador no
+ * entiende. Nunca lanza: una vista previa sin foto es mejor que ninguna.
+ */
+export async function fotoParaOg(
+  url: string,
+  ancho: number | null,
+  alto: number | null,
+): Promise<FotoOg | null> {
+  if (!ancho || !alto) return null;
+  try {
+    const respuesta = await fetch(url, { signal: AbortSignal.timeout(ESPERA_FOTO_OG_MS) });
+    if (!respuesta.ok) return null;
+    const tipo = (respuesta.headers.get("content-type") ?? "").split(";")[0]!.trim();
+    if (!(TIPOS_FOTO_OG as readonly string[]).includes(tipo)) return null;
+    const bytes = Buffer.from(await respuesta.arrayBuffer());
+    return { datos: `data:${tipo};base64,${bytes.toString("base64")}`, ancho, alto };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * LA VISTA PREVIA CON LA ILUSTRACIÓN. La foto a todo el alto, centrada sobre la
+ * noche de la marca, entera y sin recortar: WhatsApp enseña la tarjeta casi
+ * cuadrada y recorta por los lados, así que lo que importa va en el centro, y
+ * los lados son sólo cielo. Los nombres y la fecha viajan ya en el título y la
+ * descripción del enlace, debajo de la imagen.
+ */
+export async function construirImagenOgConFoto(foto: FotoOg) {
+  const alto = TAMANO_OG.height - 2 * escala.margenFoto;
+  const ancho = Math.round((alto * foto.ancho) / foto.alto);
+  return new ImageResponse(
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: paleta.fondo,
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- Satori pinta `img`, no `Image` */}
+      <img
+        src={foto.datos}
+        width={ancho}
+        height={alto}
+        alt=""
+        style={{ borderRadius: escala.radioFoto, objectFit: "cover" }}
+      />
+    </div>,
+    { ...TAMANO_OG },
   );
 }

@@ -425,6 +425,10 @@
   --og-hueco-pie: var(--size-og-hueco-pie);
   --og-filete: var(--size-og-filete);
 
+  /* Con foto: la ilustración a todo el alto, con este aire y estas esquinas. */
+  --og-margen-foto: var(--size-og-margen-foto);
+  --og-radio-foto: var(--size-og-radio-foto);
+
   /*
     LA CASILLA Y EL RADIO DE LA MARCA (`casilla-marca`). Sin marcar, un aro;
     marcada, el aro y un punto del color de la tinta con un hueco transparente

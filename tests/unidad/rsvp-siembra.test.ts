@@ -11,6 +11,7 @@ const vacio = (): Borrador => ({
   menu: {},
   alergias: {},
   autobus: {},
+  preboda: {},
 });
 
 const persona = (id: string, extra: Partial<PersonaInvitada> = {}): PersonaInvitada => ({
@@ -24,6 +25,8 @@ const persona = (id: string, extra: Partial<PersonaInvitada> = {}): PersonaInvit
   estado: null,
   respondidoEn: null,
   necesitaAutobus: null,
+  asistePreboda: null,
+  trayectoAutobus: null,
   ...extra,
 });
 
@@ -42,10 +45,38 @@ describe("sembrarDesdeLaBase", () => {
     const sembrado = sembrarDesdeLaBase(vacio(), familia);
 
     expect(sembrado.asistencia).toEqual({ ana: "confirmado", luis: "rechazado" });
-    expect(sembrado.autobus.ana).toBe(true);
+    // Un «sí» de antes del trayecto era ida y vuelta.
+    expect(sembrado.autobus.ana).toBe("ida_y_vuelta");
     expect(sembrado.menu.ana).toBe("vegetariano");
     expect(sembrado.alergias.ana).toBe("Celíaca");
     expect(sembrado.sembrado).toBe(true);
+  });
+
+  it("quien dijo que venía a la preboda la encuentra marcada, y quien no se le preguntó, sin tocar", () => {
+    const sembrado = sembrarDesdeLaBase(vacio(), [
+      persona("ana", { estado: "confirmado", asistePreboda: true }),
+      persona("luis", { estado: "confirmado", asistePreboda: false }),
+      // Contestó antes de que hubiera preboda: NULL no es «no», no se siembra.
+      persona("eva", { estado: "confirmado", asistePreboda: null }),
+    ]);
+    expect(sembrado.preboda).toEqual({ ana: true, luis: false });
+    expect(sembrado.preboda.eva).toBeUndefined();
+  });
+
+  it("el trayecto guardado sale como se dijo", () => {
+    const sembrado = sembrarDesdeLaBase(vacio(), [
+      persona("ana", {
+        estado: "confirmado",
+        necesitaAutobus: true,
+        trayectoAutobus: "vuelta",
+      }),
+      persona("luis", {
+        estado: "confirmado",
+        necesitaAutobus: false,
+        trayectoAutobus: "ninguno",
+      }),
+    ]);
+    expect(sembrado.autobus).toEqual({ ana: "vuelta", luis: "ninguno" });
   });
 
   it("la persona nueva, que nunca contestó, sigue sin marcar", () => {
@@ -61,14 +92,14 @@ describe("sembrarDesdeLaBase", () => {
     const escrito: Borrador = {
       ...vacio(),
       asistencia: { ana: "rechazado" },
-      autobus: { ana: false },
+      autobus: { ana: "ninguno" },
       alergias: { ana: "" },
     };
     const sembrado = sembrarDesdeLaBase(escrito, [
       persona("ana", { estado: "confirmado", necesitaAutobus: true, alergias: "Lactosa" }),
     ]);
     expect(sembrado.asistencia.ana).toBe("rechazado");
-    expect(sembrado.autobus.ana).toBe(false);
+    expect(sembrado.autobus.ana).toBe("ninguno");
     expect(sembrado.alergias.ana).toBe("");
   });
 

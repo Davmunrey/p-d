@@ -1,4 +1,5 @@
 import type { PersonaInvitada } from "@/lib/bbdd/rsvp";
+import { trayectoGuardado } from "@/lib/rsvp-autobus";
 import type { Borrador } from "@/lib/rsvp-borrador";
 
 /**
@@ -21,6 +22,7 @@ export function sembrarDesdeLaBase(borrador: Borrador, personas: PersonaInvitada
     menu: { ...borrador.menu },
     alergias: { ...borrador.alergias },
     autobus: { ...borrador.autobus },
+    preboda: { ...borrador.preboda },
     sembrado: true,
   };
 
@@ -36,8 +38,10 @@ export function sembrarDesdeLaBase(borrador: Borrador, personas: PersonaInvitada
     if (sembrado.alergias[id] === undefined && persona.alergias !== null) {
       sembrado.alergias[id] = persona.alergias;
     }
-    if (sembrado.autobus[id] === undefined && persona.necesitaAutobus !== null) {
-      sembrado.autobus[id] = persona.necesitaAutobus;
+    const trayecto = trayectoGuardado(persona);
+    if (sembrado.autobus[id] === undefined && trayecto) sembrado.autobus[id] = trayecto;
+    if (sembrado.preboda[id] === undefined && persona.asistePreboda !== null) {
+      sembrado.preboda[id] = persona.asistePreboda;
     }
   }
   return sembrado;

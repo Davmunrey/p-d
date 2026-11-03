@@ -104,10 +104,12 @@ jobs:
 
           echo "::warning::Falta:$faltan. Ver docs/ENTORNO.md. Las migraciones no se aplican."
 
+      # Versión fija, por lo mismo que en ci.yml: `latest` consulta la API
+      # de GitHub, que tiene cupo, y una mayor nueva no entra sin decidirlo.
       - uses: supabase/setup-cli@v1
         if: steps.credenciales.outputs.hay == 'si'
         with:
-          version: latest
+          version: 2.122.0
 
       # ENLAZAR PUEDE FALLAR SIN QUE SE CAIGA EL MUNDO, y aquí está el porqué.
       #

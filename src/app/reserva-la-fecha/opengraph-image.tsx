@@ -1,6 +1,14 @@
-import { obtenerConfiguracion, obtenerSecciones } from "@/lib/bbdd/landing";
+import { BUCKET_MEDIOS } from "@/config/constants";
+import { obtenerConfiguracion, obtenerMedios, obtenerSecciones } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
-import { construirImagenOg, FORMATO_FECHA_OG, TAMANO_OG, TIPO_OG } from "@/lib/og";
+import {
+  construirImagenOg,
+  construirImagenOgConFoto,
+  fotoParaOg,
+  FORMATO_FECHA_OG,
+  TAMANO_OG,
+  TIPO_OG,
+} from "@/lib/og";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +32,12 @@ export const contentType = TIPO_OG;
 export default async function ImagenReservaLaFecha() {
   let secciones;
   let configuracion;
+  let fotos;
   try {
-    [secciones, configuracion] = await Promise.all([
+    [secciones, configuracion, fotos] = await Promise.all([
       obtenerSecciones(),
       obtenerConfiguracion(),
+      obtenerMedios("reserva_la_fecha"),
     ]);
   } catch {
     return new Response(null, { status: 503, headers: { "Retry-After": "60" } });
@@ -36,6 +46,23 @@ export default async function ImagenReservaLaFecha() {
   if (!secciones.includes("reserva_la_fecha") || !configuracion) {
     return new Response(null, { status: 404 });
   }
+
+  /*
+    CON LA ILUSTRACIÓN, SI LA HAY. La primera foto publicada de la sección del
+    Save the Date —la misma que sale del sobre— es lo primero que ve quien
+    recibe el enlace. Si no llega o no se puede pintar, la tarjeta de siempre.
+  */
+  const primera = fotos.find((medio) => medio.tipo === "imagen");
+  const urlBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const foto =
+    primera && urlBase
+      ? await fotoParaOg(
+          `${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${primera.ruta}`,
+          primera.ancho,
+          primera.alto,
+        )
+      : null;
+  if (foto) return construirImagenOgConFoto(foto);
 
   return construirImagenOg({
     // Aquí la etiqueta es la propia llamada: es lo que se manda meses antes.

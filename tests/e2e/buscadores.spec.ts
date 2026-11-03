@@ -165,6 +165,40 @@ test.describe("El sitemap", () => {
   });
 
   /**
+   * CASO DE ERROR · UNA ILUSTRACIÓN QUE NO SE PUEDE PINTAR NO ROMPE LA VISTA
+   * PREVIA. Con una foto publicada en la sección del Save the Date, la imagen
+   * de compartir la lleva; si el fichero no está en el almacén —o no llega a
+   * tiempo, o es de un formato que el renderizador no entiende—, sale la
+   * tarjeta de siempre. Nunca un error: WhatsApp guarda en caché lo que ve.
+   */
+  test("con una foto del Save the Date que no se puede descargar, la vista previa sigue saliendo", async ({
+    request,
+  }) => {
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    const ruta = "reserva-la-fecha/e2e-no-existe.png";
+    try {
+      await sql`delete from public.medios where ruta_almacenamiento = ${ruta}`;
+      await sql`
+        insert into public.medios
+          (ruta_almacenamiento, texto_alternativo, seccion, tipo, publicado, orden, ancho, alto)
+        select
+          ${ruta}, '{"es": "(DES) Ilustración que no está en el almacén"}'::jsonb,
+          'reserva_la_fecha', 'imagen', true,
+          -- El primer hueco libre: el orden es único dentro de la sección.
+          coalesce((select max(orden) + 1 from public.medios where seccion = 'reserva_la_fecha'), 0),
+          1086, 1448
+      `;
+      const imagen = await request.get("/reserva-la-fecha/opengraph-image");
+      expect(imagen.status()).toBe(200);
+      expect(imagen.headers()["content-type"]).toContain("image/png");
+      expect((await imagen.body()).byteLength).toBeGreaterThan(0);
+    } finally {
+      await sql`delete from public.medios where ruta_almacenamiento = ${ruta}`;
+      await sql.end();
+    }
+  });
+
+  /**
    * CASO DE ERROR · EL SITEMAP NO MIENTE SOBRE CUÁNDO CAMBIÓ LA PÁGINA.
    *
    * Ponía `lastmod` a la hora de la petición, o sea «ha cambiado ahora mismo»

@@ -142,9 +142,14 @@ jobs:
       - name: Instalar navegador
         run: npx playwright install --with-deps chromium
 
+      # VERSIÓN FIJA, NO `latest`. Con `latest` la acción pregunta a la API de
+      # GitHub cuál es la última, y esa pregunta tiene cupo: con el cupo
+      # agotado el trabajo caía sin haber probado nada («rate limit
+      # exceeded»). Fija, además, una versión mayor nueva no cambia el CLI
+      # por debajo de los tests sin que nadie lo decida.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0
 
       # Levanta Postgres y GoTrue, que es lo que hace falta para probar la
       # puerta del panel. Es lento —descarga imágenes— y por eso va en su

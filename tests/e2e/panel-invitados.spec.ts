@@ -50,7 +50,12 @@ async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T
  * Apunta en la ficha abierta la respuesta de una persona, como cuando llega por
  * WhatsApp: el desplegable que dice de quién, el sí o el no, y guardar.
  */
-async function apuntar(pagina: Page, persona: string, estado: "confirmado" | "rechazado") {
+async function apuntar(
+  pagina: Page,
+  persona: string,
+  estado: "confirmado" | "rechazado",
+  { preboda = false }: { preboda?: boolean } = {},
+) {
   await pagina
     .getByLabel(copy.panel.invitados.apuntarRespuestaDe.replace("{persona}", persona))
     .click();
@@ -63,6 +68,7 @@ async function apuntar(pagina: Page, persona: string, estado: "confirmado" | "re
       estado === "confirmado" ? copy.panel.respuesta.vieneSi : copy.panel.respuesta.vieneNo,
     )
     .check();
+  if (preboda) await formulario.getByLabel(copy.panel.respuesta.preboda).check();
   await formulario.getByRole("button", { name: copy.panel.invitados.guardarRespuesta }).click();
   await expect(pagina).toHaveURL(/estado=respuesta-apuntada/);
 }
@@ -302,8 +308,15 @@ test.describe("Resumen del panel", () => {
       .filter({ hasText: copy.panel.resumen.confirmados })
       .locator("xpath=following-sibling::dd[1]");
 
+    // La de la preboda, que sólo suma los «sí» de quien viene a la boda.
+    const aLaPreboda = page
+      .getByRole("term")
+      .filter({ hasText: copy.panel.resumen.preboda })
+      .locator("xpath=following-sibling::dd[1]");
+
     await page.goto(RUTA_PANEL);
     const antes = Number((await confirmados.first().textContent())?.trim() ?? "0");
+    const prebodaAntes = Number((await aLaPreboda.first().textContent())?.trim() ?? "0");
 
     // Una invitación nueva con una persona, contestada que sí.
     await page.goto(RUTA_INVITADOS);
@@ -318,19 +331,24 @@ test.describe("Resumen del panel", () => {
     await page.getByRole("button", { name: copy.panel.invitados.anadirPersona }).click();
     await expect(page.getByText("(DES) Nekane")).toBeVisible();
 
-    await apuntar(page, "(DES) Nekane", "confirmado");
+    await apuntar(page, "(DES) Nekane", "confirmado", { preboda: true });
 
     await page.goto(RUTA_PANEL);
     const despues = Number((await confirmados.first().textContent())?.trim() ?? "0");
 
     // Si esto no sube, las cifras no salen de la base.
     expect(despues).toBe(antes + 1);
+    // Y la casilla de la preboda del panel también se guarda y se cuenta.
+    expect(Number((await aLaPreboda.first().textContent())?.trim() ?? "0")).toBe(
+      prebodaAntes + 1,
+    );
 
     /*
       Y EN LA LOGÍSTICA SÓLO LO QUE EL RSVP PREGUNTA. Salía «Necesitan
       alojamiento: 0» —el formulario no lo pregunta y la base guarda `false`
-      para todos—, que se leía como un dato. Son tres cifras: adultos, niños y
-      autobús.
+      para todos—, que se leía como un dato. Son cinco cifras: adultos, niños,
+      plazas de autobús a la ida y a la vuelta, y quienes vienen también a la
+      preboda, que el paso 2 pregunta.
     */
     const logistica = page
       .locator("section")
@@ -338,7 +356,9 @@ test.describe("Resumen del panel", () => {
     await expect(logistica.getByRole("term")).toHaveText([
       copy.panel.resumen.adultos,
       copy.panel.resumen.ninos,
-      copy.panel.resumen.autobus,
+      copy.panel.resumen.autobusIda,
+      copy.panel.resumen.autobusVuelta,
+      copy.panel.resumen.preboda,
     ]);
   });
 
@@ -1297,7 +1317,7 @@ test.describe("La ficha de una invitación", () => {
     await formulario.getByLabel(copy.panel.respuesta.vieneSi).check();
     await formulario.getByLabel(copy.panel.respuesta.menu).selectOption("sin_gluten");
     await formulario.getByLabel(copy.panel.respuesta.alergias).fill("(DES) Celíaca");
-    await formulario.getByLabel(copy.panel.respuesta.autobus).check();
+    await formulario.getByLabel(copy.panel.respuesta.autobus).selectOption("vuelta");
     // El menú infantil no se ofrece a una adulta.
     await expect(formulario.locator('option[value="infantil"]')).toHaveCount(0);
     await formulario
@@ -1322,12 +1342,14 @@ test.describe("La ficha de una invitación", () => {
           origen: string;
           con_autor: boolean;
           autobus: boolean;
+          trayecto: string;
           menu: string;
           alergias: string;
         }[]
       >`
         select c.estado::text as estado, c.origen::text as origen,
                c.registrado_por is not null as con_autor, c.necesita_autobus as autobus,
+               c.trayecto_autobus::text as trayecto,
                i.tipo_menu::text as menu, i.alergias
           from public.confirmaciones c
           join public.invitados i on i.id = c.invitado_id
@@ -1338,7 +1360,9 @@ test.describe("La ficha de una invitación", () => {
       estado: "confirmado",
       origen: "panel",
       con_autor: true,
+      // Sólo vuelta sigue siendo «necesita autobús»: lo deriva la base.
       autobus: true,
+      trayecto: "vuelta",
       menu: "sin_gluten",
       alergias: "(DES) Celíaca",
     });

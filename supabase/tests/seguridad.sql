@@ -945,7 +945,80 @@ begin
   end;
   perform pg_temp.comprobar('una confirmación sin logística explícita se acepta', v_ok);
 
+  -- LA PREBODA: sin la clave es «no se le preguntó» (NULL), no «no».
+  select asiste_preboda is null into v_ok
+    from public.obtener_invitacion(v_token) where invitado_id = v_mio;
+  perform pg_temp.comprobar('una confirmación sin preboda la deja en «no se preguntó»', v_ok);
+
+  -- Quien no viene a la boda no va a la preboda, aunque la petición lo diga.
+  perform public.registrar_confirmacion(
+    v_token,
+    jsonb_build_array(jsonb_build_object(
+      'invitado_id', v_mio, 'estado', 'rechazado', 'asiste_preboda', true
+    ))
+  );
+  select asiste_preboda is null into v_ok
+    from public.obtener_invitacion(v_token) where invitado_id = v_mio;
+  perform pg_temp.comprobar('quien no viene a la boda no queda apuntado a la preboda', v_ok);
+
+  perform public.registrar_confirmacion(
+    v_token,
+    jsonb_build_array(jsonb_build_object(
+      'invitado_id', v_mio, 'estado', 'confirmado', 'asiste_preboda', true
+    ))
+  );
+  select asiste_preboda into v_ok
+    from public.obtener_invitacion(v_token) where invitado_id = v_mio;
+  perform pg_temp.comprobar('quien viene y marca la preboda queda apuntado', v_ok);
+
+  -- EL TRAYECTO DEL AUTOBÚS: «sólo vuelta» es necesitar autobús, y lo dice
+  -- la base sola, aunque la petición diga otra cosa del sí/no.
+  perform public.registrar_confirmacion(
+    v_token,
+    jsonb_build_array(jsonb_build_object(
+      'invitado_id', v_mio, 'estado', 'confirmado',
+      'trayecto_autobus', 'vuelta', 'necesita_autobus', false
+    ))
+  );
+  select trayecto_autobus = 'vuelta' and necesita_autobus into v_ok
+    from public.obtener_invitacion(v_token) where invitado_id = v_mio;
+  perform pg_temp.comprobar('el trayecto se guarda y el sí/no del autobús sale de él', v_ok);
+
+  -- Un trayecto inventado no se cuela: la respuesta entera se rechaza.
+  begin
+    perform public.registrar_confirmacion(
+      v_token,
+      jsonb_build_array(jsonb_build_object(
+        'invitado_id', v_mio, 'estado', 'confirmado', 'trayecto_autobus', 'en_globo'
+      ))
+    );
+    v_ok := false;
+  exception when others then
+    v_ok := true;
+  end;
+  perform pg_temp.comprobar('un trayecto que no existe no se guarda', v_ok);
+
   reset role;
+
+  -- Y la base lo sostiene sola: ni el panel puede apuntar a la preboda a
+  -- quien no viene a la boda.
+  begin
+    insert into public.confirmaciones (invitado_id, estado, origen, asiste_preboda)
+    values (v_mio, 'rechazado', 'panel', true);
+    v_ok := false;
+  exception when check_violation then
+    v_ok := true;
+  end;
+  perform pg_temp.comprobar('la base no admite preboda sin boda', v_ok);
+
+  begin
+    insert into public.confirmaciones (invitado_id, estado, origen, trayecto_autobus)
+    values (v_mio, 'rechazado', 'panel', 'ida');
+    v_ok := false;
+  exception when check_violation then
+    v_ok := true;
+  end;
+  perform pg_temp.comprobar('la base no admite autobús a quien no viene', v_ok);
 end $$;
 
 \echo ''

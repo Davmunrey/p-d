@@ -13,6 +13,7 @@ import {
   RUTA_ACCESO,
   RUTA_INVITADOS,
   RUTA_INVITACION,
+  TRAYECTOS_AUTOBUS,
   ZONA_HORARIA,
 } from "@/config/constants";
 import { obtenerGrupo, type DetalleGrupo, type PersonaDelGrupo } from "@/lib/bbdd/invitados";
@@ -613,13 +614,24 @@ function ApuntarRespuesta({
           maxLength={LARGOS_DE_CAMPO["invitados.alergias"]}
           defaultValue={persona.alergias ?? undefined}
         />
+        <CampoSeleccion
+          etiqueta={t("panel.respuesta.autobus")}
+          name="trayecto_autobus"
+          defaultValue="ninguno"
+        >
+          {TRAYECTOS_AUTOBUS.map((trayecto) => (
+            <option key={trayecto} value={trayecto}>
+              {t(`rsvp.trayectos.${trayecto}`)}
+            </option>
+          ))}
+        </CampoSeleccion>
         <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
           <input
             type="checkbox"
-            name="necesita_autobus"
+            name="asiste_preboda"
             className="casilla-marca transicion-color"
           />
-          <span className="text-cuerpo text-tinta">{t("panel.respuesta.autobus")}</span>
+          <span className="text-cuerpo text-tinta">{t("panel.respuesta.preboda")}</span>
         </label>
         <div>
           <BotonEnvio jerarquia="secundario">

@@ -24,7 +24,11 @@ export interface EstadisticasInvitados {
   ninosConfirmados: number;
   rechazados: number;
   pendientes: number;
-  plazasAutobus: number;
+  /** Plazas de autobús a la ida y a la vuelta: lo que se contrata. */
+  plazasIda: number;
+  plazasVuelta: number;
+  /** Quienes vienen a la boda y han dicho que también a la preboda. */
+  asistentesPreboda: number;
 }
 
 export interface MenuConfirmado {
@@ -70,7 +74,9 @@ export async function obtenerResumen(): Promise<ResumenBoda> {
       // Tentativo cuenta como pendiente: lo que importa es si ya se sabe el
       // número o todavía no.
       pendientes: cuenta(fila?.pendientes) + cuenta(fila?.tentativos),
-      plazasAutobus: cuenta(fila?.plazas_autobus),
+      plazasIda: cuenta(fila?.plazas_ida),
+      plazasVuelta: cuenta(fila?.plazas_vuelta),
+      asistentesPreboda: cuenta(fila?.asistentes_preboda),
     },
     menus: ((menus.data ?? []) as Record<string, unknown>[]).map((menu) => ({
       tipoMenu: String(menu.tipo_menu),

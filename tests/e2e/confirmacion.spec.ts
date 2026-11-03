@@ -80,6 +80,8 @@ interface Guardado {
   estado: string;
   origen: string;
   necesita_autobus: boolean | null;
+  trayecto_autobus: string | null;
+  asiste_preboda: boolean | null;
   tipo_menu: string;
   alergias: string | null;
 }
@@ -89,7 +91,9 @@ async function loGuardado(token: string): Promise<Guardado[]> {
   return conBase(
     (sql) => sql<Guardado[]>`
       select i.nombre, c.estado::text as estado, c.origen::text as origen,
-             c.necesita_autobus, i.tipo_menu::text as tipo_menu, i.alergias
+             c.necesita_autobus, c.trayecto_autobus::text as trayecto_autobus,
+             c.asiste_preboda,
+             i.tipo_menu::text as tipo_menu, i.alergias
         from public.confirmaciones as c
         join public.invitados as i on i.id = c.invitado_id
         join public.grupos_invitacion as g on g.id = i.grupo_id
@@ -233,7 +237,10 @@ test.describe("Confirmar con el enlace", () => {
     await expect(rsvp.locator('select[name^="menu-"]')).toHaveCount(1);
     await rsvp.locator('select[name^="menu-"]').selectOption("vegano");
     await rsvp.locator('input[name^="alergias-"]').fill("(DES) Frutos secos");
-    await rsvp.locator('input[name^="autobus-"]').check();
+    // El trayecto, no un sí/no: lo que se contrata son plazas de ida y de vuelta.
+    const autobus = rsvp.getByLabel(copy.rsvp.autobus, { exact: true });
+    await expect(autobus.locator("option")).toHaveText(Object.values(copy.rsvp.trayectos));
+    await autobus.selectOption("ida");
     await botonAvanzar(rsvp, copy.rsvp.enviar).click();
 
     // Hecho: el gracias, y la estrella encendida.
@@ -255,11 +262,14 @@ test.describe("Confirmar con el enlace", () => {
     // LO QUE DE VERDAD IMPORTA: qué quedó escrito.
     const [aitor, bego] = await loGuardado(token);
     expect(aitor?.estado).toBe("confirmado");
+    expect(aitor?.trayecto_autobus).toBe("ida");
+    // El sí/no que leen el guion del día y las mesas sale del trayecto.
     expect(aitor?.necesita_autobus).toBe(true);
     expect(aitor?.tipo_menu).toBe("vegano");
     expect(aitor?.alergias).toBe("(DES) Frutos secos");
     expect(bego?.estado).toBe("rechazado");
     expect(bego?.necesita_autobus).toBeNull();
+    expect(bego?.trayecto_autobus).toBeNull();
     // El origen lo pone la base, no la petición.
     expect(aitor?.origen).toBe("publico");
 
@@ -273,6 +283,95 @@ test.describe("Confirmar con el enlace", () => {
     await expect(rsvp).toContainText(copy.rsvp.resumenNoVienen);
 
     await contexto.close();
+  });
+
+  /**
+   * LA PREBODA, POR PERSONA. Se pregunta en el paso 2, a quien viene a la boda:
+   * una casilla junto al autobús. Quien no viene a la boda no la ve.
+   */
+  test("quien viene dice si va también a la preboda, y queda en la base", async ({ page }) => {
+    const { token } = await crearGrupo("preboda", [
+      "(DES) Elvira",
+      "(DES) Fermín",
+      "(DES) Gema",
+    ]);
+    const rsvp = await abrirConElEnlace(page, token);
+
+    await contestar(rsvp, "(DES) Elvira", true);
+    await contestar(rsvp, "(DES) Fermín", true);
+    await contestar(rsvp, "(DES) Gema", false);
+    await botonAvanzar(rsvp, copy.rsvp.siguiente).click();
+    await expect(page).toHaveURL(/paso=detalles/);
+
+    // Una casilla por cada uno de los dos que vienen, con el día de la víspera.
+    const casillas = rsvp.locator('input[name^="preboda-"]');
+    await expect(casillas).toHaveCount(2);
+    const rotulo = copy.rsvp.prebodaPersona;
+    const deElvira = rsvp
+      .getByRole("group", { name: /Elvira/ })
+      .getByRole("checkbox", { name: new RegExp(rotulo) });
+    // El nombre accesible lleva también el día: quien no ve el renglón lo oye.
+    await expect(deElvira).toHaveAccessibleName(
+      /viernes|sábado|domingo|lunes|martes|miércoles|jueves/i,
+    );
+    await deElvira.check();
+    await botonAvanzar(rsvp, copy.rsvp.enviar).click();
+
+    await expect(page).toHaveURL(/enviado=1/);
+    // El resumen dice quién va a la preboda.
+    await expect(rsvp).toContainText(copy.rsvp.resumenPreboda);
+
+    const guardado = Object.fromEntries(
+      (await loGuardado(token)).map((fila) => [fila.nombre, fila.asiste_preboda]),
+    );
+    expect(guardado).toEqual({
+      "(DES) Elvira": true,
+      // Vio la casilla y no la marcó: eso sí es un «no».
+      "(DES) Fermín": false,
+      // No viene a la boda: ni se le pregunta ni se apunta nada.
+      "(DES) Gema": null,
+    });
+
+    // Al cambiar la respuesta, la casilla sigue como se dejó.
+    await rsvp.getByRole("button", { name: copy.rsvp.editarRespuesta }).click();
+    await botonAvanzar(rsvp, copy.rsvp.siguiente).click();
+    await expect(page).toHaveURL(/paso=detalles/);
+    await expect(deElvira).toBeChecked();
+  });
+
+  /**
+   * CASO DE ERROR · Sin preboda en la web no se pregunta por ella, y la base
+   * guarda «no se le preguntó» (NULL), que no cuenta como un «no».
+   */
+  test("sin preboda en la web no se pregunta, y no se apunta como un «no»", async ({
+    page,
+  }) => {
+    const { token } = await crearGrupo("sin-preboda", ["(DES) Hugo"]);
+    await conBase(
+      (sql) =>
+        sql`update public.secciones_landing set visible = false where seccion = 'preboda'`,
+    );
+    try {
+      const rsvp = await abrirConElEnlace(page, token);
+      await contestar(rsvp, "(DES) Hugo", true);
+      await botonAvanzar(rsvp, copy.rsvp.siguiente).click();
+      await expect(page).toHaveURL(/paso=detalles/);
+
+      await expect(rsvp.locator('select[name^="autobus-"]')).toHaveCount(1);
+      await expect(rsvp.locator('input[name^="preboda-"]')).toHaveCount(0);
+      await botonAvanzar(rsvp, copy.rsvp.enviar).click();
+
+      await expect(page).toHaveURL(/enviado=1/);
+      await expect(rsvp).not.toContainText(copy.rsvp.resumenPreboda);
+      const [hugo] = await loGuardado(token);
+      expect(hugo?.estado).toBe("confirmado");
+      expect(hugo?.asiste_preboda).toBeNull();
+    } finally {
+      await conBase(
+        (sql) =>
+          sql`update public.secciones_landing set visible = true where seccion = 'preboda'`,
+      );
+    }
   });
 
   test("si no viene nadie, no se pregunta por el menú y la estrella sigue hueca", async ({

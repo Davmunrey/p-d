@@ -44,7 +44,9 @@ export const ESCALA_OG = {
   "textoPie": 30,
   "hueco": 28,
   "huecoPie": 36,
-  "filete": 2
+  "filete": 2,
+  "margenFoto": 24,
+  "radioFoto": 16
 } as const;
 
 /**

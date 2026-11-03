@@ -33,6 +33,8 @@ import {
   leerBorrador,
   type Borrador,
 } from "@/lib/rsvp-borrador";
+import { esTrayecto, trayectoGuardado } from "@/lib/rsvp-autobus";
+import { CAMPO_PREGUNTA_PREBODA } from "@/lib/rsvp-preboda";
 import { sembrarDesdeLaBase } from "@/lib/rsvp-siembra";
 
 /**
@@ -116,9 +118,23 @@ function incorporar(
       const menu = texto(datos, `menu-${id}`);
       if ((MENUS_RSVP as readonly string[]).includes(menu)) borrador.menu[id] = menu;
       borrador.alergias[id] = texto(datos, `alergias-${id}`);
-      borrador.autobus[id] = datos.get(`autobus-${id}`) !== null;
+      // Un trayecto que no es de la lista no llega al borrador.
+      const trayecto = texto(datos, `autobus-${id}`);
+      if (esTrayecto(trayecto)) borrador.autobus[id] = trayecto;
+      // Sólo si la casilla estaba: sin preboda en la web no se pregunta, y
+      // una casilla que no se enseñó no puede leerse como «no».
+      if (preguntaPreboda(datos)) borrador.preboda[id] = datos.get(`preboda-${id}`) !== null;
     }
   }
+}
+
+/**
+ * Si el paso de detalles llevaba la casilla de la preboda. La lleva cuando la
+ * web enseña la preboda; el formulario lo dice con un campo oculto, para que
+ * «no marcada» y «no preguntada» no se confundan.
+ */
+function preguntaPreboda(datos: FormData): boolean {
+  return datos.get(CAMPO_PREGUNTA_PREBODA) !== null;
 }
 
 /** Vuelve al paso de asistencia señalando a quién le falta respuesta. */
@@ -202,6 +218,7 @@ async function quitarDeLaLista(
   delete borrador.menu[id];
   delete borrador.alergias[id];
   delete borrador.autobus[id];
+  delete borrador.preboda[id];
   await guardarBorrador(borrador);
   volverConAcompanante("quitado");
 }
@@ -288,12 +305,23 @@ export async function avanzar(datos: FormData): Promise<void> {
   const faltaPorContestar = invitacion.personas.filter((p) => !borrador.asistencia[p.id]);
   if (faltaPorContestar.length > 0) volverAContestar(faltaPorContestar);
 
+  /*
+    LA PREBODA VA SI SE HA PREGUNTADO EN ESTE ENVÍO. El último paso es el de
+    detalles, que es donde está la casilla; si no la llevaba —no hay preboda
+    en la web—, la clave no viaja y la base guarda «no se le preguntó».
+  */
+  const conPreboda = pasoActual === "detalles" && preguntaPreboda(datos);
+
   const respuestas: RespuestaInvitado[] = invitacion.personas.map((persona) => {
     const viene = borrador.asistencia[persona.id] === "confirmado";
     return {
       invitado_id: persona.id,
       estado: viene ? "confirmado" : "rechazado",
-      necesita_autobus: viene ? Boolean(borrador.autobus[persona.id]) : null,
+      necesita_autobus: viene
+        ? (borrador.autobus[persona.id] ?? "ninguno") !== "ninguno"
+        : null,
+      ...(viene ? { trayecto_autobus: borrador.autobus[persona.id] ?? "ninguno" } : {}),
+      ...(viene && conPreboda ? { asiste_preboda: Boolean(borrador.preboda[persona.id]) } : {}),
       ...(viene && borrador.menu[persona.id] ? { tipo_menu: borrador.menu[persona.id] } : {}),
       ...(viene && borrador.alergias[persona.id] !== undefined
         ? { alergias: borrador.alergias[persona.id] || null }
@@ -329,7 +357,9 @@ export async function reabrir(): Promise<void> {
     }
     borrador.menu[persona.id] = persona.tipoMenu;
     borrador.alergias[persona.id] = persona.alergias ?? "";
-    borrador.autobus[persona.id] = Boolean(persona.necesitaAutobus);
+    const trayecto = trayectoGuardado(persona);
+    if (trayecto) borrador.autobus[persona.id] = trayecto;
+    if (persona.asistePreboda !== null) borrador.preboda[persona.id] = persona.asistePreboda;
   }
   await guardarBorrador(borrador);
   volverAlPaso(`paso=asistencia`);

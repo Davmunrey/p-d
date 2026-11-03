@@ -13,12 +13,13 @@ import {
   PASOS_RSVP,
   ZONA_HORARIA,
   type PasoRsvp,
+  TRAYECTOS_AUTOBUS,
 } from "@/config/constants";
 import { anclaDe } from "@/config/secciones";
 import type { ConfiguracionBoda } from "@/lib/bbdd/landing";
 import type { Invitacion, PersonaInvitada } from "@/lib/bbdd/rsvp";
 import { t } from "@/lib/copy";
-import { fechaLarga } from "@/lib/fechas";
+import { fechaConDia, fechaLarga } from "@/lib/fechas";
 import {
   ANCLA_ACOMPANANTE,
   ANCLA_FORMULARIO,
@@ -27,6 +28,7 @@ import {
   faltanDeLaUrl,
 } from "@/lib/rsvp-ancla";
 import type { Borrador } from "@/lib/rsvp-borrador";
+import { CAMPO_PREGUNTA_PREBODA } from "@/lib/rsvp-preboda";
 
 /**
  * LA CONFIRMACIÓN, AL FINAL DE LA PÁGINA
@@ -83,10 +85,13 @@ export function Confirmacion({
   lectura,
   consulta,
   configuracion,
+  preboda = null,
 }: {
   lectura: LecturaInvitacion;
   consulta: ConsultaConfirmacion;
   configuracion: ConfiguracionBoda;
+  /** El día de la preboda, si la web la enseña; `null` si no hay que preguntarla. */
+  preboda?: Date | null;
 }) {
   const idTitulo = `titulo-${anclaDe("rsvp")}`;
   const invitacion = lectura.tipo === "leida" ? lectura.invitacion : null;
@@ -143,7 +148,12 @@ export function Confirmacion({
             id={ANCLA_FORMULARIO}
             className="mt-elemento scroll-mt-cabecera rounded-tarjeta border border-borde bg-superficie p-tarjeta-fluida shadow-tarjeta"
           >
-            <Contenido lectura={lectura} consulta={consulta} configuracion={configuracion} />
+            <Contenido
+              lectura={lectura}
+              consulta={consulta}
+              configuracion={configuracion}
+              preboda={preboda}
+            />
           </div>
         </details>
       </div>
@@ -155,10 +165,12 @@ function Contenido({
   lectura,
   consulta,
   configuracion,
+  preboda,
 }: {
   lectura: LecturaInvitacion;
   consulta: ConsultaConfirmacion;
   configuracion: ConfiguracionBoda;
+  preboda: Date | null;
 }) {
   const correo = configuracion.correoContacto;
 
@@ -303,6 +315,7 @@ function Contenido({
             personas={invitacion.personas}
             borrador={borrador}
             etiquetaPaso={t("rsvp.etiquetaPaso", { actual: 2, total })}
+            preboda={preboda}
           />
         )}
 
@@ -595,19 +608,25 @@ function VenisConAlguien({
   );
 }
 
-/** El menú, las alergias y el autobús de cada persona que viene. */
+/** El menú, las alergias, el autobús y la preboda de cada persona que viene. */
 function PasoDetalles({
   personas,
   borrador,
   etiquetaPaso,
+  preboda,
 }: {
   personas: PersonaInvitada[];
   borrador: Borrador;
   etiquetaPaso: string;
+  preboda: Date | null;
 }) {
   const vienen = personas.filter((p) => borrador.asistencia[p.id] === "confirmado");
+  // «Viernes 25 de junio»: debajo del rótulo, en pequeño, como un dato.
+  const diaPreboda = preboda ? fechaConDia(preboda) : null;
   return (
     <div className="grid gap-elemento">
+      {/* Dice que aquí se preguntó: sin él, una casilla sin marcar no viaja. */}
+      {diaPreboda ? <input type="hidden" name={CAMPO_PREGUNTA_PREBODA} value="1" /> : null}
       <div>
         <Etiqueta>{etiquetaPaso}</Etiqueta>
         <Titulo2 como="h3" className="mt-linea">
@@ -648,15 +667,42 @@ function PasoDetalles({
             maxLength={LARGOS_DE_CAMPO["invitados.alergias"]}
             defaultValue={borrador.alergias[persona.id] ?? persona.alergias ?? ""}
           />
-          <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
-            <input
-              type="checkbox"
-              name={`autobus-${persona.id}`}
-              defaultChecked={Boolean(borrador.autobus[persona.id])}
-              className="casilla-marca transicion-color"
-            />
-            <span className="text-cuerpo text-tinta">{t("rsvp.autobusPersona")}</span>
-          </label>
+          {/*
+            EL TRAYECTO Y NO UN SÍ/NO: lo que se contrata son plazas de ida y
+            plazas de vuelta, y no son las mismas —quien duerme en la finca no
+            vuelve—. Un desplegable, como el menú: cuatro casillas por persona
+            alargaban el paso hasta perderlo de vista.
+          */}
+          <CampoSeleccion
+            etiqueta={t("rsvp.autobus")}
+            name={`autobus-${persona.id}`}
+            defaultValue={borrador.autobus[persona.id] ?? "ninguno"}
+          >
+            {TRAYECTOS_AUTOBUS.map((trayecto) => (
+              <option key={trayecto} value={trayecto}>
+                {t(`rsvp.trayectos.${trayecto}`)}
+              </option>
+            ))}
+          </CampoSeleccion>
+          {diaPreboda ? (
+            <label className="flex min-h-control cursor-pointer items-center gap-interno rounded-campo border border-borde px-interno transicion-color has-checked:border-borde-marca has-checked:bg-superficie-tenue">
+              <input
+                type="checkbox"
+                name={`preboda-${persona.id}`}
+                defaultChecked={Boolean(borrador.preboda[persona.id])}
+                className="casilla-marca transicion-color"
+              />
+              {/*
+                EL DÍA VA DEBAJO, NO DETRÁS. En una línea, a 390 px se partía
+                por el punto medio y el día quedaba colgando en el renglón de
+                abajo; así cada cosa tiene su renglón y se lee de un vistazo.
+              */}
+              <span className="py-interno-compacto">
+                <span className="block text-cuerpo text-tinta">{t("rsvp.prebodaPersona")}</span>
+                <span className="block text-pequeno text-tinta-suave">{diaPreboda}</span>
+              </span>
+            </label>
+          ) : null}
         </fieldset>
       ))}
     </div>
@@ -675,6 +721,7 @@ function RespuestaEnviada({
 }) {
   const vienen = personas.filter((p) => p.estado === "confirmado");
   const noVienen = personas.filter((p) => p.estado === "rechazado");
+  const aLaPreboda = vienen.filter((p) => p.asistePreboda);
   const alguienViene = vienen.length > 0;
   const respondido = personas.find((p) => p.respondidoEn)?.respondidoEn ?? null;
 
@@ -693,6 +740,16 @@ function RespuestaEnviada({
             </dt>
             <dd className="mt-linea text-cuerpo text-tinta">
               {vienen.map(nombreCompleto).join(", ")}
+            </dd>
+          </div>
+        ) : null}
+        {aLaPreboda.length > 0 ? (
+          <div>
+            <dt className="text-etiqueta uppercase tracking-etiqueta text-tinta-suave">
+              {t("rsvp.resumenPreboda")}
+            </dt>
+            <dd className="mt-linea text-cuerpo text-tinta">
+              {aLaPreboda.map(nombreCompleto).join(", ")}
             </dd>
           </div>
         ) : null}

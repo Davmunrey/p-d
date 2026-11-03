@@ -55,6 +55,8 @@ const ESCALA_OG = [
   "hueco",
   "hueco-pie",
   "filete",
+  "margen-foto",
+  "radio-foto",
 ];
 
 function sinComentarios(css) {

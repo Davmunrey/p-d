@@ -334,7 +334,23 @@ export default async function PaginaInicio({
       planes.length > 0 ? (
         <Planes planes={planes} ciudad={configuracion.ciudadCeremonia} urlBase={urlBase} />
       ) : undefined,
-    rsvp: <Confirmacion lectura={lectura} consulta={consulta} configuracion={configuracion} />,
+    rsvp: (
+      <Confirmacion
+        lectura={lectura}
+        consulta={consulta}
+        configuracion={configuracion}
+        /*
+          LA PREBODA SE PREGUNTA SI LA WEB LA ENSEÑA: encendida y con algo en
+          su programa. Preguntar por una cena que no sale en ninguna parte
+          sería pedir que confirmen algo que no conocen.
+        */
+        preboda={
+          secciones.includes("preboda") && preboda.length > 0
+            ? vispera(configuracion.fechaCeremonia)
+            : null
+        }
+      />
+    ),
     // Sin foto recortada publicada no hay retrato: el cielo sigue sin él.
     retrato: retrato ? <RetratoDeEstrellas retrato={retrato} /> : undefined,
   };
