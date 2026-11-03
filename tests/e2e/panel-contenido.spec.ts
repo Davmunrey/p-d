@@ -395,7 +395,7 @@ test.describe("El contenido de la web", () => {
   });
 
   /**
-   * «Reservad la fecha» es una página aparte: su sitio en la lista no cambia
+   * «Save the date» es una página aparte: su sitio en la lista no cambia
    * nada en la web. Sus flechas decían «Orden cambiado» sin mover nada.
    */
   test("una sección que es una página aparte no ofrece flechas", async ({ page }) => {

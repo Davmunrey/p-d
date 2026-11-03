@@ -85,7 +85,7 @@ export default async function PaginaContenido({ searchParams }: Parametros) {
         : "";
 
   /*
-    SÓLO SE ORDENAN LAS QUE VAN EN LA PÁGINA. «Reservad la fecha» es una página
+    SÓLO SE ORDENAN LAS QUE VAN EN LA PÁGINA. «Save the date» es una página
     aparte: su sitio en la lista no cambia nada en la web, y sus flechas decían
     «Orden cambiado» sin mover nada. La primera y la última se cuentan entre las
     que sí se pintan una detrás de otra.
