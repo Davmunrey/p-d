@@ -427,8 +427,16 @@ test.describe("Las listas de contenido de la web", () => {
     expect(sigueAhi.publicado).toBe(false);
   });
 
-  test("el conmutador del programa escribe en el día que toca", async ({ page }) => {
-    const deLaVispera = `${MARCA} Cena en el pueblo`;
+  /*
+    EL PROGRAMA ES SÓLO EL DEL DÍA. La víspera tuvo su pestaña con horario; hoy
+    es un lugar en Ajustes. Lo que se escribe aquí va al día de la boda, y una
+    dirección vieja con `?variante=preboda` cae en él, no en una lista de hitos
+    que ya no salen en ninguna parte.
+  */
+  test("el programa escribe en el día de la boda, sin pestaña de la víspera", async ({
+    page,
+  }) => {
+    const delDia = `${MARCA} Brindis en el jardín`;
 
     /*
       LA TARJETA DEL PROGRAMA SE ENCABEZA CON LA HORA, no con el evento: es por
@@ -439,66 +447,39 @@ test.describe("Las listas de contenido de la web", () => {
 
     await entrar(page);
     await page.goto(RUTA_PROGRAMA);
-
-    // De partida se está en el día de la boda, que es la primera pestaña.
-    const conmutador = conmutadorDe(page, PROGRAMA.titulo);
-    await expect(
-      conmutador.getByRole("link", { name: PROGRAMA.boda }),
-      "la pestaña del día de la boda es la que se ve al llegar",
-    ).toHaveAttribute("aria-current", "page");
-
-    /*
-      SE AFIRMA A DÓNDE LLEVA EL ENLACE, Y SE VA. Es #126 otra vez, con la misma
-      forma que `esperarEstado`: en CI el clic no movía la barra de direcciones
-      ni en quince segundos —dos de cada tres veces—, y no por lentitud, porque
-      treinta y tres sondeos vieron la misma URL. El enrutador de cliente no
-      aplica la navegación.
-
-      NO ES AFLOJAR EL TEST. Lo que el conmutador tiene que hacer es llevar a la
-      víspera, y eso se exige EXACTO aquí abajo: el `href` es lo único que
-      decide a dónde va quien lo pulsa sin JavaScript, que es como está pensado.
-      Lo que deja de afirmarse es que el navegador aplique ese enlace, que es
-      #126 y tiene su propia incidencia.
-    */
-    const aLaVispera = conmutador.getByRole("link", { name: PROGRAMA.preboda });
-    await expect(aLaVispera).toHaveAttribute("href", `${RUTA_PROGRAMA}?variante=preboda`);
-
-    await page.goto(`${RUTA_PROGRAMA}?variante=preboda`);
-    await expect(
-      conmutadorDe(page, PROGRAMA.titulo).getByRole("link", { name: PROGRAMA.preboda }),
-      "y al llegar, la pestaña de la víspera es la que está puesta",
-    ).toHaveAttribute("aria-current", "page");
+    await expect(conmutadorDe(page, PROGRAMA.titulo), "sin pestañas que elegir").toHaveCount(0);
 
     const alta = formularioDeAlta(page);
     await alta.getByLabel(PROGRAMA.hora).fill(hora);
-    await alta.getByLabel(PROGRAMA.titulo_).fill(deLaVispera);
+    await alta.getByLabel(PROGRAMA.titulo_).fill(delDia);
     await alta.getByRole("button", { name: comun.anadir, exact: true }).click();
 
     await esperarEstado(page, "creada", RUTA_PROGRAMA);
 
     const [hito] = await leerHitos();
     expect(hito, "el hito tiene que existir").toBeTruthy();
-    expect(hito.momento, "escrito en la víspera, guardado en la víspera").toBe("preboda");
+    expect(hito.momento, "escrito en el programa, guardado en el día").toBe("boda");
 
-    // Se ve en su pestaña, encabezada por la hora y con el evento debajo...
-    await page.goto(`${RUTA_PROGRAMA}?variante=preboda`);
+    // Se ve en la lista, encabezada por la hora y con el evento debajo...
     await expect(fichaDe(page, PROGRAMA.titulo, hora)).toBeVisible();
-    await expect(fichaDe(page, PROGRAMA.titulo, hora)).toContainText(deLaVispera);
+    await expect(fichaDe(page, PROGRAMA.titulo, hora)).toContainText(delDia);
 
     /*
       Y SE LLAMA POR EL EVENTO, NO POR LA HORA. «¿Borramos «23:45»?» no pregunta
       nada, así que el nombre accesible de sus botones lleva el título. Se
       comprueba aquí porque es la única lista donde encabezar y nombrar no
-      coinciden — en las otras tres pasaría desapercibido si se rompiera.
+      coinciden — en las otras pasaría desapercibido si se rompiera.
     */
     await expect(
-      botonDe(fichaDe(page, PROGRAMA.titulo, hora), comun.borrar, deLaVispera),
+      botonDe(fichaDe(page, PROGRAMA.titulo, hora), comun.borrar, delDia),
     ).toBeVisible();
 
-    // ...y no en la otra, que es lo que hace que el conmutador sirva de algo.
-    await page.goto(`${RUTA_PROGRAMA}?variante=boda`);
-    await expect(laLista(page, PROGRAMA.titulo).getByRole("listitem").first()).toBeVisible();
-    await expect(fichaDe(page, PROGRAMA.titulo, hora)).toHaveCount(0);
+    // CASO DE ERROR · la dirección vieja de la víspera enseña el día, sin sus hitos.
+    await page.goto(`${RUTA_PROGRAMA}?variante=preboda`);
+    await expect(fichaDe(page, PROGRAMA.titulo, hora)).toBeVisible();
+    await expect(laLista(page, PROGRAMA.titulo)).not.toContainText(
+      "(DES) Vermut de bienvenida",
+    );
   });
 
   test("un obligatorio en blanco no guarda nada, y se dice cuál falta", async ({ page }) => {

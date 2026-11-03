@@ -74,7 +74,6 @@ import {
   fechaConDia,
   fechaEnPuntos,
   fechaLarga,
-  nombreDelDia,
   vispera,
 } from "@/lib/fechas";
 import { numeroEnLetra } from "@/lib/numeros";
@@ -158,7 +157,7 @@ export default async function PaginaInicio({
   /*
     EL ENLACE YA NO VALE si la base, al preguntarle, dice que no existe —mal
     tecleado, o anulado al emitir otro—. Entonces no se saluda, la playlist no
-    enseña su campo y la cookie se olvida. Si la base no contesta, NO se da
+    sale y la cookie se olvida. Si la base no contesta, NO se da
     por malo: quien sí tenía un enlace bueno conserva la playlist ese día.
   */
   const enlaceQueNoVale = lectura.tipo === "leida" && lectura.invitacion === null;
@@ -176,7 +175,6 @@ export default async function PaginaInicio({
     secciones,
     configuracion,
     programa,
-    preboda,
     historia,
     alojamientos,
     rutas,
@@ -213,13 +211,6 @@ export default async function PaginaInicio({
       : null;
 
   /*
-    A DÓNDE PUEDE LLEVAR EL BOTÓN. «Ver el día» apunta a #programa, y esa
-    sección puede no estar: apagada desde el panel, o sin ningún hito todavía.
-    Se usa el mismo criterio que decide qué se pinta: visible y con contenido.
-  */
-  const hayPrograma = secciones.includes("programa") && programa.length > 0;
-
-  /*
     LA CUENTA ATRÁS VA EN LA PORTADA, en una fila junto a la fecha y el lugar:
     es un dato más del primer vistazo, y como sección aparte costaba media
     pantalla. Sólo si está encendida en el panel y no ha pasado el día; si la
@@ -236,7 +227,6 @@ export default async function PaginaInicio({
         configuracion={configuracion}
         foto={fotosPortada[0] ?? null}
         urlBase={urlBase}
-        hayPrograma={hayPrograma}
         saludo={saludo}
         cuentaAtras={cuentaEnPortada}
       />
@@ -264,32 +254,14 @@ export default async function PaginaInicio({
     historia: historia.length > 0 ? <Historia hitos={historia} urlBase={urlBase} /> : undefined,
     galeria:
       fotosGaleria.length > 0 ? <Galeria fotos={fotosGaleria} urlBase={urlBase} /> : undefined,
-    preboda:
-      preboda.length > 0 ? (
-        <ListaDeHoras
-          seccion="preboda"
-          /*
-            LA VERSALITA ES LA FECHA DE LA VÍSPERA —«Viernes 25 de junio»—, no un
-            rótulo fijo: es lo que de verdad quiere saber quien llega de fuera.
-            Sale de la fecha de la ceremonia, un día antes, contado en la zona
-            de la boda.
-          */
-          etiqueta={fechaConDia(vispera(configuracion.fechaCeremonia))}
-          titulo={t("preboda.titulo")}
-          entradilla={t(
-            configuracion.ciudadCeremonia
-              ? "preboda.entradilla"
-              : "preboda.entradillaSinCiudad",
-            {
-              dia: nombreDelDia(vispera(configuracion.fechaCeremonia)),
-              ciudad: configuracion.ciudadCeremonia ?? "",
-            },
-          )}
-          cierre={t("preboda.cierre")}
-          menor
-          hitos={preboda}
-        />
-      ) : undefined,
+    /*
+      LA PREBODA ES UN SITIO, NO UN HORARIO: la fecha de la víspera y «Preboda
+      en el Barrio Húmedo». El lugar se escribe en Ajustes; mientras esté vacío
+      —todavía no se sabe— no hay sección.
+    */
+    preboda: configuracion.lugarPreboda ? (
+      <Preboda dia={vispera(configuracion.fechaCeremonia)} lugar={configuracion.lugarPreboda} />
+    ) : undefined,
     programa:
       programa.length > 0 ? (
         <ListaDeHoras
@@ -326,7 +298,12 @@ export default async function PaginaInicio({
     ) : undefined,
     preguntas_frecuentes:
       preguntas.length > 0 ? <Preguntas preguntas={preguntas} /> : undefined,
-    playlist: <Playlist canciones={canciones} puedeApuntar={hayInvitacion} />,
+    /*
+      LA PLAYLIST ES DE LOS INVITADOS: sólo sale a quien entra con el enlace de
+      su invitación, que es quien puede apuntar una canción. A los demás no se
+      les enseña un campo que no pueden usar ni las canciones de otros.
+    */
+    playlist: hayInvitacion ? <Playlist canciones={canciones} /> : undefined,
     // Sin cuenta no hay sección: ver el comentario de `Regalos`.
     regalos: cuentaRegalos ? <Regalos firma={configuracion.firmaRegalos} /> : undefined,
     dresscode: consejos.length > 0 ? <DressCode consejos={consejos} /> : undefined,
@@ -340,12 +317,12 @@ export default async function PaginaInicio({
         consulta={consulta}
         configuracion={configuracion}
         /*
-          LA PREBODA SE PREGUNTA SI LA WEB LA ENSEÑA: encendida y con algo en
-          su programa. Preguntar por una cena que no sale en ninguna parte
-          sería pedir que confirmen algo que no conocen.
+          LA PREBODA SE PREGUNTA SI LA WEB LA ENSEÑA: encendida y con su lugar
+          escrito. Preguntar por algo que no sale en ninguna parte sería pedir
+          que confirmen algo que no conocen.
         */
         preboda={
-          secciones.includes("preboda") && preboda.length > 0
+          secciones.includes("preboda") && configuracion.lugarPreboda
             ? vispera(configuracion.fechaCeremonia)
             : null
         }
@@ -574,7 +551,6 @@ async function cargarLanding() {
     secciones,
     configuracion,
     programa,
-    preboda,
     historia,
     alojamientos,
     rutas,
@@ -591,7 +567,6 @@ async function cargarLanding() {
     obtenerSecciones(),
     obtenerConfiguracion(),
     obtenerPrograma("boda"),
-    obtenerPrograma("preboda"),
     obtenerHistoria(),
     obtenerAlojamientos(),
     obtenerRutas(),
@@ -610,7 +585,6 @@ async function cargarLanding() {
     secciones,
     configuracion,
     programa,
-    preboda,
     historia,
     alojamientos,
     rutas,
@@ -646,15 +620,12 @@ function Portada({
   configuracion,
   foto,
   urlBase,
-  hayPrograma,
   saludo,
   cuentaAtras,
 }: {
   configuracion: ConfiguracionBoda;
   foto: Medio | null;
   urlBase: string | undefined;
-  /** Si el programa existe de verdad en la página, para no enlazar al vacío. */
-  hayPrograma: boolean;
   /** El nombre del grupo que ha abierto su invitación, o `null`. */
   saludo: string | null;
   /** Si va la cuenta atrás debajo de la fecha y el lugar. */
@@ -769,26 +740,6 @@ function Portada({
             </div>
           ) : null}
         </div>
-
-        {/*
-          El aviso de que la página sigue hacia abajo: una versalita y una raya
-          que respira. `aria-hidden` porque para quien navega con lector de
-          pantalla no significa nada: el documento ya continúa.
-        */}
-        <p
-          aria-hidden
-          className="animacion-aparecer-lento retardo-7 mt-hueco-fluido flex items-center gap-hueco-corto text-diminuto uppercase tracking-pista text-tinta-suave"
-        >
-          {t("portada.bajad")}
-          <span className="animacion-flotar block h-raya-pista w-px bg-gradient-to-b from-borde-fuerte to-transparent" />
-        </p>
-
-        {/* Confirmar no va en la portada: está al final, tocando la estrella. */}
-        {hayPrograma ? (
-          <div className="animacion-subir retardo-6 mt-acciones flex flex-wrap gap-interno">
-            <BotonEnlace href={`#${anclaDe("programa")}`}>{t("portada.verElDia")}</BotonEnlace>
-          </div>
-        ) : null}
       </div>
 
       {foto ? (
@@ -995,8 +946,6 @@ function ListaDeHoras({
   etiqueta,
   titulo,
   entradilla = null,
-  cierre = null,
-  menor = false,
   avisos = [],
   hitos,
 }: {
@@ -1004,8 +953,6 @@ function ListaDeHoras({
   etiqueta: string;
   titulo: string;
   entradilla?: string | null;
-  cierre?: string | null;
-  menor?: boolean;
   avisos?: string[];
   hitos: { id: string; hora: string; titulo: string; descripcion: string | null }[];
 }) {
@@ -1015,7 +962,7 @@ function ListaDeHoras({
       etiqueta={etiqueta}
       titulo={titulo}
       entradilla={entradilla}
-      realzada={!menor}
+      realzada
       ancho="medio"
     >
       {/*
@@ -1028,9 +975,7 @@ function ListaDeHoras({
         {hitos.map((hito) => (
           <li
             key={hito.id}
-            className={`animacion-subir-al-ver rejilla-hora py-fila-compacta ${
-              menor ? "border-b border-borde-filete" : "border-t border-borde"
-            }`}
+            className="animacion-subir-al-ver rejilla-hora border-t border-borde py-fila-compacta"
           >
             {/*
               Interlínea compacta y no la del cuerpo: es una cifra sola, y con
@@ -1042,23 +987,17 @@ function ListaDeHoras({
               líneas de tiempo de scroll —o con movimiento reducido— la hora
               está en bronce desde el principio.
             */}
-            <span
-              className={`area-hora animacion-izquierda-al-ver font-titulo peso-titulo-menor ${
-                menor ? "text-hora-menor" : "text-hora"
-              } leading-compacto text-acento tabular-nums`}
-            >
-              {menor ? hito.hora : <span className="hora-que-llega">{hito.hora}</span>}
+            <span className="area-hora animacion-izquierda-al-ver font-titulo peso-titulo-menor text-hora leading-compacto text-acento tabular-nums">
+              <span className="hora-que-llega">{hito.hora}</span>
             </span>
             {/* El filete es color, no contenido: se dibuja de arriba abajo al entrar. */}
             <span
               aria-hidden="true"
-              className={`area-filete animacion-trazar-vertical-al-ver hidden self-stretch md:block ${
-                menor ? "bg-borde-filete" : "relative bg-borde"
-              }`}
+              className="area-filete animacion-trazar-vertical-al-ver relative hidden self-stretch bg-borde md:block"
             >
-              {menor ? null : <span className="hilo-del-dia absolute inset-0 bg-acento" />}
+              <span className="hilo-del-dia absolute inset-0 bg-acento" />
             </span>
-            <Titulo3 como="h3" tamano={menor ? "hito-menor" : "hito"} className="area-titulo">
+            <Titulo3 como="h3" tamano="hito" className="area-titulo">
               {hito.titulo}
             </Titulo3>
             {hito.descripcion ? (
@@ -1083,13 +1022,25 @@ function ListaDeHoras({
           ))}
         </ul>
       ) : null}
-
-      {cierre ? (
-        <Cuerpo className="mt-elemento max-w-texto text-pequeno text-tinta-suave">
-          {cierre}
-        </Cuerpo>
-      ) : null}
     </Bloque>
+  );
+}
+
+/**
+ * LA PREBODA: la fecha de la víspera en versalita —«Viernes 25 de junio», que
+ * es lo que de verdad quiere saber quien llega de fuera— y «Preboda en el
+ * Barrio Húmedo». Sin horario: se queda en un sitio y quien pueda, va. Va al
+ * ancho del programa, que la sigue, para que los dos días se lean en una
+ * misma columna.
+ */
+function Preboda({ dia, lugar }: { dia: Date; lugar: string }) {
+  return (
+    <Bloque
+      seccion="preboda"
+      etiqueta={fechaConDia(dia)}
+      titulo={t("preboda.titulo", { lugar })}
+      ancho="medio"
+    />
   );
 }
 
@@ -1385,13 +1336,7 @@ function Preguntas({
   );
 }
 
-function Playlist({
-  canciones,
-  puedeApuntar,
-}: {
-  canciones: { id: string; texto: string }[];
-  puedeApuntar: boolean;
-}) {
+function Playlist({ canciones }: { canciones: { id: string; texto: string }[] }) {
   return (
     <Bloque
       seccion="playlist"
@@ -1402,13 +1347,7 @@ function Playlist({
       composicion="centrada"
       ancho="playlist"
     >
-      {puedeApuntar ? (
-        <FormularioPlaylist />
-      ) : (
-        <Cuerpo className="mx-auto max-w-texto text-center text-pequeno text-tinta-suave">
-          {t("playlist.sinInvitacion")}
-        </Cuerpo>
-      )}
+      <FormularioPlaylist />
 
       {/*
         EN UN MÓVIL, UNA SOLA FILA QUE SE DESLIZA: con todas las canciones
@@ -1682,7 +1621,8 @@ function Bloque({
   barrido?: boolean;
   composicion?: ComposicionDeCabecera;
   ancho?: AnchoDeBloque;
-  children: ReactNode;
+  /** Lo que va bajo la cabecera. Sin nada, la sección es sólo su cabecera. */
+  children?: ReactNode;
 }) {
   const ancla = anclaDe(seccion);
   const idTitulo = `titulo-${ancla}`;

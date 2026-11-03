@@ -940,6 +940,7 @@ export const LARGOS_DE_CAMPO = {
   "configuracion_boda.firma_regalos": 120,
   "configuracion_boda.lugar_banquete": 160,
   "configuracion_boda.lugar_ceremonia": 160,
+  "configuracion_boda.lugar_preboda": 120,
   "configuracion_boda.nombre_novia": 80,
   "configuracion_boda.nombre_novio": 80,
   "configuracion_boda.paisaje_cierre": 80,

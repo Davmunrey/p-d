@@ -13,8 +13,8 @@ import {
  *
  * Cada grupo tiene su enlace. Lo que hace en la web:
  *
- *  - lleva a la portada, que saluda al grupo por su nombre y le enseña el
- *    campo de la playlist;
+ *  - lleva a la portada, que saluda al grupo por su nombre y le enseña la
+ *    playlist, que sin enlace no sale;
  *  - deja al final de la página, en vuestra estrella, el formulario de ESE
  *    grupo (el recorrido entero está en `confirmacion.spec.ts`);
  *  - sin enlace, la estrella sólo explica cómo se confirma: no hay formulario
@@ -128,7 +128,8 @@ test.describe("El enlace de la invitación", () => {
 
     expect(new URL(page.url()).pathname).toBe("/");
     await expect(page.locator("#portada")).not.toContainText(saludoDe(""));
-    await expect(page.locator("#playlist")).toContainText(copy.playlist.sinInvitacion);
+    // Ni la playlist: es de los invitados.
+    await expect(page.locator("#playlist")).toHaveCount(0);
     expect((await context.cookies()).some((c) => c.name === "boda:invitacion")).toBe(false);
   });
 

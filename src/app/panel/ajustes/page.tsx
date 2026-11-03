@@ -88,6 +88,7 @@ interface Configuracion {
   paisaje_titulo: string | null;
   paisaje_cierre: string | null;
   ciudad_ceremonia: string | null;
+  lugar_preboda: string | null;
   avisos_programa: string[] | null;
   lugar_ceremonia: string | null;
   direccion_ceremonia: string | null;
@@ -182,7 +183,7 @@ export default async function PaginaAjustes({
         "direccion_ceremonia, latitud_ceremonia, longitud_ceremonia, lugar_banquete, " +
         "direccion_banquete, latitud_banquete, longitud_banquete, " +
         "paisaje_intro, paisaje_titulo, paisaje_cierre, " +
-        "ciudad_ceremonia, avisos_programa, actualizado_en",
+        "ciudad_ceremonia, lugar_preboda, avisos_programa, actualizado_en",
     )
     .maybeSingle<Configuracion>();
 
@@ -395,6 +396,22 @@ export default async function PaginaAjustes({
             latitud={comun("latitud_banquete", comoTexto(data.latitud_banquete))}
             longitud={comun("longitud_banquete", comoTexto(data.longitud_banquete))}
           />
+        </Grupo>
+
+        {/*
+          LA PREBODA ES UN SITIO, NO UN HORARIO: la web dice «Preboda en …» bajo
+          la fecha de la víspera. Vacío es «todavía no lo sabemos», y entonces
+          ni sale en la web ni se pregunta al confirmar.
+        */}
+        <Grupo titulo={t("panel.ajustes.grupoPreboda")}>
+          <Ancla campo="lugar_preboda">
+            <CampoTexto
+              {...comun("lugar_preboda", data.lugar_preboda ?? "")}
+              etiqueta={t("panel.ajustes.lugarPreboda")}
+              ayuda={t("panel.ajustes.lugarPrebodaAyuda")}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.lugar_preboda"]}
+            />
+          </Ancla>
         </Grupo>
 
         {/*

@@ -3,6 +3,7 @@ import postgres from "postgres";
 import { expect, test, type Page } from "./utiles/origen-propio";
 
 import copy from "../../content/copy.es.json";
+import { borrarInvitadosDePrueba, entrarComoInvitado } from "./utiles/invitacion-de-prueba";
 
 /**
  * E3 · Landing
@@ -137,10 +138,16 @@ test.describe("Landing", () => {
     await expect(segundos).not.toHaveText(antes ?? "", { timeout: 3000 });
   });
 
-  test("el CTA de la portada lleva al programa", async ({ page }) => {
-    await page.locator("#portada").getByRole("link", { name: copy.portada.verElDia }).click();
-    await expect(page).toHaveURL(/#programa$/);
-    await expect(page.locator("#programa")).toBeInViewport();
+  /*
+    LA PORTADA NO EMPUJA A NINGÚN SITIO: ni botón al programa ni la pista
+    «bajad». Son los novios, la fecha, el lugar y lo que falta; lo demás se
+    descubre bajando, que es lo que se hace sin que nadie lo pida.
+  */
+  test("la portada no lleva botón ni pista para bajar", async ({ page }) => {
+    const portada = page.locator("#portada");
+    await expect(portada.locator("time").first()).toBeVisible();
+    await expect(portada.getByRole("link")).toHaveCount(0);
+    await expect(portada.getByText(/^bajad$/i)).toHaveCount(0);
   });
 
   test("la jerarquía de encabezados es correcta", async ({ page }) => {
@@ -498,58 +505,67 @@ test.describe("Cielo con movimiento reducido", () => {
 /**
  * BODA-36 · La víspera
  *
- * La entrega tiene una sección que aquí no existía: el plan del viernes para
- * quien viene de fuera. Se resuelve con la tabla del programa y una columna
- * que dice a qué momento pertenece cada hito, así que lo que hay que
- * comprobar es justo eso: que las dos secciones leen la misma tabla y no se
- * mezclan.
+ * La víspera es un sitio, no un horario: bajo la fecha del viernes, «Preboda
+ * en el Barrio Húmedo», con el lugar escrito en Ajustes. Los hitos con
+ * `momento = 'preboda'` que quedaron en la base —el seed trae dos— ya no se
+ * pintan en ninguna parte: ni en la víspera ni colados en el programa del día.
  */
 test.describe("La víspera y el día", () => {
+  const LUGAR = "(DES) el Barrio Húmedo";
+
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
   });
 
-  test("son dos secciones distintas y ninguna enseña los hitos de la otra", async ({
+  test("la víspera es «Preboda en» su lugar, sin horario, y sus hitos no se cuelan en el día", async ({
     page,
   }) => {
     const preboda = page.locator("#preboda");
-    const programa = page.locator("#programa");
-
-    // La sección de la víspera puede estar apagada: es contenido opcional y
-    // entra desactivada. Si no está, no hay nada que comprobar aquí.
-    test.skip((await preboda.count()) === 0, "La víspera está apagada en esta base.");
-
     await expect(preboda).toBeVisible();
-    await expect(programa).toBeVisible();
+    await expect(preboda.getByRole("heading", { level: 2 })).toHaveText(
+      copy.preboda.titulo.replace("{lugar}", LUGAR),
+    );
+    // Sin horario: ni lista ni horas.
+    await expect(preboda.locator("ol, li")).toHaveCount(0);
 
-    const horasPreboda = await preboda.locator("ol li").allTextContents();
-    const horasPrograma = await programa.locator("ol li").allTextContents();
-
-    expect(horasPreboda.length).toBeGreaterThan(0);
-    expect(horasPrograma.length).toBeGreaterThan(0);
-
-    // Ningún hito puede salir en las dos: significaría que falta el filtro por
-    // momento y que la víspera está repitiendo el día de la boda.
-    for (const hito of horasPreboda) {
-      expect(horasPrograma, "un hito sale en las dos secciones").not.toContain(hito);
-    }
+    const programa = page.locator("#programa");
+    await expect(programa.locator("ol > li").first()).toBeVisible();
+    await expect(programa).not.toContainText("(DES) Vermut de bienvenida");
+    await expect(programa).not.toContainText("(DES) Cena informal");
   });
 
   test("la víspera va antes que el día, y en el menú también", async ({ page }) => {
-    test.skip(
-      (await page.locator("#preboda").count()) === 0,
-      "La víspera está apagada en esta base.",
-    );
-
     const orden = await page.evaluate(() =>
       [...document.querySelectorAll("main section")].map((seccion) => seccion.id),
     );
+    expect(orden.indexOf("preboda")).toBeGreaterThan(-1);
     expect(orden.indexOf("preboda")).toBeLessThan(orden.indexOf("programa"));
 
     const menu = await page.evaluate(() =>
       [...document.querySelectorAll("nav a")].map((enlace) => enlace.getAttribute("href")),
     );
     expect(menu.indexOf("#preboda")).toBeLessThan(menu.indexOf("#programa"));
+  });
+
+  /**
+   * CASO DE ERROR · «Todavía no lo sabemos». Sin lugar no hay víspera: ni la
+   * sección ni su entrada en el menú, aunque esté encendida y queden hitos
+   * de la víspera en la base.
+   */
+  test("sin lugar escrito no hay víspera", async ({ page }) => {
+    const cadena = process.env.DATABASE_URL;
+    test.skip(!cadena, "Hace falta DATABASE_URL para vaciar el lugar.");
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    await sql`update public.configuracion_boda set lugar_preboda = null`;
+    try {
+      await page.goto("/");
+      await expect(page.locator("#programa")).toBeVisible();
+      await expect(page.locator("#preboda")).toHaveCount(0);
+      await expect(page.locator('nav a[href="#preboda"]')).toHaveCount(0);
+    } finally {
+      await sql`update public.configuracion_boda set lugar_preboda = ${LUGAR}`;
+      await sql.end();
+    }
   });
 });
 
@@ -603,7 +619,8 @@ test.describe("La tipografía es la de la entrega", () => {
   test("los botones y el menú van al escalón de 12 px", async ({ page }) => {
     await page.goto("/");
 
-    const boton = await medir(page, `#portada a[href="#programa"]`);
+    // «Abrir en el mapa»: la portada ya no lleva botón.
+    const boton = await medir(page, "#transporte a.pulsable");
     const enlaceMenu = await medir(page, "header nav a");
 
     expect(boton.tamano).toBe(12);
@@ -638,10 +655,6 @@ test.describe("La tipografía es la de la entrega", () => {
     expect(hora.interlinea).toBeCloseTo(1, 2);
     // clamp(26px, 3.2vw, 36px) a 1280 → 36.
     expect(hora.tamano).toBe(36);
-
-    // Y la víspera, un escalón por debajo: clamp(24px, 3vw, 32px) → 32.
-    const horaVispera = await medir(page, "#preboda li > span");
-    expect(horaVispera.tamano).toBe(32);
   });
 
   test("los datos de la portada van en Cormorant a interlínea 1.1", async ({ page }) => {
@@ -742,19 +755,36 @@ test.describe("El ritmo y la composición son los de la entrega", () => {
 
     const anchos = await page.evaluate(() =>
       Object.fromEntries(
-        ["programa", "alojamiento", "playlist", "regalos"].map((id) => [
+        ["programa", "alojamiento", "regalos"].map((id) => [
           id,
           Math.round(document.querySelector(`#${id} > div`)!.getBoundingClientRect().width),
         ]),
       ),
     );
 
-    // 1080, 900 y 816 (51rem): el día y dónde dormir a lo ancho de lectura,
-    // la playlist y los regalos más recogidos.
+    // 1080 y 816 (51rem): el día y dónde dormir a lo ancho de lectura, los
+    // regalos más recogidos.
     expect(anchos.programa).toBe(1080);
     expect(anchos.alojamiento).toBe(1080);
-    expect(anchos.playlist).toBe(900);
     expect(anchos.regalos).toBe(816);
+  });
+
+  // La playlist sólo sale con la invitación: se entra con un enlace de prueba.
+  test("la playlist, recogida a 900 px", async ({ page }) => {
+    test.skip(
+      !process.env.DATABASE_URL,
+      "Hace falta DATABASE_URL para fabricar la invitación.",
+    );
+    await page.setViewportSize(ESCRITORIO);
+    try {
+      await entrarComoInvitado(page, "ancho-playlist");
+      const ancho = await page
+        .locator("#playlist > div")
+        .evaluate((nodo) => Math.round(nodo.getBoundingClientRect().width));
+      expect(ancho).toBe(900);
+    } finally {
+      await borrarInvitadosDePrueba();
+    }
   });
 
   test("los regalos y vuestra estrella, al final, comparten ancho y eje", async ({ page }) => {
@@ -849,16 +879,6 @@ test.describe("El ritmo y la composición son los de la entrega", () => {
     expect(fila.filete).toBe(1);
     expect(fila.arriba).toBe(1);
     expect(fila.abajo).toBe(0);
-
-    // Y la víspera, al revés: cierra por abajo, como en la entrega.
-    const vispera = await page
-      .locator("#preboda ol > li")
-      .first()
-      .evaluate((li) => ({
-        arriba: parseFloat(getComputedStyle(li).borderTopWidth),
-        abajo: parseFloat(getComputedStyle(li).borderBottomWidth),
-      }));
-    expect(vispera).toEqual({ arriba: 0, abajo: 1 });
   });
 
   /*
@@ -1044,7 +1064,7 @@ test.describe("Los copys y el orden de la entrega", () => {
  * —nombre, retardo, duración, curva— y no lo que dice una clase.
  */
 test.describe("El movimiento es el de la entrega", () => {
-  test("la portada entra escalonada, de la versalita a la pista", async ({ page }) => {
+  test("la portada entra escalonada, de la versalita a los datos", async ({ page }) => {
     await page.goto("/");
 
     const retardos = await page.evaluate(() =>
@@ -1053,12 +1073,9 @@ test.describe("El movimiento es el de la entrega", () => {
       ),
     );
 
-    // Siete elementos con siete retardos distintos, de 0,2 s a 1,6 s. No van en
-    // orden de documento a propósito: «bajad» está antes que los botones en el
-    // DOM y entra el último, como en la entrega.
-    expect(retardos).toHaveLength(7);
-    expect([...retardos].sort((a, b) => a - b)).toEqual([0.2, 0.35, 0.5, 0.8, 0.95, 1.1, 1.6]);
-    expect(retardos[0], "la versalita abre").toBeCloseTo(0.2, 2);
+    // Cinco elementos, en orden de documento y con cinco retardos crecientes:
+    // la versalita, los dos nombres, la raya y los datos con la cuenta atrás.
+    expect(retardos).toEqual([0.2, 0.35, 0.5, 0.8, 0.95]);
   });
 
   test("la foto de portada aparece en fundido y hace el zoom lento", async ({ page }) => {
@@ -1086,15 +1103,6 @@ test.describe("El movimiento es el de la entrega", () => {
       .toEqual({ nombre: "acercar", duracion: "2.4s", fundido: "aparecer" });
   });
 
-  test("la pista «bajad» cae y se apaga en 2,6 s", async ({ page }) => {
-    await page.goto("/");
-    const raya = await page.locator("#portada .animacion-flotar").evaluate((nodo) => ({
-      nombre: getComputedStyle(nodo).animationName,
-      periodo: getComputedStyle(nodo).animationDuration,
-    }));
-    expect(raya).toEqual({ nombre: "flotar", periodo: "2.6s" });
-  });
-
   /*
     LO QUE SE LEVANTA AL PASAR SON LAS CANCIONES APUNTADAS, que son lo único
     de la landing con forma de ficha. El seed no trae ninguna: el test apunta
@@ -1107,10 +1115,13 @@ test.describe("El movimiento es el de la entrega", () => {
     const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
     await sql`insert into public.canciones_sugeridas (texto, aprobada) values (${texto}, true)`;
     try {
+      // La playlist sólo sale con la invitación.
+      await entrarComoInvitado(page, "hover-playlist");
       await levantaAlPasar(page, texto);
     } finally {
       await sql`delete from public.canciones_sugeridas where texto = ${texto}`;
       await sql.end();
+      await borrarInvitadosDePrueba();
     }
   });
 
@@ -1154,8 +1165,8 @@ test.describe("El movimiento es el de la entrega", () => {
 
   /**
    * CASO DE ERROR. Con «movimiento reducido», los retardos de la portada se
-   * anulan: si no, «bajad» tardaría 1,6 s en aparecer aunque su fundido durase
-   * 100 ms, y los reveals tienen que estar a la vista sin más. El pop de las
+   * anulan: si no, los datos tardarían casi un segundo en aparecer aunque su
+   * fundido durase 100 ms, y los reveals tienen que estar a la vista sin más. El pop de las
    * fichas de la playlist se comprueba en `playlist.spec.ts`, que es donde se
    * apunta una canción de verdad: el seed no trae ninguna.
    */
@@ -1176,14 +1187,11 @@ test.describe("El movimiento es el de la entrega", () => {
         retardos: retardos.map((n) => getComputedStyle(n).animationDelay),
         reveal: getComputedStyle(document.querySelector("#historia .animacion-subir-al-ver")!)
           .animationName,
-        pista: getComputedStyle(document.querySelector("#portada .animacion-flotar")!)
-          .animationName,
       };
     });
 
     expect(new Set(estado.retardos)).toEqual(new Set(["0s"]));
     expect(estado.reveal).toBe("aparecer");
-    expect(estado.pista).toBe("none");
 
     // El fundido dura 100 ms: se espera a que acabe, no se mira a mitad.
     await expect
@@ -1194,13 +1202,12 @@ test.describe("El movimiento es el de la entrega", () => {
           ),
         ),
       )
-      .toEqual(Array(7).fill("1"));
+      .toEqual(Array(5).fill("1"));
   });
 });
 
 /** Pasa el ratón por la canción `texto` y espera a que suba. */
 async function levantaAlPasar(page: Page, texto: string) {
-  await page.goto("/");
   const tarjeta = page.locator("#playlist ul > li").filter({ hasText: texto });
   // Arriba del todo de la pantalla, pasado el tramo del reveal: mientras el
   // reveal está activo es él quien manda en el `transform`, no el hover.

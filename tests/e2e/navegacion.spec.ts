@@ -85,7 +85,7 @@ test.describe("Navegación", () => {
   /**
    * CASO DE ERROR · lo que se lee bajando no se anuncia arriba.
    *
-   * Estas cuatro SÍ se pintan en la página —el seed las trae con contenido— y
+   * Estas SÍ se pintan en la página —el seed las trae con contenido— y
    * aun así no pueden estar en la barra. Es la diferencia entre «no hay» y «no
    * va en el menú», y es la que se rompe sola en cuanto alguien añade una
    * sección y la mete en el menú «ya que estamos».
@@ -95,7 +95,6 @@ test.describe("Navegación", () => {
       // Se confirma al final, tocando vuestra estrella: no va arriba.
       ["rsvp", copy.navegacion.secciones.rsvp],
       ["historia", copy.navegacion.secciones.historia],
-      ["playlist", copy.navegacion.secciones.playlist],
       ["dresscode", copy.navegacion.secciones.dresscode],
       ["preguntas-frecuentes", copy.navegacion.secciones.preguntas_frecuentes],
     ] as const;

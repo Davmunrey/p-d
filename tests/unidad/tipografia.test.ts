@@ -81,7 +81,6 @@ describe("escala tipográfica", () => {
     ["font-size-hito", 23, 30],
     ["font-size-hito-menor", 21, 27],
     ["font-size-hora", 26, 36],
-    ["font-size-hora-menor", 24, 32],
     ["font-size-dato", 24, 34],
   ])("--%s es fluido entre %s y %s px (BODA-109)", (token, minimo, maximo) => {
     const remes = [...valor(token)!.matchAll(/([\d.]+)rem/g)].map((m) => Number(m[1]) * 16);

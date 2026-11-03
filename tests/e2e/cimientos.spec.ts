@@ -24,7 +24,7 @@ test.describe("Portada", () => {
 
   test("los rótulos de interfaz salen del fichero de copys", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("link", { name: copy.portada.verElDia }).first()).toBeVisible();
+    await expect(page.getByText(copy.portada.etiquetaFecha).first()).toBeVisible();
   });
 
   test("el documento declara castellano", async ({ page }) => {

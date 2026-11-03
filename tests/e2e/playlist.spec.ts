@@ -11,8 +11,8 @@ import { RUTA_INVITACION } from "../../src/config/constants";
  * única escritura pública de la web además del RSVP, y la regla es que hace
  * falta una invitación: la lista que sonará esa noche es de los ciento veinte
  * invitados, no de quien pase por la web. Así que el primer test es el de
- * quien llega sin invitación, y comprueba que **no hay campo**, no que el
- * campo dé error.
+ * quien llega sin invitación, y comprueba que **la sección no está**: ni el
+ * campo ni las canciones de los demás.
  *
  * Y SE COMPRUEBA CONTRA LA BASE, no contra la pantalla. Una sección que dice
  * «apuntada» y no escribe nada pasaría cualquier test que sólo mire el HTML —
@@ -121,11 +121,13 @@ test.describe("La playlist colaborativa", () => {
   test.skip(!cadena, "Hace falta DATABASE_URL: se comprueba lo que quedó escrito.");
 
   /**
-   * CASO DE ERROR · Sin invitación no hay campo, y el token no se filtra.
+   * CASO DE ERROR · Sin invitación no hay playlist.
+   *
+   * La sección es de los invitados: quien llega a la web sin su enlace no ve
+   * el campo ni las canciones apuntadas. Se mira el HTML del servidor, que es
+   * lo que también ve quien no tiene JavaScript, y la página ya pintada.
    */
-  test("quien llega sin invitación ve la explicación, no un campo roto", async ({
-    browser,
-  }) => {
+  test("quien llega sin invitación no ve la playlist", async ({ browser }) => {
     const contexto = await browser.newContext({
       locale: "es-ES",
       extraHTTPHeaders: origenPropio(),
@@ -133,17 +135,15 @@ test.describe("La playlist colaborativa", () => {
     const pagina = await contexto.newPage();
 
     const html = await (await pagina.request.get("/")).text();
-
-    // La sección está —si no, la comprobación no significaría nada—…
-    expect(html).toContain(copy.playlist.titulo);
-    // …y lo que hay es la explicación, no el campo.
-    expect(html).toContain(copy.playlist.sinInvitacion);
+    // La portada sí llega —si no, la comprobación no significaría nada—…
+    expect(html).toContain(copy.portada.etiquetaFecha);
+    // …pero de la playlist, nada.
+    expect(html).not.toContain(copy.playlist.titulo);
     expect(html).not.toContain(copy.playlist.campoCancion);
 
     await pagina.goto("/");
-    await expect(
-      pagina.locator("#playlist").getByRole("button", { name: copy.playlist.anadir }),
-    ).toHaveCount(0);
+    await expect(pagina.locator("#portada")).toBeVisible();
+    await expect(pagina.locator("#playlist")).toHaveCount(0);
 
     await contexto.close();
   });
@@ -153,8 +153,7 @@ test.describe("La playlist colaborativa", () => {
    *
    * La portada lo comprueba contra la base al pintarse y, si no vale, pide que
    * se olvide —con una imagen, así que también sin JavaScript, como aquí—: un
-   * enlace mal tecleado lleva a la portada de todos, sin campo y con la
-   * explicación de que hace falta la invitación.
+   * enlace mal tecleado lleva a la portada de todos, sin playlist.
    */
   test("un enlace que no existe no se recuerda", async ({ browser }) => {
     const contexto = await conInvitacionAbierta(browser, "no-existe-000000", false);
@@ -163,8 +162,8 @@ test.describe("La playlist colaborativa", () => {
     ).toBeUndefined();
 
     const html = await (await contexto.request.get("/")).text();
-    expect(html).toContain(copy.playlist.sinInvitacion);
-    expect(html).not.toContain(copy.playlist.campoCancion);
+    expect(html).toContain(copy.portada.etiquetaFecha);
+    expect(html).not.toContain(copy.playlist.titulo);
     await contexto.close();
   });
 
@@ -173,8 +172,8 @@ test.describe("La playlist colaborativa", () => {
    *
    * Los novios borran la invitación —o emiten un enlace nuevo— mientras la
    * familia tiene la portada abierta, con el campo a la vista. Al apuntar, la
-   * base dice que no vale y la acción borra la cookie: la respuesta ya sale con
-   * la explicación, que es lo que de verdad le pasa a esa persona.
+   * base dice que no vale y la acción borra la cookie: la respuesta ya es la
+   * portada de todos, sin playlist, y la canción no se ha escrito.
    */
   test("un enlace anulado deja de recordarse en cuanto falla", async ({ browser }) => {
     const { token, grupoId } = await crearGrupo("anulado");
@@ -197,11 +196,14 @@ test.describe("La playlist colaborativa", () => {
       .locator("#playlist")
       .getByRole("button", { name: copy.playlist.anadir })
       .click();
-    // Sin JavaScript, la misma respuesta ya sale sin campo y con la explicación.
-    await expect(pagina.locator("#playlist")).toContainText(copy.playlist.sinInvitacion);
-    await expect(
-      pagina.locator("#playlist").getByLabel(copy.playlist.campoCancion),
-    ).toHaveCount(0);
+    // Sin JavaScript, la misma respuesta ya sale sin la sección.
+    await expect(pagina.locator("#portada")).toBeVisible();
+    await expect(pagina.locator("#playlist")).toHaveCount(0);
+    const escritas = await conBase(
+      (sql) =>
+        sql`select count(*)::int as n from public.canciones_sugeridas where texto = '(DES) Sonda'`,
+    );
+    expect(escritas[0].n).toBe(0);
 
     expect(
       (await contexto.cookies()).find((c) => c.name === "boda:invitacion"),
@@ -210,23 +212,21 @@ test.describe("La playlist colaborativa", () => {
   });
 
   /**
-   * CASO DE ERROR · Al volver con un enlace ya anulado, ni se ofrece el campo.
+   * CASO DE ERROR · Al volver con un enlace ya anulado, no hay playlist.
    *
    * La portada pregunta a la base al pintarse —para saludar—, así que ya sabe
-   * que el enlace no vale: no enseña un campo que va a fallar, y pide que se
-   * olvide la cookie. Sin JavaScript también: lo pide una imagen.
+   * que el enlace no vale: no enseña una sección que va a fallar, y pide que
+   * se olvide la cookie. Sin JavaScript también: lo pide una imagen.
    */
-  test("al volver con un enlace anulado no hay campo, y se olvida", async ({ browser }) => {
+  test("al volver con un enlace anulado no hay playlist, y se olvida", async ({ browser }) => {
     const { token, grupoId } = await crearGrupo("anulado-vuelta");
     const contexto = await conInvitacionAbierta(browser, token, false);
     await conBase((sql) => sql`delete from public.grupos_invitacion where id = ${grupoId}`);
 
     const pagina = await contexto.newPage();
     await pagina.goto("/");
-    await expect(pagina.locator("#playlist")).toContainText(copy.playlist.sinInvitacion);
-    await expect(
-      pagina.locator("#playlist").getByLabel(copy.playlist.campoCancion),
-    ).toHaveCount(0);
+    await expect(pagina.locator("#portada")).toBeVisible();
+    await expect(pagina.locator("#playlist")).toHaveCount(0);
     expect(
       (await contexto.cookies()).find((c) => c.name === "boda:invitacion"),
     ).toBeUndefined();
@@ -259,8 +259,9 @@ test.describe("La playlist colaborativa", () => {
 
     // Y entra con el pop elástico de la entrega (BODA-120): la curva con
     // muelle, cubic-bezier(.2, 1.3, .4, 1), que sobrepasa el 1. Se mira desde
-    // una pestaña normal: el contexto de la invitación reduce el movimiento.
-    await page.goto("/");
+    // una pestaña normal —el contexto de arriba reduce el movimiento—, que
+    // también entra con el enlace: sin él no hay playlist.
+    await page.goto(`${RUTA_INVITACION}/${token}`);
     const ficha = await page
       .locator("#playlist ul > li")
       .filter({ hasText: cancion })

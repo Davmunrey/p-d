@@ -254,7 +254,6 @@
   --font-size-hito: clamp(1.4375rem, 2.6vw, 1.875rem);
   --font-size-hito-menor: clamp(1.3125rem, 2.4vw, 1.6875rem);
   --font-size-hora: clamp(1.625rem, 3.2vw, 2.25rem);
-  --font-size-hora-menor: clamp(1.5rem, 3vw, 2rem);
   --font-size-dato: clamp(1.5rem, 3vw, 2.125rem);
   --font-size-cifra-dato: 1.4375rem;
   --font-size-cifra-dato-menor: 1.25rem;
@@ -397,7 +396,6 @@
   --space-conector: clamp(0.875rem, 2vw, 1.625rem);
   --space-raya: clamp(1.75rem, 4vw, 2.75rem);
   --space-datos: clamp(1.25rem, 4vw, 3.375rem);
-  --space-acciones: clamp(1.25rem, 2.6vw, 1.75rem);
   --space-cifras: clamp(1rem, 5vw, 4.25rem);
   --space-contador: clamp(1.625rem, 4vw, 2.75rem);
   --space-cita: clamp(1.875rem, 4vw, 2.875rem);
@@ -436,10 +434,9 @@
   --space-holgura-mascara: 0.35em;
   --space-recorrido-linea: 1.5em;
 
-  /* La pista «bajad» cae 7 px y se apaga; la foto de portada baja hasta 60 px
-     mientras se hace scroll, en los primeros 428 px de recorrido (60 / 0,14),
-     y sangra un 6 % por arriba y por abajo para que ese viaje no deje borde. */
-  --space-pista-recorrido: 0.4375rem;
+  /* La foto de portada baja hasta 60 px mientras se hace scroll, en los
+     primeros 428 px de recorrido (60 / 0,14), y sangra un 6 % por arriba y por
+     abajo para que ese viaje no deje borde. */
   --space-paralaje-portada: 3.75rem;
   --size-scroll-paralaje: 26.75rem;
   --size-umbral-cabecera: 5.625rem;
@@ -452,10 +449,8 @@
   /* El campo y el botón de la playlist: una fila de píldoras de 54 px. */
   --size-control-grande: 3.375rem;
 
-  /* El degradado que funde la foto de portada con la página (120 px), y la
-     raya que respira bajo el «bajad» (26 px). */
+  /* El degradado que funde la foto de portada con la página (120 px). */
   --size-fundido-foto: 7.5rem;
-  --size-raya-pista: 1.625rem;
 
   /* Anchos mínimos de columna de las rejillas que se parten solas: tarjeta de
      hotel (280), tarjeta de consejo (240) y columna de «cómo llegar» (340). */
@@ -687,8 +682,6 @@
   --blur-3: 14px;
 
   /* Opacidades, sangrados y escalas del movimiento. */
-  --opacity-pista-alta: 80%;
-  --opacity-pista-baja: 35%;
   --bleed-foto: 6%;
   --scale-zoom: 1.12;
   --scale-paralaje: 1.1;
@@ -733,7 +726,6 @@
   --duration-slower: 1200ms;
   --duration-cinematic: 1400ms;
   --duration-escena: 2400ms;
-  --duration-pista: 2600ms;
   --ease-salida: cubic-bezier(0.2, 0.7, 0.3, 1);
   --ease-entrada: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-suave: cubic-bezier(0.22, 0.75, 0.24, 1);
@@ -746,8 +738,6 @@
   --delay-3: 500ms;
   --delay-4: 800ms;
   --delay-5: 950ms;
-  --delay-6: 1100ms;
-  --delay-7: 1600ms;
 
   /* La «y» se escribe mientras llega el segundo nombre, en 0,9 s. */
   --delay-escritura: 550ms;

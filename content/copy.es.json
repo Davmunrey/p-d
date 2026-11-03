@@ -46,13 +46,11 @@
   "portada": {
     "etiquetaFecha": "La fecha",
     "etiquetaLugar": "El lugar",
-    "verElDia": "Ver el día",
     "conjuncion": "y",
     "enPreparacion": "Estamos preparando la web",
     "enPreparacionTexto": "Volved en un rato y aquí estará todo.",
     "noDisponible": "La web no está disponible ahora mismo",
     "noDisponibleTexto": "Volved en un rato: no se ha perdido nada.",
-    "bajad": "Bajad",
     "etiqueta": "Nos casamos en {ciudad}",
     "etiquetaCompartir": "Nos casamos",
     "saludo": "Para {grupo}"
@@ -82,10 +80,7 @@
     "cerrar": "Cerrar"
   },
   "preboda": {
-    "titulo": "Si llegáis antes de tiempo",
-    "entradilla": "Muchos vendréis de fuera y el {dia} da para mucho. Nosotros estaremos por {ciudad}: venid a saludar.",
-    "cierre": "Nada de esto es obligatorio ni hace falta confirmarlo: pasaos por donde os apetezca.",
-    "entradillaSinCiudad": "Muchos vendréis de fuera y el {dia} da para mucho. Venid a saludar."
+    "titulo": "Preboda en {lugar}"
   },
   "programa": {
     "titulo": "El día, hora a hora"
@@ -592,6 +587,7 @@
       "grupoPareja": "La pareja",
       "grupoCeremonia": "Ceremonia",
       "grupoBanquete": "Banquete",
+      "grupoPreboda": "Preboda",
       "grupoContacto": "Contacto y confirmaciones",
       "grupoPortada": "Textos de la portada",
       "nombreNovia": "Nombre de la novia",
@@ -612,6 +608,8 @@
       "paisajeCierre": "Paisaje · cierre",
       "paisajeCierreAyuda": "La línea en cursiva que cierra la frase («y continúa en León»). Podéis dejarla vacía.",
       "lugarBanquete": "Lugar del banquete",
+      "lugarPreboda": "Lugar de la preboda",
+      "lugarPrebodaAyuda": "En la web sale como «Preboda en …», bajo la fecha de la víspera: escribidlo como se diría, por ejemplo «el Barrio Húmedo». Mientras esté vacío, la web no enseña la preboda ni la pregunta al confirmar.",
       "direccionBanquete": "Dirección del banquete",
       "latitud": "Latitud",
       "longitud": "Longitud",
@@ -1604,10 +1602,9 @@
         },
         "programa": {
           "titulo": "El programa",
-          "descripcion": "La hora a hora de los dos días. Se enseña en la web en el orden de aquí, no por la hora escrita.",
+          "descripcion": "La hora a hora del día de la boda. Se enseña en la web en el orden de aquí, no por la hora escrita.",
           "unaFicha": "el hito",
           "boda": "Día de la boda",
-          "preboda": "Víspera",
           "hora": "Hora",
           "horaAyuda": "Como se lea mejor: «14:00», «sobre las 19:30», «de madrugada».",
           "titulo_": "Qué pasa",

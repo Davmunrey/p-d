@@ -96,6 +96,7 @@ update public.configuracion_boda set
   paisaje_titulo       = '(DES) Dos ciudades',
   paisaje_cierre       = '(DES) y continúa en una tercera',
   ciudad_ceremonia     = '(DES) León',
+  lugar_preboda        = '(DES) el Barrio Húmedo',
   avisos_programa      = array[
     '(DES) Etiqueta elegante · ceremonia al aire libre',
     '(DES) Césped y grava: cuidado con los tacones finos'
@@ -335,9 +336,10 @@ $$;
 -- el prefijo «(DES)»: los datos de verdad se cargan desde el panel.
 -- ============================================================================
 
--- La víspera. Van con `momento = 'preboda'` y son los que separan la sección de
--- la del día de la boda: sin al menos uno, el test que comprueba que las dos no
--- se mezclan se saltaría solo y estaría verde sin haberse ejecutado nunca.
+-- La víspera ya no tiene horario —la web dice sólo «Preboda en …», con el lugar
+-- de Ajustes—, pero estos hitos con `momento = 'preboda'` se quedan: son los
+-- que quedaron en producción, y prueban que no se cuelan en el programa del día
+-- ni en su lista del panel.
 insert into public.hitos_programa (hora, titulo, descripcion, orden, momento) values
   ('19:00', '(DES) Vermut de bienvenida', 'En la plaza mayor, para quien llegue con tiempo.',      1, 'preboda'),
   ('21:30', '(DES) Cena informal',        'Sin reserva ni protocolo: quien pueda, que se apunte.', 2, 'preboda')

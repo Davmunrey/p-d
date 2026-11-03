@@ -409,6 +409,62 @@ test.describe("Ajustes de la boda", () => {
   });
 
   /**
+   * EL LUGAR DE LA PREBODA. La víspera ya no tiene horario: la web dice
+   * «Preboda en …» bajo la fecha del viernes, con el lugar que se escribe
+   * aquí. Vacío es «todavía no lo sabemos»: no sale. Se restaura al acabar.
+   */
+  test("el lugar de la preboda se escribe aquí y sale en la web; vacío, no sale", async ({
+    page,
+  }) => {
+    const campo = page.getByLabel(copy.panel.ajustes.lugarPreboda, { exact: true });
+    const original = await campo.inputValue();
+    const lugar = `${MARCA} la plaza del Grano`;
+    const guardar = async (valor: string) => {
+      await page.goto(RUTA_AJUSTES);
+      await page.getByLabel(copy.panel.ajustes.lugarPreboda, { exact: true }).fill(valor);
+      await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+      await expect(page.locator("main").getByRole("status")).toContainText(
+        copy.panel.ajustes.guardado,
+      );
+    };
+
+    try {
+      await guardar(lugar);
+      await page.goto("/");
+      await expect(page.locator("#preboda").getByRole("heading", { level: 2 })).toHaveText(
+        copy.preboda.titulo.replace("{lugar}", lugar),
+      );
+
+      // CASO DE ERROR · «Todavía no lo sabemos»: vacío, la víspera no sale.
+      await guardar("");
+      await page.goto("/");
+      await expect(page.locator("#programa")).toBeVisible();
+      await expect(page.locator("#preboda")).toHaveCount(0);
+    } finally {
+      await guardar(original);
+    }
+  });
+
+  test("un lugar de la preboda más largo de lo que cabe se explica y no se guarda", async ({
+    page,
+  }) => {
+    const campo = page.getByLabel(copy.panel.ajustes.lugarPreboda, { exact: true });
+    const tope = Number(await campo.getAttribute("maxlength"));
+    expect(tope, "el campo tiene que llevar el tope de la base").toBeGreaterThan(0);
+
+    const largo = `${MARCA} ${"la plaza del Grano ".repeat(Math.ceil(tope / 18) + 1)}`;
+    await campo.evaluate((input) => input.removeAttribute("maxlength"));
+    await campo.fill(largo);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+
+    await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorLargo);
+    await page.goto(RUTA_AJUSTES);
+    await expect(
+      page.getByLabel(copy.panel.ajustes.lugarPreboda, { exact: true }),
+    ).not.toHaveValue(largo);
+  });
+
+  /**
    * BODA-129 · LA CUENTA PARA LOS REGALOS.
    *
    * Era lo último de la landing que sólo se tocaba por SQL, y la única cosa de

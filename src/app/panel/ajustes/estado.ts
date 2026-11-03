@@ -41,6 +41,7 @@ export const CAMPOS_AJUSTES = [
   "lugar_ceremonia",
   "direccion_ceremonia",
   "ciudad_ceremonia",
+  "lugar_preboda",
   "latitud_ceremonia",
   "longitud_ceremonia",
   "fecha_hora_banquete",

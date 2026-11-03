@@ -138,16 +138,16 @@ test.describe("La portada sin foto es una noche entera", () => {
 
   /**
    * CASO DE ERROR · en un móvil la noche no puede empujar nada fuera de la
-   * pantalla: el botón entra entero en la primera vista.
+   * pantalla: la fecha y el lugar entran enteros en la primera vista.
    */
-  test("en un móvil, el botón entra entero en la primera pantalla", async ({ page }) => {
+  test("en un móvil, la fecha y el lugar entran enteros en la primera pantalla", async ({
+    page,
+  }) => {
     await page.setViewportSize(MOVIL);
     await page.goto("/");
 
     await expect(page.locator("#portada h1")).toBeVisible();
-    await expect(
-      page.locator("#portada").getByRole("link", { name: copy.portada.verElDia }),
-    ).toBeInViewport({ ratio: 1 });
+    await expect(page.locator("#portada dl")).toBeInViewport({ ratio: 1 });
   });
 
   /** CASO DE ERROR · con movimiento reducido, la noche llega quieta. */
@@ -312,8 +312,8 @@ test.describe("El movimiento de la landing", () => {
 
   /** Un botón cede un 3 % mientras se pulsa; con movimiento reducido, no. */
   async function escalaAlPulsar(page: Page): Promise<number> {
-    const boton = page.locator("#portada").getByRole("link", {
-      name: copy.portada.verElDia,
+    const boton = page.locator("#transporte").getByRole("link", {
+      name: copy.comoLlegar.abrirMapa,
     });
     await boton.scrollIntoViewIfNeeded();
     // Los botones suben al entrar: se espera a que paren para apuntarles.
@@ -325,6 +325,9 @@ test.describe("El movimiento de la landing", () => {
     await page.waitForTimeout(250);
     // La escala horizontal de la matriz: 1 es su tamaño, «none» incluido.
     const escala = await boton.evaluate((n) => new DOMMatrix(getComputedStyle(n).transform).a);
+    // Se suelta fuera: soltar encima sería un clic, y el enlace abre el mapa
+    // en otra pestaña.
+    await page.mouse.move(caja.x + caja.width / 2, caja.y - caja.height * 2);
     await page.mouse.up();
     return escala;
   }

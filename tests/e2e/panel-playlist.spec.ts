@@ -2,6 +2,7 @@ import { expect, test, type Page } from "./utiles/origen-propio";
 import postgres from "postgres";
 
 import copy from "../../content/copy.es.json";
+import { borrarInvitadosDePrueba, entrarComoInvitado } from "./utiles/invitacion-de-prueba";
 import {
   RUTA_ACCESO,
   RUTA_PANEL,
@@ -90,7 +91,6 @@ test.describe("La playlist del panel", () => {
    */
   test("ocultar una canción la retira de la landing, y devolverla la trae", async ({
     page,
-    request,
   }) => {
     // Una canción propia, a la vista en la web: no se depende de lo que otros
     // tests hayan dejado en la playlist.
@@ -101,13 +101,19 @@ test.describe("La playlist del panel", () => {
     );
 
     await entrar(page);
+    /*
+      LA PLAYLIST SÓLO SALE A QUIEN ENTRA CON SU ENLACE, así que la landing se
+      pide como invitado: la misma pestaña abre una invitación de prueba, y
+      `page.request` lleva su cookie.
+    */
+    await entrarComoInvitado(page, "panel-playlist");
     await page.goto(RUTA_PLAYLIST);
 
     const fila = page.locator("li").filter({ hasText: texto }).first();
     await expect(fila).toBeVisible();
 
     // Antes de tocar nada, la canción está en la landing.
-    const antes = await request.get("/");
+    const antes = await page.request.get("/");
     expect(await antes.text()).toContain(texto);
 
     await fila.getByRole("button", { name: copy.panel.playlist.ocultar }).click();
@@ -117,7 +123,7 @@ test.describe("La playlist del panel", () => {
 
     // Y ya no está. Se mira el HTML entregado: que el panel diga que la ha
     // ocultado no prueba que el invitado deje de verla.
-    const durante = await request.get("/");
+    const durante = await page.request.get("/");
     expect(await durante.text()).not.toContain(texto);
 
     // No se ha borrado: sigue en el panel, marcada como oculta.
@@ -137,10 +143,11 @@ test.describe("La playlist del panel", () => {
     await ocultada.getByRole("button", { name: copy.panel.playlist.mostrar }).click();
     await expect(page.getByText(copy.panel.playlist.cancionMostrada)).toBeVisible();
 
-    const despues = await request.get("/");
+    const despues = await page.request.get("/");
     expect(await despues.text()).toContain(texto);
 
     await conBase((sql) => sql`delete from public.canciones_sugeridas where texto = ${texto}`);
+    await borrarInvitadosDePrueba();
   });
 
   /**

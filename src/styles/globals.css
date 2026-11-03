@@ -174,7 +174,6 @@
   --text-hito: var(--texto-hito);
   --text-hito-menor: var(--texto-hito-menor);
   --text-hora: var(--texto-hora);
-  --text-hora-menor: var(--texto-hora-menor);
   --text-dato: var(--texto-dato);
   --text-cifra-dato: var(--texto-cifra-dato);
   --text-cifra-dato-menor: var(--texto-cifra-dato-menor);
@@ -259,7 +258,6 @@
   --spacing-conector: var(--espacio-conector);
   --spacing-raya: var(--espacio-raya);
   --spacing-datos: var(--espacio-datos);
-  --spacing-acciones: var(--espacio-acciones);
   --spacing-cifras: var(--espacio-cifras);
   --spacing-contador: var(--espacio-contador);
   --spacing-cita-arriba: var(--espacio-cita);
@@ -309,7 +307,6 @@
   --spacing-pista-escena: var(--espacio-pista-escena);
   --spacing-control-grande: var(--alto-control-grande);
   --spacing-fundido-foto: var(--ancho-fundido-foto);
-  --spacing-raya-pista: var(--alto-raya-pista);
   --spacing-control: var(--alto-control);
   --spacing-control-compacto: var(--alto-control-compacto);
   --spacing-campo: var(--alto-campo);

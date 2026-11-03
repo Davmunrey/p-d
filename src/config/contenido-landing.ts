@@ -155,17 +155,15 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
   },
 
   /*
-    LA PREBODA Y EL PROGRAMA SON LA MISMA TABLA, partida por `momento`. Un hito
-    de la víspera es exactamente lo mismo —hora, título y descripción— y lo
-    único que cambia es el día.
+    LA PREBODA ES UN SITIO, NO UN HORARIO: «Preboda en el Barrio Húmedo», con
+    el lugar escrito en Ajustes. Sin lugar no hay sección. Los hitos de la
+    víspera que quedaron en `hitos_programa` ya no se pintan ni se editan.
   */
   preboda: {
-    clase: "lista",
-    tabla: "hitos_programa",
-    filtro: [{ columna: "momento", igual: "preboda" }],
-    // La misma pantalla que el programa, abierta ya en su otra pestaña: sin la
-    // variante, «Se llena en Contenido» llevaba a la del día de la boda.
-    donde: enContenido("programa", "preboda"),
+    clase: "campo",
+    tabla: "configuracion_boda",
+    campo: "lugar_preboda",
+    donde: EN_AJUSTES,
   },
   programa: {
     clase: "lista",
@@ -367,10 +365,12 @@ export type CampoDeLista =
 /**
  * A qué sección de la landing va lo que se escribe en la lista.
  *
- * `partida` existe por el programa: `hitos_programa` alimenta DOS secciones
- * —`programa` y `preboda`— repartiéndose por su columna `momento`. Un hito de
- * la víspera es exactamente lo mismo que uno de la boda (hora, título y
- * descripción), así que son una tabla y una pantalla, con un conmutador arriba.
+ * `partida` existe por el programa: `hitos_programa` se reparte por su
+ * columna `momento`, y la pantalla sólo enseña y escribe los de una opción. La
+ * víspera tuvo su horario en la misma tabla; desde que es un sitio («Preboda en
+ * …», en Ajustes), el programa tiene una sola opción —el día de la boda— y sus
+ * hitos de la víspera, que siguen guardados, no se cuelan en su lista. Con dos
+ * opciones o más, la pantalla pone un conmutador arriba.
  */
 export type Destino =
   | { clase: "una"; seccion: Seccion }
@@ -466,11 +466,6 @@ export const LISTAS_DE_CONTENIDO: Record<ClaveLista, ListaDeContenido> = {
           valor: "boda",
           seccion: "programa",
           rotulo: "panel.contenido.listas.programa.boda",
-        },
-        {
-          valor: "preboda",
-          seccion: "preboda",
-          rotulo: "panel.contenido.listas.programa.preboda",
         },
       ],
     },

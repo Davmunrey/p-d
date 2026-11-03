@@ -58,6 +58,12 @@ export interface ConfiguracionBoda {
   hashtag: string | null;
   /** «Paloma, David y Hati»: cómo se firma el bloque de regalos, o `null`. */
   firmaRegalos: string | null;
+  /**
+   * Dónde es la preboda, escrito para ir tras «Preboda en»: «el Barrio
+   * Húmedo». `null` es que todavía no se sabe, y entonces no hay preboda en la
+   * web ni se pregunta por ella al confirmar.
+   */
+  lugarPreboda: string | null;
 }
 
 export interface HitoPrograma {
@@ -213,6 +219,7 @@ async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
         correo_contacto: string | null;
         hashtag: string | null;
         firma_regalos: string | null;
+        lugar_preboda: string | null;
       }[]
     >`
       select
@@ -220,7 +227,7 @@ async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
         lugar_ceremonia, direccion_ceremonia, lugar_banquete,
         latitud_ceremonia, longitud_ceremonia, correo_contacto, hashtag,
         paisaje_intro, paisaje_titulo, paisaje_cierre, ciudad_ceremonia, avisos_programa,
-        firma_regalos
+        firma_regalos, lugar_preboda
       from public.v_configuracion_publica
       limit 1
     `,
@@ -248,6 +255,7 @@ async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
     correoContacto: fila.correo_contacto,
     hashtag: fila.hashtag,
     firmaRegalos: fila.firma_regalos,
+    lugarPreboda: fila.lugar_preboda,
   };
 }
 

@@ -381,7 +381,17 @@ describe("las variantes de una lista partida", () => {
   it("el programa nace en el día de la boda", () => {
     expect(variantePorDefecto("programa")).toBe("boda");
     expect(seccionDeLista("programa", "boda")).toBe("programa");
-    expect(seccionDeLista("programa", "preboda")).toBe("preboda");
+  });
+
+  it("la víspera ya no es una pestaña del programa: es un lugar en Ajustes", () => {
+    // Una URL vieja con `?variante=preboda` cae en el día de la boda.
+    expect(seccionDeLista("programa", "preboda")).toBe("programa");
+    const origen = ORIGEN_DE_LA_SECCION.preboda;
+    expect(origen.clase).toBe("campo");
+    if (origen.clase !== "campo") return;
+    expect(origen.tabla).toBe("configuracion_boda");
+    expect(origen.campo).toBe("lugar_preboda");
+    expect(origen.donde.pantalla).toBe("ajustes");
   });
 
   it("una variante inventada cae en la primera, no en un hueco", () => {

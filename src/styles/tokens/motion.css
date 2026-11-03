@@ -200,24 +200,6 @@
   }
 }
 
-/**
- * LA PISTA «BAJAD» CAE Y SE APAGA, no flota hacia arriba: señala la dirección
- * en la que hay que ir. Siete píxeles y del 80 % al 35 %, en 2,6 s, como en
- * la entrega.
- */
-@keyframes flotar {
-  0%,
-  100% {
-    opacity: var(--opacidad-pista-alta);
-    transform: translateY(0);
-  }
-
-  50% {
-    opacity: var(--opacidad-pista-baja);
-    transform: translateY(var(--recorrido-pista));
-  }
-}
-
 /* El «pop» elástico de una ficha o un monograma: desde el 60 %, con muelle. */
 @keyframes pop {
   from {
@@ -372,8 +354,8 @@
 
 /**
  * EL SAVE THE DATE. El escenario se sacude cuando se rompe el sello; el sello
- * late mientras espera; la pista flota cinco píxeles hacia arriba (no cae como
- * «bajad»: aquí no señala una dirección, llama la atención sobre el sello).
+ * late mientras espera; la pista flota cinco píxeles hacia arriba: no señala
+ * una dirección, llama la atención sobre el sello.
  */
 @keyframes sacudir {
   0%,
@@ -563,10 +545,6 @@
 
 .animacion-acercar {
   animation: acercar var(--transicion-escena) both;
-}
-
-.animacion-flotar {
-  animation: flotar var(--periodo-pista) ease-in-out infinite;
 }
 
 /**
@@ -893,14 +871,6 @@
   animation-delay: var(--retardo-portada-5);
 }
 
-.retardo-6 {
-  animation-delay: var(--retardo-portada-6);
-}
-
-.retardo-7 {
-  animation-delay: var(--retardo-portada-7);
-}
-
 @supports (animation-timeline: view()) {
   /**
    * CUÁNTO DURA EL REVEAL, MEDIDO CONTRA LA PANTALLA Y NO CONTRA EL ELEMENTO.
@@ -1082,7 +1052,6 @@
     Lo que se mueve en bucle o con el scroll se para del todo. La barra de
     lectura NO: mide cuánto se ha leído y no es decoración; quieta, mentiría.
   */
-  .animacion-flotar,
   .animacion-latido,
   .animacion-flotar-arriba,
   .animacion-sacudir,
@@ -1133,8 +1102,8 @@
 
   /*
     `animation-delay: 0s` es lo que hace que la portada entera esté a la vista
-    a la vez: con los retardos puestos, «bajad» tardaría 1,6 s en aparecer
-    aunque su fundido durase 100 ms.
+    a la vez: con los retardos puestos, los datos tardarían casi un segundo en
+    aparecer aunque su fundido durase 100 ms.
   */
   *,
   *::before,

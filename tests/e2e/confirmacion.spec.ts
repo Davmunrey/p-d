@@ -341,16 +341,20 @@ test.describe("Confirmar con el enlace", () => {
 
   /**
    * CASO DE ERROR · Sin preboda en la web no se pregunta por ella, y la base
-   * guarda «no se le preguntó» (NULL), que no cuenta como un «no».
+   * guarda «no se le preguntó» (NULL), que no cuenta como un «no». La web no
+   * la enseña mientras no haya lugar escrito: «todavía no lo sabemos».
    */
-  test("sin preboda en la web no se pregunta, y no se apunta como un «no»", async ({
+  test("sin lugar de la preboda no se pregunta, y no se apunta como un «no»", async ({
     page,
   }) => {
     const { token } = await crearGrupo("sin-preboda", ["(DES) Hugo"]);
-    await conBase(
+    const [{ lugar }] = await conBase(
       (sql) =>
-        sql`update public.secciones_landing set visible = false where seccion = 'preboda'`,
+        sql<
+          { lugar: string | null }[]
+        >`select lugar_preboda as lugar from public.configuracion_boda`,
     );
+    await conBase((sql) => sql`update public.configuracion_boda set lugar_preboda = null`);
     try {
       const rsvp = await abrirConElEnlace(page, token);
       await contestar(rsvp, "(DES) Hugo", true);
@@ -368,8 +372,7 @@ test.describe("Confirmar con el enlace", () => {
       expect(hugo?.asiste_preboda).toBeNull();
     } finally {
       await conBase(
-        (sql) =>
-          sql`update public.secciones_landing set visible = true where seccion = 'preboda'`,
+        (sql) => sql`update public.configuracion_boda set lugar_preboda = ${lugar}`,
       );
     }
   });

@@ -169,9 +169,7 @@ export default async function PaginaLista({ params, searchParams }: Parametros) 
         <Cuerpo className="mt-pila">{t(lista.descripcion)}</Cuerpo>
       </header>
 
-      {lista.destino.clase === "partida" ? (
-        <Conmutador clave={clave} lista={lista} variante={variante} />
-      ) : null}
+      <Conmutador clave={clave} lista={lista} variante={variante} />
 
       {estado && aviso ? (
         <p
@@ -289,7 +287,8 @@ function varianteElegida(lista: ListaDeContenido, pedida: string): string | unde
 }
 
 /**
- * LAS DOS PESTAÑAS DEL PROGRAMA, que son dos enlaces.
+ * LAS PESTAÑAS DE UNA LISTA PARTIDA, que son enlaces. Con una sola opción no
+ * hay nada entre lo que cambiar, y no se pinta.
  *
  * No hay estado de cliente que mantener: cambiar de día es cambiar de URL, así
  * que funciona sin JavaScript, se puede compartir el enlace y el botón de atrás
@@ -304,7 +303,7 @@ function Conmutador({
   lista: ListaDeContenido;
   variante: string | undefined;
 }) {
-  if (lista.destino.clase !== "partida") return null;
+  if (lista.destino.clase !== "partida" || lista.destino.opciones.length < 2) return null;
 
   return (
     <nav aria-label={t(lista.titulo)}>

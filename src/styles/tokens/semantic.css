@@ -304,7 +304,6 @@
   --texto-hito: var(--font-size-hito);
   --texto-hito-menor: var(--font-size-hito-menor);
   --texto-hora: var(--font-size-hora);
-  --texto-hora-menor: var(--font-size-hora-menor);
   --texto-dato: var(--font-size-dato);
   --texto-cifra-dato: var(--font-size-cifra-dato);
   --texto-cifra-dato-menor: var(--font-size-cifra-dato-menor);
@@ -374,7 +373,6 @@
   --espacio-conector: var(--space-conector);
   --espacio-raya: var(--space-raya);
   --espacio-datos: var(--space-datos);
-  --espacio-acciones: var(--space-acciones);
   --espacio-cifras: var(--space-cifras);
   --espacio-contador: var(--space-contador);
   --espacio-cita: var(--space-cita);
@@ -404,7 +402,6 @@
   --alto-campo: var(--size-campo);
   --alto-control-grande: var(--size-control-grande);
   --ancho-fundido-foto: var(--size-fundido-foto);
-  --alto-raya-pista: var(--size-raya-pista);
   --ancho-tarjeta-minima: var(--size-tarjeta-minima);
   --ancho-consejo-minimo: var(--size-consejo-minimo);
   --ancho-columna-llegar: var(--size-columna-llegar);
@@ -529,14 +526,11 @@
   --transicion-fundido-portada: var(--duration-slower) var(--ease-salida);
   --transicion-escena: var(--duration-escena) var(--ease-salida);
   --transicion-muelle: var(--duration-medium) var(--ease-muelle);
-  --periodo-pista: var(--duration-pista);
   --retardo-portada-1: var(--delay-1);
   --retardo-portada-2: var(--delay-2);
   --retardo-portada-3: var(--delay-3);
   --retardo-portada-4: var(--delay-4);
   --retardo-portada-5: var(--delay-5);
-  --retardo-portada-6: var(--delay-6);
-  --retardo-portada-7: var(--delay-7);
 
   /* La constelación de la portada y la «y» que se escribe (ver primitivos). */
   --pausa-escritura: var(--delay-escritura);
@@ -556,9 +550,6 @@
   --escala-pulsado: var(--scale-pulsado);
   --paso-escalonado: var(--step-escalonado);
   --recorrido-reveal: var(--space-reveal);
-  --recorrido-pista: var(--space-pista-recorrido);
-  --opacidad-pista-alta: var(--opacity-pista-alta);
-  --opacidad-pista-baja: var(--opacity-pista-baja);
   --sangrado-foto: var(--bleed-foto);
   --escala-zoom: var(--scale-zoom);
   --escala-paralaje: var(--scale-paralaje);

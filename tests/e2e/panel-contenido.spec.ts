@@ -366,32 +366,39 @@ test.describe("El contenido de la web", () => {
   });
 
   /**
-   * CASO DE ERROR · la víspera y el día son la misma pantalla en dos pestañas.
-   * El enlace de la víspera abría la del día, y quien entraba a escribir la
-   * preboda lo hacía, sin darse cuenta, en el programa de la boda.
+   * LA VÍSPERA ES UN SITIO Y SE ESCRIBE EN AJUSTES. Antes era una pestaña del
+   * programa con su horario; ahora la web dice sólo «Preboda en …», así que su
+   * ficha lleva a Ajustes, y el programa ya no tiene pestañas.
+   *
+   * CASO DE ERROR · los hitos de la víspera que quedaron en la base no se
+   * cuelan en la lista del día de la boda: quien la edita no ve filas que no
+   * salen en ninguna parte.
    */
-  test("la víspera se llena en su pestaña, no en la del día", async ({ page }) => {
+  test("la víspera se llena en Ajustes y el programa es sólo el del día", async ({ page }) => {
     await entrar(page);
     await page.goto(RUTA_CONTENIDO);
 
-    await fichaDe(page, copy.navegacion.secciones.preboda)
-      .getByRole("link", {
+    await expect(
+      fichaDe(page, copy.navegacion.secciones.preboda).getByRole("link", {
         name: copy.panel.contenido.seLlenaEn.replace(
           "{donde}",
-          copy.panel.contenido.dondeContenido,
+          copy.panel.contenido.dondeAjustes,
         ),
-      })
-      .click();
+      }),
+    ).toHaveAttribute("href", RUTA_AJUSTES);
 
-    const pestanas = page.getByRole("navigation", {
-      name: copy.panel.contenido.listas.programa.titulo,
-    });
+    await page.goto(rutaDeLista("programa"));
     await expect(
-      pestanas.getByRole("link", { name: copy.panel.contenido.listas.programa.preboda }),
-    ).toHaveAttribute("aria-current", "page");
+      page.getByRole("heading", {
+        level: 1,
+        name: copy.panel.contenido.listas.programa.titulo,
+      }),
+    ).toBeVisible();
     await expect(
-      pestanas.getByRole("link", { name: copy.panel.contenido.listas.programa.boda }),
-    ).not.toHaveAttribute("aria-current", "page");
+      page.getByRole("navigation", { name: copy.panel.contenido.listas.programa.titulo }),
+    ).toHaveCount(0);
+    await expect(page.getByText("(DES) Ceremonia").first()).toBeVisible();
+    await expect(page.getByText("(DES) Vermut de bienvenida")).toHaveCount(0);
   });
 
   /**
