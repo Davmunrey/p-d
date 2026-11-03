@@ -94,9 +94,8 @@ test.describe("Navegación", () => {
     const fuera = [
       // Se confirma al final, tocando vuestra estrella: no va arriba.
       ["rsvp", copy.navegacion.secciones.rsvp],
-      ["historia", copy.navegacion.secciones.historia],
       ["dresscode", copy.navegacion.secciones.dresscode],
-      ["preguntas-frecuentes", copy.navegacion.secciones.preguntas_frecuentes],
+      ["planes", copy.navegacion.secciones.planes],
     ] as const;
 
     for (const [ancla, rotulo] of fuera) {
@@ -108,8 +107,8 @@ test.describe("Navegación", () => {
       /*
         Pero la sección SIGUE EN LA PÁGINA: no se ha escondido, se ha sacado del
         menú. Se comprueba por su ancla y no por su titular, porque el rótulo del
-        menú y el titular de la sección son dos textos distintos a propósito —«El
-        origen» arriba, la frase del paisaje dentro— y compararlos daría un fallo
+        menú y el titular de la sección son dos textos distintos a propósito
+        —«Planes» arriba, «Planes por León» dentro— y compararlos daría un fallo
         que no dice nada de lo que se quiere afirmar.
       */
       await expect(

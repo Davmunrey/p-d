@@ -84,15 +84,16 @@ test.describe("Un solo cielo, de la noche al día", () => {
     expect(orden.conFondo, "el cielo es uno: ninguna sección pinta el suyo").toEqual([]);
   });
 
-  test("la historia es de noche; el día llega al mapa y acaba en vuestra estrella", async ({
+  test("la portada es de noche; el día llega al mapa y acaba en vuestra estrella", async ({
     page,
   }) => {
     await page.goto("/");
 
     const deNoche = page.locator('[data-tramo="noche"]');
     await expect(deNoche.locator("#portada")).toHaveCount(1);
-    await expect(deNoche.locator("#historia")).toHaveCount(1);
+    await expect(deNoche.locator("#programa")).toHaveCount(0);
     await expect(deNoche.locator("#rsvp")).toHaveCount(0);
+    await expect(page.locator('[data-tramo="dia"] #programa')).toHaveCount(1);
 
     /*
       La llegada, en este orden: dónde dormir, cómo llegar —el mapa, donde se
@@ -238,33 +239,13 @@ test.describe("Sin JavaScript", () => {
     );
     for (const fondo of fondos) expect(fondo).toContain("gradient");
 
-    await expect(page.getByRole("heading", { name: copy.historia.titulo })).toBeVisible();
+    await expect(page.getByRole("heading", { name: copy.programa.titulo })).toBeVisible();
     await expect(page.getByRole("heading", { name: copy.rsvp.titulo })).toBeVisible();
     // La estrella del final sale posada del servidor: el sitio se ve siempre.
     await expect(page.locator("[data-estrella-llegada]")).toHaveAttribute(
       "data-llegada",
       "posada",
     );
-  });
-});
-
-test.describe("Nuestra historia, una estrella por momento", () => {
-  test("cada hito lleva su estrella, y la historia se sigue leyendo como una lista", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    const hitos = page.locator("#historia ol > li");
-    const cuantos = await hitos.count();
-    expect(cuantos).toBeGreaterThan(0);
-
-    // Una estrella por hito, decorativa; el texto es lo que se lee.
-    await expect(page.locator('#historia ol > li svg[aria-hidden="true"]')).toHaveCount(
-      cuantos,
-    );
-    for (let i = 0; i < cuantos; i += 1) {
-      await expect(hitos.nth(i).locator("h3")).not.toBeEmpty();
-    }
-    await expect(page.locator("#historia")).toContainText(copy.historia.cierre);
   });
 });
 

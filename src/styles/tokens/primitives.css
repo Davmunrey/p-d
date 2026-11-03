@@ -223,10 +223,6 @@
   --font-size-titulo-tramo: clamp(2rem, 5.4vw, 4.25rem);
   --font-size-titulo-3: 1.6875rem;
   --font-size-conector: clamp(2.75rem, 8vw, 6.5rem);
-
-  /* El cierre de la frase del paisaje, en la letra del conector: un escalón
-     por debajo de la «y» de la portada, que es la firma y no una línea más. */
-  --font-size-conector-frase: clamp(1.75rem, 3.6vw, 3rem);
   --font-size-saludo: clamp(1.375rem, 3vw, 2rem);
 
   /**
@@ -401,7 +397,6 @@
   --space-cita: clamp(1.875rem, 4vw, 2.875rem);
   --space-tarjeta: 1.625rem;
   --space-tarjeta-fluida: clamp(1.625rem, 4vw, 2.625rem);
-  --space-columnas-fluido: clamp(1.875rem, 5vw, 4.5rem);
   --space-tira-nav: clamp(0.875rem, 2.2vw, 1.75rem);
   --space-fila: clamp(1.25rem, 2.6vw, 1.875rem);
   --space-fila-hueco: clamp(1.125rem, 3vw, 2.5rem);
@@ -410,7 +405,6 @@
   --space-chip-y: 0.6875rem;
   --space-chip-x: 1.125rem;
   --space-chips-arriba: 1.875rem;
-  --space-galeria: clamp(0.875rem, 2vw, 1.625rem);
 
   /* Los rellenos que escribe el catálogo: la píldora (9 y 16), el aviso
      (18 y 20) y el cuerpo de una tarjeta (22), más el aire de 9 px entre la
@@ -457,9 +451,6 @@
   --size-tarjeta-minima: 17.5rem;
   --size-consejo-minimo: 15rem;
   --size-columna-llegar: 21.25rem;
-
-  /* Ancho mínimo de un hueco de la tira de fotos (260 px). */
-  --size-foto-tira: 16.25rem;
 
   /* Ancho mínimo de una cifra grande, para que la cuenta atrás no baile. */
   --size-cifra: 5.5rem;
@@ -647,13 +638,6 @@
   /* Lo que la tarjeta de cómo llegar se monta sobre el mapa en un móvil. */
   --space-solape-mapa: 6rem;
 
-  /*
-   * LAS ESTRELLAS DE «NUESTRA HISTORIA»: una por hito, de 14 px, en una
-   * columna de 24 que hace de hilo entre ellas.
-   */
-  --size-estrella-hito: 0.875rem;
-  --size-columna-estrella: 1.5rem;
-
   /* ---------------------------------------------------------------------
    * Forma
    * ------------------------------------------------------------------- */
@@ -684,7 +668,6 @@
   /* Opacidades, sangrados y escalas del movimiento. */
   --bleed-foto: 6%;
   --scale-zoom: 1.12;
-  --scale-paralaje: 1.1;
   --scale-pop: 0.6;
   --scale-reveal: 0.94;
 
@@ -705,7 +688,6 @@
   --shift-deriva-y: -1.625rem;
   --opacity-titilar-cielo-alta: 90%;
   --opacity-titilar-cielo-baja: 40%;
-  --shift-paralaje: 5%;
 
   /* Proporciones. Crudas y sin destino: quién las usa lo decide la capa
    * semántica. */

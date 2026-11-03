@@ -79,40 +79,12 @@ describe("el mapa de qué llena cada sección", () => {
       landing. Nunca va a estar en el objeto `contenido`, y exigírselo obligaría
       a inventar una entrada falsa allí para que este test callara.
     */
-    const huerfanas = SECCIONES.filter(
-      (seccion) =>
-        esAncla(seccion) &&
-        ORIGEN_DE_LA_SECCION[seccion].clase !== "sin-hacer" &&
-        !pinta.has(seccion),
-    );
+    const huerfanas = SECCIONES.filter((seccion) => esAncla(seccion) && !pinta.has(seccion));
 
     expect(
       huerfanas,
       "el panel dice que estas secciones se llenan, y la landing no las pinta",
     ).toEqual([]);
-  });
-
-  it("y toda sección marcada «sin hacer» es una que la landing no pinta", () => {
-    const pinta = seccionesQueLaLandingPinta();
-
-    const mentirosas = SECCIONES.filter(
-      (seccion) => ORIGEN_DE_LA_SECCION[seccion].clase === "sin-hacer" && pinta.has(seccion),
-    );
-
-    expect(
-      mentirosas,
-      "el panel avisa de que no existen y la landing ya las pinta: se puede quitar el aviso",
-    ).toEqual([]);
-
-    /*
-      Y QUE SIGA HABIENDO ALGUNA, o lo de arriba estaría comprobando el vacío.
-      Hoy es `ubicaciones`, encendida desde el primer día y sin componente
-      (BODA-26). El día que se haga, este test se cae — y caerse es lo correcto:
-      obliga a mirar si el aviso de la pantalla sigue teniendo sentido.
-    */
-    expect(
-      SECCIONES.filter((seccion) => ORIGEN_DE_LA_SECCION[seccion].clase === "sin-hacer").length,
-    ).toBeGreaterThan(0);
   });
 
   it("las tablas que se cuentan existen en las migraciones", () => {
@@ -177,11 +149,11 @@ describe("el mapa de qué llena cada sección", () => {
     expect(sinPublicado).toEqual([]);
   });
 
-  it("la galería se cuenta con los mismos predicados con los que la landing la pinta", () => {
+  it("el retrato se cuenta con los mismos predicados con los que la landing lo pinta", () => {
     /*
-      `obtenerGaleria()` exige más que `publicado`: sólo imágenes, y con
-      medidas. Un vídeo o un AVIF sin medir se guardan publicados y no salen.
-      Contarlos aquí decía «la galería se ve» mientras la web la escondía.
+      `obtenerRetrato()` exige más que `publicado`: la foto recortada, que sea
+      imagen y que ya tenga sus estrellas. Contar sin esos predicados diría «el
+      retrato se ve» mientras la web lo esconde.
 
       Se lee el `where` de la landing y se compara EN LOS DOS SENTIDOS: cada
       condición de aquí está allí, y cada predicado de allí está aquí. El día
@@ -189,25 +161,22 @@ describe("el mapa de qué llena cada sección", () => {
     */
     const landing = readFileSync(join(RAIZ, "src/lib/bbdd/landing.ts"), "utf8");
     const consulta = landing
-      .split("export async function obtenerGaleria(")[1]
+      .split("export async function obtenerRetrato(")[1]
       ?.split("order by")[0];
-    expect(consulta, "obtenerGaleria sigue existiendo y ordena").toBeDefined();
+    expect(consulta, "obtenerRetrato sigue existiendo y ordena").toBeDefined();
 
-    const galeria = ORIGEN_DE_LA_SECCION.galeria;
-    expect(galeria.clase).toBe("lista");
-    if (galeria.clase !== "lista") return;
+    const retrato = ORIGEN_DE_LA_SECCION.retrato;
+    expect(retrato.clase).toBe("lista");
+    if (retrato.clase !== "lista") return;
 
-    const aqui = (galeria.filtro ?? []).map((condicion) =>
+    const aqui = (retrato.filtro ?? []).map((condicion) =>
       "igual" in condicion
-        ? condicion.columna === "seccion"
-          ? "seccion = ${seccion}"
-          : `${condicion.columna} = '${condicion.igual}'`
+        ? `${condicion.columna} = '${condicion.igual}'`
         : `${condicion.columna} is not null`,
     );
-
-    const alli = [
-      ...consulta!.matchAll(/\band (\w+ (?:= (?:'\w+'|\$\{seccion\})|is not null))/g),
-    ].map((m) => m[1]);
+    const alli = [...consulta!.matchAll(/\band (\w+ (?:= '\w+'|is not null))/g)].map(
+      (m) => m[1],
+    );
 
     expect(aqui.sort()).toEqual(alli.sort());
     // Y no es un espejo de la nada: la landing exige algo más que la sección.

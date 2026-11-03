@@ -130,7 +130,6 @@ async function medirLaSeccion(
   const origen = ORIGEN_DE_LA_SECCION[seccion];
 
   if (origen.clase === "sola") return { elementos: null, llena: true };
-  if (origen.clase === "sin-hacer") return { elementos: null, llena: false };
 
   if (origen.clase === "lista") {
     let consulta = supabase

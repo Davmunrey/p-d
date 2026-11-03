@@ -213,8 +213,8 @@ function describir(filas: PuestoDeMedio[]): string {
  * El formulario de subida de UNA sección concreta, ya desplegado.
  *
  * Se llega a él por el campo oculto que lleva dentro y no por el orden de la
- * página: hay dieciséis formularios idénticos —uno por sección— y un `.first()`
- * subiría siempre a la portada, incluso en el test que prueba la galería. El
+ * página: hay un formulario idéntico por sección y un `.first()`
+ * subiría siempre a la portada, incluso en el test que prueba los planes. El
  * campo oculto es lo único que los distingue, y es además exactamente el dato
  * que decide dónde acaba la foto.
  *
@@ -449,8 +449,8 @@ test.describe("El gestor de fotos y vídeos", () => {
         insert into public.medios
           (ruta_almacenamiento, texto_alternativo, seccion, tipo, publicado)
         values
-          (${`galeria/e2e-fantasma-${Date.now()}.jpg`}, ${sql.json({ es: alternativo })},
-           'galeria', 'imagen', false)
+          (${`planes/e2e-fantasma-${Date.now()}.jpg`}, ${sql.json({ es: alternativo })},
+           'planes', 'imagen', false)
       `;
 
       await entrar(page);
@@ -725,7 +725,7 @@ test.describe("El gestor de fotos y vídeos", () => {
     await page.goto(RUTA_MEDIOS);
 
     for (const alternativo of [primera, segunda]) {
-      const formulario = await formularioDe(page, "galeria");
+      const formulario = await formularioDe(page, "planes");
       await formulario
         .locator('input[type="file"][name="fichero"]')
         .setInputFiles(comoFichero("prueba.png", "image/png", pngMinimo()));
@@ -757,8 +757,8 @@ test.describe("El gestor de fotos y vídeos", () => {
 
     expect(
       antes.map((fila) => fila.seccion),
-      `las dos fotos tienen que estar en «galeria». Lo que hay:\n${describir(antes)}`,
-    ).toEqual(["galeria", "galeria"]);
+      `las dos fotos tienen que estar en «planes». Lo que hay:\n${describir(antes)}`,
+    ).toEqual(["planes", "planes"]);
 
     const [delante, detras] =
       antes[0].orden! < antes[1].orden! ? [antes[0], antes[1]] : [antes[1], antes[0]];
@@ -800,7 +800,9 @@ test.describe("El gestor de fotos y vídeos", () => {
     const alternativo = `${MARCA} confirmar ${Date.now()}`;
     const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
     try {
-      await ponerMedio(sql, alternativo, "galeria", { publicado: true });
+      // Elegida en un plan publicado: así se ve en la web.
+      const id = await ponerMedio(sql, alternativo, "planes", { publicado: true });
+      await sql`insert into public.planes (titulo, medio_id) values (${alternativo}, ${id})`;
       const cuantas = async () =>
         (
           await sql<{ n: number }[]>`
@@ -812,7 +814,7 @@ test.describe("El gestor de fotos y vídeos", () => {
       await page.goto(RUTA_MEDIOS);
       const ficha = fichaDe(page, alternativo);
       await ficha.locator("summary", { hasText: copy.panel.medios.borrar }).click();
-      // Está publicada y con medidas en la galería: se ve, y la pregunta lo dice.
+      // Está publicada y elegida en un plan: se ve, y la pregunta lo dice.
       await expect(ficha.getByText(copy.panel.medios.borrarEnLaWeb)).toBeVisible();
 
       // CASO DE ERROR · el formulario llega sin la confirmación, como si se
@@ -829,6 +831,7 @@ test.describe("El gestor de fotos y vídeos", () => {
       await esperarEstado(page, "borrado");
       expect(await cuantas()).toBe(0);
     } finally {
+      await sql`delete from public.planes where titulo = ${alternativo}`;
       await sql`delete from public.medios where texto_alternativo->>'es' = ${alternativo}`;
       await sql.end();
     }
@@ -845,8 +848,8 @@ test.describe("El gestor de fotos y vídeos", () => {
     const segunda = `${MARCA} mover B ${sello}`;
     const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
     try {
-      await ponerMedio(sql, primera, "historia");
-      await ponerMedio(sql, segunda, "historia");
+      await ponerMedio(sql, primera, "planes");
+      await ponerMedio(sql, segunda, "planes");
 
       await entrar(page);
       await page.goto(RUTA_MEDIOS);
@@ -864,38 +867,37 @@ test.describe("El gestor de fotos y vídeos", () => {
   });
 
   /**
-   * SÓLO SE OFRECE LO QUE ESA PARTE DE LA WEB PINTA. La galería no enseña
+   * SÓLO SE OFRECE LO QUE ESA PARTE DE LA WEB PINTA. Los planes no enseñan
    * vídeos: antes se dejaban subir, se publicaban y se quedaban en «no se ve».
    */
-  test("la galería no ofrece vídeo, y si llega uno lo rechaza junto al formulario", async ({
+  test("los planes no ofrecen vídeo, y si llega uno lo rechazan junto al formulario", async ({
     page,
   }) => {
     await entrar(page);
     await page.goto(RUTA_MEDIOS);
 
-    const formulario = await formularioDe(page, "galeria");
+    const formulario = await formularioDe(page, "planes");
     const campo = formulario.locator('input[type="file"][name="fichero"]');
     await expect(campo).not.toHaveAttribute("accept", /video/);
-    await expect(campo).not.toHaveAttribute("accept", /avif/);
     // Sin vídeo, no hay fotograma que pedir.
     await expect(formulario.locator('input[name="poster"]')).toHaveCount(0);
 
     // CASO DE ERROR · el `accept` no impide elegirlo «con todos los archivos».
     await campo.setInputFiles(
-      comoFichero("paisaje.mp4", "video/mp4", Buffer.from("no-soy-un-mp4")),
+      comoFichero("plan.mp4", "video/mp4", Buffer.from("no-soy-un-mp4")),
     );
     await formulario
       .getByLabel(copy.panel.medios.alternativo)
-      .fill(`${MARCA} vídeo en la galería`);
+      .fill(`${MARCA} vídeo en los planes`);
     await formulario
       .getByRole("button", { name: copy.panel.medios.subir, exact: true })
       .click();
 
     await esperarEstado(page, "tipo-no-admitido");
-    // El aviso sale en la galería, con su formulario abierto debajo.
-    const galeria = page.locator("#seccion-galeria");
-    await expect(galeria.getByText(copy.panel.medios.errorTipo)).toBeVisible();
-    await expect(galeria.locator("details[open]")).toHaveCount(1);
+    // El aviso sale en los planes, con su formulario abierto debajo.
+    const planes = page.locator("#seccion-planes");
+    await expect(planes.getByText(copy.panel.medios.errorTipo)).toBeVisible();
+    await expect(planes.locator("details[open]")).toHaveCount(1);
   });
 
   /**
@@ -908,11 +910,13 @@ test.describe("El gestor de fotos y vídeos", () => {
     const alternativo = `${MARCA} apagada ${Date.now()}`;
     const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
     const [previa] = await sql<{ visible: boolean }[]>`
-      select visible from public.secciones_landing where seccion = 'galeria'
+      select visible from public.secciones_landing where seccion = 'planes'
     `;
     try {
-      await ponerMedio(sql, alternativo, "galeria", { publicado: true });
-      await sql`update public.secciones_landing set visible = false where seccion = 'galeria'`;
+      // Elegida en un plan publicado: con la sección encendida, se ve.
+      const id = await ponerMedio(sql, alternativo, "planes", { publicado: true });
+      await sql`insert into public.planes (titulo, medio_id) values (${alternativo}, ${id})`;
+      await sql`update public.secciones_landing set visible = false where seccion = 'planes'`;
 
       await entrar(page);
       await page.goto(RUTA_MEDIOS);
@@ -920,11 +924,11 @@ test.describe("El gestor de fotos y vídeos", () => {
       const ficha = fichaDe(page, alternativo);
       await expect(ficha.getByText(copy.panel.medios.publicadaNoSeVe)).toBeVisible();
       await expect(
-        page.locator("#seccion-galeria").getByText(copy.panel.medios.seccionApagada),
+        page.locator("#seccion-planes").getByText(copy.panel.medios.seccionApagada),
       ).toBeVisible();
 
       // CAMINO FELIZ · encendida, la misma foto sí está en la web.
-      await sql`update public.secciones_landing set visible = true where seccion = 'galeria'`;
+      await sql`update public.secciones_landing set visible = true where seccion = 'planes'`;
       await page.goto(RUTA_MEDIOS);
       await expect(
         fichaDe(page, alternativo).getByText(copy.panel.medios.enLaWeb, { exact: true }),
@@ -932,8 +936,9 @@ test.describe("El gestor de fotos y vídeos", () => {
     } finally {
       await sql`
         update public.secciones_landing set visible = ${previa?.visible ?? true}
-         where seccion = 'galeria'
+         where seccion = 'planes'
       `;
+      await sql`delete from public.planes where titulo = ${alternativo}`;
       await sql`delete from public.medios where texto_alternativo->>'es' = ${alternativo}`;
       await sql.end();
     }
@@ -963,7 +968,7 @@ test.describe("El gestor de fotos y vídeos", () => {
 
     await entrar(page);
     await page.goto(RUTA_MEDIOS);
-    const formulario = await formularioDe(page, "galeria");
+    const formulario = await formularioDe(page, "planes");
     await formulario
       .locator('input[type="file"][name="fichero"]')
       .setInputFiles(comoFichero("grande.png", "image/png", grande));
@@ -1000,7 +1005,7 @@ test.describe("El gestor de fotos y vídeos", () => {
 
     await entrar(page);
     await page.goto(RUTA_MEDIOS);
-    const formulario = await formularioDe(page, "galeria");
+    const formulario = await formularioDe(page, "planes");
     await formulario
       .locator('input[type="file"][name="fichero"]')
       .setInputFiles(comoFichero("prueba.png", "image/png", pngMinimo()));
@@ -1011,7 +1016,7 @@ test.describe("El gestor de fotos y vídeos", () => {
 
     await esperarEstado(page, "subida-cortada");
     await expect(
-      page.locator("#seccion-galeria").getByText(copy.panel.medios.errorSubidaCortada),
+      page.locator("#seccion-planes").getByText(copy.panel.medios.errorSubidaCortada),
     ).toBeVisible();
     expect(await ordenEnLaBase([alternativo]), "no queda ninguna fila a medias").toEqual([]);
   });
@@ -1029,7 +1034,7 @@ test.describe("El gestor de fotos y vídeos", () => {
 
     const bloque = page
       .locator("details")
-      .filter({ has: page.locator('input[name="seccion"][value="galeria"]') });
+      .filter({ has: page.locator('input[name="seccion"][value="planes"]') });
     await bloque.locator("summary").click();
     await bloque
       .locator('input[type="file"][name="fichero"]')

@@ -79,8 +79,8 @@ describe("admitir un fichero", () => {
 
   /**
    * El caso que se cuela solo: un vídeo de veinte megas cabe como vídeo y no
-   * cabría como imagen. Si el tope se aplicara sin mirar el tipo, el fondo del
-   * paisaje sería imposible de subir.
+   * cabría como imagen. Si el tope se aplicara sin mirar el tipo, el vídeo de
+   * fondo de la portada sería imposible de subir.
    */
   it("un vídeo puede pesar lo que una imagen no", () => {
     const tamano = (PESO_MAXIMO_IMAGEN_MB + 1) * MEGA;
@@ -184,12 +184,12 @@ describe("reconocer una ruta de la subida", () => {
   });
 
   it("no vale la de otra sección, ni salirse de la carpeta, ni otra forma de nombre", () => {
-    const buena = componerRuta("galeria", "png", identificadorDeRuta(0.25));
+    const buena = componerRuta("planes", "png", identificadorDeRuta(0.25));
     expect(esRutaDeSeccion(buena, "portada")).toBe(false);
-    expect(esRutaDeSeccion("galeria/../portada/abcdefghijkl.png", "galeria")).toBe(false);
-    expect(esRutaDeSeccion("galeria/desarrollo/portada.jpg", "galeria")).toBe(false);
-    expect(esRutaDeSeccion("galeria/abcdefghijkl.exe", "galeria")).toBe(false);
-    expect(esRutaDeSeccion("galeria/ABCDEFGHIJKL.png", "galeria")).toBe(false);
-    expect(esRutaDeSeccion("galeria/abcdefghijkl.png,poster_ruta.eq.x", "galeria")).toBe(false);
+    expect(esRutaDeSeccion("planes/../portada/abcdefghijkl.png", "planes")).toBe(false);
+    expect(esRutaDeSeccion("planes/desarrollo/portada.jpg", "planes")).toBe(false);
+    expect(esRutaDeSeccion("planes/abcdefghijkl.exe", "planes")).toBe(false);
+    expect(esRutaDeSeccion("planes/ABCDEFGHIJKL.png", "planes")).toBe(false);
+    expect(esRutaDeSeccion("planes/abcdefghijkl.png,poster_ruta.eq.x", "planes")).toBe(false);
   });
 });

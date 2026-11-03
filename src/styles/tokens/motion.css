@@ -303,18 +303,6 @@
   }
 }
 
-/* Paralaje dentro de un marco: la foto, algo más grande, viaja al bajar. */
-@keyframes paralaje-foto {
-  from {
-    transform: translateY(calc(var(--desplazamiento-paralaje) * -1))
-      scale(var(--escala-paralaje));
-  }
-
-  to {
-    transform: translateY(var(--desplazamiento-paralaje)) scale(var(--escala-paralaje));
-  }
-}
-
 /* La foto de portada baja despacio con el scroll: hasta 60 px, a 0,14. */
 @keyframes paralaje-portada {
   from {
@@ -499,17 +487,6 @@
 
 @utility transicion-suave {
   transition: all var(--transicion-aparicion);
-}
-
-/* --------------------------------------------------------------------------
- * Utilidades de entrada
- *
- * `-al-ver` reproduce la animación cuando el elemento entra en el viewport;
- * el resto se reproducen al cargar (contenido de la primera pantalla).
- * ----------------------------------------------------------------------- */
-
-.animacion-aparecer {
-  animation: aparecer var(--transicion-aparicion) both;
 }
 
 /* El fundido de la portada es más largo (1,2 s) que el de un visor (0,9). */
@@ -997,13 +974,6 @@
     animation-range: entry calc(var(--indice, 0) * var(--paso-escalonado)) cover
       calc(30% + var(--indice, 0) * var(--paso-escalonado));
   }
-
-  /* El paralaje dura lo que la foto tarda en cruzar la pantalla entera. */
-  .animacion-paralaje {
-    animation: paralaje-foto linear both;
-    animation-range: cover 0% cover 100%;
-    animation-timeline: view();
-  }
 }
 
 /* Escalonado de listas: cada hijo entra un poco después que el anterior. */
@@ -1019,7 +989,6 @@
  */
 
 @media (prefers-reduced-motion: reduce) {
-  .animacion-aparecer,
   .animacion-subir,
   .animacion-bajar,
   .animacion-acercar,
@@ -1056,7 +1025,6 @@
   .animacion-flotar-arriba,
   .animacion-sacudir,
   .trazado-al-llegar,
-  .animacion-paralaje,
   .animacion-paralaje-portada,
   .hora-que-llega,
   .latido-estrella,

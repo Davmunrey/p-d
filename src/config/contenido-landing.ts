@@ -31,8 +31,7 @@ import type { Seccion } from "./secciones";
  *
  * Lo que sí se puede hacer —y se hace— es que el espejo no se despegue solo:
  * `tests/unidad/contenido-landing.test.ts` comprueba contra el fichero real de
- * la landing que toda sección con pantalla está en su mapa y que
- * `ubicaciones`, que aún no existe, sigue sin estarlo.
+ * la landing que toda sección con pantalla está en su mapa.
  */
 
 /** Dónde se escribe hoy el contenido de una sección. */
@@ -50,7 +49,6 @@ export type Donde =
  * `lista`  — hay al menos un elemento publicado en su tabla.
  * `campo`  — hay un dato escrito en la configuración de la boda.
  * `sola`   — se pinta siempre que esté encendida.
- * `sin-hacer` — todavía no existe el componente: encenderla no hace nada.
  */
 /**
  * Una condición más, además de `publicado`, para contar sólo lo que la landing
@@ -72,8 +70,7 @@ export type Origen =
        */
       ademas?: { ruta: string; rotulo: ClaveCopy };
     }
-  | { clase: "sola"; donde: Donde }
-  | { clase: "sin-hacer" };
+  | { clase: "sola"; donde: Donde };
 
 const EN_AJUSTES: Donde = { pantalla: "ajustes", ruta: RUTA_AJUSTES };
 const EN_MEDIOS: Donde = { pantalla: "medios", ruta: RUTA_MEDIOS };
@@ -104,52 +101,23 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
   /* Nombres, fecha y foto de portada: la configuración basta para pintarla. */
   portada: { clase: "sola", donde: EN_AJUSTES },
 
-  /* Manda la frase, no la foto: sin `paisaje_titulo` no hay sección. */
-  paisaje: {
-    clase: "campo",
-    tabla: "configuracion_boda",
-    campo: "paisaje_titulo",
-    donde: EN_AJUSTES,
-  },
-
   /* Es una página aparte, no un trozo de la landing. */
   reserva_la_fecha: { clase: "sola", donde: EN_AJUSTES },
 
   cuenta_atras: { clase: "sola", donde: EN_AJUSTES },
 
-  historia: { clase: "lista", tabla: "hitos_historia", donde: enContenido("historia") },
-
   /*
-    EL RETRATO DE ESTRELLAS: la foto recortada de Medios, y sólo si ya tiene sus
-    estrellas, que es lo que pinta la landing. Los mismos predicados que
-    `obtenerRetrato()`.
+    EL RETRATO DE ESTRELLAS: la foto recortada de Medios, sólo si es imagen y
+    ya tiene sus estrellas, que es lo que pinta la landing. Los mismos
+    predicados que `obtenerRetrato()`; el test unitario los compara.
   */
   retrato: {
     clase: "lista",
     tabla: "medios",
     filtro: [
       { columna: "seccion", igual: "retrato" },
-      { columna: "estrellas", noNula: true },
-    ],
-    donde: EN_MEDIOS,
-  },
-
-  /*
-    CON LOS MISMOS PREDICADOS QUE `obtenerGaleria()`, no sólo `publicado`. La
-    landing pinta únicamente imágenes con medidas: un vídeo con póster o un
-    AVIF —formato admitido que `medirImagen` no sabe medir— se guardan
-    publicados y no salen. Contarlos aquí decía «la galería se ve» mientras la
-    web la escondía, que es justo la mentira que esta pantalla existe para
-    quitar. El test unitario compara esta lista con el `where` de la landing.
-  */
-  galeria: {
-    clase: "lista",
-    tabla: "medios",
-    filtro: [
-      { columna: "seccion", igual: "galeria" },
       { columna: "tipo", igual: "imagen" },
-      { columna: "ancho", noNula: true },
-      { columna: "alto", noNula: true },
+      { columna: "estrellas", noNula: true },
     ],
     donde: EN_MEDIOS,
   },
@@ -171,9 +139,6 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
     filtro: [{ columna: "momento", igual: "boda" }],
     donde: enContenido("programa"),
   },
-
-  /* BODA-26: encendida desde el primer día y sin componente que la pinte. */
-  ubicaciones: { clase: "sin-hacer" },
 
   /*
     SIN COORDENADAS NO HAY SECCIÓN, aunque haya rutas escritas: el mapa es su
@@ -222,12 +187,6 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
   /* Lo que haríais vosotros por la ciudad, con una foto vuestra en cada sitio. */
   planes: { clase: "lista", tabla: "planes", donde: enContenido("planes") },
 
-  preguntas_frecuentes: {
-    clase: "lista",
-    tabla: "preguntas_frecuentes",
-    donde: enContenido("preguntas"),
-  },
-
   /* La escriben los invitados desde la propia web, con su enlace. */
   playlist: { clase: "sola", donde: { pantalla: "invitados" } },
 
@@ -268,8 +227,6 @@ export const CLAVES_LISTA = [
   "programa",
   "transporte",
   "dresscode",
-  "preguntas",
-  "historia",
   "alojamientos",
   "planes",
 ] as const;
@@ -332,9 +289,9 @@ export type CampoDeLista =
    * de foto con `largo: 0` sería un cero con significado, que es una trampa que
    * alguien acaba leyendo como «no caben caracteres».
    *
-   * Y NUNCA ES OBLIGATORIA. Los dos `left join` de la landing son deliberados:
-   * la historia se escribe meses antes de escanear las fotos, así que un hito
-   * sin foto es lo normal al principio y tiene que salir igual.
+   * Y NUNCA ES OBLIGATORIA. Los `left join` de la landing son deliberados: un
+   * hotel o un plan se apuntan antes de tener su foto, y tienen que salir
+   * igual.
    *
    * `seccion` dice de qué montón se elige. Aquí no se sube nada —eso vive en
    * Fotos y vídeos, con su texto alternativo obligatorio y su borrado del
@@ -536,82 +493,14 @@ export const LISTAS_DE_CONTENIDO: Record<ClaveLista, ListaDeContenido> = {
     columnaNombre: "titulo",
   },
 
-  preguntas: {
-    tabla: "preguntas_frecuentes",
-    titulo: "panel.contenido.listas.preguntas.titulo",
-    descripcion: "panel.contenido.listas.preguntas.descripcion",
-    unaFicha: "panel.contenido.listas.preguntas.unaFicha",
-    campos: [
-      {
-        clase: "linea",
-        columna: "pregunta",
-        etiqueta: "panel.contenido.listas.preguntas.pregunta",
-        obligatorio: true,
-        largo: LARGO_MAXIMO_LINEA,
-      },
-      {
-        clase: "parrafo",
-        columna: "respuesta",
-        etiqueta: "panel.contenido.listas.preguntas.respuesta",
-        obligatorio: true,
-        largo: LARGO_MAXIMO_PARRAFO,
-      },
-    ],
-    destino: { clase: "una", seccion: "preguntas_frecuentes" },
-    ordenacion: ["orden"],
-    columnaNombre: "pregunta",
-  },
-
   /*
-    LAS DOS CON FOTO. Lo único que las separa de las cuatro de arriba es que
+    LAS QUE LLEVAN FOTO. Lo único que las separa de las de arriba es que
     llevan `medio_id`, y elegir una foto no es un `input`. No se sube nada desde
     aquí: se escoge entre lo que ya está en Fotos y vídeos, que es donde vive el
     tratamiento de ficheros y el texto alternativo obligatorio. Duplicar la
     subida sería tener dos sitios donde arreglar lo mismo y dos criterios sobre
     la accesibilidad de las imágenes.
   */
-  historia: {
-    tabla: "hitos_historia",
-    titulo: "panel.contenido.listas.historia.titulo",
-    descripcion: "panel.contenido.listas.historia.descripcion",
-    unaFicha: "panel.contenido.listas.historia.unaFicha",
-    campos: [
-      {
-        clase: "linea",
-        columna: "titulo",
-        etiqueta: "panel.contenido.listas.historia.tituloHito",
-        ayuda: "panel.contenido.listas.historia.tituloHitoAyuda",
-        obligatorio: true,
-        largo: LARGO_MAXIMO_LINEA,
-      },
-      {
-        clase: "linea",
-        columna: "fecha_texto",
-        etiqueta: "panel.contenido.listas.historia.fecha",
-        ayuda: "panel.contenido.listas.historia.fechaAyuda",
-        obligatorio: false,
-        largo: LARGO_MAXIMO_DATO,
-      },
-      {
-        clase: "parrafo",
-        columna: "descripcion",
-        etiqueta: "panel.contenido.listas.historia.descripcion_",
-        obligatorio: false,
-        largo: LARGO_MAXIMO_PARRAFO,
-      },
-      {
-        clase: "foto",
-        columna: "medio_id",
-        etiqueta: "panel.contenido.listas.historia.foto",
-        ayuda: "panel.contenido.listas.historia.fotoAyuda",
-        seccion: "historia",
-      },
-    ],
-    destino: { clase: "una", seccion: "historia" },
-    ordenacion: ["orden"],
-    columnaNombre: "titulo",
-  },
-
   alojamientos: {
     tabla: "alojamientos",
     titulo: "panel.contenido.listas.alojamientos.titulo",
@@ -686,9 +575,8 @@ export const LISTAS_DE_CONTENIDO: Record<ClaveLista, ListaDeContenido> = {
   },
 
   /*
-    LOS PLANES POR LA ZONA tienen la misma forma que un hito de la historia
-    —qué, por qué y una foto— porque son lo mismo contado hacia fuera: un sitio
-    vuestro que queréis enseñar a quien viene de lejos. La foto se elige entre
+    LOS PLANES POR LA ZONA: qué, por qué y una foto, un sitio vuestro que
+    queréis enseñar a quien viene de lejos. La foto se elige entre
     las subidas a la sección «Planes» de Fotos y vídeos.
   */
   planes: {

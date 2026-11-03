@@ -159,17 +159,14 @@ export const FUGACES = {
 } as const;
 
 /**
- * QUÉ SE CUENTA DE NOCHE. La historia de los novios se cuenta bajo las
- * estrellas: la portada, el paisaje, la cuenta atrás, la historia y la
- * galería. Todo lo demás —el día, la víspera, lo que ponerse, la música— es de
- * día. El orden dentro de cada tramo lo sigue poniendo la base de datos.
+ * QUÉ SE CUENTA DE NOCHE: la portada y la cuenta atrás, bajo las estrellas, y
+ * el retrato que cierra la noche (`CIERRE_DE_LA_NOCHE`). Todo lo demás —el
+ * día, la víspera, lo que ponerse, la música— es de día. El orden dentro de
+ * cada tramo lo sigue poniendo la base de datos.
  */
 export const SECCIONES_DE_NOCHE = [
   "portada",
-  "paisaje",
   "cuenta_atras",
-  "historia",
-  "galeria",
 ] as const satisfies readonly Seccion[];
 
 /**

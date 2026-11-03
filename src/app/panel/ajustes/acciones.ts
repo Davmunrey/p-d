@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 import {
   LARGOS_DE_CAMPO,
   LONGITUD_MAXIMA_AVISO_PROGRAMA,
-  LONGITUD_MINIMA_FRASE_PAISAJE,
   LONGITUD_MINIMA_NOMBRE,
   RUTA_ACCESO,
   RUTA_AJUSTES,
@@ -140,25 +139,11 @@ export async function guardarAjustes(datos: FormData) {
     ["ciudad_ceremonia", LARGOS_DE_CAMPO["configuracion_boda.ciudad_ceremonia"]],
     ["lugar_banquete", LARGOS_DE_CAMPO["configuracion_boda.lugar_banquete"]],
     ["direccion_banquete", LARGOS_DE_CAMPO["configuracion_boda.direccion_banquete"]],
-    ["paisaje_intro", LARGOS_DE_CAMPO["configuracion_boda.paisaje_intro"]],
-    ["paisaje_titulo", LARGOS_DE_CAMPO["configuracion_boda.paisaje_titulo"]],
-    ["paisaje_cierre", LARGOS_DE_CAMPO["configuracion_boda.paisaje_cierre"]],
     ["firma_regalos", LARGOS_DE_CAMPO["configuracion_boda.firma_regalos"]],
     ["lugar_preboda", LARGOS_DE_CAMPO["configuracion_boda.lugar_preboda"]],
   ];
   const demasiadoLargo = topes.find(([campo, tope]) => texto(datos, campo).length > tope);
   if (demasiadoLargo) return rechazar(datos, "largo", demasiadoLargo[0]);
-
-  const frasesDelPaisaje: CampoAjustes[] = [
-    "paisaje_intro",
-    "paisaje_titulo",
-    "paisaje_cierre",
-  ];
-  const fraseCorta = frasesDelPaisaje.find((campo) => {
-    const frase = texto(datos, campo);
-    return frase.length > 0 && frase.length < LONGITUD_MINIMA_FRASE_PAISAJE;
-  });
-  if (fraseCorta) return rechazar(datos, "paisaje-corto", fraseCorta);
 
   const hashtag = textoONulo(datos, "hashtag");
   if (hashtag && !/^#[\p{L}\p{N}_]{1,60}$/u.test(hashtag)) {
@@ -269,9 +254,6 @@ export async function guardarAjustes(datos: FormData) {
           fecha_hora_ceremonia: ceremonia.toISOString(),
           fecha_hora_banquete: banquete ? banquete.toISOString() : null,
           fecha_limite_rsvp: limite.toISOString(),
-          paisaje_intro: textoONulo(datos, "paisaje_intro"),
-          paisaje_titulo: textoONulo(datos, "paisaje_titulo"),
-          paisaje_cierre: textoONulo(datos, "paisaje_cierre"),
           ciudad_ceremonia: textoONulo(datos, "ciudad_ceremonia"),
           lugar_preboda: textoONulo(datos, "lugar_preboda"),
           avisos_programa: avisos,

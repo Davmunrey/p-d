@@ -24,19 +24,14 @@
     "monogramaConector": "&",
     "secciones": {
       "portada": "Inicio",
-      "paisaje": "El origen",
       "reserva_la_fecha": "Save the date",
       "cuenta_atras": "Cuenta atrás",
-      "historia": "Nuestra historia",
       "retrato": "Retrato de estrellas",
-      "galeria": "Galería",
       "programa": "Programa",
-      "ubicaciones": "Dónde",
       "transporte": "Cómo llegar",
       "alojamiento": "Alojamiento",
       "regalos": "Regalos",
       "dresscode": "Dress code",
-      "preguntas_frecuentes": "Preguntas",
       "playlist": "Playlist",
       "rsvp": "Confirmar",
       "preboda": "Preboda",
@@ -66,19 +61,6 @@
     "yaEsHoy": "Hoy es el día",
     "cierre": "Nos hace mucha ilusión celebrarlo con vosotros. Aquí abajo está todo lo que hay que saber."
   },
-  "historia": {
-    "etiqueta": "Cómo llegamos hasta aquí",
-    "titulo": "Nuestra historia",
-    "cierre": "Cada momento fue una estrella. Juntas dibujan la nuestra."
-  },
-  "galeria": {
-    "titulo": "Nuestras fotos",
-    "visorEtiqueta": "Galería a pantalla completa",
-    "contador": "Foto {actual} de {total}",
-    "anterior": "Anterior",
-    "siguiente": "Siguiente",
-    "cerrar": "Cerrar"
-  },
   "preboda": {
     "titulo": "Preboda en {lugar}"
   },
@@ -103,10 +85,6 @@
     "abrirMapa": "Abrir en el mapa",
     "atribucionMapa": "colaboradores de OpenStreetMap",
     "mapaDe": "Mapa:"
-  },
-  "preguntas": {
-    "etiqueta": "Por si os queda alguna duda",
-    "titulo": "Preguntas frecuentes"
   },
   "playlist": {
     "etiqueta": "La pista es cosa vuestra",
@@ -588,8 +566,8 @@
       "grupoCeremonia": "Ceremonia",
       "grupoBanquete": "Banquete",
       "grupoPreboda": "Preboda",
+      "grupoPrograma": "El programa",
       "grupoContacto": "Contacto y confirmaciones",
-      "grupoPortada": "Textos de la portada",
       "nombreNovia": "Nombre de la novia",
       "nombreNovio": "Nombre del novio",
       "hashtag": "Hashtag",
@@ -601,12 +579,6 @@
       "fechaBanqueteAyuda": "Opcional. Si lo dejas vacío, el calendario cuenta sólo desde la ceremonia.",
       "lugarCeremonia": "Lugar de la ceremonia",
       "direccionCeremonia": "Dirección de la ceremonia",
-      "paisajeIntro": "Paisaje · primera línea",
-      "paisajeIntroAyuda": "La versalita pequeña que abre la escena («Todo empezó entre»). Podéis dejarla vacía.",
-      "paisajeTitulo": "Paisaje · titular",
-      "paisajeTituloAyuda": "El titular grande sobre la foto aérea («Barcelona y Sevilla»). Si lo dejáis vacío, esa sección no se enseña.",
-      "paisajeCierre": "Paisaje · cierre",
-      "paisajeCierreAyuda": "La línea en cursiva que cierra la frase («y continúa en León»). Podéis dejarla vacía.",
       "lugarBanquete": "Lugar del banquete",
       "lugarPreboda": "Lugar de la preboda",
       "lugarPrebodaAyuda": "En la web sale como «Preboda en …», bajo la fecha de la víspera: escribidlo como se diría, por ejemplo «el Barrio Húmedo». Mientras esté vacío, la web no enseña la preboda ni la pregunta al confirmar.",
@@ -640,8 +612,7 @@
       "avisosPrograma": "Avisos al pie del programa",
       "avisosProgramaAyuda": "Uno por línea, hasta seis. Salen como etiquetas bajo el programa del día: «Etiqueta elegante · ceremonia al aire libre». Vacío, no se pinta nada.",
       "errorAvisos": "Los avisos del programa son como mucho seis, y ninguno pasa de 120 caracteres.",
-      "errorLargo": "Algún texto es más largo de lo que cabe: los nombres, el lugar, la dirección, las frases del paisaje o la firma de los regalos. Acortadlo y volved a guardar.",
-      "errorPaisajeCorto": "Las frases del paisaje, si se ponen, necesitan al menos dos letras.",
+      "errorLargo": "Algún texto es más largo de lo que cabe: los nombres, el lugar, la dirección, el lugar de la preboda o la firma de los regalos. Acortadlo y volved a guardar.",
       "grupoRegalos": "Cuenta para los regalos",
       "regalosAyuda": "Sin cuenta escrita, la sección de Regalos no aparece en la web. Vaciarla es la forma de quitarla.",
       "iban": "IBAN",
@@ -1459,16 +1430,13 @@
       "seccionVacia": "Todavía no hay nada en esta sección.",
       "seccionSinMedios": "Esta parte de la web no enseña fotos: lo que hay aquí no sale, y no se puede subir nada más.",
       "seccionApagada": "Esta parte de la web está apagada: lo publicado aquí no lo ve nadie hasta que se encienda.",
-      "paisajeSinTitulo": "El paisaje no sale en la web mientras no tenga título, así que lo publicado aquí no lo ve nadie.",
       "retratoAyuda": "Aquí va una foto recortada, con el fondo transparente. En el iPhone: abrid la foto, mantened pulsado sobre vosotros hasta que se ilumine el contorno y tocad «Compartir» y luego «Guardar imagen». La foto no se enseña: su contorno se dibuja con estrellas al final de la noche.",
       "irAContenido": "Encenderla en Contenido",
-      "irAAjustes": "Ponerle título en Ajustes",
       "borrador": "Sin publicar",
       "publicadaNoSeVe": "Publicada, no se ve",
       "motivos": {
         "soloLaPrimera": "Esta parte de la web enseña sólo la primera. Para que salga ésta, ponedla delante con «{boton}».",
         "soloLaPrimeraFoto": "La tarjeta enseña sólo la primera foto, y los vídeos no. Para que salga ésta, ponedla delante con «{boton}».",
-        "sinMedidas": "La galería sólo coloca fotos con medidas, y a ésta no se le han podido sacar: algunos formatos, como AVIF, no se pueden medir.",
         "sinFicha": "Sale cuando se elige como foto en una ficha publicada de Contenido.",
         "soloFotos": "Esta parte de la web sólo enseña fotos: un vídeo aquí no sale nunca."
       },
@@ -1538,7 +1506,6 @@
       "escrito": "Escrito",
       "sinEscribir": "Sin escribir, así que no aparece",
       "noNecesita": "No necesita contenido",
-      "sinHacer": "Esta sección todavía no existe: encenderla no hace nada",
       "seLlenaEn": "Se llena en {donde}",
       "rutasEnContenido": "Las rutas, en Contenido",
       "dondeAjustes": "Ajustes",
@@ -1629,25 +1596,6 @@
           "tituloConsejo": "Título",
           "tituloConsejoAyuda": "«Colores», «Tacones a salvo», «Ley de León».",
           "texto": "Qué se dice"
-        },
-        "preguntas": {
-          "titulo": "Preguntas frecuentes",
-          "descripcion": "Lo que os van a preguntar por WhatsApp, contestado una sola vez.",
-          "unaFicha": "la pregunta",
-          "pregunta": "Pregunta",
-          "respuesta": "Respuesta"
-        },
-        "historia": {
-          "titulo": "Nuestra historia",
-          "descripcion": "Los hitos de la pareja, en orden. Cada uno puede llevar su foto, y funciona igual sin ella.",
-          "unaFicha": "el hito",
-          "tituloHito": "Qué pasó",
-          "tituloHitoAyuda": "«Nos conocimos», «El viaje a Oporto», «La pedida».",
-          "fecha": "Cuándo",
-          "fechaAyuda": "Opcional. Como se cuente: «Mayo de 2019», «Un martes de invierno».",
-          "descripcion_": "Cómo fue",
-          "foto": "Foto",
-          "fotoAyuda": "Opcional. Se elige entre las que ya estén subidas y publicadas en la sección «Nuestra historia»."
         },
         "alojamientos": {
           "titulo": "Dónde dormir",

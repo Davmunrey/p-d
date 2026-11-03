@@ -287,8 +287,8 @@ test.describe("El vocabulario de espaciado está cerrado", () => {
    * sistema. No se enumera qué sección va en qué grupo a propósito: el día que
    * se añada una nueva, entra sola en la comprobación.
    *
-   * LA ÚNICA EXCEPCIÓN SON LAS SECCIONES A PANTALLA COMPLETA —la portada y el
-   * paisaje—, que no ponen aire porque lo pone su contenido dentro. Y no se
+   * LA ÚNICA EXCEPCIÓN SON LAS SECCIONES A PANTALLA COMPLETA —la portada—,
+   * que no ponen aire porque lo pone su contenido dentro. Y no se
    * reconocen por su nombre sino por lo que hacen: llenar la pantalla. Así una
    * sección normal que se quedara sin relleno no puede colarse por esa puerta.
    */

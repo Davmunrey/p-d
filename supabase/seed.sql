@@ -92,9 +92,6 @@ update public.configuracion_boda set
   direccion_banquete   = '(DES) Camino del Ejemplo, 1',
   latitud_banquete     = 40.416775,
   longitud_banquete    = -3.703790,
-  paisaje_intro        = '(DES) Todo empezó entre',
-  paisaje_titulo       = '(DES) Dos ciudades',
-  paisaje_cierre       = '(DES) y continúa en una tercera',
   ciudad_ceremonia     = '(DES) León',
   lugar_preboda        = '(DES) el Barrio Húmedo',
   avisos_programa      = array[
@@ -270,9 +267,9 @@ values
   ('desarrollo/portada.jpg',
    '{"es": "(DES) Fotografía de portada de ejemplo"}'::jsonb,
    'portada', 0, 2000, 1333, true),
-  ('desarrollo/galeria-borrador.jpg',
+  ('desarrollo/planes-borrador.jpg',
    '{"es": "(DES) Borrador que no debe verse en la landing"}'::jsonb,
-   'galeria', 0, 1600, 1067, false),
+   'planes', 0, 1600, 1067, false),
   -- La foto que sale del sobre en el Save the Date, con la tarjeta.
   ('desarrollo/reserva-la-fecha.jpg',
    '{"es": "(DES) Los novios con su perra, Hati"}'::jsonb,
@@ -368,40 +365,11 @@ insert into public.rutas_llegada (modo, duracion, detalle, orden) values
   ('(DES) En tren',     '1 h 50', 'Desde la estación, 20 minutos en taxi.',                       3)
 on conflict do nothing;
 
-insert into public.preguntas_frecuentes (pregunta, respuesta, orden) values
-  ('(DES) ¿Cuál es el código de vestimenta?', 'Elegante. La ceremonia es al aire libre, sobre césped y grava: cuidado con los tacones finos.', 1),
-  ('(DES) ¿Puedo llevar a los niños?',        'Por supuesto. Hay menú infantil y alguien pendiente de ellos durante el banquete.',             2),
-  ('(DES) ¿Hasta cuándo puedo confirmar?',    'Hasta la fecha límite que aparece en el formulario. Después nos cuesta avisar al catering.',    3)
-on conflict do nothing;
-
-insert into public.hitos_historia (titulo, fecha_texto, descripcion, orden) values
-  ('(DES) Nos conocimos', 'Marzo de 2018', 'En una cena de amigos comunes, hablando de música durante horas.', 1),
-  ('(DES) El viaje',      'Verano de 2021', 'Tres semanas y una avería del coche que hoy nos hace reír.',      2),
-  ('(DES) La pregunta',   'Diciembre de 2025', 'En casa, sin testigos y sin plan. Salió que sí.',              3)
-on conflict do nothing;
-
 -- «Mientras estáis por aquí»: sin foto, que es como nace un plan antes de la
 -- sesión de fotos, y como tiene que poder salir.
 insert into public.planes (titulo, texto, orden) values
   ('(DES) Subid a la catedral al atardecer', 'Las vidrieras se encienden con el sol de poniente. Mejor a última hora.', 1),
   ('(DES) Tapead en el barrio viejo',        'Cada caña viene con su tapa. Id de bar en bar, sin reservar.',          2)
 on conflict do nothing;
-/*
-  UN VÍDEO DE PAISAJE PARA DESARROLLO.
-
-  El objeto no está en el bucket de pruebas —Storage no se siembra desde aquí—,
-  así que el navegador pedirá un fichero que no existe y se quedará el póster.
-  Es justo lo que hace falta para probar la RAMA: que la sección monta un vídeo
-  con sus atributos de fondo cuando la fila dice que es vídeo, sin depender de
-  que alguien suba dos megas a una base de pruebas que se borra cada vez.
-*/
-delete from public.medios where ruta_almacenamiento like 'paisaje/%';
-
-insert into public.medios
-  (ruta_almacenamiento, texto_alternativo, seccion, tipo, poster_ruta, publicado, orden)
-values
-  ('paisaje/vista-aerea.mp4',
-   '{"es": "(DES) Vista aerea de la ciudad al amanecer"}'::jsonb,
-   'paisaje', 'video', 'paisaje/vista-aerea.jpg', true, 0);
 
 

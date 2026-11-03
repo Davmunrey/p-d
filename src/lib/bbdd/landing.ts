@@ -38,15 +38,6 @@ export interface ConfiguracionBoda {
   latitud: number | null;
   longitud: number | null;
   /**
-   * Las tres líneas de la escena del paisaje. La entrega las escribe con tres
-   * tipografías distintas, así que son tres campos y no una frase partida: el
-   * titular es el único obligatorio —es el `h2` de la sección y sin él no hay
-   * sección—, la versalita que lo abre y el cierre en cursiva son opcionales.
-   */
-  paisajeIntro: string | null;
-  paisajeTitulo: string | null;
-  paisajeCierre: string | null;
-  /**
    * La ciudad de la boda: «Nos casamos en León». Es un dato aparte de la
    * dirección porque la entrega los usa en sitios distintos —la ciudad en la
    * portada y en las frases, la dirección en «cómo llegar»—.
@@ -86,11 +77,10 @@ export interface Alojamiento {
   fechaLimiteReserva: string | null;
   /**
    * La foto que corona la tarjeta, o `null`. La entrega la dibuja siempre;
-   * aquí es opcional por lo mismo que en la historia: los hoteles se apuntan
-   * antes de tener una foto de cada uno, y una tarjeta sin foto se publica
-   * igual.
+   * aquí es opcional: los hoteles se apuntan antes de tener una foto de cada
+   * uno, y una tarjeta sin foto se publica igual.
    */
-  foto: FotoDeHito | null;
+  foto: FotoDeFicha | null;
 }
 
 export interface RutaLlegada {
@@ -100,45 +90,27 @@ export interface RutaLlegada {
   detalle: string | null;
 }
 
-export interface PreguntaFrecuente {
-  id: string;
-  pregunta: string;
-  respuesta: string;
-}
-
-export interface HitoHistoria {
-  id: string;
-  titulo: string;
-  fechaTexto: string | null;
-  descripcion: string | null;
-  /**
-   * La foto de ese momento, o `null`. Es opcional a propósito: la historia se
-   * escribe antes de tener las fotos escaneadas, y un hito sin imagen tiene que
-   * poder publicarse igual.
-   */
-  foto: FotoDeHito | null;
-}
-
-/**
- * Lo que hace falta de un medio para pintar la foto de un hito.
- *
- * NO ES `Medio` ENTERO. Un hito nunca lleva vídeo —es un recuerdo, no un
- * fondo—, así que arrastrar `tipo` y `posterRuta` obligaría a comprobar en la
- * plantilla algo que la consulta ya descarta.
- */
 /**
  * Un plan por la zona para quien viene de fuera: qué hacer, por qué, y una foto
- * de los novios allí. Como un hito de la historia, la foto es opcional: un plan
- * se escribe antes de tener la foto, y tiene que poder salir igual.
+ * de los novios allí. La foto es opcional: un plan se escribe antes de tener la
+ * foto, y tiene que poder salir igual.
  */
 export interface Plan {
   id: string;
   titulo: string;
   texto: string | null;
-  foto: FotoDeHito | null;
+  foto: FotoDeFicha | null;
 }
 
-export interface FotoDeHito {
+/**
+ * Lo que hace falta de un medio para pintar la foto de una ficha —un hotel, un
+ * plan—.
+ *
+ * NO ES `Medio` ENTERO. Una ficha nunca lleva vídeo, así que arrastrar `tipo`
+ * y `posterRuta` obligaría a comprobar en la plantilla algo que la consulta ya
+ * descarta.
+ */
+export interface FotoDeFicha {
   ruta: string;
   textoAlternativo: string;
   ancho: number | null;
@@ -209,9 +181,6 @@ async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
         lugar_ceremonia: string | null;
         direccion_ceremonia: string | null;
         lugar_banquete: string | null;
-        paisaje_intro: string | null;
-        paisaje_titulo: string | null;
-        paisaje_cierre: string | null;
         ciudad_ceremonia: string | null;
         avisos_programa: string[] | null;
         latitud_ceremonia: string | null;
@@ -226,7 +195,7 @@ async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
         nombre_novia, nombre_novio, fecha_hora_ceremonia, fecha_hora_banquete, fecha_limite_rsvp,
         lugar_ceremonia, direccion_ceremonia, lugar_banquete,
         latitud_ceremonia, longitud_ceremonia, correo_contacto, hashtag,
-        paisaje_intro, paisaje_titulo, paisaje_cierre, ciudad_ceremonia, avisos_programa,
+        ciudad_ceremonia, avisos_programa,
         firma_regalos, lugar_preboda
       from public.v_configuracion_publica
       limit 1
@@ -245,9 +214,6 @@ async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
     lugarCeremonia: fila.lugar_ceremonia,
     direccionCeremonia: fila.direccion_ceremonia,
     lugarBanquete: fila.lugar_banquete,
-    paisajeIntro: fila.paisaje_intro,
-    paisajeTitulo: fila.paisaje_titulo,
-    paisajeCierre: fila.paisaje_cierre,
     ciudadCeremonia: fila.ciudad_ceremonia,
     avisosPrograma: fila.avisos_programa ?? [],
     latitud: fila.latitud_ceremonia === null ? null : Number(fila.latitud_ceremonia),
@@ -302,7 +268,7 @@ export async function obtenerPrograma(
 }
 
 /**
- * La foto del hotel viene con la fila, y con la misma regla que en la historia:
+ * La foto del hotel viene con la fila, y con la misma regla que en los planes:
  * `publicado` va en la condición del `join`, no en el `where`. Un `where` sobre
  * la foto dejaría fuera al hotel entero por tener una imagen a medio subir; en
  * el `join`, el hotel sale y la foto no, que es lo que se quiere.
@@ -378,84 +344,9 @@ export async function obtenerRutas(): Promise<RutaLlegada[]> {
   }));
 }
 
-export async function obtenerPreguntasFrecuentes(): Promise<PreguntaFrecuente[]> {
-  const filas = await leerComoAnonimo(
-    (tx) => tx<{ id: string; pregunta: string; respuesta: string }[]>`
-      select id, pregunta, respuesta
-      from public.preguntas_frecuentes
-      order by orden
-    `,
-  );
-  return filas.map((f) => ({ id: f.id, pregunta: f.pregunta, respuesta: f.respuesta }));
-}
-
-/**
- * BODA-24 · Los hitos de «nuestra historia», con su foto.
- *
- * `LEFT JOIN` Y NO `JOIN`, que es la diferencia entre una sección que funciona
- * y una que desaparece a medias: la historia se escribe meses antes de tener
- * las fotos escaneadas, así que un hito sin `medio_id` es lo normal al
- * principio y tiene que salir igual.
- *
- * SE EXIGE ADEMÁS QUE LA FOTO ESTÉ PUBLICADA. Un hito publicado puede apuntar a
- * una foto que todavía es borrador —se sube la imagen, se enlaza y se deja para
- * revisar—, y sin esta condición esa foto saldría en la web por la puerta de
- * atrás: RLS protege `medios` cuando se pregunta por `medios`, pero aquí se
- * está preguntando por `hitos_historia`, y el `join` se lleva lo que encuentre.
- * En ese caso sale el hito con su texto y sin imagen, que es lo correcto.
- *
- * `where publicado` está de más —la política `hitos_historia_lectura_publica`
- * ya lo impone para `anon`— y se escribe igual, por lo mismo que en
- * `obtenerMedios`: quien lee esta consulta tiene que ver la intención sin ir a
- * buscar la política.
- */
-export async function obtenerHistoria(): Promise<HitoHistoria[]> {
-  const filas = await leerComoAnonimo(
-    (tx) => tx<
-      {
-        id: string;
-        titulo: string;
-        fecha_texto: string | null;
-        descripcion: string | null;
-        ruta_almacenamiento: string | null;
-        texto_alternativo: Record<string, string> | null;
-        ancho: number | null;
-        alto: number | null;
-        marcador_borroso: string | null;
-      }[]
-    >`
-      select h.id, h.titulo, h.fecha_texto, h.descripcion,
-             m.ruta_almacenamiento, m.texto_alternativo,
-             m.ancho, m.alto, m.marcador_borroso
-      from public.hitos_historia as h
-      left join public.medios as m
-        on m.id = h.medio_id and m.publicado and m.tipo = 'imagen'
-      where h.publicado
-      order by h.orden
-    `,
-  );
-
-  return filas.map((f) => ({
-    id: f.id,
-    titulo: f.titulo,
-    fechaTexto: f.fecha_texto,
-    descripcion: f.descripcion,
-    foto: f.ruta_almacenamiento
-      ? {
-          ruta: f.ruta_almacenamiento,
-          textoAlternativo:
-            f.texto_alternativo?.es ?? Object.values(f.texto_alternativo ?? {})[0] ?? "",
-          ancho: f.ancho,
-          alto: f.alto,
-          marcadorBorroso: f.marcador_borroso,
-        }
-      : null,
-  }));
-}
-
 /**
  * Los planes por la zona, con la foto en el `join` y no en el `where`, por lo
- * mismo que la historia y los hoteles: un plan sale aunque su foto esté a
+ * mismo que los hoteles: un plan sale aunque su foto esté a
  * medio subir; la foto, no. `where publicado` repite lo que ya impone la
  * política `planes_lectura_publica`, para que la intención se lea aquí.
  */
@@ -653,90 +544,4 @@ export async function obtenerRetrato(): Promise<Retrato | null> {
     alternativo:
       fila.texto_alternativo?.es ?? Object.values(fila.texto_alternativo ?? {})[0] ?? "",
   };
-}
-
-/**
- * BODA-25 · Una foto de la galería.
- *
- * NO ES `Medio`, y la diferencia está en dos campos que aquí NO admiten nulo.
- * Una rejilla se compone de huecos, y un hueco sin medidas no se puede
- * reservar: la foto entra al cargar, empuja a las de al lado y la página pega
- * un salto justo cuando alguien iba a pulsar. Exigirlas en el tipo le ahorra al
- * componente preguntar «¿y si faltan?» y decidir sobre la marcha qué pinta en
- * ese hueco.
- *
- * Tampoco lleva `tipo` ni `posterRuta`: la galería es de fotos. Un vídeo se
- * abre, se pausa y se cierra —otra pieza entera—, y arrastrar esos campos
- * obligaría a comprobar en la plantilla algo que la consulta ya descarta.
- */
-export interface FotoGaleria {
-  id: string;
-  /** Ruta relativa dentro del bucket, tal y como la valida la base. */
-  ruta: string;
-  textoAlternativo: string;
-  ancho: number;
-  alto: number;
-  /** Miniatura en base64 para pintar algo mientras carga la de verdad. */
-  marcadorBorroso: string | null;
-}
-
-/**
- * Las fotos publicadas de la galería, en el orden que les puso el panel.
- *
- * LO QUE NO SE PUEDE PINTAR SE DESCARTA EN LA CONSULTA, no en la plantilla:
- *
- * - `tipo = 'imagen'`, por lo que dice `FotoGaleria`.
- * - `ancho` y `alto` no nulos. La base los admite vacíos a propósito —hay
- *   formatos que el servidor no sabe medir, y un AVIF sin medir es mejor que un
- *   AVIF rechazado—, pero una foto sin medidas no entra en una rejilla sin
- *   provocar el salto de maquetación que el plan maestro quiere evitar. La
- *   restricción `medios_dimensiones_coherentes` ya obliga a que las dos vayan
- *   juntas, así que preguntar por una bastaría; se preguntan las dos porque el
- *   día que alguien la relaje, esto no se enteraría.
- *
- * EL TEXTO ALTERNATIVO NO SE COMPRUEBA, y es a propósito: el disparador
- * `medios_validar_texto_alternativo` no deja entrar un medio sin alternativa de
- * entre 3 y 300 caracteres en el idioma de la boda. Repetirlo aquí sería fingir
- * que la base puede devolver algo que no puede devolver.
- *
- * `where publicado` está de más —RLS ya lo impone para `anon`— y se escribe
- * igual, por lo mismo que en `obtenerMedios`: quien lee esta consulta tiene que
- * ver la intención sin ir a buscar la política.
- */
-export async function obtenerGaleria(): Promise<FotoGaleria[]> {
-  // Con nombre y tipado: el día que `galeria` deje de ser un valor del
-  // enumerado, esto no compila en lugar de devolver cero filas en silencio.
-  const seccion: Seccion = "galeria";
-
-  const filas = await leerComoAnonimo(
-    (tx) => tx<
-      {
-        id: string;
-        ruta_almacenamiento: string;
-        texto_alternativo: Record<string, string>;
-        ancho: number;
-        alto: number;
-        marcador_borroso: string | null;
-      }[]
-    >`
-      select id, ruta_almacenamiento, texto_alternativo, ancho, alto, marcador_borroso
-      from public.medios
-      where publicado
-        and seccion = ${seccion}::public.seccion_landing
-        and tipo = 'imagen'
-        and ancho is not null
-        and alto is not null
-      order by orden nulls last, creado_en
-    `,
-  );
-
-  return filas.map((f) => ({
-    id: f.id,
-    ruta: f.ruta_almacenamiento,
-    textoAlternativo:
-      f.texto_alternativo?.es ?? Object.values(f.texto_alternativo ?? {})[0] ?? "",
-    ancho: f.ancho,
-    alto: f.alto,
-    marcadorBorroso: f.marcador_borroso,
-  }));
 }

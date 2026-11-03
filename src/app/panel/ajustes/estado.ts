@@ -23,7 +23,6 @@ export type EstadoAjustes =
   | "correo"
   | "avisos"
   | "largo"
-  | "paisaje-corto"
   | "cambiado"
   | "sin-permiso"
   | "error";
@@ -50,9 +49,6 @@ export const CAMPOS_AJUSTES = [
   "latitud_banquete",
   "longitud_banquete",
   "avisos_programa",
-  "paisaje_intro",
-  "paisaje_titulo",
-  "paisaje_cierre",
   "correo_contacto",
   "fecha_limite_rsvp",
   "iban_regalos",

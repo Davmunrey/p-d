@@ -6,15 +6,15 @@ import { RUTA_ACCESO, RUTA_CONTENIDO, RUTA_PANEL } from "../../src/config/consta
 import { laPista, olvidarDestinos, seguirLaPista, ultimoDestino } from "./utiles/rastro";
 
 /**
- * BODA-130 · Las dos listas con foto
+ * BODA-130 · Las listas con foto
  *
- * `hitos_historia` y `alojamientos` son las dos únicas tablas de la landing que
- * llevan `medio_id`, y esa es toda su diferencia con las otras cuatro. Lo que
- * este fichero defiende es justo eso: que la foto se elija bien y, sobre todo,
- * QUE SIN FOTO SIGA FUNCIONANDO. Los dos `left join` de `src/lib/bbdd/landing.ts`
- * son deliberados —la historia se escribe meses antes de escanear las fotos—, y
- * un `join` normal los rompería sin que nadie lo notara hasta que faltara una
- * sección entera en la web.
+ * `alojamientos` y `planes` son las tablas de la landing que llevan
+ * `medio_id`, y esa es toda su diferencia con las demás. Lo que este fichero
+ * defiende es justo eso, con los hoteles: que la foto se elija bien y, sobre
+ * todo, QUE SIN FOTO SIGA FUNCIONANDO. Los `left join` de
+ * `src/lib/bbdd/landing.ts` son deliberados —un hotel se apunta antes de tener
+ * su foto—, y un `join` normal los rompería sin que nadie lo notara hasta que
+ * faltara una sección entera en la web.
  *
  * Y LA OTRA MITAD: que una foto EN BORRADOR no se pueda elegir. La landing la
  * descarta en la condición del `join`, así que ofrecerla aquí sería enseñar en
@@ -32,13 +32,11 @@ const MARCA = "E2E130";
 const SIN_DESTINO = "(la acción no redirigió)";
 
 /** Se apaga y se enciende aquí, así que se restauran las dos al acabar. */
-const SECCIONES_TOCADAS = ["historia", "alojamiento"] as const;
+const SECCIONES_TOCADAS = ["alojamiento"] as const;
 
 const comun = copy.panel.contenido.listas.comun;
-const HISTORIA = copy.panel.contenido.listas.historia;
 const HOTELES = copy.panel.contenido.listas.alojamientos;
 
-const RUTA_HISTORIA = `${RUTA_CONTENIDO}/historia`;
 const RUTA_HOTELES = `${RUTA_CONTENIDO}/alojamientos`;
 
 /**
@@ -113,19 +111,9 @@ function leerHoteles(): Promise<FilaConFoto[]> {
   );
 }
 
-function leerHitos(): Promise<{ id: string; titulo: string; medio_id: string | null }[]> {
-  return conBase(
-    (sql) => sql<{ id: string; titulo: string; medio_id: string | null }[]>`
-      select id, titulo, medio_id from public.hitos_historia
-       where titulo like ${`${MARCA}%`} order by orden
-    `,
-  );
-}
-
 function limpiar(): Promise<void> {
   return conBase(async (sql) => {
     await sql`delete from public.alojamientos where nombre like ${`${MARCA}%`}`;
-    await sql`delete from public.hitos_historia where titulo like ${`${MARCA}%`}`;
     // Las fotos las últimas: `medio_id` es `on delete set null`, pero borrarlas
     // antes dejaría las fichas sin foto y el test siguiente miraría otra cosa.
     await sql`delete from public.medios where ruta_almacenamiento like ${`desarrollo/${MARCA.toLowerCase()}-%`}`;
@@ -236,34 +224,34 @@ test.describe("Las listas de contenido con foto", () => {
     await expect(tarjeta.locator("img"), "la foto elegida se ve en la web").toHaveCount(1);
   });
 
-  test("y un hito sin foto sale igual, sin hueco", async ({ page }) => {
+  test("y un hotel sin foto sale igual, sin hueco", async ({ page }) => {
     /*
-      ES EL CASO NORMAL AL PRINCIPIO, no una rareza: la historia se escribe
-      meses antes de escanear las fotos. Los `left join` de la landing existen
-      por esto, y un `join` normal los rompería sin que nadie lo notara hasta
-      que faltase la sección entera.
+      ES EL CASO NORMAL AL PRINCIPIO, no una rareza: un hotel se apunta antes
+      de tener su foto. Los `left join` de la landing existen por esto, y un
+      `join` normal lo dejaría fuera sin que nadie lo notara.
     */
-    const titulo = `${MARCA} Nos conocimos`;
+    const nombre = `${MARCA} Hotel sin foto`;
 
     await entrar(page);
-    await page.goto(RUTA_HISTORIA);
+    await page.goto(RUTA_HOTELES);
 
     const alta = formularioDeAlta(page);
-    await alta.getByLabel(HISTORIA.tituloHito).fill(titulo);
-    await alta.getByLabel(HISTORIA.fecha).fill("Mayo de 2019");
+    await alta.getByLabel(HOTELES.nombre, { exact: true }).fill(nombre);
+    await alta.getByLabel(HOTELES.reserva).fill("https://ejemplo.test/sin-foto");
     await alta.getByRole("button", { name: comun.anadir, exact: true }).click();
 
-    await esperarEstado(page, "creada", RUTA_HISTORIA);
+    await esperarEstado(page, "creada", RUTA_HOTELES);
 
-    const [hito] = await leerHitos();
-    expect(hito, "el hito tiene que existir").toBeTruthy();
-    expect(hito.medio_id, "sin foto es una respuesta, no un fallo").toBeNull();
+    const hotel = (await leerHoteles()).find((fila) => fila.nombre === nombre);
+    expect(hotel, "el hotel tiene que existir").toBeTruthy();
+    expect(hotel!.medio_id, "sin foto es una respuesta, no un fallo").toBeNull();
 
     await page.goto("/");
-    await expect(
-      page.locator("#historia").getByRole("heading", { name: titulo }),
-      "un hito sin foto sale igual",
-    ).toBeVisible();
+    const tarjeta = page
+      .locator("#alojamiento li")
+      .filter({ has: page.getByRole("heading", { name: nombre }) });
+    await expect(tarjeta, "un hotel sin foto sale igual").toBeVisible();
+    await expect(tarjeta.locator("img")).toHaveCount(0);
   });
 
   test("una foto en borrador no se puede elegir", async ({ page }) => {

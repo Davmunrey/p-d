@@ -9,7 +9,6 @@ import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   IDIOMA,
   LARGOS_DE_CAMPO,
-  LONGITUD_MINIMA_FRASE_PAISAJE,
   LONGITUD_MINIMA_NOMBRE,
   RUTA_ACCESO,
   RUTA_AJUSTES,
@@ -68,7 +67,6 @@ const AVISOS: Record<EstadoAjustes, { texto: string; error: boolean }> = {
   correo: { texto: t("panel.ajustes.errorCorreo"), error: true },
   avisos: { texto: t("panel.ajustes.errorAvisos"), error: true },
   largo: { texto: t("panel.ajustes.errorLargo"), error: true },
-  "paisaje-corto": { texto: t("panel.ajustes.errorPaisajeCorto"), error: true },
   cambiado: { texto: t("panel.ajustes.errorCambiado"), error: true },
   "sin-permiso": { texto: t("panel.ajustes.errorSinPermiso"), error: true },
   error: { texto: t("panel.ajustes.errorGuardar"), error: true },
@@ -84,9 +82,6 @@ interface Configuracion {
   fecha_hora_banquete: string | null;
   fecha_limite_rsvp: string;
   zona_horaria: string;
-  paisaje_intro: string | null;
-  paisaje_titulo: string | null;
-  paisaje_cierre: string | null;
   ciudad_ceremonia: string | null;
   lugar_preboda: string | null;
   avisos_programa: string[] | null;
@@ -182,7 +177,6 @@ export default async function PaginaAjustes({
         "fecha_hora_banquete, fecha_limite_rsvp, zona_horaria, lugar_ceremonia, " +
         "direccion_ceremonia, latitud_ceremonia, longitud_ceremonia, lugar_banquete, " +
         "direccion_banquete, latitud_banquete, longitud_banquete, " +
-        "paisaje_intro, paisaje_titulo, paisaje_cierre, " +
         "ciudad_ceremonia, lugar_preboda, avisos_programa, actualizado_en",
     )
     .maybeSingle<Configuracion>();
@@ -415,60 +409,18 @@ export default async function PaginaAjustes({
         </Grupo>
 
         {/*
-          LOS TEXTOS DE LA PORTADA, EN SU GRUPO. Quien busca la frase del
-          paisaje no la espera dentro de «Ceremonia», y metida allí separaba la
-          dirección de sus coordenadas.
+          LOS AVISOS DEL PROGRAMA, EN SU GRUPO: son contenido de esta boda
+          —«césped y grava: cuidado con los tacones»— y no rótulos de la
+          interfaz, así que se editan aquí y no viven en el fichero de copys.
+          Uno por línea.
         */}
-        <Grupo titulo={t("panel.ajustes.grupoPortada")}>
-          {/*
-            LOS AVISOS DEL PROGRAMA SON CONTENIDO DE ESTA BODA —«césped y grava:
-            cuidado con los tacones»— y no rótulos de la interfaz: por eso se
-            editan aquí y no viven en el fichero de copys. Uno por línea.
-          */}
+        <Grupo titulo={t("panel.ajustes.grupoPrograma")}>
           <Ancla campo="avisos_programa">
             <CampoTextoLargo
               {...comun("avisos_programa", (data.avisos_programa ?? []).join("\n"))}
               etiqueta={t("panel.ajustes.avisosPrograma")}
               ayuda={t("panel.ajustes.avisosProgramaAyuda")}
               rows={TOPE_AVISOS_PROGRAMA}
-            />
-          </Ancla>
-          {/*
-            LA FRASE DEL PAISAJE VIVE AQUÍ, entre los datos de la boda, y no en
-            un módulo de contenido aparte: nombra tres ciudades concretas, que
-            son de esta boda igual que el lugar o la fecha.
-
-            SON TRES CAMPOS Y NO UNO porque la entrega escribe tres líneas con
-            tres tipografías distintas, y de un solo texto no hay manera de
-            saber dónde corta cada una. El titular es el que manda: vacío, la
-            sección no se pinta — y eso se dice en la ayuda, porque si no el
-            único modo de averiguarlo es borrarlo y recargar la web.
-          */}
-          <Ancla campo="paisaje_intro">
-            <CampoTexto
-              {...comun("paisaje_intro", data.paisaje_intro ?? "")}
-              etiqueta={t("panel.ajustes.paisajeIntro")}
-              ayuda={t("panel.ajustes.paisajeIntroAyuda")}
-              maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_intro"]}
-              minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
-            />
-          </Ancla>
-          <Ancla campo="paisaje_titulo">
-            <CampoTexto
-              {...comun("paisaje_titulo", data.paisaje_titulo ?? "")}
-              etiqueta={t("panel.ajustes.paisajeTitulo")}
-              ayuda={t("panel.ajustes.paisajeTituloAyuda")}
-              maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_titulo"]}
-              minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
-            />
-          </Ancla>
-          <Ancla campo="paisaje_cierre">
-            <CampoTexto
-              {...comun("paisaje_cierre", data.paisaje_cierre ?? "")}
-              etiqueta={t("panel.ajustes.paisajeCierre")}
-              ayuda={t("panel.ajustes.paisajeCierreAyuda")}
-              maxLength={LARGOS_DE_CAMPO["configuracion_boda.paisaje_cierre"]}
-              minLength={LONGITUD_MINIMA_FRASE_PAISAJE}
             />
           </Ancla>
         </Grupo>

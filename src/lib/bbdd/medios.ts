@@ -115,15 +115,15 @@ export async function obtenerMediosDelPanel(): Promise<SeccionConMedios[]> {
 /**
  * Los medios que alguna ficha PUBLICADA de Contenido ha elegido como foto.
  *
- * Historia y alojamiento no pintan su sección de medios entera: pintan la foto
- * que cada hito u hotel elige. Sin esto, el gestor no puede saber cuáles de
+ * Alojamiento y planes no pintan su sección de medios entera: pintan la foto
+ * que cada hotel o plan elige. Sin esto, el gestor no puede saber cuáles de
  * esas fotos se ven en la web y cuáles esperan a que alguien las elija.
  */
 export async function obtenerMediosElegidosEnFichas(): Promise<Set<string>> {
   const supabase = await clienteServidor();
 
   const lecturas = await Promise.all(
-    (["hitos_historia", "alojamientos", "planes"] as const).map((tabla) =>
+    (["alojamientos", "planes"] as const).map((tabla) =>
       supabase.from(tabla).select("medio_id").eq("publicado", true).not("medio_id", "is", null),
     ),
   );

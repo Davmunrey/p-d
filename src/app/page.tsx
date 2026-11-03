@@ -4,14 +4,11 @@ import { Fragment, type ReactNode } from "react";
 import { CieloEstrellado } from "@/components/marketing/cielo-estrellado";
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
-import { EstrellaDeCuatroPuntas } from "@/components/marketing/estrella-de-cuatro-puntas";
-import { Galeria } from "@/components/marketing/galeria";
 import { HuecoFoto } from "@/components/marketing/hueco-foto";
 import { MapaDelLugar } from "@/components/marketing/mapa-del-lugar";
 import { Navegacion } from "@/components/marketing/navegacion";
 import { Pie } from "@/components/marketing/pie";
 import { RetratoDeEstrellas } from "@/components/marketing/retrato-de-estrellas";
-import { VideoDeFondo } from "@/components/marketing/video-de-fondo";
 import {
   Confirmacion,
   type ConsultaConfirmacion,
@@ -50,10 +47,7 @@ import {
   obtenerConfiguracion,
   obtenerConsejosVestimenta,
   obtenerCuentaRegalos,
-  obtenerGaleria,
-  obtenerHistoria,
   obtenerPlanes,
-  obtenerPreguntasFrecuentes,
   obtenerPrograma,
   obtenerRetrato,
   obtenerRutas,
@@ -63,7 +57,6 @@ import {
   type ConfiguracionBoda,
   type RutaLlegada,
   type ConsejoVestimenta,
-  type HitoHistoria,
   type Medio,
   type Plan,
 } from "@/lib/bbdd/landing";
@@ -105,7 +98,7 @@ import { sembrarDesdeLaBase } from "@/lib/rsvp-siembra";
  * transparentes, en tres tramos:
  *
  *   · LA NOCHE   → lo que se cuenta bajo las estrellas (`SECCIONES_DE_NOCHE`):
- *                  la portada, el paisaje y la historia.
+ *                  la portada y, al final, el retrato de estrellas.
  *   · EL DÍA     → todo lo demás, en el orden de la base.
  *   · LA LLEGADA → siempre al final (`SECCIONES_DE_LLEGADA`): dónde dormir,
  *                  cómo llegar con el mapa debajo, los regalos plegados y, lo
@@ -175,17 +168,13 @@ export default async function PaginaInicio({
     secciones,
     configuracion,
     programa,
-    historia,
     alojamientos,
     rutas,
-    preguntas,
     canciones,
     consejos,
     planes,
     cuentaRegalos,
     fotosPortada,
-    fotosPaisaje,
-    fotosGaleria,
     retrato,
   } = datos;
 
@@ -231,29 +220,11 @@ export default async function PaginaInicio({
         cuentaAtras={cuentaEnPortada}
       />
     ),
-    /*
-      MANDA LA FRASE Y NO LA FOTO. Sin frase no hay nada que decir y la sección
-      no se pinta; sin foto sí, sólo con la frase sobre el cielo. Esperar a la
-      sesión de fotos para publicar una frase que ya está escrita sería tenerla
-      meses en un cajón.
-    */
-    paisaje: configuracion.paisajeTitulo ? (
-      <Paisaje
-        intro={configuracion.paisajeIntro}
-        titulo={configuracion.paisajeTitulo}
-        cierre={configuracion.paisajeCierre}
-        foto={fotosPaisaje[0] ?? null}
-        urlBase={urlBase}
-      />
-    ) : undefined,
     // Pasado el día, no queda nada que contar; con portada, va dentro de ella.
     cuenta_atras:
       quedaCuenta && !cuentaEnPortada ? (
         <CuentaAtrasSeccion configuracion={configuracion} />
       ) : undefined,
-    historia: historia.length > 0 ? <Historia hitos={historia} urlBase={urlBase} /> : undefined,
-    galeria:
-      fotosGaleria.length > 0 ? <Galeria fotos={fotosGaleria} urlBase={urlBase} /> : undefined,
     /*
       LA PREBODA ES UN SITIO, NO UN HORARIO: la fecha de la víspera y «Preboda
       en el Barrio Húmedo». El lugar se escribe en Ajustes; mientras esté vacío
@@ -296,8 +267,6 @@ export default async function PaginaInicio({
     transporte: coordenadas ? (
       <Transporte rutas={rutas} configuracion={configuracion} coordenadas={coordenadas} />
     ) : undefined,
-    preguntas_frecuentes:
-      preguntas.length > 0 ? <Preguntas preguntas={preguntas} /> : undefined,
     /*
       LA PLAYLIST ES DE LOS INVITADOS: sólo sale a quien entra con el enlace de
       su invitación, que es quien puede apuntar una canción. A los demás no se
@@ -551,33 +520,25 @@ async function cargarLanding() {
     secciones,
     configuracion,
     programa,
-    historia,
     alojamientos,
     rutas,
-    preguntas,
     canciones,
     consejos,
     planes,
     cuentaRegalos,
     fotosPortada,
-    fotosPaisaje,
-    fotosGaleria,
     retrato,
   ] = await Promise.all([
     obtenerSecciones(),
     obtenerConfiguracion(),
     obtenerPrograma("boda"),
-    obtenerHistoria(),
     obtenerAlojamientos(),
     obtenerRutas(),
-    obtenerPreguntasFrecuentes(),
     obtenerCanciones(),
     obtenerConsejosVestimenta(),
     obtenerPlanes(),
     obtenerCuentaRegalos(),
     obtenerMedios("portada"),
-    obtenerMedios("paisaje"),
-    obtenerGaleria(),
     obtenerRetrato(),
   ]);
 
@@ -585,17 +546,13 @@ async function cargarLanding() {
     secciones,
     configuracion,
     programa,
-    historia,
     alojamientos,
     rutas,
-    preguntas,
     canciones,
     consejos,
     planes,
     cuentaRegalos,
     fotosPortada,
-    fotosPaisaje,
-    fotosGaleria,
     retrato,
   };
 }
@@ -755,105 +712,6 @@ function Portada({
   );
 }
 
-/**
- * EL PAISAJE · de dónde vienen los novios, en una frase
- *
- * Lo único de la página que cuenta de dónde vienen, en la costura entre los
- * nombres y lo demás. Antes era una escena de tres pantallas de alto; ahora es
- * una frase sobre el cielo de la noche —versalita, titular y un cierre en la
- * letra del conector— y, si hay, la foto o el vídeo en una franja apaisada.
- *
- * MANDA EL TITULAR, NO LA FOTO: sin titular no hay sección (lo decide quien la
- * pinta). La versalita y el cierre son opcionales una a una.
- */
-function Paisaje({
-  intro,
-  titulo,
-  cierre,
-  foto,
-  urlBase,
-}: {
-  intro: string | null;
-  titulo: string;
-  cierre: string | null;
-  foto: Medio | null;
-  urlBase: string | undefined;
-}) {
-  const idTitulo = `titulo-${anclaDe("paisaje")}`;
-  const enElBucket = (ruta: string) =>
-    `${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${ruta}`;
-  const fuente = foto && urlBase ? enElBucket(foto.ruta) : null;
-  /*
-    Lo dice la base —el campo `tipo`—, no el final de la ruta. El vídeo se
-    monta por su propia rama porque se rinde solo ante `prefers-reduced-motion`
-    y deja el fotograma.
-  */
-  const esVideo = Boolean(foto?.tipo === "video" && foto.posterRuta && fuente);
-
-  return (
-    <section
-      id={anclaDe("paisaje")}
-      aria-labelledby={idTitulo}
-      className="relative px-margen py-tramo"
-    >
-      {/*
-        Con foto y sitio, la foto a un lado y la frase al otro: apiladas, en
-        pantalla ancha la franja medía casi una pantalla. Sin foto, o en un
-        móvil, una columna centrada.
-      */}
-      <div
-        className={`mx-auto max-w-medio text-center ${
-          fuente
-            ? "md:grid md:grid-cols-2 md:items-center md:gap-columnas-fluido md:text-left"
-            : ""
-        }`}
-      >
-        {fuente ? (
-          <div className="animacion-escala-al-ver relative mb-cabecera-tramo aspect-paisaje overflow-hidden rounded-imagen bg-superficie-hundida md:mb-0">
-            {esVideo ? (
-              <VideoDeFondo
-                fuente={fuente}
-                poster={enElBucket(foto!.posterRuta!)}
-                textoAlternativo={foto!.textoAlternativo}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            ) : (
-              <Image
-                src={fuente}
-                alt={foto!.textoAlternativo}
-                fill
-                sizes="(min-width: 48rem) 34rem, 100vw"
-                className="object-cover"
-                placeholder={foto!.marcadorBorroso ? "blur" : "empty"}
-                blurDataURL={foto!.marcadorBorroso ?? undefined}
-              />
-            )}
-          </div>
-        ) : null}
-
-        {/*
-          El titular es el `h2` —es lo que la sección dice—; la versalita que lo
-          abre y el cierre en la letra del conector son párrafos, porque leídos
-          sueltos no son encabezados de nada.
-        */}
-        <header className="animacion-subir-al-ver">
-          {intro ? (
-            <p className="text-etiqueta uppercase tracking-marcado text-acento">{intro}</p>
-          ) : null}
-          <Titulo1 como="h2" id={idTitulo} tamano="tramo" className={intro ? "mt-pila" : ""}>
-            {titulo}
-          </Titulo1>
-          {cierre ? (
-            <p className="mt-pila">
-              <Conector tamano="frase">{cierre}</Conector>
-            </p>
-          ) : null}
-        </header>
-      </div>
-    </section>
-  );
-}
-
 function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBoda }) {
   const idTitulo = `titulo-${anclaDe("cuenta_atras")}`;
   return (
@@ -877,67 +735,6 @@ function CuentaAtrasSeccion({ configuracion }: { configuracion: ConfiguracionBod
         </Cita>
       </div>
     </section>
-  );
-}
-
-/**
- * NUESTRA HISTORIA, UNA ESTRELLA POR MOMENTO
- *
- * Bajo el cielo de la noche, cada hito es una estrella de cuatro puntas en una
- * columna, unidas por un hilo: la fecha, lo que pasó y, si hay, su foto en
- * pequeño. Al llegar a cada una, se enciende. Cabe en poco más de una pantalla:
- * es una historia que se lee de un vistazo, no un capítulo por pantalla.
- *
- * Con el último hito, la frase que lo cierra: «cada momento fue una estrella».
- */
-function Historia({ hitos, urlBase }: { hitos: HitoHistoria[]; urlBase: string | undefined }) {
-  return (
-    <Bloque
-      seccion="historia"
-      etiqueta={t("historia.etiqueta")}
-      titulo={t("historia.titulo")}
-      realzada
-      ancho="medio"
-    >
-      <ol className="hilo-de-estrellas">
-        {hitos.map((hito) => (
-          <li key={hito.id} className="rejilla-hito pb-elemento last:pb-0">
-            <span className="flex h-columna-estrella items-center justify-center">
-              <EstrellaDeCuatroPuntas className="animacion-pop-al-ver size-estrella-hito text-acento" />
-            </span>
-            <div className="animacion-subir-al-ver">
-              {hito.fechaTexto ? <Etiqueta tono="acento">{hito.fechaTexto}</Etiqueta> : null}
-              <Titulo3 como="h3" tamano="hito-menor" className="mt-interno-compacto">
-                {hito.titulo}
-              </Titulo3>
-              {hito.descripcion ? (
-                <Cuerpo className="mt-interno-compacto max-w-texto text-pequeno text-tinta-suave">
-                  {hito.descripcion}
-                </Cuerpo>
-              ) : null}
-            </div>
-            {hito.foto && urlBase ? (
-              <div className="animacion-escala-al-ver relative size-miniatura overflow-hidden rounded-imagen bg-superficie-hundida">
-                <Image
-                  src={`${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${hito.foto.ruta}`}
-                  alt={hito.foto.textoAlternativo}
-                  fill
-                  sizes="6rem"
-                  className="object-cover"
-                  placeholder={hito.foto.marcadorBorroso ? "blur" : "empty"}
-                  blurDataURL={hito.foto.marcadorBorroso ?? undefined}
-                />
-              </div>
-            ) : (
-              <span />
-            )}
-          </li>
-        ))}
-      </ol>
-      <Cita className="animacion-subir-al-ver mt-cabecera-tramo text-center">
-        {t("historia.cierre")}
-      </Cita>
-    </Bloque>
   );
 }
 
@@ -1282,55 +1079,6 @@ function Transporte({
             </div>
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
-
-/**
- * LAS PREGUNTAS, PLEGADAS. Son para quien tiene una duda, no para leerlas de
- * corrido: la sección es una sola línea —el titular— que se abre, y dentro
- * cada pregunta se abre a su vez. Acordeón nativo: accesible por teclado sin
- * una línea de JavaScript.
- */
-function Preguntas({
-  preguntas,
-}: {
-  preguntas: { id: string; pregunta: string; respuesta: string }[];
-}) {
-  const idTitulo = `titulo-${anclaDe("preguntas_frecuentes")}`;
-  return (
-    <section
-      id={anclaDe("preguntas_frecuentes")}
-      aria-labelledby={idTitulo}
-      className="relative px-margen py-tramo"
-    >
-      <div className="mx-auto max-w-medio">
-        <details className="group/preguntas border-y border-borde">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-elemento py-elemento">
-            <span>
-              <EtiquetaSeccion>{t("preguntas.etiqueta")}</EtiquetaSeccion>
-              <Titulo2 id={idTitulo} className="mt-pila">
-                {t("preguntas.titulo")}
-              </Titulo2>
-            </span>
-            <SignoAbrir grupo="preguntas" />
-          </summary>
-          <ul className="border-t border-borde">
-            {preguntas.map((pregunta) => (
-              <li key={pregunta.id} className="border-b border-borde last:border-b-0">
-                <details>
-                  <summary className="cursor-pointer list-none py-pila font-titulo text-hito-menor transicion-color hover:text-tinta-marca">
-                    {pregunta.pregunta}
-                  </summary>
-                  <Cuerpo className="max-w-texto pb-pila text-pequeno">
-                    {pregunta.respuesta}
-                  </Cuerpo>
-                </details>
-              </li>
-            ))}
-          </ul>
-        </details>
       </div>
     </section>
   );

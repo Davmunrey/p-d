@@ -1,11 +1,10 @@
 /**
  * El giro de cada desplegable, escrito entero: Tailwind sólo compila las
  * clases que encuentra tal cual en el código. Cada `<details>` que lo usa
- * lleva su grupo con nombre (`group/preguntas`, `group/regalos`…), para que
+ * lleva su grupo con nombre (`group/regalos`, `group/acompanante`), para que
  * un desplegable dentro de otro no gire con el de fuera.
  */
 const GIRO_AL_ABRIR = {
-  preguntas: "group-open/preguntas:rotate-45",
   regalos: "group-open/regalos:rotate-45",
   acompanante: "group-open/acompanante:rotate-45",
 } as const;

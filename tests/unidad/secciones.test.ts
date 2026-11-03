@@ -2,7 +2,13 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { SECCIONES, anclaDe, esAncla, esSeccionConocida } from "@/config/secciones";
+import {
+  SECCIONES,
+  SECCIONES_RETIRADAS,
+  anclaDe,
+  esAncla,
+  esSeccionConocida,
+} from "@/config/secciones";
 
 /**
  * BODA-20 · La lista de secciones de TypeScript y la de SQL no pueden divergir
@@ -57,8 +63,40 @@ describe("Secciones de la landing", () => {
     expect(enSql.length).toBeGreaterThan(0);
   });
 
-  it("TypeScript conoce exactamente las mismas que SQL", () => {
-    expect([...SECCIONES].sort()).toEqual([...enSql].sort());
+  it("TypeScript conoce exactamente las mismas que SQL, las vigentes y las retiradas", () => {
+    expect([...SECCIONES, ...SECCIONES_RETIRADAS].sort()).toEqual([...enSql].sort());
+  });
+
+  it("ninguna sección está a la vez vigente y retirada", () => {
+    const retiradas = new Set<string>(SECCIONES_RETIRADAS);
+    expect(SECCIONES.filter((seccion) => retiradas.has(seccion))).toEqual([]);
+  });
+
+  it("la base veta en sus dos tablas exactamente las retiradas", () => {
+    /*
+      Los valores retirados siguen en el enumerado —Postgres no sabe quitarlos—,
+      así que lo que impide que vuelvan es un CHECK en `secciones_landing` y
+      otro en `medios`. Si alguien retira una sección aquí y no allí, la base
+      la dejaría volver.
+    */
+    const sql = readdirSync(MIGRACIONES)
+      .filter((nombre) => nombre.endsWith(".sql"))
+      .sort()
+      .map((nombre) => readFileSync(join(MIGRACIONES, nombre), "utf8"))
+      .join("\n");
+    for (const restriccion of ["secciones_landing_seccion_vigente", "medios_seccion_vigente"]) {
+      const ultima = [
+        ...sql.matchAll(
+          new RegExp(
+            `add constraint ${restriccion}\\s+check \\(seccion::text not in \\(([^)]*)\\)`,
+            "g",
+          ),
+        ),
+      ].at(-1);
+      expect(ultima, restriccion).toBeDefined();
+      const vetadas = [...ultima![1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+      expect(vetadas.sort(), restriccion).toEqual([...SECCIONES_RETIRADAS].sort());
+    }
   });
 
   it("ninguna sección está declarada dos veces en SQL", () => {

@@ -344,7 +344,7 @@ describe("a qué sección de la web va cada lista", () => {
 
     for (const variante of variantes) {
       const origen = ORIGEN_DE_LA_SECCION[seccionDeLista(clave, variante)];
-      if (origen.clase === "sin-hacer" || origen.donde.pantalla !== "contenido") continue;
+      if (origen.donde.pantalla !== "contenido") continue;
 
       // Y a su pestaña: la víspera abría la del día, y lo que se escribía
       // allí iba al programa de la boda.

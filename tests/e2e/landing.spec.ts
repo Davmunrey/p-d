@@ -100,28 +100,6 @@ test.describe("Landing", () => {
     }
   });
 
-  /*
-    LAS PREGUNTAS VAN PLEGADAS: la sección es su titular, que se abre, y dentro
-    cada pregunta se abre a su vez. Las dos cosas, con teclado.
-  */
-  test("las preguntas frecuentes se abren y cierran con teclado", async ({ page }) => {
-    const seccion = page.locator("#preguntas-frecuentes > div > details");
-    await expect(seccion).not.toHaveAttribute("open", "");
-
-    await seccion.locator("> summary").focus();
-    await page.keyboard.press("Enter");
-    await expect(seccion).toHaveAttribute("open", "");
-
-    const primera = seccion.locator("ul details").first();
-    await expect(primera).not.toHaveAttribute("open", "");
-    await primera.locator("summary").focus();
-    await page.keyboard.press("Enter");
-    await expect(primera).toHaveAttribute("open", "");
-
-    await page.keyboard.press("Enter");
-    await expect(primera).not.toHaveAttribute("open", "");
-  });
-
   test("la cuenta atrás muestra cifras y no un hueco", async ({ page }) => {
     const contador = page.getByRole("timer");
     await expect(contador).toBeVisible();
@@ -185,13 +163,13 @@ test.describe("Landing", () => {
   /**
    * CASO DE ERROR. Una imagen sin publicar no puede asomarse a la landing.
    *
-   * El seed deja una en `galeria` marcada como borrador justamente para esto:
+   * El seed deja una en `planes` marcada como borrador justamente para esto:
    * si apareciera, significaría que la consulta se olvidó del filtro y que
    * cualquier foto a medio subir acabaría en la web.
    */
   test("una imagen sin publicar no aparece en ninguna parte", async ({ page }) => {
     await expect(page.getByAltText(/Borrador/i)).toHaveCount(0);
-    await expect(page.locator('img[src*="galeria-borrador"]')).toHaveCount(0);
+    await expect(page.locator('img[src*="planes-borrador"]')).toHaveCount(0);
   });
 
   /**
@@ -390,8 +368,8 @@ test.describe("Cabecera de sección", () => {
 
   test("ninguna sección de contenido se queda sin abrir", async ({ page }) => {
     // La portada y la cuenta atrás tienen su propia composición; el resto
-    // comparte el patrón y ninguna puede quedarse muda. Las preguntas, que van
-    // plegadas, se abren con su titular dentro del desplegable.
+    // comparte el patrón y ninguna puede quedarse muda. Lo plegado —los
+    // regalos, vuestra estrella— lleva su titular dentro del desplegable.
     const mudas = await page.evaluate(() =>
       [...document.querySelectorAll("main section")]
         .filter((seccion) => !["portada", "cuenta-atras"].includes(seccion.id))
@@ -634,13 +612,7 @@ test.describe("La tipografía es la de la entrega", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/");
 
-    /*
-      El paisaje queda fuera a propósito: su titular no es el de una sección de
-      contenido, es el de la ESCENA, y la entrega le da su propia escala
-      (38–98 px contra 38–68). Medir el primero que aparezca en el documento
-      daría 94 px y diría que la escala está rota cuando está bien.
-    */
-    const titular = await medir(page, "main section:not(#paisaje) header h2");
+    const titular = await medir(page, "main section header h2");
     // 5.4vw a 1280 son 69,12: el clamp topa en 68. Con 5vw se quedaba en 64.
     expect(titular.tamano).toBe(68);
     expect(titular.peso).toBe(300);
@@ -1185,7 +1157,7 @@ test.describe("El movimiento es el de la entrega", () => {
       ];
       return {
         retardos: retardos.map((n) => getComputedStyle(n).animationDelay),
-        reveal: getComputedStyle(document.querySelector("#historia .animacion-subir-al-ver")!)
+        reveal: getComputedStyle(document.querySelector("#programa .animacion-subir-al-ver")!)
           .animationName,
       };
     });

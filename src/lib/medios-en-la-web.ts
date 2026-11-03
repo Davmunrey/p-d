@@ -1,35 +1,29 @@
 import { TIPOS_MEDIO_ADMITIDOS, TIPOS_RETRATO } from "@/config/constants";
 import type { Seccion } from "@/config/secciones";
-import { TIPOS_MEDIBLES } from "@/lib/dimensiones";
 
 /**
  * QUÉ MEDIO SE VE DE VERDAD EN LA WEB
  *
  * «Publicado» no es «se ve». El gestor de medios marcaba «En la web» todo lo
- * publicado, y avisaba «Ya se ve en la web» al publicar, en las dieciséis
+ * publicado, y avisaba «Ya se ve en la web» al publicar, en todas las
  * secciones. Pero la landing pinta muy poco de lo que hay:
  *
- *   · portada y paisaje, LA PRIMERA por orden;
+ *   · la portada, LA PRIMERA por orden;
  *   · la tarjeta del Save the Date, LA PRIMERA FOTO (no vídeos);
- *   · la galería, las fotos CON MEDIDAS —una rejilla no reserva hueco para lo
- *     que no sabe cuánto mide—;
- *   · historia, alojamiento y planes, la que se ELIGE EN UNA FICHA publicada;
+ *   · alojamiento y planes, la que se ELIGE EN UNA FICHA publicada;
  *   · el retrato de estrellas, LA PRIMERA, y sólo recortada (con transparencia);
  *   · y las demás secciones, NINGUNA.
  *
- * Es la misma regla que aplican `obtenerMedios`, `obtenerGaleria` y las
+ * Es la misma regla que aplican `obtenerMedios`, `obtenerRetrato` y las
  * fichas de Contenido, escrita aquí una vez, sin base de datos y con unitarios:
  * el fallo no da error, sólo se ve comparando el panel con la web.
  */
 
-type ComoSePinta = "la-primera" | "la-primera-foto" | "con-medidas" | "por-ficha" | "recortada";
+type ComoSePinta = "la-primera" | "la-primera-foto" | "por-ficha" | "recortada";
 
 const COMO_SE_PINTA: Partial<Record<Seccion, ComoSePinta>> = {
   portada: "la-primera",
-  paisaje: "la-primera",
   reserva_la_fecha: "la-primera-foto",
-  galeria: "con-medidas",
-  historia: "por-ficha",
   alojamiento: "por-ficha",
   planes: "por-ficha",
   retrato: "recortada",
@@ -41,14 +35,13 @@ export function seccionEnsenaMedios(seccion: Seccion): boolean {
 }
 
 /**
- * QUÉ FORMATOS LLEGA A PINTAR CADA FORMA DE PINTAR. La portada y el paisaje
- * enseñan foto o vídeo; la tarjeta del Save the Date y las fichas de historia y
- * alojamiento, sólo fotos; la galería, sólo fotos que se puedan medir.
+ * QUÉ FORMATOS LLEGA A PINTAR CADA FORMA DE PINTAR. La portada enseña foto o
+ * vídeo; la tarjeta del Save the Date y las fichas de alojamiento y planes,
+ * sólo fotos.
  */
 const PINTA: Record<ComoSePinta, (tipo: string) => boolean> = {
   "la-primera": () => true,
   "la-primera-foto": (tipo) => tipo.startsWith("image/"),
-  "con-medidas": (tipo) => (TIPOS_MEDIBLES as readonly string[]).includes(tipo),
   "por-ficha": (tipo) => tipo.startsWith("image/"),
   // Sólo formatos con canal alfa: lo que se traza es el borde de lo opaco.
   recortada: (tipo) => (TIPOS_RETRATO as readonly string[]).includes(tipo),
@@ -57,8 +50,8 @@ const PINTA: Record<ComoSePinta, (tipo: string) => boolean> = {
 /**
  * Los tipos que se admiten al subir a una sección: los que la web va a pintar.
  *
- * Antes se admitían todos en todas, y un vídeo subido a «Nuestra historia» se
- * quedaba en «Publicada, no se ve» con un motivo que mandaba a elegirlo en una
+ * Antes se admitían todos en todas, y un vídeo subido a una sección de fichas
+ * se quedaba en «Publicada, no se ve» con un motivo que mandaba a elegirlo en una
  * ficha de Contenido... donde el selector sólo ofrece fotos.
  */
 export function tiposQuePinta(seccion: Seccion): string[] {
@@ -70,7 +63,6 @@ export type MotivoNoSeVe =
   | "borrador"
   | "solo-la-primera"
   | "solo-la-primera-foto"
-  | "sin-medidas"
   | "sin-ficha"
   | "solo-fotos"
   | "seccion-sin-medios"
@@ -93,8 +85,8 @@ export interface MedioParaPintar {
  * primero), que es el mismo con el que se lee aquí: «la primera» es la primera
  * PUBLICADA. `elegidos` son los que alguna ficha publicada de Contenido usa.
  *
- * `seccionVisible` es si la web pinta esa parte: apagada en Contenido —o el
- * paisaje sin título—, nada de lo publicado en ella se ve, y la pantalla decía
+ * `seccionVisible` es si la web pinta esa parte: apagada en Contenido, nada de
+ * lo publicado en ella se ve, y la pantalla decía
  * «En la web» de fotos que no veía nadie.
  */
 export function visibilidadEnLaWeb(
@@ -148,11 +140,6 @@ function deUno(
       return medio.id === laPrimera
         ? { seVe: true }
         : { seVe: false, motivo: "solo-la-primera-foto" };
-    case "con-medidas":
-      if (medio.tipo !== "imagen") return { seVe: false, motivo: "solo-fotos" };
-      return medio.ancho !== null && medio.alto !== null
-        ? { seVe: true }
-        : { seVe: false, motivo: "sin-medidas" };
     case "por-ficha":
       // Un vídeo no se puede elegir en una ficha: mandar a elegirlo era mentir.
       if (medio.tipo !== "imagen") return { seVe: false, motivo: "solo-fotos" };

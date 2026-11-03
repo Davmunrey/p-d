@@ -157,7 +157,6 @@
   --text-titulo-tramo: var(--texto-titulo-tramo);
   --text-titulo-3: var(--texto-titulo-3);
   --text-conector: var(--texto-conector);
-  --text-conector-frase: var(--texto-conector-frase);
   --text-saludo: var(--texto-saludo);
   --text-cifra: var(--texto-cifra);
   --text-cita: var(--texto-cita);
@@ -263,7 +262,6 @@
   --spacing-cita-arriba: var(--espacio-cita);
   --spacing-tarjeta: var(--espacio-tarjeta);
   --spacing-tarjeta-fluida: var(--espacio-tarjeta-fluida);
-  --spacing-columnas-fluido: var(--espacio-columnas-fluido);
   --spacing-tira-nav: var(--espacio-tira-nav);
   --spacing-fila: var(--espacio-fila);
   --spacing-fila-compacta: var(--espacio-fila-compacta);
@@ -279,7 +277,6 @@
   --spacing-tarjeta-cuerpo: var(--espacio-tarjeta-cuerpo);
   --spacing-meta: var(--espacio-meta);
   --spacing-chips-arriba: var(--espacio-chips-arriba);
-  --spacing-galeria: var(--espacio-galeria);
   --spacing-sobre-arriba: var(--espacio-sobre-arriba);
   --spacing-sobre-abajo: var(--espacio-sobre-abajo);
   --spacing-escenario-arriba: var(--espacio-escenario-arriba);
@@ -329,9 +326,7 @@
   /* Vuestra estrella, la que falta en el cielo, y la que baja al lugar. */
   --spacing-vuestra-estrella: var(--lado-vuestra-estrella);
   --spacing-estrella-llegada: var(--lado-estrella-llegada);
-  --spacing-estrella-hito: var(--lado-estrella-hito);
   --spacing-retrato: var(--alto-retrato);
-  --spacing-columna-estrella: var(--ancho-columna-estrella);
   --spacing-solape-mapa: var(--solape-mapa);
 
   /* Un solo token da `h-cabecera`, `pt-cabecera` y `scroll-mt-cabecera`. */
@@ -351,9 +346,7 @@
   --radius-imagen: var(--radio-imagen);
   --radius-modal: var(--radio-modal);
   --radius-etiqueta: var(--radio-etiqueta);
-  --aspect-paisaje: var(--proporcion-paisaje);
   --aspect-foto-tarjeta: var(--proporcion-foto-tarjeta);
-  --aspect-foto-tira: var(--proporcion-foto-tira);
   --aspect-plano: var(--proporcion-plano);
 
   /*
@@ -367,7 +360,6 @@
   --shadow-anillo-campo: 0 0 0 var(--anillo-campo-ancho) var(--anillo-campo);
   --shadow-sutil: var(--sombra-sutil);
   --shadow-tarjeta: var(--sombra-tarjeta);
-  --shadow-elevada: var(--sombra-elevada);
   --shadow-modal: var(--sombra-modal);
 
   /*
@@ -487,33 +479,6 @@
 }
 
 /**
- * LOS HITOS DE LA HISTORIA, EN UNA COLUMNA DE ESTRELLAS: la estrella, el
- * texto y, si hay, la foto. El hilo que une cada estrella con la siguiente lo
- * pinta `hilo-de-estrellas` en la lista, por debajo de las estrellas.
- */
-@utility rejilla-hito {
-  display: grid;
-  grid-template-columns: var(--ancho-columna-estrella) minmax(0, 1fr) auto;
-  column-gap: var(--spacing-elemento);
-}
-
-@utility hilo-de-estrellas {
-  & > li {
-    position: relative;
-  }
-
-  & > li:not(:last-child)::before {
-    position: absolute;
-    top: var(--ancho-columna-estrella);
-    bottom: 0;
-    left: calc(var(--ancho-columna-estrella) / 2);
-    width: var(--grosor-filete);
-    content: "";
-    background-color: var(--color-borde);
-  }
-}
-
-/**
  * UNA FILA DE HORAS DE LA LANDING. En un móvil, la hora va al lado del titular
  * y la descripción debajo, a todo el ancho: en una columna estrecha junto a la
  * hora, cada descripción ocupaba el doble de líneas. Con sitio, la hora vuelve
@@ -620,12 +585,6 @@
 @utility rejilla-fichas {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--ancho-ficha-catalogo)), 1fr));
-}
-
-/** La tira de fotos: tantos huecos 4/3 por fila como quepan a 260 px. */
-@utility rejilla-tira {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--ancho-foto-tira)), 1fr));
 }
 
 /** «Cómo llegar»: texto a un lado y mapa al otro, centrados verticalmente. */

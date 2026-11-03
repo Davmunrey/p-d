@@ -303,14 +303,6 @@ function DeQueSeccion({ nombre }: { nombre: string }) {
 function Contenido({ fila, destacado }: { fila: EstadoDeSeccion; destacado: boolean }) {
   const origen = ORIGEN_DE_LA_SECCION[fila.seccion];
 
-  if (origen.clase === "sin-hacer") {
-    return (
-      <EtiquetaEstado variante="aviso" tamano="versalita">
-        {t("panel.contenido.sinHacer")}
-      </EtiquetaEstado>
-    );
-  }
-
   if (origen.clase === "sola") {
     return <Etiqueta>{t("panel.contenido.noNecesita")}</Etiqueta>;
   }
@@ -349,9 +341,6 @@ function Contenido({ fila, destacado }: { fila: EstadoDeSeccion; destacado: bool
 /** Dónde se escribe: un enlace cuando hay a dónde ir, y la verdad cuando no. */
 function DondeSeLlena({ seccion }: { seccion: Seccion }) {
   const origen = ORIGEN_DE_LA_SECCION[seccion];
-
-  // Una sección sin hacer no tiene dónde llenarse: no hay pantalla que la pinte.
-  if (origen.clase === "sin-hacer") return null;
 
   const donde: Donde = origen.donde;
   if (donde.pantalla === "nada") return null;

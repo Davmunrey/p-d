@@ -136,16 +136,14 @@ export function Conector({
    */
   escrita?: boolean;
   /**
-   * El escalón. `conector` es la «y» de la portada, fluida; `frase`, el cierre
-   * de la frase del paisaje, un escalón por debajo; `naipe` la de la tarjeta
-   * del Save the Date, que se mide contra el alto del naipe; y `sello` el «&»
+   * El escalón. `conector` es la «y» de la portada, fluida; `naipe` la de la
+   * tarjeta del Save the Date, que se mide contra el alto del naipe; y `sello` el «&»
    * del sello, que hereda el color de las iniciales en vez del acento.
    */
-  tamano?: "conector" | "frase" | "naipe" | "sello";
+  tamano?: "conector" | "naipe" | "sello";
 }) {
   const escalon = {
     conector: "text-conector leading-conector text-acento",
-    frase: "text-conector-frase leading-titulo-corto text-acento",
     naipe: "text-naipe-conector leading-compacto text-acento",
     sello: "sello-ampersand text-sello-ampersand leading-compacto text-current",
   }[tamano];

@@ -41,7 +41,7 @@ const CONTRASENA = process.env.CONTRASENA_PRUEBAS;
 const cadena = process.env.DATABASE_URL;
 
 /** La que se enciende y se apaga. No la mira ningún otro spec. */
-const SECCION = "preguntas_frecuentes";
+const SECCION = "dresscode";
 
 /** Lo que se afirma cuando la acción no dejó ningún destino: falla y se lee. */
 const SIN_DESTINO = "(la acción no redirigió)";
@@ -186,7 +186,7 @@ test.describe("El contenido de la web", () => {
     // De partida está encendida y con contenido, así que la web la enseña.
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { name: copy.preguntas.titulo, exact: true }),
+      page.getByRole("heading", { name: copy.dresscode.titulo, exact: true }),
     ).toBeVisible();
 
     // --- apagar -------------------------------------------------------------
@@ -203,7 +203,7 @@ test.describe("El contenido de la web", () => {
 
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { name: copy.preguntas.titulo, exact: true }),
+      page.getByRole("heading", { name: copy.dresscode.titulo, exact: true }),
     ).toHaveCount(0);
 
     // --- y volver a encender ------------------------------------------------
@@ -220,7 +220,7 @@ test.describe("El contenido de la web", () => {
 
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { name: copy.preguntas.titulo, exact: true }),
+      page.getByRole("heading", { name: copy.dresscode.titulo, exact: true }),
     ).toBeVisible();
   });
 
@@ -294,9 +294,7 @@ test.describe("El contenido de la web", () => {
     ).toHaveCount(1);
   });
 
-  test("están las dieciséis, y se dice cuál no aparece aunque esté encendida", async ({
-    page,
-  }) => {
+  test("están todas las secciones de la web", async ({ page }) => {
     await entrar(page);
     await page.goto(RUTA_CONTENIDO);
 
@@ -305,16 +303,6 @@ test.describe("El contenido de la web", () => {
       laLista(page).getByRole("listitem"),
       "una sección que no salga aquí es una sección que nadie puede encender",
     ).toHaveCount(SECCIONES.length);
-
-    /*
-      `ubicaciones` está encendida desde el primer día y no existe: no hay
-      componente que la pinte (BODA-26). Es el caso que convierte esta pantalla
-      en algo más que un interruptor — sin decirlo, alguien la enciende, no pasa
-      nada, y no hay forma de saber por qué.
-    */
-    await expect(fichaDe(page, copy.navegacion.secciones.ubicaciones)).toContainText(
-      copy.panel.contenido.sinHacer,
-    );
   });
 
   /**
@@ -431,25 +419,27 @@ test.describe("El contenido de la web", () => {
 
   /**
    * CASO DE ERROR · encender una sección que no tiene con qué pintarse no
-   * puede acabar en «Ya se ve en la web». `ubicaciones` está encendida de
-   * fábrica y no existe (BODA-26): se apaga y se enciende, y se deja como
-   * estaba pase lo que pase.
+   * puede acabar en «Ya se ve en la web». La preboda sin lugar escrito es el
+   * caso real —«todavía no lo sabemos»—: se apaga, se le quita el lugar y se
+   * enciende, y se deja como estaba pase lo que pase.
    */
   test("encender una sección que no puede salir no dice que ya se ve", async ({ page }) => {
-    const [{ visible: antes }] = await conBase(
-      (sql) => sql<{ visible: boolean }[]>`
-        select visible from public.secciones_landing where seccion = 'ubicaciones'
+    const [antes] = await conBase(
+      (sql) => sql<{ visible: boolean; lugar: string | null }[]>`
+        select s.visible, c.lugar_preboda as lugar
+          from public.secciones_landing as s, public.configuracion_boda as c
+         where s.seccion = 'preboda'
       `,
     );
     try {
-      await conBase(
-        (sql) =>
-          sql`update public.secciones_landing set visible = false where seccion = 'ubicaciones'`,
-      );
+      await conBase(async (sql) => {
+        await sql`update public.secciones_landing set visible = false where seccion = 'preboda'`;
+        await sql`update public.configuracion_boda set lugar_preboda = null`;
+      });
       await entrar(page);
       await page.goto(RUTA_CONTENIDO);
 
-      const nombre = copy.navegacion.secciones.ubicaciones;
+      const nombre = copy.navegacion.secciones.preboda;
       await fichaDe(page, nombre)
         .getByRole("button", { name: new RegExp(copy.panel.contenido.mostrar) })
         .click();
@@ -458,10 +448,10 @@ test.describe("El contenido de la web", () => {
         copy.panel.contenido.avisoMostradaSinContenido.replace("{seccion}", nombre),
       );
     } finally {
-      await conBase(
-        (sql) =>
-          sql`update public.secciones_landing set visible = ${antes} where seccion = 'ubicaciones'`,
-      );
+      await conBase(async (sql) => {
+        await sql`update public.secciones_landing set visible = ${antes.visible} where seccion = 'preboda'`;
+        await sql`update public.configuracion_boda set lugar_preboda = ${antes.lugar}`;
+      });
     }
   });
 });

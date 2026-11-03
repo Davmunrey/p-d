@@ -29,8 +29,8 @@ async function pintar(consulta: Record<string, string> = {}): Promise<string> {
   );
 }
 
-const galeria = (llena: boolean): EstadoDeSeccion => ({
-  seccion: "galeria",
+const planes = (llena: boolean): EstadoDeSeccion => ({
+  seccion: "planes",
   visible: true,
   orden: 1,
   elementos: llena ? 3 : 0,
@@ -50,21 +50,21 @@ describe("las secciones de la web en el panel", () => {
   });
 
   it("encender una sección vacía no dice que ya se ve", async () => {
-    secciones.mockResolvedValue([galeria(false)]);
-    const html = await pintar({ estado: "mostrada", seccion: "galeria" });
+    secciones.mockResolvedValue([planes(false)]);
+    const html = await pintar({ estado: "mostrada", seccion: "planes" });
 
     expect(html).not.toContain(copy.panel.contenido.avisoMostrada);
     expect(html).toContain(
       copy.panel.contenido.avisoMostradaSinContenido.replace(
         "{seccion}",
-        copy.navegacion.secciones.galeria,
+        copy.navegacion.secciones.planes,
       ),
     );
   });
 
   it("encender una con contenido sí dice que ya se ve", async () => {
-    secciones.mockResolvedValue([galeria(true)]);
-    const html = await pintar({ estado: "mostrada", seccion: "galeria" });
+    secciones.mockResolvedValue([planes(true)]);
+    const html = await pintar({ estado: "mostrada", seccion: "planes" });
 
     expect(html).toContain(copy.panel.contenido.avisoMostrada);
   });

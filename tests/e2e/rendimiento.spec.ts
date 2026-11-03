@@ -68,8 +68,8 @@ test.describe("El peso y la estabilidad de la landing", () => {
     await page.waitForLoadState("networkidle");
 
     // Y se recorre entera: las secciones de abajo también cuentan. Sin
-    // `networkidle` tras el scroll: el vídeo del paisaje descarga en bucle y
-    // la red no se calla nunca — los <img> ya están en el HTML del servidor,
+    // `networkidle` tras el scroll: un vídeo de fondo descarga en bucle y la
+    // red no se calla nunca — los <img> ya están en el HTML del servidor,
     // así que basta un respiro para lo que se inserte al entrar en pantalla.
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await page.waitForTimeout(500);
@@ -119,7 +119,7 @@ test.describe("El peso y la estabilidad de la landing", () => {
       }
     });
 
-    // Nada de `networkidle` aquí: el vídeo del paisaje sigue descargando en
+    // Nada de `networkidle` aquí: un vídeo de fondo sigue descargando en
     // bucle y la red no se calla nunca. Medio segundo da tiempo a que el
     // observador anote los últimos saltos, que es lo único que se espera.
     await page.waitForTimeout(500);

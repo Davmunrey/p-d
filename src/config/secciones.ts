@@ -12,35 +12,46 @@
  * falla en `typecheck` si a alguien se le olvida el rótulo, en vez de reventar
  * en runtime delante de un invitado.
  *
- * `tests/unidad/secciones.test.ts` compara esta lista con el SQL de las
- * migraciones: si divergen, el CI se pone rojo. Es el fallo que provocó esta
+ * `tests/unidad/secciones.test.ts` compara esta lista —más las retiradas— con
+ * el SQL de las migraciones: si divergen, el CI se pone rojo. Es el fallo que provocó esta
  * pantalla —la landing pintaba el programa y la playlist, y el enumerado no
  * las conocía, así que no había forma de enseñarlas en el menú ni de apagarlas.
  */
 
 /**
- * Todos los valores del enumerado `public.seccion_landing`, en el mismo orden
- * en que se declararon.
+ * Los valores del enumerado `public.seccion_landing` que la web usa, en el
+ * mismo orden en que se declararon.
  */
 export const SECCIONES = [
   "portada",
-  "paisaje",
   "reserva_la_fecha",
   "cuenta_atras",
-  "historia",
   "retrato",
-  "galeria",
   "preboda",
   "programa",
-  "ubicaciones",
   "transporte",
   "alojamiento",
   "regalos",
   "dresscode",
   "planes",
-  "preguntas_frecuentes",
   "playlist",
   "rsvp",
+] as const;
+
+/**
+ * LAS SECCIONES RETIRADAS. Los novios decidieron no tener historia, galería,
+ * paisaje ni preguntas frecuentes, y «ubicaciones» nunca llegó a hacerse. Sus
+ * tablas, columnas y filas se borraron (`20261103150000`); sus valores siguen
+ * en el enumerado de SQL porque PostgreSQL no sabe quitar un valor de un
+ * enumerado sin rehacer el tipo, y eso arrastra funciones, políticas y la
+ * tabla de medios. Un CHECK impide que una fila vuelva a usarlos.
+ */
+export const SECCIONES_RETIRADAS = [
+  "paisaje",
+  "historia",
+  "galeria",
+  "ubicaciones",
+  "preguntas_frecuentes",
 ] as const;
 
 export type Seccion = (typeof SECCIONES)[number];
@@ -71,8 +82,8 @@ export type SeccionConRuta = keyof typeof RUTAS_PROPIAS;
  * que hay que leer entero no es un atajo.
  *
  * Fuera quedan a propósito las que se disfrutan en su sitio y nadie va a buscar
- * a la carrera: la historia, la galería, el paisaje, la playlist, el dress code,
- * las preguntas. No se esconden — siguen en la página, en su orden.
+ * a la carrera: la playlist, el dress code, los planes. No se esconden — siguen
+ * en la página, en su orden.
  *
  * Tampoco va la de confirmar: va al final, a propósito, después de haberlo
  * leído todo, y se llega bajando hasta vuestra estrella.

@@ -14,13 +14,11 @@ import {
   PESO_MAXIMO_IMAGEN_MB,
   PESO_MAXIMO_VIDEO_MB,
   RUTA_ACCESO,
-  RUTA_AJUSTES,
   RUTA_CONTENIDO,
   TIPOS_MEDIO_ADMITIDOS,
 } from "@/config/constants";
 import { type Seccion } from "@/config/secciones";
 import { obtenerEstadoDeLasSecciones } from "@/lib/bbdd/contenido";
-import { obtenerConfiguracion } from "@/lib/bbdd/landing";
 import {
   obtenerMediosDelPanel,
   obtenerMediosElegidosEnFichas,
@@ -115,9 +113,9 @@ function nombrar(tipos: readonly string[]): string {
 }
 
 /**
- * SÓLO SE OFRECE LO QUE ESA PARTE DE LA WEB PINTA. Un vídeo en la galería, en
- * la tarjeta del Save the Date o en historia no sale nunca, y un AVIF en la
- * galería tampoco: se subía, se publicaba y se quedaba en «no se ve».
+ * SÓLO SE OFRECE LO QUE ESA PARTE DE LA WEB PINTA. Un vídeo en la tarjeta del
+ * Save the Date o en una ficha de hotel o de plan no sale nunca: se subía, se
+ * publicaba y se quedaba en «no se ve».
  */
 function camposDeSubida(seccion: Seccion) {
   const tipos = tiposQuePinta(seccion);
@@ -144,7 +142,7 @@ function camposDeSubida(seccion: Seccion) {
 }
 
 /** Por qué una sección entera no sale en la web, aunque tenga cosas publicadas. */
-type Oculta = "apagada" | "paisaje-sin-titulo";
+type Oculta = "apagada";
 
 /** El aviso de una acción, donde toque pintarlo. */
 function Aviso({ estado, className = "" }: { estado: EstadoMedios; className?: string }) {
@@ -174,26 +172,22 @@ export default async function PaginaMedios({ searchParams }: Parametros) {
   const bruto = leer("estado");
   const estado = esEstadoMedios(bruto) ? bruto : null;
 
-  const [secciones, elegidos, estadoDeSecciones, configuracion] = await Promise.all([
+  const [secciones, elegidos, estadoDeSecciones] = await Promise.all([
     obtenerMediosDelPanel(),
     obtenerMediosElegidosEnFichas(),
     obtenerEstadoDeLasSecciones(),
-    obtenerConfiguracion(),
   ]);
   const puedeEditar = acceso.rol !== "lector";
   const urlBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   /*
-    LO QUE LA WEB NO PINTA AUNQUE TENGA FOTOS: una sección apagada en Contenido
-    y el paisaje sin título, que la portada se salta. Si las secciones no se han
-    podido leer no se da ninguna por apagada: mejor no avisar que avisar mal.
+    LO QUE LA WEB NO PINTA AUNQUE TENGA FOTOS: una sección apagada en Contenido.
+    Si las secciones no se han podido leer no se da ninguna por apagada: mejor
+    no avisar que avisar mal.
   */
   const ocultas = new Map<Seccion, Oculta>();
   for (const fila of estadoDeSecciones ?? []) {
     if (!fila.visible) ocultas.set(fila.seccion, "apagada");
-  }
-  if (!ocultas.has("paisaje") && configuracion && !configuracion.paisajeTitulo) {
-    ocultas.set("paisaje", "paisaje-sin-titulo");
   }
 
   /*
@@ -259,7 +253,6 @@ const MOTIVOS: Record<MotivoNoSeVe, ClaveCopy | null> = {
   borrador: null,
   "solo-la-primera": "panel.medios.motivos.soloLaPrimera",
   "solo-la-primera-foto": "panel.medios.motivos.soloLaPrimeraFoto",
-  "sin-medidas": "panel.medios.motivos.sinMedidas",
   "sin-ficha": "panel.medios.motivos.sinFicha",
   "solo-fotos": "panel.medios.motivos.soloFotos",
   // Ya lo dice la sección entera, una vez: repetirlo en cada ficha es ruido.
@@ -339,15 +332,9 @@ function BloqueSeccion({
       {ensena && oculta ? (
         <div className="mt-pila max-w-texto">
           <Cuerpo className="text-pequeno text-tinta-suave">
-            {oculta === "apagada"
-              ? t("panel.medios.seccionApagada")
-              : t("panel.medios.paisajeSinTitulo")}
+            {t("panel.medios.seccionApagada")}
           </Cuerpo>
-          <EnlaceSuave href={oculta === "apagada" ? RUTA_CONTENIDO : RUTA_AJUSTES}>
-            {oculta === "apagada"
-              ? t("panel.medios.irAContenido")
-              : t("panel.medios.irAAjustes")}
-          </EnlaceSuave>
+          <EnlaceSuave href={RUTA_CONTENIDO}>{t("panel.medios.irAContenido")}</EnlaceSuave>
         </div>
       ) : null}
 

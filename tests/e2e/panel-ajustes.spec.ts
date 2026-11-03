@@ -276,15 +276,6 @@ test.describe("Ajustes de la boda", () => {
     ).not.toHaveValue(larga);
   });
 
-  test("una frase del paisaje de una sola letra se explica", async ({ page }) => {
-    const campo = page.getByLabel(copy.panel.ajustes.paisajeIntro, { exact: true });
-    await campo.evaluate((input) => input.removeAttribute("minlength"));
-    await campo.fill("Y");
-    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
-
-    await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorPaisajeCorto);
-  });
-
   test("un hashtag sin almohadilla se rechaza", async ({ page }) => {
     const hashtag = page.getByLabel(copy.panel.ajustes.hashtag);
     // El navegador ya lo frena por el `pattern`; sin él, decide la acción.
@@ -718,7 +709,7 @@ test.describe("Ajustes de la boda", () => {
    * CASO DE ERROR · Si la configuración no se puede leer, no se pinta vacía.
    *
    * Un formulario en blanco invitaba a rellenar lo obligatorio y guardar, y eso
-   * borraba el lugar, las coordenadas, el paisaje y los avisos. Sale la
+   * borraba el lugar, las coordenadas y los avisos. Sale la
    * pantalla de avería del panel, con su «Reintentar».
    */
   test("si la configuración no se puede leer, sale la avería y no un formulario vacío", async ({
