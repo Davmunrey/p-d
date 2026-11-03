@@ -52,6 +52,7 @@ const DE_INVITADO = [
   "meta",
   "navegacion",
   "pie",
+  "planes",
   "playlist",
   "portada",
   "preboda",

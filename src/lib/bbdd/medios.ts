@@ -123,7 +123,7 @@ export async function obtenerMediosElegidosEnFichas(): Promise<Set<string>> {
   const supabase = await clienteServidor();
 
   const lecturas = await Promise.all(
-    (["hitos_historia", "alojamientos"] as const).map((tabla) =>
+    (["hitos_historia", "alojamientos", "planes"] as const).map((tabla) =>
       supabase.from(tabla).select("medio_id").eq("publicado", true).not("medio_id", "is", null),
     ),
   );

@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**70**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**72**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -27,7 +27,7 @@ Cada una tiene su reverso exacto en
 [`supabase/migrations/rollback/`](../supabase/migrations/rollback/), con el mismo
 nombre. Se ejecutan en orden **inverso**.
 
-En números: **34 tablas, 15 vistas, 19 enumerados, 59 funciones, 68 políticas RLS.**
+En números: **35 tablas, 15 vistas, 19 enumerados, 59 funciones, 70 políticas RLS.**
 
 Esos cinco números no se escriben a mano: los cuenta la suite de seguridad contra
 el catálogo de la base recién migrada, y si el documento dice otra cosa, el CI se
@@ -459,7 +459,7 @@ Una fila por respuesta. La anterior deja de ser vigente; nunca se edita.
 
 ### 3.5 Contenido de la landing
 
-Seis tablas con la misma forma —`orden`, `publicado`, `creado_en`— y el mismo
+Siete tablas con la misma forma —`orden`, `publicado`, `creado_en`— y el mismo
 modelo: **`anon` lee lo publicado y nadie más toca nada**. Es la única excepción
 consciente al «anon no lee ninguna tabla», y está acotada por la propia política:
 el filtro es `publicado`, así que un borrador subido y sin revisar no sale por
@@ -483,7 +483,7 @@ lo escriben los novios desde el panel, sin desplegar.
 
 - `preguntas_frecuentes` — pregunta y respuesta son obligatorias y ninguna puede quedar
   en blanco: una fila a medias se publica igual que una entera, y lo que se ve es la
-  pregunta sin responder. `publicado` nace en `true` en las seis tablas de esta sección
+  pregunta sin responder. `publicado` nace en `true` en las siete tablas de esta sección
   —al revés que en `medios`—: aquí el borrador es la fila que todavía no se ha escrito.
 
 - `consejos_vestimenta` — el dress code es contenido de esta boda y no copy fijo —el
@@ -503,6 +503,13 @@ lo escriben los novios desde el panel, sin desplegar.
   maquinaria para dos o tres líneas que se escriben de una vez. Y
   `fecha_limite_reserva` es `date` y no `timestamptz`: el plazo de un hotel es un
   día, no un instante, y es el del propio hotel, no el de confirmar asistencia.
+
+- `planes` — «Mientras estáis por aquí»: qué hacer en la ciudad quien viene de fuera,
+  con una foto de los novios en cada sitio. Tiene la forma de un hito de la historia
+  —`titulo` obligatorio, `texto` opcional y `medio_id` con `ON DELETE SET NULL`— porque
+  es lo mismo contado hacia fuera. La foto se elige entre las subidas a la sección
+  `planes` de `medios`; el valor del enumerado va en su propia migración porque
+  Postgres no deja usarlo en la misma transacción que lo crea.
 
 - `rutas_llegada` — la tabla más sosa de la sección, y está bien que lo sea: sólo `modo`
   es obligatorio, y `duracion` y `detalle` son texto opcional porque «unos 25 minutos

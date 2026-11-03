@@ -221,6 +221,9 @@ export const ORIGEN_DE_LA_SECCION: Record<Seccion, Origen> = {
 
   dresscode: { clase: "lista", tabla: "consejos_vestimenta", donde: enContenido("dresscode") },
 
+  /* Lo que haríais vosotros por la ciudad, con una foto vuestra en cada sitio. */
+  planes: { clase: "lista", tabla: "planes", donde: enContenido("planes") },
+
   preguntas_frecuentes: {
     clase: "lista",
     tabla: "preguntas_frecuentes",
@@ -270,6 +273,7 @@ export const CLAVES_LISTA = [
   "preguntas",
   "historia",
   "alojamientos",
+  "planes",
 ] as const;
 
 export type ClaveLista = (typeof CLAVES_LISTA)[number];
@@ -684,6 +688,48 @@ export const LISTAS_DE_CONTENIDO: Record<ClaveLista, ListaDeContenido> = {
     /* La web desempata por nombre cuando dos hoteles comparten orden. */
     ordenacion: ["orden", "nombre"],
     columnaNombre: "nombre",
+  },
+
+  /*
+    LOS PLANES POR LA ZONA tienen la misma forma que un hito de la historia
+    —qué, por qué y una foto— porque son lo mismo contado hacia fuera: un sitio
+    vuestro que queréis enseñar a quien viene de lejos. La foto se elige entre
+    las subidas a la sección «Planes» de Fotos y vídeos.
+  */
+  planes: {
+    tabla: "planes",
+    titulo: "panel.contenido.listas.planes.titulo",
+    descripcion: "panel.contenido.listas.planes.descripcion",
+    unaFicha: "panel.contenido.listas.planes.unaFicha",
+    campos: [
+      {
+        clase: "linea",
+        columna: "titulo",
+        etiqueta: "panel.contenido.listas.planes.tituloPlan",
+        ayuda: "panel.contenido.listas.planes.tituloPlanAyuda",
+        obligatorio: true,
+        largo: LARGO_MAXIMO_LINEA,
+      },
+      {
+        clase: "parrafo",
+        columna: "texto",
+        etiqueta: "panel.contenido.listas.planes.texto",
+        ayuda: "panel.contenido.listas.planes.textoAyuda",
+        obligatorio: false,
+        largo: LARGO_MAXIMO_PARRAFO,
+      },
+      {
+        clase: "foto",
+        columna: "medio_id",
+        etiqueta: "panel.contenido.listas.planes.foto",
+        ayuda: "panel.contenido.listas.planes.fotoAyuda",
+        seccion: "planes",
+      },
+    ],
+    destino: { clase: "una", seccion: "planes" },
+    /* Como los hoteles: a igual orden, por título. */
+    ordenacion: ["orden", "titulo"],
+    columnaNombre: "titulo",
   },
 };
 

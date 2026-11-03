@@ -39,7 +39,13 @@ const MARCA = "E2E129";
 const SIN_DESTINO = "(la acción no redirigió)";
 
 /** Las secciones que este fichero enciende y apaga. */
-const SECCIONES_TOCADAS = ["dresscode", "programa", "preboda", "alojamiento"] as const;
+const SECCIONES_TOCADAS = [
+  "dresscode",
+  "programa",
+  "preboda",
+  "alojamiento",
+  "planes",
+] as const;
 
 const comun = copy.panel.contenido.listas.comun;
 
@@ -110,6 +116,7 @@ function borrarLoDePrueba(): Promise<void> {
     await sql`delete from public.consejos_vestimenta where titulo like ${`${MARCA}%`}`;
     await sql`delete from public.hitos_programa where titulo like ${`${MARCA}%`}`;
     await sql`delete from public.alojamientos where nombre like ${`${MARCA}%`}`;
+    await sql`delete from public.planes where titulo like ${`${MARCA}%`}`;
   });
 }
 
@@ -254,6 +261,8 @@ const RUTA_DRESSCODE = `${RUTA_CONTENIDO}/dresscode`;
 const RUTA_ALOJAMIENTOS = `${RUTA_CONTENIDO}/alojamientos`;
 const ALOJAMIENTOS = copy.panel.contenido.listas.alojamientos;
 const RUTA_PROGRAMA = `${RUTA_CONTENIDO}/programa`;
+const RUTA_PLANES = `${RUTA_CONTENIDO}/planes`;
+const PLANES = copy.panel.contenido.listas.planes;
 const DRESSCODE = copy.panel.contenido.listas.dresscode;
 const PROGRAMA = copy.panel.contenido.listas.programa;
 
@@ -608,6 +617,77 @@ test.describe("Las listas de contenido de la web", () => {
     ).toBeVisible();
     const guardados = await conBase(
       (sql) => sql`select 1 from public.alojamientos where nombre = ${nombre}`,
+    );
+    expect(guardados, "no se guarda nada a medias").toHaveLength(0);
+  });
+
+  /**
+   * PLANES POR LA ZONA. Lo que haríais vosotros en la ciudad, escrito aquí y
+   * pintado en la web como una tarjeta, bajo un título que lleva la ciudad de
+   * Ajustes.
+   */
+  test("un plan escrito aquí sale en la web como una tarjeta, con la ciudad en el título", async ({
+    page,
+  }) => {
+    const titulo = `${MARCA} Subid a la catedral al atardecer`;
+    const texto = `${MARCA} Las vidrieras se encienden con el sol de poniente.`;
+
+    await entrar(page);
+    await page.goto(RUTA_PLANES);
+
+    const alta = formularioDeAlta(page);
+    await alta.getByLabel(PLANES.tituloPlan, { exact: true }).fill(titulo);
+    await alta.getByLabel(PLANES.texto, { exact: true }).fill(texto);
+    await alta.getByRole("button", { name: comun.anadir, exact: true }).click();
+    await esperarEstado(page, "creada", RUTA_PLANES);
+
+    const [enLaBase] = await conBase(
+      (sql) => sql<{ texto: string; publicado: boolean }[]>`
+        select texto, publicado from public.planes where titulo = ${titulo}
+      `,
+    );
+    expect(enLaBase).toEqual({ texto, publicado: true });
+
+    const [{ ciudad }] = await conBase(
+      (sql) => sql<{ ciudad: string }[]>`
+        select ciudad_ceremonia as ciudad from public.configuracion_boda
+      `,
+    );
+
+    await page.goto("/");
+    const seccion = page.locator("#planes");
+    await expect(
+      seccion.getByRole("heading", {
+        level: 2,
+        name: copy.planes.titulo.replace("{ciudad}", ciudad),
+      }),
+    ).toBeVisible();
+    const tarjeta = seccion.getByRole("listitem").filter({
+      has: page.getByRole("heading", { level: 3, name: titulo }),
+    });
+    await expect(tarjeta).toContainText(texto);
+  });
+
+  /** CASO DE ERROR · Un plan sin título no se guarda, y se dice qué falta. */
+  test("un plan sin título no se guarda, y se dice qué falta", async ({ page }) => {
+    const texto = `${MARCA} Un plan que no dice cuál es.`;
+
+    await entrar(page);
+    await page.goto(RUTA_PLANES);
+
+    const alta = formularioDeAlta(page);
+    // Un espacio pasa el `required` del navegador y no es un título: decide el servidor.
+    await alta.getByLabel(PLANES.tituloPlan, { exact: true }).fill("   ");
+    await alta.getByLabel(PLANES.texto, { exact: true }).fill(texto);
+    await alta.getByRole("button", { name: comun.anadir, exact: true }).click();
+
+    await esperarEstado(page, "falta", RUTA_PLANES);
+    await expect(
+      page.getByText(comun.errorFalta.replace("{campo}", PLANES.tituloPlan)),
+    ).toBeVisible();
+
+    const guardados = await conBase(
+      (sql) => sql`select 1 from public.planes where texto = ${texto}`,
     );
     expect(guardados, "no se guarda nada a medias").toHaveLength(0);
   });

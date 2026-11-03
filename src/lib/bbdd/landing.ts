@@ -120,6 +120,18 @@ export interface HitoHistoria {
  * fondo—, así que arrastrar `tipo` y `posterRuta` obligaría a comprobar en la
  * plantilla algo que la consulta ya descarta.
  */
+/**
+ * Un plan por la zona para quien viene de fuera: qué hacer, por qué, y una foto
+ * de los novios allí. Como un hito de la historia, la foto es opcional: un plan
+ * se escribe antes de tener la foto, y tiene que poder salir igual.
+ */
+export interface Plan {
+  id: string;
+  titulo: string;
+  texto: string | null;
+  foto: FotoDeHito | null;
+}
+
 export interface FotoDeHito {
   ruta: string;
   textoAlternativo: string;
@@ -420,6 +432,54 @@ export async function obtenerHistoria(): Promise<HitoHistoria[]> {
     titulo: f.titulo,
     fechaTexto: f.fecha_texto,
     descripcion: f.descripcion,
+    foto: f.ruta_almacenamiento
+      ? {
+          ruta: f.ruta_almacenamiento,
+          textoAlternativo:
+            f.texto_alternativo?.es ?? Object.values(f.texto_alternativo ?? {})[0] ?? "",
+          ancho: f.ancho,
+          alto: f.alto,
+          marcadorBorroso: f.marcador_borroso,
+        }
+      : null,
+  }));
+}
+
+/**
+ * Los planes por la zona, con la foto en el `join` y no en el `where`, por lo
+ * mismo que la historia y los hoteles: un plan sale aunque su foto esté a
+ * medio subir; la foto, no. `where publicado` repite lo que ya impone la
+ * política `planes_lectura_publica`, para que la intención se lea aquí.
+ */
+export async function obtenerPlanes(): Promise<Plan[]> {
+  const filas = await leerComoAnonimo(
+    (tx) => tx<
+      {
+        id: string;
+        titulo: string;
+        texto: string | null;
+        ruta_almacenamiento: string | null;
+        texto_alternativo: Record<string, string> | null;
+        ancho: number | null;
+        alto: number | null;
+        marcador_borroso: string | null;
+      }[]
+    >`
+      select p.id, p.titulo, p.texto,
+             m.ruta_almacenamiento, m.texto_alternativo,
+             m.ancho, m.alto, m.marcador_borroso
+      from public.planes as p
+      left join public.medios as m
+        on m.id = p.medio_id and m.publicado and m.tipo = 'imagen'
+      where p.publicado
+      order by p.orden, p.titulo
+    `,
+  );
+
+  return filas.map((f) => ({
+    id: f.id,
+    titulo: f.titulo,
+    texto: f.texto,
     foto: f.ruta_almacenamiento
       ? {
           ruta: f.ruta_almacenamiento,

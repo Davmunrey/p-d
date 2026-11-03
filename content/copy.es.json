@@ -39,7 +39,8 @@
       "preguntas_frecuentes": "Preguntas",
       "playlist": "Playlist",
       "rsvp": "Confirmar",
-      "preboda": "Preboda"
+      "preboda": "Preboda",
+      "planes": "Planes"
     }
   },
   "portada": {
@@ -149,6 +150,12 @@
     "etiqueta": "Qué ponerse",
     "titulo": "Dress code",
     "descripcion": "Venid como queráis, que lo importante es celebrar juntos. Eso sí, tened en cuenta un par de detalles:"
+  },
+  "planes": {
+    "etiqueta": "Mientras estáis por aquí",
+    "titulo": "Planes por {ciudad}",
+    "tituloSinCiudad": "Planes por la zona",
+    "entradilla": "Si os quedáis unos días, esto es lo que nosotros no nos perderíamos."
   },
   "rsvp": {
     "titulo": "Confirmad asistencia",
@@ -1652,6 +1659,17 @@
           "plazoAyuda": "Opcional. Hasta cuándo os guarda el hotel las habitaciones. Sale en la web junto al hotel.",
           "incluye": "Qué incluye",
           "incluyeAyuda": "Opcional. Una cosa por línea: «Parking incluido», «Desayuno no incluido». Sale como etiquetas junto al hotel."
+        },
+        "planes": {
+          "titulo": "Planes por la zona",
+          "descripcion": "Qué hacer en la ciudad para quien viene de fuera y se queda unos días. Cada plan puede llevar una foto vuestra allí, y funciona igual sin ella.",
+          "unaFicha": "el plan",
+          "tituloPlan": "El plan",
+          "tituloPlanAyuda": "«Subid a la catedral al atardecer», «Tapead en el Húmedo».",
+          "texto": "Por qué",
+          "textoAyuda": "Opcional. Una o dos frases: qué tiene y cuándo ir.",
+          "foto": "Foto",
+          "fotoAyuda": "Opcional. Se elige entre las que ya estén subidas y publicadas en la sección «Planes»."
         }
       }
     },

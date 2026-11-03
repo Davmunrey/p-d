@@ -37,6 +37,7 @@ export const SECCIONES = [
   "alojamiento",
   "regalos",
   "dresscode",
+  "planes",
   "preguntas_frecuentes",
   "playlist",
   "rsvp",

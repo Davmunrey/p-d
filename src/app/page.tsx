@@ -23,6 +23,7 @@ import { CuentaRegalos } from "@/components/ui/cuenta-regalos";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { FormularioPlaylist } from "@/components/ui/formulario-playlist";
 import { SignoAbrir } from "@/components/ui/signo-abrir";
+import { Tarjeta } from "@/components/ui/tarjeta";
 import {
   Cita,
   Conector,
@@ -51,6 +52,7 @@ import {
   obtenerCuentaRegalos,
   obtenerGaleria,
   obtenerHistoria,
+  obtenerPlanes,
   obtenerPreguntasFrecuentes,
   obtenerPrograma,
   obtenerRetrato,
@@ -63,6 +65,7 @@ import {
   type ConsejoVestimenta,
   type HitoHistoria,
   type Medio,
+  type Plan,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 import {
@@ -180,6 +183,7 @@ export default async function PaginaInicio({
     preguntas,
     canciones,
     consejos,
+    planes,
     cuentaRegalos,
     fotosPortada,
     fotosPaisaje,
@@ -326,6 +330,10 @@ export default async function PaginaInicio({
     // Sin cuenta no hay sección: ver el comentario de `Regalos`.
     regalos: cuentaRegalos ? <Regalos firma={configuracion.firmaRegalos} /> : undefined,
     dresscode: consejos.length > 0 ? <DressCode consejos={consejos} /> : undefined,
+    planes:
+      planes.length > 0 ? (
+        <Planes planes={planes} ciudad={configuracion.ciudadCeremonia} urlBase={urlBase} />
+      ) : undefined,
     rsvp: <Confirmacion lectura={lectura} consulta={consulta} configuracion={configuracion} />,
     // Sin foto recortada publicada no hay retrato: el cielo sigue sin él.
     retrato: retrato ? <RetratoDeEstrellas retrato={retrato} /> : undefined,
@@ -557,6 +565,7 @@ async function cargarLanding() {
     preguntas,
     canciones,
     consejos,
+    planes,
     cuentaRegalos,
     fotosPortada,
     fotosPaisaje,
@@ -573,6 +582,7 @@ async function cargarLanding() {
     obtenerPreguntasFrecuentes(),
     obtenerCanciones(),
     obtenerConsejosVestimenta(),
+    obtenerPlanes(),
     obtenerCuentaRegalos(),
     obtenerMedios("portada"),
     obtenerMedios("paisaje"),
@@ -591,6 +601,7 @@ async function cargarLanding() {
     preguntas,
     canciones,
     consejos,
+    planes,
     cuentaRegalos,
     fotosPortada,
     fotosPaisaje,
@@ -1484,6 +1495,62 @@ function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
             </Etiqueta>
             <Cuerpo className="text-pequeno">{consejo.texto}</Cuerpo>
           </li>
+        ))}
+      </ul>
+    </Bloque>
+  );
+}
+
+/**
+ * MIENTRAS ESTÁIS POR AQUÍ: lo que haríais vosotros en la ciudad, para quien
+ * viene de fuera y se queda el fin de semana. Cada plan es una tarjeta con una
+ * foto vuestra allí —es lo que lo hace vuestro y no una guía—, y sin foto la
+ * tarjeta sale igual, con su texto.
+ *
+ * El título lleva la ciudad de la configuración: «Planes por León».
+ */
+function Planes({
+  planes,
+  ciudad,
+  urlBase,
+}: {
+  planes: Plan[];
+  ciudad: string | null;
+  urlBase: string | undefined;
+}) {
+  return (
+    <Bloque
+      seccion="planes"
+      etiqueta={t("planes.etiqueta")}
+      titulo={ciudad ? t("planes.titulo", { ciudad }) : t("planes.tituloSinCiudad")}
+      entradilla={t("planes.entradilla")}
+      composicion="apilada"
+      ancho="medio"
+    >
+      <ul className="escalonado rejilla-tarjetas gap-elemento">
+        {planes.map((plan) => (
+          <Tarjeta
+            key={plan.id}
+            como="li"
+            tamano="amplia"
+            className="animacion-subir-al-ver"
+            titulo={plan.titulo}
+            texto={plan.texto}
+            imagen={
+              plan.foto && urlBase ? (
+                <Image
+                  src={`${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${plan.foto.ruta}`}
+                  alt={plan.foto.textoAlternativo}
+                  fill
+                  // Hasta tres por fila en escritorio, dos en tableta, una en el móvil.
+                  sizes="(min-width: 64rem) 22rem, (min-width: 36rem) 50vw, 100vw"
+                  className="object-cover"
+                  placeholder={plan.foto.marcadorBorroso ? "blur" : "empty"}
+                  blurDataURL={plan.foto.marcadorBorroso ?? undefined}
+                />
+              ) : undefined
+            }
+          />
         ))}
       </ul>
     </Bloque>

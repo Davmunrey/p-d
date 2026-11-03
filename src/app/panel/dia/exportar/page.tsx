@@ -107,11 +107,24 @@ export default async function PaginaExportarDelDia() {
         <span className="text-tinta-suave">{t("panel.dia.exportar.esUnaFotoFija")}</span>
       </p>
 
-      {porMesa.map(([mesa, gente]) => (
+      {porMesa.map(([mesa, gente], indice) => (
         <section key={mesa} className="mt-bloque break-inside-avoid">
-          <Titulo3 como="h2">{mesa}</Titulo3>
+          <Titulo3 como="h2" id={`mesa-${indice}`}>
+            {mesa}
+          </Titulo3>
 
-          <div className="mt-elemento overflow-x-auto">
+          {/*
+            SE LLEGA CON EL TABULADOR. En el móvil la tabla puede desplazarse a
+            lo ancho, y una región que se desplaza sin poder enfocarla deja sin
+            la columna de alergias a quien no usa el dedo ni el ratón. Se
+            nombra con la mesa, que es lo que el lector de pantalla anuncia.
+          */}
+          <div
+            role="region"
+            aria-labelledby={`mesa-${indice}`}
+            tabIndex={0}
+            className="mt-elemento overflow-x-auto rounded-campo"
+          >
             {/*
               `table-fixed` CON LA MITAD PARA EL NOMBRE. Cada mesa repartía las
               columnas según su contenido, así que en el papel el menú bailaba

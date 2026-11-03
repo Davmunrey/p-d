@@ -13,7 +13,7 @@ import { TIPOS_MEDIBLES } from "@/lib/dimensiones";
  *   · la tarjeta del Save the Date, LA PRIMERA FOTO (no vídeos);
  *   · la galería, las fotos CON MEDIDAS —una rejilla no reserva hueco para lo
  *     que no sabe cuánto mide—;
- *   · historia y alojamiento, la que se ELIGE EN UNA FICHA publicada;
+ *   · historia, alojamiento y planes, la que se ELIGE EN UNA FICHA publicada;
  *   · el retrato de estrellas, LA PRIMERA, y sólo recortada (con transparencia);
  *   · y las demás secciones, NINGUNA.
  *
@@ -31,6 +31,7 @@ const COMO_SE_PINTA: Partial<Record<Seccion, ComoSePinta>> = {
   galeria: "con-medidas",
   historia: "por-ficha",
   alojamiento: "por-ficha",
+  planes: "por-ficha",
   retrato: "recortada",
 };
 

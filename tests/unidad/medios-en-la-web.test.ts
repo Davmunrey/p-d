@@ -104,13 +104,14 @@ describe("visibilidadEnLaWeb", () => {
     expect(seccionEnsenaMedios("programa")).toBe(false);
   });
 
-  it("sólo siete partes de la web enseñan medios", () => {
+  it("sólo ocho partes de la web enseñan medios", () => {
     expect(SECCIONES.filter(seccionEnsenaMedios).sort()).toEqual(
       [
         "alojamiento",
         "galeria",
         "historia",
         "paisaje",
+        "planes",
         "portada",
         "reserva_la_fecha",
         "retrato",

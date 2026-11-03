@@ -1063,7 +1063,7 @@ declare
   tablas   text[] := array[
     'hitos_programa', 'rutas_llegada', 'consejos_vestimenta', 'preguntas_frecuentes',
     -- BODA-130: las dos con foto entran por la misma puerta que las otras cuatro.
-    'hitos_historia', 'alojamientos'
+    'hitos_historia', 'alojamientos', 'planes'
   ];
 begin
   perform set_config('request.jwt.claim.sub', '', true);
@@ -1094,6 +1094,7 @@ begin
         when 'consejos_vestimenta'  then 'titulo, texto'
         when 'hitos_historia'       then 'titulo'
         when 'alojamientos'         then 'nombre'
+        when 'planes'              then 'titulo'
         else 'pregunta, respuesta'
       end,
       case t
@@ -1102,6 +1103,7 @@ begin
         when 'consejos_vestimenta'  then '''Borrador de BODA-129'', ''Texto'''
         when 'hitos_historia'       then '''Borrador de BODA-130'''
         when 'alojamientos'         then '''Borrador de BODA-130'''
+        when 'planes'              then '''Borrador de BODA-130'''
         else '''Borrador de BODA-129'', ''Respuesta'''
       end
     ) into v_id;
@@ -1120,6 +1122,7 @@ begin
           when 'consejos_vestimenta'  then 'titulo, texto'
           when 'hitos_historia'       then 'titulo'
           when 'alojamientos'         then 'nombre'
+          when 'planes'              then 'titulo'
           else 'pregunta, respuesta'
         end,
         case t
@@ -1128,6 +1131,7 @@ begin
           when 'consejos_vestimenta'  then '''Colado por un lector'', ''Texto'''
           when 'hitos_historia'       then '''Colado por un lector'''
           when 'alojamientos'         then '''Colado por un lector'''
+          when 'planes'              then '''Colado por un lector'''
           else '''Colado por un lector'', ''Respuesta'''
         end
       );
@@ -1179,7 +1183,7 @@ declare
   v_ok   boolean;
   tablas text[] := array[
     'hitos_programa', 'rutas_llegada', 'consejos_vestimenta', 'preguntas_frecuentes',
-    'hitos_historia', 'alojamientos'
+    'hitos_historia', 'alojamientos', 'planes'
   ];
 begin
   foreach t in array tablas loop
@@ -1194,6 +1198,7 @@ begin
           when 'consejos_vestimenta'  then 'titulo, texto'
           when 'hitos_historia'       then 'titulo'
           when 'alojamientos'         then 'nombre'
+          when 'planes'              then 'titulo'
           else 'pregunta, respuesta'
         end,
         case t
@@ -1202,6 +1207,7 @@ begin
           when 'consejos_vestimenta'  then '''Pintada de anon'', ''Texto'''
           when 'hitos_historia'       then '''Pintada de anon'''
           when 'alojamientos'         then '''Pintada de anon'''
+          when 'planes'              then '''Pintada de anon'''
           else '''Pintada de anon'', ''Respuesta'''
         end
       );
@@ -1216,7 +1222,7 @@ end $$;
 
 -- BODA-130 · BORRAR UNA FOTO NO BORRA LA FICHA QUE LA TENÍA PUESTA.
 --
--- `medio_id` es `on delete set null` en las dos tablas con foto, y de eso
+-- `medio_id` es `on delete set null` en las tablas con foto, y de eso
 -- depende una promesa de la pantalla: que retirar una imagen deje el hotel en
 -- pie, sin imagen. Con un `cascade` —que es el otro valor plausible y el que
 -- alguien pondría sin pensarlo— borrar una foto se llevaría por delante el
@@ -1227,6 +1233,7 @@ declare
   v_medio  uuid;
   v_hito   uuid;
   v_hotel  uuid;
+  v_plan   uuid;
   v_filas  bigint;
 begin
   insert into public.medios (ruta_almacenamiento, texto_alternativo, seccion, tipo, publicado)
@@ -1239,6 +1246,9 @@ begin
 
   insert into public.alojamientos (nombre, medio_id) values ('Hotel de BODA-130', v_medio)
   returning id into v_hotel;
+
+  insert into public.planes (titulo, medio_id) values ('Plan de prueba', v_medio)
+  returning id into v_plan;
 
   delete from public.medios where id = v_medio;
 
@@ -1256,8 +1266,13 @@ begin
     from public.alojamientos where id = v_hotel and medio_id is null;
   perform pg_temp.comprobar('y el alojamiento se queda sin foto', v_filas = 1);
 
+  select count(*) into v_filas
+    from public.planes where id = v_plan and medio_id is null;
+  perform pg_temp.comprobar('borrar la foto deja el plan en pie, sin foto', v_filas = 1);
+
   delete from public.hitos_historia where id = v_hito;
   delete from public.alojamientos where id = v_hotel;
+  delete from public.planes where id = v_plan;
 end $$;
 
 -- EL RETRATO DE ESTRELLAS: sólo el retrato lleva estrellas, con su forma, y
@@ -1663,7 +1678,7 @@ begin
        -- El contenido público de la landing: lo que dice ya está a la vista
        -- de todos, y su historia no es un dato de nadie.
        'alojamientos', 'consejos_vestimenta', 'hitos_historia', 'hitos_programa',
-       'preguntas_frecuentes', 'rutas_llegada', 'canciones_sugeridas'
+       'planes', 'preguntas_frecuentes', 'rutas_llegada', 'canciones_sugeridas'
      )
      and not exists (
        select 1
