@@ -635,6 +635,32 @@
   --alto-escenario: var(--size-escenario);
   --alto-escenario-minimo: var(--size-escenario-minimo);
   --alto-naipe: var(--size-naipe);
+  --alto-naipe-apilado: var(--size-naipe-apilado);
+  --hueco-naipes-apilados: var(--space-naipes-apilados);
+  --giro-cromo-detras: var(--rotate-cromo-detras);
+  --escala-cromo-detras: var(--scale-cromo-detras);
+  --desplazamiento-cromo-detras-x: var(--shift-cromo-detras-x);
+  --desplazamiento-cromo-detras-y: var(--shift-cromo-detras-y);
+  --giro-cromo-salida: var(--rotate-cromo-salida);
+  --salida-cromo: var(--shift-cromo-salida);
+  --transicion-cromo: var(--duration-cromo) var(--ease-muelle-sobre);
+  --transicion-cromo-vuelo: var(--duration-cromo-vuelo) var(--ease-salida);
+
+  /* El componente lee éste del CSS: cuánto vuela antes de meterse detrás. */
+  --duracion-cromo-vuelo: var(--duration-cromo-vuelo);
+  --recorrido-cromo-amago: var(--shift-cromo-amago);
+  --giro-cromo-amago: var(--rotate-cromo-amago);
+  --animacion-cromo-amago: var(--duration-cromo-amago) var(--ease-suave)
+    var(--delay-cromo-amago) both;
+  --brillo-cromo: var(--color-brillo-cromo);
+  --brillo-cromo-final: var(--color-brillo-cromo-0);
+  --recorrido-brillo-cromo: var(--shift-brillo-cromo);
+  --animacion-brillo-cromo: var(--duration-brillo-cromo) var(--ease-suave)
+    var(--delay-brillo-cromo) both;
+  --transicion-brillo-cromo: var(--duration-fast) var(--ease-salida);
+  --capa-cromo-delante: var(--layer-escena-4);
+  --lado-punto-baraja: var(--size-punto-baraja);
+  --ancho-punto-baraja-activo: var(--size-punto-baraja-activo);
   --lado-sello: var(--size-sello);
   --alcance-anillo-sello: var(--size-anillo-sello);
   --lado-icono: var(--size-icono);
@@ -717,8 +743,6 @@
   --giro-tarjeta-asoma: var(--rotate-tarjeta-asoma);
   --giro-foto-fuera: var(--rotate-foto-fuera);
   --giro-tarjeta-fuera: var(--rotate-tarjeta-fuera);
-  --giro-foto-fuera-movil: var(--rotate-foto-fuera-movil);
-  --giro-tarjeta-fuera-movil: var(--rotate-tarjeta-fuera-movil);
   --escala-reveal: var(--scale-reveal);
   --escala-escenario: var(--scale-escenario);
   --escala-sello-cerrado: var(--scale-pop);
@@ -726,7 +750,6 @@
   --escala-naipe-dentro: var(--scale-naipe-dentro);
   --escala-foto-asoma: var(--scale-foto-asoma);
   --escala-tarjeta-asoma: var(--scale-tarjeta-asoma);
-  --escala-naipe-fuera-movil: var(--scale-naipe-fuera-movil);
   --escala-luz-apagada: var(--scale-luz-apagada);
   --centrado: var(--shift-centro);
   --desplazamiento-naipe-dentro: var(--shift-naipe-dentro-y);
@@ -734,10 +757,6 @@
   --desplazamiento-tarjeta-asoma: var(--shift-tarjeta-asoma-y);
   --desplazamiento-foto-fuera-x: var(--shift-foto-fuera-x);
   --desplazamiento-tarjeta-fuera-x: var(--shift-tarjeta-fuera-x);
-  --desplazamiento-foto-fuera-x-movil: var(--shift-foto-fuera-x-movil);
-  --desplazamiento-foto-fuera-y-movil: var(--shift-foto-fuera-y-movil);
-  --desplazamiento-tarjeta-fuera-x-movil: var(--shift-tarjeta-fuera-x-movil);
-  --desplazamiento-tarjeta-fuera-y-movil: var(--shift-tarjeta-fuera-y-movil);
   --recorrido-flotar-sobre: var(--shift-flotar-sobre);
   --recorrido-pie-sobre: var(--shift-pie-sobre);
   --opacidad-titilar-alta: var(--opacity-titilar-alta);

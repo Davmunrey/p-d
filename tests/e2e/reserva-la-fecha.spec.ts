@@ -387,6 +387,223 @@ test.describe("El retrato de estrellas en el sobre", () => {
 });
 
 /**
+ * LA BARAJA DE CROMOS DEL MÓVIL.
+ *
+ * En el móvil, la ilustración y la tarjeta salen del sobre en el mismo sitio,
+ * como dos cromos en la mano: la tarjeta delante y la ilustración asomando
+ * detrás. Se pasan deslizando, tocando o con el botón «Ver la otra tarjeta».
+ * Desde tableta, una al lado de la otra y sin baraja. Se mira con el sobre
+ * servido ya abierto (`?abierto`) y con las cajas de verdad.
+ */
+test.describe("La baraja del Save the Date", () => {
+  const foto = (page: Page) => page.locator(".naipe-foto");
+  const otraTarjeta = (page: Page) =>
+    page.getByRole("button", { name: copy.saveTheDate.otraTarjeta });
+
+  /**
+   * Cuenta los fundidos de página en curso. Al llegar, React revela el
+   * contenido con un fundido (`<ViewTransition>` del layout) que dura algo más
+   * de un segundo y empieza cuando le toca —a veces después de hidratar—; y
+   * mientras dura, el navegador no deja tocar la página: el toque va a la
+   * capa del fundido. Un `click()` de Playwright lo espera solo; un arrastre
+   * hecho a mano, no.
+   */
+  async function vigilarFundidos(page: Page) {
+    await page.addInitScript(() => {
+      const ventana = window as typeof window & {
+        fundidos?: { activos: number; acabados: number };
+      };
+      const fundidos = { activos: 0, acabados: 0 };
+      ventana.fundidos = fundidos;
+      const iniciar = document.startViewTransition?.bind(document);
+      if (!iniciar) return;
+      document.startViewTransition = ((opciones) => {
+        const transicion = iniciar(opciones);
+        fundidos.activos++;
+        void transicion.finished.finally(() => {
+          fundidos.activos--;
+          fundidos.acabados++;
+        });
+        return transicion;
+      }) as typeof document.startViewTransition;
+    });
+  }
+
+  /**
+   * Espera a que la tarjeta se pueda coger con el dedo: hidratada, sin
+   * fundido en curso —o pasados dos segundos sin que haya empezado ninguno—
+   * y siendo ella lo que hay bajo el dedo.
+   */
+  async function esperarATocable(page: Page) {
+    await expect(pieza(page)).toHaveAttribute("data-hidratado", "");
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const { fundidos } = window as typeof window & {
+            fundidos?: { activos: number; acabados: number };
+          };
+          return (
+            !!fundidos &&
+            fundidos.activos === 0 &&
+            (fundidos.acabados > 0 || performance.now() > 2000)
+          );
+        }),
+      )
+      .toBe(true);
+    await expect
+      .poll(() =>
+        tarjeta(page).evaluate((naipe) => {
+          const caja = naipe.getBoundingClientRect();
+          const centro = document.elementFromPoint(
+            caja.x + caja.width / 2,
+            caja.y + caja.height / 2,
+          );
+          return naipe.contains(centro);
+        }),
+      )
+      .toBe(true);
+  }
+
+  async function abrirEnElMovil(page: Page) {
+    await vigilarFundidos(page);
+    await page.setViewportSize(MOVIL);
+    await page.goto(`${RUTA}?${PARAMETRO_SOBRE_ABIERTO}`);
+    await esperarATocable(page);
+  }
+
+  /** Arrastra el cromo de delante en horizontal, desde su centro. */
+  async function arrastrar(page: Page, recorrido: number) {
+    const caja = (await page.locator('.naipe[data-cromo="delante"]').boundingBox())!;
+    const x = caja.x + caja.width / 2;
+    const y = caja.y + caja.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    for (let paso = 1; paso <= 8; paso++) await page.mouse.move(x + (recorrido * paso) / 8, y);
+    await page.mouse.up();
+  }
+
+  test("en el móvil salen en el mismo sitio, la tarjeta delante y entera", async ({ page }) => {
+    await abrirEnElMovil(page);
+    await expect(tarjeta(page)).toHaveAttribute("data-cromo", "delante");
+    await expect(foto(page)).toHaveAttribute("data-cromo", "detras");
+
+    // Una encima de otra: los centros casi coinciden y se pisan.
+    await expect
+      .poll(async () => {
+        const delante = (await tarjeta(page).boundingBox())!;
+        const detras = (await foto(page).boundingBox())!;
+        return (
+          Math.abs(delante.x + delante.width / 2 - (detras.x + detras.width / 2)) <
+          delante.width / 4
+        );
+      })
+      .toBe(true);
+
+    // La de delante, entera en la pantalla y por encima de la otra.
+    const delante = (await tarjeta(page).boundingBox())!;
+    expect(delante.x).toBeGreaterThanOrEqual(0);
+    expect(delante.x + delante.width).toBeLessThanOrEqual(MOVIL.width);
+    expect(delante.y + delante.height).toBeLessThanOrEqual(MOVIL.height);
+    const capa = (naipe: ReturnType<typeof foto>) =>
+      naipe.evaluate((elemento) => Number(getComputedStyle(elemento).zIndex));
+    expect(await capa(tarjeta(page))).toBeGreaterThan(await capa(foto(page)));
+
+    // Y el botón dice cuál va delante, sin scroll horizontal.
+    await expect(otraTarjeta(page)).toBeVisible();
+    const { anchoDocumento, anchoVentana } = await medir(page);
+    expect(anchoDocumento).toBeLessThanOrEqual(anchoVentana + 1);
+  });
+
+  test("se pasan con el botón y con el teclado", async ({ page }) => {
+    await abrirEnElMovil(page);
+    await otraTarjeta(page).click();
+    await expect(foto(page)).toHaveAttribute("data-cromo", "delante");
+    await expect(tarjeta(page)).toHaveAttribute("data-cromo", "detras");
+    await expect(pieza(page)).toHaveAttribute("data-barajada", "");
+
+    await otraTarjeta(page).focus();
+    await page.keyboard.press("Enter");
+    await expect(tarjeta(page)).toHaveAttribute("data-cromo", "delante");
+  });
+
+  test("se pasan deslizando, y tocando el de detrás vuelve delante", async ({ page }) => {
+    await abrirEnElMovil(page);
+    await arrastrar(page, -MOVIL.width / 2);
+    await expect(foto(page)).toHaveAttribute("data-cromo", "delante");
+    // Al soltar no le queda nada escrito a mano: lo coloca el CSS.
+    await expect(tarjeta(page)).toHaveAttribute("style", "");
+
+    /*
+      Ya posada detrás, la tarjeta asoma por la izquierda: tocar esa franja la
+      trae. Se toca en mitad de la franja, a media altura, que es donde pone
+      el dedo una persona; en el filo de una esquina girada cada navegador
+      decide a su manera de quién es el píxel.
+    */
+    await expect
+      .poll(() => tarjeta(page).evaluate((naipe) => naipe.getAnimations().length))
+      .toBe(0);
+    const asoma = await tarjeta(page).evaluate((naipe) => {
+      const caja = naipe.getBoundingClientRect();
+      const y = caja.top + caja.height / 2;
+      let desde: number | null = null;
+      for (let x = caja.left; x < caja.right; x += 2) {
+        const suya = naipe.contains(document.elementFromPoint(x, y));
+        if (suya && desde === null) desde = x;
+        if (!suya && desde !== null) return { x: (desde + x) / 2, y };
+      }
+      return null;
+    });
+    expect(asoma, "la tarjeta asoma por detrás de la ilustración").not.toBeNull();
+    await page.mouse.click(asoma!.x, asoma!.y);
+    await expect(tarjeta(page)).toHaveAttribute("data-cromo", "delante");
+  });
+
+  /**
+   * CASO DE ERROR · Un arrastre corto no pasa el cromo.
+   *
+   * Si el dedo se arrepiente a medio camino, el cromo vuelve a su sitio: lo
+   * contrario sería pasar de tarjeta cada vez que alguien roza la pantalla.
+   */
+  test("un arrastre corto no la pasa: vuelve a su sitio", async ({ page }) => {
+    await abrirEnElMovil(page);
+    const antes = (await tarjeta(page).boundingBox())!;
+    await page.mouse.move(antes.x + antes.width / 2, antes.y + antes.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(400);
+    await page.mouse.move(antes.x + antes.width / 2 - 30, antes.y + antes.height / 2, {
+      steps: 6,
+    });
+    await page.waitForTimeout(400);
+    await page.mouse.up();
+
+    await expect(tarjeta(page)).toHaveAttribute("data-cromo", "delante");
+    await expect
+      .poll(async () => Math.round((await tarjeta(page).boundingBox())!.x))
+      .toBe(Math.round(antes.x));
+  });
+
+  /**
+   * CASO DE ERROR · En escritorio no hay baraja.
+   *
+   * Uno al lado del otro, sin botón, y arrastrar la tarjeta no la mueve.
+   */
+  test("desde tableta salen una al lado de la otra y no se barajan", async ({ page }) => {
+    await vigilarFundidos(page);
+    await page.setViewportSize({ width: 1280, height: 860 });
+    await page.goto(`${RUTA}?${PARAMETRO_SOBRE_ABIERTO}`);
+    await esperarATocable(page);
+    const izquierda = (await foto(page).boundingBox())!;
+    const derecha = (await tarjeta(page).boundingBox())!;
+    expect(izquierda.x + izquierda.width).toBeLessThanOrEqual(derecha.x);
+    await expect(otraTarjeta(page)).toBeHidden();
+
+    await arrastrar(page, -300);
+    await expect(tarjeta(page)).toHaveAttribute("data-cromo", "delante");
+    expect((await tarjeta(page).boundingBox())!.x).toBeCloseTo(derecha.x, 0);
+  });
+});
+
+/**
  * CASO DE ERROR · Sin JavaScript el sobre se abre igual.
  *
  * El sello es el botón de un formulario GET: sin script —o antes de que
@@ -433,6 +650,23 @@ test.describe("Reserva la fecha sin JavaScript", () => {
     await expect(sello(page)).toBeVisible();
     await expect(tarjeta(page)).toHaveAttribute("inert", "");
   });
+
+  /*
+    La baraja es del JavaScript: sin él, en el móvil, las dos van una debajo
+    de otra —la ilustración arriba—, enteras, y sin un botón que no haría nada.
+  */
+  test("en el móvil, la ilustración y la tarjeta van una debajo de otra", async ({ page }) => {
+    await page.setViewportSize(MOVIL);
+    await page.goto(`${RUTA}?${PARAMETRO_SOBRE_ABIERTO}`);
+    const foto = (await page.locator(".naipe-foto").boundingBox())!;
+    const escrita = (await tarjeta(page).boundingBox())!;
+    expect(foto.y + foto.height).toBeLessThanOrEqual(escrita.y);
+    for (const caja of [foto, escrita]) {
+      expect(caja.x).toBeGreaterThanOrEqual(0);
+      expect(caja.x + caja.width).toBeLessThanOrEqual(MOVIL.width);
+    }
+    await expect(page.getByRole("button", { name: copy.saveTheDate.otraTarjeta })).toBeHidden();
+  });
 });
 
 /**
@@ -460,6 +694,18 @@ test.describe("Reserva la fecha con movimiento reducido", () => {
     // Muy por debajo de los 1900 ms de la apertura animada.
     await expect(pieza(page)).toHaveAttribute("data-fuera", "", { timeout: 1000 });
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  });
+
+  test("la baraja del móvil cambia de cromo sin hacerlo volar", async ({ page }) => {
+    await page.setViewportSize(MOVIL);
+    await page.goto(`${RUTA}?${PARAMETRO_SOBRE_ABIERTO}`);
+    await expect(pieza(page)).toHaveAttribute("data-hidratado", "");
+    await page.getByRole("button", { name: copy.saveTheDate.otraTarjeta }).click();
+    // Sin vuelo no hay `data-lanzado` en ningún momento: el cambio es directo.
+    await expect(page.locator(".naipe-foto")).toHaveAttribute("data-cromo", "delante", {
+      timeout: 200,
+    });
+    await expect(pieza(page)).not.toHaveAttribute("data-lanzado", /.+/);
   });
 });
 

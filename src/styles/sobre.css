@@ -324,6 +324,7 @@
   transform-origin: center;
   transition:
     transform var(--transicion-naipe),
+    height var(--transicion-naipe),
     opacity var(--transicion-naipe-fundido);
   width: auto;
   will-change: transform;
@@ -398,24 +399,16 @@
 }
 
 /*
-  Fase 4: el sobre se funde y los naipes se colocan, la foto a la izquierda y
-  la tarjeta a la derecha. En un móvil se solapan y se encogen un punto,
-  porque uno al lado del otro no caben. Los naipes no cambian de capa: siguen
-  detrás del bolsillo mientras se desvanece, y la tarjeta acaba de salir
-  porque el sobre deja de estar, no porque salte por delante de él.
+  Fase 4: el sobre se funde y los naipes se colocan. Desde `md`, a los lados:
+  la foto a la izquierda y la tarjeta a la derecha, un poco giradas. Los
+  naipes no cambian de capa: siguen detrás del bolsillo mientras se
+  desvanece, y la tarjeta acaba de salir porque el sobre deja de estar, no
+  porque salte por delante de él.
+
+  `@variant md` es el punto de ruptura del sistema —el de Tailwind, para no
+  escribir otro— nombrado desde CSS sin repetir el número.
 */
 .pieza-sobre[data-fuera] .naipe-foto {
-  transform: translate(
-      var(--desplazamiento-foto-fuera-x-movil),
-      var(--desplazamiento-foto-fuera-y-movil)
-    )
-    rotate(var(--giro-foto-fuera-movil)) scale(var(--escala-naipe-fuera-movil));
-
-  /*
-    Desde el punto de ruptura `md` del sistema —el de Tailwind, para no
-    escribir otro— los naipes se abren a los lados a tamaño natural.
-    `@variant` es la forma de nombrarlo desde CSS sin repetir el número.
-  */
   @variant md {
     transform: translate(var(--desplazamiento-foto-fuera-x), var(--centrado))
       rotate(var(--giro-foto-fuera));
@@ -423,15 +416,204 @@
 }
 
 .pieza-sobre[data-fuera] .naipe-tarjeta {
-  transform: translate(
-      var(--desplazamiento-tarjeta-fuera-x-movil),
-      var(--desplazamiento-tarjeta-fuera-y-movil)
-    )
-    rotate(var(--giro-tarjeta-fuera-movil)) scale(var(--escala-naipe-fuera-movil));
-
   @variant md {
     transform: translate(var(--desplazamiento-tarjeta-fuera-x), var(--centrado))
       rotate(var(--giro-tarjeta-fuera));
+  }
+}
+
+/*
+  EN EL MÓVIL, UNA BARAJA DE DOS CROMOS. Uno al lado del otro no caben, y uno
+  debajo de otro obligan a bajar para ver el segundo. Así que salen del sobre
+  como dos cromos en la mano, en el mismo sitio: la tarjeta delante, derecha;
+  la ilustración detrás, asomando girada por arriba a la izquierda. Se pasan
+  con el dedo —ver `baraja-de-cromos.ts`—: el de delante sale volando por un
+  lado y vuelve por detrás mientras el otro sube a su sitio.
+
+  La baraja es cosa de JavaScript (`scripting: enabled`): el gesto lo lleva el
+  componente. Sin él, y en los navegadores que no saben preguntarlo, las dos
+  van apiladas, enteras y derechas, y la segunda se ve bajando.
+*/
+@media (scripting: enabled) {
+  /* El componente lee esto para saber si el arrastre pasa cromos o no. */
+  .pieza-sobre:not([data-sin-foto]) {
+    @variant max-md {
+      --modo-baraja: 1;
+    }
+  }
+
+  .pieza-sobre[data-fuera] .naipe[data-cromo="detras"] {
+    @variant max-md {
+      transform: translate(
+          var(--desplazamiento-cromo-detras-x),
+          var(--desplazamiento-cromo-detras-y)
+        )
+        rotate(var(--giro-cromo-detras)) scale(var(--escala-cromo-detras));
+    }
+  }
+
+  /*
+    El de delante deja el desplazamiento vertical al navegador
+    (`touch-action: pan-y`): arrastrar en horizontal pasa el cromo, en
+    vertical sigue moviendo la página.
+  */
+  .pieza-sobre[data-fuera] .naipe[data-cromo="delante"] {
+    @variant max-md {
+      cursor: grab;
+      touch-action: pan-y;
+      transform: translate(var(--centrado), var(--centrado));
+      user-select: none;
+      z-index: var(--capa-cromo-delante);
+    }
+  }
+
+  .pieza-sobre[data-fuera] .naipe[data-cromo="detras"],
+  .pieza-sobre[data-fuera] .naipe[data-cromo="delante"] {
+    @variant max-md {
+      -webkit-tap-highlight-color: transparent;
+    }
+  }
+
+  /* Volando: sale por su lado, girando, más allá de su ancho. */
+  .pieza-sobre[data-fuera][data-lanzado="izquierda"] .naipe[data-cromo="delante"] {
+    @variant max-md {
+      transform: translate(calc(var(--centrado) - var(--salida-cromo)), var(--centrado))
+        rotate(calc(-1 * var(--giro-cromo-salida)));
+      transition: transform var(--transicion-cromo-vuelo);
+    }
+  }
+
+  .pieza-sobre[data-fuera][data-lanzado="derecha"] .naipe[data-cromo="delante"] {
+    @variant max-md {
+      transform: translate(calc(var(--centrado) + var(--salida-cromo)), var(--centrado))
+        rotate(var(--giro-cromo-salida));
+      transition: transform var(--transicion-cromo-vuelo);
+    }
+  }
+
+  /* Mientras el de delante vuela, el de detrás ya viene a su sitio. */
+  .pieza-sobre[data-fuera][data-lanzado] .naipe[data-cromo="detras"] {
+    @variant max-md {
+      transform: translate(var(--centrado), var(--centrado));
+    }
+  }
+
+  /*
+    En cuanto se toca la baraja, los cromos van a su paso —más vivo que la
+    salida del sobre— y sin el retardo con el que la tarjeta seguía a la foto.
+  */
+  .pieza-sobre[data-fuera][data-barajada] .naipe {
+    @variant max-md {
+      transition:
+        transform var(--transicion-cromo),
+        opacity var(--transicion-naipe-fundido);
+    }
+  }
+}
+
+/* Sin JavaScript, en el móvil con foto: una debajo de otra. */
+@media (scripting: none) {
+  .pieza-sobre[data-fuera]:not([data-sin-foto]) .escenario {
+    @variant max-md {
+      height: calc(
+        2 * var(--alto-naipe-apilado) + var(--hueco-naipes-apilados) + 2 * var(--margen-naipe)
+      );
+    }
+  }
+
+  .pieza-sobre[data-fuera]:not([data-sin-foto]) .naipe {
+    @variant max-md {
+      height: var(--alto-naipe-apilado);
+    }
+  }
+
+  .pieza-sobre[data-fuera] .naipe-foto {
+    @variant max-md {
+      transform: translate(var(--centrado), calc(-100% - var(--hueco-naipes-apilados) / 2));
+    }
+  }
+
+  .pieza-sobre[data-fuera] .naipe-tarjeta {
+    @variant max-md {
+      transform: translate(var(--centrado), calc(var(--hueco-naipes-apilados) / 2));
+    }
+  }
+}
+
+/*
+  LA CARA DEL CROMO: lo que se ve de cada naipe, con su brillo encima. Va
+  dentro del naipe para poder moverla sin tocar la posición del naipe, que es
+  de la coreografía y del dedo.
+*/
+.cara-cromo {
+  height: 100%;
+  position: relative;
+  width: 100%;
+}
+
+/*
+  EL BRILLO: una franja de luz que cruza la cara, como el reflejo en un cromo
+  al ladearlo. Pasa una vez cuando los naipes se posan, y en el móvil sigue
+  al dedo mientras se arrastra (la mueve el componente) y vuelve al soltar.
+*/
+.brillo-cromo {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+}
+
+.brillo-cromo-franja {
+  background: linear-gradient(
+    105deg,
+    var(--brillo-cromo-final) 30%,
+    var(--brillo-cromo) 50%,
+    var(--brillo-cromo-final) 70%
+  );
+  inset: 0;
+  position: absolute;
+  transform: translateX(calc(-1 * var(--recorrido-brillo-cromo)));
+  transition: transform var(--transicion-brillo-cromo);
+}
+
+/*
+  EL AMAGO Y EL BRILLO SÓLO PASAN UNA VEZ, y sólo hasta que se toca la
+  baraja: después ya se sabe que hay dos. Con movimiento reducido, ninguno.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  .pieza-sobre[data-fuera]:not([data-barajada]) .brillo-cromo-franja {
+    animation: brillo-cromo var(--animacion-brillo-cromo);
+  }
+
+  @media (scripting: enabled) {
+    .pieza-sobre[data-fuera]:not([data-barajada]) .naipe[data-cromo="delante"] .cara-cromo {
+      @variant max-md {
+        animation: cromo-amago var(--animacion-cromo-amago);
+      }
+    }
+  }
+}
+
+@keyframes brillo-cromo {
+  from {
+    transform: translateX(calc(-1 * var(--recorrido-brillo-cromo)));
+  }
+
+  to {
+    transform: translateX(var(--recorrido-brillo-cromo));
+  }
+}
+
+/* Se aparta a la derecha, enseña el de detrás y vuelve a su sitio. */
+@keyframes cromo-amago {
+  0%,
+  62%,
+  100% {
+    transform: none;
+  }
+
+  28% {
+    transform: translateX(var(--recorrido-cromo-amago)) rotate(var(--giro-cromo-amago));
   }
 }
 
@@ -515,4 +697,43 @@
   opacity: 100%;
   pointer-events: auto;
   transform: none;
+}
+
+/*
+  EL BOTÓN DE LA BARAJA: dos puntos —cuál va delante— y «Ver la otra
+  tarjeta». Es el camino del teclado y de quien no sabe que se desliza. Sólo
+  existe donde hay baraja.
+*/
+.pista-baraja {
+  display: none;
+}
+
+@media (scripting: enabled) {
+  .pieza-sobre:not([data-sin-foto]) .pista-baraja {
+    @variant max-md {
+      display: flex;
+      justify-content: center;
+    }
+  }
+}
+
+.puntos-baraja {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--lado-punto-baraja);
+}
+
+.puntos-baraja > span {
+  background: var(--borde-fuerte);
+  border-radius: var(--radio-boton);
+  height: var(--lado-punto-baraja);
+  transition:
+    width var(--transicion-color),
+    background-color var(--transicion-color);
+  width: var(--lado-punto-baraja);
+}
+
+.puntos-baraja > span[data-activo] {
+  background: var(--acento);
+  width: var(--ancho-punto-baraja-activo);
 }

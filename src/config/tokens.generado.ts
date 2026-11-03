@@ -203,7 +203,9 @@ export const GRUPOS_COLOR = [
       "luz-naipe",
       "luz-naipe-final",
       "retrato-naipe-estrella",
-      "retrato-naipe-principal"
+      "retrato-naipe-principal",
+      "brillo-cromo",
+      "brillo-cromo-final"
     ]
   }
 ] as const;

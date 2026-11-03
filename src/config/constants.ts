@@ -196,6 +196,31 @@ export const FASES_APERTURA_SOBRE_MS = { foto: 720, tarjeta: 1180, fuera: 1900 }
  */
 export const PARAMETRO_SOBRE_ABIERTO = "abierto";
 
+/**
+ * LA BARAJA DE CROMOS DEL SAVE THE DATE, en el móvil: la ilustración y la
+ * tarjeta, una encima de otra, que se pasan deslizando o tocando. Esto es lo
+ * que decide el gesto —cuándo un arrastre es un pase y cuándo se arrepiente—;
+ * cómo se ven los cromos y cuánto tardan son tokens de `sobre.css`.
+ */
+export const BARAJA_CROMOS = {
+  /** Fracción del ancho del cromo que hay que arrastrar para pasarlo. */
+  umbralArrastre: 0.25,
+  /** Velocidad (px/ms) a la que un golpe de dedo basta, aunque sea corto. */
+  umbralVelocidad: 0.11,
+  /** Lo que se puede mover el dedo y que siga contando como un toque (px). */
+  toleranciaToque: 6,
+  /** Grados que gira el cromo por cada píxel que se arrastra. */
+  giroPorPixel: 0.07,
+  /** Lo que sigue el cromo al dedo en vertical: poco, para que no baile. */
+  arrastreVertical: 0.2,
+  /** Lo que se levanta (escala) el cromo al cogerlo. */
+  escalaAlCoger: 1.03,
+  /** Fracción del ancho que hay que arrastrar para que el brillo cruce entero. */
+  recorridoBrillo: 0.6,
+  /** El toque en la mano al pasar de cromo, donde el móvil vibra (ms). */
+  vibracionMs: 8,
+} as const;
+
 /** El sistema de marca vivo. El pie de la landing enlaza a él, como la entrega. */
 export const RUTA_COCINA = "/cocina";
 

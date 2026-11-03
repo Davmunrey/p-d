@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
+import { ATRIBUTO_FRANJA, useBarajaDeCromos } from "@/components/marketing/baraja-de-cromos";
 import { EstrellasDelRetrato } from "@/components/marketing/estrellas-del-retrato";
 import { Sello } from "@/components/marketing/sello";
 import { TarjetaReserva } from "@/components/marketing/tarjeta-reserva";
@@ -51,6 +52,11 @@ import { t } from "@/lib/copy";
  * son los dos segundos de espera, y para quien ha pedido menos movimiento dos
  * segundos mirando un sobre quieto no son menos movimiento, son espera.
  *
+ * EN EL MÓVIL, LOS DOS NAIPES SON UNA BARAJA: la tarjeta delante y la
+ * ilustración asomando detrás, que se pasan deslizando o tocando (ver
+ * `baraja-de-cromos.ts`). Cuál va delante es estado de aquí; dónde va cada uno
+ * lo dice el CSS. En escritorio salen uno al lado del otro y nada de eso pinta.
+ *
  * EL FOCO SIGUE A LA PIEZA: al abrir del todo pasa a la tarjeta, que es lo que
  * hay que leer; al cerrar vuelve al sello. Lo que no se ve va `inert`: los
  * botones del pie plegado y la tarjeta guardada no se alcanzan con el tabulador.
@@ -61,8 +67,11 @@ type Fase = 0 | 1 | 2 | 3 | 4;
 const CERRADO: Fase = 0;
 const ABIERTO: Fase = 4;
 
-/** Cuánto ocupa la foto en pantalla: el naipe mide como mucho unos 330 px. */
-const MEDIDAS_FOTO = "(min-width: 48rem) 21rem, 60vw";
+/**
+ * Cuánto ocupa la foto en pantalla: en escritorio el naipe mide como mucho
+ * unos 330 px; en el móvil, en la baraja, casi todo el ancho.
+ */
+const MEDIDAS_FOTO = "(min-width: 48rem) 21rem, 80vw";
 
 export function SobreReserva({
   nombreNovia,
@@ -101,6 +110,23 @@ export function SobreReserva({
   const pieza = useRef<HTMLDivElement>(null);
   const sello = useRef<HTMLButtonElement>(null);
   const tarjeta = useRef<HTMLDivElement>(null);
+  const naipeFoto = useRef<HTMLDivElement>(null);
+
+  const cromos = useMemo(() => ({ foto: naipeFoto, tarjeta }), []);
+  const duracionVuelo = useCallback(() => {
+    if (!pieza.current) return 0;
+    const valor = getComputedStyle(pieza.current)
+      .getPropertyValue("--duracion-cromo-vuelo")
+      .trim();
+    const numero = Number.parseFloat(valor);
+    if (!Number.isFinite(numero)) return 0;
+    return valor.endsWith("ms") ? numero : numero * 1000;
+  }, []);
+  const { delante, lanzado, barajada, pasar, propiedadesDe } = useBarajaDeCromos({
+    pieza,
+    cromos,
+    duracionVuelo,
+  });
 
   const limpiar = () => {
     for (const id of temporizadores.current) window.clearTimeout(id);
@@ -180,6 +206,8 @@ export function SobreReserva({
       data-tarjeta={fase >= 3 ? "" : undefined}
       data-fuera={fase >= ABIERTO ? "" : undefined}
       data-sin-foto={fuente ? undefined : ""}
+      data-lanzado={lanzado ?? undefined}
+      data-barajada={barajada ? "" : undefined}
     >
       {/*
         «Save the date» entre dos rayas, y una tercera que se traza debajo: el
@@ -257,34 +285,52 @@ export function SobreReserva({
             foto no se pinta un naipe vacío: la tarjeta sale sola y centrada.
           */}
           {fuente ? (
-            <div className="naipe naipe-foto" aria-hidden={fase < 2 ? true : undefined}>
-              <div className="tarjeta-foto flex h-full w-full flex-col p-naipe-foto">
-                <div className="relative flex-1 overflow-hidden bg-hueco-foto-naipe">
-                  <Image
-                    src={fuente}
-                    alt={foto!.textoAlternativo}
-                    fill
-                    sizes={MEDIDAS_FOTO}
-                    className="object-cover"
-                    placeholder={foto!.marcadorBorroso ? "blur" : "empty"}
-                    blurDataURL={foto!.marcadorBorroso ?? undefined}
-                  />
+            <div
+              ref={naipeFoto}
+              className="naipe naipe-foto"
+              aria-hidden={fase < 2 ? true : undefined}
+              {...propiedadesDe("foto")}
+            >
+              <div className="cara-cromo">
+                <div className="tarjeta-foto flex h-full w-full flex-col p-naipe-foto">
+                  <div className="relative flex-1 overflow-hidden bg-hueco-foto-naipe">
+                    <Image
+                      src={fuente}
+                      alt={foto!.textoAlternativo}
+                      fill
+                      sizes={MEDIDAS_FOTO}
+                      className="object-cover"
+                      draggable={false}
+                      placeholder={foto!.marcadorBorroso ? "blur" : "empty"}
+                      blurDataURL={foto!.marcadorBorroso ?? undefined}
+                    />
+                  </div>
                 </div>
+                <BrilloCromo />
               </div>
             </div>
           ) : null}
 
-          <div ref={tarjeta} tabIndex={-1} className="naipe naipe-tarjeta" inert={fase < 3}>
-            <TarjetaReserva
-              nombreNovia={nombreNovia}
-              nombreNovio={nombreNovio}
-              fechaIso={fechaIso}
-              diaDeLaSemana={diaDeLaSemana}
-              fechaEnPuntos={fechaEnPuntos}
-              fechaLeida={fechaLeida}
-              lugar={lugar}
-              retrato={retrato}
-            />
+          <div
+            ref={tarjeta}
+            tabIndex={-1}
+            className="naipe naipe-tarjeta"
+            inert={fase < 3}
+            {...(fuente ? propiedadesDe("tarjeta") : {})}
+          >
+            <div className="cara-cromo">
+              <TarjetaReserva
+                nombreNovia={nombreNovia}
+                nombreNovio={nombreNovio}
+                fechaIso={fechaIso}
+                diaDeLaSemana={diaDeLaSemana}
+                fechaEnPuntos={fechaEnPuntos}
+                fechaLeida={fechaLeida}
+                lugar={lugar}
+                retrato={retrato}
+              />
+              <BrilloCromo />
+            </div>
           </div>
         </div>
       </div>
@@ -301,6 +347,27 @@ export function SobreReserva({
       <div className="pie-sobre relative text-center" inert={fase < ABIERTO}>
         <div className="pie-sobre-dentro">
           <div className="pie-sobre-contenido">
+            {/*
+              En la baraja del móvil: cuál de los dos va delante y cómo pasar
+              al otro sin deslizar —con el teclado, o sin saber que se desliza—.
+              Fuera de la baraja, el CSS no lo enseña.
+            */}
+            {fuente ? (
+              <div className="pista-baraja mb-volver-sobre">
+                <button
+                  type="button"
+                  onClick={() => pasar()}
+                  className="inline-flex min-h-control-compacto cursor-pointer items-center gap-interno px-hueco-corto font-cuerpo text-etiqueta uppercase tracking-volver text-tinta-suave transicion-color hover:text-acento"
+                >
+                  <span aria-hidden="true" className="puntos-baraja">
+                    <span data-activo={delante === "tarjeta" ? "" : undefined} />
+                    <span data-activo={delante === "foto" ? "" : undefined} />
+                  </span>
+                  {t("saveTheDate.otraTarjeta")}
+                </button>
+              </div>
+            ) : null}
+
             <div className="flex justify-center">
               {/*
                 Enlace normal y no `next/link`: el destino no es una página, es
@@ -325,6 +392,15 @@ export function SobreReserva({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** La franja de luz que cruza la cara del cromo (ver `sobre.css`). */
+function BrilloCromo() {
+  return (
+    <div aria-hidden="true" className="brillo-cromo">
+      <div className="brillo-cromo-franja" {...{ [ATRIBUTO_FRANJA]: "" }} />
     </div>
   );
 }
