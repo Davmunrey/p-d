@@ -10,6 +10,7 @@ import {
   DENSIDAD_PIXELES_MAXIMA,
   DURACION_ENCENDIDO_MS,
   ESCALA_HALO_ESTRELLA,
+  EVENTO_FUGAZ,
   FOTOGRAMAS_CIELO,
   FUGACES,
   GIRO_CIELO,
@@ -45,6 +46,11 @@ import { entre, generador } from "@/lib/azar";
  *    pintar al bajar, para irse apagando al llegar el amanecer.
  *  - No lleva colores: los lee de los tokens `--cielo-*` del propio lienzo.
  *  - No es contenido: `aria-hidden`, y sin él la página se lee igual.
+ *
+ * EN UNA PÁGINA QUE NO SE BAJA —el Save the Date— no hay scroll que lo haga
+ * girar: con `giroPorSegundo` gira solo, despacio, desde que se enciende. Y
+ * con `fugazAlAviso` cruza una fugaz en el instante en que la pieza la pide
+ * (`EVENTO_FUGAZ`), además de las que salen solas.
  *
  * El estado se publica en `data-cielo` —`vivo`, `quieto` o `pausado`—, las
  * estrellas sembradas en `data-estrellas` y cuánto ha girado, en grados, en
@@ -149,11 +155,17 @@ export function CieloEstrellado({
   semilla = SEMILLA_CIELO,
   viaLactea = false,
   fugaces = false,
+  giroPorSegundo = 0,
+  fugazAlAviso = false,
   className = "",
 }: {
   semilla?: number;
   viaLactea?: boolean;
   fugaces?: boolean;
+  /** Grados que gira solo cada segundo, para una página sin scroll. */
+  giroPorSegundo?: number;
+  /** Si atiende a `EVENTO_FUGAZ` y lanza una fugaz en ese momento. */
+  fugazAlAviso?: boolean;
   className?: string;
 }) {
   const referencia = useRef<HTMLCanvasElement>(null);
@@ -278,11 +290,24 @@ export function CieloEstrellado({
       contexto!.stroke();
     }
 
+    /** Una fugaz que empieza ahora, y la siguiente de las que salen solas. */
+    function lanzarFugaz(ahora: number) {
+      fugaz = {
+        inicio: ahora,
+        x: entre(azar, [0.05, 0.55]) * ancho,
+        y: entre(azar, [0.04, 0.4]) * alto,
+        angulo: entre(azar, FUGACES.angulo) * RADIANES_POR_GRADO,
+      };
+      proximaFugaz = ahora + FUGACES.duracionMs + entre(azar, FUGACES.intervaloMs);
+    }
+
     function pintar(ahora: number) {
       contexto!.clearRect(0, 0, ancho, alto);
       contexto!.globalAlpha = 1;
 
-      const giro = quieto ? 0 : (bajado() / alto) * GIRO_CIELO.gradosPorPantalla;
+      const solo =
+        giroPorSegundo && nacimiento ? ((ahora - nacimiento) / 1000) * giroPorSegundo : 0;
+      const giro = quieto ? 0 : (bajado() / alto) * GIRO_CIELO.gradosPorPantalla + solo;
       const radianes = giro * RADIANES_POR_GRADO;
       lienzo!.dataset.giro = giro.toFixed(2);
 
@@ -346,15 +371,7 @@ export function CieloEstrellado({
 
       // Las fugaces cruzan la parte alta, y sólo mientras queda noche arriba.
       if (fugaces && !quieto && linea > alto / 2) {
-        if (!fugaz && ahora >= proximaFugaz) {
-          fugaz = {
-            inicio: ahora,
-            x: entre(azar, [0.05, 0.55]) * ancho,
-            y: entre(azar, [0.04, 0.4]) * alto,
-            angulo: entre(azar, FUGACES.angulo) * RADIANES_POR_GRADO,
-          };
-          proximaFugaz = ahora + FUGACES.duracionMs + entre(azar, FUGACES.intervaloMs);
-        }
+        if (!fugaz && ahora >= proximaFugaz) lanzarFugaz(ahora);
         pintarFugaz(ahora);
       }
       contexto!.globalAlpha = 1;
@@ -435,6 +452,11 @@ export function CieloEstrellado({
 
     document.addEventListener("visibilitychange", decidir);
     if (quieto) window.addEventListener("scroll", alBajar, { passive: true });
+    // La fugaz que se pide: con movimiento reducido, ninguna.
+    const alAviso = () => {
+      if (!quieto && fugaces) lanzarFugaz(performance.now());
+    };
+    if (fugazAlAviso) window.addEventListener(EVENTO_FUGAZ, alAviso);
     decidir();
 
     return () => {
@@ -444,8 +466,9 @@ export function CieloEstrellado({
       tamano.disconnect();
       document.removeEventListener("visibilitychange", decidir);
       window.removeEventListener("scroll", alBajar);
+      window.removeEventListener(EVENTO_FUGAZ, alAviso);
     };
-  }, [semilla, viaLactea, fugaces]);
+  }, [semilla, viaLactea, fugaces, giroPorSegundo, fugazAlAviso]);
 
   return (
     <canvas

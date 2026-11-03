@@ -591,17 +591,6 @@
   animation: flotar-arriba var(--periodo-flotar-sobre) ease-in-out infinite;
 }
 
-.animacion-cielo-claro {
-  --deriva-x: var(--deriva-lenta-x);
-  --deriva-y: var(--deriva-lenta-y);
-  --titilar-alta: var(--opacidad-titilar-alta);
-  --titilar-baja: var(--opacidad-titilar-baja);
-
-  animation:
-    deriva var(--periodo-deriva-lenta) linear infinite alternate,
-    titilar var(--periodo-titilar-lento) ease-in-out infinite;
-}
-
 .animacion-escribir {
   animation: escribir var(--transicion-escritura) both;
   animation-delay: var(--pausa-escritura);
@@ -1071,7 +1060,6 @@
     lectura NO: mide cuánto se ha leído y no es decoración; quieta, mentiría.
   */
   .animacion-flotar,
-  .animacion-cielo-claro,
   .animacion-latido,
   .animacion-flotar-arriba,
   .animacion-sacudir,
@@ -1090,6 +1078,15 @@
   */
   .estrella-que-baja,
   .rotulo-de-llegada {
+    transition: none;
+  }
+
+  /*
+    Ni el retrato de la tarjeta se dibuja ni la luz de detrás crece: con el
+    sobre abierto, los dos están ahí desde el primer fotograma.
+  */
+  .trazado-del-naipe,
+  .luz-del-naipe {
     transition: none;
   }
 

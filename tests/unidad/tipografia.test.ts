@@ -93,7 +93,6 @@ describe("escala tipográfica", () => {
   it.each([
     ["font-size-remite", 7, 9],
     ["font-size-sello", 19, 25],
-    ["font-size-nota-sobre", 16, 21],
   ])("--%s es fluido entre %s y %s px (BODA-121)", (token, minimo, maximo) => {
     const remes = [...valor(token)!.matchAll(/([\d.]+)rem/g)].map((m) => Number(m[1]) * 16);
     expect(remes.length).toBe(2);
@@ -108,10 +107,10 @@ describe("escala tipográfica", () => {
    */
   it.each([
     ["font-size-naipe-rotulo", "2.5cqh"],
-    ["font-size-naipe-nombre", "8.4cqh"],
-    ["font-size-naipe-conector", "8cqh"],
+    ["font-size-naipe-nombre", "7.2cqh"],
+    ["font-size-naipe-conector", "6.8cqh"],
     ["font-size-naipe-fecha", "2.7cqh"],
-    ["font-size-naipe-anno", "13cqh"],
+    ["font-size-naipe-anno", "11.5cqh"],
     ["font-size-naipe-cifra", "6cqh"],
     ["font-size-naipe-unidad", "2.1cqh"],
   ])("--%s mide %s del alto del naipe", (token, esperado) => {

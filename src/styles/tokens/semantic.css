@@ -565,42 +565,49 @@
 
   /* --- Save the Date: el sobre, el sello y los naipes ---------------- */
 
+  /*
+    DE NOCHE. El Save the Date es una sola página bajo el cielo de la landing:
+    el sobre es papel marino, el lacre es de bronce y la tarjeta, clara, sale
+    a la luz en medio. Estos tokens no los usa nada más, así que su noche se
+    escribe aquí y no en el bloque inverso.
+  */
+
   /* Los papeles. Cada uno es un degradado de dos tonos: arriba y abajo. */
-  --papel-sobre-arriba: var(--color-nieve-80);
-  --papel-sobre-abajo: var(--color-bruma-220);
-  --papel-dorso-arriba: var(--color-nieve-90);
-  --papel-dorso-abajo: var(--color-bruma-260);
-  --papel-solapa-arriba: var(--color-nieve-60);
-  --papel-solapa-abajo: var(--color-bruma-240);
+  --papel-sobre-arriba: var(--color-marino-775);
+  --papel-sobre-abajo: var(--color-marino-850);
+  --papel-dorso-arriba: var(--color-marino-750);
+  --papel-dorso-abajo: var(--color-marino-900);
+  --papel-solapa-arriba: var(--color-marino-700);
+  --papel-solapa-abajo: var(--color-marino-800);
   --papel-tarjeta-arriba: var(--color-blanco);
   --papel-tarjeta-abajo: var(--color-nieve-70);
   --papel-foto: var(--color-blanco);
   --hueco-foto-naipe: var(--color-bruma-200);
-  --borde-sobre: var(--color-bruma-320);
+  --borde-sobre: var(--color-marino-600);
   --borde-naipe: var(--color-bruma-200);
   --trama-sobre: var(--color-trama-sobre);
   --brillo-papel: var(--color-brillo-papel);
   --brillo-papel-final: var(--color-brillo-papel-0);
-  --tinta-remite: var(--color-marino-380);
+  --tinta-remite: var(--color-marino-300);
 
   /*
-    «Tocad el sello para abrir» es la ÚNICA instrucción del sobre, y en el gris
-    azulado de la entrega (marino-420) se leía a 2,8:1 en 10 px. Pasa al azul de
-    la marca, a 7,8:1: el mismo criterio con el que el resto de los textos
-    pequeños del Save the Date dejaron el gris tenue.
+    «Tocad el sello para abrir» es la ÚNICA instrucción del sobre: en 10 px
+    sobre el cielo de noche, en el marino más claro de la escala (12:1 sobre
+    el cenit). El remite, impreso en el papel marino, un punto más apagado.
   */
-  --tinta-pista: var(--color-marino-500);
-  --tinta-sello: var(--color-nieve-100);
-  --sello-brillo: var(--color-marino-470);
-  --sello-medio: var(--color-marino-640);
-  --sello-fondo: var(--color-marino-700);
+  --tinta-pista: var(--color-marino-200);
+  --tinta-sello: var(--color-marino-900);
+  --sello-brillo: var(--color-bronce-200);
+  --sello-medio: var(--color-bronce-300);
+  --sello-fondo: var(--color-bronce-500);
   --anillo-sello: var(--color-anillo-sello);
   --anillo-sello-final: var(--color-anillo-sello-0);
-  --estrella-clara-1: var(--color-bruma-330);
-  --estrella-clara-2: var(--color-bruma-280);
-  --velo-cielo-centro: var(--color-velo-nieve-95);
-  --velo-cielo-medio: var(--color-velo-nieve-60);
-  --velo-cielo-borde: var(--color-velo-nieve-0);
+  --luz-naipe: var(--color-luz-naipe);
+  --luz-naipe-final: var(--color-luz-naipe-0);
+
+  /* El retrato impreso en la tarjeta: tinta marino y oro sobre el papel. */
+  --retrato-naipe-estrella: var(--color-marino-700);
+  --retrato-naipe-principal: var(--color-bronce-500);
   --sombra-sobre: var(--shadow-sobre);
   --sombra-solapa: var(--shadow-solapa);
   --sombra-sello: var(--shadow-sello);
@@ -610,15 +617,13 @@
   /* El aire y las medidas de la página y del escenario. */
   --espacio-sobre-arriba: var(--space-sobre-arriba);
   --espacio-sobre-abajo: var(--space-sobre-abajo);
-  --sangrado-cielo: var(--space-sangrado-cielo);
   --espacio-escenario-arriba: var(--space-escenario-arriba);
   --espacio-pista-sobre: var(--space-pista-sobre);
   --espacio-pie-sobre: var(--space-pie-sobre);
-  --espacio-nota-sobre: var(--space-nota-sobre);
   --espacio-volver-sobre: var(--space-volver-sobre);
   --espacio-remite-abajo: var(--space-remite-abajo);
+  --espacio-retrato-solapa: var(--space-retrato-solapa);
   --espacio-hueco-boton: var(--space-hueco-boton);
-  --espacio-lira-solapa: var(--space-lira-solapa);
   --margen-naipe: var(--space-margen);
   --ancho-raya-cabecera: var(--size-raya-cabecera);
   --alto-raya-vertical: var(--size-raya-vertical);
@@ -631,10 +636,10 @@
   --lado-icono: var(--size-icono);
   --paso-trama: var(--size-paso-trama);
   --alto-solapa: var(--size-solapa);
-  --ancho-lira-solapa: var(--size-lira-solapa);
-  --alto-lira-solapa: var(--size-lira-solapa-alto);
+  --alto-retrato-solapa: var(--size-retrato-solapa);
+  --ancho-luz-naipe: var(--size-luz-naipe-ancho);
+  --alto-luz-naipe: var(--size-luz-naipe-alto);
   --ancho-sobre: var(--width-sobre);
-  --ancho-nota-sobre: var(--width-nota-sobre);
   --proporcion-sobre: var(--ratio-sobre);
   --proporcion-naipe: var(--ratio-naipe);
   --perspectiva-sobre: var(--perspective-sobre);
@@ -644,7 +649,6 @@
   --texto-remite: var(--font-size-remite);
   --texto-sello: var(--font-size-sello);
   --texto-sello-ampersand: var(--font-size-sello-ampersand);
-  --texto-nota-sobre: var(--font-size-nota-sobre);
   --texto-pista-sobre: var(--font-size-diminuto);
   --espaciado-remite: var(--letter-spacing-remite);
   --espaciado-volver: var(--letter-spacing-naipe-lugar);
@@ -670,7 +674,7 @@
   --espacio-naipe-hueco-corto: var(--space-naipe-hueco-corto);
   --espacio-naipe-hueco-cifras: var(--space-naipe-hueco-cifras);
   --espacio-naipe-foto: var(--space-naipe-foto);
-  --lado-naipe-lira: var(--size-naipe-lira);
+  --alto-naipe-retrato: var(--size-naipe-retrato);
   --ancho-naipe-raya: var(--size-naipe-raya);
   --lado-naipe-rombo: var(--size-naipe-rombo);
 
@@ -687,11 +691,12 @@
   --transicion-pie-sobre: var(--duration-pie-sobre) var(--ease-suave);
   --transicion-pie-sobre-fundido: var(--duration-pie-sobre) var(--ease-lineal);
   --transicion-pista-sobre: var(--duration-pista-sobre) var(--ease-lineal);
+  --transicion-trazado-naipe: var(--duration-trazado-naipe) var(--ease-salida);
+  --transicion-luz-naipe: var(--duration-luz-naipe) var(--ease-salida);
   --transicion-sello-escala: var(--duration-fast) var(--ease-muelle);
   --periodo-sacudida: var(--duration-sosegado);
   --periodo-latido: var(--duration-latido);
   --periodo-flotar-sobre: var(--duration-flotar-sobre);
-  --periodo-deriva-lenta: var(--duration-deriva-lenta);
   --periodo-titilar-lento: var(--duration-titilar-lento);
   --retardo-cabecera-sobre: var(--delay-corto);
   --retardo-raya-sobre: var(--delay-3);
@@ -700,6 +705,7 @@
   --retardo-tarjeta-naipe: var(--delay-corto);
   --retardo-tarjeta-contenido: var(--delay-tarjeta);
   --retardo-pie-sobre: var(--delay-pie-sobre);
+  --retardo-trazado-naipe: var(--delay-trazado-naipe);
   --giro-solapa: var(--rotate-solapa);
   --giro-sello: var(--rotate-sello);
   --giro-sacudida-1: var(--rotate-sacudida-1);
@@ -721,6 +727,7 @@
   --escala-foto-asoma: var(--scale-foto-asoma);
   --escala-tarjeta-asoma: var(--scale-tarjeta-asoma);
   --escala-naipe-fuera-movil: var(--scale-naipe-fuera-movil);
+  --escala-luz-apagada: var(--scale-luz-apagada);
   --centrado: var(--shift-centro);
   --desplazamiento-naipe-dentro: var(--shift-naipe-dentro-y);
   --desplazamiento-foto-asoma: var(--shift-foto-asoma-y);
@@ -732,21 +739,18 @@
   --desplazamiento-tarjeta-fuera-x-movil: var(--shift-tarjeta-fuera-x-movil);
   --desplazamiento-tarjeta-fuera-y-movil: var(--shift-tarjeta-fuera-y-movil);
   --recorrido-flotar-sobre: var(--shift-flotar-sobre);
-  --deriva-lenta-x: var(--shift-deriva-lenta-x);
-  --deriva-lenta-y: var(--shift-deriva-lenta-y);
   --recorrido-pie-sobre: var(--shift-pie-sobre);
   --opacidad-titilar-alta: var(--opacity-titilar-alta);
   --opacidad-titilar-baja: var(--opacity-titilar-baja);
-  --opacidad-lira-solapa: var(--opacity-lira-solapa);
   --opacidad-ampersand-sello: var(--opacity-ampersand-sello);
-  --capa-naipe-guardado: var(--layer-escena-1);
-  --capa-sobre: var(--layer-escena-2);
-  --capa-dorso: var(--layer-escena-2);
-  --capa-solapa: var(--layer-escena-3);
-  --capa-solapa-abierta: var(--layer-escena-1);
-  --capa-sello: var(--layer-escena-4);
-  --capa-foto-fuera: var(--layer-escena-3);
-  --capa-tarjeta-fuera: var(--layer-escena-4);
+  --opacidad-retrato-solapa: var(--opacity-retrato-solapa);
+  --capa-luz-naipe: var(--layer-escena-0);
+  --capa-fondo-sobre: var(--layer-escena-1);
+  --capa-solapa-abierta: var(--layer-escena-2);
+  --capa-naipe: var(--layer-escena-3);
+  --capa-dorso: var(--layer-escena-4);
+  --capa-solapa: var(--layer-escena-5);
+  --capa-sello: var(--layer-escena-6);
 
   /* --- Anchos de contenido ------------------------------------------- */
   --ancho-texto: var(--width-prose);
@@ -886,6 +890,72 @@
   --etiqueta-marca-tinta: var(--color-marino-800);
 }
 
+/**
+ * EL PAPEL DEL SAVE THE DATE
+ *
+ * La página del Save the Date va entera de noche (`inversa`), y la tarjeta que
+ * sale del sobre es papel claro en medio de ella. Este bloque deshace dentro de
+ * la tarjeta lo que el inverso reasigna: los MISMOS tokens, con los valores de
+ * `:root`. Si el inverso reasigna uno nuevo, aquí tiene que volver —lo vigila
+ * `paleta.test.ts`—; si no, la tarjeta heredaría la tinta clara de la noche y
+ * se escribiría en blanco sobre blanco.
+ *
+ * Y una cosa propia: el retrato de estrellas se imprime aquí en tinta marino
+ * y oro, no en la luz de nieve y bronce del cielo.
+ */
+
+[data-seccion="papel"] {
+  color-scheme: light;
+
+  --fondo: var(--color-nieve-50);
+  --superficie: var(--color-blanco);
+  --superficie-elevada: var(--color-blanco);
+  --superficie-tenue: var(--color-marino-100);
+  --superficie-hundida: var(--color-nieve-150);
+  --marca-tenue: var(--color-marino-100);
+  --error: var(--color-error-claro);
+  --error-fondo: var(--color-error-fondo-claro);
+  --error-tinta: var(--color-error-claro);
+  --exito-fondo: var(--color-exito-fondo-claro);
+  --exito-tinta: var(--color-exito-claro);
+  --aviso-fondo: var(--color-nieve-150);
+  --aviso-tinta: var(--color-bronce-600);
+  --tinta: var(--color-pizarra-900);
+  --tinta-suave: var(--color-pizarra-600);
+  --tinta-tenue: var(--color-pizarra-400);
+  --tinta-inversa: var(--color-nieve-50);
+  --tinta-marca: var(--color-marino-700);
+  --marca: var(--color-marino-500);
+  --marca-hover: var(--color-marino-600);
+  --accion: var(--color-marino-700);
+  --accion-hover: var(--color-pizarra-900);
+  --accion-activa: var(--color-pizarra-900);
+  --tinta-sobre-accion: var(--color-nieve-50);
+  --acento: var(--color-bronce-600);
+  --acento-hover: var(--color-bronce-500);
+  --constelacion-estrella: var(--color-marino-700);
+  --constelacion-trazo: var(--color-trazo-marino);
+  --tinta-sobre-acento: var(--color-nieve-50);
+  --borde: var(--color-bruma-300);
+  --borde-fuerte: var(--color-bruma-400);
+  --borde-tenue: var(--color-nieve-150);
+  --superficie-cabecera: var(--color-velado-nieve);
+  --borde-filete: var(--color-bruma-350);
+  --serie-previsto: var(--color-marino-450);
+  --serie-real: var(--color-marino-700);
+  --serie-exceso: var(--color-error-claro);
+  --foco: var(--color-bronce-600);
+  --accion-desactivada: var(--color-marino-100);
+  --tinta-desactivada: var(--color-marino-420);
+  --anillo-campo: var(--color-marino-100);
+  --nota-fondo: var(--color-nieve-150);
+  --nota-tinta: var(--color-pizarra-600);
+  --nota-tinta-fuerte: var(--color-pizarra-900);
+  --etiqueta-marca-tinta: var(--color-nieve-100);
+  --retrato-estrella: var(--retrato-naipe-estrella);
+  --retrato-estrella-principal: var(--retrato-naipe-principal);
+}
+
 [data-seccion="pie"] {
   color-scheme: dark;
 
@@ -936,16 +1006,4 @@
   --nota-tinta: var(--color-marino-350);
   --nota-tinta-fuerte: var(--color-nieve-100);
   --etiqueta-marca-tinta: var(--color-pizarra-950);
-}
-
-/**
- * LA SOLAPA DEL SOBRE. La Lira va impresa en ella, en el gris del papel y al
- * cincuenta por ciento, como una filigrana: es la misma constelación que en la
- * tarjeta, pero aquí no es información, es textura. Se reasignan los dos
- * semánticos de la constelación y el componente no se entera.
- */
-
-[data-lienzo="solapa"] {
-  --constelacion-estrella: var(--color-marino-420);
-  --constelacion-trazo: var(--color-trazo-solapa);
 }

@@ -1,21 +1,29 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { CieloEstrellado } from "@/components/marketing/cielo-estrellado";
 import { EnPreparacion } from "@/components/marketing/en-preparacion";
 import { SobreReserva } from "@/components/marketing/sobre-reserva";
+import { GIRO_DEL_SOBRE } from "@/config/cielo";
 import { IDIOMA, IDIOMA_OG, PARAMETRO_SOBRE_ABIERTO, ZONA_HORARIA } from "@/config/constants";
-import { obtenerConfiguracion, obtenerMedios, obtenerSecciones } from "@/lib/bbdd/landing";
+import {
+  obtenerConfiguracion,
+  obtenerMedios,
+  obtenerRetrato,
+  obtenerSecciones,
+} from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 import { anio, fechaConDia } from "@/lib/fechas";
 
 /**
  * RESERVA LA FECHA
  *
- * Lo primero que se manda a los invitados, meses antes de la invitación. Se
- * abre casi siempre desde WhatsApp, en móvil, y es la pieza de la entrega: un
- * sobre cerrado con un sello que, al tocarlo, suelta la foto y la tarjeta con
- * quién, cuándo y dónde. El sobre vive en `SobreReserva`; aquí se leen los
- * datos y se componen los textos.
+ * Lo primero que se manda a quien aún no tiene invitación. Se abre casi
+ * siempre desde WhatsApp, en móvil: un sobre de noche, bajo el mismo cielo que
+ * la landing —la Vía Láctea, las fugaces, girando despacio—, con el retrato de
+ * estrellas de Paloma, Hati y David en la solapa. Al tocar el lacre sale la
+ * tarjeta con quién, cuándo y dónde. El sobre vive en `SobreReserva`; aquí se
+ * leen los datos y se componen los textos.
  *
  * NO SE CACHEA, y es lo contrario que la landing. Su existencia depende de una
  * fila de `secciones_landing`, así que revalidar cada hora significaría que
@@ -85,11 +93,13 @@ export default async function PaginaReservaLaFecha({
   let secciones;
   let configuracion;
   let fotos;
+  let retrato;
   try {
-    [secciones, configuracion, fotos] = await Promise.all([
+    [secciones, configuracion, fotos, retrato] = await Promise.all([
       obtenerSecciones(),
       obtenerConfiguracion(),
       obtenerMedios("reserva_la_fecha"),
+      obtenerRetrato(),
     ]);
   } catch {
     // La avería ya está en el log. Aquí no se puede saber si la sección estaba
@@ -123,17 +133,23 @@ export default async function PaginaReservaLaFecha({
       : (lugar ?? ciudadCeremonia);
 
   /*
-    LA PÁGINA ES CLARA, con el cielo de puntos derivando detrás y un velo que
-    lo aclara por el centro para que el sobre se lea. Todo cuelga de la
-    columna central y se centra en el alto que sobre.
+    LA PÁGINA ES DE NOCHE, ENTERA. El bloque inverso de la marca —los mismos
+    semánticos reasignados— y el cielo de la landing detrás, en su lienzo:
+    como aquí no se baja, gira solo, y cruza una fugaz cuando sale la tarjeta.
+    Todo cuelga de la columna central y se centra en el alto que sobre.
   */
   return (
-    <main className="relative flex min-h-dvh flex-col items-center overflow-clip px-pila pt-sobre-arriba pb-sobre-abajo">
-      <div
-        aria-hidden="true"
-        className="animacion-cielo-claro cielo-claro pointer-events-none absolute -inset-sangrado-cielo"
+    <main
+      data-seccion="inversa"
+      className="cielo-del-sobre relative isolate flex min-h-dvh flex-col items-center overflow-clip px-pila pt-sobre-arriba pb-sobre-abajo"
+    >
+      <CieloEstrellado
+        viaLactea
+        fugaces
+        giroPorSegundo={GIRO_DEL_SOBRE}
+        fugazAlAviso
+        className="capa-cielo absolute inset-0 size-full"
       />
-      <div aria-hidden="true" className="velo-cielo pointer-events-none absolute inset-0" />
 
       <SobreReserva
         nombreNovia={nombreNovia}
@@ -145,6 +161,7 @@ export default async function PaginaReservaLaFecha({
         lugar={lugarConCiudad}
         remite={remite}
         foto={fotos.find((medio) => medio.tipo === "imagen") ?? null}
+        retrato={retrato}
         urlBase={process.env.NEXT_PUBLIC_SUPABASE_URL}
         abiertoAlLlegar={consulta[PARAMETRO_SOBRE_ABIERTO] !== undefined}
       />

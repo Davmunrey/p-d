@@ -1,15 +1,22 @@
 import { CuentaAtras } from "@/components/marketing/cuenta-atras";
-import { Constelacion } from "@/components/ui/constelacion";
+import { EstrellasDelRetrato } from "@/components/marketing/estrellas-del-retrato";
 import { Conector } from "@/components/ui/tipografia";
-import { CONSTELACION_NOVIOS, ESCALA_ESTRELLA_TARJETA } from "@/config/constelaciones";
+import { RETRATO_EN_LA_TARJETA } from "@/config/cielo";
+import type { Retrato } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 
 /**
  * LA TARJETA DEL SAVE THE DATE
  *
- * El naipe que sale del sobre con la información: la Lira, «Reservad la
- * fecha», los nombres, la fecha en dos líneas, el lugar y la cuenta atrás.
- * Es la tarjeta impresa de la entrega, letra por letra.
+ * El naipe que sale del sobre con la información: el retrato de estrellas de
+ * Paloma, Hati y David, «Reservad la fecha», los nombres, la fecha en dos
+ * líneas, el lugar y la cuenta atrás.
+ *
+ * ES PAPEL CLARO EN MEDIO DE LA NOCHE. La página va en marino
+ * (`data-seccion="inversa"`) y la tarjeta vuelve a la paleta clara con
+ * `data-seccion="papel"`: los mismos componentes, los mismos tokens, otro
+ * papel. El retrato se imprime en él en tinta marino y oro, y se dibuja
+ * estrella a estrella cuando la tarjeta sale (`trazado-del-naipe`).
  *
  * SE MIDE EN `cqh`. El naipe tiene una proporción fija y su alto lo decide la
  * pantalla, así que todo lo de dentro va en centésimas de ese alto: los
@@ -34,6 +41,7 @@ export function TarjetaReserva({
   fechaTexto,
   anio,
   lugar,
+  retrato,
 }: {
   nombreNovia: string;
   nombreNovio: string;
@@ -46,9 +54,14 @@ export function TarjetaReserva({
   anio: string;
   /** «Finca La Sierra · León», o `null` si no hay lugar configurado. */
   lugar: string | null;
+  /** El retrato de estrellas, o `null` si aún no se ha subido. */
+  retrato: Retrato | null;
 }) {
   return (
-    <div className="tarjeta relative flex h-full w-full flex-col items-center overflow-hidden px-naipe-x py-naipe-y text-center">
+    <div
+      data-seccion="papel"
+      className="tarjeta relative flex h-full w-full flex-col items-center overflow-hidden px-naipe-x py-naipe-y text-center"
+    >
       {/* El marco interior, a 2,4 cqh del borde: el filo de una tarjeta impresa. */}
       <div
         aria-hidden="true"
@@ -56,9 +69,22 @@ export function TarjetaReserva({
       />
 
       <div className="tarjeta-contenido flex h-full w-full flex-col items-center">
-        <div className="size-naipe-lira shrink-0">
-          <Constelacion clave={CONSTELACION_NOVIOS} escala={ESCALA_ESTRELLA_TARJETA} />
-        </div>
+        {retrato ? (
+          <div
+            className="trazado-del-naipe h-naipe-retrato shrink-0"
+            {...(retrato.alternativo
+              ? { role: "img", "aria-label": retrato.alternativo }
+              : { "aria-hidden": true })}
+          >
+            <EstrellasDelRetrato
+              retrato={retrato}
+              medidas={RETRATO_EN_LA_TARJETA}
+              idHalo="halo-retrato-naipe"
+              encuadre="xMidYMid meet"
+              className="block h-full w-auto overflow-visible"
+            />
+          </div>
+        ) : null}
 
         <p className="mt-naipe-hueco-rotulo font-cuerpo peso-cuerpo text-naipe-rotulo leading-titulo-menor uppercase tracking-seccion text-tinta-suave">
           {t("saveTheDate.etiqueta")}

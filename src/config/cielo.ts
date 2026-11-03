@@ -211,6 +211,54 @@ export const RETRATO_EN_EL_CIELO = {
 } as const;
 
 /**
+ * EL RETRATO EN EL SAVE THE DATE, en la solapa del sobre y en la tarjeta. Allí
+ * mide setenta u ochenta píxeles de alto, no cuatrocientos, y eso cambia el
+ * dibujo entero: el contorno del retrato de producción lleva casi quinientas
+ * estrellas, que a ese tamaño caen a menos de un píxel unas de otras y se
+ * funden en una raya. Así que se pinta UNA DE CADA POCAS hasta quedarse en
+ * `maximo` —las principales van siempre—, con estrellas más gruesas para su
+ * tamaño: a tres píxeles de distancia y uno de radio, se lee como lo que es,
+ * un dibujo hecho de estrellas.
+ *
+ * En la solapa, sobre papel marino, las principales llevan halo, como en el
+ * cielo. En la tarjeta, sobre papel claro, un halo no brilla: mancha. Allí
+ * van impresas, tinta marino y oro, sin halo.
+ */
+export const RETRATO_EN_LA_SOLAPA = {
+  alto: 1000,
+  radio: 13,
+  radioPrincipal: 22,
+  halo: 2.6,
+  brilloHalo: 0.5,
+  principal: 0.99,
+  maximo: 160,
+} as const;
+
+export const RETRATO_EN_LA_TARJETA = {
+  alto: 1000,
+  radio: 12,
+  radioPrincipal: 21,
+  halo: 0,
+  brilloHalo: 0,
+  principal: 0.99,
+  maximo: 170,
+} as const;
+
+/**
+ * EL CIELO DEL SAVE THE DATE GIRA SOLO: es una sola pantalla y no hay scroll
+ * que lo mueva. Grados por segundo: en el minuto que se tarda en abrir el
+ * sobre y leer la tarjeta gira algo más de un cuarto de lo que gira la
+ * landing de punta a punta, lo justo para que se note vivo sin marear.
+ */
+export const GIRO_DEL_SOBRE = 0.6;
+
+/**
+ * EL AVISO CON EL QUE UNA PIEZA PIDE UNA ESTRELLA FUGAZ. El sobre lo lanza al
+ * salir la tarjeta y el cielo (`fugazAlAviso`) la cruza en ese instante.
+ */
+export const EVENTO_FUGAZ = "boda:fugaz";
+
+/**
  * CUÁNDO SE DIBUJA EL RETRATO. Empieza cuando la cabeza asoma por `empieza`
  * (en fracción del alto de la pantalla, desde arriba) y acaba cuando los pies
  * llegan a `acaba`: algo menos de lo que se tarda en bajar una pantalla. Las

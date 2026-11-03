@@ -80,7 +80,9 @@ test.describe("El Save the Date", () => {
     expect(transicion).not.toContain("max-height");
 
     await page.goto("/reserva-la-fecha?abierto");
-    await expect(page.getByRole("link", { name: copy.saveTheDate.verLaWeb })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: copy.saveTheDate.anadirCalendario }),
+    ).toBeVisible();
     expect((await pie.boundingBox())!.height).toBeGreaterThan(0);
   });
 

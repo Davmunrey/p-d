@@ -1,3 +1,5 @@
+import postgres from "postgres";
+
 import { expect, test, type Page } from "./utiles/origen-propio";
 
 import copy from "../../content/copy.es.json";
@@ -12,8 +14,11 @@ import {
  * BODA-30 · Reserva la fecha
  * BODA-121 · El sobre de la entrega
  *
- * Lo primero que se manda a los invitados: un sobre cerrado con un sello que,
- * al tocarlo, suelta la foto y la tarjeta con quién, cuándo y dónde. Se
+ * Lo primero que se manda a quien aún no tiene invitación: un sobre de noche,
+ * bajo el cielo de la landing, con el retrato de estrellas de Paloma, Hati y
+ * David en la solapa y un lacre que, al tocarlo, suelta la tarjeta con quién,
+ * cuándo y dónde. De aquí no se salta a la web: la web llega con la
+ * invitación. Se
  * comprueba lo de siempre —que los datos salen de la base y no de un literal—
  * y lo que la pieza promete: que se abre con el dedo, con el teclado y sin
  * JavaScript; que se puede volver a cerrar; que cabe en un móvil; y que la
@@ -29,6 +34,17 @@ const RUTA = "/reserva-la-fecha";
 
 /** Un móvil de hoy: donde se abre esta página casi siempre. */
 const MOVIL = { width: 390, height: 844 };
+
+const cadenaBase = process.env.DATABASE_URL;
+
+async function conBase<T>(trabajo: (sql: postgres.Sql) => Promise<T>): Promise<T> {
+  const sql = postgres(cadenaBase!, { max: 1, prepare: false, onnotice: () => {} });
+  try {
+    return await trabajo(sql);
+  } finally {
+    await sql.end();
+  }
+}
 
 const pieza = (page: Page) => page.locator(".pieza-sobre");
 const sello = (page: Page) => page.getByRole("button", { name: copy.saveTheDate.abrir });
@@ -108,12 +124,10 @@ test.describe("Reserva la fecha", () => {
     await expect(page.getByText(/\(DES\).*[Ff]inca/).first()).toBeVisible();
     await expect(page.getByRole("timer")).toBeVisible();
 
-    // El pie: la nota, los dos botones y la forma de cerrarlo.
-    await expect(page.getByText(copy.saveTheDate.nota)).toBeVisible();
+    // El pie: el calendario y la forma de cerrarlo. Nada más.
     await expect(
       page.getByRole("link", { name: copy.saveTheDate.anadirCalendario }),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: copy.saveTheDate.verLaWeb })).toBeVisible();
     await expect(
       page.getByRole("button", { name: copy.saveTheDate.volverAlSobre }),
     ).toBeVisible();
@@ -175,24 +189,60 @@ test.describe("Reserva la fecha", () => {
     await expect
       .poll(async () => {
         const naipe = await tarjeta(page).boundingBox();
-        const nota = await page.getByText(copy.saveTheDate.nota).boundingBox();
+        const calendario = await page
+          .getByRole("link", { name: copy.saveTheDate.anadirCalendario })
+          .boundingBox();
         const ventana = page.viewportSize()!;
         return {
           tarjetaEntera: !!naipe && naipe.y >= 0 && naipe.y + naipe.height <= ventana.height,
-          notaALaVista: !!nota && nota.y < ventana.height,
+          calendarioALaVista: !!calendario && calendario.y < ventana.height,
         };
       })
-      .toEqual({ tarjetaEntera: true, notaALaVista: true });
+      .toEqual({ tarjetaEntera: true, calendarioALaVista: true });
 
     const abierto = await medir(page);
     expect(abierto.anchoDocumento).toBeLessThanOrEqual(abierto.anchoVentana + 1);
   });
 
-  test("desde aquí se llega a la web completa", async ({ page }) => {
+  /**
+   * CASO DE ERROR · De aquí no se salta a la web.
+   *
+   * Lo pidieron los novios: el Save the Date va a quien aún no tiene
+   * invitación, y la web llega con ella. Ni «ver la web», ni una nota que
+   * mande allí, ni el `URL:` del evento, que el calendario pinta como enlace.
+   * El único enlace de la página es el del calendario.
+   */
+  test("de aquí no se salta a la web, ni por el calendario", async ({ page, request }) => {
     await abrirElSobre(page);
-    await page.getByRole("link", { name: copy.saveTheDate.verLaWeb }).click();
-    await expect(page).toHaveURL(/\/$/);
-    await expect(page.locator("#portada")).toBeVisible();
+    const destinos = await page
+      .locator("a[href]")
+      .evaluateAll((enlaces) => enlaces.map((enlace) => enlace.getAttribute("href")));
+    expect(destinos).toEqual([RUTA_CALENDARIO]);
+
+    const ics = await (await request.get(RUTA_CALENDARIO)).text();
+    expect(ics).not.toMatch(/^URL:/m);
+  });
+
+  test("es de noche: el bloque inverso con el cielo de la landing girando", async ({
+    page,
+  }) => {
+    await expect(page.locator("main")).toHaveAttribute("data-seccion", "inversa");
+    const cielo = page.locator("main canvas[data-cielo-estrellado]");
+    await expect(cielo).toHaveCount(1);
+    await expect(cielo).toHaveAttribute("data-cielo", "vivo");
+    // Aquí no se baja: gira solo.
+    const giro = () => cielo.evaluate((nodo) => Number(nodo.getAttribute("data-giro")));
+    const antes = await giro();
+    await expect.poll(giro, { timeout: 4000 }).toBeGreaterThan(antes);
+
+    // La tarjeta, en cambio, es papel claro: su texto no hereda la tinta de noche.
+    const papel = page.locator(".tarjeta");
+    await expect(papel).toHaveAttribute("data-seccion", "papel");
+    const [tinta, fondoMain] = await Promise.all([
+      papel.locator("h1").evaluate((nodo) => getComputedStyle(nodo).color),
+      page.locator("main").evaluate((nodo) => getComputedStyle(nodo).color),
+    ]);
+    expect(tinta).not.toBe(fondoMain);
   });
 
   test("las meta tags llevan los datos reales, no un texto de plantilla", async ({ page }) => {
@@ -210,6 +260,87 @@ test.describe("Reserva la fecha", () => {
     await expect(boton).toHaveAttribute("href", RUTA_CALENDARIO);
     // `download` para que el navegador lo guarde en vez de intentar pintarlo.
     await expect(boton).toHaveAttribute("download", "");
+  });
+});
+
+/**
+ * EL RETRATO DE ESTRELLAS EN EL SOBRE, Y NI RASTRO DE LA LIRA
+ *
+ * Paloma, Hati y David —el contorno de su foto, en estrellas— van impresos en
+ * la solapa y en la tarjeta, donde estaba la Lira. Si la base no tiene ningún
+ * retrato publicado, se pone uno para la prueba y se quita al acabar: lo que
+ * se comprueba es que la página pinta el que hay, con su texto alternativo.
+ */
+test.describe("El retrato de estrellas en el sobre", () => {
+  test.skip(!cadenaBase, "Hace falta DATABASE_URL para leer el retrato.");
+
+  const RUTA_RETRATO = "retrato/e2e-reserva-la-fecha.png";
+  let alternativo = "";
+
+  test.beforeAll(async () => {
+    await conBase(async (sql) => {
+      const [primero] = await sql<{ alternativo: string }[]>`
+        select texto_alternativo ->> 'es' as alternativo
+          from public.medios
+         where publicado and seccion = 'retrato' and tipo = 'imagen' and estrellas is not null
+         order by orden nulls last, creado_en
+         limit 1
+      `;
+      if (primero) {
+        alternativo = primero.alternativo;
+        return;
+      }
+      alternativo = "(DES) Retrato de prueba del Save the Date";
+      const estrellas = {
+        proporcion: 0.9,
+        estrellas: Array.from({ length: 60 }, (_, i) => {
+          const angulo = (i / 60) * 2 * Math.PI;
+          return [
+            Number((0.5 + 0.45 * Math.cos(angulo)).toFixed(4)),
+            Number((0.5 + 0.45 * Math.sin(angulo)).toFixed(4)),
+            i % 10 === 0 ? 1 : 0.6,
+          ];
+        }),
+      };
+      await sql`
+        insert into public.medios
+          (ruta_almacenamiento, texto_alternativo, seccion, tipo, publicado, orden, ancho, alto, estrellas)
+        select ${RUTA_RETRATO}, ${sql.json({ es: alternativo })}, 'retrato', 'imagen', true,
+               coalesce(max(orden), -1) + 1, 900, 1000, ${sql.json(estrellas)}
+          from public.medios where seccion = 'retrato'
+      `;
+    });
+  });
+
+  test.afterAll(async () => {
+    if (!cadenaBase) return;
+    await conBase(
+      (sql) => sql`delete from public.medios where ruta_almacenamiento = ${RUTA_RETRATO}`,
+    );
+  });
+
+  test("va en la solapa y en la tarjeta, donde estaba la Lira", async ({ page }) => {
+    await page.goto(RUTA);
+    await expect(page.locator(".solapa-retrato svg circle").first()).toBeAttached();
+    await expect(page.locator(".solapa-lira")).toHaveCount(0);
+
+    await abrirElSobre(page);
+    const retrato = tarjeta(page).getByRole("img", { name: alternativo });
+    await expect(retrato).toBeVisible();
+    // Ni una constelación de la marca en toda la pieza: sólo el retrato.
+    await expect(pieza(page).locator(".fill-constelacion-estrella")).toHaveCount(0);
+  });
+
+  test("al salir la tarjeta, el retrato se dibuja entero", async ({ page }) => {
+    await page.goto(RUTA);
+    const trazado = () =>
+      tarjeta(page)
+        .locator(".trazado-del-naipe")
+        .evaluate((nodo) => Number(getComputedStyle(nodo).getPropertyValue("--trazado")));
+    // Guardado en el sobre, sin dibujar.
+    expect(await trazado()).toBe(0);
+    await abrirElSobre(page);
+    await expect.poll(trazado, { timeout: 5000 }).toBe(1);
   });
 });
 

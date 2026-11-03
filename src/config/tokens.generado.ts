@@ -198,11 +198,10 @@ export const GRUPOS_COLOR = [
       "sello-fondo",
       "anillo-sello",
       "anillo-sello-final",
-      "estrella-clara-1",
-      "estrella-clara-2",
-      "velo-cielo-centro",
-      "velo-cielo-medio",
-      "velo-cielo-borde"
+      "luz-naipe",
+      "luz-naipe-final",
+      "retrato-naipe-estrella",
+      "retrato-naipe-principal"
     ]
   }
 ] as const;

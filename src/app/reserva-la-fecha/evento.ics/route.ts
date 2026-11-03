@@ -15,6 +15,10 @@ import { t } from "@/lib/copy";
  *
  * Se genera al vuelo desde la base de datos, nunca es un fichero estático:
  * mover la hora de la ceremonia tiene que cambiar lo que se descarga.
+ *
+ * SIN ENLACE A LA WEB. El Save the Date no lleva a la web —lo pidieron los
+ * novios: la web llega con la invitación—, y un `URL:` en el evento sería la
+ * puerta de atrás: el calendario lo pinta como un enlace.
  */
 export const dynamic = "force-dynamic";
 
@@ -56,7 +60,6 @@ export async function GET(peticion: Request) {
     lugar: [lugar, direccion].filter(Boolean).join(", ") || null,
     latitud: configuracion.latitud,
     longitud: configuracion.longitud,
-    url: origen,
     inicio: configuracion.fechaCeremonia,
     // El fin se cuenta desde el último hito con hora conocida. Ojo: el
     // banquete es cuándo EMPIEZA el banquete, no cuándo acaba la boda; usarlo

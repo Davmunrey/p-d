@@ -3,12 +3,12 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
+import { EstrellasDelRetrato } from "@/components/marketing/estrellas-del-retrato";
 import { Sello } from "@/components/marketing/sello";
 import { TarjetaReserva } from "@/components/marketing/tarjeta-reserva";
 import { BotonEnlace } from "@/components/ui/boton";
-import { Constelacion } from "@/components/ui/constelacion";
 import { Etiqueta } from "@/components/ui/tipografia";
-import { CONSTELACION_NOVIOS } from "@/config/constelaciones";
+import { EVENTO_FUGAZ, RETRATO_EN_LA_SOLAPA } from "@/config/cielo";
 import {
   BUCKET_MEDIOS,
   FASES_APERTURA_SOBRE_MS,
@@ -16,16 +16,22 @@ import {
   RUTA_CALENDARIO,
 } from "@/config/constants";
 import { rutaDe } from "@/config/secciones";
-import type { Medio } from "@/lib/bbdd/landing";
+import type { Medio, Retrato } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 
 /**
  * EL SOBRE DEL SAVE THE DATE
  *
- * La pieza de la entrega: un sobre cerrado con un sello que late. Al tocarlo,
- * la solapa gira, asoma la foto, asoma la tarjeta, el sobre se va y los dos
- * naipes quedan sobre la mesa con el pie debajo — la nota, «añadir al
- * calendario», «ver la web» y la forma de volver a meterlo todo en el sobre.
+ * Un sobre de noche, bajo el cielo de la landing, con el lacre de bronce que
+ * late y el retrato de estrellas de Paloma, Hati y David en la solapa. Al
+ * tocarlo, la solapa gira, cruza una estrella fugaz, la tarjeta sale con una
+ * luz detrás y el retrato se dibuja en ella estrella a estrella; el sobre se
+ * va y debajo quedan «añadir al calendario» y la forma de volver a meterlo
+ * todo en el sobre.
+ *
+ * DE AQUÍ NO SE SALTA A LA WEB: ni «ver la web» ni nota que mande a ella. El
+ * Save the Date va a quien todavía no tiene invitación, y la web es lo que
+ * llega con ella (lo pidieron los novios).
  *
  * CINCO FASES Y TRES TEMPORIZADORES. La fase 0 es el sobre cerrado; la 1
  * empieza al tocar el sello; las tres siguientes las marcan los tiempos de
@@ -68,6 +74,7 @@ export function SobreReserva({
   lugar,
   remite,
   foto,
+  retrato,
   urlBase,
   abiertoAlLlegar,
 }: {
@@ -83,6 +90,8 @@ export function SobreReserva({
   remite: string;
   /** La foto que sale del sobre con la tarjeta, o `null` si no hay ninguna. */
   foto: Medio | null;
+  /** El retrato de estrellas de la solapa y de la tarjeta, o `null` si no hay. */
+  retrato: Retrato | null;
   urlBase: string | undefined;
   /** El servidor ya lo pinta abierto: llegó con `?abierto` en la URL. */
   abiertoAlLlegar: boolean;
@@ -115,6 +124,11 @@ export function SobreReserva({
     else if (fase === CERRADO) sello.current?.focus({ preventScroll: true });
   }, [fase]);
 
+  const fuente =
+    foto && urlBase
+      ? `${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${foto.ruta}`
+      : null;
+
   function abrir(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (fase !== CERRADO) return;
@@ -126,13 +140,26 @@ export function SobreReserva({
     }
 
     setFase(1);
+    /*
+      SIN FOTO NO HAY ESPERA. El hueco entre que asoma la foto y asoma la
+      tarjeta es para la foto; sin ella se quedaba medio segundo de sobre
+      abierto sin que saliera nada. La tarjeta adelanta ese tiempo, pero el
+      sobre se va a su hora: ese rato de más es la tarjeta asomando por la
+      boca del sobre con la luz detrás, que es el momento de la pieza.
+    */
+    const { foto: tFoto, tarjeta: tTarjeta, fuera: tFuera } = FASES_APERTURA_SOBRE_MS;
+    const adelanto = fuente ? 0 : tTarjeta - tFoto;
     const pasos: readonly (readonly [number, Fase])[] = [
-      [FASES_APERTURA_SOBRE_MS.foto, 2],
-      [FASES_APERTURA_SOBRE_MS.tarjeta, 3],
-      [FASES_APERTURA_SOBRE_MS.fuera, ABIERTO],
+      [tFoto, 2],
+      [tTarjeta - adelanto, 3],
+      [tFuera, ABIERTO],
     ];
     temporizadores.current = pasos.map(([ms, siguiente]) =>
-      window.setTimeout(() => setFase(siguiente), ms),
+      window.setTimeout(() => {
+        setFase(siguiente);
+        // La fugaz cruza justo cuando sale la tarjeta.
+        if (siguiente === 3) window.dispatchEvent(new Event(EVENTO_FUGAZ));
+      }, ms),
     );
   }
 
@@ -141,11 +168,6 @@ export function SobreReserva({
     limpiar();
     setFase(CERRADO);
   }
-
-  const fuente =
-    foto && urlBase
-      ? `${urlBase}/storage/v1/object/public/${BUCKET_MEDIOS}/${foto.ruta}`
-      : null;
 
   // El escenario se sacude mientras la solapa gira y hasta que asoma la tarjeta.
   const sacudida = fase >= 1 && fase < 3;
@@ -178,9 +200,16 @@ export function SobreReserva({
       <div className="escenario animacion-escalar-escenario">
         <div className={`h-full w-full ${sacudida ? "animacion-sacudir" : ""}`}>
           {/*
+            La luz que sale con la tarjeta: un charco cálido en el cielo, detrás
+            de ella, que se enciende cuando asoma y se queda mientras se lee.
+          */}
+          <div aria-hidden="true" className="luz-del-naipe" />
+
+          {/*
             El sobre: el cuerpo, su trama, el dorso en pico con el brillo y el
-            remite, la solapa con la Lira y el sello encima. Abierto, se funde y
-            queda inerte: nada de dentro se puede tocar ni enfocar.
+            remite, la solapa con el retrato de estrellas y el sello encima.
+            Abierto, se funde y queda inerte: nada de dentro se puede tocar ni
+            enfocar.
           */}
           <div className="sobre" inert={fase !== CERRADO}>
             <div className="sobre-cuerpo" />
@@ -193,13 +222,25 @@ export function SobreReserva({
               </span>
             </div>
 
-            <div className="solapa" data-lienzo="solapa">
+            <div className="solapa">
               <div className="solapa-papel" />
-              <div className="solapa-lira" aria-hidden="true">
-                <div className="rotate-180">
-                  <Constelacion clave={CONSTELACION_NOVIOS} />
+              {/*
+                EL RETRATO, DE PIE Y A MEDIA LUZ: impreso en la solapa como un
+                grabado, en la parte ancha del pico, encima del lacre. Titila
+                como en el cielo de la landing; se dibuja entero de verdad
+                cuando sale en la tarjeta.
+              */}
+              {retrato ? (
+                <div className="solapa-retrato" aria-hidden="true">
+                  <EstrellasDelRetrato
+                    retrato={retrato}
+                    medidas={RETRATO_EN_LA_SOLAPA}
+                    idHalo="halo-retrato-solapa"
+                    encuadre="xMidYMin meet"
+                    className="block w-auto overflow-visible"
+                  />
                 </div>
-              </div>
+              ) : null}
             </div>
 
             <form method="get" onSubmit={abrir} className="sello-hueco">
@@ -239,6 +280,7 @@ export function SobreReserva({
               fechaTexto={fechaTexto}
               anio={anio}
               lugar={lugar}
+              retrato={retrato}
             />
           </div>
         </div>
@@ -256,22 +298,15 @@ export function SobreReserva({
       <div className="pie-sobre relative text-center" inert={fase < ABIERTO}>
         <div className="pie-sobre-dentro">
           <div className="pie-sobre-contenido">
-            <p className="mx-auto mb-nota-sobre-abajo max-w-nota-sobre font-titulo peso-titulo text-nota-sobre leading-cita text-tinta-suave italic">
-              {t("saveTheDate.nota")}
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-hueco-boton">
+            <div className="flex justify-center">
               {/*
-            Enlace normal y no `next/link`: el destino no es una página, es un
-            fichero que se descarga. Con el enrutador de Next por medio, el
-            navegador intentaría navegar a él.
-          */}
+                Enlace normal y no `next/link`: el destino no es una página, es
+                un fichero que se descarga. Con el enrutador de Next por medio,
+                el navegador intentaría navegar a él.
+              */}
               <BotonEnlace href={RUTA_CALENDARIO} prefetch={false} download>
                 <IconoCalendario />
                 {t("saveTheDate.anadirCalendario")}
-              </BotonEnlace>
-              <BotonEnlace href="/" jerarquia="secundario">
-                {t("saveTheDate.verLaWeb")}
               </BotonEnlace>
             </div>
 

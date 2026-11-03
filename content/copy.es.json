@@ -227,9 +227,7 @@
     "remite": "{nombres} · {ciudad}",
     "lugarYCiudad": "{lugar} · {ciudad}",
     "volverAlSobre": "Volver a meterlo en el sobre",
-    "nota": "La invitación con todos los detalles llegará más adelante. De momento, guardad el día.",
     "anadirCalendario": "Añadir al calendario",
-    "verLaWeb": "Ver la web",
     "icsTitulo": "Boda de {nombres}",
     "icsDescripcion": "Nos casamos. Guardad el día."
   },

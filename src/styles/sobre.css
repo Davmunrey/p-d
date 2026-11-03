@@ -1,8 +1,9 @@
 /**
  * CAPA 3 — EL SOBRE DEL SAVE THE DATE
  *
- * La única pieza del sistema con una coreografía: un sobre que se abre, dos
- * naipes que salen de él y un pie que aparece debajo. Tailwind no tiene
+ * La única pieza del sistema con una coreografía: un sobre de noche que se
+ * abre, la tarjeta que sale de él con una luz detrás y su retrato de estrellas
+ * dibujándose, y un pie que aparece debajo. Tailwind no tiene
  * vocabulario para una solapa que gira en 3D ni para un naipe que cambia de
  * sitio según la fase, así que la pieza tiene su hoja. Es capa de componente:
  * consume sólo semánticos, no hay aquí ni un color ni un tiempo escrito.
@@ -47,20 +48,46 @@
 
 /* --------------------------------------------------------------------------
  * El sobre
+ *
+ * LA TARJETA SALE ENTRE SUS CAPAS. Un sobre de verdad tiene detrás el fondo y
+ * la solapa abierta, y delante el bolsillo: la tarjeta asoma entre los dos,
+ * por encima del pico del bolsillo y por delante de la solapa. Para eso el
+ * sobre NO PUEDE SER UN CONTEXTO DE APILAMIENTO —si lo fuera, la tarjeta
+ * quedaría entera delante o entera detrás—, así que no lleva ni `z-index`, ni
+ * `transform`, ni `perspective`, ni opacidad propia: se centra con márgenes,
+ * la perspectiva la lleva la solapa en su `transform` y cada pieza se funde
+ * por su cuenta. Sus capas compiten en el escenario con la luz y los naipes:
+ *
+ *   luz · fondo del sobre · solapa abierta · naipes · bolsillo · solapa
+ *   cerrada · sello
  * ----------------------------------------------------------------------- */
 
 .sobre {
   aspect-ratio: var(--proporcion-sobre);
   bottom: 0;
-  left: 50%;
-  perspective: var(--perspectiva-sobre);
+  inset-inline: 0;
+  margin-inline: auto;
   position: absolute;
-  transform: translateX(var(--centrado));
-  transition:
-    opacity var(--transicion-sobre) var(--retardo-sobre),
-    transform var(--transicion-sobre) var(--retardo-sobre);
   width: var(--ancho-sobre);
-  z-index: var(--capa-sobre);
+}
+
+/* Al irse el sobre, sus piezas se funden; la tarjeta se queda donde estaba. */
+.sobre-cuerpo,
+.sobre-trama,
+.sobre-dorso,
+.sobre-brillo,
+.sobre-remite {
+  transition: opacity var(--transicion-sobre) var(--retardo-sobre);
+}
+
+.pieza-sobre[data-fuera]
+  :is(.sobre-cuerpo, .sobre-trama, .sobre-dorso, .sobre-brillo, .sobre-remite, .solapa) {
+  opacity: 0%;
+}
+
+.sobre-cuerpo,
+.sobre-trama {
+  z-index: var(--capa-fondo-sobre);
 }
 
 .sobre-cuerpo {
@@ -129,14 +156,22 @@
  * La solapa: gira desde su borde de arriba y, abierta, pasa detrás del dorso
  * ----------------------------------------------------------------------- */
 
+/*
+  Cerrada va delante del bolsillo; abierta, detrás de la tarjeta. El cambio
+  de capa espera a que la punta haya subido por encima del pico, o se vería
+  cortarse contra el bolsillo al empezar a girar.
+*/
 .solapa {
   height: var(--alto-solapa);
   inset: 0 0 auto;
   position: absolute;
-  transform: rotateX(0);
+  transform: perspective(var(--perspectiva-sobre)) rotateX(0);
   transform-origin: top center;
   transform-style: preserve-3d;
-  transition: transform var(--transicion-solapa);
+  transition:
+    transform var(--transicion-solapa),
+    opacity var(--transicion-sobre) var(--retardo-sobre),
+    z-index 0s var(--retardo-capa-solapa);
   z-index: var(--capa-solapa);
 }
 
@@ -152,25 +187,30 @@
   position: absolute;
 }
 
-/* La Lira impresa en la solapa, boca abajo: se lee bien cuando la solapa gira. */
-.solapa-lira {
+/*
+  El retrato impreso en la solapa, de pie y a media luz, en la parte ancha del
+  pico: entra de sobra por encima del lacre, y el recorte de la solapa lo
+  sujeta si una foto muy ancha lo estirara. Va impreso por fuera: con la
+  solapa abierta se ve el forro, no el retrato del revés.
+*/
+.solapa-retrato {
   align-items: flex-start;
+  backface-visibility: hidden;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   display: flex;
   inset: 0;
   justify-content: center;
-  opacity: var(--opacidad-lira-solapa);
-  padding-top: var(--espacio-lira-solapa);
+  opacity: var(--opacidad-retrato-solapa);
+  padding-top: var(--espacio-retrato-solapa);
   position: absolute;
 }
 
-.solapa-lira > * {
-  height: var(--alto-lira-solapa);
-  width: var(--ancho-lira-solapa);
+.solapa-retrato > svg {
+  height: var(--alto-retrato-solapa);
 }
 
 .pieza-sobre[data-abierto] .solapa {
-  transform: rotateX(var(--giro-solapa));
+  transform: perspective(var(--perspectiva-sobre)) rotateX(var(--giro-solapa));
   z-index: var(--capa-solapa-abierta);
 }
 
@@ -235,6 +275,36 @@
 }
 
 /* --------------------------------------------------------------------------
+ * La luz de la tarjeta: un charco cálido en el cielo, detrás de todo
+ *
+ * Está apagada y encogida mientras el sobre está cerrado; cuando la tarjeta
+ * asoma se enciende y se abre, como si saliera luz del sobre, y se queda
+ * detrás de ella mientras se lee. Es lo que hace que una tarjeta clara en
+ * medio de la noche parezca alumbrada y no recortada.
+ * ----------------------------------------------------------------------- */
+
+.luz-del-naipe {
+  background: radial-gradient(closest-side, var(--luz-naipe), var(--luz-naipe-final));
+  height: var(--alto-luz-naipe);
+  left: 50%;
+  opacity: 0%;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translate(var(--centrado), var(--centrado)) scale(var(--escala-luz-apagada));
+  transition:
+    opacity var(--transicion-luz-naipe),
+    transform var(--transicion-luz-naipe);
+  width: var(--ancho-luz-naipe);
+  z-index: var(--capa-luz-naipe);
+}
+
+.pieza-sobre[data-tarjeta] .luz-del-naipe {
+  opacity: 100%;
+  transform: translate(var(--centrado), var(--centrado)) scale(1);
+}
+
+/* --------------------------------------------------------------------------
  * Los naipes: la foto y la tarjeta, guardados dentro hasta que se abre
  *
  * El naipe mide de alto lo que el escenario deje (menos un margen) y nunca
@@ -257,7 +327,7 @@
     opacity var(--transicion-naipe-fundido);
   width: auto;
   will-change: transform;
-  z-index: var(--capa-naipe-guardado);
+  z-index: var(--capa-naipe);
 }
 
 .naipe-foto {
@@ -299,21 +369,47 @@
 }
 
 /*
-  Fase 4: el sobre se va y los naipes se colocan, la foto a la izquierda y la
-  tarjeta a la derecha. En un móvil se solapan y se encogen un punto, porque
-  uno al lado del otro no caben.
+  EL RETRATO DE LA TARJETA SE DIBUJA AL SALIR. Las estrellas se encienden
+  según `--trazado` (ver `motion.css`, el mismo dibujo que en la landing); aquí
+  `--trazado` va de 0 a 1 cuando la tarjeta asoma, en el orden del contorno,
+  como si alguien lo trazara con tinta mientras se lee el resto. Para que una
+  variable se pueda animar el navegador tiene que saber que es un número: eso
+  es el `@property`. Donde no lo sabe, el retrato sale entero de golpe.
+
+  Servido ya abierto —sin JavaScript— la tarjeta nace con `data-tarjeta`, y una
+  transición no corre en el primer pintado: el retrato está entero.
 */
-.pieza-sobre[data-fuera] .sobre {
-  opacity: 0%;
+@property --trazado {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
 }
 
+.trazado-del-naipe {
+  --trazado: 0;
+
+  transition: --trazado var(--transicion-trazado-naipe);
+}
+
+.pieza-sobre[data-tarjeta] .trazado-del-naipe {
+  --trazado: 1;
+
+  transition-delay: var(--retardo-trazado-naipe);
+}
+
+/*
+  Fase 4: el sobre se funde y los naipes se colocan, la foto a la izquierda y
+  la tarjeta a la derecha. En un móvil se solapan y se encogen un punto,
+  porque uno al lado del otro no caben. Los naipes no cambian de capa: siguen
+  detrás del bolsillo mientras se desvanece, y la tarjeta acaba de salir
+  porque el sobre deja de estar, no porque salte por delante de él.
+*/
 .pieza-sobre[data-fuera] .naipe-foto {
   transform: translate(
       var(--desplazamiento-foto-fuera-x-movil),
       var(--desplazamiento-foto-fuera-y-movil)
     )
     rotate(var(--giro-foto-fuera-movil)) scale(var(--escala-naipe-fuera-movil));
-  z-index: var(--capa-foto-fuera);
 
   /*
     Desde el punto de ruptura `md` del sistema —el de Tailwind, para no
@@ -332,7 +428,6 @@
       var(--desplazamiento-tarjeta-fuera-y-movil)
     )
     rotate(var(--giro-tarjeta-fuera-movil)) scale(var(--escala-naipe-fuera-movil));
-  z-index: var(--capa-tarjeta-fuera);
 
   @variant md {
     transform: translate(var(--desplazamiento-tarjeta-fuera-x), var(--centrado))

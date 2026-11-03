@@ -386,18 +386,12 @@ export function constelacionPorClave(clave: string): Constelacion | undefined {
 }
 
 /**
- * La constelación de los novios. Es la que abre el sistema de marca y la que
- * lleva el Save the Date, y por eso tiene nombre propio en lugar de aparecer
- * como una cadena suelta en dos sitios distintos.
+ * La constelación de los novios. Es la que abre el sistema de marca y la de
+ * las pantallas de estado, y por eso tiene nombre propio en lugar de aparecer
+ * como una cadena suelta en varios sitios. El Save the Date ya no la lleva:
+ * lleva el retrato de estrellas de Paloma, Hati y David.
  */
 export const CONSTELACION_NOVIOS = "lira";
-
-/**
- * Cuánto crecen las estrellas dentro de la tarjeta del Save the Date. La
- * entrega pide `escala-estrella="1.2"` sólo ahí: en un lienzo pequeño el
- * brillo de 1× se pierde, y en el catálogo o en un cartel sobra.
- */
-export const ESCALA_ESTRELLA_TARJETA = 1.2;
 
 /**
  * Grosor de la línea, en unidades del lienzo de 100. Va aquí y no como número

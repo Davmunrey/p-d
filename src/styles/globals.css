@@ -192,7 +192,6 @@
   --text-remite: var(--texto-remite);
   --text-sello: var(--texto-sello);
   --text-sello-ampersand: var(--texto-sello-ampersand);
-  --text-nota-sobre: var(--texto-nota-sobre);
   --text-pista-sobre: var(--texto-pista-sobre);
   --text-naipe-rotulo: var(--texto-naipe-rotulo);
   --text-naipe-nombre: var(--texto-naipe-nombre);
@@ -288,10 +287,8 @@
   --spacing-galeria: var(--espacio-galeria);
   --spacing-sobre-arriba: var(--espacio-sobre-arriba);
   --spacing-sobre-abajo: var(--espacio-sobre-abajo);
-  --spacing-sangrado-cielo: var(--sangrado-cielo);
   --spacing-escenario-arriba: var(--espacio-escenario-arriba);
   --spacing-pista-sobre: var(--espacio-pista-sobre);
-  --spacing-nota-sobre-abajo: var(--espacio-nota-sobre);
   --spacing-volver-sobre: var(--espacio-volver-sobre);
   --spacing-remite-abajo: var(--espacio-remite-abajo);
   --spacing-hueco-boton: var(--espacio-hueco-boton);
@@ -309,7 +306,7 @@
   --spacing-naipe-hueco-corto: var(--espacio-naipe-hueco-corto);
   --spacing-naipe-hueco-cifras: var(--espacio-naipe-hueco-cifras);
   --spacing-naipe-foto: var(--espacio-naipe-foto);
-  --spacing-naipe-lira: var(--lado-naipe-lira);
+  --spacing-naipe-retrato: var(--alto-naipe-retrato);
   --spacing-naipe-raya: var(--ancho-naipe-raya);
   --spacing-naipe-rombo: var(--lado-naipe-rombo);
   --spacing-escena-lado: var(--espacio-escena-lado);
@@ -401,7 +398,6 @@
   --container-entradilla-centrada: var(--ancho-entradilla-centrada);
   --container-entradilla-llegar: var(--ancho-entradilla-llegar);
   --container-cita: var(--ancho-cita);
-  --container-nota-sobre: var(--ancho-nota-sobre);
 }
 
 /**
@@ -709,6 +705,22 @@
 }
 
 /**
+ * LA NOCHE DEL SAVE THE DATE: el mismo cielo, en una sola pantalla. Lleva
+ * además su color de fondo, el del medio de la noche: un degradado no es un
+ * color, y lo que mide contrastes —axe, el lector de pantalla del sistema, un
+ * test— buscaba uno, no lo encontraba y medía contra el blanco del `body`.
+ */
+@utility cielo-del-sobre {
+  background-color: var(--cielo-noche-medio);
+  background-image: linear-gradient(
+    to bottom,
+    var(--cielo-noche-cenit),
+    var(--cielo-noche-medio) 40%,
+    var(--cielo-noche-horizonte)
+  );
+}
+
+/**
  * EL AMANECER: la franja sin texto entre la noche y el día. Del horizonte de
  * la noche al alba en cuatro paradas, con el sol —sólo luz— asomando por
  * abajo. El brillo se apaga antes del borde: si llegara hasta él, se vería
@@ -784,33 +796,6 @@
     var(--mascara-llena) 32%,
     var(--mascara-llena) 76%,
     transparent
-  );
-}
-
-/**
- * EL CIELO CLARO DEL SAVE THE DATE: el mismo truco en dos tonos de bruma
- * sobre el fondo de la página, con rejillas un punto más grandes. Y el velo
- * que lo aclara por el centro, para que el sobre se lea sobre él.
- */
-@utility cielo-claro {
-  background-image:
-    radial-gradient(circle at 16% 22%, var(--estrella-clara-1) 1.4px, transparent 0),
-    radial-gradient(circle at 68% 12%, var(--estrella-clara-2) 1.1px, transparent 0),
-    radial-gradient(circle at 84% 58%, var(--estrella-clara-1) 1.5px, transparent 0),
-    radial-gradient(circle at 32% 78%, var(--estrella-clara-2) 1.2px, transparent 0);
-  background-size:
-    260px 230px,
-    190px 200px,
-    310px 270px,
-    230px 250px;
-}
-
-@utility velo-cielo {
-  background: radial-gradient(
-    56% 44% at 50% 42%,
-    var(--velo-cielo-centro) 0%,
-    var(--velo-cielo-medio) 58%,
-    var(--velo-cielo-borde) 100%
   );
 }
 

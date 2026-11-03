@@ -92,6 +92,7 @@ const semanticoCss = leer("src/styles/tokens/semantic.css");
 const claro = declaracionesDe(bloqueDe(semanticoCss, ":root"));
 const inversa = declaracionesDe(bloqueDe(semanticoCss, '[data-seccion="inversa"]'));
 const pie = declaracionesDe(bloqueDe(semanticoCss, '[data-seccion="pie"]'));
+const papel = declaracionesDe(bloqueDe(semanticoCss, '[data-seccion="papel"]'));
 
 /** Los tres fondos sobre los que se pinta algo en esta web. */
 const FONDOS: [string, Map<string, string>][] = [
@@ -115,6 +116,29 @@ function resolver(nombre: string, propias: Map<string, string>) {
   expect(literal, `Primitivo desconocido: --${referencia![1]}`).toBeDefined();
   return normalizar(literal!);
 }
+
+/**
+ * EL PAPEL DEL SAVE THE DATE DESHACE LA NOCHE, TODA.
+ *
+ * La tarjeta clara va dentro de la página de noche (`inversa`). Si el inverso
+ * reasigna un token y el papel no lo devuelve a su valor de `:root`, la
+ * tarjeta lo hereda de la noche: tinta clara sobre papel claro. Pasaría el día
+ * que alguien añada un token al bloque inverso sin pensar en el sobre.
+ */
+describe("el papel del Save the Date", () => {
+  it("devuelve cada token que el bloque inverso reasigna, con el valor de :root", () => {
+    for (const nombre of inversa.keys()) {
+      expect(papel.get(nombre), `--${nombre} no vuelve en el papel`).toBe(claro.get(nombre));
+    }
+  });
+
+  it("imprime el retrato en tinta, no en la luz del cielo", () => {
+    expect(papel.get("retrato-estrella")).toBe("var(--retrato-naipe-estrella)");
+    expect(resolver("retrato-naipe-estrella", claro)).not.toBe(
+      resolver("retrato-estrella", claro),
+    );
+  });
+});
 
 describe("paleta azul marino", () => {
   it.each(Object.entries(CLARO))(
@@ -210,10 +234,14 @@ describe("contraste de la paleta", () => {
 
     it(`en ${nombre} las instrucciones pequeñas del sobre se leen`, () => {
       // «Tocad el sello para abrir», en versalita de 10 px: la única
-      // instrucción del Save the Date cerrado.
-      expect(
-        contraste(resolver("tinta-pista", propias), resolver("fondo", claro)),
-      ).toBeGreaterThanOrEqual(4.5);
+      // instrucción del Save the Date cerrado. Va sobre su cielo de noche, de
+      // la parte más clara a la más oscura.
+      for (const cielo of ["cielo-noche-cenit", "cielo-noche-medio", "cielo-noche-horizonte"]) {
+        expect(
+          contraste(resolver("tinta-pista", propias), resolver(cielo, claro)),
+          `la pista sobre ${cielo}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
     });
 
     it(`en ${nombre} el botón primario se ve y se lee`, () => {

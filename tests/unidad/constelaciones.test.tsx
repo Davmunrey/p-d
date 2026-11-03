@@ -10,7 +10,6 @@ import {
   CONSTELACIONES,
   CONSTELACION_NOVIOS,
   constelacionPorClave,
-  ESCALA_ESTRELLA_TARJETA,
   GROSOR_TRAZO,
   normalizarClave,
 } from "@/config/constelaciones";
@@ -114,19 +113,6 @@ describe("El catálogo de constelaciones", () => {
     expect(normalizarClave(escrita)).toBe(clave);
     expect(constelacionPorClave(escrita)?.clave).toBe(clave);
   });
-
-  it("la escala de la tarjeta agranda las estrellas sin sacar ninguna del lienzo", () => {
-    expect(ESCALA_ESTRELLA_TARJETA).toBeGreaterThan(1);
-    for (const { clave, estrellas } of CONSTELACIONES) {
-      for (const [x, y, radio] of estrellas) {
-        const r = radio * ESCALA_ESTRELLA_TARJETA;
-        expect(x - r, `${clave}: a 1.2× se corta por la izquierda`).toBeGreaterThanOrEqual(0);
-        expect(x + r, `${clave}: a 1.2× se corta por la derecha`).toBeLessThanOrEqual(100);
-        expect(y - r, `${clave}: a 1.2× se corta por arriba`).toBeGreaterThanOrEqual(0);
-        expect(y + r, `${clave}: a 1.2× se corta por abajo`).toBeLessThanOrEqual(100);
-      }
-    }
-  });
 });
 
 /**
@@ -151,11 +137,12 @@ describe("El componente Constelacion", () => {
   });
 
   it("la escala multiplica el radio de cada estrella y sólo el radio", () => {
+    const escala = 1.5;
     const html = renderToStaticMarkup(
-      <Constelacion clave={CONSTELACION_NOVIOS} escala={ESCALA_ESTRELLA_TARJETA} />,
+      <Constelacion clave={CONSTELACION_NOVIOS} escala={escala} />,
     );
     const [, , radio] = lira.estrellas[0];
-    expect(html).toContain(`r="${radio * ESCALA_ESTRELLA_TARJETA}"`);
+    expect(html).toContain(`r="${radio * escala}"`);
     // Las coordenadas no se tocan: crece el brillo, no el mapa.
     expect(html).toContain(`cx="${lira.estrellas[0][0]}"`);
   });
@@ -201,8 +188,9 @@ describe("Las constelaciones respetan el sistema de tokens", () => {
       sobre marino con el trazo de fondo claro es invisible, así que cada fondo
       nuevo obliga a reasignar los dos tokens, y este número es el recordatorio.
     */
-    // Los tres fondos del sistema y la solapa del sobre del Save the Date,
-    // donde la Lira va impresa como filigrana (BODA-121).
+    // Los tres fondos del sistema y el papel de la tarjeta del Save the Date,
+    // que devuelve dentro de la noche los colores claros. La solapa ya no
+    // lleva la Lira: lleva el retrato de estrellas.
     const apariciones = semanticos.match(/--constelacion-estrella:/g) ?? [];
     expect(apariciones.length).toBe(4);
     expect(semanticos.match(/--constelacion-trazo:/g)?.length).toBe(4);
