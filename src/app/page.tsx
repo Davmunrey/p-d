@@ -1521,7 +1521,8 @@ function DressCode({ consejos }: { consejos: ConsejoVestimenta[] }) {
  * MIENTRAS ESTÁIS POR AQUÍ: lo que haríais vosotros en la ciudad, para quien
  * viene de fuera y se queda el fin de semana. Cada plan es una tarjeta con una
  * foto vuestra allí —es lo que lo hace vuestro y no una guía—, y sin foto la
- * tarjeta sale igual, con su texto.
+ * tarjeta sale igual, con su texto. Las fotos van en el tono del mapa del
+ * final (`tono-de-plano`): grises tostados, como un plano impreso.
  *
  * El título lleva la ciudad de la configuración: «Planes por León».
  */
@@ -1560,7 +1561,8 @@ function Planes({
                   fill
                   // Hasta tres por fila en escritorio, dos en tableta, una en el móvil.
                   sizes="(min-width: 64rem) 22rem, (min-width: 36rem) 50vw, 100vw"
-                  className="object-cover"
+                  // En sepia, como el mapa del final: todas casan, vengan de donde vengan.
+                  className="tono-de-plano object-cover"
                   placeholder={plan.foto.marcadorBorroso ? "blur" : "empty"}
                   blurDataURL={plan.foto.marcadorBorroso ?? undefined}
                 />

@@ -254,6 +254,10 @@
   /* El mapa del final, como un plano impreso (ver primitivos). */
   --filtro-mapa: var(--filtro-mapa-papel);
 
+  /* Las fotos de los planes, en el mismo tono del plano: así cualquiera que se
+     suba —de un banco o vuestra— casa con la web sin retocarla. */
+  --filtro-foto-plano: var(--filtro-mapa-papel);
+
   /* Una máscara sólo mira el alfa: el color lleno de donde se ve entero. */
   --mascara-llena: var(--color-negro);
 

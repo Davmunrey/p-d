@@ -784,6 +784,11 @@
   top: calc(var(--lado-estrella-llegada) / 2 + var(--spacing-pila));
 }
 
+/** Las fotos de los planes por la ciudad, en el tono del mapa del final. */
+@utility tono-de-plano {
+  filter: var(--filtro-foto-plano);
+}
+
 @utility teselas-de-papel {
   filter: var(--filtro-mapa);
   mask-image: linear-gradient(

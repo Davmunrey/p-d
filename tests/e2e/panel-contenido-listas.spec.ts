@@ -117,6 +117,7 @@ function borrarLoDePrueba(): Promise<void> {
     await sql`delete from public.hitos_programa where titulo like ${`${MARCA}%`}`;
     await sql`delete from public.alojamientos where nombre like ${`${MARCA}%`}`;
     await sql`delete from public.planes where titulo like ${`${MARCA}%`}`;
+    await sql`delete from public.medios where seccion = 'planes' and texto_alternativo ->> 'es' like ${`${MARCA}%`}`;
   });
 }
 
@@ -666,6 +667,49 @@ test.describe("Las listas de contenido de la web", () => {
       has: page.getByRole("heading", { level: 3, name: titulo }),
     });
     await expect(tarjeta).toContainText(texto);
+  });
+
+  /**
+   * LAS FOTOS DE LOS PLANES, EN SEPIA COMO EL MAPA. Vengan de un banco de
+   * imágenes o de vuestro móvil, en la web salen todas con el tono del plano
+   * del final; y sólo ellas: la foto de portada sigue en color.
+   */
+  test("la foto de un plan sale en el tono del mapa, y sólo ella", async ({ page }) => {
+    const titulo = `${MARCA} Entrad en la catedral con sol`;
+    await conBase(async (sql) => {
+      const [{ orden }] = await sql<{ orden: number }[]>`
+        select coalesce(max(orden) + 1, 0) as orden from public.medios where seccion = 'planes'
+      `;
+      const [{ id }] = await sql<{ id: string }[]>`
+        insert into public.medios (ruta_almacenamiento, texto_alternativo, seccion, orden, ancho, alto, publicado)
+        values ('planes/e2e-catedral.jpg', ${sql.json({ es: `${MARCA} La catedral al sol` })},
+                'planes', ${orden}, 1200, 900, true)
+        returning id
+      `;
+      await sql`insert into public.planes (titulo, medio_id) values (${titulo}, ${id})`;
+    });
+
+    await page.goto("/");
+    const tarjeta = page
+      .locator("#planes")
+      .getByRole("listitem")
+      .filter({
+        has: page.getByRole("heading", { level: 3, name: titulo }),
+      });
+    const foto = tarjeta.getByRole("img", { name: `${MARCA} La catedral al sol` });
+    await expect(foto).toBeAttached();
+    const filtro = await foto.evaluate((img) => getComputedStyle(img).filter);
+    expect(filtro).toContain("grayscale(1)");
+    expect(filtro).toContain("sepia(");
+
+    // CASO DE ERROR · El tono no se escapa: fuera de los planes, las fotos van en color.
+    const fueraDeLosPlanes = await page.evaluate(() =>
+      [...document.querySelectorAll("main img")]
+        .filter((img) => !img.closest("#planes"))
+        .map((img) => getComputedStyle(img).filter),
+    );
+    expect(fueraDeLosPlanes.length, "hay otras fotos en la página").toBeGreaterThan(0);
+    expect(fueraDeLosPlanes.filter((f) => f.includes("sepia"))).toEqual([]);
   });
 
   /** CASO DE ERROR · Un plan sin título no se guarda, y se dice qué falta. */
