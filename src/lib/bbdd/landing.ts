@@ -55,6 +55,8 @@ export interface ConfiguracionBoda {
    * web ni se pregunta por ella al confirmar.
    */
   lugarPreboda: string | null;
+  /** Cerrada, la landing enseña «Próximamente» a quien no está en el panel. */
+  webAbierta: boolean;
 }
 
 export interface HitoPrograma {
@@ -189,6 +191,7 @@ async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
         hashtag: string | null;
         firma_regalos: string | null;
         lugar_preboda: string | null;
+        web_abierta: boolean;
       }[]
     >`
       select
@@ -196,7 +199,7 @@ async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
         lugar_ceremonia, direccion_ceremonia, lugar_banquete,
         latitud_ceremonia, longitud_ceremonia, correo_contacto, hashtag,
         ciudad_ceremonia, avisos_programa,
-        firma_regalos, lugar_preboda
+        firma_regalos, lugar_preboda, web_abierta
       from public.v_configuracion_publica
       limit 1
     `,
@@ -222,6 +225,7 @@ async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
     hashtag: fila.hashtag,
     firmaRegalos: fila.firma_regalos,
     lugarPreboda: fila.lugar_preboda,
+    webAbierta: fila.web_abierta,
   };
 }
 

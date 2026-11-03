@@ -17,6 +17,7 @@ import {
 import { DatosEstructurados } from "@/components/datos-estructurados";
 import { BotonEnlace } from "@/components/ui/boton";
 import { CuentaRegalos } from "@/components/ui/cuenta-regalos";
+import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { EtiquetaEstado } from "@/components/ui/etiqueta-estado";
 import { FormularioPlaylist } from "@/components/ui/formulario-playlist";
 import { SignoAbrir } from "@/components/ui/signo-abrir";
@@ -34,9 +35,11 @@ import {
 } from "@/components/ui/tipografia";
 import { CIERRE_DE_LA_NOCHE, SECCIONES_DE_LLEGADA, SECCIONES_DE_NOCHE } from "@/config/cielo";
 import {
+  ANCLA_WEB_EN_AJUSTES,
   BUCKET_MEDIOS,
   ID_CONTENIDO,
   MARCA_RSVP_ENVIADO,
+  RUTA_AJUSTES,
   RUTA_OLVIDAR_INVITACION,
   URL_ATRIBUCION_MAPA,
 } from "@/config/constants";
@@ -55,6 +58,7 @@ import {
   obtenerSecciones,
   type Alojamiento as Hotel,
   type ConfiguracionBoda,
+  type Retrato,
   type RutaLlegada,
   type ConsejoVestimenta,
   type Medio,
@@ -74,6 +78,7 @@ import { enlaceMapaExterno } from "@/lib/mapa";
 import { invitacionRecordada } from "@/lib/invitacion-recordada";
 import { esCupoAgotado, obtenerInvitacion } from "@/lib/bbdd/rsvp";
 import { leerBorrador } from "@/lib/rsvp-borrador";
+import { accesoActual } from "@/lib/sesion";
 import { sembrarDesdeLaBase } from "@/lib/rsvp-siembra";
 
 /**
@@ -182,6 +187,21 @@ export default async function PaginaInicio({
   // aún está vacío. Se dice con claridad, en lugar de pintar una página rota o
   // inventarse datos para tapar el hueco.
   if (!configuracion) return <EnPreparacion retrato={retrato} />;
+
+  /*
+    LA WEB CERRADA. Hasta que los novios la abren desde Ajustes, quien entra ve
+    «Próximamente»: la noche, el retrato de estrellas, los nombres y la fecha.
+    Ellos, con sesión en el panel, la ven entera con un aviso de vista previa
+    para prepararla. Quien llega con su enlace de invitación tampoco la ve: el
+    enlace se recuerda igual y servirá el día que se abra.
+
+    La sesión sólo se pregunta si está cerrada: abierta, la landing no cuesta
+    ni una consulta más.
+  */
+  const vistaPrevia = !configuracion.webAbierta;
+  if (vistaPrevia && !(await accesoActual())) {
+    return <Proximamente configuracion={configuracion} retrato={retrato} />;
+  }
 
   const nombres = `${configuracion.nombreNovia} ${t("portada.conjuncion")} ${configuracion.nombreNovio}`;
 
@@ -377,6 +397,24 @@ export default async function PaginaInicio({
         anunciarse: para quien escucha la página no mide nada.
       */}
       <div aria-hidden="true" className="barra-lectura" />
+
+      {/*
+        LA VISTA PREVIA SE DICE. Con la web cerrada, quien la ve entera es
+        porque tiene sesión en el panel; sin el aviso, nada le recuerda que los
+        invitados ven otra cosa.
+      */}
+      {vistaPrevia ? (
+        <p
+          role="status"
+          data-vista-previa=""
+          className="fixed inset-x-margen bottom-margen capa-cabecera mx-auto max-w-texto rounded-boton border border-borde bg-superficie px-interno py-pila text-center text-pequeno text-tinta"
+        >
+          {t("panel.ajustes.vistaPrevia")}{" "}
+          <EnlaceSuave href={`${RUTA_AJUSTES}#${ANCLA_WEB_EN_AJUSTES}`}>
+            {t("panel.ajustes.vistaPreviaAbrir")}
+          </EnlaceSuave>
+        </p>
+      ) : null}
 
       {/*
         OLVIDAR UN ENLACE QUE NO VALE. La página no puede borrar una cookie;
@@ -641,23 +679,7 @@ function Portada({
           pausa de su línea: es el primer plano de la película, y entra como un
           título, no como un párrafo.
         */}
-        <Display className="animacion-subir retardo-2 mt-nombres">
-          <span className="mascara-linea">
-            <span className="linea-que-emerge pausa-nombre-novia">
-              {configuracion.nombreNovia}
-            </span>
-          </span>
-        </Display>
-        <div className="animacion-subir retardo-3 flex flex-wrap items-baseline gap-conector">
-          <Conector escrita>{t("portada.conjuncion")}</Conector>
-          <Display como="p">
-            <span className="mascara-linea">
-              <span className="linea-que-emerge pausa-nombre-novio">
-                {configuracion.nombreNovio}
-              </span>
-            </span>
-          </Display>
-        </div>
+        <NombresDePortada configuracion={configuracion} />
 
         <hr className="animacion-trazar retardo-4 my-raya border-t border-borde-fuerte" />
 
@@ -716,6 +738,78 @@ function Portada({
         />
       ) : null}
     </section>
+  );
+}
+
+/**
+ * LOS NOMBRES DE LA PORTADA: el de la novia, la «y» que se escribe y el del
+ * novio, cada uno emergiendo de detrás de su línea. Los comparten la portada y
+ * «Próximamente», que es la misma primera imagen con la web todavía cerrada.
+ */
+function NombresDePortada({ configuracion }: { configuracion: ConfiguracionBoda }) {
+  return (
+    <>
+      <Display className="animacion-subir retardo-2 mt-nombres">
+        <span className="mascara-linea">
+          <span className="linea-que-emerge pausa-nombre-novia">
+            {configuracion.nombreNovia}
+          </span>
+        </span>
+      </Display>
+      <div className="animacion-subir retardo-3 flex flex-wrap items-baseline gap-conector">
+        <Conector escrita>{t("portada.conjuncion")}</Conector>
+        <Display como="p">
+          <span className="mascara-linea">
+            <span className="linea-que-emerge pausa-nombre-novio">
+              {configuracion.nombreNovio}
+            </span>
+          </span>
+        </Display>
+      </div>
+    </>
+  );
+}
+
+/**
+ * «PRÓXIMAMENTE»: LA WEB, CERRADA
+ *
+ * Lo que ve quien entra en el dominio antes de que los novios abran la web: la
+ * noche de la portada, con su firmamento girando, los nombres, la fecha y una
+ * frase, y debajo el retrato de estrellas, que se dibuja solo al llegar. Nada
+ * más: ni menú, ni lugar, ni programa, ni datos para buscadores. Es la primera
+ * imagen de la web, sin la web.
+ */
+function Proximamente({
+  configuracion,
+  retrato,
+}: {
+  configuracion: ConfiguracionBoda;
+  retrato: Retrato | null;
+}) {
+  return (
+    <main id={ID_CONTENIDO} data-web="cerrada">
+      <div data-tramo="noche" data-seccion="inversa" className="tramo-noche relative isolate">
+        <div aria-hidden className="lienzo-pegado capa-cielo">
+          <CieloEstrellado viaLactea fugaces className="size-full" />
+        </div>
+        <section className="relative mx-auto flex min-h-portada-sin-foto max-w-contenido flex-col justify-center px-portada-lado pt-portada-arriba pb-portada-abajo">
+          <p className="animacion-aparecer-lento retardo-1 text-boton uppercase tracking-marcado text-acento">
+            {t("proximamente.etiqueta")}
+          </p>
+          <NombresDePortada configuracion={configuracion} />
+          <hr className="animacion-trazar retardo-4 my-raya border-t border-borde-fuerte" />
+          <div className="animacion-subir retardo-5">
+            <p className="font-titulo peso-titulo-menor text-dato leading-titulo-corto text-tinta-marca tabular-nums">
+              <time dateTime={configuracion.fechaCeremonia.toISOString()}>
+                {fechaEnPuntos(configuracion.fechaCeremonia)}
+              </time>
+            </p>
+            <Cuerpo className="mt-pila text-tinta-suave">{t("proximamente.texto")}</Cuerpo>
+          </div>
+        </section>
+        {retrato ? <RetratoDeEstrellas retrato={retrato} /> : null}
+      </div>
+    </main>
   );
 }
 

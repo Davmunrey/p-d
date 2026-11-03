@@ -13,6 +13,7 @@ import {
 } from "@/config/constants";
 import { construirCsp } from "@/lib/csp";
 import { COOKIE_INVITACION, opcionesCookieInvitacion } from "@/lib/invitacion";
+import { rutaEnElSubdominio } from "@/lib/subdominio";
 
 /**
  * BODA-41 · LA PUERTA, ANTES DE PINTAR NADA
@@ -69,6 +70,22 @@ export async function middleware(peticion: NextRequest) {
   if (peticion.nextUrl.pathname === RUTA_OLVIDAR_INVITACION) return olvidarEnlace();
 
   const csp = conCsp(peticion);
+
+  /*
+    EL SUBDOMINIO DEL SAVE THE DATE: su raíz es el sobre (`lib/subdominio.ts`).
+    Un `rewrite` y no una redirección: la dirección que se compartió es la que
+    se queda en el navegador. No hay sesión que renovar en el sobre.
+  */
+  const enElSubdominio = rutaEnElSubdominio(
+    peticion.headers.get("host"),
+    peticion.nextUrl.pathname,
+    process.env.HOST_RESERVA_LA_FECHA,
+  );
+  if (enElSubdominio) {
+    const destino = peticion.nextUrl.clone();
+    destino.pathname = enElSubdominio;
+    return conCabeceraCsp(NextResponse.rewrite(destino, { request: peticion }), csp);
+  }
 
   // La respuesta se crea antes de preguntar por el usuario: `setAll` escribe
   // en ella las cookies renovadas mientras `getUser()` está en marcha.

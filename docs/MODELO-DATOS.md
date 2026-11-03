@@ -6,7 +6,7 @@
 
 Las migraciones viven en [`supabase/migrations/`](../supabase/migrations/) y se
 aplican en orden alfabético, que es el orden cronológico de su prefijo. Son
-**76**, y las ocho primeras son las que levantan el esquema entero: quien quiera
+**77**, y las ocho primeras son las que levantan el esquema entero: quien quiera
 entender la base las lee en orden y ya sabe cómo funciona. Las demás son
 incrementales —una tabla, un enumerado, una columna— y cada una lleva en su
 cabecera el ticket que la trajo y por qué está escrita así, que es donde de
@@ -234,7 +234,9 @@ la firma con que acaba el texto de los regalos (`firma_regalos`, de 1 a 120
 caracteres o NULL: sin ella, la carta va sin firmar) y el lugar de la preboda
 (`lugar_preboda`, de 1 a 120 caracteres o NULL: la web dice «Preboda en …» bajo
 la fecha de la víspera; sin él, no enseña la preboda ni la pregunta al
-confirmar).
+confirmar). Y si la web está abierta (`web_abierta`, nace cerrada): cerrada, el
+dominio enseña «Próximamente» y sólo quien tiene acceso al panel ve la landing,
+como vista previa; se abre desde Ajustes.
 
 Está separada de la parte privada **por diseño**: la landing necesita leerla y
 RLS filtra filas, no columnas. Como aquí sólo hay una fila, una política de

@@ -64,6 +64,10 @@
   "preboda": {
     "titulo": "Preboda en {lugar}"
   },
+  "proximamente": {
+    "etiqueta": "Próximamente",
+    "texto": "Aquí estará todo lo que hay que saber de la boda. Muy pronto."
+  },
   "programa": {
     "titulo": "El día, hora a hora"
   },
@@ -562,6 +566,15 @@
     "ajustes": {
       "titulo": "Ajustes de la boda",
       "descripcion": "De aquí salen los nombres de la portada, la cuenta atrás, el mapa, el evento del calendario y la vista previa al compartir. Es lo primero que conviene rellenar.",
+      "grupoWeb": "La web",
+      "webCerrada": "La web está cerrada: quien entra ve «Próximamente», con vuestros nombres y la fecha, y nada más. Vosotros la veis entera mientras tengáis la sesión abierta.",
+      "webAbierta": "La web está abierta: la ve todo el que entra.",
+      "abrirWeb": "Abrir la web",
+      "cerrarWeb": "Cerrar la web",
+      "webAbiertaHecho": "Web abierta: ya la ve todo el que entra.",
+      "webCerradaHecho": "Web cerrada: quien entra ve «Próximamente».",
+      "vistaPrevia": "Vista previa: la web está cerrada y sólo la veis vosotros.",
+      "vistaPreviaAbrir": "Abrirla en Ajustes",
       "grupoPareja": "La pareja",
       "grupoCeremonia": "Ceremonia",
       "grupoBanquete": "Banquete",

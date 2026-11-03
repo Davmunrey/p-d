@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
+  ANCLA_WEB_EN_AJUSTES,
   LARGOS_DE_CAMPO,
   LONGITUD_MAXIMA_AVISO_PROGRAMA,
   LONGITUD_MINIMA_NOMBRE,
@@ -406,4 +407,49 @@ export async function guardarRegalos(datos: FormData) {
   revalidatePath("/", "layout");
   await borrarBorradorAjustes();
   volver("regalos-guardado");
+}
+
+/**
+ * ABRIR O CERRAR LA WEB
+ *
+ * Cerrada, quien entra en el dominio ve «Próximamente» y sólo quien tiene
+ * sesión en el panel ve la landing (ver `page.tsx`). El formulario dice lo que
+ * quiere —`abrir` es «si» o «no»— y no «cambia lo que haya»: con dos personas
+ * pulsando a la vez, «abrir» dos veces deja la web abierta, no cerrada.
+ *
+ * QUIÉN PUEDE lo decide RLS, como en el resto de los ajustes: un lector no
+ * escribe y la base devuelve cero filas, que aquí es «sin permiso».
+ */
+export async function cambiarEstadoDeLaWeb(datos: FormData) {
+  if (!hayAutenticacion) redirect(RUTA_ACCESO);
+
+  const abrir = datos.get("abrir") === "si";
+  let resultado: EstadoAjustes = abrir ? "web-abierta" : "web-cerrada";
+
+  try {
+    const supabase = await clienteServidor();
+
+    const { data: sesion } = await supabase.auth.getUser();
+    if (!sesion.user) redirect(RUTA_ACCESO);
+
+    const { error, count } = await supabase
+      .from("configuracion_boda")
+      .update({ web_abierta: abrir }, { count: "exact" })
+      .eq("fila_unica", true);
+
+    if (error) {
+      console.error("No se pudo abrir o cerrar la web:", error.message);
+      resultado = "error";
+    } else if (count === 0) {
+      resultado = "sin-permiso";
+    }
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "digest" in error) throw error;
+    console.error("Fallo al abrir o cerrar la web:", error);
+    resultado = "error";
+  }
+
+  // La portada cambia entera con esto: de «Próximamente» a la web, o al revés.
+  if (resultado === "web-abierta" || resultado === "web-cerrada") revalidatePath("/", "layout");
+  redirect(`${RUTA_AJUSTES}?estado=${resultado}#${ANCLA_WEB_EN_AJUSTES}`);
 }

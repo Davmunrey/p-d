@@ -94,6 +94,9 @@ update public.configuracion_boda set
   longitud_banquete    = -3.703790,
   ciudad_ceremonia     = '(DES) León',
   lugar_preboda        = '(DES) el Barrio Húmedo',
+  -- Abierta: en desarrollo y en el CI la landing tiene que verse. En
+  -- producción nace cerrada (ver 20261103170000_web_abierta.sql).
+  web_abierta          = true,
   avisos_programa      = array[
     '(DES) Etiqueta elegante · ceremonia al aire libre',
     '(DES) Césped y grava: cuidado con los tacones finos'

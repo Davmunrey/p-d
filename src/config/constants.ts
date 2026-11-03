@@ -164,8 +164,11 @@ export const NOMBRE_FICHERO_CALENDARIO = "nuestra-boda.ics";
  */
 export const HORAS_DURACION_EVENTO = 6;
 
+/** El Save the Date. En su subdominio, se sirve en la raíz (`lib/subdominio.ts`). */
+export const RUTA_RESERVA_LA_FECHA = "/reserva-la-fecha";
+
 /** Descarga del evento para el calendario. La escriben la página y su test. */
-export const RUTA_CALENDARIO = "/reserva-la-fecha/evento.ics";
+export const RUTA_CALENDARIO = `${RUTA_RESERVA_LA_FECHA}/evento.ics`;
 
 /**
  * Las estrellas del retrato, en JSON. Las pide la pantalla de error, que se
@@ -454,6 +457,8 @@ export const RUTA_RECUPERAR = "/acceso/recuperar";
 export const RUTA_NUEVA_CONTRASENA = "/acceso/nueva-contrasena";
 export const RUTA_CUENTA = "/panel/cuenta";
 export const RUTA_AJUSTES = "/panel/ajustes";
+/** El bloque de Ajustes donde se abre y se cierra la web. */
+export const ANCLA_WEB_EN_AJUSTES = "la-web";
 export const RUTA_INVITADOS = "/panel/invitados";
 
 /** Las canciones que piden los invitados desde la portada. */

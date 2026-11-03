@@ -55,6 +55,7 @@ const DE_INVITADO = [
   "portada",
   "preboda",
   "programa",
+  "proximamente",
   "regalos",
   "rsvp",
   "saveTheDate",

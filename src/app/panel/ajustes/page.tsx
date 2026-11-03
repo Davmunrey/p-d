@@ -8,6 +8,7 @@ import { EnlaceSuave } from "@/components/ui/enlace-suave";
 import { Cuerpo, Titulo2, Titulo3 } from "@/components/ui/tipografia";
 import {
   IDIOMA,
+  ANCLA_WEB_EN_AJUSTES,
   LARGOS_DE_CAMPO,
   LONGITUD_MINIMA_NOMBRE,
   RUTA_ACCESO,
@@ -21,7 +22,7 @@ import { accesoActual } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import { localDesdeInstante } from "@/lib/zona-horaria";
 
-import { guardarAjustes, guardarRegalos } from "./acciones";
+import { cambiarEstadoDeLaWeb, guardarAjustes, guardarRegalos } from "./acciones";
 import {
   anclaDeCampo,
   esCampoAjustes,
@@ -54,6 +55,8 @@ export const dynamic = "force-dynamic";
 const AVISOS: Record<EstadoAjustes, { texto: string; error: boolean }> = {
   guardado: { texto: t("panel.ajustes.guardado"), error: false },
   "regalos-guardado": { texto: t("panel.ajustes.regalosGuardado"), error: false },
+  "web-abierta": { texto: t("panel.ajustes.webAbiertaHecho"), error: false },
+  "web-cerrada": { texto: t("panel.ajustes.webCerradaHecho"), error: false },
   iban: { texto: t("panel.ajustes.errorIban"), error: true },
   "solo-propietario": { texto: t("panel.ajustes.errorSoloPropietario"), error: true },
   nombres: { texto: t("panel.ajustes.errorNombres"), error: true },
@@ -73,6 +76,7 @@ const AVISOS: Record<EstadoAjustes, { texto: string; error: boolean }> = {
 };
 
 interface Configuracion {
+  web_abierta: boolean;
   nombre_novia: string;
   nombre_novio: string;
   hashtag: string | null;
@@ -173,7 +177,7 @@ export default async function PaginaAjustes({
   const { data, error } = await supabase
     .from("configuracion_boda")
     .select(
-      "nombre_novia, nombre_novio, hashtag, correo_contacto, firma_regalos, fecha_hora_ceremonia, " +
+      "web_abierta, nombre_novia, nombre_novio, hashtag, correo_contacto, firma_regalos, fecha_hora_ceremonia, " +
         "fecha_hora_banquete, fecha_limite_rsvp, zona_horaria, lugar_ceremonia, " +
         "direccion_ceremonia, latitud_ceremonia, longitud_ceremonia, lugar_banquete, " +
         "direccion_banquete, latitud_banquete, longitud_banquete, " +
@@ -256,6 +260,31 @@ export default async function PaginaAjustes({
           {t("panel.ajustes.soloLectura")}
         </p>
       ) : null}
+
+      {/*
+        LA WEB, ABIERTA O CERRADA. Va primero y en su propio formulario: no es
+        un dato que se rellena, es una decisión que se toma un día, y no tiene
+        que esperar a que el resto de la pantalla esté bien para guardarse.
+      */}
+      <form
+        id={ANCLA_WEB_EN_AJUSTES}
+        action={cambiarEstadoDeLaWeb}
+        className="scroll-mt-cabecera grid gap-bloque"
+      >
+        <Grupo titulo={t("panel.ajustes.grupoWeb")}>
+          <Cuerpo>
+            {data.web_abierta ? t("panel.ajustes.webAbierta") : t("panel.ajustes.webCerrada")}
+          </Cuerpo>
+          {soloLectura ? null : (
+            <div>
+              <input type="hidden" name="abrir" value={data.web_abierta ? "no" : "si"} />
+              <BotonEnvio jerarquia={data.web_abierta ? "secundario" : "primario"}>
+                {data.web_abierta ? t("panel.ajustes.cerrarWeb") : t("panel.ajustes.abrirWeb")}
+              </BotonEnvio>
+            </div>
+          )}
+        </Grupo>
+      </form>
 
       {/*
         LA CLAVE CAMBIA CON LO QUE SE PINTA. Los campos no son controlados, y

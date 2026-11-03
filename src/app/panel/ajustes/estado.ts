@@ -10,6 +10,8 @@
 export type EstadoAjustes =
   | "guardado"
   | "regalos-guardado"
+  | "web-abierta"
+  | "web-cerrada"
   | "iban"
   | "solo-propietario"
   | "nombres"
@@ -28,7 +30,12 @@ export type EstadoAjustes =
   | "error";
 
 /** Los que dicen que se guardó: con ellos no se enseña ningún borrador. */
-export const ESTADOS_DE_EXITO: readonly EstadoAjustes[] = ["guardado", "regalos-guardado"];
+export const ESTADOS_DE_EXITO: readonly EstadoAjustes[] = [
+  "guardado",
+  "regalos-guardado",
+  "web-abierta",
+  "web-cerrada",
+];
 
 /** Los campos de los dos formularios: son los `name` de la pantalla. */
 export const CAMPOS_AJUSTES = [
