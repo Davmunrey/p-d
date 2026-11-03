@@ -122,6 +122,16 @@ export function esDiaDeCalendario(texto: string): boolean {
   return new Date(instante).toISOString().slice(0, 10) === texto;
 }
 
+/**
+ * Un día de calendario —«2026-09-01», como lo guarda una columna `date`—
+ * convertido en un instante para poder formatearlo: el mediodía de ese día en
+ * UTC. A medianoche, una zona al oeste de Greenwich lo pintaría como el día
+ * anterior; a mediodía cae en el mismo día en cualquier zona habitada.
+ */
+export function diaDeCalendario(texto: string): Date {
+  return new Date(`${texto}T12:00:00Z`);
+}
+
 const formatoDiaDeCalendario = new Intl.DateTimeFormat(IDIOMA, {
   year: "numeric",
   month: "2-digit",

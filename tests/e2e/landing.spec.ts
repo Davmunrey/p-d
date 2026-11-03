@@ -47,6 +47,58 @@ test.describe("Landing", () => {
     await expect(enlace).toHaveAttribute("target", "_blank");
   });
 
+  /**
+   * QUÉ INCLUYE Y HASTA CUÁNDO. Lo que trae cada hotel sale en etiquetas y su
+   * plazo junto a él; con un plazo propio, la entradilla deja de poner el de
+   * confirmar asistencia, que no tiene por qué ser el del hotel.
+   */
+  test("cada hotel dice qué incluye y hasta cuándo se reserva", async ({ page }) => {
+    const cadena = process.env.DATABASE_URL;
+    test.skip(!cadena, "Hace falta DATABASE_URL: los hoteles salen de la base.");
+    const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+    const [hotel] = await sql<{ id: string; nombre: string }[]>`
+      select id, nombre from public.alojamientos where publicado order by orden, nombre limit 1
+    `;
+    try {
+      await sql`
+        update public.alojamientos
+           set incluye = ${"Parking incluido\nDesayuno no incluido"},
+               fecha_limite_reserva = '2026-09-01'
+         where id = ${hotel.id}
+      `;
+      await page.goto("/");
+      const fila = page
+        .locator("#alojamiento li")
+        .filter({ has: page.getByRole("heading", { name: hotel.nombre }) });
+      await expect(fila.getByRole("listitem")).toHaveText([
+        "Parking incluido",
+        "Desayuno no incluido",
+      ]);
+      await expect(fila).toContainText(
+        copy.alojamiento.plazo.replace("{fecha}", "1 de septiembre de 2026"),
+      );
+
+      // CASO DE ERROR · Sin plazo ni nada que incluya, el hotel no pinta huecos
+      // y la entradilla vuelve a la fecha de confirmar asistencia.
+      await sql`
+        update public.alojamientos set incluye = null, fecha_limite_reserva = null
+         where id = ${hotel.id}
+      `;
+      await page.goto("/");
+      const sinNada = page
+        .locator("#alojamiento li")
+        .filter({ has: page.getByRole("heading", { name: hotel.nombre }) });
+      await expect(sinNada.getByRole("listitem")).toHaveCount(0);
+      await expect(sinNada).not.toContainText(copy.alojamiento.plazo.split("{")[0].trim());
+    } finally {
+      await sql`
+        update public.alojamientos set incluye = null, fecha_limite_reserva = null
+         where id = ${hotel.id}
+      `;
+      await sql.end();
+    }
+  });
+
   /*
     LAS PREGUNTAS VAN PLEGADAS: la sección es su titular, que se abre, y dentro
     cada pregunta se abre a su vez. Las dos cosas, con teclado.

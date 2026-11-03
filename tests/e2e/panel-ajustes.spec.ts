@@ -361,6 +361,54 @@ test.describe("Ajustes de la boda", () => {
   });
 
   /**
+   * LA FIRMA DE LOS REGALOS. El texto de los regalos es una carta, y se firma
+   * desde aquí —«Paloma, David y Hati»— porque lleva sus nombres: es un dato de
+   * la boda, no un copy. Se restaura al acabar.
+   */
+  test("la firma de los regalos se escribe aquí y firma la carta de la web", async ({
+    page,
+  }) => {
+    const campo = page.getByLabel(copy.panel.ajustes.firmaRegalos, { exact: true });
+    const original = await campo.inputValue();
+    const firma = `${MARCA} Ana, Luis y la perra`;
+
+    await campo.fill(firma);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+    await expect(page.locator("main").getByRole("status")).toContainText(
+      copy.panel.ajustes.guardado,
+    );
+
+    await page.goto("/");
+    const regalos = page.locator("#regalos");
+    await regalos.locator("summary").click();
+    await expect(regalos.getByText(firma, { exact: true })).toBeVisible();
+
+    await page.goto(RUTA_AJUSTES);
+    await page.getByLabel(copy.panel.ajustes.firmaRegalos, { exact: true }).fill(original);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+    await expect(page.locator("main").getByRole("status")).toContainText(
+      copy.panel.ajustes.guardado,
+    );
+  });
+
+  test("una firma más larga de lo que cabe se explica y no se guarda", async ({ page }) => {
+    const campo = page.getByLabel(copy.panel.ajustes.firmaRegalos, { exact: true });
+    const tope = Number(await campo.getAttribute("maxlength"));
+    expect(tope, "el campo tiene que llevar el tope de la base").toBeGreaterThan(0);
+
+    const larga = `${MARCA} ${"Ana, Luis y la perra ".repeat(Math.ceil(tope / 20) + 1)}`;
+    await campo.evaluate((input) => input.removeAttribute("maxlength"));
+    await campo.fill(larga);
+    await page.getByRole("button", { name: copy.panel.ajustes.guardar }).click();
+
+    await expect(avisoDe(page)).toContainText(copy.panel.ajustes.errorLargo);
+    await page.goto(RUTA_AJUSTES);
+    await expect(
+      page.getByLabel(copy.panel.ajustes.firmaRegalos, { exact: true }),
+    ).not.toHaveValue(larga);
+  });
+
+  /**
    * BODA-129 · LA CUENTA PARA LOS REGALOS.
    *
    * Era lo último de la landing que sólo se tocaba por SQL, y la única cosa de

@@ -25,6 +25,7 @@ import {
   type FotoElegible,
 } from "@/lib/bbdd/contenido";
 import { t } from "@/lib/copy";
+import { diaDeCalendario, fechaLarga } from "@/lib/fechas";
 import { accesoActual } from "@/lib/sesion";
 
 import { alternarVisible } from "../acciones";
@@ -86,6 +87,7 @@ const AVISOS: Record<EstadoLista, string> = {
   falta: "",
   largo: "",
   enlace: "",
+  fecha: "",
   "no-encontrada": t("panel.contenido.listas.comun.errorNoEncontrada"),
   "sin-permiso": t("panel.contenido.listas.comun.errorSinPermiso"),
   error: t("panel.contenido.listas.comun.errorGuardar"),
@@ -431,6 +433,11 @@ function mensajeDeFallo(
   // Una foto no tiene largo ni es obligatoria, así que no hay nada suyo que
   // contar aquí: si algo falla con ella, falla al escribir y sale arriba.
   if (campo.clase === "foto") return undefined;
+  if (campo.clase === "fecha") {
+    return estado === "fecha"
+      ? t("panel.contenido.listas.comun.errorFecha", { campo: etiqueta })
+      : undefined;
+  }
 
   if (estado === "largo") {
     return t("panel.contenido.listas.comun.errorLargo", {
@@ -468,10 +475,14 @@ function Campo({
     ayuda: campo.ayuda ? t(campo.ayuda) : undefined,
     error,
     required: campo.obligatorio,
-    maxLength: campo.largo,
   };
 
-  if (campo.clase === "parrafo") return <CampoTextoLargo {...comunes} rows={3} />;
+  // Un día, con el selector de fechas del sistema: en el móvil sale la rueda.
+  if (campo.clase === "fecha") return <CampoTexto {...comunes} type="date" />;
+
+  if (campo.clase === "parrafo") {
+    return <CampoTextoLargo {...comunes} maxLength={campo.largo} rows={3} />;
+  }
 
   /*
     `type="url"` y no `text`: el teclado del móvil cambia —sale la barra, el
@@ -479,7 +490,13 @@ function Campo({
     siendo el servidor, que repite la comprobación con la misma expresión que el
     `CHECK` de la tabla.
   */
-  return <CampoTexto {...comunes} type={campo.clase === "enlace" ? "url" : "text"} />;
+  return (
+    <CampoTexto
+      {...comunes}
+      maxLength={campo.largo}
+      type={campo.clase === "enlace" ? "url" : "text"}
+    />
+  );
 }
 
 /**
@@ -710,7 +727,9 @@ function Ficha({
           >
             {campo.clase === "foto"
               ? fotoDelResumen(valor, fotosPorCampo[campo.columna] ?? [])
-              : valor}
+              : campo.clase === "fecha"
+                ? fechaLarga(diaDeCalendario(valor))
+                : valor}
           </Cuerpo>
         );
       })}

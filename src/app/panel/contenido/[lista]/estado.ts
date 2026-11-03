@@ -25,6 +25,7 @@ export type EstadoLista =
   | "falta"
   | "largo"
   | "enlace"
+  | "fecha"
   | "no-encontrada"
   | "sin-permiso"
   | "error";
@@ -34,6 +35,7 @@ export const ESTADOS_DE_ERROR: readonly EstadoLista[] = [
   "falta",
   "largo",
   "enlace",
+  "fecha",
   "no-encontrada",
   "sin-permiso",
   "error",

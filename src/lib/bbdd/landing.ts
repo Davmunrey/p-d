@@ -56,6 +56,8 @@ export interface ConfiguracionBoda {
   avisosPrograma: string[];
   correoContacto: string | null;
   hashtag: string | null;
+  /** «Paloma, David y Hati»: cómo se firma el bloque de regalos, o `null`. */
+  firmaRegalos: string | null;
 }
 
 export interface HitoPrograma {
@@ -72,6 +74,10 @@ export interface Alojamiento {
   descripcion: string | null;
   precioTexto: string | null;
   urlReserva: string | null;
+  /** Lo que incluye la tarifa, una cosa por línea en el panel: aquí, ya partido. */
+  incluye: string[];
+  /** Hasta cuándo se reserva, como día de calendario («2026-09-01»), o `null`. */
+  fechaLimiteReserva: string | null;
   /**
    * La foto que corona la tarjeta, o `null`. La entrega la dibuja siempre;
    * aquí es opcional por lo mismo que en la historia: los hoteles se apuntan
@@ -194,13 +200,15 @@ async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
         longitud_ceremonia: string | null;
         correo_contacto: string | null;
         hashtag: string | null;
+        firma_regalos: string | null;
       }[]
     >`
       select
         nombre_novia, nombre_novio, fecha_hora_ceremonia, fecha_hora_banquete, fecha_limite_rsvp,
         lugar_ceremonia, direccion_ceremonia, lugar_banquete,
         latitud_ceremonia, longitud_ceremonia, correo_contacto, hashtag,
-        paisaje_intro, paisaje_titulo, paisaje_cierre, ciudad_ceremonia, avisos_programa
+        paisaje_intro, paisaje_titulo, paisaje_cierre, ciudad_ceremonia, avisos_programa,
+        firma_regalos
       from public.v_configuracion_publica
       limit 1
     `,
@@ -227,6 +235,7 @@ async function leerConfiguracion(): Promise<ConfiguracionBoda | null> {
     longitud: fila.longitud_ceremonia === null ? null : Number(fila.longitud_ceremonia),
     correoContacto: fila.correo_contacto,
     hashtag: fila.hashtag,
+    firmaRegalos: fila.firma_regalos,
   };
 }
 
@@ -288,6 +297,8 @@ export async function obtenerAlojamientos(): Promise<Alojamiento[]> {
         descripcion: string | null;
         precio_texto: string | null;
         url_reserva: string | null;
+        incluye: string | null;
+        fecha_limite_reserva: string | null;
         ruta_almacenamiento: string | null;
         texto_alternativo: Record<string, string> | null;
         ancho: number | null;
@@ -296,6 +307,7 @@ export async function obtenerAlojamientos(): Promise<Alojamiento[]> {
       }[]
     >`
       select a.id, a.nombre, a.distintivo, a.descripcion, a.precio_texto, a.url_reserva,
+             a.incluye, a.fecha_limite_reserva::text as fecha_limite_reserva,
              m.ruta_almacenamiento, m.texto_alternativo,
              m.ancho, m.alto, m.marcador_borroso
       from public.alojamientos as a
@@ -311,6 +323,12 @@ export async function obtenerAlojamientos(): Promise<Alojamiento[]> {
     descripcion: f.descripcion,
     precioTexto: f.precio_texto,
     urlReserva: f.url_reserva,
+    // Una por línea; las vacías no cuentan, que un intro de más no es una etiqueta.
+    incluye: (f.incluye ?? "")
+      .split("\n")
+      .map((linea) => linea.trim())
+      .filter(Boolean),
+    fechaLimiteReserva: f.fecha_limite_reserva,
     foto: f.ruta_almacenamiento
       ? {
           ruta: f.ruta_almacenamiento,

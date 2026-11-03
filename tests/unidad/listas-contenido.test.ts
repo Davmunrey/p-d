@@ -281,6 +281,22 @@ describe("el descriptor de las listas de contenido", () => {
     }
   });
 
+  it.each(LISTAS)("las fechas de «%s» son columnas de días", (_clave, lista) => {
+    /*
+      La clase \`fecha\` pinta un \`input type="date"\` y valida un día que existe.
+      Contra una columna de texto guardaría «2026-09-01» como cualquier otra
+      cadena, y la web no podría escribirlo como «1 de septiembre».
+    */
+    for (const campo of lista.campos) {
+      if (campo.clase !== "fecha") continue;
+
+      const enLaBase = columnasDe(lista.tabla).find(
+        (columna) => columna.nombre === campo.columna,
+      );
+      expect(enLaBase?.resto, `${lista.tabla}.${campo.columna}`).toMatch(/^date\b/);
+    }
+  });
+
   it("el tope de orden es el del tipo de la columna", () => {
     // `orden` es `smallint` en las cuatro: pasarse de 32767 no se trunca, revienta.
     for (const [, lista] of LISTAS) {

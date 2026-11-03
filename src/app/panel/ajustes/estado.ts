@@ -36,6 +36,7 @@ export const CAMPOS_AJUSTES = [
   "nombre_novia",
   "nombre_novio",
   "hashtag",
+  "firma_regalos",
   "fecha_hora_ceremonia",
   "lugar_ceremonia",
   "direccion_ceremonia",

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { RedirectType, redirect } from "next/navigation";
 
 import { RUTA_ACCESO, RUTA_CONTENIDO, TOPE_ORDEN_CONTENIDO } from "@/config/constants";
+import { esDiaDeCalendario } from "@/lib/fechas";
 import { esIdentificador } from "@/lib/identificador";
 import {
   LISTAS_DE_CONTENIDO,
@@ -165,6 +166,21 @@ function camposValidados(
     if (campo.obligatorio && !escrito) {
       volver(clave, "falta", { variante, campo: campo.columna, ficha });
     }
+
+    /*
+      UNA FECHA SE MIRA ENTERA: con forma de día y que el día exista. El
+      `input type="date"` ya no deja escribir otra cosa, pero el formulario
+      viene de fuera; y Postgres, ante un 31 de febrero, contesta con un error
+      que no es un mensaje para nadie.
+    */
+    if (campo.clase === "fecha") {
+      if (escrito && !esDiaDeCalendario(escrito)) {
+        volver(clave, "fecha", { variante, campo: campo.columna, ficha });
+      }
+      valores[campo.columna] = escrito || null;
+      continue;
+    }
+
     if (escrito.length > campo.largo) {
       volver(clave, "largo", { variante, campo: campo.columna, ficha });
     }

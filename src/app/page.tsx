@@ -66,6 +66,7 @@ import {
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 import {
+  diaDeCalendario,
   diaEnLaBoda,
   fechaConDia,
   fechaEnPuntos,
@@ -323,7 +324,7 @@ export default async function PaginaInicio({
       preguntas.length > 0 ? <Preguntas preguntas={preguntas} /> : undefined,
     playlist: <Playlist canciones={canciones} puedeApuntar={hayInvitacion} />,
     // Sin cuenta no hay sección: ver el comentario de `Regalos`.
-    regalos: cuentaRegalos ? <Regalos /> : undefined,
+    regalos: cuentaRegalos ? <Regalos firma={configuracion.firmaRegalos} /> : undefined,
     dresscode: consejos.length > 0 ? <DressCode consejos={consejos} /> : undefined,
     rsvp: <Confirmacion lectura={lectura} consulta={consulta} configuracion={configuracion} />,
     // Sin foto recortada publicada no hay retrato: el cielo sigue sin él.
@@ -1104,11 +1105,17 @@ function Alojamiento({
       titulo={t("alojamiento.titulo")}
       entradilla={
         /*
-          El plazo y los nombres salen de `configuracion_boda`: escritos aquí se
-          quedarían viejos el día que cambie cualquiera de los dos. Sin fecha
-          límite se dice lo mismo sin ella.
+          El plazo y los nombres salen de la base: escritos aquí se quedarían
+          viejos el día que cambie cualquiera de los dos. Sin fecha límite se
+          dice lo mismo sin ella.
+
+          CADA HOTEL TIENE SU PLAZO. Si alguno lo trae (`fecha_limite_reserva`),
+          va junto a ese hotel y la entradilla no pone ninguno: el de confirmar
+          asistencia no es el del hotel, y dos fechas distintas en la misma
+          sección se contradicen. Sólo si ninguno lo trae se queda la de
+          siempre.
         */
-        configuracion.fechaLimiteRsvp
+        configuracion.fechaLimiteRsvp && !sitios.some((sitio) => sitio.fechaLimiteReserva)
           ? t("alojamiento.entradilla", {
               hoteles,
               nombres,
@@ -1147,6 +1154,27 @@ function Alojamiento({
                 <Cuerpo className="mt-interno-compacto text-pequeno">
                   {sitio.descripcion}
                 </Cuerpo>
+              ) : null}
+              {/*
+                LO QUE INCLUYE, EN ETIQUETAS: parking, desayuno, cena… Es lo
+                que se compara entre dos hoteles antes de elegir, así que va a
+                la vista y no dentro de la descripción.
+              */}
+              {sitio.incluye.length > 0 ? (
+                <ul className="mt-interno flex flex-wrap gap-interno-compacto">
+                  {sitio.incluye.map((cosa) => (
+                    <EtiquetaEstado como="li" key={cosa} tamano="aviso">
+                      {cosa}
+                    </EtiquetaEstado>
+                  ))}
+                </ul>
+              ) : null}
+              {sitio.fechaLimiteReserva ? (
+                <p className="mt-interno text-pequeno text-tinta-marca">
+                  {t("alojamiento.plazo", {
+                    fecha: fechaLarga(diaDeCalendario(sitio.fechaLimiteReserva)),
+                  })}
+                </p>
               ) : null}
               <div className="mt-interno-compacto flex flex-wrap items-baseline justify-between gap-interno">
                 {sitio.precioTexto ? (
@@ -1388,8 +1416,12 @@ function Playlist({
  * LOS REGALOS, PLEGADOS Y AL FINAL, junto a la confirmación: lo que se hace
  * va junto. Una línea —el titular— que se abre, y dentro el texto, el número
  * de cuenta con su botón de copiar y el buzón.
+ *
+ * EL TEXTO ES UNA CARTA, Y SE FIRMA: «Paloma, David y Hati», en la cursiva de
+ * las citas, justo debajo. La firma es un dato de la boda (`firma_regalos`, en
+ * Ajustes) porque lleva sus nombres; sin firma, la carta va sin firmar.
  */
-function Regalos() {
+function Regalos({ firma }: { firma: string | null }) {
   const idTitulo = `titulo-${anclaDe("regalos")}`;
   return (
     <section
@@ -1417,6 +1449,7 @@ function Regalos() {
           */}
           <div className="pb-elemento">
             <Cuerpo className="max-w-texto">{t("regalos.descripcion")}</Cuerpo>
+            {firma ? <Cita className="mt-pila">{firma}</Cita> : null}
             <div className="mt-elemento">
               <CuentaRegalos />
             </div>

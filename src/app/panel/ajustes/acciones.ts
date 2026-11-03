@@ -143,6 +143,7 @@ export async function guardarAjustes(datos: FormData) {
     ["paisaje_intro", LARGOS_DE_CAMPO["configuracion_boda.paisaje_intro"]],
     ["paisaje_titulo", LARGOS_DE_CAMPO["configuracion_boda.paisaje_titulo"]],
     ["paisaje_cierre", LARGOS_DE_CAMPO["configuracion_boda.paisaje_cierre"]],
+    ["firma_regalos", LARGOS_DE_CAMPO["configuracion_boda.firma_regalos"]],
   ];
   const demasiadoLargo = topes.find(([campo, tope]) => texto(datos, campo).length > tope);
   if (demasiadoLargo) return rechazar(datos, "largo", demasiadoLargo[0]);
@@ -263,6 +264,7 @@ export async function guardarAjustes(datos: FormData) {
           nombre_novio: nombreNovio,
           hashtag,
           correo_contacto: correo,
+          firma_regalos: textoONulo(datos, "firma_regalos"),
           fecha_hora_ceremonia: ceremonia.toISOString(),
           fecha_hora_banquete: banquete ? banquete.toISOString() : null,
           fecha_limite_rsvp: limite.toISOString(),

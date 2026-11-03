@@ -891,6 +891,7 @@ export const LARGOS_DE_CAMPO = {
   "configuracion_boda.ciudad_ceremonia": 80,
   "configuracion_boda.direccion_banquete": 300,
   "configuracion_boda.direccion_ceremonia": 300,
+  "configuracion_boda.firma_regalos": 120,
   "configuracion_boda.lugar_banquete": 160,
   "configuracion_boda.lugar_ceremonia": 160,
   "configuracion_boda.nombre_novia": 80,

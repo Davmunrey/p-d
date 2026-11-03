@@ -79,6 +79,7 @@ interface Configuracion {
   nombre_novio: string;
   hashtag: string | null;
   correo_contacto: string | null;
+  firma_regalos: string | null;
   fecha_hora_ceremonia: string;
   fecha_hora_banquete: string | null;
   fecha_limite_rsvp: string;
@@ -176,7 +177,7 @@ export default async function PaginaAjustes({
   const { data, error } = await supabase
     .from("configuracion_boda")
     .select(
-      "nombre_novia, nombre_novio, hashtag, correo_contacto, fecha_hora_ceremonia, " +
+      "nombre_novia, nombre_novio, hashtag, correo_contacto, firma_regalos, fecha_hora_ceremonia, " +
         "fecha_hora_banquete, fecha_limite_rsvp, zona_horaria, lugar_ceremonia, " +
         "direccion_ceremonia, latitud_ceremonia, longitud_ceremonia, lugar_banquete, " +
         "direccion_banquete, latitud_banquete, longitud_banquete, " +
@@ -308,6 +309,14 @@ export default async function PaginaAjustes({
               ayuda={t("panel.ajustes.hashtagAyuda")}
               // El navegador lo frena antes de enviar; la acción, si no.
               pattern="#[\p{L}\p{N}_]{1,60}"
+            />
+          </Ancla>
+          <Ancla campo="firma_regalos">
+            <CampoTexto
+              {...comun("firma_regalos", data.firma_regalos ?? "")}
+              etiqueta={t("panel.ajustes.firmaRegalos")}
+              ayuda={t("panel.ajustes.firmaRegalosAyuda")}
+              maxLength={LARGOS_DE_CAMPO["configuracion_boda.firma_regalos"]}
             />
           </Ancla>
         </Grupo>

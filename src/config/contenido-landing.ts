@@ -344,6 +344,20 @@ export type CampoDeLista =
       etiqueta: ClaveCopy;
       ayuda?: ClaveCopy;
       seccion: Seccion;
+    }
+  /**
+   * Un día del calendario: un `input type="date"`, a una columna `date`.
+   *
+   * Sin `largo`, por lo mismo que la foto: una fecha no se mide en
+   * caracteres. Lo que se comprueba es que sea un día que existe —el 31 de
+   * febrero no—, con `esDiaDeCalendario`, antes de que lo diga Postgres.
+   */
+  | {
+      clase: "fecha";
+      columna: string;
+      etiqueta: ClaveCopy;
+      ayuda?: ClaveCopy;
+      obligatorio: boolean;
     };
 
 /**
@@ -642,6 +656,21 @@ export const LISTAS_DE_CONTENIDO: Record<ClaveLista, ListaDeContenido> = {
         ayuda: "panel.contenido.listas.alojamientos.reservaAyuda",
         obligatorio: false,
         largo: LARGO_MAXIMO_ENLACE,
+      },
+      {
+        clase: "fecha",
+        columna: "fecha_limite_reserva",
+        etiqueta: "panel.contenido.listas.alojamientos.plazo",
+        ayuda: "panel.contenido.listas.alojamientos.plazoAyuda",
+        obligatorio: false,
+      },
+      {
+        clase: "parrafo",
+        columna: "incluye",
+        etiqueta: "panel.contenido.listas.alojamientos.incluye",
+        ayuda: "panel.contenido.listas.alojamientos.incluyeAyuda",
+        obligatorio: false,
+        largo: LARGO_MAXIMO_PARRAFO,
       },
       {
         clase: "foto",

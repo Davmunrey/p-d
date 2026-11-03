@@ -39,7 +39,7 @@ const MARCA = "E2E129";
 const SIN_DESTINO = "(la acción no redirigió)";
 
 /** Las secciones que este fichero enciende y apaga. */
-const SECCIONES_TOCADAS = ["dresscode", "programa", "preboda"] as const;
+const SECCIONES_TOCADAS = ["dresscode", "programa", "preboda", "alojamiento"] as const;
 
 const comun = copy.panel.contenido.listas.comun;
 
@@ -109,6 +109,7 @@ function borrarLoDePrueba(): Promise<void> {
   return conBase(async (sql) => {
     await sql`delete from public.consejos_vestimenta where titulo like ${`${MARCA}%`}`;
     await sql`delete from public.hitos_programa where titulo like ${`${MARCA}%`}`;
+    await sql`delete from public.alojamientos where nombre like ${`${MARCA}%`}`;
   });
 }
 
@@ -250,6 +251,8 @@ function formularioDeAlta(pagina: Page): Locator {
 }
 
 const RUTA_DRESSCODE = `${RUTA_CONTENIDO}/dresscode`;
+const RUTA_ALOJAMIENTOS = `${RUTA_CONTENIDO}/alojamientos`;
+const ALOJAMIENTOS = copy.panel.contenido.listas.alojamientos;
 const RUTA_PROGRAMA = `${RUTA_CONTENIDO}/programa`;
 const DRESSCODE = copy.panel.contenido.listas.dresscode;
 const PROGRAMA = copy.panel.contenido.listas.programa;
@@ -521,6 +524,92 @@ test.describe("Las listas de contenido de la web", () => {
       envío no escribió nada», y eso es una diferencia, no un número.
     */
     expect(await leerConsejos(), "no se guarda nada a medias").toHaveLength(antes.length);
+  });
+
+  /**
+   * QUÉ INCLUYE CADA HOTEL Y HASTA CUÁNDO SE RESERVA. Lo que se compara entre
+   * dos hoteles antes de elegir —parking, desayuno— y el plazo del propio
+   * hotel, que no es el de confirmar asistencia. Se escriben aquí y salen en
+   * la web junto al hotel.
+   */
+  test("lo que incluye un hotel y su plazo se escriben aquí y salen junto a él", async ({
+    page,
+  }) => {
+    const nombre = `${MARCA} Hotel de las Estrellas`;
+
+    await entrar(page);
+    await page.goto(RUTA_ALOJAMIENTOS);
+
+    const alta = formularioDeAlta(page);
+    await alta.getByLabel(ALOJAMIENTOS.nombre, { exact: true }).fill(nombre);
+    await alta
+      .getByLabel(ALOJAMIENTOS.incluye, { exact: true })
+      .fill("Parking incluido\n\nDesayuno no incluido\n");
+    await alta.getByLabel(ALOJAMIENTOS.plazo, { exact: true }).fill("2026-09-01");
+    await alta.getByRole("button", { name: comun.anadir, exact: true }).click();
+    await esperarEstado(page, "creada", RUTA_ALOJAMIENTOS);
+
+    const [enLaBase] = await conBase(
+      (sql) => sql<{ incluye: string; fecha: string }[]>`
+        select incluye, fecha_limite_reserva::text as fecha
+          from public.alojamientos where nombre = ${nombre}
+      `,
+    );
+    expect(enLaBase.fecha).toBe("2026-09-01");
+
+    await page.goto("/");
+    const hotel = page
+      .locator("#alojamiento li")
+      .filter({ has: page.getByRole("heading", { name: nombre }) });
+    // Dos etiquetas: la línea en blanco no es una tercera.
+    await expect(hotel.getByRole("listitem")).toHaveText([
+      "Parking incluido",
+      "Desayuno no incluido",
+    ]);
+    await expect(hotel).toContainText(
+      copy.alojamiento.plazo.replace("{fecha}", "1 de septiembre de 2026"),
+    );
+  });
+
+  /** CASO DE ERROR · Un día que no existe no se guarda, y se dice en su campo. */
+  test("un plazo que no es un día de verdad no se guarda", async ({ page }) => {
+    const nombre = `${MARCA} Hotel del 31 de febrero`;
+
+    await entrar(page);
+    await page.goto(RUTA_ALOJAMIENTOS);
+
+    const alta = formularioDeAlta(page);
+    await alta.getByLabel(ALOJAMIENTOS.nombre, { exact: true }).fill(nombre);
+    /*
+      Sin el selector del navegador, que ya no deja escribirlo: decide el
+      servidor. Y CON CUIDADO DE QUE REACT NO SE ENTERE. Cada vez que React
+      pinta un `<input>` —al hidratar, y en cualquier repintado que provoque
+      escribir en él— le vuelve a poner su `type`; un campo de fecha con
+      «2026-02-31» dentro se queda vacío, y se guardaba el hotel sin plazo.
+      Así que se espera a que haya hidratado (las propiedades que React cuelga
+      del nodo lo dicen) y el valor se pone sin eventos, que es lo que no
+      provoca repintado.
+    */
+    const plazo = alta.getByLabel(ALOJAMIENTOS.plazo, { exact: true });
+    await expect
+      .poll(() =>
+        plazo.evaluate((input) => Object.keys(input).some((k) => k.startsWith("__reactProps"))),
+      )
+      .toBe(true);
+    await plazo.evaluate((input: HTMLInputElement) => {
+      input.setAttribute("type", "text");
+      input.value = "2026-02-31";
+    });
+    await alta.getByRole("button", { name: comun.anadir, exact: true }).click();
+
+    await esperarEstado(page, "fecha", RUTA_ALOJAMIENTOS);
+    await expect(
+      page.getByText(comun.errorFecha.replace("{campo}", ALOJAMIENTOS.plazo)),
+    ).toBeVisible();
+    const guardados = await conBase(
+      (sql) => sql`select 1 from public.alojamientos where nombre = ${nombre}`,
+    );
+    expect(guardados, "no se guarda nada a medias").toHaveLength(0);
   });
 
   test("si la sección está apagada se avisa, y se puede encender desde aquí", async ({

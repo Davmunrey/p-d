@@ -77,6 +77,38 @@ test("los regalos enseñan la cuenta que hay en la base, no una escrita a mano",
   await expect(regalos).toContainText(copy.regalos.buzon);
 });
 
+/**
+ * LA CARTA DE LOS REGALOS SE FIRMA CON LO QUE HAYA EN LA BASE —«Paloma, David y
+ * Hati»—, y sin firma va sin firmar: ni un hueco ni una firma inventada. Se deja
+ * la que hubiera al acabar.
+ */
+test("la carta de los regalos va firmada con la firma de la base, y sin ella, sin firmar", async ({
+  page,
+}) => {
+  const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
+  const firma = "(DES) Ana, Luis y la perra";
+  const [{ firma_regalos: original }] = await sql<{ firma_regalos: string | null }[]>`
+    select firma_regalos from public.configuracion_boda
+  `;
+  try {
+    await sql`update public.configuracion_boda set firma_regalos = ${firma}`;
+    await page.goto("/");
+    const regalos = page.locator("#regalos");
+    await regalos.locator("summary").click();
+    await expect(regalos.getByText(firma, { exact: true })).toBeVisible();
+
+    // CASO DE ERROR · Sin firma, la carta no se firma con nada.
+    await sql`update public.configuracion_boda set firma_regalos = null`;
+    await page.goto("/");
+    await page.locator("#regalos summary").click();
+    await expect(page.locator("#regalos")).toContainText(copy.regalos.descripcion);
+    await expect(page.locator("#regalos").getByText(firma)).toHaveCount(0);
+  } finally {
+    await sql`update public.configuracion_boda set firma_regalos = ${original}`;
+    await sql.end();
+  }
+});
+
 test("el dress code sale de la tabla, con un bloque por consejo", async ({ page }) => {
   const sql = postgres(cadena!, { max: 1, prepare: false, onnotice: () => {} });
   const consejos = await sql<{ titulo: string; texto: string }[]>`

@@ -93,6 +93,7 @@
     "etiqueta": "Dónde dormir",
     "titulo": "Alojamiento",
     "reservar": "Reservar →",
+    "plazo": "Reservad antes del {fecha}",
     "entradilla": "Hemos bloqueado habitaciones en {hoteles} con tarifa cerrada. Reservad diciendo «Boda {nombres}» antes del {fecha}.",
     "entradillaSinPlazo": "Hemos bloqueado habitaciones en {hoteles} con tarifa cerrada. Reservad diciendo «Boda {nombres}».",
     "hotelesDeCiudad": "{cuantos} hoteles de {ciudad}",
@@ -579,6 +580,8 @@
       "nombreNovio": "Nombre del novio",
       "hashtag": "Hashtag",
       "hashtagAyuda": "Con almohadilla delante, por ejemplo #PalomaYDavid. Dejadlo vacío si no queréis.",
+      "firmaRegalos": "Firma de los regalos",
+      "firmaRegalosAyuda": "Cómo firmáis el texto de los regalos en la web, por ejemplo «Paloma, David y Hati». Vacía, va sin firmar.",
       "fechaCeremonia": "Fecha y hora de la ceremonia",
       "fechaBanquete": "Fecha y hora del banquete",
       "fechaBanqueteAyuda": "Opcional. Si lo dejas vacío, el calendario cuenta sólo desde la ceremonia.",
@@ -621,7 +624,7 @@
       "avisosPrograma": "Avisos al pie del programa",
       "avisosProgramaAyuda": "Uno por línea, hasta seis. Salen como etiquetas bajo el programa del día: «Etiqueta elegante · ceremonia al aire libre». Vacío, no se pinta nada.",
       "errorAvisos": "Los avisos del programa son como mucho seis, y ninguno pasa de 120 caracteres.",
-      "errorLargo": "Algún texto es más largo de lo que cabe: los nombres, el lugar, la dirección o las frases del paisaje. Acortadlo y volved a guardar.",
+      "errorLargo": "Algún texto es más largo de lo que cabe: los nombres, el lugar, la dirección, las frases del paisaje o la firma de los regalos. Acortadlo y volved a guardar.",
       "errorPaisajeCorto": "Las frases del paisaje, si se ponen, necesitan al menos dos letras.",
       "grupoRegalos": "Cuenta para los regalos",
       "regalosAyuda": "Sin cuenta escrita, la sección de Regalos no aparece en la web. Vaciarla es la forma de quitarla.",
@@ -1577,6 +1580,7 @@
           "sinFotosQueElegir": "Todavía no hay fotos publicadas para esta sección. Se suben en Fotos y vídeos.",
           "irAMedios": "Ir a Fotos y vídeos",
           "errorEnlace": "«{campo}» tiene que ser una dirección web que empiece por http:// o https://.",
+          "errorFecha": "«{campo}» tiene que ser un día que exista, como el 1 de septiembre.",
           "resumenFoto": "Foto: {foto}",
           "resumenFotoRetirada": "La foto elegida ya no está entre las publicadas de esta sección."
         },
@@ -1643,7 +1647,11 @@
           "reserva": "Enlace de reserva",
           "reservaAyuda": "Opcional. La dirección de su web, empezando por https://",
           "foto": "Foto",
-          "fotoAyuda": "Opcional. Se elige entre las que ya estén subidas y publicadas en la sección «Dónde dormir»."
+          "fotoAyuda": "Opcional. Se elige entre las que ya estén subidas y publicadas en la sección «Dónde dormir».",
+          "plazo": "Reservar antes del",
+          "plazoAyuda": "Opcional. Hasta cuándo os guarda el hotel las habitaciones. Sale en la web junto al hotel.",
+          "incluye": "Qué incluye",
+          "incluyeAyuda": "Opcional. Una cosa por línea: «Parking incluido», «Desayuno no incluido». Sale como etiquetas junto al hotel."
         }
       }
     },
