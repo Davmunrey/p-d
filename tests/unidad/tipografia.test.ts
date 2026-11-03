@@ -110,7 +110,7 @@ describe("escala tipográfica", () => {
     ["font-size-naipe-nombre", "8.4cqh"],
     ["font-size-naipe-conector", "8cqh"],
     ["font-size-naipe-fecha", "2.7cqh"],
-    ["font-size-naipe-anno", "13cqh"],
+    ["font-size-naipe-dia", "9cqh"],
   ])("--%s mide %s del alto del naipe", (token, esperado) => {
     expect(valor(token)).toBe(esperado);
   });

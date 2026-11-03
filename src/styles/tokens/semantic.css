@@ -656,9 +656,9 @@
   --texto-naipe-nombre: var(--font-size-naipe-nombre);
   --texto-naipe-conector: var(--font-size-naipe-conector);
   --texto-naipe-fecha: var(--font-size-naipe-fecha);
-  --texto-naipe-anno: var(--font-size-naipe-anno);
+  --texto-naipe-dia: var(--font-size-naipe-dia);
   --interlineado-naipe-nombre: var(--line-height-naipe-nombre);
-  --interlineado-naipe-anno: var(--line-height-naipe-anno);
+  --interlineado-naipe-dia: var(--line-height-naipe-dia);
   --espaciado-naipe-fecha: var(--letter-spacing-naipe-fecha);
   --espaciado-naipe-lugar: var(--letter-spacing-naipe-lugar);
   --espacio-naipe-y: var(--space-naipe-y);

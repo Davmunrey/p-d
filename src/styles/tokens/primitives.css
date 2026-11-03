@@ -890,9 +890,9 @@
   --font-size-naipe-nombre: 8.4cqh;
   --font-size-naipe-conector: 8cqh;
   --font-size-naipe-fecha: 2.7cqh;
-  --font-size-naipe-anno: 13cqh;
+  --font-size-naipe-dia: 9cqh;
   --line-height-naipe-nombre: 1.06;
-  --line-height-naipe-anno: 0.96;
+  --line-height-naipe-dia: 1;
   --letter-spacing-naipe-fecha: 0.28em;
   --letter-spacing-naipe-lugar: 0.24em;
   --space-naipe-y: 5cqh;

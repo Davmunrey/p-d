@@ -68,8 +68,9 @@ export function SobreReserva({
   nombreNovia,
   nombreNovio,
   fechaIso,
-  fechaTexto,
-  anio,
+  diaDeLaSemana,
+  fechaEnPuntos,
+  fechaLeida,
   lugar,
   remite,
   foto,
@@ -80,8 +81,9 @@ export function SobreReserva({
   nombreNovia: string;
   nombreNovio: string;
   fechaIso: string;
-  fechaTexto: string;
-  anio: string;
+  diaDeLaSemana: string;
+  fechaEnPuntos: string;
+  fechaLeida: string;
   lugar: string | null;
   /** «Paloma & David · León», lo que va impreso en el dorso del sobre. */
   remite: string;
@@ -273,8 +275,9 @@ export function SobreReserva({
               nombreNovia={nombreNovia}
               nombreNovio={nombreNovio}
               fechaIso={fechaIso}
-              fechaTexto={fechaTexto}
-              anio={anio}
+              diaDeLaSemana={diaDeLaSemana}
+              fechaEnPuntos={fechaEnPuntos}
+              fechaLeida={fechaLeida}
               lugar={lugar}
               retrato={retrato}
             />

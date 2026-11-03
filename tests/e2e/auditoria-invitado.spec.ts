@@ -95,15 +95,32 @@ test.describe("El Save the Date", () => {
 });
 
 test.describe("Las pantallas de estado", () => {
-  test("la 404 lleva la Lira y el bloque arriba, no flotando en medio", async ({ page }) => {
+  /**
+   * La Lira se fue de las pantallas de estado: encima del titular va el
+   * retrato de estrellas cuando hay uno publicado —eso lo prueba
+   * `pantallas-estado.spec.ts`, con un retrato puesto para la prueba— y nada
+   * cuando no. Lo que se audita aquí vale en los dos casos: el bloque arriba
+   * y ni rastro de la constelación.
+   */
+  test("la 404 lleva el bloque arriba, no flotando en medio, y sin la Lira", async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/una-ruta-que-no-existe-para-la-auditoria");
 
-    const main = page.getByRole("main");
-    await expect(main.locator("svg").first()).toBeVisible();
     const titulo = page.getByRole("heading", { level: 1 });
     await expect(titulo).toHaveText(copy.errores.noEncontrado);
     expect((await titulo.boundingBox())!.y).toBeLessThan(844 * 0.45);
+
+    // Lo único que puede dibujarse encima es el retrato: ningún otro svg, y
+    // ningún trazo, que es lo que delata a una constelación.
+    const dibujos = await page.getByRole("main").evaluate((main) => ({
+      todos: main.querySelectorAll("svg").length,
+      delRetrato: main.querySelectorAll("[data-retrato-estado] svg").length,
+      trazos: main.querySelectorAll("svg line").length,
+    }));
+    expect(dibujos.todos).toBe(dibujos.delRetrato);
+    expect(dibujos.trazos).toBe(0);
   });
 });
 

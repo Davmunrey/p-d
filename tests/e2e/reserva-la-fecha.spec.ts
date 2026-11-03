@@ -114,12 +114,29 @@ test.describe("Reserva la fecha", () => {
     await expect(titulo).toBeVisible();
     await expect(titulo).toContainText("(DES)");
 
-    // La fecha en dos líneas: «Sábado 26 de junio» y el año debajo.
-    const fecha = page.locator("time");
+    // «Save the date», el nombre de la pieza, encima de los nombres.
+    await expect(
+      tarjeta(page).getByText(copy.saveTheDate.etiqueta, { exact: true }),
+    ).toBeVisible();
+
+    // La fecha entera es la protagonista: «26 · 06 · 2027» grande, con el día
+    // de la semana encima, y en palabras para quien no ve la tarjeta.
+    const fecha = tarjeta(page).locator("time");
     await expect(fecha).toBeVisible();
     await expect(fecha).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T/);
-    await expect(fecha).toHaveText(/^[A-ZÁÉÍÓÚ][a-záéíóúñ]+ \d{1,2} de [a-záéíóú]+$/);
-    await expect(tarjeta(page).getByText(/^\d{4}$/)).toBeVisible();
+    await expect(fecha.locator("[aria-hidden='true']")).toHaveText(/^\d{2} · \d{2} · \d{4}$/);
+    await expect(fecha.locator(".sr-only")).toHaveText(
+      /^[A-ZÁÉÍÓÚ][a-záéíóúñ]+ \d{1,2} de [a-záéíóú]+ de \d{4}$/,
+    );
+
+    // CASO DE ERROR · El año ya no va suelto: era lo que más se veía.
+    await expect(tarjeta(page).getByText(/^\d{4}$/)).toHaveCount(0);
+    // Y la fecha cabe en una línea: con dos, el año volvería a quedarse solo.
+    const lineas = await fecha.evaluate((nodo) => {
+      const visible = nodo.querySelector("[aria-hidden='true']")!;
+      return visible.getClientRects().length;
+    });
+    expect(lineas).toBe(1);
 
     await expect(page.getByText(/\(DES\).*[Ff]inca/).first()).toBeVisible();
 

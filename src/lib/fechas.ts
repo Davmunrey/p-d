@@ -94,9 +94,10 @@ export function vispera(fecha: Date): Date {
 }
 
 /**
- * «2027»: el año solo. La tarjeta del Save the Date lo escribe en su propia
- * línea, grande, debajo de «Sábado 26 de junio». En la zona de la boda, como
- * todo lo demás: una ceremonia en Nochevieja no cambia de año por el servidor.
+ * «2027»: el año solo. Con `fechaConDia` compone «Sábado 26 de junio de
+ * 2027», lo que oye en la tarjeta del Save the Date quien no la ve. En la zona
+ * de la boda, como todo lo demás: una ceremonia en Nochevieja no cambia de
+ * año por el servidor.
  */
 export function anio(fecha: Date): string {
   return formatoAnio.format(fecha);

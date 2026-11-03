@@ -13,7 +13,7 @@ import {
   obtenerSecciones,
 } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
-import { anio, fechaConDia } from "@/lib/fechas";
+import { anio, fechaConDia, fechaEnPuntos, nombreDelDia } from "@/lib/fechas";
 
 /**
  * RESERVA LA FECHA
@@ -155,8 +155,9 @@ export default async function PaginaReservaLaFecha({
         nombreNovia={nombreNovia}
         nombreNovio={nombreNovio}
         fechaIso={fechaCeremonia.toISOString()}
-        fechaTexto={fechaConDia(fechaCeremonia)}
-        anio={anio(fechaCeremonia)}
+        diaDeLaSemana={nombreDelDia(fechaCeremonia)}
+        fechaEnPuntos={fechaEnPuntos(fechaCeremonia)}
+        fechaLeida={`${fechaConDia(fechaCeremonia)} de ${anio(fechaCeremonia)}`}
         lugar={lugarConCiudad}
         remite={remite}
         foto={fotos.find((medio) => medio.tipo === "imagen") ?? null}

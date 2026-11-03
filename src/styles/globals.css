@@ -197,7 +197,7 @@
   --text-naipe-nombre: var(--texto-naipe-nombre);
   --text-naipe-conector: var(--texto-naipe-conector);
   --text-naipe-fecha: var(--texto-naipe-fecha);
-  --text-naipe-anno: var(--texto-naipe-anno);
+  --text-naipe-dia: var(--texto-naipe-dia);
   --font-weight-titulo: var(--peso-titulo);
   --font-weight-titulo-menor: var(--peso-titulo-menor);
   --font-weight-cuerpo: var(--peso-cuerpo);
@@ -213,7 +213,7 @@
   --leading-compacto: var(--interlineado-compacto);
   --leading-monograma-secundario: var(--interlineado-monograma-secundario);
   --leading-naipe-nombre: var(--interlineado-naipe-nombre);
-  --leading-naipe-anno: var(--interlineado-naipe-anno);
+  --leading-naipe-dia: var(--interlineado-naipe-dia);
   --tracking-display: var(--espaciado-display);
   --tracking-titulo: var(--espaciado-titulo);
   --tracking-normal: var(--espaciado-normal);
