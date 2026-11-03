@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 
 import { PantallaEstado } from "@/components/marketing/pantalla-estado";
 import { BotonEnlace } from "@/components/ui/boton";
+import { obtenerRetrato } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 
 /**
@@ -40,8 +41,16 @@ export default async function NoEncontrada() {
   */
   await headers();
 
+  // El retrato de estrellas encima del titular. Si la base no contesta, la
+  // 404 sale igual, sin dibujo: no puede caerse por un adorno.
+  const retrato = await obtenerRetrato().catch(() => null);
+
   return (
-    <PantallaEstado titulo={t("errores.noEncontrado")} texto={t("errores.noEncontradoTexto")}>
+    <PantallaEstado
+      titulo={t("errores.noEncontrado")}
+      texto={t("errores.noEncontradoTexto")}
+      retrato={retrato}
+    >
       <BotonEnlace href="/">{t("errores.volverAlInicio")}</BotonEnlace>
     </PantallaEstado>
   );

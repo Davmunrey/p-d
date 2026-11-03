@@ -521,10 +521,11 @@
   --size-ficha-catalogo: 8.125rem;
 
   /**
-   * El hueco de una constelación cuando acompaña a un texto. Es cuadrado: el
-   * lienzo del mapa lo es, y darle otra proporción deformaría el cielo.
+   * El alto del retrato de estrellas sobre el titular de las pantallas de
+   * estado (la 404, el error, «estamos preparando la web»). Sólo el alto: el
+   * ancho sale de la proporción de la foto.
    */
-  --size-constelacion: 4.625rem;
+  --size-retrato-estado: 7.5rem;
 
   /**
    * Ancho mínimo de columna en las rejillas que se parten solas. Por debajo de
@@ -882,33 +883,28 @@
    * LA TARJETA SE MIDE EN `cqh`: es un naipe de proporción fija cuyo alto lo
    * decide la pantalla, y todo lo que lleva dentro —el retrato, los nombres,
    * el año, la cuenta atrás— escala con él. Son las medidas de la entrega, en
-   * centésimas del alto del naipe, recortadas para que el retrato quepa
-   * arriba sin que la cuenta atrás pise el marco: la suma de todo lo que va
-   * en columna deja dos centésimas largas de aire sobre las cifras.
+   * centésimas del alto del naipe. Sin la cuenta atrás al pie, el retrato
+   * crece hasta 22 y todo va centrado en el papel.
    */
   --font-size-naipe-rotulo: 2.5cqh;
-  --font-size-naipe-nombre: 7.2cqh;
-  --font-size-naipe-conector: 6.8cqh;
+  --font-size-naipe-nombre: 8.4cqh;
+  --font-size-naipe-conector: 8cqh;
   --font-size-naipe-fecha: 2.7cqh;
-  --font-size-naipe-anno: 11.5cqh;
-  --font-size-naipe-cifra: 6cqh;
-  --font-size-naipe-unidad: 2.1cqh;
+  --font-size-naipe-anno: 13cqh;
   --line-height-naipe-nombre: 1.06;
   --line-height-naipe-anno: 0.96;
   --letter-spacing-naipe-fecha: 0.28em;
   --letter-spacing-naipe-lugar: 0.24em;
-  --letter-spacing-naipe-unidad: 0.14em;
-  --space-naipe-y: 4.4cqh;
+  --space-naipe-y: 5cqh;
   --space-naipe-x: 6cqh;
   --space-naipe-marco: 2.4cqh;
-  --space-naipe-hueco: 2cqh;
-  --space-naipe-hueco-rotulo: 2.2cqh;
-  --space-naipe-separador: 2.2cqh;
+  --space-naipe-hueco: 2.4cqh;
+  --space-naipe-hueco-rotulo: 2.6cqh;
+  --space-naipe-separador: 2.8cqh;
   --space-naipe-hueco-raya: 1.6cqh;
   --space-naipe-hueco-corto: 0.8cqh;
-  --space-naipe-hueco-cifras: 1.4cqh;
   --space-naipe-foto: 3.4cqh;
-  --size-naipe-retrato: 18cqh;
+  --size-naipe-retrato: 22cqh;
   --size-naipe-raya: 5cqh;
   --size-naipe-rombo: 0.9cqh;
 

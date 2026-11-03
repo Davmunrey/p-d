@@ -198,8 +198,6 @@
   --text-naipe-conector: var(--texto-naipe-conector);
   --text-naipe-fecha: var(--texto-naipe-fecha);
   --text-naipe-anno: var(--texto-naipe-anno);
-  --text-naipe-cifra: var(--texto-naipe-cifra);
-  --text-naipe-unidad: var(--texto-naipe-unidad);
   --font-weight-titulo: var(--peso-titulo);
   --font-weight-titulo-menor: var(--peso-titulo-menor);
   --font-weight-cuerpo: var(--peso-cuerpo);
@@ -236,7 +234,6 @@
   --tracking-volver: var(--espaciado-volver);
   --tracking-naipe-fecha: var(--espaciado-naipe-fecha);
   --tracking-naipe-lugar: var(--espaciado-naipe-lugar);
-  --tracking-naipe-unidad: var(--espaciado-naipe-unidad);
 
   /* Espaciado */
   --spacing-linea: var(--espacio-linea);
@@ -304,7 +301,6 @@
   --spacing-naipe-separador: var(--espacio-naipe-separador);
   --spacing-naipe-hueco-raya: var(--espacio-naipe-hueco-raya);
   --spacing-naipe-hueco-corto: var(--espacio-naipe-hueco-corto);
-  --spacing-naipe-hueco-cifras: var(--espacio-naipe-hueco-cifras);
   --spacing-naipe-foto: var(--espacio-naipe-foto);
   --spacing-naipe-retrato: var(--alto-naipe-retrato);
   --spacing-naipe-raya: var(--ancho-naipe-raya);
@@ -330,8 +326,8 @@
   --spacing-columna-dato: var(--ancho-columna-dato);
   --spacing-barra-muestra: var(--alto-barra-muestra);
 
-  /* Un solo token da `size-constelacion`: el hueco es cuadrado por definición. */
-  --spacing-constelacion: var(--lado-constelacion);
+  /* El retrato sobre el titular de las pantallas de estado: sólo el alto. */
+  --spacing-retrato-estado: var(--alto-retrato-estado);
 
   /* Vuestra estrella, la que falta en el cielo, y la que baja al lugar. */
   --spacing-vuestra-estrella: var(--lado-vuestra-estrella);

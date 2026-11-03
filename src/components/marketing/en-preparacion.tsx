@@ -1,4 +1,5 @@
 import { PantallaEstado } from "@/components/marketing/pantalla-estado";
+import type { Retrato } from "@/lib/bbdd/landing";
 import { t } from "@/lib/copy";
 
 /**
@@ -16,11 +17,16 @@ import { t } from "@/lib/copy";
  *
  * Dice la verdad y no finge nada. La alternativa —una página con huecos, o
  * peor, con datos de ejemplo— hace que un invitado se crea una fecha que no es.
+ *
+ * El retrato de estrellas sólo puede ir en la primera: en la avería no hay
+ * base a la que pedírselo.
  */
 export function EnPreparacion({
   motivo = "preparacion",
+  retrato = null,
 }: {
   motivo?: "preparacion" | "averia";
+  retrato?: Retrato | null;
 }) {
   return motivo === "averia" ? (
     <PantallaEstado titulo={t("portada.noDisponible")} texto={t("portada.noDisponibleTexto")} />
@@ -28,6 +34,7 @@ export function EnPreparacion({
     <PantallaEstado
       titulo={t("portada.enPreparacion")}
       texto={t("portada.enPreparacionTexto")}
+      retrato={retrato}
     />
   );
 }

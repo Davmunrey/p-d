@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { PantallaEstado } from "@/components/marketing/pantalla-estado";
 import { Boton, BotonEnlace } from "@/components/ui/boton";
+import { RUTA_RETRATO_DE_ESTRELLAS } from "@/config/constants";
 import { t } from "@/lib/copy";
+import { comoRetrato, type RetratoDeEstrellas } from "@/lib/retrato/estrellas";
 
 /**
  * EL FALLO, FUERA DEL PANEL
@@ -20,6 +22,11 @@ import { t } from "@/lib/copy";
  * estuviera confirmado sigue guardado, porque un fallo al pintar no borra nada
  * de la base.
  *
+ * EL RETRATO SE PIDE APARTE. Esta pantalla la pinta el navegador y no puede
+ * preguntar a la base, así que pide las estrellas a `RUTA_RETRATO_DE_ESTRELLAS`
+ * y las dibuja cuando llegan. Si no llegan —no hay retrato, o lo que ha fallado
+ * es justo la base—, la pantalla se queda sin dibujo y sin decir nada más.
+ *
  * NO SE ENSEÑA `error.message`: puede llevar dentro una consulta o un dato de
  * otra persona. Va al registro del servidor.
  */
@@ -30,12 +37,28 @@ export default function ErrorPublico({
   error: Error & { digest?: string };
   retry: () => void;
 }) {
+  const [retrato, setRetrato] = useState<RetratoDeEstrellas | null>(null);
+
   useEffect(() => {
     console.error("Fallo en una página pública:", error);
   }, [error]);
 
+  useEffect(() => {
+    const cancelar = new AbortController();
+    fetch(RUTA_RETRATO_DE_ESTRELLAS, { signal: cancelar.signal })
+      .then((respuesta) => (respuesta.ok ? respuesta.json() : null))
+      .then((datos: unknown) => setRetrato(comoRetrato(datos)))
+      .catch(() => {});
+    return () => cancelar.abort();
+  }, []);
+
   return (
-    <PantallaEstado alerta titulo={t("errores.falloTitulo")} texto={t("errores.falloTexto")}>
+    <PantallaEstado
+      alerta
+      titulo={t("errores.falloTitulo")}
+      texto={t("errores.falloTexto")}
+      retrato={retrato}
+    >
       <Boton type="button" onClick={() => retry()}>
         {t("errores.reintentar")}
       </Boton>

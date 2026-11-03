@@ -107,12 +107,10 @@ describe("escala tipográfica", () => {
    */
   it.each([
     ["font-size-naipe-rotulo", "2.5cqh"],
-    ["font-size-naipe-nombre", "7.2cqh"],
-    ["font-size-naipe-conector", "6.8cqh"],
+    ["font-size-naipe-nombre", "8.4cqh"],
+    ["font-size-naipe-conector", "8cqh"],
     ["font-size-naipe-fecha", "2.7cqh"],
-    ["font-size-naipe-anno", "11.5cqh"],
-    ["font-size-naipe-cifra", "6cqh"],
-    ["font-size-naipe-unidad", "2.1cqh"],
+    ["font-size-naipe-anno", "13cqh"],
   ])("--%s mide %s del alto del naipe", (token, esperado) => {
     expect(valor(token)).toBe(esperado);
   });

@@ -31,11 +31,11 @@ import { diaEnLaBoda } from "@/lib/fechas";
  * la hora de la ceremonia, cambia aquí sola.
  *
  * DOS FORMAS, UNA CUENTA. La grande es la de la sección de la landing: cuatro
- * cifras a tamaño de titular, sobre marino. La `compacta` es la del pie de la
- * tarjeta del Save the Date: cuatro columnas iguales, medidas contra el alto
- * del naipe, con los rótulos cortos («min», «seg») y los segundos en bronce,
- * como la dibuja la entrega. El cálculo, el `role="timer"` y el silencio para
- * el lector de pantalla son los mismos.
+ * cifras a tamaño de titular, sobre marino. La `enFila` es la de la portada,
+ * junto a la fecha y el lugar. El cálculo, el `role="timer"` y el silencio
+ * para el lector de pantalla son los mismos. (Hubo una tercera, la del pie de
+ * la tarjeta del Save the Date; los novios la quitaron: la tarjeta dice la
+ * fecha y basta.)
  */
 
 interface Restante {
@@ -78,14 +78,11 @@ const dosDigitos = (n: number) => String(n).padStart(2, "0");
 export function CuentaAtras({
   fechaIso,
   ahoraIso,
-  compacta = false,
   enFila = false,
 }: {
   fechaIso: string;
   /** El instante en que el servidor pintó, para que hidratar no cambie nada. */
   ahoraIso: string;
-  /** La forma de la tarjeta del Save the Date. */
-  compacta?: boolean;
   /**
    * La forma de la portada: una sola fila, a la medida de los datos de al
    * lado —la fecha y el lugar—, que cabe entera en un móvil.
@@ -105,32 +102,19 @@ export function CuentaAtras({
   if (restante.pasado) return null;
 
   if (restante.llegado) {
-    return (
-      <p
-        className={
-          compacta
-            ? "font-titulo text-naipe-cifra leading-compacto text-tinta-marca"
-            : "font-titulo text-titulo-1 text-tinta"
-        }
-      >
-        {t("cuentaAtras.yaEsHoy")}
-      </p>
-    );
+    return <p className="font-titulo text-titulo-1 text-tinta">{t("cuentaAtras.yaEsHoy")}</p>;
   }
 
   const bloques = [
-    { valor: String(restante.dias), etiqueta: t("cuentaAtras.dias"), acento: false },
-    { valor: dosDigitos(restante.horas), etiqueta: t("cuentaAtras.horas"), acento: false },
+    { valor: String(restante.dias), etiqueta: t("cuentaAtras.dias") },
+    { valor: dosDigitos(restante.horas), etiqueta: t("cuentaAtras.horas") },
     {
       valor: dosDigitos(restante.minutos),
-      etiqueta: t(compacta || enFila ? "cuentaAtras.minCorto" : "cuentaAtras.minutos"),
-      acento: false,
+      etiqueta: t(enFila ? "cuentaAtras.minCorto" : "cuentaAtras.minutos"),
     },
     {
       valor: dosDigitos(restante.segundos),
-      etiqueta: t(compacta || enFila ? "cuentaAtras.segCorto" : "cuentaAtras.segundos"),
-      // En la tarjeta los segundos van en bronce: son lo único que se mueve.
-      acento: compacta,
+      etiqueta: t(enFila ? "cuentaAtras.segCorto" : "cuentaAtras.segundos"),
     },
   ];
 
@@ -154,31 +138,6 @@ export function CuentaAtras({
               {bloque.valor}
             </div>
             <div className="mt-interno-compacto text-diminuto uppercase tracking-etiqueta text-tinta-suave">
-              {bloque.etiqueta}
-            </div>
-          </div>
-        ))}
-        <span className="sr-only">{ZONA_HORARIA}</span>
-      </div>
-    );
-  }
-
-  if (compacta) {
-    return (
-      <div
-        className="flex w-full justify-center gap-naipe-hueco-cifras border-t border-borde-naipe pt-naipe-hueco"
-        {...accesibilidad}
-      >
-        {bloques.map((bloque) => (
-          <div key={bloque.etiqueta} className="min-w-0 flex-1">
-            <div
-              className={`font-titulo text-naipe-cifra leading-compacto tabular-nums ${
-                bloque.acento ? "text-acento" : "text-tinta-marca"
-              }`}
-            >
-              {bloque.valor}
-            </div>
-            <div className="mt-naipe-hueco-corto font-cuerpo text-naipe-unidad leading-titulo-menor uppercase tracking-naipe-unidad text-tinta-suave">
               {bloque.etiqueta}
             </div>
           </div>

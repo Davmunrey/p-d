@@ -159,6 +159,16 @@ export const HORAS_DURACION_EVENTO = 6;
 export const RUTA_CALENDARIO = "/reserva-la-fecha/evento.ics";
 
 /**
+ * Las estrellas del retrato, en JSON. Las pide la pantalla de error, que se
+ * pinta en el navegador y no puede preguntar a la base; las demás pantallas
+ * las leen en el servidor.
+ */
+export const RUTA_RETRATO_DE_ESTRELLAS = "/retrato-de-estrellas.json";
+
+/** Cuánto puede guardarse esa respuesta, en segundos: el retrato cambia poco. */
+export const SEGUNDOS_CACHE_RETRATO = 300;
+
+/**
  * LOS TIEMPOS DEL SOBRE, en milisegundos desde que se toca el sello: cuándo
  * asoma la foto, cuándo asoma la tarjeta y cuándo el sobre se va y los dos
  * naipes se colocan con el pie debajo. Son los de la entrega. Un test

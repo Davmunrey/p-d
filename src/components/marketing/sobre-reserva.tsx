@@ -68,7 +68,6 @@ export function SobreReserva({
   nombreNovia,
   nombreNovio,
   fechaIso,
-  ahoraIso,
   fechaTexto,
   anio,
   lugar,
@@ -81,8 +80,6 @@ export function SobreReserva({
   nombreNovia: string;
   nombreNovio: string;
   fechaIso: string;
-  /** El instante del servidor, que la cuenta atrás necesita para hidratar. */
-  ahoraIso: string;
   fechaTexto: string;
   anio: string;
   lugar: string | null;
@@ -276,7 +273,6 @@ export function SobreReserva({
               nombreNovia={nombreNovia}
               nombreNovio={nombreNovio}
               fechaIso={fechaIso}
-              ahoraIso={ahoraIso}
               fechaTexto={fechaTexto}
               anio={anio}
               lugar={lugar}

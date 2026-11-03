@@ -1,4 +1,3 @@
-import { CuentaAtras } from "@/components/marketing/cuenta-atras";
 import { EstrellasDelRetrato } from "@/components/marketing/estrellas-del-retrato";
 import { Conector } from "@/components/ui/tipografia";
 import { RETRATO_EN_LA_TARJETA } from "@/config/cielo";
@@ -10,7 +9,10 @@ import { t } from "@/lib/copy";
  *
  * El naipe que sale del sobre con la información: el retrato de estrellas de
  * Paloma, Hati y David, «Reservad la fecha», los nombres, la fecha en dos
- * líneas, el lugar y la cuenta atrás.
+ * líneas y el lugar, centrados en el papel.
+ *
+ * SIN CUENTA ATRÁS: la llevaba al pie y los novios la quitaron. Un Save the
+ * Date dice qué día es; contar los segundos es cosa de la web.
  *
  * ES PAPEL CLARO EN MEDIO DE LA NOCHE. La página va en marino
  * (`data-seccion="inversa"`) y la tarjeta vuelve a la paleta clara con
@@ -19,15 +21,15 @@ import { t } from "@/lib/copy";
  * estrella a estrella cuando la tarjeta sale (`trazado-del-naipe`).
  *
  * SE MIDE EN `cqh`. El naipe tiene una proporción fija y su alto lo decide la
- * pantalla, así que todo lo de dentro va en centésimas de ese alto: los
- * nombres miden 8,4 cqh, el año 13, la cuenta atrás 6. En un móvil pequeño y
- * en un monitor grande la tarjeta es la misma, sólo que a otra escala — que
- * es exactamente lo que hace una tarjeta de papel al acercarla o alejarla.
- * El contenedor lo pone el naipe que la envuelve (`container-type: size`).
+ * pantalla, así que todo lo de dentro va en centésimas de ese alto: el
+ * retrato mide 22 cqh, los nombres 8,4 y el año 13. En un móvil pequeño y en
+ * un monitor grande la tarjeta es la misma, sólo que a otra escala — que es
+ * exactamente lo que hace una tarjeta de papel al acercarla o alejarla. El
+ * contenedor lo pone el naipe que la envuelve (`container-type: size`).
  *
  * Las versalitas van a interlínea corta y no a la del cuerpo: a 1,65 cada
- * línea pequeña crecía un tercio, y sumadas empujaban la cuenta atrás fuera
- * del naipe. La entrega las deja a la interlínea natural de la letra.
+ * línea pequeña crecía un tercio, y sumadas se salían del naipe. La entrega
+ * las deja a la interlínea natural de la letra.
  *
  * LOS NOMBRES SON EL `h1` DE LA PÁGINA: es lo que la página dice. La «y» va
  * en la letra del conector a través de `Conector`, como en la portada, y en
@@ -37,7 +39,6 @@ export function TarjetaReserva({
   nombreNovia,
   nombreNovio,
   fechaIso,
-  ahoraIso,
   fechaTexto,
   anio,
   lugar,
@@ -46,8 +47,6 @@ export function TarjetaReserva({
   nombreNovia: string;
   nombreNovio: string;
   fechaIso: string;
-  /** El instante del servidor, que la cuenta atrás necesita para hidratar. */
-  ahoraIso: string;
   /** «Sábado 26 de junio», ya formateada en el servidor. */
   fechaTexto: string;
   /** «2027», en su propia línea. */
@@ -68,7 +67,7 @@ export function TarjetaReserva({
         className="pointer-events-none absolute inset-naipe-marco border border-borde-naipe"
       />
 
-      <div className="tarjeta-contenido flex h-full w-full flex-col items-center">
+      <div className="tarjeta-contenido flex h-full w-full flex-col items-center justify-center">
         {retrato ? (
           <div
             className="trazado-del-naipe h-naipe-retrato shrink-0"
@@ -120,11 +119,6 @@ export function TarjetaReserva({
             {lugar}
           </p>
         ) : null}
-
-        {/* Lo que sobre de alto se lo queda este hueco: la cuenta atrás va al pie. */}
-        <div className="min-h-naipe-hueco-cifras flex-1" />
-
-        <CuentaAtras fechaIso={fechaIso} ahoraIso={ahoraIso} compacta />
       </div>
     </div>
   );

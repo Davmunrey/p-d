@@ -189,7 +189,7 @@ export default async function PaginaInicio({
   // Sin configuración no hay boda que enseñar: la base respondió, pero el panel
   // aún está vacío. Se dice con claridad, en lugar de pintar una página rota o
   // inventarse datos para tapar el hueco.
-  if (!configuracion) return <EnPreparacion />;
+  if (!configuracion) return <EnPreparacion retrato={retrato} />;
 
   const nombres = `${configuracion.nombreNovia} ${t("portada.conjuncion")} ${configuracion.nombreNovio}`;
 

@@ -86,65 +86,42 @@ test.describe("El catálogo del sistema de marca", () => {
 });
 
 /**
- * El Save the Date lleva la Lira dos veces, y las dos son de la entrega: impresa
- * en la solapa del sobre, boca abajo y como filigrana, y dentro de la tarjeta
- * con las estrellas al 120 %. Se abre en un móvil, desde WhatsApp, así que
- * estas pruebas fijan ese alto.
+ * EL SAVE THE DATE YA NO LLEVA LA LIRA. La llevaba dos veces —en la solapa y
+ * en la tarjeta— y los novios la cambiaron por su retrato de estrellas, que
+ * prueba `reserva-la-fecha.spec.ts` con un retrato de verdad en la base. Aquí
+ * se vigila lo contrario: que la constelación no vuelve por la puerta de
+ * atrás, ni con el sobre cerrado ni abierto. Se abre en un móvil, desde
+ * WhatsApp, así que estas pruebas fijan ese alto.
  */
 test.describe("La constelación del Save the Date", () => {
   const MOVIL = { width: 390, height: 844 };
 
-  test("Lira va impresa en la solapa y dentro de la tarjeta", async ({ page }) => {
+  test("no hay Lira ni en la solapa ni en la tarjeta, cerrado ni abierto", async ({ page }) => {
     await page.setViewportSize(MOVIL);
     await page.goto("/reserva-la-fecha");
 
-    // Las dos constelaciones; el icono del calendario del pie no cuenta.
-    const dibujos = page.locator(".solapa svg, .naipe-tarjeta svg");
-    await expect(dibujos).toHaveCount(2);
-
-    for (const dibujo of [dibujos.nth(0), dibujos.nth(1)]) {
-      expect(await dibujo.locator("circle").count()).toBeGreaterThanOrEqual(4);
-    }
-
-    // Y la de la tarjeta brilla más: sus estrellas van a escala 1,2 (BODA-122).
-    const enSolapa = await page.locator(".solapa svg circle").first().getAttribute("r");
-    const enTarjeta = await page.locator(".naipe-tarjeta svg circle").first().getAttribute("r");
-    expect(Number(enTarjeta)).toBeCloseTo(Number(enSolapa) * 1.2, 5);
-  });
-
-  /**
-   * CASO DE ERROR / ACCESIBILIDAD. Aquí la constelación es adorno sobre unos
-   * nombres. Si se anunciara, quien navega con lector de pantalla oiría «Lira»
-   * antes que a los novios, que es lo único que la página tiene que decir.
-   */
-  test("como adorno, no le dice nada a un lector de pantalla", async ({ page }) => {
-    await page.setViewportSize(MOVIL);
-    await page.goto("/reserva-la-fecha");
-
-    const dibujos = page.locator(".solapa svg, .naipe-tarjeta svg");
-    await expect(dibujos).toHaveCount(2);
-    for (const dibujo of [dibujos.nth(0), dibujos.nth(1)]) {
-      await expect(dibujo).toHaveAttribute("aria-hidden", "true");
-      await expect(dibujo.locator("title")).toHaveCount(0);
-    }
-  });
-
-  /**
-   * CASO DE ERROR. Con el sobre cerrado sólo se ve la de la solapa; la de la
-   * tarjeta espera dentro, sin pintarse, hasta que se toca el sello.
-   */
-  test("cerrada, se ve la de la solapa; abierta, la de la tarjeta", async ({ page }) => {
-    await page.setViewportSize(MOVIL);
-    await page.goto("/reserva-la-fecha");
-
-    await expect(page.locator(".solapa svg")).toBeVisible();
-    await expect(page.locator(".naipe-tarjeta")).toHaveCSS("opacity", "0");
-
+    // Una constelación se reconoce por sus trazos: el retrato son sólo estrellas
+    // y el icono del calendario, un rectángulo y un trazado.
+    const trazos = page.locator(".pieza-sobre svg line");
     await expect(page.locator(".pieza-sobre")).toHaveAttribute("data-hidratado", "");
+    await expect(trazos).toHaveCount(0);
+
     await page.getByRole("button", { name: copy.saveTheDate.abrir }).click();
     await expect(page.locator(".pieza-sobre")).toHaveAttribute("data-fuera", "");
     await expect(page.locator(".naipe-tarjeta")).toHaveCSS("opacity", "1");
-    await expect(page.locator(".naipe-tarjeta svg")).toBeVisible();
+    await expect(trazos).toHaveCount(0);
+  });
+
+  /**
+   * CASO DE ERROR / ACCESIBILIDAD. Si la Lira volviera como imagen con nombre,
+   * quien navega con lector de pantalla oiría «Lira» antes que a los novios.
+   */
+  test("nada en el sobre se anuncia como la Lira", async ({ page }) => {
+    await page.setViewportSize(MOVIL);
+    await page.goto("/reserva-la-fecha");
+
+    await expect(page.getByRole("img", { name: /lira/i })).toHaveCount(0);
+    await expect(page.locator(".pieza-sobre svg title")).toHaveCount(0);
   });
 });
 

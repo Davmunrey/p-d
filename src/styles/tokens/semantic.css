@@ -439,7 +439,7 @@
   --ancho-columna-dato: var(--size-cuarto);
   --alto-barra-muestra: var(--size-barra-muestra);
   --ancho-ficha-catalogo: var(--size-ficha-catalogo);
-  --lado-constelacion: var(--size-constelacion);
+  --alto-retrato-estado: var(--size-retrato-estado);
   --lado-vuestra-estrella: var(--size-vuestra-estrella);
   --alto-amanecer: var(--size-amanecer);
   --alto-retrato: var(--size-retrato);
@@ -657,13 +657,10 @@
   --texto-naipe-conector: var(--font-size-naipe-conector);
   --texto-naipe-fecha: var(--font-size-naipe-fecha);
   --texto-naipe-anno: var(--font-size-naipe-anno);
-  --texto-naipe-cifra: var(--font-size-naipe-cifra);
-  --texto-naipe-unidad: var(--font-size-naipe-unidad);
   --interlineado-naipe-nombre: var(--line-height-naipe-nombre);
   --interlineado-naipe-anno: var(--line-height-naipe-anno);
   --espaciado-naipe-fecha: var(--letter-spacing-naipe-fecha);
   --espaciado-naipe-lugar: var(--letter-spacing-naipe-lugar);
-  --espaciado-naipe-unidad: var(--letter-spacing-naipe-unidad);
   --espacio-naipe-y: var(--space-naipe-y);
   --espacio-naipe-x: var(--space-naipe-x);
   --espacio-naipe-marco: var(--space-naipe-marco);
@@ -672,7 +669,6 @@
   --espacio-naipe-separador: var(--space-naipe-separador);
   --espacio-naipe-hueco-raya: var(--space-naipe-hueco-raya);
   --espacio-naipe-hueco-corto: var(--space-naipe-hueco-corto);
-  --espacio-naipe-hueco-cifras: var(--space-naipe-hueco-cifras);
   --espacio-naipe-foto: var(--space-naipe-foto);
   --alto-naipe-retrato: var(--size-naipe-retrato);
   --ancho-naipe-raya: var(--size-naipe-raya);

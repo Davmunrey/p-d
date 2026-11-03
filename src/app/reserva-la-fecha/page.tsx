@@ -155,7 +155,6 @@ export default async function PaginaReservaLaFecha({
         nombreNovia={nombreNovia}
         nombreNovio={nombreNovio}
         fechaIso={fechaCeremonia.toISOString()}
-        ahoraIso={new Date().toISOString()}
         fechaTexto={fechaConDia(fechaCeremonia)}
         anio={anio(fechaCeremonia)}
         lugar={lugarConCiudad}

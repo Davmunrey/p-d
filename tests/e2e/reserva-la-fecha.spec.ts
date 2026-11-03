@@ -91,7 +91,7 @@ test.describe("Reserva la fecha", () => {
   });
 
   test("llega cerrado: el sello es un botón y la tarjeta espera dentro", async ({ page }) => {
-    // `exact`: la nota del pie también dice «guardad el día», en minúscula.
+    // `exact`: la cabecera, y no otro texto que lo diga de pasada.
     await expect(page.getByText(copy.saveTheDate.cabecera, { exact: true })).toBeVisible();
     await expect(sello(page)).toBeVisible();
     await expect(sello(page)).toBeEnabled();
@@ -122,7 +122,6 @@ test.describe("Reserva la fecha", () => {
     await expect(tarjeta(page).getByText(/^\d{4}$/)).toBeVisible();
 
     await expect(page.getByText(/\(DES\).*[Ff]inca/).first()).toBeVisible();
-    await expect(page.getByRole("timer")).toBeVisible();
 
     // El pie: el calendario y la forma de cerrarlo. Nada más.
     await expect(
@@ -137,12 +136,31 @@ test.describe("Reserva la fecha", () => {
     await expect(tarjeta(page)).toBeFocused();
   });
 
-  test("la cuenta atrás de la tarjeta va en vivo", async ({ page }) => {
+  /**
+   * La tarjeta dice la fecha y basta: los novios quitaron la cuenta atrás del
+   * pie. Contar los segundos es cosa de la web, no del Save the Date.
+   */
+  test("la tarjeta lleva la fecha y no una cuenta atrás, y todo cabe en el marco", async ({
+    page,
+  }) => {
     await abrirElSobre(page);
 
-    const contador = page.getByRole("timer");
-    const antes = await contador.innerText();
-    await expect.poll(() => contador.innerText(), { timeout: 3000 }).not.toBe(antes);
+    await expect(tarjeta(page).locator("time")).toBeVisible();
+    await expect(page.getByRole("timer")).toHaveCount(0);
+
+    // Lo impreso queda dentro del marco interior: nada lo pisa ni se sale.
+    await expect
+      .poll(() =>
+        tarjeta(page).evaluate((naipe) => {
+          const marco = naipe.querySelector(".tarjeta > [aria-hidden='true']")!;
+          const { top, bottom } = marco.getBoundingClientRect();
+          return [...naipe.querySelectorAll(".tarjeta-contenido > *")].every((hijo) => {
+            const caja = hijo.getBoundingClientRect();
+            return caja.top >= top && caja.bottom <= bottom;
+          });
+        }),
+      )
+      .toBe(true);
   });
 
   test("se abre con el teclado, el foco sigue a la pieza y se vuelve a cerrar", async ({
@@ -323,6 +341,8 @@ test.describe("El retrato de estrellas en el sobre", () => {
     await page.goto(RUTA);
     await expect(page.locator(".solapa-retrato svg circle").first()).toBeAttached();
     await expect(page.locator(".solapa-lira")).toHaveCount(0);
+    // En la solapa es adorno: el lector de pantalla lo oye una vez, en la tarjeta.
+    await expect(page.locator(".solapa-retrato")).toHaveAttribute("aria-hidden", "true");
 
     await abrirElSobre(page);
     const retrato = tarjeta(page).getByRole("img", { name: alternativo });
@@ -378,7 +398,7 @@ test.describe("Reserva la fecha sin JavaScript", () => {
     await expect(page).toHaveURL(new RegExp(`\\?${PARAMETRO_SOBRE_ABIERTO}=1`));
     await expect(pieza(page)).toHaveAttribute("data-fuera", "");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("(DES)");
-    await expect(page.getByRole("timer")).toBeVisible();
+    await expect(tarjeta(page).locator("time")).toBeVisible();
     await expect(
       page.getByRole("link", { name: copy.saveTheDate.anadirCalendario }),
     ).toBeVisible();

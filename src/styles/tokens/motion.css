@@ -154,6 +154,20 @@
   }
 }
 
+/*
+  El retrato de estrellas, dibujándose de la primera estrella a la última.
+  Anima `--trazado`, que `sobre.css` registra como número con `@property`.
+*/
+@keyframes trazar-retrato {
+  from {
+    --trazado: 0;
+  }
+
+  to {
+    --trazado: 1;
+  }
+}
+
 /* Una línea que se traza. Se usa como separador que "dibuja" la sección. */
 @keyframes trazar-horizontal {
   from {
@@ -654,6 +668,15 @@
   );
 }
 
+/*
+  EN LAS PANTALLAS DE ESTADO SE DIBUJA UNA VEZ, AL LLEGAR: no hay scroll que
+  lo vaya trazando, y el gesto es el mismo que el de la tarjeta del Save the
+  Date. Lo dibujado se queda (`both`).
+*/
+.trazado-al-llegar {
+  animation: trazar-retrato var(--transicion-trazado-naipe) both;
+}
+
 /* Las principales titilan despacio, cada una a su tiempo. */
 .titila-en-el-retrato {
   --titilar-alta: var(--titilar-retrato-alta);
@@ -1063,6 +1086,7 @@
   .animacion-latido,
   .animacion-flotar-arriba,
   .animacion-sacudir,
+  .trazado-al-llegar,
   .animacion-paralaje,
   .animacion-paralaje-portada,
   .hora-que-llega,
