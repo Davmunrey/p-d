@@ -181,12 +181,16 @@ export function SobreReserva({
       data-fuera={fase >= ABIERTO ? "" : undefined}
       data-sin-foto={fuente ? undefined : ""}
     >
-      {/* «Guardad el día» entre dos rayas, y una tercera que se traza debajo. */}
+      {/*
+        «Save the date» entre dos rayas, y una tercera que se traza debajo: el
+        nombre de la pieza, por fuera. La noticia, «Nos casamos», va dentro, en
+        la tarjeta.
+      */}
       <div className="animacion-bajar-pausado relative text-center">
         <div className="flex items-center justify-center gap-interno">
           <span aria-hidden="true" className="w-raya-cabecera border-t border-borde-filete" />
           <Etiqueta espaciado="marcado" tono="acento">
-            {t("saveTheDate.cabecera")}
+            {t("saveTheDate.etiqueta")}
           </Etiqueta>
           <span aria-hidden="true" className="w-raya-cabecera border-t border-borde-filete" />
         </div>

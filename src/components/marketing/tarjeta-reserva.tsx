@@ -8,7 +8,7 @@ import { t } from "@/lib/copy";
  * LA TARJETA DEL SAVE THE DATE
  *
  * El naipe que sale del sobre con la información: el retrato de estrellas de
- * Paloma, Hati y David, «Save the date», los nombres, la fecha —el día de la
+ * Paloma, Hati y David, «Nos casamos», los nombres, la fecha —el día de la
  * semana y, debajo, la fecha entera y grande— y el lugar, centrados en el
  * papel.
  *
@@ -90,7 +90,7 @@ export function TarjetaReserva({
         ) : null}
 
         <p className="mt-naipe-hueco-rotulo font-cuerpo peso-cuerpo text-naipe-rotulo leading-titulo-menor uppercase tracking-seccion text-tinta-suave">
-          {t("saveTheDate.etiqueta")}
+          {t("saveTheDate.anuncio")}
         </p>
 
         <h1 className="mt-naipe-hueco font-titulo peso-titulo text-naipe-nombre leading-naipe-nombre tracking-normal text-tinta">

@@ -221,7 +221,7 @@
   },
   "saveTheDate": {
     "etiqueta": "Save the date",
-    "cabecera": "Guardad el día",
+    "anuncio": "Nos casamos",
     "abrir": "Abrir la invitación",
     "pista": "Tocad el sello para abrir",
     "remite": "{nombres} · {ciudad}",

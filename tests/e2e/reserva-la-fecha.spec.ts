@@ -92,7 +92,7 @@ test.describe("Reserva la fecha", () => {
 
   test("llega cerrado: el sello es un botón y la tarjeta espera dentro", async ({ page }) => {
     // `exact`: la cabecera, y no otro texto que lo diga de pasada.
-    await expect(page.getByText(copy.saveTheDate.cabecera, { exact: true })).toBeVisible();
+    await expect(page.getByText(copy.saveTheDate.etiqueta, { exact: true })).toBeVisible();
     await expect(sello(page)).toBeVisible();
     await expect(sello(page)).toBeEnabled();
     await expect(page.getByText(copy.saveTheDate.pista)).toBeVisible();
@@ -114,10 +114,15 @@ test.describe("Reserva la fecha", () => {
     await expect(titulo).toBeVisible();
     await expect(titulo).toContainText("(DES)");
 
-    // «Save the date», el nombre de la pieza, encima de los nombres.
+    // Fuera, el nombre de la pieza; dentro, la noticia. «Nos casamos» encima de
+    // los nombres, y «Save the date» sólo en la cabecera: no se repite.
+    await expect(
+      tarjeta(page).getByText(copy.saveTheDate.anuncio, { exact: true }),
+    ).toBeVisible();
     await expect(
       tarjeta(page).getByText(copy.saveTheDate.etiqueta, { exact: true }),
-    ).toBeVisible();
+    ).toHaveCount(0);
+    await expect(page.getByText(copy.saveTheDate.etiqueta, { exact: true })).toHaveCount(1);
 
     // La fecha entera es la protagonista: «26 · 06 · 2027» grande, con el día
     // de la semana encima, y en palabras para quien no ve la tarjeta.
