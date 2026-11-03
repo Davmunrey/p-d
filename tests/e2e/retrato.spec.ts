@@ -126,6 +126,10 @@ test.describe("El retrato de estrellas", () => {
     await page.goto("/");
     const trazado = retrato(page).locator("[data-trazado]");
 
+    // Con la foto de portada el retrato queda por debajo al llegar: lo traza
+    // el scroll, no se dibuja solo.
+    await expect(trazado).toHaveAttribute("data-al-bajar", "");
+
     // Lejos todavía: apagado.
     await bajarHasta(page, 2);
     await expect(trazado).toHaveAttribute("data-trazado", "dibujando");
@@ -145,6 +149,47 @@ test.describe("El retrato de estrellas", () => {
     await bajarHasta(page, 2);
     await expect(trazado).toHaveAttribute("data-trazado", "entero");
     expect(await opacidad(page, CUANTAS - 1)).toBeGreaterThan(0);
+  });
+
+  /**
+   * SIN FOTO DE PORTADA EL RETRATO YA SE VE AL LLEGAR: asoma bajo la portada.
+   * Atado al scroll se quedaba a medio trazar, como algo que no ha terminado
+   * de cargar. Ahora se traza solo, entero, sin que nadie baje.
+   */
+  test("si al llegar ya se ve, se dibuja entero sin bajar", async ({ page }) => {
+    const fotos = await conBase(
+      (sql) => sql<{ id: string }[]>`
+        update public.medios set publicado = false
+         where seccion = 'portada' and publicado
+     returning id
+      `,
+    );
+    try {
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/");
+      await expect(retrato(page)).toBeInViewport();
+
+      const trazado = retrato(page).locator("[data-trazado]");
+      await expect(trazado).not.toHaveAttribute("data-al-bajar");
+      const seDibujaSolo = await trazado.evaluate((nodo) =>
+        nodo.getAnimations().some((animacion) => {
+          return (animacion as CSSAnimation).animationName === "trazar-retrato";
+        }),
+      );
+      expect(seDibujaSolo).toBe(true);
+
+      await expect(trazado).toHaveAttribute("data-trazado", "entero", { timeout: 10_000 });
+      await expect.poll(() => opacidad(page, CUANTAS - 1)).toBeGreaterThan(0);
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    } finally {
+      if (fotos.length > 0) {
+        await conBase(
+          (sql) =>
+            sql`update public.medios set publicado = true where id in ${sql(fotos.map((f) => f.id))}`,
+        );
+      }
+    }
   });
 
   test("con movimiento reducido está entero desde el principio y no titila", async ({

@@ -607,6 +607,22 @@
 }
 
 /*
+  SI AL LLEGAR YA SE VE, SE DIBUJA SOLO. Sin foto de portada el retrato asoma
+  en la primera pantalla, y atado al scroll se quedaba a medio trazar —y como
+  del servidor sale entero, además se borraba al cargar—. Con JavaScript
+  arranca a oscuras desde el primer fotograma y se traza entero cuando acaba
+  de entrar la portada, el mismo gesto que la tarjeta del Save the Date. Si al
+  medir está todavía por debajo de la pantalla, el componente le pone
+  `data-al-bajar`, que quita esta animación, y lo traza el scroll.
+*/
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .trazado-del-retrato:not([data-al-bajar]) {
+    animation: trazar-retrato var(--transicion-trazado-retrato) var(--retardo-trazado-retrato)
+      both;
+  }
+}
+
+/*
   EL FRENTE LLEGA UN PASO MÁS ALLÁ DEL FINAL: con el trazado entero, la
   última estrella —`--orden` 1— tiene que estar encendida del todo, y con
   «trazado menos orden» se quedaba a oscuras (y con ella, el lomo de Hati,

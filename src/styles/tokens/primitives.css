@@ -943,6 +943,9 @@
   --duration-flotar-sobre: 3600ms;
   --duration-titilar-lento: 9000ms;
   --duration-trazado-naipe: 2200ms;
+
+  /* El retrato de la landing es cinco veces más alto: se traza más despacio. */
+  --duration-trazado-retrato: 2800ms;
   --duration-luz-naipe: 1600ms;
   --ease-muelle-sobre: cubic-bezier(0.16, 1.1, 0.3, 1);
   --delay-corto: 120ms;

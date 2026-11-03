@@ -700,6 +700,10 @@
   --transicion-pie-sobre-fundido: var(--duration-pie-sobre) var(--ease-lineal);
   --transicion-pista-sobre: var(--duration-pista-sobre) var(--ease-lineal);
   --transicion-trazado-naipe: var(--duration-trazado-naipe) var(--ease-salida);
+
+  /* El retrato de la landing, cuando ya se ve al llegar: tras la portada. */
+  --transicion-trazado-retrato: var(--duration-trazado-retrato) var(--ease-salida);
+  --retardo-trazado-retrato: var(--delay-5);
   --transicion-luz-naipe: var(--duration-luz-naipe) var(--ease-salida);
   --transicion-sello-escala: var(--duration-fast) var(--ease-muelle);
   --periodo-sacudida: var(--duration-sosegado);
