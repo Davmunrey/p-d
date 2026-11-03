@@ -271,7 +271,7 @@ Vistas: **`v_estadisticas_invitados`** (confirmados, adultos, niños, autobús, 
 
 ### Contenido de la landing
 
-**`hitos_programa`** — el día hora a hora. La columna `momento` (`preboda` | `boda`) separaba la víspera cuando tenía horario; desde `20261103140000` la víspera es un lugar (`configuracion_boda.lugar_preboda`) y sus hitos se guardan sin pintarse: ni el programa ni su lista del panel los enseñan. La hora es texto y no `time` a propósito: en una boda se escribe «14:00» pero también «de madrugada».
+**`hitos_programa`** — el día hora a hora. La columna `momento` (`preboda` | `boda`) separaba la víspera cuando tenía horario; desde `20261103140000` la víspera es un lugar (`configuracion_boda.lugar_preboda`) y sus hitos se quedaron guardados sin pintarse, hasta que `20261103160000` los borró a petición de los novios (el rollback devuelve los tres sembrados). Si vuelve a haber alguno, ni el programa ni su lista del panel lo enseñan. La hora es texto y no `time` a propósito: en una boda se escribe «14:00» pero también «de madrugada».
 
 **`alojamientos`**, **`rutas_llegada`**, **`consejos_vestimenta`**, **`planes`** — cada uno con `orden` y `publicado`. **`hitos_historia`** y **`preguntas_frecuentes`** se retiraron en `20261103150000`, con la historia, la galería, el paisaje y las preguntas: los novios decidieron que la web no las lleve. Sus valores siguen en el enumerado `seccion_landing` —Postgres no los sabe quitar sin rehacer el tipo— y un CHECK en `secciones_landing` y en `medios` impide que vuelvan a usarse.
 
