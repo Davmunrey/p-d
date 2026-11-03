@@ -592,6 +592,13 @@
   --size-retrato: clamp(17rem, 56svh, 32rem);
 
   /*
+   * LA PORTADA SIN FOTO NO OCUPA LA PANTALLA ENTERA: dos tercios, y en el
+   * tercio de abajo asoma el retrato de estrellas, que es lo que invita a
+   * bajar. Si el texto pide más, manda el texto.
+   */
+  --size-portada-sin-foto: 64svh;
+
+  /*
    * CUÁNTO TARDA CADA ESTRELLA DEL RETRATO EN ENCENDERSE, en fracción del
    * trazado entero: con 12, cada una pasa de apagada a encendida mientras se
    * dibuja una doceava parte del contorno, y la línea avanza con un frente

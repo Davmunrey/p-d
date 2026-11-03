@@ -444,6 +444,7 @@
   --lado-vuestra-estrella: var(--size-vuestra-estrella);
   --alto-amanecer: var(--size-amanecer);
   --alto-retrato: var(--size-retrato);
+  --alto-portada-sin-foto: var(--size-portada-sin-foto);
   --nitidez-trazado: var(--number-nitidez-trazado);
   --titilar-retrato-alta: var(--opacity-titilar-retrato-alta);
   --titilar-retrato-baja: var(--opacity-titilar-retrato-baja);

@@ -526,6 +526,29 @@ test.describe("La víspera y el día", () => {
   });
 
   /**
+   * La víspera es el preludio del día: su titular va un escalón por debajo
+   * del de «El día, hora a hora», y como no lleva nada debajo, la cabecera no
+   * deja hueco: el aire es el de la sección, igual arriba que abajo.
+   */
+  test("el titular de la víspera va un escalón por debajo del día", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/");
+
+    const tamanoDe = (selector: string) =>
+      page
+        .locator(selector)
+        .evaluate((nodo) => Number.parseFloat(getComputedStyle(nodo).fontSize));
+    expect(await tamanoDe("#preboda header h2")).toBeLessThan(
+      await tamanoDe("#programa header h2"),
+    );
+
+    const margenBajoLaCabecera = await page
+      .locator("#preboda header")
+      .evaluate((nodo) => getComputedStyle(nodo).marginBottom);
+    expect(margenBajoLaCabecera).toBe("0px");
+  });
+
+  /**
    * CASO DE ERROR · «Todavía no lo sabemos». Sin lugar no hay víspera: ni la
    * sección ni su entrada en el menú, aunque esté encendida y queden hitos
    * de la víspera en la base.
@@ -612,7 +635,8 @@ test.describe("La tipografía es la de la entrega", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/");
 
-    const titular = await medir(page, "main section header h2");
+    // La víspera queda fuera: es el preludio del día y va un escalón por debajo.
+    const titular = await medir(page, "main section:not(#preboda) header h2");
     // 5.4vw a 1280 son 69,12: el clamp topa en 68. Con 5vw se quedaba en 64.
     expect(titular.tamano).toBe(68);
     expect(titular.peso).toBe(300);

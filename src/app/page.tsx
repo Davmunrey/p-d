@@ -569,9 +569,14 @@ async function cargarLanding() {
  * `breakpoint` escrito: lo resuelve `auto-fit` con un ancho mínimo de columna.
  *
  * ES DE NOCHE: no tiene fondo propio, va sobre el principio del cielo, con el
- * firmamento recién encendido detrás y los nombres en marfil. Sin foto el
- * texto se queda centrado sobre el cielo; el día que se publique una imagen,
- * ocupa su mitad sin tocar nada.
+ * firmamento recién encendido detrás y los nombres en marfil. El día que se
+ * publique una imagen, ocupa su mitad sin tocar nada.
+ *
+ * SIN FOTO NO OCUPA LA PANTALLA ENTERA: dos tercios (`min-h-portada-sin-foto`)
+ * con el texto centrado, y en el tercio de abajo asoma el retrato de
+ * estrellas. Es lo que invita a bajar desde que no hay pista ni botón; a
+ * pantalla entera, debajo de la cuenta atrás quedaba media pantalla de cielo
+ * vacío y el retrato, fuera de la vista.
  */
 function Portada({
   configuracion,
@@ -606,7 +611,9 @@ function Portada({
     */
     <section
       id={anclaDe("portada")}
-      className="relative rejilla-partida min-h-dvh items-stretch max-md:flex max-md:flex-col"
+      className={`relative rejilla-partida items-stretch ${
+        foto ? "min-h-dvh max-md:flex max-md:flex-col" : "min-h-portada-sin-foto"
+      }`}
     >
       <div
         className={`flex w-full flex-col justify-center px-portada-lado pt-portada-arriba pb-portada-abajo ${
@@ -828,7 +835,8 @@ function ListaDeHoras({
  * es lo que de verdad quiere saber quien llega de fuera— y «Preboda en el
  * Barrio Húmedo». Sin horario: se queda en un sitio y quien pueda, va. Va al
  * ancho del programa, que la sigue, para que los dos días se lean en una
- * misma columna.
+ * misma columna, y con el titular un escalón por debajo: es el preludio del
+ * día, no otra sección que compita con él.
  */
 function Preboda({ dia, lugar }: { dia: Date; lugar: string }) {
   return (
@@ -837,6 +845,7 @@ function Preboda({ dia, lugar }: { dia: Date; lugar: string }) {
       etiqueta={fechaConDia(dia)}
       titulo={t("preboda.titulo", { lugar })}
       ancho="medio"
+      menor
     />
   );
 }
@@ -1273,6 +1282,7 @@ function CabeceraSeccion({
   barrido = false,
   composicion = "alineada",
   anchoEntradilla = "texto",
+  menor = false,
   className = "mb-cabecera-tramo",
 }: {
   idTitulo: string;
@@ -1283,6 +1293,11 @@ function CabeceraSeccion({
   barrido?: boolean;
   composicion?: ComposicionDeCabecera;
   anchoEntradilla?: "texto" | "llegar";
+  /**
+   * Un escalón por debajo: el titular de una sección que es preludio de la
+   * siguiente —la víspera antes del día— y no compite con ella.
+   */
+  menor?: boolean;
   className?: string;
 }) {
   if (!etiqueta && !titulo) return null;
@@ -1306,9 +1321,15 @@ function CabeceraSeccion({
         </EtiquetaSeccion>
       ) : null}
       {titulo ? (
-        <Titulo1 como="h2" id={idTitulo} tamano="tramo" className="mt-pila">
-          {titulo}
-        </Titulo1>
+        menor ? (
+          <Titulo2 id={idTitulo} className="mt-pila text-balance">
+            {titulo}
+          </Titulo2>
+        ) : (
+          <Titulo1 como="h2" id={idTitulo} tamano="tramo" className="mt-pila">
+            {titulo}
+          </Titulo1>
+        )
       ) : null}
       {entradillaDebajo ? (
         <Cuerpo className={`mt-pila ${anchoDeEntradilla}`}>{entradilla}</Cuerpo>
@@ -1359,6 +1380,7 @@ function Bloque({
   barrido = false,
   composicion = "alineada",
   ancho = "contenido",
+  menor = false,
   children,
 }: {
   seccion: Seccion;
@@ -1369,6 +1391,8 @@ function Bloque({
   barrido?: boolean;
   composicion?: ComposicionDeCabecera;
   ancho?: AnchoDeBloque;
+  /** El titular un escalón por debajo (ver `CabeceraSeccion`). */
+  menor?: boolean;
   /** Lo que va bajo la cabecera. Sin nada, la sección es sólo su cabecera. */
   children?: ReactNode;
 }) {
@@ -1389,6 +1413,10 @@ function Bloque({
           realzada={realzada}
           barrido={barrido}
           composicion={composicion}
+          menor={menor}
+          // Sin nada debajo, el hueco bajo la cabecera sobra: el aire lo pone
+          // la sección, igual por arriba que por abajo.
+          className={children ? undefined : ""}
         />
         {children}
       </div>

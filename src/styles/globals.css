@@ -327,6 +327,7 @@
   --spacing-vuestra-estrella: var(--lado-vuestra-estrella);
   --spacing-estrella-llegada: var(--lado-estrella-llegada);
   --spacing-retrato: var(--alto-retrato);
+  --spacing-portada-sin-foto: var(--alto-portada-sin-foto);
   --spacing-solape-mapa: var(--solape-mapa);
 
   /* Un solo token da `h-cabecera`, `pt-cabecera` y `scroll-mt-cabecera`. */

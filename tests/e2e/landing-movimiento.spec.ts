@@ -150,6 +150,25 @@ test.describe("La portada sin foto es una noche entera", () => {
     await expect(page.locator("#portada dl")).toBeInViewport({ ratio: 1 });
   });
 
+  /**
+   * CAMINO FELIZ · sin botón ni pista que inviten a bajar, lo hace el retrato:
+   * la portada sin foto se queda en dos tercios de la pantalla y en el tercio
+   * de abajo asoma el retrato de estrellas, en un móvil y en escritorio.
+   */
+  for (const [nombre, pantalla] of [
+    ["un móvil", MOVIL],
+    ["escritorio", ESCRITORIO],
+  ] as const) {
+    test(`en ${nombre}, el retrato de estrellas asoma bajo la portada`, async ({ page }) => {
+      await page.setViewportSize(pantalla);
+      await page.goto("/");
+
+      const portada = await page.locator("#portada").boundingBox();
+      expect(portada!.height).toBeLessThan(pantalla.height);
+      await expect(page.locator("[data-retrato]")).toBeInViewport();
+    });
+  }
+
   /** CASO DE ERROR · con movimiento reducido, la noche llega quieta. */
   test("con movimiento reducido el cielo se pinta una vez y no se mueve", async ({ page }) => {
     await page.setViewportSize(ESCRITORIO);
@@ -172,6 +191,23 @@ test.describe("El movimiento de la landing", () => {
     const nombres = await page.locator("#portada h1").boundingBox();
     const foto = await page.locator("#portada img").first().boundingBox();
     expect(foto!.x, "la foto va a la derecha del texto").toBeGreaterThan(nombres!.x);
+  });
+
+  /**
+   * CASO DE ERROR · los dos tercios son de la portada sin foto. Con foto, la
+   * portada sigue siendo la pantalla entera: la imagen no se recorta para
+   * dejar asomar el retrato.
+   */
+  test("con foto de portada, la portada sigue ocupando la pantalla entera", async ({
+    page,
+  }) => {
+    await page.setViewportSize(MOVIL);
+    await page.goto("/");
+
+    const conFoto = await page.locator("#portada img").count();
+    test.skip(conFoto === 0, "La base no tiene foto de portada publicada");
+    const portada = await page.locator("#portada").boundingBox();
+    expect(portada!.height).toBeGreaterThanOrEqual(MOVIL.height - 1);
   });
 
   test("la «y» de la portada se escribe, y sólo la de la portada", async ({ page }) => {
