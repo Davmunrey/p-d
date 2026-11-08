@@ -1,0 +1,85 @@
+name: Direcciones de acceso
+
+# A DÓNDE VUELVEN LOS CORREOS DE SUPABASE AUTH.
+#
+# El enlace de «he olvidado la contraseña» lleva a `NEXT_PUBLIC_SITE_URL`, y
+# Supabase sólo devuelve a direcciones de su lista («Redirect URLs»): con una
+# que no está, manda a su «Site URL» y el enlace se pierde. Cambiar de dominio
+# es tocar las dos, y eso vive en Supabase, fuera del repositorio. Este flujo
+# lo hace con su API de gestión y el mismo token que ya usan las migraciones.
+#
+# SE LANZA A MANO, DICIENDO EL DOMINIO. No hay un dominio escrito aquí: es el
+# que se le da al lanzarlo, el mismo que `NEXT_PUBLIC_SITE_URL` en Vercel.
+#
+# NO PISA LA LISTA. Lee la que hay y le añade el dominio nuevo (`/**`, para que
+# valga cualquier ruta de vuelta); la «Site URL» sí se sustituye, porque sólo
+# hay una. El registro dice cómo estaban las dos antes y cómo quedan.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sitio:
+        description: "El dominio de la web, con https:// (el de NEXT_PUBLIC_SITE_URL)"
+        required: true
+        type: string
+
+concurrency:
+  group: direcciones-de-acceso
+  cancel-in-progress: false
+
+jobs:
+  aplicar:
+    name: Poner el dominio en Supabase Auth
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar el dominio y las credenciales
+        id: datos
+        env:
+          SITIO: ${{ inputs.sitio }}
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          # De la variable, o del secreto si alguien lo guardó ahí (ver
+          # migraciones.yml, que lo acepta de los dos sitios por lo mismo).
+          PROYECTO: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          case "$SITIO" in
+            https://*) ;;
+            *)
+              echo "::error::El dominio tiene que empezar por https://, y llegó «$SITIO». No se ha cambiado nada."
+              exit 1 ;;
+          esac
+          if [ -z "$TOKEN" ] || [ -z "$PROYECTO" ]; then
+            echo "::error::Faltan SUPABASE_ACCESS_TOKEN o SUPABASE_PROJECT_REF. Ver docs/ENTORNO.md. No se ha cambiado nada."
+            exit 1
+          fi
+          echo "sitio=${SITIO%/}" >> "$GITHUB_OUTPUT"
+          echo "proyecto=$PROYECTO" >> "$GITHUB_OUTPUT"
+
+      - name: Aplicar
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROYECTO: ${{ steps.datos.outputs.proyecto }}
+          SITIO: ${{ steps.datos.outputs.sitio }}
+        run: |
+          api="https://api.supabase.com/v1/projects/$PROYECTO/config/auth"
+
+          actual=$(curl -fsS -H "Authorization: Bearer $TOKEN" "$api")
+          echo "Antes: $(jq -c '{site_url, uri_allow_list}' <<<"$actual")"
+
+          # La lista es una sola cadena separada por comas.
+          lista=$(jq -r --arg nueva "$SITIO/**" '
+            (.uri_allow_list // "") | split(",")
+            | map(gsub("^\\s+|\\s+$"; "")) | map(select(. != ""))
+            | . + [$nueva] | unique | join(",")' <<<"$actual")
+          cuerpo=$(jq -nc --arg sitio "$SITIO" --arg lista "$lista" \
+            '{site_url: $sitio, uri_allow_list: $lista}')
+
+          despues=$(curl -fsS -X PATCH \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$cuerpo" "$api")
+          echo "Después: $(jq -c '{site_url, uri_allow_list}' <<<"$despues")"
+
+          if [ "$(jq -r .site_url <<<"$despues")" != "$SITIO" ]; then
+            echo "::error::Supabase no ha guardado la Site URL."
+            exit 1
+          fi

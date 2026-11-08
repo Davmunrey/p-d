@@ -228,6 +228,19 @@ migraciones van hacia delante; cada una trae su SQL de rollback en
 `supabase/migrations/rollback/` para aplicarlo a mano, con la cabeza fría y
 mirando lo que se borra.
 
+### Las direcciones de vuelta de Supabase Auth: a mano, con el mismo token
+
+El correo de «he olvidado la contraseña» devuelve a `NEXT_PUBLIC_SITE_URL`, y
+Supabase sólo deja volver a las direcciones de su lista («Redirect URLs»); con
+una que no está, manda a la «Site URL» y el enlace se pierde. Al cambiar de
+dominio hay que tocar las dos, y eso no es una migración: vive en la
+configuración de Auth del proyecto. Lo hace el flujo **«Direcciones de
+acceso»** (`.github/workflows/direcciones-de-acceso.yml`), que se lanza a mano
+desde la pestaña Actions con el dominio —el mismo de `NEXT_PUBLIC_SITE_URL`—,
+usa `SUPABASE_ACCESS_TOKEN` y `SUPABASE_PROJECT_REF`, pone ese dominio como
+«Site URL» y lo **añade** a la lista sin quitar lo que hubiera. El registro
+dice cómo estaban las dos antes y cómo quedan.
+
 ### La excepción: trabajar desde GitHub
 
 `.github/workflows/claude.yml` permite mencionar `@claude` en una incidencia o
