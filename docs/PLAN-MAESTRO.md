@@ -553,6 +553,8 @@ El sello es el botón de un formulario GET: **sin JavaScript —o antes de hidra
 
 Si el despliegue apunta a una rama de trabajo, producción deja de actualizarse en cuanto esa rama se mergea y se abandona.
 
+**Dominios de producción** (comprados en Vercel, con sus DNS allí): `www.davidypaloma.com` es la web —`davidypaloma.com` redirige a él con un 308, y es el valor de `NEXT_PUBLIC_SITE_URL`— y `savethedate.davidypaloma.com` es el Save the Date (`HOST_RESERVA_LA_FECHA`). `paloma-david.vercel.app` sigue sirviendo lo mismo que el dominio. La vuelta de «he olvidado la contraseña» va a `NEXT_PUBLIC_SITE_URL`, así que ese dominio tiene que estar entre las URL de redirección de Supabase Auth.
+
 Variables de entorno (Vercel, nunca en git): `DATABASE_URL` (cadena del pooler de Supabase, modo transaction), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (solo servidor), `NEXT_PUBLIC_SITE_URL` y, si el Save the Date va en su subdominio, `HOST_RESERVA_LA_FECHA` (el host, sin esquema).
 
 **Backups:** export diario del esquema y datos a un repo privado vía GitHub Action — el free tier de Supabase tiene retención limitada, y la lista de invitados no se puede perder. El volcado lleva los permisos (el modelo de acceso son GRANT explícitos) y se hace con el `pg_dump` de la versión de la base; cómo se restaura, en el mismo proyecto o en uno nuevo, está en `docs/ENTORNO.md`. Los intentos del RSVP, con la IP de cada invitado, los purga pg_cron cada noche según la retención configurada.
