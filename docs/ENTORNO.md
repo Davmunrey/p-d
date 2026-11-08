@@ -237,8 +237,10 @@ dominio hay que tocar las dos, y eso no es una migración: vive en la
 configuración de Auth del proyecto. Lo hace el flujo **«Direcciones de
 acceso»** (`.github/workflows/direcciones-de-acceso.yml`), que se lanza a mano
 desde la pestaña Actions con el dominio —el mismo de `NEXT_PUBLIC_SITE_URL`—,
-usa `SUPABASE_ACCESS_TOKEN` y `SUPABASE_PROJECT_REF`, pone ese dominio como
-«Site URL» y lo **añade** a la lista sin quitar lo que hubiera. El registro
+usa `SUPABASE_ACCESS_TOKEN` y `SUPABASE_PROJECT_REF`, pone como «Site URL» la
+puerta del panel en ese dominio (`/acceso`: es a donde vuelve un correo que no
+dice a dónde, y con la web cerrada la portada es «Próximamente») y **añade** el
+dominio a la lista sin quitar lo que hubiera. El registro
 dice cómo estaban las dos antes y cómo quedan.
 
 ### La excepción: trabajar desde GitHub

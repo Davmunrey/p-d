@@ -14,6 +14,12 @@ name: Direcciones de acceso
 # NO PISA LA LISTA. Lee la que hay y le añade el dominio nuevo (`/**`, para que
 # valga cualquier ruta de vuelta); la «Site URL» sí se sustituye, porque sólo
 # hay una. El registro dice cómo estaban las dos antes y cómo quedan.
+#
+# LA «SITE URL» ES LA PUERTA DEL PANEL, no la portada: es a donde manda
+# Supabase un correo que no dice a dónde volver —una invitación lanzada desde
+# su panel, un cambio de correo—, y con la web cerrada la portada es
+# «Próximamente». Por eso lleva su ruta (`inicio`), que por defecto es la de
+# `RUTA_ACCESO`.
 
 on:
   workflow_dispatch:
@@ -21,6 +27,11 @@ on:
       sitio:
         description: "El dominio de la web, con https:// (el de NEXT_PUBLIC_SITE_URL)"
         required: true
+        type: string
+      inicio:
+        description: "La página de la Site URL, a la que vuelve un correo sin destino (RUTA_ACCESO)"
+        required: false
+        default: "/acceso"
         type: string
 
 concurrency:
@@ -36,6 +47,7 @@ jobs:
         id: datos
         env:
           SITIO: ${{ inputs.sitio }}
+          INICIO: ${{ inputs.inicio }}
           TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           # De la variable, o del secreto si alguien lo guardó ahí (ver
           # migraciones.yml, que lo acepta de los dos sitios por lo mismo).
@@ -51,7 +63,14 @@ jobs:
             echo "::error::Faltan SUPABASE_ACCESS_TOKEN o SUPABASE_PROJECT_REF. Ver docs/ENTORNO.md. No se ha cambiado nada."
             exit 1
           fi
+          case "$INICIO" in
+            /*) ;;
+            *)
+              echo "::error::La página tiene que empezar por /, y llegó «$INICIO». No se ha cambiado nada."
+              exit 1 ;;
+          esac
           echo "sitio=${SITIO%/}" >> "$GITHUB_OUTPUT"
+          echo "inicio=$INICIO" >> "$GITHUB_OUTPUT"
           echo "proyecto=$PROYECTO" >> "$GITHUB_OUTPUT"
 
       - name: Aplicar
@@ -59,6 +78,7 @@ jobs:
           TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROYECTO: ${{ steps.datos.outputs.proyecto }}
           SITIO: ${{ steps.datos.outputs.sitio }}
+          INICIO: ${{ steps.datos.outputs.inicio }}
         run: |
           api="https://api.supabase.com/v1/projects/$PROYECTO/config/auth"
 
@@ -70,7 +90,7 @@ jobs:
             (.uri_allow_list // "") | split(",")
             | map(gsub("^\\s+|\\s+$"; "")) | map(select(. != ""))
             | . + [$nueva] | unique | join(",")' <<<"$actual")
-          cuerpo=$(jq -nc --arg sitio "$SITIO" --arg lista "$lista" \
+          cuerpo=$(jq -nc --arg sitio "$SITIO$INICIO" --arg lista "$lista" \
             '{site_url: $sitio, uri_allow_list: $lista}')
 
           despues=$(curl -fsS -X PATCH \
@@ -79,7 +99,7 @@ jobs:
             -d "$cuerpo" "$api")
           echo "Después: $(jq -c '{site_url, uri_allow_list}' <<<"$despues")"
 
-          if [ "$(jq -r .site_url <<<"$despues")" != "$SITIO" ]; then
+          if [ "$(jq -r .site_url <<<"$despues")" != "$SITIO$INICIO" ]; then
             echo "::error::Supabase no ha guardado la Site URL."
             exit 1
           fi
